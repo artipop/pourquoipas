@@ -7,11 +7,30 @@
     // where it is mounted next.
     color: rgb(var(--center-channel-color-rgb));
 
+    // One width, whatever section is open. A dialog is shrink-to-fit — its box
+    // is as wide as the longest line inside it, up to the 975px every dialog
+    // stops at — so the width was being decided by whichever panel happened to
+    // be drawn: «Импорт и экспорт», whose longest line is a short sentence and
+    // three narrow cards, came out 174px narrower than the rest, and the list
+    // of sections moved under the pointer as a person went down it.
+    // The 48px is what keeps a window narrower than that from giving the dialog
+    // the whole screen edge to edge.
+    .dialog {
+        width: 975px;
+        max-width: calc(100% - 48px);
+    }
+
+    // One height for every section rather than one per section's content. The
+    // dialog is a fixed box that scrolls when it does not fit, so a section
+    // that fitted and one that did not were drawn at two different widths —
+    // the scrollbar takes its space out of the content, and «Импорт и
+    // экспорт», the shortest panel here, was the one section that never paid
+    // for it.
     .AppSettingsDialog__body {
         display: flex;
         align-items: stretch;
+        height: 70vh;
         min-height: 420px;
-        max-height: 70vh;
     }
 
     .AppSettingsDialog__nav {
@@ -49,6 +68,12 @@
         flex: 1;
         min-width: 0;
         overflow-y: auto;
+
+        // The gutter is held whether this section scrolls or not: where the
+        // platform draws a scrollbar that takes width rather than one that
+        // floats over the content, a short section is otherwise wider than a
+        // long one and everything on it shifts as the section changes.
+        scrollbar-gutter: stable;
         padding: 0 24px 24px;
     }
 
@@ -64,5 +89,31 @@
         color: rgba(var(--center-channel-color-rgb), 0.64);
         font-size: 12px;
         margin-bottom: 12px;
+    }
+
+    // A line of explanation stops at a length somebody can read. The panel is
+    // as wide as the widest control on it, and that is the wrong measure for
+    // prose: at the full width these ran to 130 characters, where the eye
+    // loses the start of the next line. Rows, fields, buttons and cards keep
+    // the whole width — only the sentences are held in.
+    //
+    // In `ch` rather than pixels, so the 12px hints and the 14px messages come
+    // out the same number of characters: the unit is that font's own digit.
+    [class$='__subtitle'],
+    [class$='__hint'],
+    [class$='__actionHint'],
+    [class$='__groupHint'],
+    [class$='__factValue'],
+    [class$='__empty'],
+    [class$='__error'] {
+        max-width: 72ch;
+    }
+
+    // The one sentence in these panels that belongs to a shared widget rather
+    // than to a panel: the fold over the planning instructions is a whole
+    // sentence, and it was the last 130-character line here. Held to the same
+    // measure, and only inside this dialog — the widget is used elsewhere.
+    .PromptField > summary {
+        max-width: 72ch;
     }
 }
