@@ -97,7 +97,12 @@ func readShippedTemplate(file string) ([]byte, error) {
 // nobody can open is the worst possible place to be wrong. The lifetime
 // edition's own two boards join the set at this version; they are a separate
 // glob, so a base install sees no change from them.
-const TemplateVersion = 19
+// 20: «Домашние дела» is «Личное». What it is for is everything outside work
+// — the documents folder, the subscriptions, the notes — and «дела по дому»
+// named the smallest part of that and read as an errand board. The slug stays
+// `home-chores`: it is an id, and nothing about a template has to stay still
+// except that.
+const TemplateVersion = 20
 
 // TemplateMarkerProperty is the board property each template carries its slug
 // in. Ids are regenerated on import and titles are the user's to change, so the

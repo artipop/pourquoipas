@@ -214,7 +214,7 @@ as a duplicate path.
 Three templates are offered. «Разработка» is the one written for code, with
 the «Фича», «Хотфикс» and «Только ревью» routes across «В работе», «Деплой»
 and «QA». The other two are the same machinery pointed at everything else —
-«Контент» and «Домашние дела» — and they are worth reading as examples,
+«Контент» and «Личное» — and they are worth reading as examples,
 because they show what is left when deploys and browser tests are taken away:
 one column where an agent works, and a route that waits for a person. There the
 agent writes into an ordinary folder, added on the card or in «Папки», with

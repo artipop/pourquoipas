@@ -181,7 +181,7 @@ func TestAnInstalledTemplateKeepsItsCardsAndAutomation(t *testing.T) {
 
 	board := installedTemplates(t, a)["home-chores"]
 	if board == nil {
-		t.Fatal("«Домашние дела» is not installed")
+		t.Fatal("«Личное» is not installed")
 	}
 	if _, ok := board.Properties["xciiiColumns"]; !ok {
 		t.Error("the board arrived without the columns it runs")

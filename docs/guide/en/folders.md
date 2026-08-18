@@ -30,8 +30,8 @@ panel always opens.
 
 Which items a board's menu has is decided by the template it was made from: the
 «Разработка» board asks about a folder, a deploy host and a browser, so its menu
-has "Folders…" and "Where to deploy…"; a board of household chores asks about a
-folder alone.
+has "Folders…" and "Where to deploy…"; the «Личное» board asks about a folder
+alone.
 
 Every folder in the list is a card of its own: the name, the path under it,
 and — for a repository — its two settings.
