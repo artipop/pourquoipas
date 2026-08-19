@@ -15,30 +15,11 @@ import (
 	"github.com/artipop/xciii/server/utils"
 )
 
-// Team mode is what turns this install from one person's board into several
-// people's (docs/teamwork.md).
-//
-// It is a mode of the *install*, not a build: the same binary runs both, and
-// the switch is a file under the data directory, read once at startup. That is
-// deliberate — which mode the board server runs in is decided when it is
-// constructed (the session token below), so making it a runtime flag would be a
-// switch that lies about what the running server is doing.
-//
-// The two modes differ in exactly one thing: whether the board server is given
-// a single-user token. With one, the API synthesizes a session for every
-// request and nobody logs in; without one, /login and /register are open and
-// every request carries a real session.
-//
-// **The person at the machine keeps their identity.** Everything made in
-// single-user mode — boards, memberships, categories, card assignments — names
-// the user id `single-user`, so turning the mode on registers the owner's
-// account *under that id* rather than making a second one. Nothing has to be
-// moved, and turning the mode back off hands the same data back to the
-// synthesized session. What it costs is stated in docs/deferred.md: a write the
-// machine makes on the owner's behalf is authored by the owner.
+// Team mode: accounts and a login, instead of one person nobody asks about.
+// A mode of the install rather than a build, because the board server is
+// constructed with the answer — docs/teamwork.md, docs/decisions.md.
 
-// teamSettings is <dataDir>/team/settings.json. An absent file means an absent
-// team, which is the state every install starts in.
+// teamSettings is <dataDir>/team/settings.json. No file means no team.
 type teamSettings struct {
 	Enabled bool `json:"enabled"`
 }
@@ -69,11 +50,8 @@ func saveTeamSettings(path string, cfg teamSettings) error {
 	return os.WriteFile(path, append(data, '\n'), 0o600)
 }
 
-// teamState is what the settings panel shows.
-//
-// Running is what the server was started with and Enabled is what the file
-// says; they differ between the switch being thrown and the app being restarted,
-// which is the one thing the panel has to say out loud.
+// teamState is what the settings panel shows. Enabled and Running disagree
+// between throwing the switch and restarting, which is what it says out loud.
 type teamState struct {
 	Enabled bool `json:"enabled"`
 	Running bool `json:"running"`
@@ -85,11 +63,8 @@ type teamState struct {
 	Invite string `json:"invite"`
 }
 
-// teamBoard is the half of the board server this needs: the account that holds
-// the install's identity, the team's signup token, and whether a token names a
-// live session. Named as an interface rather than taking *app.App so the
-// decisions below can be tested without a database — every one of them is about
-// what to do, not about SQL.
+// teamBoard is the half of the board server this needs, as an interface so the
+// decisions below are testable without a database.
 type teamBoard interface {
 	GetUser(id string) (*model.User, error)
 	GetUserByUsername(username string) (*model.User, error)
@@ -99,9 +74,9 @@ type teamBoard interface {
 	GetSession(token string) (*model.Session, error)
 }
 
-// teamController owns the settings file and the account behind it. Every method
-// tolerates a nil receiver, as the tailnet controller's do, so a data directory
-// that could not be opened costs the feature and not the app.
+// teamController owns the settings file and the account behind it. Safe on a
+// nil receiver, like the tailnet controller: no data dir costs the feature,
+// not the app.
 type teamController struct {
 	mu sync.Mutex
 
@@ -171,10 +146,8 @@ func (c *teamController) stateLocked() teamState {
 	return out
 }
 
-// owner is the account holding this install's own identity, or nil when nobody
-// has named themselves yet. Absence is not an error here — it is the ordinary
-// state of an install that has never been a team — and the store reports it as
-// one.
+// owner is the account holding this install's identity, nil when nobody has
+// named themselves. The store reports that absence as an error.
 func (c *teamController) owner() (*model.User, error) {
 	user, err := c.app.GetUser(model.SingleUser)
 	if model.IsErrNotFound(err) {
@@ -186,8 +159,8 @@ func (c *teamController) owner() (*model.User, error) {
 	return user, nil
 }
 
-// enable names the person at this machine and turns the mode on. It takes
-// effect at the next launch, which the state says by disagreeing with itself.
+// enable names the person at this machine and turns the mode on, for the next
+// launch.
 func (c *teamController) enable(username, password string) (teamState, error) {
 	if c == nil {
 		return teamState{}, errors.New("командный режим недоступен")
@@ -233,9 +206,8 @@ func (c *teamController) enable(username, password string) (teamState, error) {
 	return c.stateLocked(), nil
 }
 
-// disable puts the install back to one person. The account and everything it
-// owns stay exactly where they are: the synthesized session that takes over
-// carries the same id.
+// disable puts the install back to one person. Nothing moves: the synthesized
+// session carries the same id the account does.
 func (c *teamController) disable() (teamState, error) {
 	if c == nil {
 		return teamState{}, errors.New("командный режим недоступен")
@@ -252,8 +224,7 @@ func (c *teamController) disable() (teamState, error) {
 	return c.stateLocked(), nil
 }
 
-// regenerateInvite mints a new signup token, which is how a link handed to the
-// wrong person is taken back.
+// regenerateInvite retires the old link by minting a new token.
 func (c *teamController) regenerateInvite() (teamState, error) {
 	if c == nil {
 		return teamState{}, errors.New("командный режим недоступен")
@@ -274,11 +245,8 @@ func (c *teamController) regenerateInvite() (teamState, error) {
 	return c.stateLocked(), nil
 }
 
-// sessionValid answers the front door: is this token a live board session.
-//
-// It is the whole of what the guard needs to know — *which* person is behind it
-// is the board's own business, and every route the guard stands in front of is
-// about this machine rather than about a board.
+// sessionValid answers the front door. Whose session it is stays the board's
+// business — see docs/deferred.md, «Терминал видит любой из команды».
 func (c *teamController) sessionValid(token string) bool {
 	if c == nil {
 		return false
@@ -293,21 +261,13 @@ func (c *teamController) sessionValid(token string) bool {
 	return err == nil && session != nil
 }
 
-// sessionCookie is the name the page keeps its board session token under for
-// the front door's benefit.
-//
-// The page authenticates to the *board* with an Authorization header it sets
-// itself. Nothing of ours can do that: the Wails runtime makes its own fetches
-// and a WebSocket carries no headers a browser lets us set — so the same token
-// travels a second way, as a cookie the page writes beside the one it already
-// keeps in localStorage. It is not HttpOnly on purpose: the page writes it, and
-// the value is one a script on this origin can read anyway.
-const sessionCookie = "xciiiSession"
+// sessionCookie is how the token reaches the front door: the Wails runtime
+// makes its own fetches and a WebSocket takes no header a page can set. Written
+// by the page (session.ts), so not HttpOnly.
+const sessionCookie = "boardSession"
 
-// requireSession refuses a request that carries no live board session. It is
-// installed only in team mode: in single-user mode there is no session to
-// carry, and the front door's own guards (same origin, expected Host) are the
-// whole of the protection — which is what nothing authenticating a user means.
+// requireSession refuses a request with no live board session. Installed only
+// in team mode, where sessions exist.
 func requireSession(next http.Handler, valid func(string) bool) http.Handler {
 	if valid == nil {
 		return next
@@ -326,16 +286,9 @@ func requireSession(next http.Handler, valid func(string) bool) http.Handler {
 	})
 }
 
-// openToEverybody is the one thing behind the guard that a page without a
-// session still has to be able to fetch: the runtime module itself.
-//
-// It carries no authority — it is a script, and every capability it offers goes
-// through the POST below it, which stays guarded. Refusing it was refusing the
-// login page the ability to *become* a logged-in page: the bootstrap imports
-// the module as the page loads, a rejected dynamic import is cached by the
-// browser's module map, and logging in navigates without reloading — so every
-// bound call for the rest of that page's life failed with "Failed to fetch
-// dynamically imported module", long after the session existed.
+// openToEverybody: the runtime module carries no authority — the calls made
+// through it are the guarded POST — and a login page has to be able to load it
+// to stop being a login page. See docs/decisions.md.
 func openToEverybody(r *http.Request) bool {
 	if r.Method != http.MethodGet && r.Method != http.MethodHead {
 		return false

@@ -1,11 +1,10 @@
 // The Wails-generated Go bindings are PascalCase methods, not constructors.
 /* eslint-disable new-cap */
 import {Board, IPropertyTemplate, IPropertyOption} from '../../blocks/board'
-import {Card} from '../../blocks/card'
 import mutator from '../../mutator'
 import {Utils, IDType} from '../../utils'
 
-import {BOARD_PROP_BRANCH_PROPERTY, BOARD_PROP_PROJECT_PROPERTY, boardBranchProperty, legacyBoardProp} from './automation'
+import {BOARD_PROP_BRANCH_PROPERTY, BOARD_PROP_PROJECT_PROPERTY, boardBranchProperty} from './automation'
 
 // Mirroring the folder registry into the board's own field, which is the only
 // way a card can name a folder: the registry is the machine's, the field is the
@@ -38,6 +37,7 @@ function namedByUs(name?: string): boolean {
 
 // Workdir is a registry entry as the page reads it back (see workdirsPanel).
 export type Workdir = {
+
     // What a card points at. The board's option for this folder is created
     // under it, so the card names its folder by an id and what the folder is
     // *called* stays a label — free to change, and free to stop being a folder
@@ -61,8 +61,7 @@ export type Workdir = {
 // says it is. Nothing is matched by name: a board that has not recorded one has
 // not got one, and one is made.
 export function findWorkdirProperty(board: Board, properties: IPropertyTemplate[]): IPropertyTemplate | undefined {
-    const recorded = board.properties?.[BOARD_PROP_PROJECT_PROPERTY] ??
-        board.properties?.[legacyBoardProp(BOARD_PROP_PROJECT_PROPERTY)!]
+    const recorded = board.properties?.[BOARD_PROP_PROJECT_PROPERTY]
     if (typeof recorded !== 'string' || !recorded) {
         return undefined
     }
@@ -126,6 +125,7 @@ export async function syncWorkdirsToBoard(board: Board, registry: Workdir[]): Pr
     }
     for (const workdir of missing) {
         target.options.push({
+
             // The registry's id, not a fresh one: this is what makes the card's
             // value a reference to the entry rather than a copy of its name.
             id: workdir.id || Utils.createGuid(IDType.BlockID),
@@ -177,34 +177,6 @@ export function soleWorkdirOption(board: Board): {propertyId: string, optionId: 
         return undefined
     }
     return {propertyId: property.id, optionId: property.options[0].id}
-}
-
-// narrowWorkdirProperty makes the folder field a single choice on a board that
-// still carries it as a multiSelect.
-//
-// Two folders on a card never meant two: a card claims one workspace, works one
-// branch and hands its agent one cwd, so `resolveWorkdir` took the first and
-// dropped the rest — a choice made for the person, in silence. Narrowing puts
-// it back on the card, which is why this edits somebody's board rather than
-// letting both types live side by side.
-//
-// The rename rides along, because the plural was the type talking; a name
-// somebody typed is theirs and is kept.
-//
-// Idempotent, and it writes only for a board that still has the old field.
-export async function narrowWorkdirProperty(board: Board, cards: Card[]): Promise<boolean> {
-    const property = findWorkdirProperty(board, board.cardProperties)
-    if (!property || property.type !== 'multiSelect') {
-        return false
-    }
-
-    // changePropertyTypeAndName is the board's own conversion: between select
-    // and multiSelect it keeps the options — which cards reference — and leaves
-    // every card the first of the values it had, which is the folder the agent
-    // was already being sent to.
-    const name = namedByUs(property.name) ? WORKDIR_PROPERTY_TITLE : property.name
-    await mutator.changePropertyTypeAndName(board, cards, property, 'select', name)
-    return true
 }
 
 // useWorkdirHere makes a folder somebody already registered available on this

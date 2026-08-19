@@ -64,7 +64,7 @@ type CardSpec struct {
 	Item       ItemRef
 }
 
-// ItemRef is a card's origin, on the card itself (fields.xciiiSource): what
+// ItemRef is a card's origin, on the card itself (fields.source): what
 // stops the same letter becoming a second card.
 //
 // On the card and not only in source_item, because that table is keyed by card

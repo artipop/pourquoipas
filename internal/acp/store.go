@@ -23,13 +23,6 @@ import (
 // its stall being lifted become one transaction.
 type Store struct {
 	db *sql.DB
-
-	// board and carriedSessions belong to the one-off import of a pre-move
-	// acp.db (legacystore.go) and are nil at every other moment. They sit on
-	// the store rather than being threaded through ten carry functions, which
-	// would be ten signatures carrying something none of them is about.
-	board           *presence
-	carriedSessions map[string]bool
 }
 
 // NewStore wraps the board's database handle. It creates nothing: the tables
@@ -902,4 +895,14 @@ func (s *Store) CheckoutModeForCard(cardID string) (mode, branch, base string, e
 		return "", "", "", err
 	}
 	return mode, branch, base, nil
+}
+
+// nullable turns an empty string into absence. A key column says "there is
+// none" with NULL and never with "" — a planning conversation has no card, an
+// ordinary folder has no branch (CLAUDE.md, "Absence is NULL").
+func nullable(v string) any {
+	if v == "" {
+		return nil
+	}
+	return v
 }

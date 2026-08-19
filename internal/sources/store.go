@@ -165,3 +165,13 @@ func (s *Store) PruneEvents(keep int) error {
 		SELECT id FROM source_event ORDER BY id DESC LIMIT ?)`, keep)
 	return err
 }
+
+// nullable turns an empty string into absence. Ours is a schema where a key
+// column says "there is none" with NULL, not with "" — a card that no item was
+// filed onto, a version nobody reported (docs/db-erd.md).
+func nullable(v string) any {
+	if v == "" {
+		return nil
+	}
+	return v
+}

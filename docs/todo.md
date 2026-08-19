@@ -78,14 +78,14 @@ ERR Binding call failed: Bound method returned an error:
 ## Префикс `xciii` в ключах и именах
 
 Имя продукта записано внутрь данных. `BoardPropColumnProperty =
-"xciiiColumnProperty"` — образец, но таких мест десятки: ключи автоматики на
-доске (`xciiiColumns`, `xciiiFlows`, `xciiiPrompt`, `xciiiSetup`,
-`xciiiGit`, `xciiiBranchProperty`, `xciiiProjectProperty`), поля карточки
-(`xciiiSource`, `xciiiFlow`), маркер шаблона (`xciiiTemplate`), кука и
-`localStorage` сессии (`xciiiSession`, `xciiiSessionId`), ref в git
+"columnProperty"` — образец, но таких мест десятки: ключи автоматики на
+доске (`columns`, `flows`, `prompt`, `setup`,
+`git`, `branchProperty`, `projectProperty`), поля карточки
+(`source`, `flow`), маркер шаблона (`template`), кука и
+`localStorage` сессии (`boardSession`, `boardSessionId`), ref в git
 (`refs/xciii/seen/`), ключи в системном хранилище (`xciii.probe`,
 `xciii.board.machines`), id узлов на странице (`xciii-app`,
-`xciii-root-portal`), имя базы (`xciii.db`), временный файл конфига MCP,
+`root-portal`), имя базы (`xciii.db`), временный файл конфига MCP,
 имя экземпляра миграций.
 
 Разделять их надо по тому, зачем префикс стоит.

@@ -33,33 +33,33 @@ import (
 // not presuppose an agent: of the twelve triggers an edge can wait on, nine
 // come from git, GitHub or the board itself, and a FlowActionNone stage runs
 // nothing at all. A board can carry a working route with no agent in it.
+// The keys this application keeps on a board, in the board's own `properties`
+// map. Bare names on purpose: the map is shared with the board server's own
+// keys — of which there is exactly one, `trackingTemplateId` — and a prefix
+// here would only be the product's name written into stored data, where a
+// rename becomes a migration.
 const (
-	BoardPropColumns = "xciiiColumns"
-	BoardPropFlows   = "xciiiFlows"
-	BoardPropSetup   = "xciiiSetup"
+	BoardPropColumns = "columns"
+	BoardPropFlows   = "flows"
+	BoardPropSetup   = "setup"
 	// BoardPropPrompt is what this board's agents are told first. It is the
 	// board's, for the same reason its columns are: a household board and a
 	// code board want different first words, and a board carried to another
 	// machine that arrived without them would run its agents unbriefed.
-	BoardPropPrompt = "xciiiPrompt"
-	// BoardPropGit is how this board *used* to say a repository is worked in.
-	// The answer belongs to the folder (WorkdirEntry.Mode) — it is a fact about
-	// the repository and not about the board — so this key is read once, moved
-	// onto the folders that board offers, and taken off the board.
-	BoardPropGit = "xciiiGit"
+	BoardPropPrompt = "prompt"
 	// BoardPropBranch is the id of the text property a card's branch is
 	// written into. An id and not a name, for the reason every other field of
 	// ours is found by one: «Ветка» is what this app calls it when it makes
 	// one, and a person may call it anything.
 	//
 	// Written by the page (it owns the board's card properties), read here.
-	BoardPropBranch = "xciiiBranchProperty"
+	BoardPropBranch = "branchProperty"
 	// BoardPropProject is the id of the select property a card names its folder
 	// in — «Папка» when this app makes it. An id for the same reason the branch
 	// field is one, and load-bearing for a second: it is what lets the folder be
 	// read off the card rather than *recognised* among everything the card has
 	// selected (resolveWorkdir).
-	BoardPropProject = "xciiiProjectProperty"
+	BoardPropProject = "projectProperty"
 	// BoardPropColumnProperty is the id of the select property this board's
 	// columns live on — the field a card's column is a value of.
 	//
@@ -72,7 +72,7 @@ const (
 	// Written here rather than by the page, unlike the folder and branch
 	// records: the columns already carry the property they were bound to, so
 	// the board can be told what it is the first time its automation is saved.
-	BoardPropColumnProperty = "xciiiColumnProperty"
+	BoardPropColumnProperty = "columnProperty"
 )
 
 // The names these keys had before, still read because every board made until
@@ -86,42 +86,13 @@ const (
 // build ever wrote `acpPrompt`. `acp` was also the one defensible prefix here —
 // this really is what an agent is told — and it was renamed anyway so that a
 // board does not carry four keys under one prefix and a fifth under another.
-var legacyBoardProps = map[string]string{
-	BoardPropColumns: "acpColumns",
-	BoardPropFlows:   "acpFlows",
-	BoardPropSetup:   "acpSetup",
-	BoardPropPrompt:  "acpPrompt",
-	BoardPropProject: "acpProjectProperty",
-}
-
 // boardProp reads one of this app's own keys off a board, under whichever name
 // that board happens to carry it.
 func boardProp(props map[string]any, key string) (any, bool) {
 	if v, ok := props[key]; ok && v != nil {
 		return v, true
 	}
-	if legacy, ok := legacyBoardProps[key]; ok {
-		if v, ok := props[legacy]; ok && v != nil {
-			return v, true
-		}
-	}
 	return nil, false
-}
-
-// legacyNamesOf is the old spelling of the keys named, and only of those.
-//
-// A write may delete the old name of a key it is writing, and of no other: this
-// side reads BoardPropSetup and never writes it, so deleting `acpSetup` beside
-// a write of the columns took the questions a template declared off the board
-// with nothing to put them back. Migrating that one is migrateLegacyProps.
-func legacyNamesOf(keys ...string) []string {
-	out := make([]string, 0, len(keys))
-	for _, key := range keys {
-		if legacy, ok := legacyBoardProps[key]; ok {
-			out = append(out, legacy)
-		}
-	}
-	return out
 }
 
 // BoardMeta is the board's own properties — where a board keeps the automation
@@ -233,13 +204,9 @@ func (m *Manager) seedFromBoard(boardID string) {
 	if added > 0 {
 		m.log.Info("acp: routes taken from the board itself", "board", boardID, "count", added)
 	}
-	m.migrateLegacyProps(boardID, props)
 	m.rememberUnadopted(boardID, unusableColumns, unusableFlows)
 	if m.adoptPrompt(boardID, boardPromptFrom(props)) {
 		m.log.Info("acp: the board's own instructions taken from the board itself", "board", boardID)
-	}
-	if moved := m.moveGitPolicyToWorkdirs(boardID, props); moved > 0 {
-		m.log.Info("acp: how to work in a repository moved onto the folders", "board", boardID, "folders", moved)
 	}
 	m.indexBoardCardFlows(boardID)
 
@@ -277,56 +244,6 @@ func parseBoardAutomation(props map[string]any) ([]ColumnSpec, []FlowEntry, erro
 	return columns, flows, nil
 }
 
-// moveGitPolicyToWorkdirs takes a board's old answer about repositories and
-// writes it onto the folders that board offers, then takes the key off the
-// board. One-time, and idempotent: a folder that already says how it is worked
-// in is left alone, and a board whose key is gone does nothing.
-//
-// The answer moved because it is a fact about the repository rather than about
-// the board — see WorkMode. Moving it rather than dropping it is what keeps a
-// board somebody had already set to «в самой папке» working that way.
-func (m *Manager) moveGitPolicyToWorkdirs(boardID string, props map[string]any) int {
-	raw, ok := boardProp(props, BoardPropGit)
-	if !ok {
-		return 0
-	}
-	var p struct {
-		Mode string `json:"mode"`
-	}
-	if err := reinterpret(raw, &p); err != nil {
-		return 0
-	}
-	mode := strings.ToLower(strings.TrimSpace(p.Mode))
-	if mode != WorkModeWorktree && mode != WorkModeBranch {
-		return 0
-	}
-
-	moved := 0
-	m.cfgMu.Lock()
-	for i, e := range m.cfg.Workdirs {
-		if !e.OfferedOn(boardID) || strings.TrimSpace(e.Modes[boardID]) != "" {
-			continue
-		}
-		if m.cfg.Workdirs[i].Modes == nil {
-			m.cfg.Workdirs[i].Modes = map[string]string{}
-		}
-		m.cfg.Workdirs[i].Modes[boardID] = mode
-		moved++
-	}
-	err := m.persistConfigLocked()
-	m.cfgMu.Unlock()
-	if err != nil {
-		m.log.Warn("acp: cannot save how the folders are worked in", "board", boardID, "err", err)
-	}
-
-	// Off the board, so it is moved once and never read again.
-	ctx, cancel := context.WithTimeout(m.rootCtx, 10*time.Second)
-	defer cancel()
-	if err := m.meta.SetBoardProperties(ctx, boardID, nil, []string{BoardPropGit}); err != nil {
-		m.log.Warn("acp: cannot take the old repository setting off the board", "board", boardID, "err", err)
-	}
-	return moved
-}
 
 func reinterpret(from any, into any) error {
 	// A property may also arrive as the JSON text of itself: the board store
@@ -531,48 +448,6 @@ func (m *Manager) indexBoardCardFlows(boardID string) {
 	}
 }
 
-// migrateLegacyProps moves the keys nothing else writes to their current names.
-//
-// Everything the registry owns is rewritten in full on every edit, so it
-// migrates itself. BoardPropSetup does not: it is the board's own declaration
-// of what to ask, read here and written only by the template editor. Left
-// alone it would sit under its old name for ever on a board nobody edits in
-// that editor — and deleted with the rest it would be gone.
-func (m *Manager) migrateLegacyProps(boardID string, props map[string]any) {
-	if m.meta == nil {
-		return
-	}
-	move := map[string]any{}
-	var remove []string
-	for _, key := range []string{BoardPropSetup} {
-		legacy, ok := legacyBoardProps[key]
-		if !ok {
-			continue
-		}
-		if _, current := props[key]; current {
-			continue
-		}
-		value, ok := props[legacy]
-		if !ok || value == nil {
-			continue
-		}
-		move[key] = value
-		remove = append(remove, legacy)
-	}
-	if len(move) == 0 {
-		return
-	}
-	parent := m.rootCtx
-	if parent == nil {
-		parent = context.Background()
-	}
-	ctx, cancel := context.WithTimeout(parent, 10*time.Second)
-	defer cancel()
-	if err := m.meta.SetBoardProperties(ctx, boardID, move, remove); err != nil {
-		m.log.Warn("acp: cannot rename the board's own keys", "board", boardID, "err", err)
-	}
-}
-
 // hasUnadopted reports whether the board still carries something this machine
 // could not take. Takes cfgMu itself: it is asked under seededMu, which is the
 // other way round from everywhere else, and the two guard nothing in common.
@@ -654,8 +529,7 @@ func (m *Manager) persistBoardLocked(boardID string) {
 	}
 	ctx, cancel := context.WithTimeout(parent, 10*time.Second)
 	defer cancel()
-	remove := legacyNamesOf(BoardPropColumns, BoardPropFlows, BoardPropPrompt)
-	if err := m.meta.SetBoardProperties(ctx, boardID, props, remove); err != nil {
+	if err := m.meta.SetBoardProperties(ctx, boardID, props, nil); err != nil {
 		m.log.Warn("acp: cannot save the board's automation on the board", "board", boardID, "err", err)
 	}
 }
@@ -697,8 +571,8 @@ func boardOwn(cfg Config, boardID string) ([]ColumnSpec, []FlowEntry) {
 // across it. Exported so a test — and "save this board as a template" —
 // speaks the same shape the template does.
 type BoardAutomation struct {
-	Columns []ColumnSpec `json:"acpColumns,omitempty"`
-	Flows   []FlowEntry  `json:"acpFlows,omitempty"`
+	Columns []ColumnSpec `json:"columns,omitempty"`
+	Flows   []FlowEntry  `json:"flows,omitempty"`
 }
 
 // columnPropertyOf is the property this board's columns are values of, read off

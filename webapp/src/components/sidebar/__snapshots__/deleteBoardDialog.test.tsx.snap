@@ -2,7 +2,7 @@
 
 exports[`components/sidebar/DeleteBoardDialog > Cancel should not submit 1`] = `
 <div
-  id="xciii-root-portal"
+  id="root-portal"
 >
   exists
 </div>
@@ -10,7 +10,7 @@ exports[`components/sidebar/DeleteBoardDialog > Cancel should not submit 1`] = `
 
 exports[`components/sidebar/DeleteBoardDialog > Delete should submit 1`] = `
 <div
-  id="xciii-root-portal"
+  id="root-portal"
 >
   deleted
   

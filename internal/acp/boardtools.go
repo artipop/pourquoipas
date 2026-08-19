@@ -167,7 +167,7 @@ func (m *Manager) openBoardTools(boardID, cardID, terminalID string, agent Agent
 		return "", ""
 	}
 	// 0600 by default, and it carries the grant, so it stays that way.
-	f, err := os.CreateTemp("", "xciii-mcp-*.json")
+	f, err := os.CreateTemp("", "mcp-config-*.json")
 	if err != nil {
 		m.log.Warn("acp: cannot write the MCP config for a terminal", "err", err)
 		m.RevokeBoardTools(token)

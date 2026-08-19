@@ -47,7 +47,7 @@ id и переживают её переезд между досками (`MoveC
 Сердце — две таблицы: `boards` (доска, её свойства и схема карточных полей как
 JSON) и `blocks` (всё содержимое: карточки, виды, комментарии, вложения —
 дерево через `parent_id`). Наша автоматика живёт в `boards.properties`
-(`xciiiColumns`, `xciiiFlows`, `xciiiPrompt`, `xciiiBranchProperty`, …) и в
+(`columns`, `flows`, `prompt`, `branchProperty`, …) и в
 `blocks.fields` карточки — отдельных таблиц у неё нет.
 
 Три **history-таблицы** — `blocks_history`, `boards_history`,
@@ -100,7 +100,7 @@ flowchart TB
         FOPT["Опция папки<br/>option id = id записи реестра"]
         CARD["Карточка<br/>blocks.id"]
         COL["Колонка<br/>ColumnSpec"]
-        FLOW["Маршрут<br/>xciiiFlows"]
+        FLOW["Маршрут<br/>flows"]
         NODE["Стадия<br/>FlowNode"]
     end
 
@@ -121,14 +121,14 @@ flowchart TB
     B --> PROPS
     PROPS --> OPT
     PROPS --> FOPT
-    B -->|"xciiiProjectProperty"| FOPT
-    B -->|"xciiiBranchProperty"| PROPS
+    B -->|"projectProperty"| FOPT
+    B -->|"branchProperty"| PROPS
     CARD -->|"значение поля папки"| FOPT
     FOPT -->|"option id = WorkdirEntry.id"| WD
     CARD -->|"значение поля колонки"| OPT
     CARD -->|"ветка — текстом в поле"| CLAIM
 
-    B -->|"xciiiColumnProperty"| PROPS
+    B -->|"columnProperty"| PROPS
     COL -->|"optionId"| OPT
     NODE -->|"optionId"| OPT
     FLOW --> NODE
@@ -175,7 +175,7 @@ flowchart LR
   адресуется» выше.
 - **Ссылки между хранилищами идут по id, а не по именам.** Карточка называет
   папку id записи реестра, доска записывает, какое её поле — папка и какое —
-  ветка (`xciiiProjectProperty`, `xciiiBranchProperty`), а не ищет по названию.
+  ветка (`projectProperty`, `branchProperty`), а не ищет по названию.
   Путём не связывается уже ничего.
 - **Наша автоматика не добавила таблиц в бордовую базу.** Колонки, маршруты,
   промпты и запись «какое свойство — ветка» лежат в `boards.properties`, и

@@ -41,25 +41,15 @@ func appDataDir(name string, perm os.FileMode) (string, error) {
 	return dir, nil
 }
 
-// openAgentStore hands the agent integration the board's database, after
-// carrying over whatever an `acp.db` from before the move still holds. The
-// import is at startup and happens once: it renames the file when it is done.
+// openAgentStore hands the agent integration the board's database. Both
+// subsystems keep their tables there rather than in files of their own — see
+// CLAUDE.md, "One database" — and neither creates anything: the schema is the
+// migration's.
 func openAgentStore(brd board, dir string) (*acp.Store, error) {
-	if n, err := acp.ImportLegacyStore(brd.db, filepath.Join(dir, "acp.db")); err != nil {
-		return nil, err
-	} else if n > 0 {
-		log.Printf("acp: %d rows carried over from acp.db, which is now acp.db.migrated", n)
-	}
 	return acp.NewStore(brd.db), nil
 }
 
-// openSourceStore does the same for `sources.db`.
 func openSourceStore(brd board, dir string) (*sources.Store, error) {
-	if n, err := sources.ImportLegacyStore(brd.db, filepath.Join(dir, "sources.db")); err != nil {
-		return nil, err
-	} else if n > 0 {
-		log.Printf("sources: %d rows carried over from sources.db, which is now sources.db.migrated", n)
-	}
 	return sources.NewStore(brd.db), nil
 }
 

@@ -641,7 +641,7 @@ in, and gave one set of routes two places to be edited — the second of them a
 copy nobody was looking at. `docs/templates.md` is that half written for
 somebody using it.
 
-**The marker is the app's to give** (`TemplateMarkerProperty`, `xciiiTemplate`).
+**The marker is the app's to give** (`TemplateMarkerProperty`, `template`).
 It is how the importer recognises its own copy of a template across launches, so
 a copy that carries one is a copy claiming to be it: a board made from
 «Разработка» carries the marker, `saveBoardAsTemplate` copies the board's
@@ -662,7 +662,7 @@ neither list.
 
 **What an agent is told first is two texts, and there are two because there are
 two owners** (`internal/acp/boardprompts.go`). The board's — `boardPrompts`, on
-the board as `xciiiPrompt`, so it travels with it — goes to everybody working
+the board as `prompt`, so it travels with it — goes to everybody working
 here, and is «Системный промпт доски…» in the board's ⋯ menu. The agent's own —
 `AgentEntry.Prompt`, in the registry — holds on every board this machine has,
 and is «Настройки → Агенты». `promptLead` puts them in that order in front of
@@ -678,7 +678,7 @@ wants said is already said in the folder, in the `AGENTS.md` its own CLI reads,
 and what one card wants said is the card. So the dialog prints the order it
 composes, and the count it prints is two.
 
-And a board's automation **lives on the board** — `xciiiColumns`/`xciiiFlows` in the
+And a board's automation **lives on the board** — `columns`/`flows` in the
 board's own properties, in the board database, which is why a live board and a
 template are the same two keys and why a template can carry automation at all.
 `internal/acp` keeps the registry in memory because the engine reads it on every
@@ -746,7 +746,7 @@ reads the other names through `listBoards()` rather than the store, so it needs
 no provider around it in a test.
 
 **The plan is read off the board's stages, not off its template**
-(`setupSteps`). It used to be the steps the template declared in `xciiiSetup`,
+(`setupSteps`). It used to be the steps the template declared in `setup`,
 falling back to inference — and a declaration is written once, before the board
 exists, so a board of household chores that grew a deploy stage a month later
 was never asked for a host and never offered «Куда деплоить…» either: the stage
@@ -880,13 +880,13 @@ of which a card names in its «Папка» field. The code calls them working
 directories (`WorkdirEntry`), the screen calls them папки, and neither ever
 calls them projects again: a folder of household notes is not a project, and
 the word made every board of shopping lists look like it was missing one. The
-keys in `config.json` (`projects`), on the board (`xciiiProjectProperty`) and on
+keys in `config.json` (`projects`), on the board (`projectProperty`) and on
 a card (`project_path`, `repo_path`) keep their old spelling, because they are
 other people's stored data.
 
 **A card names its folder by id, and the id is the entry's own**
 (`WorkdirEntry.ID`, `cardWorkdir`). The board records which property holds the
-folder (`BoardPropProject`, `xciiiProjectProperty`); the *option* offering a
+folder (`BoardPropProject`, `projectProperty`); the *option* offering a
 folder is created under that folder's registry id (`workdirSync.ts`), so a card
 that names a folder is a card holding an ordinary select value that happens to
 be a reference. Nothing about the entry has to stay still except the id — which
@@ -994,7 +994,7 @@ is exactly one answer and the screen reads as "this folder works like this".
 `worktreeDir` and `keepFailedWorktrees` stay in `config.json`, being about this
 machine's disk, and `worktreeMode` survives as the default for a folder nobody
 has been asked about (`always`→worktree, `never`→branch). A board that carries
-the earlier board-level key (`xciiiGit`) has its answer moved onto its folders
+the earlier board-level key (`git`) has its answer moved onto its folders
 once, and the key taken off it (`moveGitPolicyToWorkdirs`).
 
 `branch` mode is the one that can refuse: the folder is held by one card
@@ -1013,7 +1013,7 @@ the directory is folded away (`FoldWorktree`) and the branch stays; the next
 terminal on that card remakes the copy from the branch, which is what makes
 folding it safe — and it never touches a copy with uncommitted work in it or one
 a CLI is still running in. The branch is also written onto the card, into the
-text property the board records as `xciiiBranchProperty`: a machine's database
+text property the board records as `branchProperty`: a machine's database
 does not travel, and the card does — to another board (`MoveCardToBoard`) or
 another machine. The path is not written, because a path means nothing there.
 
@@ -1752,7 +1752,7 @@ table of that name instead of `workdir_claim`. That reads as what it already is,
 because a plain folder records no row at all: `ClaimWorkspace` creates and
 writes nothing for `WorkModePlain`, so the table only ever held git copies. The
 Go side still says `WorkdirEntry`, and the stored keys still say `project`
-(`projects`, `xciiiProjectProperty`, `project_path`) — they are other people's
+(`projects`, `projectProperty`, `project_path`) — they are other people's
 saved data. Not `project` in anything new: that word was removed for a product
 reason which has not changed — a folder of household notes is not a project,
 and it made every board of shopping lists look like it was missing one.
@@ -1809,7 +1809,7 @@ and it made every board of shopping lists look like it was missing one.
   else. Nothing may find, match or branch on one: the board's column property is
   whatever a view groups by, the author and link properties are found by their
   *type*, the inbox view by what it filters, the folders field by an id the
-  board records (`xciiiProjectProperty`). Names that do decide something come from
+  board records (`projectProperty`). Names that do decide something come from
   the board or the registry — a rule's `Props`, a flow's stages — where a person
   typed them against the board in front of them; they are data, not literals in
   our code. A manifest field is the shape to copy: `key` is the id, `title` is

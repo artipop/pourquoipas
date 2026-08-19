@@ -33,8 +33,8 @@
 
 Форк Focalboard. Всё содержимое доски — строки `blocks`: карточка,
 вид, комментарий, вложение; дерево внутри доски — через `parent_id`.
-Наша автоматика лежит в `boards.properties` (`xciiiColumns`,
-`xciiiFlows`, `xciiiPrompt`, …) и в `blocks.fields` карточки, своих
+Наша автоматика лежит в `boards.properties` (`columns`,
+`flows`, `prompt`, …) и в `blocks.fields` карточки, своих
 таблиц у неё нет — потому и едет с доской при экспорте и переезде.
 
 Внешних ключей здесь нет, и намеренно: у форка наследный soft-delete,
@@ -58,7 +58,7 @@ erDiagram
         bool show_description "nullable"
         bool is_template "nullable"
         int32 template_version "nullable"
-        text properties "The board's own automation lives here — xciiiColumns, xciiiFlows, xciiiPrompt and the records of which…"
+        text properties "The board's own automation lives here — columns, flows, prompt and the records of which…"
         text card_properties "The schema of a card's fields. The product's main denormalisation, and deliberately left alone: the whole…"
         millis create_at "nullable"
         millis update_at "nullable"
@@ -212,7 +212,7 @@ erDiagram
         bool show_description "nullable"
         bool is_template "nullable"
         int32 template_version "nullable"
-        text properties "The board's own automation lives here — xciiiColumns, xciiiFlows, xciiiPrompt and the records of which…"
+        text properties "The board's own automation lives here — columns, flows, prompt and the records of which…"
         text card_properties "The schema of a card's fields. The product's main denormalisation, and deliberately left alone: the whole…"
         millis create_at "nullable"
         millis update_at "nullable"

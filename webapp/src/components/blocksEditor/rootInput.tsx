@@ -33,7 +33,7 @@ export default function RootInput(props: Props) {
             placeholder={intl.formatMessage({id: 'BlocksEditor.placeholder', defaultMessage: 'Type your text, or a slash command'})}
             autoFocus={true}
             menuIsOpen={showMenu()}
-            portalTarget={document.getElementById('xciii-root-portal')}
+            portalTarget={document.getElementById('root-portal')}
             options={options}
 
             // A slash command matches from either end, so `/i` finds `/image`

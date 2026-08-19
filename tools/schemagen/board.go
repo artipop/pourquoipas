@@ -169,8 +169,8 @@ func boardColumns() []Column {
 		{Name: "is_template", Type: Bool(), Null: true},
 		{Name: "template_version", Type: Int32(), Null: true, Default: DefaultZero},
 		{Name: "properties", Type: Text(), Null: true,
-			Why: "The board's own automation lives here — xciiiColumns, xciiiFlows,\n" +
-				"xciiiPrompt and the records of which field is which. JSON on purpose:\n" +
+			Why: "The board's own automation lives here — columns, flows,\n" +
+				"prompt and the records of which field is which. JSON on purpose:\n" +
 				"it travels with the board, into an export and into a template."},
 		{Name: "card_properties", Type: Text(), Null: true,
 			Why: "The schema of a card's fields. The product's main denormalisation, and\n" +

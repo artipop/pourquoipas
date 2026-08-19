@@ -73,7 +73,7 @@ async function boot() {
         <AppStoreProvider store={store}>
             <MainApp/>
         </AppStoreProvider>
-    ), document.getElementById('xciii-app')!)
+    ), document.getElementById('app-root')!)
 }
 
 boot()

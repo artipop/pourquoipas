@@ -31,8 +31,8 @@ describe('components/acp/saveAsTemplate', () => {
             main: {
                 App: {
                     ExportBoardAutomation: vi.fn().mockResolvedValue(JSON.stringify({
-                        acpColumns: [{optionId: 'opt-work', property: 'Статус', column: 'В работе', action: 'agent'}],
-                        acpFlows: [{name: 'Фича', nodes: [], edges: []}],
+                        columns: [{optionId: 'opt-work', property: 'Статус', column: 'В работе', action: 'agent'}],
+                        flows: [{name: 'Фича', nodes: [], edges: []}],
                     })),
                 },
             },

@@ -177,7 +177,7 @@ func cardProperties(schema model.PropSchema, props map[string]string) map[string
 }
 
 // Where a card came from lives on the card, under one key of its own — the same
-// bargain as xciiiFlow (cardstate.go): a card block is what an export carries and
+// bargain as flow (cardstate.go): a card block is what an export carries and
 // an import renumbers, and a table keyed by card id is neither.
 //
 // It holds the source's name as well as the item's id: the question is "did
@@ -187,7 +187,7 @@ func cardProperties(schema model.PropSchema, props map[string]string) map[string
 //
 // The prefix is the app's, not the agent integration's: sources must keep
 // working with it switched off (docs/sources.md §18).
-const cardFieldSource = "xciiiSource"
+const cardFieldSource = "source"
 
 var _ sources.BoardItems = (*SourceWriter)(nil)
 

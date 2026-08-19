@@ -46,14 +46,14 @@ func bootstrapScript(sessionToken string) string {
   // any app script runs. In team mode it is empty and the page logs in.
   try {
     var seeded = %q;
-    if (seeded) { localStorage.setItem('xciiiSessionId', seeded); }
+    if (seeded) { localStorage.setItem('boardSessionId', seeded); }
     // The same token a second way, for the front door (team.go): the Wails
     // runtime makes its own fetches and a WebSocket carries no header a page
     // can set, so what guards those routes is a cookie. Written here and by
     // octoClient at login, because a login navigates without reloading.
-    var token = localStorage.getItem('xciiiSessionId') || '';
+    var token = localStorage.getItem('boardSessionId') || '';
     if (token) {
-      document.cookie = 'xciiiSession=' + token + '; path=/; SameSite=Strict' +
+      document.cookie = 'boardSession=' + token + '; path=/; SameSite=Strict' +
         (location.protocol === 'https:' ? '; Secure' : '');
     }
   } catch (e) {}

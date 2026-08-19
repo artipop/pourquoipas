@@ -1,28 +1,17 @@
-// Where the board session token is kept, and why it is kept twice.
-//
-// The page authenticates to the board with an `Authorization: Bearer` header it
-// sets itself, so localStorage is the whole of what it needs. The front door in
-// front of that board needs the same token and cannot be handed a header: the
-// Wails runtime makes its own fetches for every bound method, and a browser
-// lets nobody set a header on a WebSocket handshake. So the token also travels
-// as a cookie, which both of those carry by themselves (team.go).
-//
-// It is not HttpOnly, and could not be: the page writes it. That costs nothing
-// it has not already spent — a script on this origin can read localStorage too.
-// SameSite=Strict is the part that matters, since it keeps another site from
-// sending it.
+// The board session token, kept twice: a header for the board, a cookie for the
+// front door — which can be handed neither a header on a WebSocket handshake
+// nor one on the Wails runtime's own fetches (team.go).
 
-const TOKEN_KEY = 'xciiiSessionId'
+const TOKEN_KEY = 'boardSessionId'
 
-// The name the front door reads. Kept in step with sessionCookie in team.go.
-const COOKIE = 'xciiiSession'
+// Kept in step with sessionCookie in team.go.
+const COOKIE = 'boardSession'
 
 export function sessionToken(): string {
     return localStorage.getItem(TOKEN_KEY) || ''
 }
 
-// rememberSession stores a token both ways. Called wherever a session begins —
-// logging in, and the bootstrap script seeding a single-user install.
+// rememberSession stores a token both ways.
 export function rememberSession(token: string): void {
     localStorage.setItem(TOKEN_KEY, token)
     writeCookie(token)

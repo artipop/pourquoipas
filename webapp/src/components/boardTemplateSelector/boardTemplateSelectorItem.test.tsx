@@ -215,7 +215,7 @@ describe('components/boardTemplateSelector/boardTemplateSelectorItem', () => {
         const onEdit = vi.fn()
 
         const root = document.createElement('div')
-        root.setAttribute('id', 'xciii-root-portal')
+        root.setAttribute('id', 'root-portal')
         render(() => wrapDNDIntl(() =>
             <AppStoreProvider store={store}>
                 <BoardTemplateSelectorItem

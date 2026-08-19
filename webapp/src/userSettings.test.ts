@@ -31,12 +31,12 @@ describe('userSettings and the install’s own memory', () => {
     // keeps come through.
     test('hydration takes only the keys the install keeps', async () => {
         anyWindow.go = {main: {App: {
-            GetUIPreferences: vi.fn().mockResolvedValue(JSON.stringify({xciiiSessionId: 'stolen', language: 'ru'})),
+            GetUIPreferences: vi.fn().mockResolvedValue(JSON.stringify({boardSessionId: 'stolen', language: 'ru'})),
         }}}
 
         await hydrateUserSettings()
 
-        expect(localStorage.getItem('xciiiSessionId')).toBeNull()
+        expect(localStorage.getItem('boardSessionId')).toBeNull()
         expect(UserSettings.language).toBe('ru')
     })
 

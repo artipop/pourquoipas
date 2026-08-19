@@ -217,7 +217,7 @@ the one thing a rewrite must not quietly drop.
   examples and stay hidden. Ours live **here**, in
   `internal/boardadapter/templates/`, one `.jsonl` per board, embedded with
   `go:embed` and installed into the global team on launch by `ImportTemplates`.
-  A board is recognised on the next launch by the `xciiiTemplate` property
+  A board is recognised on the next launch by the `template` property
   carrying its file's slug (ids are regenerated on import, titles are the
   user's), and `TemplateVersion` in `internal/boardadapter/templates.go` is what
   replaces an installed copy with an edited one. Authoring is not by hand:
@@ -255,7 +255,7 @@ the one thing a rewrite must not quietly drop.
   when the registries are still empty — a folder and an agent are asked for
   (nothing runs without them), Dokku and a browser MCP server are offered and
   skippable. **Which steps it has is the board's own answer.** A template
-  declares them in `xciiiSetup`, beside the columns and routes it carries, and may
+  declares them in `setup`, beside the columns and routes it carries, and may
   add a sentence of its own to a step ("the folder with your household notes")
   or insist on one the app calls optional. It may only name steps from the
   closed set `internal/acp/setup.go` implements — like the flow triggers, the

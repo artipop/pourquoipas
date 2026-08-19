@@ -156,7 +156,7 @@ func TestEveryTemplateBringsItsOwnAutomation(t *testing.T) {
 	for _, file := range embeddedTemplates(t) {
 		board := readTemplate(t, file)[0].Data
 		properties, _ := board.Fields["properties"].(map[string]any)
-		for _, key := range []string{"xciiiColumns", "xciiiFlows"} {
+		for _, key := range []string{"columns", "flows"} {
 			list, ok := properties[key].([]any)
 			if !ok || len(list) == 0 {
 				t.Errorf("%s (%s) ships no %s", file, board.Title, key)
@@ -208,9 +208,9 @@ func TestEveryTemplateNamesItsProjectPropertyByID(t *testing.T) {
 		board := readTemplate(t, file)[0].Data
 
 		properties, _ := board.Fields["properties"].(map[string]any)
-		propID, _ := properties["xciiiProjectProperty"].(string)
+		propID, _ := properties["projectProperty"].(string)
 		if propID == "" {
-			t.Errorf("%s: no xciiiProjectProperty", file)
+			t.Errorf("%s: no projectProperty", file)
 			continue
 		}
 
@@ -227,7 +227,7 @@ func TestEveryTemplateNamesItsProjectPropertyByID(t *testing.T) {
 			}
 		}
 		if !found {
-			t.Errorf("%s: xciiiProjectProperty names %q, which the board has not got", file, propID)
+			t.Errorf("%s: projectProperty names %q, which the board has not got", file, propID)
 		}
 	}
 }

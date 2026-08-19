@@ -47,7 +47,7 @@ func TestACardThatSaysNothingIsLeftWhereTheRouteThinksItIs(t *testing.T) {
 // Once the board records which field its columns are on, a card that has moved
 // is recognised as having moved however the field has been renamed — which is
 // the half the option id alone could not answer. That record is
-// `xciiiColumnProperty`, beside the ones the board already keeps for the folder
+// `columnProperty`, beside the ones the board already keeps for the folder
 // and the branch.
 func TestACardThatMovedIsSeenToHaveMovedWhateverTheFieldIsCalled(t *testing.T) {
 	node := FlowNode{ID: "n1", Column: "В работе", OptionID: "opt-work"}

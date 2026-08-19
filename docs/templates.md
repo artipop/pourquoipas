@@ -35,13 +35,13 @@ second of them a copy nobody was looking at.
 | **Rules** | conditions on those arrows | the same outcome forks on the card's own properties, or on what the agent wrote |
 | **Questions to ask** | the list in *«Шаблон»*, the one thing edited there | the setup wizard walks exactly these, in this order |
 
-The first two live in the template board's own properties (`xciiiColumns`,
-`xciiiFlows`), and a board made from it takes them into this machine's registry the
+The first two live in the template board's own properties (`columns`,
+`flows`), and a board made from it takes them into this machine's registry the
 first time it is looked at. From then on they are the board's own: editing them
 there does not touch the template, and editing the template does not reach back
 into boards already made.
 
-A fourth key sits beside them: **`xciiiProjectProperty`** is the id of the card
+A fourth key sits beside them: **`projectProperty`** is the id of the card
 property that holds the projects. Making a board from a template duplicates it
 without renumbering the card properties, so the id the template writes is the id
 the new board has, and nothing has to recognise the field by what it is called —
@@ -114,7 +114,7 @@ carry is the machine: the agents and deploy targets it named live in
 board they were added on, and a board made from the template asks for them
 again.
 
-A copy also carries **the marker** (`xciiiTemplate`), and that one is not the
+A copy also carries **the marker** (`template`), and that one is not the
 copy's to keep. A board made from «Разработка» carries the marker, a copy takes
 the board's properties with it, and the copy then claims to *be* «Разработка»:
 three templates of that name stood in the picker, and the importer maintained
@@ -143,6 +143,6 @@ a board made from one arrives with no automation at all.
 «Контент» is also the smallest demonstration of setup following the flow: its
 routes are «Через бриф» (Бриф → Черновик → На вычитке, failures to «Не пошло»)
 and «Сразу черновик», both agent-written and person-read, with no deploy and
-no browser test anywhere — so its `xciiiSetup` declares only
+no browser test anywhere — so its `setup` declares only
 project/agent/done, and the wizard for a board made from it asks for a folder
 and an agent and nothing else.

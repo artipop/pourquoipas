@@ -87,7 +87,7 @@ the one action that explains the product: **«Поставить первую з
 one field, one sentence from the person, and the app makes a card in the
 board's trigger column and opens it.
 
-- The trigger column is already known: `xciiiColumns` on the board says
+- The trigger column is already known: `columns` on the board says
   which column starts an agent. No new configuration.
 - The offer appears **only if the agent step passed**. The wizard already
   knows; an offer that fails because nothing is installed is worse than no

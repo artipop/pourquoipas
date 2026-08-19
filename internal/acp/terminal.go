@@ -617,7 +617,7 @@ func (m *Manager) cardPlace(ev CardMoved) cardPlace {
 //
 // The node's option id answers "yes". Answering "no" needs the other half —
 // which of the card's options is a column at all — and that is propertyID, what
-// the board records as xciiiColumnProperty. A board without one falls back to
+// the board records as columnProperty. A board without one falls back to
 // the property's name.
 func columnMatchesCard(ev CardMoved, node FlowNode, property, propertyID string) bool {
 	if len(ev.SelectedOptions) == 0 {

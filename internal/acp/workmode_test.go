@@ -67,28 +67,3 @@ func TestTheFolderSaysHowItIsWorkedInOnThisBoard(t *testing.T) {
 	}
 }
 
-// A board that already carried the old answer keeps working the way it was set
-// up: the answer moves onto the folders that board offers, and the key comes
-// off the board so it is moved once.
-func TestTheBoardsOldAnswerMovesOntoItsFolders(t *testing.T) {
-	repo := initTestWorkdir(t)
-	m, meta, _ := storeManager(t)
-	m.rootCtx = context.Background()
-	if _, err := m.AddWorkdir("code", repo, "board1", WorkdirGit, false); err != nil {
-		t.Fatal(err)
-	}
-	meta.props = map[string]any{BoardPropGit: map[string]any{"mode": WorkModeBranch}}
-
-	if moved := m.moveGitPolicyToWorkdirs("board1", meta.props); moved != 1 {
-		t.Fatalf("moved %d folders, want the board's one", moved)
-	}
-	if got := m.WorkModeFor("board1", repo); got != WorkModeBranch {
-		t.Errorf("the folder works %q, want the board's old answer %q", got, WorkModeBranch)
-	}
-
-	// A folder that already says how it is worked in is not overwritten, and a
-	// board whose key is gone does nothing at all.
-	if moved := m.moveGitPolicyToWorkdirs("board1", map[string]any{}); moved != 0 {
-		t.Errorf("a board with no answer moved %d folders", moved)
-	}
-}

@@ -580,7 +580,7 @@ describe('components/centerPanel', () => {
                 type: 'select',
                 options: folders.map((value, i) => ({id: `folder-${i}`, value, color: 'propColorDefault'})),
             })
-            withFolders.properties = {...withFolders.properties, xciiiProjectProperty: 'folderprop'}
+            withFolders.properties = {...withFolders.properties, projectProperty: 'folderprop'}
             return withFolders
         }
 

@@ -16,7 +16,7 @@ describe('session', () => {
         rememberSession('a-token')
 
         expect(sessionToken()).toBe('a-token')
-        expect(cookie()).toContain('xciiiSession=a-token')
+        expect(cookie()).toContain('boardSession=a-token')
     })
 
     it('takes both away when the session ends', () => {

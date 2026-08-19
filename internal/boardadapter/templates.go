@@ -74,7 +74,7 @@ const TemplateVersion = 19
 // TemplateMarkerProperty is the board property each template carries its slug
 // in. Ids are regenerated on import and titles are the user's to change, so the
 // marker is the only thing that still says "this board came from that file".
-const TemplateMarkerProperty = "xciiiTemplate"
+const TemplateMarkerProperty = "template"
 
 // ImportTemplates makes the app's own templates exist in the global team, and
 // keeps them at the version this build ships. It is safe to call on every
@@ -83,101 +83,7 @@ func ImportTemplates(a *app.App, log mlog.LoggerIFace) error {
 	if err := importTemplates(a, log, TemplateVersion); err != nil {
 		return err
 	}
-	renameLegacyViews(a, log)
-	rearrangeLegacyKanbans(a, log)
 	return nil
-}
-
-// rearrangeLegacyKanbans catches up boards arranged by template version 15,
-// which put «Мои задачи» at the front of the main kanban. The column belongs
-// with «Входящие» — hidden from the board of work, read on the inbox view —
-// and a board with a source is re-arranged on every delivery anyway; this
-// covers the boards nothing delivers to. Idempotent, and it looks the columns
-// up by the names our own templates gave them: a board that has not got both
-// is not one of ours to touch.
-func rearrangeLegacyKanbans(a *app.App, log mlog.LoggerIFace) {
-	boards, err := a.GetBoardsForUserAndTeam(model.SingleUser, model.GlobalTeamID, false)
-	if err != nil {
-		log.Warn("templates: cannot list boards for the kanban catch-up", mlog.Err(err))
-		return
-	}
-	w := NewWriter(a)
-	for _, board := range boards {
-		if board.IsTemplate || templateSlug(board) == "" {
-			continue
-		}
-		schema, err := model.ParsePropertySchema(board)
-		if err != nil {
-			continue
-		}
-		var property, inboxID, mineID string
-		for _, def := range schema {
-			if def.Type != "select" {
-				continue
-			}
-			var inbox, mine string
-			for oid, opt := range def.Options {
-				if strings.EqualFold(opt.Value, InboxViewTitle) {
-					inbox = oid
-				}
-				if strings.EqualFold(opt.Value, MineColumnTitle) {
-					mine = oid
-				}
-			}
-			if inbox != "" && mine != "" {
-				property, inboxID, mineID = def.Name, inbox, mine
-				break
-			}
-		}
-		if property == "" {
-			continue
-		}
-		if err := w.arrangeKanbans(board.ID, property, inboxID, mineID); err != nil {
-			log.Warn("templates: cannot re-arrange the kanban", mlog.String("board", board.ID), mlog.Err(err))
-		}
-	}
-}
-
-// renameLegacyViews catches up boards the old templates already made. A version
-// bump replaces the template, but a board made from it is the user's and is
-// never replaced — so a name the template got wrong lives on there until it is
-// mended in place. Only a title still byte-equal to what our own file shipped
-// is touched: one somebody renamed is theirs. Safe to run on every launch —
-// after the first pass nothing matches.
-func renameLegacyViews(a *app.App, log mlog.LoggerIFace) {
-	// The developer template's main view carried the name of the upstream
-	// board it was built from (template version 16).
-	const oldTitle, newTitle = "Progress Tracker", "Задачи"
-
-	boards, err := a.GetBoardsForUserAndTeam(model.SingleUser, model.GlobalTeamID, false)
-	if err != nil {
-		log.Warn("templates: cannot list boards for the view rename", mlog.Err(err))
-		return
-	}
-	for _, board := range boards {
-		if board.IsTemplate || templateSlug(board) != "developer-tasks" {
-			continue
-		}
-		// By type alone: a board duplicated from a template keeps its views'
-		// parentId pointing at the template's own id, so filtering on the
-		// board as parent finds nothing there.
-		views, err := a.GetBlocks(board.ID, "", model.TypeView)
-		if err != nil {
-			log.Warn("templates: cannot read views for the view rename", mlog.String("board", board.ID), mlog.Err(err))
-			continue
-		}
-		for _, view := range views {
-			if view.Title != oldTitle {
-				continue
-			}
-			title := newTitle
-			if _, err := a.PatchBlock(view.ID, &model.BlockPatch{Title: &title}, model.SystemUserID); err != nil {
-				log.Warn("templates: cannot rename the view", mlog.String("board", board.ID), mlog.Err(err))
-				continue
-			}
-			log.Info("templates: renamed the legacy view", mlog.String("board", board.ID))
-		}
-	}
 }
 
 // importTemplates takes the version as an argument so a test can install an

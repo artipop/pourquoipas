@@ -56,7 +56,7 @@ func TestProxyInjectsTheBootstrapIntoHTML(t *testing.T) {
 	}
 	// It has to land before the app's own scripts, which is what "right after
 	// <head>" buys: the session token must exist by the time they run.
-	if strings.Index(page, "xciiiSessionId") > strings.Index(page, "<title>") {
+	if strings.Index(page, "boardSessionId") > strings.Index(page, "<title>") {
 		t.Error("bootstrap injected after the head contents")
 	}
 	if got := res.Header.Get("Content-Length"); got != strconv.Itoa(len(body)) {

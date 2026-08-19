@@ -44,7 +44,7 @@ const CardDetailProperties = (props: Props) => {
 
     // The branch field is the machine's record — where the card's work lives —
     // and the card knows *what kind* of place that is. The board records which
-    // property it is (xciiiBranchProperty); the card's own state says whether
+    // property it is (branchProperty); the card's own state says whether
     // its workspace is a copy or a branch in the folder. The stamp under the
     // title already names its line after the mode, and a field under it saying
     // «Ветка» over the same value read as the setting not having taken.

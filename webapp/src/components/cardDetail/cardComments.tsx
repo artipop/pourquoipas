@@ -7,19 +7,8 @@ import CommentsList from './commentsList'
 
 import './cardComments.scss'
 
-// What people say about a card to each other, beside the card rather than
-// inside it (docs/teamwork.md).
-//
-// The body of a card is what a person wrote, and everything the machinery put
-// in there has already been taken out — the agent's line, the session status,
-// the «какая папка» form. A comment is the same case: it is a conversation
-// about the card, not part of it.
-//
-// So it shares the panel the terminal has, and the two are the same question
-// asked of two different readers — what to tell the agent about this card, and
-// what to tell the person who comes to it later. Which one is drawn is the
-// dialog's toolbar; the ✕ here closes the panel, exactly as the terminal's
-// does.
+// Comments beside the card rather than in it: the body is what a person wrote.
+// Shares the terminal's panel — same question, two readers (docs/teamwork.md).
 
 type Props = {
     cardId: string

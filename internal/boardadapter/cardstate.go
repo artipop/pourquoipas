@@ -26,7 +26,7 @@ import (
 // The key is ours and the page never looks at it. Writing it is a field patch,
 // which merges (model.BlockPatch.Patch), so it cannot disturb the properties a
 // person filled in or the card's contentOrder.
-const cardFieldFlow = "xciiiFlow"
+const cardFieldFlow = "flow"
 
 var _ acp.BoardCardState = (*Writer)(nil)
 

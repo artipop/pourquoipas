@@ -379,59 +379,39 @@ export function automationChanges(before: Automation, after: Automation): Automa
 // The board properties a template carries its automation in — the same names Go
 // reads (internal/acp/boardseed.go). A board made from the template brings them,
 // and the first look at it takes them into the registry.
-export const BOARD_PROP_COLUMNS = 'xciiiColumns'
-export const BOARD_PROP_FLOWS = 'xciiiFlows'
-export const BOARD_PROP_SETUP = 'xciiiSetup'
+// KEY_PREFIX is the namespace this application's own keys live under wherever
+// they share a map with somebody else's — a board's `properties`, a card's
+// `fields`. Spelled the same on the Go side (acp.KeyPrefix), and deliberately
+// not the product's name: a name can be revisited, and after a release every
+// key carrying one is a migration in its own store.
+export const KEY_PREFIX = 'app'
+
+export const BOARD_PROP_COLUMNS = 'columns'
+export const BOARD_PROP_FLOWS = 'flows'
+export const BOARD_PROP_SETUP = 'setup'
 
 // What this board's agents are told first. Nothing here writes it — the page
 // asks Go for it (GetBoardPrompts/SetBoardPrompts) and Go keeps it on the board —
 // but it is named here because it is one of the keys a template carries, and
 // anything that rebuilds a board's properties has to leave it alone.
-export const BOARD_PROP_PROMPT = 'xciiiPrompt'
-
-// How a board *used* to say a repository is worked in. The answer belongs to
-// the folder on this board now (SetAgentWorkdirMode); Go moves the old key onto
-// the folders once and takes it off the board. Named here only so that a save
-// which rebuilds a board's properties leaves it alone while it is still there.
-export const BOARD_PROP_GIT = 'xciiiGit'
+export const BOARD_PROP_PROMPT = 'prompt'
 
 // Which card property holds the folders, by id. A name would have been a
 // worse answer twice over: the field is a person's to rename, and the name
 // this app gives it is Russian, so a board in any other language could only
 // ever have been matched by luck.
-export const BOARD_PROP_PROJECT_PROPERTY = 'xciiiProjectProperty'
+export const BOARD_PROP_PROJECT_PROPERTY = 'projectProperty'
 
 // And which one holds the branch a card's work is on, by id for the same
 // reason. Go writes into it (workspace.go); the page is what creates it,
 // because the board's card properties are the page's to patch.
-export const BOARD_PROP_BRANCH_PROPERTY = 'xciiiBranchProperty'
+export const BOARD_PROP_BRANCH_PROPERTY = 'branchProperty'
 
 // boardBranchProperty is the id of that field, or '' for a board without one.
 export function boardBranchProperty(board: {properties?: Record<string, unknown>}): string {
     const recorded = board.properties?.[BOARD_PROP_BRANCH_PROPERTY]
     return typeof recorded === 'string' ? recorded : ''
 }
-
-// What these keys were called before. Every board made until now carries them,
-// so they are read; they are never written, and a save drops them (see
-// boardAutomationProperties), which is the same migration Go does.
-//
-// The prefix was `acp`, which claimed the agent integration owns all of this.
-// It does not: a route can be made entirely of deterministic transitions — a
-// branch merged, a card property changed — with no agent in it anywhere.
-const LEGACY_BOARD_PROPS: Record<string, string> = {
-    [BOARD_PROP_COLUMNS]: 'acpColumns',
-    [BOARD_PROP_FLOWS]: 'acpFlows',
-    [BOARD_PROP_SETUP]: 'acpSetup',
-    [BOARD_PROP_PROMPT]: 'acpPrompt',
-    [BOARD_PROP_PROJECT_PROPERTY]: 'acpProjectProperty',
-}
-
-// legacyBoardProp is the old name of a key, for reading and for dropping.
-export function legacyBoardProp(key: string): string | undefined {
-    return LEGACY_BOARD_PROPS[key]
-}
-
 // BoardSetupStep is one question the template asks the machine when a board is
 // made from it. Only the kind and the order are the template's to choose: what
 // each step does is the app's, so a template can never ask for something no
@@ -455,8 +435,7 @@ export type SetupStepDef = {
 
 function readProperty<T>(board: Board, key: string, fallback: T): T {
     const properties = board.properties || {}
-    const legacy = legacyBoardProp(key)
-    const raw = properties[key] ?? (legacy ? properties[legacy] : undefined)
+    const raw = properties[key]
     if (raw === undefined || raw === null || raw === '') {
         return fallback
     }
@@ -494,19 +473,6 @@ export function boardAutomationProperties(
     setup: BoardSetup | undefined,
 ): Record<string, string | string[]> {
     const properties = {...(board.properties || {})}
-
-    // A board written by this app carries the current names only. Dropping the
-    // old ones here is what migrates a board saved as a template: mutator's
-    // patch turns a key that is gone into a deletedProperties entry.
-    for (const key of Object.keys(LEGACY_BOARD_PROPS)) {
-        const legacy = legacyBoardProp(key)
-        if (legacy && properties[legacy] !== undefined && properties[key] === undefined) {
-            properties[key] = properties[legacy]
-        }
-        if (legacy) {
-            delete properties[legacy]
-        }
-    }
 
     properties[BOARD_PROP_COLUMNS] = JSON.stringify(automation.columns)
     properties[BOARD_PROP_FLOWS] = JSON.stringify(automation.flows)
