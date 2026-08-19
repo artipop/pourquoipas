@@ -43,11 +43,11 @@ func bootstrapScript(sessionToken string) string {
 	return fmt.Sprintf(`<script>
 (function () {
   // In single-user mode this is the session the API synthesizes, seeded before
-  // any app script runs. In team mode it is empty and the page logs in.
+  // any app script runs. On a hosted server it is empty and the page logs in.
   try {
     var seeded = %q;
     if (seeded) { localStorage.setItem('boardSessionId', seeded); }
-    // The same token a second way, for the front door (team.go): the Wails
+    // The same token a second way, for the front door (frontdoor.go): the Wails
     // runtime makes its own fetches and a WebSocket carries no header a page
     // can set, so what guards those routes is a cookie. Written here and by
     // octoClient at login, because a login navigates without reloading.

@@ -13,7 +13,7 @@ import {Utils} from './utils'
 //
 // **In a team the same id has a name.** Turning team mode on registers the
 // person at the machine under this very id, so that everything they have
-// already made stays theirs (team.go, docs/teamwork.md) — and from then on
+// already made stays theirs (docs/teamwork.md) — and from then on
 // «Вы» is the wrong word twice over: they picked a username, and the other
 // people on the board would read it as being about themselves. So the answer
 // takes the mode, and nobody may print this id without saying which install

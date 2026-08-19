@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/artipop/xciii/server/model"
 )
 
 func named(name string) http.Handler {
@@ -135,5 +137,91 @@ func TestFrontDoorPublishedOnEveryInterfaceAcceptsAnyName(t *testing.T) {
 		if rec.Code != want {
 			t.Errorf("Host %s: status %d, want %d", host, rec.Code, want)
 		}
+	}
+}
+
+// sessionsOf stands in for the board's session table: the guard asks it one
+// question and the answer is all that decides.
+type sessionsOf map[string]bool
+
+func (s sessionsOf) GetSession(token string) (*model.Session, error) {
+	if !s[token] {
+		return nil, model.NewErrNotFound("session")
+	}
+	return &model.Session{ID: token, Token: token, UserID: "somebody"}, nil
+}
+
+func teapot() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusTeapot)
+	})
+}
+
+// The routes behind the guard start agents and open shells. On a hosted server
+// a request that carries no live session is not one of the team's.
+func TestTheGuardRefusesARequestWithNoSession(t *testing.T) {
+	guarded := requireSession(teapot(), boardSessionGuard(sessionsOf{"live": true}))
+
+	for _, tc := range []struct {
+		name   string
+		cookie *http.Cookie
+		want   int
+	}{
+		{"no cookie at all", nil, http.StatusUnauthorized},
+		{"a token nobody issued", &http.Cookie{Name: sessionCookie, Value: "made-up"}, http.StatusUnauthorized},
+		{"a live session", &http.Cookie{Name: sessionCookie, Value: "live"}, http.StatusTeapot},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			// The call, not the script: the module itself is open (below).
+			req := httptest.NewRequest(http.MethodPost, "/wails/runtime", nil)
+			if tc.cookie != nil {
+				req.AddCookie(tc.cookie)
+			}
+			rec := httptest.NewRecorder()
+			guarded.ServeHTTP(rec, req)
+			if rec.Code != tc.want {
+				t.Fatalf("got %d, want %d", rec.Code, tc.want)
+			}
+		})
+	}
+}
+
+// The runtime module is the one thing behind the guard a page without a session
+// must still be able to fetch: it carries no authority, and refusing it left a
+// login page unable to become a logged-in one — the browser caches a rejected
+// dynamic import, and logging in does not reload the page.
+func TestTheRuntimeModuleIsServedToAPageWithNoSessionYet(t *testing.T) {
+	guarded := requireSession(teapot(), boardSessionGuard(sessionsOf{}))
+
+	for _, tc := range []struct {
+		name   string
+		method string
+		path   string
+		want   int
+	}{
+		{"the runtime module", http.MethodGet, "/wails/runtime.js", http.StatusTeapot},
+		{"a call made through it", http.MethodPost, "/wails/runtime", http.StatusUnauthorized},
+		{"anything else under it", http.MethodGet, "/wails/events", http.StatusUnauthorized},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			rec := httptest.NewRecorder()
+			guarded.ServeHTTP(rec, httptest.NewRequest(tc.method, tc.path, nil))
+			if rec.Code != tc.want {
+				t.Fatalf("got %d, want %d", rec.Code, tc.want)
+			}
+		})
+	}
+}
+
+// On a desktop there is no session to carry, and the guard has to be absent
+// rather than closed — otherwise the app locks itself out of its own bound
+// methods. newSessionGuard is what answers nil there.
+func TestOnADesktopTheGuardStandsAside(t *testing.T) {
+	guarded := requireSession(teapot(), nil)
+
+	rec := httptest.NewRecorder()
+	guarded.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/wails/runtime", nil))
+	if rec.Code != http.StatusTeapot {
+		t.Fatalf("got %d, want the handler to have run", rec.Code)
 	}
 }

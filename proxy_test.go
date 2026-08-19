@@ -122,3 +122,22 @@ func TestBootstrapSendsEveryOutwardLinkToTheBrowser(t *testing.T) {
 		t.Error("bootstrap does not keep in-app links inside the webview")
 	}
 }
+
+// The page writes the cookie the guard reads, and the two names are in
+// different languages: this is the one place they can be compared.
+func TestTheBootstrapWritesTheCookieTheGuardReads(t *testing.T) {
+	script := bootstrapScript("su-token")
+	if !strings.Contains(script, sessionCookie+"=") {
+		t.Fatalf("the bootstrap script writes no %q cookie", sessionCookie)
+	}
+}
+
+// A page that could not load the runtime once has to be able to try again: the
+// module map caches a rejected import, so the page has to drop its own handle
+// on it or one bad moment lasts as long as the page does.
+func TestTheBootstrapForgetsARuntimeImportThatFailed(t *testing.T) {
+	script := bootstrapScript("")
+	if !strings.Contains(script, "runtimePromise = null;") {
+		t.Fatal("a failed runtime import is kept, so a bound call can never recover")
+	}
+}

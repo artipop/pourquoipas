@@ -303,11 +303,10 @@ func (a *API) handleGetTeamUsersByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// The single-user id is synthesized while this install has no accounts on
-	// it, and is the owner's own account once it has (team.go). The rest are
-	// looked up as usual either way, so a single-user install can hold real
-	// accounts alongside it — the desktop app creates one per coding agent, and
-	// this is the call the webapp resolves board members with.
+	// The single-user id is synthesized on a desktop, which asks nobody who
+	// they are. The rest are looked up as usual, so such an install can hold
+	// real accounts alongside it — the desktop app creates one per coding
+	// agent, and this is the call the webapp resolves board members with.
 	realIDs := make([]string, 0, len(userIDs))
 	singleUserRequested := false
 	for _, id := range userIDs {

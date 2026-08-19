@@ -35,7 +35,7 @@ import (
 // this machine rather than about a board — the bound methods, the terminal
 // sockets — are then guarded by the origin and the Host alone. In team mode it
 // is what stops a person who has not logged in from starting an agent
-// (team.go).
+// (identity.go).
 func newFrontDoor(wails, acpRoutes, ingest, board http.Handler, allowedHost string, session func(string) bool) http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle("/wails/", requireSession(sameOrigin(wails, allowedHost), session))
@@ -173,4 +173,39 @@ func portOf(hostport string) string {
 // door is private to this process and its window.
 func listenLoopback(port int) (net.Listener, error) {
 	return net.Listen("tcp", net.JoinHostPort("127.0.0.1", strconv.Itoa(port)))
+}
+
+// sessionCookie is how the token reaches the front door: the Wails runtime
+// makes its own fetches and a WebSocket takes no header a page can set. Written
+// by the page (session.ts), so not HttpOnly.
+const sessionCookie = "boardSession"
+
+// requireSession refuses a request with no live board session. Installed only
+// on a hosted server, where sessions exist.
+func requireSession(next http.Handler, valid func(string) bool) http.Handler {
+	if valid == nil {
+		return next
+	}
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if openToEverybody(r) {
+			next.ServeHTTP(w, r)
+			return
+		}
+		cookie, err := r.Cookie(sessionCookie)
+		if err != nil || !valid(cookie.Value) {
+			http.Error(w, "not logged in", http.StatusUnauthorized)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+// openToEverybody: the runtime module carries no authority — the calls made
+// through it are the guarded POST — and a login page has to be able to load it
+// to stop being a login page. See docs/decisions.md.
+func openToEverybody(r *http.Request) bool {
+	if r.Method != http.MethodGet && r.Method != http.MethodHead {
+		return false
+	}
+	return r.URL.Path == "/wails/runtime.js"
 }

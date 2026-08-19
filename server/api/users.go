@@ -68,7 +68,7 @@ func (a *API) handleGetUsersList(w http.ResponseWriter, r *http.Request) {
 
 	// In single-user mode that id has no row in the users table and is
 	// synthesized here; in team mode it is the owner's own account and is looked
-	// up like anybody else's (team.go). The rest of the requested ids are looked
+	// up like anybody else's. The rest of the requested ids are looked
 	// up as usual either way: a single-user install can still hold real accounts
 	// — the desktop app provisions one per coding agent — and they have to come
 	// back alongside it.

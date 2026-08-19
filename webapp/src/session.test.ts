@@ -10,7 +10,7 @@ describe('session', () => {
 
     // The token has to travel twice, and the second way is what the front door
     // reads: the Wails runtime makes its own fetches and a browser lets nobody
-    // set a header on a WebSocket handshake (team.go). Losing this is losing
+    // set a header on a WebSocket handshake (frontdoor.go). Losing this is losing
     // every bound method and both sockets on a team install.
     it('keeps a session where both the page and the front door can read it', () => {
         rememberSession('a-token')

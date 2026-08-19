@@ -38,7 +38,7 @@ type origin struct {
 	tailnet  *tailnetController
 	server   *http.Server
 	// session says whether a request carries a live board session; nil in
-	// single-user mode, where nothing does. See team.go.
+	// single-user mode, where nothing does. See identity.go.
 	session func(string) bool
 }
 

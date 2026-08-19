@@ -1,10 +1,10 @@
 // The board session token, kept twice: a header for the board, a cookie for the
 // front door — which can be handed neither a header on a WebSocket handshake
-// nor one on the Wails runtime's own fetches (team.go).
+// nor one on the Wails runtime's own fetches (frontdoor.go).
 
 const TOKEN_KEY = 'boardSessionId'
 
-// Kept in step with sessionCookie in team.go.
+// Kept in step with sessionCookie in frontdoor.go.
 const COOKIE = 'boardSession'
 
 export function sessionToken(): string {
