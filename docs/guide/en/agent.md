@@ -7,8 +7,8 @@ is, how to answer questions and what stays on the card.
 
 A card is worked by whoever it is assigned to. The assignment field is an
 ordinary board field of the "person" type; templates name it differently:
-«Исполнитель» on the developer board, «Кто делает» on chores, «Кто идёт» on
-shopping.
+«Исполнитель» on the «Разработка» board, «Кто делает» on «Личное», «Кто ведёт»
+on «Контент».
 
 You do not have to fill it in by hand. If a route stage has its own agent (in
 the editor — "Worked by" on the column or "Worked here by" on the route stage),

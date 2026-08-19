@@ -209,7 +209,7 @@ the one thing a rewrite must not quietly drop.
   screenshots and write `result.json` — that verdict is what moves the card.
 - **Templates**: the board selector offers three of them, and each ships the
   columns and routes it needs in the board's own properties — «Разработка»
-  for code, «Контент» for writing, and «Домашние дела» for the ordinary life
+  for code, «Контент» for writing, and «Личное» for the ordinary life
   the same machinery turns out to fit: an agent that puts a plan, a list or a
   draft in a folder of notes, and a route that waits for a person to read it. Every other
   upstream template is hidden, because a board the automation knows nothing
