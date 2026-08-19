@@ -6,8 +6,8 @@ html {
     height: 100%;
 }
 
-.xciii-body,
-#xciii-app {
+.app-body,
+#app-root {
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -24,7 +24,7 @@ html {
     height: 100%;
 }
 
-.xciii-body {
+.app-body {
     --cursor-color: rgb(var(--center-channel-color-rgb));
 
     padding: 0;
@@ -84,7 +84,7 @@ html {
         margin-bottom: 8px;
     }
 
-    #xciii-app {
+    #app-root {
         button {
             &.style--none {
                 background: transparent;
