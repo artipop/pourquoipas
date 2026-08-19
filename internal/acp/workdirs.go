@@ -400,28 +400,45 @@ func (m *Manager) resolveWorkdir(ev CardMoved) (string, error) {
 // folder holds that id and the folder's name is free to change — or to stop
 // being a folder name at all: a place to work need not be a directory here.
 //
-// A board that has recorded no folder property has not got one, and the card
-// says nothing: matching a folder by the *name* of anything selected on the
-// card is what this used to do, and it let a label named after a repository
-// decide where an agent worked.
+// Two fallbacks by name: an option whose id is not a registry id, and a board
+// that has recorded no folder property — the page records one when it makes the
+// field, so a board it has never opened has none, and the names are all such a
+// board can say.
 func (m *Manager) cardWorkdir(ev CardMoved, workdirs []WorkdirEntry) (WorkdirEntry, bool) {
-	propID := m.boardProperty(ev.BoardID, BoardPropProject)
-	if propID == "" {
+	if propID := m.boardProperty(ev.BoardID, BoardPropProject); propID != "" {
+		for _, sel := range ev.SelectedOptions {
+			if sel.PropertyID != propID {
+				continue
+			}
+			for _, r := range workdirs {
+				if r.ID != "" && r.ID == sel.OptionID {
+					return r, true
+				}
+			}
+			return matchWorkdirName(workdirs, sel.Name)
+		}
 		return WorkdirEntry{}, false
 	}
-	for _, sel := range ev.SelectedOptions {
-		if sel.PropertyID != propID {
-			continue
-		}
-		for _, r := range workdirs {
-			if r.ID != "" && r.ID == sel.OptionID {
-				return r, true
-			}
+	for _, name := range append(append([]string(nil), ev.OptionNames...), ev.FromColumn.Name) {
+		if r, ok := matchWorkdirName(workdirs, name); ok {
+			return r, true
 		}
 	}
 	return WorkdirEntry{}, false
 }
 
+func matchWorkdirName(workdirs []WorkdirEntry, name string) (WorkdirEntry, bool) {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return WorkdirEntry{}, false
+	}
+	for _, r := range workdirs {
+		if strings.EqualFold(name, r.Name) {
+			return r, true
+		}
+	}
+	return WorkdirEntry{}, false
+}
 
 func workdirNames(workdirs []WorkdirEntry) string {
 	names := make([]string, len(workdirs))
