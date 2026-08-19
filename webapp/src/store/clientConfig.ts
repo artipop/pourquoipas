@@ -8,7 +8,7 @@ import type {RootState} from './index'
 
 export type ClientConfigState = {value: ClientConfig}
 
-const defaultClientConfig = (): ClientConfig => ({enablePublicSharedBoards: false, teammateNameDisplay: ShowUsername, featureFlags: {}, maxFileSize: 0, teamMode: false})
+const defaultClientConfig = (): ClientConfig => ({enablePublicSharedBoards: false, teammateNameDisplay: ShowUsername, featureFlags: {}, maxFileSize: 0, teamMode: false, registrationOpen: false})
 
 export const initialClientConfigState = (): ClientConfigState => ({value: defaultClientConfig()})
 
@@ -32,4 +32,11 @@ export function getClientConfig(state: RootState): ClientConfig {
 // reading a config field at every call site.
 export function getTeamMode(state: RootState): boolean {
     return Boolean(state.clientConfig?.value?.teamMode)
+}
+
+// Whether the way in is registration rather than a login. False everywhere
+// except a hosted server nobody has claimed, so a page that reads it before the
+// config arrives sends nobody anywhere by accident.
+export function getRegistrationOpen(state: RootState): boolean {
+    return Boolean(state.clientConfig?.value?.registrationOpen)
 }

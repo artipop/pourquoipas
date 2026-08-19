@@ -3,6 +3,8 @@ import {Dynamic} from 'solid-js/web'
 import type {Component} from 'solid-js'
 
 import {useIntl} from '../../intl'
+import {useAppSelector} from '../../store/hooks'
+import {getMe} from '../../store/users'
 
 import Dialog from '../dialog'
 
@@ -13,6 +15,7 @@ import MachineMiscPanel from '../acp/machineMiscPanel'
 
 import AppPanel from './appPanel'
 import DataPanel from './dataPanel'
+import PeoplePanel from './peoplePanel'
 import UpdatesPanel, {isUpdatesAvailable} from './updatesPanel'
 
 import './appSettingsDialog.scss'
@@ -60,6 +63,13 @@ type Props = {
 const AppSettingsDialog = (props: Props) => {
     const intl = useIntl()
 
+    // Administering the install is a thing only a hosted server has: a desktop
+    // asks nobody who they are, so nobody there is an admin and the section is
+    // not drawn. The answer comes from the account rather than from the mode,
+    // because a member of a team is not an admin either.
+    const me = useAppSelector(getMe)
+    const administersInstall = () => Boolean(me()?.permissions?.includes('manage_system'))
+
     const sections: Section[] = [
         {
 
@@ -91,6 +101,15 @@ const AppSettingsDialog = (props: Props) => {
             name: () => intl.formatMessage({id: 'Proxies.title', defaultMessage: 'Proxy configurations'}),
             when: isProxiesAvailable,
             body: ProxiesPanel,
+        },
+        {
+
+            // Beside the tailnet: the two are the same kind of question — who
+            // may reach this board — asked about people and about devices.
+            id: 'people',
+            name: () => intl.formatMessage({id: 'People.title', defaultMessage: 'People'}),
+            when: administersInstall,
+            body: PeoplePanel,
         },
         {
             id: 'tailnet',

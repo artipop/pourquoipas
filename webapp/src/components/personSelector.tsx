@@ -139,7 +139,8 @@ const PersonSelector = (props: Props): JSX.Element => {
                     update_at: currentMe.update_at,
                     is_bot: false,
                     is_guest: currentMe.is_guest,
-                    roles: currentMe.roles,
+                    role: currentMe.role,
+                    kind: currentMe.kind,
                 })
                 returnUsers.push(...boardUsers().filter((u) => u.id !== currentMe.id))
             } else {

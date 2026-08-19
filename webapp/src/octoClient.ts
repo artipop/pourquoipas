@@ -197,6 +197,40 @@ class OctoClient {
         return user
     }
 
+    // Administering the install rather than a board: who is here, who else runs
+    // it, and whose account is switched off. Every one of these answers 403 to
+    // anybody but an admin, and on a desktop — where nobody logs in — to
+    // everybody.
+
+    async getAdminUsers(): Promise<IUser[]> {
+        const path = '/api/v2/admin/users'
+        const response = await fetch(this.getBaseURL() + path, {headers: this.headers()})
+        if (response.status !== 200) {
+            return []
+        }
+        return (await this.getJson(response, [])) as IUser[]
+    }
+
+    async setUserRole(userId: string, role: string): Promise<boolean> {
+        const path = `/api/v2/admin/users/${encodeURIComponent(userId)}/role`
+        const response = await fetch(this.getBaseURL() + path, {
+            method: 'PUT',
+            headers: this.headers(),
+            body: JSON.stringify({role}),
+        })
+        return response.status === 200
+    }
+
+    async setUserActive(userId: string, active: boolean): Promise<boolean> {
+        const action = active ? 'activate' : 'deactivate'
+        const path = `/api/v2/admin/users/${encodeURIComponent(userId)}/${action}`
+        const response = await fetch(this.getBaseURL() + path, {
+            method: 'POST',
+            headers: this.headers(),
+        })
+        return response.status === 200
+    }
+
     async getMyConfig(): Promise<UserPreference[] | undefined> {
         const path = '/api/v2/users/me/config'
         const response = await fetch(this.getBaseURL() + path, {

@@ -1,68 +1,70 @@
-# Working as a team
+# Your own server
 
-A board normally belongs to one person: the app never asks who you are, and
-whoever opens it sees everything. The **«Работа командой»** section of the
-settings window switches the install into the other mode — accounts, a password
-to log in with, and an invitation link for the second person.
+The app on your computer belongs to one person: it never asks who you are, and
+whoever opens the board sees everything. Working as a team is **a separate
+install, on a server**: there are always accounts there, everybody logs in under
+their own name, and the first person to register becomes the administrator.
 
-## What changes
+There is no switch in the settings any more. An install used to be moved into
+team mode and back; now it is decided by which build you installed, and no
+restart changes it.
 
-- everybody who opens the board logs in under their own name;
+## What a server gives you
+
+- everybody who opens the board logs in under their own name and password;
 - cards are assigned to people by name, in the same field agents are assigned in;
-- terminals, agents and the machine's settings are reachable only once logged in.
+- comments appear on cards: there is somebody to address them to;
+- a waiting agent gets an addressee — whoever the card is assigned to.
 
 This says **who** may open the board, not where it is visible from. A second
 device still comes in through the tailnet («Доступ с телефона»), and the two are
-unrelated: a team does not publish the board anywhere, and the tailnet creates no
-accounts.
+unrelated.
 
-## Turning it on
+## The first login
 
-1. Open **Настройки → «Работа командой»**.
-2. Fill in a **username** and a **password** (at least six characters). This is
-   your own account — the one you have been working under all along: every
-   board, folder and assignment stays yours, and nothing is moved.
-3. Press **«Работать командой»**.
-4. **Restart the app.** Until you do, the section keeps saying
-   «Перезапустите приложение…»: the mode is written down, but the board server
-   is still running in the old one.
+1. Install the server build and open its address in a browser.
+2. While nobody is on the server, it opens on a registration page. Choose a name
+   and a password — that account becomes the administrator of the install.
+3. After that the server opens on a login page, and registering is by invitation
+   only.
 
-After the restart the app opens on the login page.
+## Inviting the rest
 
-## Inviting somebody
+**Настройки → «Люди»** — the section is shown to the administrator alone. In it:
 
-The section grows a line — **«Отправьте это тому, кто присоединяется»** — with a
-link of the form `…/register?t=…`. Copy it with **«Скопировать»** and send it
-however you like. They open it, pick a username and a password, and land on
-whichever boards you add them to.
+- **«Отправьте это тому, кто присоединяется»** — a link of the form
+  `…/register?t=…`. **«Скопировать»** puts it on the clipboard; pass it on any
+  way you like. They open the link, choose a name and a password, and land on
+  the boards you add them to.
+- **«Новая ссылка»** issues another one and retires the previous. That is how a
+  link sent to the wrong person is taken back.
 
 Without such a link nobody can register.
 
-**«Новая ссылка»** issues a different one and retires the old. That is how a
-link sent to the wrong person is taken back.
+A new person sees no boards at all by default: access to a board is membership
+in it, and membership is granted on the board itself.
 
-A new person sees no boards to begin with: access to a board is membership of
-it, and members are added on the board itself.
+## The list of people
 
-## Who hears that an agent is waiting
+Below the link are all the accounts there are. Under each name it says what kind
+of account it is: **администратор**, **агент** or **источник**. The app makes
+the agent and source accounts itself — a card names its agent by being assigned
+to it, and that name needs an account.
 
-While one person works the board, they see every "an agent is waiting" message.
-In a team the wait gets an addressee, and the card names it:
+For everybody but yourself there are two buttons:
 
-- a card assigned to a person — that person sees it;
-- a card assigned to an agent, or to nobody — everybody sees it, because that is
-  the ordinary case: a route stage is worked by an agent, and anybody can answer.
+- **«Сделать администратором»** and **«Снять администрирование»** — who else
+  runs the install;
+- **«Выключить»** and **«Включить»** — somebody switched off cannot log in, and
+  their open sessions end immediately.
 
-## Going back to one person
-
-**«Вернуться к одному человеку»**, then restart. The accounts and everything
-made stay exactly where they are — the app simply stops asking who arrived and
-opens the board straight away.
+There are no buttons against your own account. And the last administrator can
+neither step down nor be switched off: an install nobody can administer cannot
+be repaired from inside the app.
 
 ## A forgotten password
 
-There is nothing to recover it with: the app knows no mail server and sends no
-letters. A password is changed by whoever is logged in, on the change-password
-page. So while you are the only person on the install you can always go back to
-one person and turn the mode on again; an invited person who forgets theirs has
-to be set up afresh, with a new link and a new name.
+A password is changed by whoever is logged in, on the change-password page. If
+logging in is no longer possible, the administrator switches that account off
+and invites the person again with a new link. The app knows no email addresses
+and sends no mail.

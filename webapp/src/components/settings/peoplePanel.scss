@@ -1,0 +1,76 @@
+.PeoplePanel {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+
+    &__subtitle,
+    &__hint {
+        color: rgba(var(--center-channel-color-rgb), 0.72);
+        font-size: 13px;
+        line-height: 18px;
+    }
+
+    &__invite {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    &__inviteName {
+        font-weight: 600;
+    }
+
+    &__inviteLink {
+        // A token is long and has no spaces, so it has to be allowed to break
+        // somewhere or it widens the whole dialog.
+        word-break: break-all;
+        font-family: var(--font-mono);
+        font-size: 12px;
+        padding: 8px;
+        border-radius: 4px;
+        background: rgba(var(--center-channel-color-rgb), 0.04);
+    }
+
+    &__inviteButtons {
+        display: flex;
+        gap: 8px;
+    }
+
+    &__list {
+        display: flex;
+        flex-direction: column;
+    }
+
+    &__person {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 8px 0;
+        border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+
+        &--off {
+            opacity: 0.55;
+        }
+    }
+
+    &__who {
+        display: flex;
+        flex-direction: column;
+    }
+
+    &__name {
+        font-weight: 600;
+    }
+
+    &__what {
+        color: rgba(var(--center-channel-color-rgb), 0.72);
+        font-size: 12px;
+    }
+
+    &__actions {
+        display: flex;
+        gap: 8px;
+        flex-shrink: 0;
+    }
+}

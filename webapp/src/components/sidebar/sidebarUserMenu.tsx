@@ -1,4 +1,4 @@
-import {Show, createSignal} from 'solid-js'
+import {Show} from 'solid-js'
 import {useNavigate} from '@solidjs/router'
 
 import {useIntl} from '../../intl'
@@ -17,8 +17,6 @@ import ModalWrapper from '../modalWrapper'
 
 import {IAppWindow} from '../../types'
 
-import RegistrationLink from './registrationLink'
-
 import './sidebarUserMenu.scss'
 
 declare let window: IAppWindow
@@ -26,7 +24,6 @@ declare let window: IAppWindow
 const SidebarUserMenu = () => {
     const {actions} = useAppStore()
     const navigate = useNavigate()
-    const [showRegistrationLinkDialog, setShowRegistrationLinkDialog] = createSignal(false)
     const user = useAppSelector<IUser|null>(getMe)
     const teamMode = useAppSelector<boolean>(getTeamMode)
     const intl = useIntl()
@@ -61,13 +58,6 @@ const SidebarUserMenu = () => {
                                         navigate('/change_password')
                                     }}
                                 />
-                                <Menu.Text
-                                    id='invite'
-                                    name={intl.formatMessage({id: 'Sidebar.invite-users', defaultMessage: 'Invite users'})}
-                                    onClick={async () => {
-                                        setShowRegistrationLinkDialog(true)
-                                    }}
-                                />
 
                                 <Menu.Separator/>
                             </Show>
@@ -95,13 +85,6 @@ const SidebarUserMenu = () => {
                     </div>
                 </MenuWrapper>
 
-                <Show when={showRegistrationLinkDialog()}>
-                    <RegistrationLink
-                        onClose={() => {
-                            setShowRegistrationLinkDialog(false)
-                        }}
-                    />
-                </Show>
             </ModalWrapper>
         </div>
     )
