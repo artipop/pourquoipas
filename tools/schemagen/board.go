@@ -83,10 +83,10 @@ func insertAt() Column {
 func users() Table {
 	return Table{
 		Name: "users",
-		Why: "Everybody the board knows: people, and — under their own names and\n" +
-			"with no column to tell them apart — the agents and the sources.\n" +
-			"password, mfa_secret, auth_service and auth_data are unused: this\n" +
-			"application creates every account itself and has no passwords.",
+		Why: "Everybody the board knows: people, and — under their own names —\n" +
+			"the agents and the sources. mfa_secret, auth_service and auth_data\n" +
+			"are unused; password is written only on a hosted server, where\n" +
+			"people register and log in.",
 		Columns: []Column{
 			{Name: "id", Type: Name(100), Null: true},
 			{Name: "username", Type: Name(100), Null: true},
@@ -96,11 +96,25 @@ func users() Table {
 			{Name: "auth_service", Type: Name(20), Null: true},
 			{Name: "auth_data", Type: Name(255), Null: true},
 			{Name: "props", Type: Text(), Null: true},
+			{Name: "role", Type: Name(16), Null: true,
+				Why: "Who administers this install. NULL and 'member' read the same, so\n" +
+					"a row written before the column is not an admin. Closed by the\n" +
+					"model — an account either administers the install or it does not —\n" +
+					"so it is a CHECK. What a person may do *on a board* is a different\n" +
+					"question and is answered by board_members.minimum_role."},
+			{Name: "kind", Type: Name(32), Null: true,
+				Why: "person, agent or source. There was no column to tell them apart,\n" +
+					"and exclude_bots on the team's user list had nothing to filter on.\n" +
+					"NO check: this set grows — a delegated runner wants an account of\n" +
+					"its own — and SQLite cannot ALTER one in."},
 			{Name: "create_at", Type: Millis(), Null: true},
 			{Name: "update_at", Type: Millis(), Null: true},
 			{Name: "delete_at", Type: Millis(), Null: true},
 		},
 		PK: []string{"id"},
+		Checks: []Check{
+			{Name: "users_role", Column: "role", Values: []string{"admin", "member"}},
+		},
 	}
 }
 

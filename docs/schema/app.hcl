@@ -42,6 +42,14 @@ table "users" {
     null = true
     type = text
   }
+  column "role" {
+    null = true
+    type = varchar(16)
+  }
+  column "kind" {
+    null = true
+    type = varchar(32)
+  }
   column "create_at" {
     null = true
     type = bigint
@@ -56,6 +64,9 @@ table "users" {
   }
   primary_key {
     columns = [column.id]
+  }
+  check "users_role" {
+    expr = "`role` IS NULL OR `role` IN ('admin', 'member')"
   }
 }
 table "teams" {

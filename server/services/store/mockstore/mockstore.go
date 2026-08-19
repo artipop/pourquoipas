@@ -306,6 +306,20 @@ func (mr *MockStoreMockRecorder) DeleteSession(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteSession", reflect.TypeOf((*MockStore)(nil).DeleteSession), arg0)
 }
 
+// DeleteSessionsForUser mocks base method.
+func (m *MockStore) DeleteSessionsForUser(arg0 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteSessionsForUser", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteSessionsForUser indicates an expected call of DeleteSessionsForUser.
+func (mr *MockStoreMockRecorder) DeleteSessionsForUser(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteSessionsForUser", reflect.TypeOf((*MockStore)(nil).DeleteSessionsForUser), arg0)
+}
+
 // DeleteSubscription mocks base method.
 func (m *MockStore) DeleteSubscription(arg0, arg1 string) error {
 	m.ctrl.T.Helper()
@@ -364,6 +378,21 @@ func (m *MockStore) GetActiveUserCount(arg0 int64) (int, error) {
 func (mr *MockStoreMockRecorder) GetActiveUserCount(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActiveUserCount", reflect.TypeOf((*MockStore)(nil).GetActiveUserCount), arg0)
+}
+
+// GetAdminCount mocks base method.
+func (m *MockStore) GetAdminCount() (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAdminCount")
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAdminCount indicates an expected call of GetAdminCount.
+func (mr *MockStoreMockRecorder) GetAdminCount() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAdminCount", reflect.TypeOf((*MockStore)(nil).GetAdminCount))
 }
 
 // GetAllTeams mocks base method.
@@ -1074,6 +1103,21 @@ func (mr *MockStoreMockRecorder) GetUsersByTeam(arg0, arg1, arg2, arg3 interface
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUsersByTeam", reflect.TypeOf((*MockStore)(nil).GetUsersByTeam), arg0, arg1, arg2, arg3)
 }
 
+// GetUsersForAdmin mocks base method.
+func (m *MockStore) GetUsersForAdmin() ([]*model.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUsersForAdmin")
+	ret0, _ := ret[0].([]*model.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUsersForAdmin indicates an expected call of GetUsersForAdmin.
+func (mr *MockStoreMockRecorder) GetUsersForAdmin() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUsersForAdmin", reflect.TypeOf((*MockStore)(nil).GetUsersForAdmin))
+}
+
 // GetUsersList mocks base method.
 func (m *MockStore) GetUsersList(arg0 []string, arg1, arg2 bool) ([]*model.User, error) {
 	m.ctrl.T.Helper()
@@ -1421,6 +1465,34 @@ func (m *MockStore) SetSystemSetting(arg0, arg1 string) error {
 func (mr *MockStoreMockRecorder) SetSystemSetting(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetSystemSetting", reflect.TypeOf((*MockStore)(nil).SetSystemSetting), arg0, arg1)
+}
+
+// SetUserActive mocks base method.
+func (m *MockStore) SetUserActive(arg0 string, arg1 bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetUserActive", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetUserActive indicates an expected call of SetUserActive.
+func (mr *MockStoreMockRecorder) SetUserActive(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetUserActive", reflect.TypeOf((*MockStore)(nil).SetUserActive), arg0, arg1)
+}
+
+// SetUserRole mocks base method.
+func (m *MockStore) SetUserRole(arg0, arg1 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetUserRole", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetUserRole indicates an expected call of SetUserRole.
+func (mr *MockStoreMockRecorder) SetUserRole(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetUserRole", reflect.TypeOf((*MockStore)(nil).SetUserRole), arg0, arg1)
 }
 
 // Shutdown mocks base method.

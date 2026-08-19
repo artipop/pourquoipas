@@ -213,6 +213,65 @@ func (c *Client) GetTeam(teamID string) (*model.Team, *Response) {
 	return model.TeamFromJSON(r.Body), BuildResponse(r)
 }
 
+// Administering the install rather than a board: who is here, who else runs it,
+// and whose account is switched off.
+
+func (c *Client) GetAdminRoute() string { return "/admin" }
+
+func (c *Client) GetAdminUsers() ([]*model.User, *Response) {
+	r, err := c.DoAPIGet(c.GetAdminRoute()+"/users", "")
+	if err != nil {
+		return nil, BuildErrorResponse(r, err)
+	}
+	defer closeBody(r)
+
+	var users []*model.User
+	if err := json.NewDecoder(r.Body).Decode(&users); err != nil {
+		return nil, BuildErrorResponse(r, err)
+	}
+	return users, BuildResponse(r)
+}
+
+func (c *Client) SetUserRole(userID, role string) (bool, *Response) {
+	body, err := json.Marshal(map[string]string{"role": role})
+	if err != nil {
+		return false, BuildErrorResponse(nil, err)
+	}
+	r, err := c.DoAPIPut(c.GetAdminRoute()+"/users/"+userID+"/role", string(body))
+	if err != nil {
+		return false, BuildErrorResponse(r, err)
+	}
+	defer closeBody(r)
+
+	return true, BuildResponse(r)
+}
+
+func (c *Client) SetUserActive(userID string, active bool) (bool, *Response) {
+	action := "/deactivate"
+	if active {
+		action = "/activate"
+	}
+	r, err := c.DoAPIPost(c.GetAdminRoute()+"/users/"+userID+action, "")
+	if err != nil {
+		return false, BuildErrorResponse(r, err)
+	}
+	defer closeBody(r)
+
+	return true, BuildResponse(r)
+}
+
+// RegenerateTeamSignupToken retires the invite link by minting a new token.
+// Admin-only, and the way a link handed to the wrong person is taken back.
+func (c *Client) RegenerateTeamSignupToken(teamID string) (bool, *Response) {
+	r, err := c.DoAPIPost(c.GetTeamRoute(teamID)+"/regenerate_signup_token", "")
+	if err != nil {
+		return false, BuildErrorResponse(r, err)
+	}
+	defer closeBody(r)
+
+	return true, BuildResponse(r)
+}
+
 func (c *Client) GetBlocksForBoard(boardID string) ([]*model.Block, *Response) {
 	r, err := c.DoAPIGet(c.GetBlocksRoute(boardID), "")
 	if err != nil {

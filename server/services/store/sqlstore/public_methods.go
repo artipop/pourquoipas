@@ -213,6 +213,11 @@ func (s *SQLStore) DeleteSession(sessionID string) error {
 
 }
 
+func (s *SQLStore) DeleteSessionsForUser(userID string) error {
+	return s.deleteSessionsForUser(s.db, userID)
+
+}
+
 func (s *SQLStore) DeleteSubscription(blockID string, subscriberID string) error {
 	return s.deleteSubscription(s.db, blockID, subscriberID)
 
@@ -262,6 +267,11 @@ func (s *SQLStore) DuplicateBoard(boardID string, userID string, toTeam string, 
 
 func (s *SQLStore) GetActiveUserCount(updatedSecondsAgo int64) (int, error) {
 	return s.getActiveUserCount(s.db, updatedSecondsAgo)
+
+}
+
+func (s *SQLStore) GetAdminCount() (int, error) {
+	return s.getAdminCount(s.db)
 
 }
 
@@ -497,6 +507,11 @@ func (s *SQLStore) GetUserTimezone(userID string) (string, error) {
 
 func (s *SQLStore) GetUsersByTeam(teamID string, asGuestID string, showEmail bool, showName bool) ([]*model.User, error) {
 	return s.getUsersByTeam(s.db, teamID, asGuestID, showEmail, showName)
+
+}
+
+func (s *SQLStore) GetUsersForAdmin() ([]*model.User, error) {
+	return s.getUsersForAdmin(s.db)
 
 }
 
@@ -745,6 +760,16 @@ func (s *SQLStore) SetBoardVisibility(userID string, categoryID string, boardID 
 
 func (s *SQLStore) SetSystemSetting(key string, value string) error {
 	return s.setSystemSetting(s.db, key, value)
+
+}
+
+func (s *SQLStore) SetUserActive(userID string, active bool) error {
+	return s.setUserActive(s.db, userID, active)
+
+}
+
+func (s *SQLStore) SetUserRole(userID string, role string) error {
+	return s.setUserRole(s.db, userID, role)
 
 }
 

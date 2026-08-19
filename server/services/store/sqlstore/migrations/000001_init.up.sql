@@ -6,11 +6,20 @@
 -- somebody has to remember three answers to one question.
 
 {{if .sqlite}}
--- Everybody the board knows: people, and — under their own names and
--- with no column to tell them apart — the agents and the sources.
--- password, mfa_secret, auth_service and auth_data are unused: this
--- application creates every account itself and has no passwords.
-CREATE TABLE `users` (`id` varchar NOT NULL, `username` varchar NULL, `email` varchar NULL, `password` varchar NULL, `mfa_secret` varchar NULL, `auth_service` varchar NULL, `auth_data` varchar NULL, `props` text NULL, `create_at` bigint NULL, `update_at` bigint NULL, `delete_at` bigint NULL, PRIMARY KEY (`id`));
+-- Everybody the board knows: people, and — under their own names —
+-- the agents and the sources. mfa_secret, auth_service and auth_data
+-- are unused; password is written only on a hosted server, where
+-- people register and log in.
+--   role: Who administers this install. NULL and 'member' read the same, so
+--     a row written before the column is not an admin. Closed by the
+--     model — an account either administers the install or it does not —
+--     so it is a CHECK. What a person may do *on a board* is a different
+--     question and is answered by board_members.minimum_role.
+--   kind: person, agent or source. There was no column to tell them apart,
+--     and exclude_bots on the team's user list had nothing to filter on.
+--     NO check: this set grows — a delegated runner wants an account of
+--     its own — and SQLite cannot ALTER one in.
+CREATE TABLE `users` (`id` varchar NOT NULL, `username` varchar NULL, `email` varchar NULL, `password` varchar NULL, `mfa_secret` varchar NULL, `auth_service` varchar NULL, `auth_data` varchar NULL, `props` text NULL, `role` varchar NULL, `kind` varchar NULL, `create_at` bigint NULL, `update_at` bigint NULL, `delete_at` bigint NULL, PRIMARY KEY (`id`), CONSTRAINT `users_role` CHECK (`role` IS NULL OR `role` IN ('admin', 'member')));
 
 -- The team a board belongs to. In this product there is exactly one and
 -- its id is '0' — but the column is in two hundred queries of the fork,
@@ -26,8 +35,8 @@ CREATE TABLE `system_settings` (`id` varchar NOT NULL, `value` text NULL, PRIMAR
 -- A board.
 --   channel_id: A remnant of the Mattermost plugin. Nothing writes it.
 --   type: O — open, P — private.
---   properties: The board's own automation lives here — xciiiColumns, xciiiFlows,
---     xciiiPrompt and the records of which field is which. JSON on purpose:
+--   properties: The board's own automation lives here — columns, flows,
+--     prompt and the records of which field is which. JSON on purpose:
 --     it travels with the board, into an export and into a template.
 --   card_properties: The schema of a card's fields. The product's main denormalisation, and
 --     deliberately left alone: the whole webapp filters and groups on it.
@@ -44,8 +53,8 @@ CREATE INDEX `idx_boards_channel_id` ON `boards` (`channel_id`);
 -- own rather than inside a collapse.
 --   channel_id: A remnant of the Mattermost plugin. Nothing writes it.
 --   type: O — open, P — private.
---   properties: The board's own automation lives here — xciiiColumns, xciiiFlows,
---     xciiiPrompt and the records of which field is which. JSON on purpose:
+--   properties: The board's own automation lives here — columns, flows,
+--     prompt and the records of which field is which. JSON on purpose:
 --     it travels with the board, into an export and into a template.
 --   card_properties: The schema of a card's fields. The product's main denormalisation, and
 --     deliberately left alone: the whole webapp filters and groups on it.
@@ -322,11 +331,20 @@ CREATE TABLE `sessions` (`id` varchar(100) NOT NULL, `token` varchar(100) NULL, 
 -- Key and value, for the handful of things the server records about itself.
 CREATE TABLE `system_settings` (`id` varchar(100) NOT NULL, `value` text NULL, PRIMARY KEY (`id`)) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
 
--- Everybody the board knows: people, and — under their own names and
--- with no column to tell them apart — the agents and the sources.
--- password, mfa_secret, auth_service and auth_data are unused: this
--- application creates every account itself and has no passwords.
-CREATE TABLE `users` (`id` varchar(100) NOT NULL, `username` varchar(100) NULL, `email` varchar(255) NULL, `password` varchar(100) NULL, `mfa_secret` varchar(100) NULL, `auth_service` varchar(20) NULL, `auth_data` varchar(255) NULL, `props` text NULL, `create_at` bigint NULL, `update_at` bigint NULL, `delete_at` bigint NULL, PRIMARY KEY (`id`)) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
+-- Everybody the board knows: people, and — under their own names —
+-- the agents and the sources. mfa_secret, auth_service and auth_data
+-- are unused; password is written only on a hosted server, where
+-- people register and log in.
+--   role: Who administers this install. NULL and 'member' read the same, so
+--     a row written before the column is not an admin. Closed by the
+--     model — an account either administers the install or it does not —
+--     so it is a CHECK. What a person may do *on a board* is a different
+--     question and is answered by board_members.minimum_role.
+--   kind: person, agent or source. There was no column to tell them apart,
+--     and exclude_bots on the team's user list had nothing to filter on.
+--     NO check: this set grows — a delegated runner wants an account of
+--     its own — and SQLite cannot ALTER one in.
+CREATE TABLE `users` (`id` varchar(100) NOT NULL, `username` varchar(100) NULL, `email` varchar(255) NULL, `password` varchar(100) NULL, `mfa_secret` varchar(100) NULL, `auth_service` varchar(20) NULL, `auth_data` varchar(255) NULL, `props` text NULL, `role` varchar(16) NULL, `kind` varchar(32) NULL, `create_at` bigint NULL, `update_at` bigint NULL, `delete_at` bigint NULL, PRIMARY KEY (`id`), CONSTRAINT `users_role` CHECK (`role` IS NULL OR `role` IN ('admin', 'member'))) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
 
 -- Every version of every board, one row per edit, never pruned. The
 -- upstream's audit and undo mechanism; this product's undo is in the page
@@ -335,8 +353,8 @@ CREATE TABLE `users` (`id` varchar(100) NOT NULL, `username` varchar(100) NULL, 
 -- own rather than inside a collapse.
 --   channel_id: A remnant of the Mattermost plugin. Nothing writes it.
 --   type: O — open, P — private.
---   properties: The board's own automation lives here — xciiiColumns, xciiiFlows,
---     xciiiPrompt and the records of which field is which. JSON on purpose:
+--   properties: The board's own automation lives here — columns, flows,
+--     prompt and the records of which field is which. JSON on purpose:
 --     it travels with the board, into an export and into a template.
 --   card_properties: The schema of a card's fields. The product's main denormalisation, and
 --     deliberately left alone: the whole webapp filters and groups on it.
@@ -427,8 +445,8 @@ CREATE TABLE `blocks` (`id` varchar(36) NOT NULL, `insert_at` datetime(6) NOT NU
 -- A board.
 --   channel_id: A remnant of the Mattermost plugin. Nothing writes it.
 --   type: O — open, P — private.
---   properties: The board's own automation lives here — xciiiColumns, xciiiFlows,
---     xciiiPrompt and the records of which field is which. JSON on purpose:
+--   properties: The board's own automation lives here — columns, flows,
+--     prompt and the records of which field is which. JSON on purpose:
 --     it travels with the board, into an export and into a template.
 --   card_properties: The schema of a card's fields. The product's main denormalisation, and
 --     deliberately left alone: the whole webapp filters and groups on it.
@@ -575,11 +593,20 @@ CREATE TABLE "sessions" ("id" character varying(100) NOT NULL, "token" character
 -- Key and value, for the handful of things the server records about itself.
 CREATE TABLE "system_settings" ("id" character varying(100) NOT NULL, "value" text NULL, PRIMARY KEY ("id"));
 
--- Everybody the board knows: people, and — under their own names and
--- with no column to tell them apart — the agents and the sources.
--- password, mfa_secret, auth_service and auth_data are unused: this
--- application creates every account itself and has no passwords.
-CREATE TABLE "users" ("id" character varying(100) NOT NULL, "username" character varying(100) NULL, "email" character varying(255) NULL, "password" character varying(100) NULL, "mfa_secret" character varying(100) NULL, "auth_service" character varying(20) NULL, "auth_data" character varying(255) NULL, "props" text NULL, "create_at" bigint NULL, "update_at" bigint NULL, "delete_at" bigint NULL, PRIMARY KEY ("id"));
+-- Everybody the board knows: people, and — under their own names —
+-- the agents and the sources. mfa_secret, auth_service and auth_data
+-- are unused; password is written only on a hosted server, where
+-- people register and log in.
+--   role: Who administers this install. NULL and 'member' read the same, so
+--     a row written before the column is not an admin. Closed by the
+--     model — an account either administers the install or it does not —
+--     so it is a CHECK. What a person may do *on a board* is a different
+--     question and is answered by board_members.minimum_role.
+--   kind: person, agent or source. There was no column to tell them apart,
+--     and exclude_bots on the team's user list had nothing to filter on.
+--     NO check: this set grows — a delegated runner wants an account of
+--     its own — and SQLite cannot ALTER one in.
+CREATE TABLE "users" ("id" character varying(100) NOT NULL, "username" character varying(100) NULL, "email" character varying(255) NULL, "password" character varying(100) NULL, "mfa_secret" character varying(100) NULL, "auth_service" character varying(20) NULL, "auth_data" character varying(255) NULL, "props" text NULL, "role" character varying(16) NULL, "kind" character varying(32) NULL, "create_at" bigint NULL, "update_at" bigint NULL, "delete_at" bigint NULL, PRIMARY KEY ("id"), CONSTRAINT "users_role" CHECK ("role" IS NULL OR "role" IN ('admin', 'member')));
 
 -- Every version of every board, one row per edit, never pruned. The
 -- upstream's audit and undo mechanism; this product's undo is in the page
@@ -588,8 +615,8 @@ CREATE TABLE "users" ("id" character varying(100) NOT NULL, "username" character
 -- own rather than inside a collapse.
 --   channel_id: A remnant of the Mattermost plugin. Nothing writes it.
 --   type: O — open, P — private.
---   properties: The board's own automation lives here — xciiiColumns, xciiiFlows,
---     xciiiPrompt and the records of which field is which. JSON on purpose:
+--   properties: The board's own automation lives here — columns, flows,
+--     prompt and the records of which field is which. JSON on purpose:
 --     it travels with the board, into an export and into a template.
 --   card_properties: The schema of a card's fields. The product's main denormalisation, and
 --     deliberately left alone: the whole webapp filters and groups on it.
@@ -743,8 +770,8 @@ CREATE INDEX "idx_blocks_board_id_parent_id" ON "blocks" ("board_id", "parent_id
 -- A board.
 --   channel_id: A remnant of the Mattermost plugin. Nothing writes it.
 --   type: O — open, P — private.
---   properties: The board's own automation lives here — xciiiColumns, xciiiFlows,
---     xciiiPrompt and the records of which field is which. JSON on purpose:
+--   properties: The board's own automation lives here — columns, flows,
+--     prompt and the records of which field is which. JSON on purpose:
 --     it travels with the board, into an export and into a template.
 --   card_properties: The schema of a card's fields. The product's main denormalisation, and
 --     deliberately left alone: the whole webapp filters and groups on it.
@@ -753,8 +780,8 @@ CREATE TABLE "boards" ("id" character varying(36) NOT NULL, "insert_at" timestam
 -- A board.
 --   channel_id: A remnant of the Mattermost plugin. Nothing writes it.
 --   type: O — open, P — private.
---   properties: The board's own automation lives here — xciiiColumns, xciiiFlows,
---     xciiiPrompt and the records of which field is which. JSON on purpose:
+--   properties: The board's own automation lives here — columns, flows,
+--     prompt and the records of which field is which. JSON on purpose:
 --     it travels with the board, into an export and into a template.
 --   card_properties: The schema of a card's fields. The product's main denormalisation, and
 --     deliberately left alone: the whole webapp filters and groups on it.
@@ -763,8 +790,8 @@ CREATE INDEX "idx_boards_team_id_is_template" ON "boards" ("team_id", "is_templa
 -- A board.
 --   channel_id: A remnant of the Mattermost plugin. Nothing writes it.
 --   type: O — open, P — private.
---   properties: The board's own automation lives here — xciiiColumns, xciiiFlows,
---     xciiiPrompt and the records of which field is which. JSON on purpose:
+--   properties: The board's own automation lives here — columns, flows,
+--     prompt and the records of which field is which. JSON on purpose:
 --     it travels with the board, into an export and into a template.
 --   card_properties: The schema of a card's fields. The product's main denormalisation, and
 --     deliberately left alone: the whole webapp filters and groups on it.

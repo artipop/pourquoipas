@@ -198,14 +198,18 @@ func (a *API) handleRegister(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
-		// No signup token, check if no active users
-		userCount, err2 := a.app.GetRegisteredUserCount()
+		// No signup token: allowed only while nobody has claimed this install.
+		// Counted in admins rather than in registered users, because this app
+		// makes an account per agent and per source — a desktop attaching to a
+		// fresh server would otherwise close the door before anybody walked
+		// through it.
+		adminCount, err2 := a.app.GetAdminCount()
 		if err2 != nil {
 			a.errorResponse(w, r, err2)
 			return
 		}
-		if userCount > 0 {
-			a.errorResponse(w, r, model.NewErrUnauthorized("no sign-up token and user(s) already exist"))
+		if adminCount > 0 {
+			a.errorResponse(w, r, model.NewErrUnauthorized("no sign-up token and this install already has an admin"))
 			return
 		}
 	}

@@ -64,6 +64,10 @@ type Store interface {
 	SearchUsersByTeam(teamID string, searchQuery string, asGuestID string, excludeBots bool, showEmail, showName bool) ([]*model.User, error)
 	PatchUserPreferences(userID string, patch model.UserPreferencesPatch) (model.Preferences, error)
 	GetUserPreferences(userID string) (model.Preferences, error)
+	SetUserRole(userID, role string) error
+	SetUserActive(userID string, active bool) error
+	GetUsersForAdmin() ([]*model.User, error)
+	GetAdminCount() (int, error)
 
 	GetActiveUserCount(updatedSecondsAgo int64) (int, error)
 	GetSession(token string, expireTime int64) (*model.Session, error)
@@ -71,6 +75,7 @@ type Store interface {
 	RefreshSession(session *model.Session) error
 	UpdateSession(session *model.Session) error
 	DeleteSession(sessionID string) error
+	DeleteSessionsForUser(userID string) error
 	CleanUpSessions(expireTime int64) error
 
 	UpsertSharing(sharing model.Sharing) error

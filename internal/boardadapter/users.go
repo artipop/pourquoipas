@@ -124,8 +124,10 @@ func (b *EventsBackend) ensureAccount(agent acp.AgentUser) (acp.AgentUser, error
 			return agent, err
 		}
 		// The account exists to be assigned, not to be logged into: the
-		// password is random and never shown anywhere.
-		if err := a.RegisterUser(agent.Username, agent.Username+"@"+agentEmailDomain, password); err != nil {
+		// password is random and never shown anywhere. Through the machine
+		// door rather than the person one, so that provisioning an agent can
+		// never claim an install nobody has registered on yet.
+		if err := a.RegisterMachineUser(agent.Username, agent.Username+"@"+agentEmailDomain, password, model.UserKindAgent); err != nil {
 			return agent, fmt.Errorf("создание пользователя %q: %w", agent.Username, err)
 		}
 		if user, err = a.GetUserByUsername(agent.Username); err != nil || user == nil {
@@ -240,8 +242,9 @@ func (w *Writer) EnsureSourceUser(ctx context.Context, boardID, source string) (
 		if err != nil {
 			return "", err
 		}
-		// The account exists to be named, not to be logged into.
-		if err := w.app.RegisterUser(username, username+"@"+sourceEmailDomain, password); err != nil {
+		// The account exists to be named, not to be logged into. The machine
+		// door, for the reason EnsureAgentAccounts gives.
+		if err := w.app.RegisterMachineUser(username, username+"@"+sourceEmailDomain, password, model.UserKindSource); err != nil {
 			return "", fmt.Errorf("создание пользователя %q: %w", username, err)
 		}
 		if user, err = w.app.GetUserByUsername(username); err != nil || user == nil {

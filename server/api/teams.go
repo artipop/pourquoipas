@@ -114,6 +114,15 @@ func (a *API) handleGetTeam(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// The signup token is the door into this install, and this handler is
+	// asked by every member on every page load. It went out to all of them
+	// because the whole model.Team was marshalled.
+	if !a.permissions.HasPermissionToTeam(userID, teamID, model.PermissionManageTeam) {
+		withoutToken := *team
+		withoutToken.SignupToken = ""
+		team = &withoutToken
+	}
+
 	data, err := json.Marshal(team)
 	if err != nil {
 		a.errorResponse(w, r, err)
@@ -148,6 +157,14 @@ func (a *API) handlePostTeamRegenerateSignupToken(w http.ResponseWriter, r *http
 	//       "$ref": "#/definitions/ErrorResponse"
 	if a.MattermostAuth {
 		a.errorResponse(w, r, model.NewErrNotImplemented("not permitted in plugin mode"))
+		return
+	}
+
+	// Retiring the invite link and minting a new one is administering the
+	// install. This checked nothing but the session, so any member could take
+	// away everybody else's link.
+	if !a.permissions.HasPermissionToTeam(getUserID(r), r.PathValue("teamID"), model.PermissionManageTeam) {
+		a.errorResponse(w, r, model.NewErrPermission("access denied to team"))
 		return
 	}
 

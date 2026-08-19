@@ -83,6 +83,7 @@ func (a *API) RegisterRoutes(r *web.Router) {
 	a.registerCategoriesRoutes(apiv2)
 	a.registerSharingRoutes(apiv2)
 	a.registerTeamsRoutes(apiv2)
+	a.registerAdminRoutes(apiv2)
 	a.registerAchivesRoutes(apiv2)
 	a.registerSubscriptionsRoutes(apiv2)
 	a.registerFilesRoutes(apiv2)
