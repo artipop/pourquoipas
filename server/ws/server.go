@@ -533,17 +533,21 @@ func (ws *Server) BroadcastBlockDelete(teamID, blockID, boardID string) {
 	block.UpdateAt = now
 	block.DeleteAt = now
 
-	ws.BroadcastBlockChange(teamID, block)
+	// A deletion is never bookkeeping: a card that is gone is gone for
+	// everybody, and a client keeping an index of the board has to hear it.
+	ws.BroadcastBlockChange(teamID, block, false)
 }
 
-// BroadcastBlockChange broadcasts update messages to clients.
-func (ws *Server) BroadcastBlockChange(teamID string, block *model.Block) {
+// BroadcastBlockChange broadcasts update messages to clients. silent marks the
+// machine's own bookkeeping — see UpdateBlockMsg.Silent.
+func (ws *Server) BroadcastBlockChange(teamID string, block *model.Block, silent bool) {
 	blockIDsToNotify := []string{block.ID, block.ParentID}
 
 	message := UpdateBlockMsg{
 		Action: websocketActionUpdateBlock,
 		TeamID: teamID,
 		Block:  block,
+		Silent: silent,
 	}
 
 	listeners := ws.getListenersForTeamAndBoard(teamID, block.BoardID)

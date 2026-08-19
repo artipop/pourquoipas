@@ -49,7 +49,8 @@ func (a *App) DuplicateBlock(boardID string, blockID string, userID string, asTe
 
 	a.blockChangeNotifier.Enqueue(func() error {
 		for _, block := range blocks {
-			a.wsAdapter.BroadcastBlockChange(board.TeamID, block)
+			// A duplicate is a person asking for a copy.
+			a.wsAdapter.BroadcastBlockChange(board.TeamID, block, false)
 		}
 		return nil
 	})
@@ -83,7 +84,7 @@ func (a *App) PatchBlockAndNotify(blockID string, blockPatch *model.BlockPatch, 
 	}
 	a.blockChangeNotifier.Enqueue(func() error {
 		// broadcast on websocket
-		a.wsAdapter.BroadcastBlockChange(board.TeamID, block)
+		a.wsAdapter.BroadcastBlockChange(board.TeamID, block, disableNotify)
 
 		// send notifications
 		if !disableNotify {
@@ -114,7 +115,7 @@ func (a *App) PatchBlocksAndNotify(teamID string, blockPatches *model.BlockPatch
 			if err != nil {
 				return err
 			}
-			a.wsAdapter.BroadcastBlockChange(teamID, newBlock)
+			a.wsAdapter.BroadcastBlockChange(teamID, newBlock, disableNotify)
 			if !disableNotify {
 				a.notifyBlockChanged(notify.Update, newBlock, oldBlocks[i], modifiedByID)
 			}
@@ -137,7 +138,7 @@ func (a *App) InsertBlockAndNotify(block *model.Block, modifiedByID string, disa
 	err := a.store.InsertBlock(block, modifiedByID)
 	if err == nil {
 		a.blockChangeNotifier.Enqueue(func() error {
-			a.wsAdapter.BroadcastBlockChange(board.TeamID, block)
+			a.wsAdapter.BroadcastBlockChange(board.TeamID, block, disableNotify)
 			if !disableNotify {
 				a.notifyBlockChanged(notify.Add, block, nil, modifiedByID)
 			}
@@ -178,7 +179,7 @@ func (a *App) InsertBlocksAndNotify(blocks []*model.Block, modifiedByID string, 
 		}
 		needsNotify = append(needsNotify, blocks[i])
 
-		a.wsAdapter.BroadcastBlockChange(board.TeamID, blocks[i])
+		a.wsAdapter.BroadcastBlockChange(board.TeamID, blocks[i], disableNotify)
 	}
 
 	a.blockChangeNotifier.Enqueue(func() error {
@@ -276,7 +277,8 @@ func (a *App) UndeleteBlock(blockID string, modifiedBy string) (*model.Block, er
 	}
 
 	a.blockChangeNotifier.Enqueue(func() error {
-		a.wsAdapter.BroadcastBlockChange(board.TeamID, block)
+		// An undelete puts a card back on the board for everybody.
+		a.wsAdapter.BroadcastBlockChange(board.TeamID, block, false)
 		a.notifyBlockChanged(notify.Add, block, nil, modifiedBy)
 
 		return nil

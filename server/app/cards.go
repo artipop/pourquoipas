@@ -159,7 +159,7 @@ func (a *App) MoveCardToBoard(cardID, toBoardID, userID string) (*model.Card, er
 			a.wsAdapter.BroadcastBlockDelete(fromBoard.TeamID, block.ID, fromBoardID)
 		}
 		for _, block := range blocks {
-			a.wsAdapter.BroadcastBlockChange(toBoard.TeamID, block)
+			a.wsAdapter.BroadcastBlockChange(toBoard.TeamID, block, false)
 		}
 		return nil
 	})

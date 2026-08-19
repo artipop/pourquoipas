@@ -173,7 +173,7 @@ func (a *App) DuplicateBoard(boardID, userID, toTeam string, asTemplate bool) (*
 		}
 		for _, block := range bab.Blocks {
 			blk := block
-			a.wsAdapter.BroadcastBlockChange(teamID, blk)
+			a.wsAdapter.BroadcastBlockChange(teamID, blk, false)
 			a.notifyBlockChanged(notify.Add, blk, nil, userID)
 		}
 		for _, member := range members {

@@ -32,7 +32,7 @@ func (a *App) CreateBoardsAndBlocks(bab *model.BoardsAndBlocks, userID string, a
 
 	for _, block := range newBab.Blocks {
 		b := block
-		a.wsAdapter.BroadcastBlockChange(teamID, b)
+		a.wsAdapter.BroadcastBlockChange(teamID, b, false)
 		a.notifyBlockChanged(notify.Add, b, nil, userID)
 	}
 
@@ -80,7 +80,7 @@ func (a *App) PatchBoardsAndBlocks(pbab *model.PatchBoardsAndBlocks, userID stri
 			}
 
 			b := block
-			a.wsAdapter.BroadcastBlockChange(teamID, b)
+			a.wsAdapter.BroadcastBlockChange(teamID, b, false)
 			a.notifyBlockChanged(notify.Update, b, oldBlock, userID)
 		}
 
