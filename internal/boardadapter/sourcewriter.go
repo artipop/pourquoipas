@@ -9,6 +9,7 @@ import (
 	"github.com/artipop/xciii/server/model"
 	"github.com/artipop/xciii/server/utils"
 
+	"github.com/artipop/xciii/internal/boardmodel"
 	"github.com/artipop/xciii/internal/sources"
 )
 
@@ -248,7 +249,7 @@ func cardSourceOf(block *model.Block) (cardSource, bool) {
 		return cardSource{}, false
 	}
 	var origin cardSource
-	if err := reinterpretField(raw, &origin); err != nil {
+	if err := boardmodel.ReinterpretField(raw, &origin); err != nil {
 		return cardSource{}, false
 	}
 	return origin, origin.ExternalID != ""

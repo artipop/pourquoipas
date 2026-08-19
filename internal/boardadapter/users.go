@@ -11,6 +11,7 @@ import (
 	"github.com/artipop/xciii/server/model"
 
 	"github.com/artipop/xciii/internal/acp"
+	"github.com/artipop/xciii/internal/boardmodel"
 )
 
 // Agents as board users: a registered agent gets a board account named
@@ -201,9 +202,9 @@ func (b *EventsBackend) AssignCardAgent(ctx context.Context, cardID string, agen
 		value = []string{agent.UserID}
 	}
 	patch := &model.CardPatch{UpdatedProperties: map[string]any{person.ID: value}}
-	if err := mergeCardProperties(a, cardID, patch); err != nil {
-		return err
-	}
+	// The card was read at the top of this function; merging against it is what
+	// keeps a one-key patch from erasing every other property.
+	boardmodel.MergeCardProperties(boardmodel.RawProperties(block), patch)
 	blockPatch, err := model.CardPatch2BlockPatch(patch)
 	if err != nil {
 		return err

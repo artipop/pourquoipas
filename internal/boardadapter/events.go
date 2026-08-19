@@ -314,7 +314,7 @@ func (b *EventsBackend) BoardColumnOptions(_ context.Context, boardID string) ([
 		if err != nil {
 			return nil, fmt.Errorf("get views of board %s: %w", boardID, err)
 		}
-		name, found := columnPropertyName(board, schema, views)
+		name, found := boardmodel.ColumnPropertyName(board, schema, views)
 		if !found {
 			return nil, nil
 		}

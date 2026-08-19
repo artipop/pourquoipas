@@ -7,6 +7,8 @@ import (
 	"github.com/artipop/xciii/server/app"
 	"github.com/artipop/xciii/server/mlog"
 	"github.com/artipop/xciii/server/model"
+
+	"github.com/artipop/xciii/internal/boardmodel"
 	"github.com/artipop/xciii/server/utils"
 )
 
@@ -86,7 +88,7 @@ func optionID(t *testing.T, a *app.App, boardID, name string) string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, id, ok := findSelectOption(schema, "Статус", name)
+	_, id, ok := boardmodel.FindSelectOption(schema, "Статус", name)
 	if !ok {
 		t.Fatalf("колонки «%s» на доске нет", name)
 	}

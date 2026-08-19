@@ -273,3 +273,59 @@ func MovedEvents(boardID string, block *model.Block, schema model.PropSchema, ol
 	}
 	return out
 }
+
+// ColumnPropertyName picks the property whose options a person reads as the
+// board's columns: what a view groups by, or failing that the board's first
+// select property, which is what a new kanban view would have grouped by too.
+func ColumnPropertyName(board *model.Board, schema model.PropSchema, views []*model.Block) (string, bool) {
+	for _, view := range views {
+		groupBy, _ := view.Fields["groupById"].(string)
+		if def, ok := schema[groupBy]; ok && def.Type == "select" {
+			return def.Name, true
+		}
+	}
+	// CardProperties keeps the board's own order and schema is a map, so the
+	// fallback is read off the ordered half — otherwise "the first select
+	// property" would be a different one on every call.
+	for _, prop := range board.CardProperties {
+		if id, ok := prop["id"].(string); ok {
+			if def, ok := schema[id]; ok && def.Type == "select" {
+				return def.Name, true
+			}
+		}
+	}
+	return "", false
+}
+
+// ColumnOptions is the board's own columns as acp.Column: the property the
+// board recorded for itself, and failing that the one a person reads as the
+// columns. Empty when the board has no such property — a board of notes need
+// not have one.
+func ColumnOptions(board *model.Board, schema model.PropSchema, views []*model.Block, recordedPropID string) []acp.Column {
+	propID := recordedPropID
+	if _, ok := schema[propID]; !ok {
+		name, found := ColumnPropertyName(board, schema, views)
+		if !found {
+			return nil
+		}
+		propID = ""
+		for id, def := range schema {
+			if def.Type == "select" && strings.EqualFold(def.Name, name) {
+				propID = id
+				break
+			}
+		}
+	}
+	def, ok := schema[propID]
+	if !ok {
+		return nil
+	}
+	out := make([]acp.Column, 0, len(def.Options))
+	for id, opt := range def.Options {
+		out = append(out, acp.Column{
+			PropertyID: propID, PropertyName: def.Name,
+			OptionID: id, Name: opt.Value,
+		})
+	}
+	return out
+}

@@ -7,6 +7,8 @@ import (
 	"strings"
 
 	"github.com/artipop/xciii/server/model"
+
+	"github.com/artipop/xciii/internal/boardmodel"
 )
 
 // The board as a phone reads it.
@@ -107,7 +109,7 @@ func (w *Writer) columnsOf(board *model.Board) (string, []Column, error) {
 	if err != nil {
 		return "", nil, err
 	}
-	name, ok := columnPropertyName(board, schema, views)
+	name, ok := boardmodel.ColumnPropertyName(board, schema, views)
 	if !ok {
 		return "", nil, fmt.Errorf("на доске %s нет свойства-колонок", board.ID)
 	}
@@ -151,7 +153,7 @@ func (w *Writer) BoardCards(ctx context.Context, boardID string) ([]CardSummary,
 	if err != nil {
 		return nil, fmt.Errorf("get views of board %s: %w", boardID, err)
 	}
-	property, _ := columnPropertyName(board, schema, views)
+	property, _ := boardmodel.ColumnPropertyName(board, schema, views)
 	linkID, _ := propertyOfType(board, schema, "url")
 	authors := w.boardAuthors(boardID)
 	blocks, err := w.app.GetBlocks(boardID, "", model.TypeCard)
@@ -294,11 +296,11 @@ func (w *Writer) MoveCardToBoard(ctx context.Context, cardID, toBoardID, column 
 	if err != nil {
 		return fmt.Errorf("get views of board %s: %w", toBoardID, err)
 	}
-	property, ok := columnPropertyName(board, schema, views)
+	property, ok := boardmodel.ColumnPropertyName(board, schema, views)
 	if !ok {
 		return fmt.Errorf("на доске %s нет свойства-колонок", toBoardID)
 	}
-	propID, optionID, ok := findSelectOption(schema, property, column)
+	propID, optionID, ok := boardmodel.FindSelectOption(schema, property, column)
 	if !ok {
 		return fmt.Errorf("на доске %s нет колонки %q", toBoardID, column)
 	}
