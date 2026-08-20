@@ -85,6 +85,16 @@ in a browser.
   `terminalEnv` writes `TERM`/`COLORTERM` rather than inheriting them —
   the other end of that pty is xterm.js whatever launched the app, and an
   inherited value describes the wrong terminal even when there is one.
+**The desktop app is a WKWebView, and CSS prefixes are the build's job**
+(`vite.config.ts`, `css.postcss`, autoprefixer). Measured in the engine itself:
+`CSS.supports('user-select', 'none')` is **false** there — it answers only to
+`-webkit-user-select`. Without the prefix step every "this does not select" in
+the product worked in a browser and did nothing in the app, and a drag out of a
+socket on the route canvas painted half the dialog blue. `browserslist` in
+`webapp/package.json` names the targets, and Safari is on that list for the
+webview rather than for the browser; stylelint's `property-no-vendor-prefix`
+forbids writing them by hand, which is right exactly because the build does it.
+
 - `npm test` in `webapp/` — the page's suite, **vitest** under jsdom, sharing
   `vite-plugin-solid` with the build through `vitest.config.ts`. Coverage is on by
   default (v8); `--coverage.enabled=false` while iterating, `npm run updatesnapshot`

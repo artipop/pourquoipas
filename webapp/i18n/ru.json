@@ -79,7 +79,6 @@
   "Automation.cancel": "Закрыть",
   "Automation.column-prompt": "Что сказать агенту здесь",
   "Automation.columns-hint": "Здесь все колонки доски. Выберите колонку, чтобы сказать, что происходит с попавшей в неё карточкой.",
-  "Automation.columns-view": "Колонки",
   "Automation.cond-always": "всегда",
   "Automation.cond-comment": "только если агент написал…",
   "Automation.cond-comment-placeholder": "текст в итоговом комментарии агента",

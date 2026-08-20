@@ -4,6 +4,7 @@ import path from 'path'
 import {fileURLToPath} from 'url'
 
 import formatjs from '@formatjs/unplugin/vite'
+import autoprefixer from 'autoprefixer'
 import {defineConfig} from 'vite'
 import type {Connect, Plugin, ViteDevServer} from 'vite'
 import solid from 'vite-plugin-solid'
@@ -121,6 +122,19 @@ export default defineConfig(({mode}) => {
         },
 
         css: {
+            // The desktop app is a WKWebView, and it does not know the
+            // unprefixed `user-select` at all — measured, in the real engine:
+            // CSS.supports('user-select','none') is false there and
+            // -webkit-user-select is what it answers to. So every "do not
+            // select this" in the product was inert in the app while working in
+            // a browser, and a drag out of a socket on the route canvas painted
+            // half the dialog blue.
+            //
+            // Prefixing by hand is what stylelint's property-no-vendor-prefix
+            // forbids, and it is right to: the rule assumes this step exists.
+            // It did not.
+            postcss: {plugins: [autoprefixer()]},
+
             preprocessorOptions: {
                 scss: {
                     api: 'modern-compiler',
