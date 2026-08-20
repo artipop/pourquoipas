@@ -135,6 +135,27 @@ CREATE INDEX `idx_subscriptions_subscriber_id` ON `subscriptions` (`subscriber_i
 -- A block that has changed and whose watchers have not been told yet.
 CREATE TABLE `notification_hints` (`block_type` varchar NULL, `block_id` varchar NOT NULL, `modified_by_id` varchar NULL, `create_at` bigint NULL, `notify_at` bigint NULL, PRIMARY KEY (`block_id`));
 
+-- A board this machine knows about, whoever's it is. What the app's own
+-- tables point at instead of boards(id), which only has the boards
+-- served by this process.
+--   board_id: The board's own id, on whichever server it lives.
+--   source_id: Where the board is. NULL is this machine, which is every board
+--     until a desktop attaches to a hosted one.
+--   local_board_id: The same board in this process's own table, when it is ours. NULL
+--     for a board on a server: that is what makes the key possible at all.
+CREATE TABLE `board_ref` (`board_id` varchar NOT NULL, `source_id` varchar NULL, `local_board_id` varchar NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`board_id`), CONSTRAINT `board_ref_local` FOREIGN KEY (`local_board_id`) REFERENCES `boards` (`id`) ON DELETE CASCADE);
+
+-- A card this machine knows about. The row every table keyed on a card
+-- points at, so the cascade survives the board being somewhere else.
+--   board_id: Which board it is on, and through that which server. Nullable
+--     because three of the writers know a card and not its board — a
+--     stall, a flow event, a checkout — and the board is filled in by
+--     whichever writer knows it.
+--   block_id: The same card in this process's own blocks, when it is ours. This
+--     is the cascade: the card is deleted, the block goes, this row goes,
+--     and everything about the card goes with it.
+CREATE TABLE `card_ref` (`card_id` varchar NOT NULL, `board_id` varchar NULL, `block_id` varchar NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`card_id`), CONSTRAINT `card_ref_board` FOREIGN KEY (`board_id`) REFERENCES `board_ref` (`board_id`) ON DELETE CASCADE, CONSTRAINT `card_ref_block` FOREIGN KEY (`block_id`) REFERENCES `blocks` (`id`) ON DELETE CASCADE);
+
 -- Network settings several agents share, so they are edited in one
 -- place. Was the `proxies` array in config.json.
 --   password: Kept apart from the URL so it is entered raw and masked on screen.
@@ -196,7 +217,7 @@ CREATE UNIQUE INDEX `idx_deploy_target_name` ON `deploy_target` (`name`);
 -- separate tables and not one row with a transport column.
 --   card_id: NULL for a run that is about no card — naming a branch is one.
 --   finished_at: NULL means the session is still live.
-CREATE TABLE `agent_session` (`id` varchar NOT NULL, `card_id` varchar NULL, `board_id` varchar NULL, `agent_kind` varchar NOT NULL, `acp_session_id` varchar NULL, `status` varchar NOT NULL, `cwd` text NULL, `worktree_path` text NULL, `branch` varchar NULL, `started_at` bigint NOT NULL, `finished_at` bigint NULL, `error_text` text NULL, PRIMARY KEY (`id`), CONSTRAINT `agent_session_card` FOREIGN KEY (`card_id`) REFERENCES `blocks` (`id`) ON DELETE CASCADE, CONSTRAINT `agent_session_board` FOREIGN KEY (`board_id`) REFERENCES `boards` (`id`) ON DELETE CASCADE, CONSTRAINT `agent_session_status` CHECK (`status` IN ('queued', 'running', 'idle', 'waiting_permission', 'done', 'failed', 'cancelled')));
+CREATE TABLE `agent_session` (`id` varchar NOT NULL, `card_id` varchar NULL, `board_id` varchar NULL, `agent_kind` varchar NOT NULL, `acp_session_id` varchar NULL, `status` varchar NOT NULL, `cwd` text NULL, `worktree_path` text NULL, `branch` varchar NULL, `started_at` bigint NOT NULL, `finished_at` bigint NULL, `error_text` text NULL, PRIMARY KEY (`id`), CONSTRAINT `agent_session_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE CASCADE, CONSTRAINT `agent_session_board` FOREIGN KEY (`board_id`) REFERENCES `board_ref` (`board_id`) ON DELETE CASCADE, CONSTRAINT `agent_session_status` CHECK (`status` IN ('queued', 'running', 'idle', 'waiting_permission', 'done', 'failed', 'cancelled')));
 
 CREATE INDEX `idx_agent_session_card` ON `agent_session` (`card_id`, `started_at`);
 
@@ -220,7 +241,7 @@ CREATE INDEX `idx_session_event_session` ON `session_event` (`session_id`, `id`)
 --   summary: The agent's own line about what this conversation is doing.
 --   workdir_path: Was repo_path. Becomes workspace_id in the second half of step 2,
 --     together with the code that resolves a folder to its registry id.
-CREATE TABLE `conversation` (`id` varchar NOT NULL, `card_id` varchar NULL, `board_id` varchar NULL, `node_id` varchar NOT NULL, `column_name` varchar NULL, `title` text NULL, `summary` text NULL, `agent` varchar NULL, `kind` varchar NULL, `workdir_path` text NULL, `cwd` text NULL, `branch` varchar NULL, `started_at` bigint NOT NULL, `ended_at` bigint NULL, `exit_code` bigint NULL, PRIMARY KEY (`id`), CONSTRAINT `conversation_card` FOREIGN KEY (`card_id`) REFERENCES `blocks` (`id`) ON DELETE CASCADE, CONSTRAINT `conversation_board` FOREIGN KEY (`board_id`) REFERENCES `boards` (`id`) ON DELETE CASCADE);
+CREATE TABLE `conversation` (`id` varchar NOT NULL, `card_id` varchar NULL, `board_id` varchar NULL, `node_id` varchar NOT NULL, `column_name` varchar NULL, `title` text NULL, `summary` text NULL, `agent` varchar NULL, `kind` varchar NULL, `workdir_path` text NULL, `cwd` text NULL, `branch` varchar NULL, `started_at` bigint NOT NULL, `ended_at` bigint NULL, `exit_code` bigint NULL, PRIMARY KEY (`id`), CONSTRAINT `conversation_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE CASCADE, CONSTRAINT `conversation_board` FOREIGN KEY (`board_id`) REFERENCES `board_ref` (`board_id`) ON DELETE CASCADE);
 
 CREATE INDEX `idx_conversation_card` ON `conversation` (`card_id`, `started_at`);
 
@@ -241,12 +262,12 @@ CREATE INDEX `idx_idempotency_created` ON `idempotency` (`created_at`);
 --     foreign key: routes live in the board's JSON, not in a table.
 --     Nullable because a row carried over from before routes had ids
 --     knows only a name; the card's own record supplies the id.
-CREATE TABLE `flow_state` (`card_id` varchar NOT NULL, `board_id` varchar NULL, `flow_id` varchar NULL, `node_id` varchar NOT NULL, `branch` varchar NULL, `workdir_path` text NULL, `entered_at` bigint NOT NULL, PRIMARY KEY (`card_id`), CONSTRAINT `flow_state_card` FOREIGN KEY (`card_id`) REFERENCES `blocks` (`id`) ON DELETE CASCADE, CONSTRAINT `flow_state_board` FOREIGN KEY (`board_id`) REFERENCES `boards` (`id`) ON DELETE CASCADE);
+CREATE TABLE `flow_state` (`card_id` varchar NOT NULL, `board_id` varchar NULL, `flow_id` varchar NULL, `node_id` varchar NOT NULL, `branch` varchar NULL, `workdir_path` text NULL, `entered_at` bigint NOT NULL, PRIMARY KEY (`card_id`), CONSTRAINT `flow_state_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE CASCADE, CONSTRAINT `flow_state_board` FOREIGN KEY (`board_id`) REFERENCES `board_ref` (`board_id`) ON DELETE CASCADE);
 
 -- Every transition a card made, and what the agent said on it.
 --   said: The agent's closing words: what a conversation is told instead of
 --     its task when the card comes back to it.
-CREATE TABLE `flow_event` (`id` varchar NOT NULL, `card_id` varchar NOT NULL, `flow_id` varchar NULL, `from_node` varchar NULL, `to_node` varchar NOT NULL, `on_kind` varchar NOT NULL, `detail` text NULL, `said` text NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`id`), CONSTRAINT `flow_event_card` FOREIGN KEY (`card_id`) REFERENCES `blocks` (`id`) ON DELETE CASCADE);
+CREATE TABLE `flow_event` (`id` varchar NOT NULL, `card_id` varchar NOT NULL, `flow_id` varchar NULL, `from_node` varchar NULL, `to_node` varchar NOT NULL, `on_kind` varchar NOT NULL, `detail` text NULL, `said` text NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`id`), CONSTRAINT `flow_event_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE CASCADE);
 
 CREATE INDEX `idx_flow_event_card` ON `flow_event` (`card_id`, `id`);
 
@@ -256,11 +277,11 @@ CREATE INDEX `idx_flow_event_card` ON `flow_event` (`card_id`, `id`);
 --   kind: 'conversation' is the one kind with somewhere to go: open the
 --     terminal. The rest have no button, which is why this is a field and
 --     never a reading of the reason's own Russian.
-CREATE TABLE `card_stall` (`card_id` varchar NOT NULL, `node_id` varchar NULL, `kind` varchar NULL, `reason` text NOT NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`card_id`), CONSTRAINT `card_stall_card` FOREIGN KEY (`card_id`) REFERENCES `blocks` (`id`) ON DELETE CASCADE);
+CREATE TABLE `card_stall` (`card_id` varchar NOT NULL, `node_id` varchar NULL, `kind` varchar NULL, `reason` text NOT NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`card_id`), CONSTRAINT `card_stall_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE CASCADE);
 
 -- A card waiting for its column to free up a place.
 --   column_key: board|option — the queue belongs to one column of one board.
-CREATE TABLE `stage_queue` (`card_id` varchar NOT NULL, `board_id` varchar NULL, `column_key` varchar NOT NULL, `flow_id` varchar NULL, `node_id` varchar NULL, `queued_at` bigint NOT NULL, PRIMARY KEY (`card_id`), CONSTRAINT `stage_queue_card` FOREIGN KEY (`card_id`) REFERENCES `blocks` (`id`) ON DELETE CASCADE, CONSTRAINT `stage_queue_board` FOREIGN KEY (`board_id`) REFERENCES `boards` (`id`) ON DELETE CASCADE);
+CREATE TABLE `stage_queue` (`card_id` varchar NOT NULL, `board_id` varchar NULL, `column_key` varchar NOT NULL, `flow_id` varchar NULL, `node_id` varchar NULL, `queued_at` bigint NOT NULL, PRIMARY KEY (`card_id`), CONSTRAINT `stage_queue_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE CASCADE, CONSTRAINT `stage_queue_board` FOREIGN KEY (`board_id`) REFERENCES `board_ref` (`board_id`) ON DELETE CASCADE);
 
 CREATE INDEX `idx_stage_queue_column` ON `stage_queue` (`column_key`, `queued_at`);
 
@@ -268,7 +289,7 @@ CREATE INDEX `idx_stage_queue_column` ON `stage_queue` (`column_key`, `queued_at
 -- — the answers are folders and hosts here — so it cannot live in the
 -- browser's storage, which the desktop window forgets on every launch.
 --   changed_at: Was `at`. AT is a keyword in Postgres and a name not worth having.
-CREATE TABLE `board_setup` (`board_id` varchar NOT NULL, `step` varchar NOT NULL, `status` varchar NOT NULL, `changed_at` bigint NOT NULL, PRIMARY KEY (`board_id`, `step`), CONSTRAINT `board_setup_board` FOREIGN KEY (`board_id`) REFERENCES `boards` (`id`) ON DELETE CASCADE, CONSTRAINT `board_setup_status` CHECK (`status` IN ('pending', 'done', 'skipped', 'offered')));
+CREATE TABLE `board_setup` (`board_id` varchar NOT NULL, `step` varchar NOT NULL, `status` varchar NOT NULL, `changed_at` bigint NOT NULL, PRIMARY KEY (`board_id`, `step`), CONSTRAINT `board_setup_board` FOREIGN KEY (`board_id`) REFERENCES `board_ref` (`board_id`) ON DELETE CASCADE, CONSTRAINT `board_setup_status` CHECK (`status` IN ('pending', 'done', 'skipped', 'offered')));
 
 -- This branch event has already been acted on. Keyed by the workspace
 -- rather than by its path: a folder somebody moved used to keep its
@@ -292,7 +313,7 @@ CREATE TABLE `vcs_seen` (`workspace_id` varchar NOT NULL, `branch` varchar NOT N
 --     workspace, and this is the worktree cut from it.
 --   base: What the branch was cut from, and therefore what «merged» means.
 --   released_at: NULL means the checkout is live.
-CREATE TABLE `checkout` (`id` varchar NOT NULL, `workspace_id` varchar NOT NULL, `card_id` varchar NULL, `board_id` varchar NULL, `mode` varchar NOT NULL, `branch` varchar NULL, `path` text NULL, `base` varchar NULL, `created_at` bigint NOT NULL, `released_at` bigint NULL, PRIMARY KEY (`id`), CONSTRAINT `checkout_workspace` FOREIGN KEY (`workspace_id`) REFERENCES `workspace` (`id`) ON DELETE RESTRICT, CONSTRAINT `checkout_card` FOREIGN KEY (`card_id`) REFERENCES `blocks` (`id`) ON DELETE CASCADE, CONSTRAINT `checkout_board` FOREIGN KEY (`board_id`) REFERENCES `boards` (`id`) ON DELETE CASCADE, CONSTRAINT `checkout_mode` CHECK (`mode` IN ('worktree', 'branch', 'plain')));
+CREATE TABLE `checkout` (`id` varchar NOT NULL, `workspace_id` varchar NOT NULL, `card_id` varchar NULL, `board_id` varchar NULL, `mode` varchar NOT NULL, `branch` varchar NULL, `path` text NULL, `base` varchar NULL, `created_at` bigint NOT NULL, `released_at` bigint NULL, PRIMARY KEY (`id`), CONSTRAINT `checkout_workspace` FOREIGN KEY (`workspace_id`) REFERENCES `workspace` (`id`) ON DELETE RESTRICT, CONSTRAINT `checkout_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE CASCADE, CONSTRAINT `checkout_board` FOREIGN KEY (`board_id`) REFERENCES `board_ref` (`board_id`) ON DELETE CASCADE, CONSTRAINT `checkout_mode` CHECK (`mode` IN ('worktree', 'branch', 'plain')));
 
 CREATE UNIQUE INDEX `idx_checkout_card` ON `checkout` (`workspace_id`, `card_id`);
 
@@ -304,26 +325,28 @@ CREATE INDEX `idx_checkout_live` ON `checkout` (`workspace_id`, `released_at`);
 -- to the card it made rather than making a second one.
 --   version: The service's own updated/etag: changed means there is something
 --     to add.
-CREATE TABLE `source_item` (`source` varchar NOT NULL, `external_id` varchar NOT NULL, `version` varchar NULL, `card_id` varchar NULL, `created_at` bigint NOT NULL, `updated_at` bigint NOT NULL, PRIMARY KEY (`source`, `external_id`), CONSTRAINT `source_item_card` FOREIGN KEY (`card_id`) REFERENCES `blocks` (`id`) ON DELETE SET NULL);
+CREATE TABLE `source_item` (`source` varchar NOT NULL, `external_id` varchar NOT NULL, `version` varchar NULL, `card_id` varchar NULL, `created_at` bigint NOT NULL, `updated_at` bigint NOT NULL, PRIMARY KEY (`source`, `external_id`), CONSTRAINT `source_item_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE SET NULL);
 
 CREATE INDEX `idx_source_item_card` ON `source_item` (`card_id`);
 
 -- Why nothing happened — the only question anybody asks of a source.
 -- Deleting the card it produced does not delete the line: what a source
 -- decided is a fact about the source.
-CREATE TABLE `source_event` (`id` varchar NOT NULL, `source` varchar NOT NULL, `external_id` varchar NULL, `rule` varchar NULL, `outcome` varchar NOT NULL, `card_id` varchar NULL, `detail` text NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`id`), CONSTRAINT `source_event_card` FOREIGN KEY (`card_id`) REFERENCES `blocks` (`id`) ON DELETE SET NULL, CONSTRAINT `source_event_outcome` CHECK (`outcome` IN ('created', 'commented', 'inbox', 'dropped', 'failed', 'skipped')));
+CREATE TABLE `source_event` (`id` varchar NOT NULL, `source` varchar NOT NULL, `external_id` varchar NULL, `rule` varchar NULL, `outcome` varchar NOT NULL, `card_id` varchar NULL, `detail` text NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`id`), CONSTRAINT `source_event_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE SET NULL, CONSTRAINT `source_event_outcome` CHECK (`outcome` IN ('created', 'commented', 'inbox', 'dropped', 'failed', 'skipped')));
 
 CREATE INDEX `idx_source_event_source` ON `source_event` (`source`, `id`);
 {{end}}
 
 {{if .mysql}}
--- A block that has changed and whose watchers have not been told yet.
-CREATE TABLE `notification_hints` (`block_type` varchar(10) NULL, `block_id` varchar(36) NOT NULL, `modified_by_id` varchar(36) NULL, `create_at` bigint NULL, `notify_at` bigint NULL, PRIMARY KEY (`block_id`)) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
-
 -- One route event, handled once. `key` was the column's name and is a
 -- reserved word in MySQL, so it is `token` — cheaper than backticks in
 -- every query for ever.
 CREATE TABLE `idempotency` (`token` varchar(255) NOT NULL, `session_id` varchar(36) NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`token`), INDEX `idx_idempotency_created` (`created_at`)) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
+
+-- The team a board belongs to. In this product there is exactly one and
+-- its id is '0' — but the column is in two hundred queries of the fork,
+-- and working with teams stays as it is.
+CREATE TABLE `teams` (`id` varchar(36) NOT NULL, `signup_token` varchar(100) NOT NULL, `settings` text NULL, `modified_by` varchar(36) NULL, `update_at` bigint NULL, PRIMARY KEY (`id`)) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
 
 -- A logged-in session. Its token is what proxy.go hands the page.
 CREATE TABLE `sessions` (`id` varchar(100) NOT NULL, `token` varchar(100) NULL, `user_id` varchar(100) NULL, `props` text NULL, `create_at` bigint NULL, `update_at` bigint NULL, `auth_service` varchar(20) NULL, PRIMARY KEY (`id`)) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
@@ -346,6 +369,10 @@ CREATE TABLE `system_settings` (`id` varchar(100) NOT NULL, `value` text NULL, P
 --     its own — and SQLite cannot ALTER one in.
 CREATE TABLE `users` (`id` varchar(100) NOT NULL, `username` varchar(100) NULL, `email` varchar(255) NULL, `password` varchar(100) NULL, `mfa_secret` varchar(100) NULL, `auth_service` varchar(20) NULL, `auth_data` varchar(255) NULL, `props` text NULL, `role` varchar(16) NULL, `kind` varchar(32) NULL, `create_at` bigint NULL, `update_at` bigint NULL, `delete_at` bigint NULL, PRIMARY KEY (`id`), CONSTRAINT `users_role` CHECK (`role` IS NULL OR `role` IN ('admin', 'member'))) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
 
+-- Where a card's branch is published. Was the `deploys` array in
+-- config.json, and a route's stage named it by name.
+CREATE TABLE `deploy_target` (`id` varchar(36) NOT NULL, `name` varchar(100) NOT NULL, `ssh_host` varchar(255) NOT NULL, `ssh_user` varchar(64) NULL, `ssh_port` bigint NULL, `ssh_key` text NULL, `base_app` varchar(100) NULL, `base_domain` varchar(255) NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`id`), UNIQUE INDEX `idx_deploy_target_name` (`name`)) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
+
 -- Every version of every board, one row per edit, never pruned. The
 -- upstream's audit and undo mechanism; this product's undo is in the page
 -- (webapp/src/undomanager.ts) and there is no history screen, so whether
@@ -359,10 +386,6 @@ CREATE TABLE `users` (`id` varchar(100) NOT NULL, `username` varchar(100) NULL, 
 --   card_properties: The schema of a card's fields. The product's main denormalisation, and
 --     deliberately left alone: the whole webapp filters and groups on it.
 CREATE TABLE `boards_history` (`id` varchar(36) NOT NULL, `insert_at` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), `team_id` varchar(36) NOT NULL, `channel_id` varchar(36) NULL, `created_by` varchar(36) NULL, `modified_by` varchar(36) NULL, `type` varchar(1) NOT NULL, `title` text NOT NULL, `description` text NULL, `icon` varchar(256) NULL, `show_description` bool NULL, `is_template` bool NULL, `template_version` int NULL DEFAULT 0, `properties` text NULL, `card_properties` text NULL, `create_at` bigint NULL, `update_at` bigint NULL, `delete_at` bigint NULL, `minimum_role` varchar(36) NOT NULL DEFAULT '', PRIMARY KEY (`id`, `insert_at`)) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
-
--- Where a card's branch is published. Was the `deploys` array in
--- config.json, and a route's stage named it by name.
-CREATE TABLE `deploy_target` (`id` varchar(36) NOT NULL, `name` varchar(100) NOT NULL, `ssh_host` varchar(255) NOT NULL, `ssh_user` varchar(64) NULL, `ssh_port` bigint NULL, `ssh_key` text NULL, `base_app` varchar(100) NULL, `base_domain` varchar(255) NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`id`), UNIQUE INDEX `idx_deploy_target_name` (`name`)) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
 
 -- Every version of every block. See boards_history.
 --   id: Nullable, which a primary key makes impossible in practice — but this
@@ -407,10 +430,8 @@ CREATE TABLE `preferences` (`userid` varchar(36) NOT NULL, `category` varchar(32
 -- Who is watching a block, for the notification service.
 CREATE TABLE `subscriptions` (`block_type` varchar(10) NULL, `block_id` varchar(36) NOT NULL, `subscriber_type` varchar(10) NULL, `subscriber_id` varchar(36) NOT NULL, `notified_at` bigint NULL, `create_at` bigint NULL, `delete_at` bigint NULL, PRIMARY KEY (`block_id`, `subscriber_id`), INDEX `idx_subscriptions_subscriber_id` (`subscriber_id`)) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
 
--- The team a board belongs to. In this product there is exactly one and
--- its id is '0' — but the column is in two hundred queries of the fork,
--- and working with teams stays as it is.
-CREATE TABLE `teams` (`id` varchar(36) NOT NULL, `signup_token` varchar(100) NOT NULL, `settings` text NULL, `modified_by` varchar(36) NULL, `update_at` bigint NULL, PRIMARY KEY (`id`)) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
+-- A block that has changed and whose watchers have not been told yet.
+CREATE TABLE `notification_hints` (`block_type` varchar(10) NULL, `block_id` varchar(36) NOT NULL, `modified_by_id` varchar(36) NULL, `create_at` bigint NULL, `notify_at` bigint NULL, PRIMARY KEY (`block_id`)) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
 
 -- Network settings several agents share, so they are edited in one
 -- place. Was the `proxies` array in config.json.
@@ -431,6 +452,26 @@ CREATE TABLE `proxy` (`id` varchar(36) NOT NULL, `name` varchar(100) NOT NULL, `
 --     a process, it points at nothing and nothing joins to it.
 CREATE TABLE `agent` (`id` varchar(36) NOT NULL, `name` varchar(100) NOT NULL, `kind` varchar(32) NOT NULL, `user_id` varchar(36) NULL, `proxy_id` varchar(36) NULL, `bin_path` text NULL, `model` varchar(100) NULL, `prompt` text NULL, `settings` text NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`id`), UNIQUE INDEX `idx_agent_name` (`name`), CONSTRAINT `agent_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL, CONSTRAINT `agent_proxy` FOREIGN KEY (`proxy_id`) REFERENCES `proxy` (`id`) ON DELETE SET NULL) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
 
+-- A board.
+--   channel_id: A remnant of the Mattermost plugin. Nothing writes it.
+--   type: O — open, P — private.
+--   properties: The board's own automation lives here — columns, flows,
+--     prompt and the records of which field is which. JSON on purpose:
+--     it travels with the board, into an export and into a template.
+--   card_properties: The schema of a card's fields. The product's main denormalisation, and
+--     deliberately left alone: the whole webapp filters and groups on it.
+CREATE TABLE `boards` (`id` varchar(36) NOT NULL, `insert_at` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), `team_id` varchar(36) NOT NULL, `channel_id` varchar(36) NULL, `created_by` varchar(36) NULL, `modified_by` varchar(36) NULL, `type` varchar(1) NOT NULL, `title` text NOT NULL, `description` text NULL, `icon` varchar(256) NULL, `show_description` bool NULL, `is_template` bool NULL, `template_version` int NULL DEFAULT 0, `properties` text NULL, `card_properties` text NULL, `create_at` bigint NULL, `update_at` bigint NULL, `delete_at` bigint NULL, `minimum_role` varchar(36) NOT NULL DEFAULT '', PRIMARY KEY (`id`), INDEX `idx_boards_team_id_is_template` (`team_id`, `is_template`), INDEX `idx_boards_channel_id` (`channel_id`)) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
+
+-- A board this machine knows about, whoever's it is. What the app's own
+-- tables point at instead of boards(id), which only has the boards
+-- served by this process.
+--   board_id: The board's own id, on whichever server it lives.
+--   source_id: Where the board is. NULL is this machine, which is every board
+--     until a desktop attaches to a hosted one.
+--   local_board_id: The same board in this process's own table, when it is ours. NULL
+--     for a board on a server: that is what makes the key possible at all.
+CREATE TABLE `board_ref` (`board_id` varchar(36) NOT NULL, `source_id` varchar(64) NULL, `local_board_id` varchar(36) NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`board_id`), CONSTRAINT `board_ref_local` FOREIGN KEY (`local_board_id`) REFERENCES `boards` (`id`) ON DELETE CASCADE) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
+
 -- Everything on a board: cards, views, comments, text, attachments. A
 -- card is a row here with type='card', and it is what every table this
 -- application owns points at.
@@ -442,28 +483,29 @@ CREATE TABLE `agent` (`id` varchar(36) NOT NULL, `name` varchar(100) NOT NULL, `
 --   fields: The card's field values, {property_id: value}.
 CREATE TABLE `blocks` (`id` varchar(36) NOT NULL, `insert_at` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), `parent_id` varchar(36) NULL, `schema` bigint NULL, `type` text NULL, `title` text NULL, `fields` text NULL, `create_at` bigint NULL, `update_at` bigint NULL, `delete_at` bigint NULL, `modified_by` varchar(36) NULL, `channel_id` varchar(36) NULL, `created_by` varchar(36) NULL, `board_id` varchar(36) NULL, PRIMARY KEY (`id`), INDEX `idx_blocks_board_id_parent_id` (`board_id`, `parent_id`)) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
 
--- A board.
---   channel_id: A remnant of the Mattermost plugin. Nothing writes it.
---   type: O — open, P — private.
---   properties: The board's own automation lives here — columns, flows,
---     prompt and the records of which field is which. JSON on purpose:
---     it travels with the board, into an export and into a template.
---   card_properties: The schema of a card's fields. The product's main denormalisation, and
---     deliberately left alone: the whole webapp filters and groups on it.
-CREATE TABLE `boards` (`id` varchar(36) NOT NULL, `insert_at` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), `team_id` varchar(36) NOT NULL, `channel_id` varchar(36) NULL, `created_by` varchar(36) NULL, `modified_by` varchar(36) NULL, `type` varchar(1) NOT NULL, `title` text NOT NULL, `description` text NULL, `icon` varchar(256) NULL, `show_description` bool NULL, `is_template` bool NULL, `template_version` int NULL DEFAULT 0, `properties` text NULL, `card_properties` text NULL, `create_at` bigint NULL, `update_at` bigint NULL, `delete_at` bigint NULL, `minimum_role` varchar(36) NOT NULL DEFAULT '', PRIMARY KEY (`id`), INDEX `idx_boards_team_id_is_template` (`team_id`, `is_template`), INDEX `idx_boards_channel_id` (`channel_id`)) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
+-- A card this machine knows about. The row every table keyed on a card
+-- points at, so the cascade survives the board being somewhere else.
+--   board_id: Which board it is on, and through that which server. Nullable
+--     because three of the writers know a card and not its board — a
+--     stall, a flow event, a checkout — and the board is filled in by
+--     whichever writer knows it.
+--   block_id: The same card in this process's own blocks, when it is ours. This
+--     is the cascade: the card is deleted, the block goes, this row goes,
+--     and everything about the card goes with it.
+CREATE TABLE `card_ref` (`card_id` varchar(36) NOT NULL, `board_id` varchar(36) NULL, `block_id` varchar(36) NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`card_id`), CONSTRAINT `card_ref_board` FOREIGN KEY (`board_id`) REFERENCES `board_ref` (`board_id`) ON DELETE CASCADE, CONSTRAINT `card_ref_block` FOREIGN KEY (`block_id`) REFERENCES `blocks` (`id`) ON DELETE CASCADE) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
 
 -- A run of an agent over ACP. One process, one verdict: unlike a
 -- conversation, it is never resumed, which is why the two are
 -- separate tables and not one row with a transport column.
 --   card_id: NULL for a run that is about no card — naming a branch is one.
 --   finished_at: NULL means the session is still live.
-CREATE TABLE `agent_session` (`id` varchar(36) NOT NULL, `card_id` varchar(36) NULL, `board_id` varchar(36) NULL, `agent_kind` varchar(32) NOT NULL, `acp_session_id` varchar(100) NULL, `status` varchar(24) NOT NULL, `cwd` text NULL, `worktree_path` text NULL, `branch` varchar(255) NULL, `started_at` bigint NOT NULL, `finished_at` bigint NULL, `error_text` text NULL, PRIMARY KEY (`id`), INDEX `idx_agent_session_card` (`card_id`, `started_at`), CONSTRAINT `agent_session_card` FOREIGN KEY (`card_id`) REFERENCES `blocks` (`id`) ON DELETE CASCADE, CONSTRAINT `agent_session_board` FOREIGN KEY (`board_id`) REFERENCES `boards` (`id`) ON DELETE CASCADE, CONSTRAINT `agent_session_status` CHECK (`status` IN ('queued', 'running', 'idle', 'waiting_permission', 'done', 'failed', 'cancelled'))) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
+CREATE TABLE `agent_session` (`id` varchar(36) NOT NULL, `card_id` varchar(36) NULL, `board_id` varchar(36) NULL, `agent_kind` varchar(32) NOT NULL, `acp_session_id` varchar(100) NULL, `status` varchar(24) NOT NULL, `cwd` text NULL, `worktree_path` text NULL, `branch` varchar(255) NULL, `started_at` bigint NOT NULL, `finished_at` bigint NULL, `error_text` text NULL, PRIMARY KEY (`id`), INDEX `idx_agent_session_card` (`card_id`, `started_at`), CONSTRAINT `agent_session_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE CASCADE, CONSTRAINT `agent_session_board` FOREIGN KEY (`board_id`) REFERENCES `board_ref` (`board_id`) ON DELETE CASCADE, CONSTRAINT `agent_session_status` CHECK (`status` IN ('queued', 'running', 'idle', 'waiting_permission', 'done', 'failed', 'cancelled'))) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
 
 -- Which setup questions a board has been asked. It is about this machine
 -- — the answers are folders and hosts here — so it cannot live in the
 -- browser's storage, which the desktop window forgets on every launch.
 --   changed_at: Was `at`. AT is a keyword in Postgres and a name not worth having.
-CREATE TABLE `board_setup` (`board_id` varchar(36) NOT NULL, `step` varchar(32) NOT NULL, `status` varchar(16) NOT NULL, `changed_at` bigint NOT NULL, PRIMARY KEY (`board_id`, `step`), CONSTRAINT `board_setup_board` FOREIGN KEY (`board_id`) REFERENCES `boards` (`id`) ON DELETE CASCADE, CONSTRAINT `board_setup_status` CHECK (`status` IN ('pending', 'done', 'skipped', 'offered'))) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
+CREATE TABLE `board_setup` (`board_id` varchar(36) NOT NULL, `step` varchar(32) NOT NULL, `status` varchar(16) NOT NULL, `changed_at` bigint NOT NULL, PRIMARY KEY (`board_id`, `step`), CONSTRAINT `board_setup_board` FOREIGN KEY (`board_id`) REFERENCES `board_ref` (`board_id`) ON DELETE CASCADE, CONSTRAINT `board_setup_status` CHECK (`status` IN ('pending', 'done', 'skipped', 'offered'))) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
 
 -- One current reason a card is not moving — not a journal. The reason is
 -- true only until somebody fixes what it is about, and a comment would
@@ -471,7 +513,7 @@ CREATE TABLE `board_setup` (`board_id` varchar(36) NOT NULL, `step` varchar(32) 
 --   kind: 'conversation' is the one kind with somewhere to go: open the
 --     terminal. The rest have no button, which is why this is a field and
 --     never a reading of the reason's own Russian.
-CREATE TABLE `card_stall` (`card_id` varchar(36) NOT NULL, `node_id` varchar(64) NULL, `kind` varchar(32) NULL, `reason` text NOT NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`card_id`), CONSTRAINT `card_stall_card` FOREIGN KEY (`card_id`) REFERENCES `blocks` (`id`) ON DELETE CASCADE) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
+CREATE TABLE `card_stall` (`card_id` varchar(36) NOT NULL, `node_id` varchar(64) NULL, `kind` varchar(32) NULL, `reason` text NOT NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`card_id`), CONSTRAINT `card_stall_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE CASCADE) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
 
 -- A named place an agent can work in. Was the `projects` array in
 -- config.json; a card points at it by id, which is also the id of the
@@ -506,7 +548,7 @@ CREATE TABLE `workspace` (`id` varchar(36) NOT NULL, `name` varchar(200) NOT NUL
 --     workspace, and this is the worktree cut from it.
 --   base: What the branch was cut from, and therefore what «merged» means.
 --   released_at: NULL means the checkout is live.
-CREATE TABLE `checkout` (`id` varchar(36) NOT NULL, `workspace_id` varchar(36) NOT NULL, `card_id` varchar(36) NULL, `board_id` varchar(36) NULL, `mode` varchar(16) NOT NULL, `branch` varchar(255) NULL, `path` text NULL, `base` varchar(255) NULL, `created_at` bigint NOT NULL, `released_at` bigint NULL, PRIMARY KEY (`id`), UNIQUE INDEX `idx_checkout_card` (`workspace_id`, `card_id`), UNIQUE INDEX `idx_checkout_board` (`workspace_id`, `board_id`), INDEX `idx_checkout_live` (`workspace_id`, `released_at`), CONSTRAINT `checkout_workspace` FOREIGN KEY (`workspace_id`) REFERENCES `workspace` (`id`) ON DELETE RESTRICT, CONSTRAINT `checkout_card` FOREIGN KEY (`card_id`) REFERENCES `blocks` (`id`) ON DELETE CASCADE, CONSTRAINT `checkout_board` FOREIGN KEY (`board_id`) REFERENCES `boards` (`id`) ON DELETE CASCADE, CONSTRAINT `checkout_mode` CHECK (`mode` IN ('worktree', 'branch', 'plain'))) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
+CREATE TABLE `checkout` (`id` varchar(36) NOT NULL, `workspace_id` varchar(36) NOT NULL, `card_id` varchar(36) NULL, `board_id` varchar(36) NULL, `mode` varchar(16) NOT NULL, `branch` varchar(255) NULL, `path` text NULL, `base` varchar(255) NULL, `created_at` bigint NOT NULL, `released_at` bigint NULL, PRIMARY KEY (`id`), UNIQUE INDEX `idx_checkout_card` (`workspace_id`, `card_id`), UNIQUE INDEX `idx_checkout_board` (`workspace_id`, `board_id`), INDEX `idx_checkout_live` (`workspace_id`, `released_at`), CONSTRAINT `checkout_workspace` FOREIGN KEY (`workspace_id`) REFERENCES `workspace` (`id`) ON DELETE RESTRICT, CONSTRAINT `checkout_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE CASCADE, CONSTRAINT `checkout_board` FOREIGN KEY (`board_id`) REFERENCES `board_ref` (`board_id`) ON DELETE CASCADE, CONSTRAINT `checkout_mode` CHECK (`mode` IN ('worktree', 'branch', 'plain'))) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
 
 -- A conversation with an agent: its CLI in a pty, keyed (card, node).
 -- The row outlives every process that ever drew it — that is what makes
@@ -520,12 +562,12 @@ CREATE TABLE `checkout` (`id` varchar(36) NOT NULL, `workspace_id` varchar(36) N
 --   summary: The agent's own line about what this conversation is doing.
 --   workdir_path: Was repo_path. Becomes workspace_id in the second half of step 2,
 --     together with the code that resolves a folder to its registry id.
-CREATE TABLE `conversation` (`id` varchar(36) NOT NULL, `card_id` varchar(36) NULL, `board_id` varchar(36) NULL, `node_id` varchar(64) NOT NULL, `column_name` varchar(200) NULL, `title` text NULL, `summary` text NULL, `agent` varchar(100) NULL, `kind` varchar(32) NULL, `workdir_path` text NULL, `cwd` text NULL, `branch` varchar(255) NULL, `started_at` bigint NOT NULL, `ended_at` bigint NULL, `exit_code` bigint NULL, PRIMARY KEY (`id`), INDEX `idx_conversation_card` (`card_id`, `started_at`), INDEX `idx_conversation_card_node` (`card_id`, `node_id`, `started_at`), CONSTRAINT `conversation_card` FOREIGN KEY (`card_id`) REFERENCES `blocks` (`id`) ON DELETE CASCADE, CONSTRAINT `conversation_board` FOREIGN KEY (`board_id`) REFERENCES `boards` (`id`) ON DELETE CASCADE) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
+CREATE TABLE `conversation` (`id` varchar(36) NOT NULL, `card_id` varchar(36) NULL, `board_id` varchar(36) NULL, `node_id` varchar(64) NOT NULL, `column_name` varchar(200) NULL, `title` text NULL, `summary` text NULL, `agent` varchar(100) NULL, `kind` varchar(32) NULL, `workdir_path` text NULL, `cwd` text NULL, `branch` varchar(255) NULL, `started_at` bigint NOT NULL, `ended_at` bigint NULL, `exit_code` bigint NULL, PRIMARY KEY (`id`), INDEX `idx_conversation_card` (`card_id`, `started_at`), INDEX `idx_conversation_card_node` (`card_id`, `node_id`, `started_at`), CONSTRAINT `conversation_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE CASCADE, CONSTRAINT `conversation_board` FOREIGN KEY (`board_id`) REFERENCES `board_ref` (`board_id`) ON DELETE CASCADE) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
 
 -- Every transition a card made, and what the agent said on it.
 --   said: The agent's closing words: what a conversation is told instead of
 --     its task when the card comes back to it.
-CREATE TABLE `flow_event` (`id` varchar(36) NOT NULL, `card_id` varchar(36) NOT NULL, `flow_id` varchar(36) NULL, `from_node` varchar(64) NULL, `to_node` varchar(64) NOT NULL, `on_kind` varchar(32) NOT NULL, `detail` text NULL, `said` text NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`id`), INDEX `idx_flow_event_card` (`card_id`, `id`), CONSTRAINT `flow_event_card` FOREIGN KEY (`card_id`) REFERENCES `blocks` (`id`) ON DELETE CASCADE) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
+CREATE TABLE `flow_event` (`id` varchar(36) NOT NULL, `card_id` varchar(36) NOT NULL, `flow_id` varchar(36) NULL, `from_node` varchar(64) NULL, `to_node` varchar(64) NOT NULL, `on_kind` varchar(32) NOT NULL, `detail` text NULL, `said` text NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`id`), INDEX `idx_flow_event_card` (`card_id`, `id`), CONSTRAINT `flow_event_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE CASCADE) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
 
 -- This machine's index of where each card is on its route. The truth is
 -- on the card itself, so it travels with the board; this is what the VCS
@@ -535,7 +577,7 @@ CREATE TABLE `flow_event` (`id` varchar(36) NOT NULL, `card_id` varchar(36) NOT 
 --     foreign key: routes live in the board's JSON, not in a table.
 --     Nullable because a row carried over from before routes had ids
 --     knows only a name; the card's own record supplies the id.
-CREATE TABLE `flow_state` (`card_id` varchar(36) NOT NULL, `board_id` varchar(36) NULL, `flow_id` varchar(36) NULL, `node_id` varchar(64) NOT NULL, `branch` varchar(255) NULL, `workdir_path` text NULL, `entered_at` bigint NOT NULL, PRIMARY KEY (`card_id`), CONSTRAINT `flow_state_card` FOREIGN KEY (`card_id`) REFERENCES `blocks` (`id`) ON DELETE CASCADE, CONSTRAINT `flow_state_board` FOREIGN KEY (`board_id`) REFERENCES `boards` (`id`) ON DELETE CASCADE) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
+CREATE TABLE `flow_state` (`card_id` varchar(36) NOT NULL, `board_id` varchar(36) NULL, `flow_id` varchar(36) NULL, `node_id` varchar(64) NOT NULL, `branch` varchar(255) NULL, `workdir_path` text NULL, `entered_at` bigint NOT NULL, PRIMARY KEY (`card_id`), CONSTRAINT `flow_state_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE CASCADE, CONSTRAINT `flow_state_board` FOREIGN KEY (`board_id`) REFERENCES `board_ref` (`board_id`) ON DELETE CASCADE) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
 
 -- What happened during a session, in order. The id is a UUIDv7 rather
 -- than an autoincrement: v7 sorts by time, so ORDER BY id still means
@@ -546,17 +588,17 @@ CREATE TABLE `session_event` (`id` varchar(36) NOT NULL, `session_id` varchar(36
 -- Why nothing happened — the only question anybody asks of a source.
 -- Deleting the card it produced does not delete the line: what a source
 -- decided is a fact about the source.
-CREATE TABLE `source_event` (`id` varchar(36) NOT NULL, `source` varchar(100) NOT NULL, `external_id` varchar(255) NULL, `rule` varchar(100) NULL, `outcome` varchar(16) NOT NULL, `card_id` varchar(36) NULL, `detail` text NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`id`), INDEX `idx_source_event_source` (`source`, `id`), CONSTRAINT `source_event_card` FOREIGN KEY (`card_id`) REFERENCES `blocks` (`id`) ON DELETE SET NULL, CONSTRAINT `source_event_outcome` CHECK (`outcome` IN ('created', 'commented', 'inbox', 'dropped', 'failed', 'skipped'))) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
+CREATE TABLE `source_event` (`id` varchar(36) NOT NULL, `source` varchar(100) NOT NULL, `external_id` varchar(255) NULL, `rule` varchar(100) NULL, `outcome` varchar(16) NOT NULL, `card_id` varchar(36) NULL, `detail` text NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`id`), INDEX `idx_source_event_source` (`source`, `id`), CONSTRAINT `source_event_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE SET NULL, CONSTRAINT `source_event_outcome` CHECK (`outcome` IN ('created', 'commented', 'inbox', 'dropped', 'failed', 'skipped'))) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
 
 -- What a source has already brought. The same letter arriving twice adds
 -- to the card it made rather than making a second one.
 --   version: The service's own updated/etag: changed means there is something
 --     to add.
-CREATE TABLE `source_item` (`source` varchar(100) NOT NULL, `external_id` varchar(255) NOT NULL, `version` varchar(255) NULL, `card_id` varchar(36) NULL, `created_at` bigint NOT NULL, `updated_at` bigint NOT NULL, PRIMARY KEY (`source`, `external_id`), INDEX `idx_source_item_card` (`card_id`), CONSTRAINT `source_item_card` FOREIGN KEY (`card_id`) REFERENCES `blocks` (`id`) ON DELETE SET NULL) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
+CREATE TABLE `source_item` (`source` varchar(100) NOT NULL, `external_id` varchar(255) NOT NULL, `version` varchar(255) NULL, `card_id` varchar(36) NULL, `created_at` bigint NOT NULL, `updated_at` bigint NOT NULL, PRIMARY KEY (`source`, `external_id`), INDEX `idx_source_item_card` (`card_id`), CONSTRAINT `source_item_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE SET NULL) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
 
 -- A card waiting for its column to free up a place.
 --   column_key: board|option — the queue belongs to one column of one board.
-CREATE TABLE `stage_queue` (`card_id` varchar(36) NOT NULL, `board_id` varchar(36) NULL, `column_key` varchar(128) NOT NULL, `flow_id` varchar(36) NULL, `node_id` varchar(64) NULL, `queued_at` bigint NOT NULL, PRIMARY KEY (`card_id`), INDEX `idx_stage_queue_column` (`column_key`, `queued_at`), CONSTRAINT `stage_queue_card` FOREIGN KEY (`card_id`) REFERENCES `blocks` (`id`) ON DELETE CASCADE, CONSTRAINT `stage_queue_board` FOREIGN KEY (`board_id`) REFERENCES `boards` (`id`) ON DELETE CASCADE) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
+CREATE TABLE `stage_queue` (`card_id` varchar(36) NOT NULL, `board_id` varchar(36) NULL, `column_key` varchar(128) NOT NULL, `flow_id` varchar(36) NULL, `node_id` varchar(64) NULL, `queued_at` bigint NOT NULL, PRIMARY KEY (`card_id`), INDEX `idx_stage_queue_column` (`column_key`, `queued_at`), CONSTRAINT `stage_queue_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE CASCADE, CONSTRAINT `stage_queue_board` FOREIGN KEY (`board_id`) REFERENCES `board_ref` (`board_id`) ON DELETE CASCADE) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
 
 -- This branch event has already been acted on. Keyed by the workspace
 -- rather than by its path: a folder somebody moved used to keep its
@@ -574,9 +616,6 @@ CREATE TABLE `workspace_board` (`workspace_id` varchar(36) NOT NULL, `board_id` 
 {{end}}
 
 {{if .postgres}}
--- A block that has changed and whose watchers have not been told yet.
-CREATE TABLE "notification_hints" ("block_type" character varying(10) NULL, "block_id" character varying(36) NOT NULL, "modified_by_id" character varying(36) NULL, "create_at" bigint NULL, "notify_at" bigint NULL, PRIMARY KEY ("block_id"));
-
 -- One route event, handled once. `key` was the column's name and is a
 -- reserved word in MySQL, so it is `token` — cheaper than backticks in
 -- every query for ever.
@@ -586,6 +625,11 @@ CREATE TABLE "idempotency" ("token" character varying(255) NOT NULL, "session_id
 -- reserved word in MySQL, so it is `token` — cheaper than backticks in
 -- every query for ever.
 CREATE INDEX "idx_idempotency_created" ON "idempotency" ("created_at");
+
+-- The team a board belongs to. In this product there is exactly one and
+-- its id is '0' — but the column is in two hundred queries of the fork,
+-- and working with teams stays as it is.
+CREATE TABLE "teams" ("id" character varying(36) NOT NULL, "signup_token" character varying(100) NOT NULL, "settings" text NULL, "modified_by" character varying(36) NULL, "update_at" bigint NULL, PRIMARY KEY ("id"));
 
 -- A logged-in session. Its token is what proxy.go hands the page.
 CREATE TABLE "sessions" ("id" character varying(100) NOT NULL, "token" character varying(100) NULL, "user_id" character varying(100) NULL, "props" text NULL, "create_at" bigint NULL, "update_at" bigint NULL, "auth_service" character varying(20) NULL, PRIMARY KEY ("id"));
@@ -608,6 +652,14 @@ CREATE TABLE "system_settings" ("id" character varying(100) NOT NULL, "value" te
 --     its own — and SQLite cannot ALTER one in.
 CREATE TABLE "users" ("id" character varying(100) NOT NULL, "username" character varying(100) NULL, "email" character varying(255) NULL, "password" character varying(100) NULL, "mfa_secret" character varying(100) NULL, "auth_service" character varying(20) NULL, "auth_data" character varying(255) NULL, "props" text NULL, "role" character varying(16) NULL, "kind" character varying(32) NULL, "create_at" bigint NULL, "update_at" bigint NULL, "delete_at" bigint NULL, PRIMARY KEY ("id"), CONSTRAINT "users_role" CHECK ("role" IS NULL OR "role" IN ('admin', 'member')));
 
+-- Where a card's branch is published. Was the `deploys` array in
+-- config.json, and a route's stage named it by name.
+CREATE TABLE "deploy_target" ("id" character varying(36) NOT NULL, "name" character varying(100) NOT NULL, "ssh_host" character varying(255) NOT NULL, "ssh_user" character varying(64) NULL, "ssh_port" bigint NULL, "ssh_key" text NULL, "base_app" character varying(100) NULL, "base_domain" character varying(255) NULL, "created_at" bigint NOT NULL, PRIMARY KEY ("id"));
+
+-- Where a card's branch is published. Was the `deploys` array in
+-- config.json, and a route's stage named it by name.
+CREATE UNIQUE INDEX "idx_deploy_target_name" ON "deploy_target" ("name");
+
 -- Every version of every board, one row per edit, never pruned. The
 -- upstream's audit and undo mechanism; this product's undo is in the page
 -- (webapp/src/undomanager.ts) and there is no history screen, so whether
@@ -621,14 +673,6 @@ CREATE TABLE "users" ("id" character varying(100) NOT NULL, "username" character
 --   card_properties: The schema of a card's fields. The product's main denormalisation, and
 --     deliberately left alone: the whole webapp filters and groups on it.
 CREATE TABLE "boards_history" ("id" character varying(36) NOT NULL, "insert_at" timestamptz NOT NULL DEFAULT NOW(), "team_id" character varying(36) NOT NULL, "channel_id" character varying(36) NULL, "created_by" character varying(36) NULL, "modified_by" character varying(36) NULL, "type" character varying(1) NOT NULL, "title" text NOT NULL, "description" text NULL, "icon" character varying(256) NULL, "show_description" boolean NULL, "is_template" boolean NULL, "template_version" integer NULL DEFAULT 0, "properties" text NULL, "card_properties" text NULL, "create_at" bigint NULL, "update_at" bigint NULL, "delete_at" bigint NULL, "minimum_role" character varying(36) NOT NULL DEFAULT '', PRIMARY KEY ("id", "insert_at"));
-
--- Where a card's branch is published. Was the `deploys` array in
--- config.json, and a route's stage named it by name.
-CREATE TABLE "deploy_target" ("id" character varying(36) NOT NULL, "name" character varying(100) NOT NULL, "ssh_host" character varying(255) NOT NULL, "ssh_user" character varying(64) NULL, "ssh_port" bigint NULL, "ssh_key" text NULL, "base_app" character varying(100) NULL, "base_domain" character varying(255) NULL, "created_at" bigint NOT NULL, PRIMARY KEY ("id"));
-
--- Where a card's branch is published. Was the `deploys` array in
--- config.json, and a route's stage named it by name.
-CREATE UNIQUE INDEX "idx_deploy_target_name" ON "deploy_target" ("name");
 
 -- Every version of every block. See boards_history.
 --   id: Nullable, which a primary key makes impossible in practice — but this
@@ -702,10 +746,8 @@ CREATE TABLE "subscriptions" ("block_type" character varying(10) NULL, "block_id
 -- Who is watching a block, for the notification service.
 CREATE INDEX "idx_subscriptions_subscriber_id" ON "subscriptions" ("subscriber_id");
 
--- The team a board belongs to. In this product there is exactly one and
--- its id is '0' — but the column is in two hundred queries of the fork,
--- and working with teams stays as it is.
-CREATE TABLE "teams" ("id" character varying(36) NOT NULL, "signup_token" character varying(100) NOT NULL, "settings" text NULL, "modified_by" character varying(36) NULL, "update_at" bigint NULL, PRIMARY KEY ("id"));
+-- A block that has changed and whose watchers have not been told yet.
+CREATE TABLE "notification_hints" ("block_type" character varying(10) NULL, "block_id" character varying(36) NOT NULL, "modified_by_id" character varying(36) NULL, "create_at" bigint NULL, "notify_at" bigint NULL, PRIMARY KEY ("block_id"));
 
 -- Network settings several agents share, so they are edited in one
 -- place. Was the `proxies` array in config.json.
@@ -745,28 +787,6 @@ CREATE TABLE "agent" ("id" character varying(36) NOT NULL, "name" character vary
 --     a process, it points at nothing and nothing joins to it.
 CREATE UNIQUE INDEX "idx_agent_name" ON "agent" ("name");
 
--- Everything on a board: cards, views, comments, text, attachments. A
--- card is a row here with type='card', and it is what every table this
--- application owns points at.
---   id: Nullable, which a primary key makes impossible in practice — but this
---     is what the migrations leave, and reproducing it is the point.
---   parent_id: The tree inside a board: a comment or a text block hangs off a card.
---   schema: A version number for the row's own shape. Backticked by the fork's
---     queries on MySQL, where `schema` is reserved.
---   fields: The card's field values, {property_id: value}.
-CREATE TABLE "blocks" ("id" character varying(36) NOT NULL, "insert_at" timestamptz NOT NULL DEFAULT NOW(), "parent_id" character varying(36) NULL, "schema" bigint NULL, "type" text NULL, "title" text NULL, "fields" text NULL, "create_at" bigint NULL, "update_at" bigint NULL, "delete_at" bigint NULL, "modified_by" character varying(36) NULL, "channel_id" character varying(36) NULL, "created_by" character varying(36) NULL, "board_id" character varying(36) NULL, PRIMARY KEY ("id"));
-
--- Everything on a board: cards, views, comments, text, attachments. A
--- card is a row here with type='card', and it is what every table this
--- application owns points at.
---   id: Nullable, which a primary key makes impossible in practice — but this
---     is what the migrations leave, and reproducing it is the point.
---   parent_id: The tree inside a board: a comment or a text block hangs off a card.
---   schema: A version number for the row's own shape. Backticked by the fork's
---     queries on MySQL, where `schema` is reserved.
---   fields: The card's field values, {property_id: value}.
-CREATE INDEX "idx_blocks_board_id_parent_id" ON "blocks" ("board_id", "parent_id");
-
 -- A board.
 --   channel_id: A remnant of the Mattermost plugin. Nothing writes it.
 --   type: O — open, P — private.
@@ -797,12 +817,55 @@ CREATE INDEX "idx_boards_team_id_is_template" ON "boards" ("team_id", "is_templa
 --     deliberately left alone: the whole webapp filters and groups on it.
 CREATE INDEX "idx_boards_channel_id" ON "boards" ("channel_id");
 
+-- A board this machine knows about, whoever's it is. What the app's own
+-- tables point at instead of boards(id), which only has the boards
+-- served by this process.
+--   board_id: The board's own id, on whichever server it lives.
+--   source_id: Where the board is. NULL is this machine, which is every board
+--     until a desktop attaches to a hosted one.
+--   local_board_id: The same board in this process's own table, when it is ours. NULL
+--     for a board on a server: that is what makes the key possible at all.
+CREATE TABLE "board_ref" ("board_id" character varying(36) NOT NULL, "source_id" character varying(64) NULL, "local_board_id" character varying(36) NULL, "created_at" bigint NOT NULL, PRIMARY KEY ("board_id"), CONSTRAINT "board_ref_local" FOREIGN KEY ("local_board_id") REFERENCES "boards" ("id") ON DELETE CASCADE);
+
+-- Everything on a board: cards, views, comments, text, attachments. A
+-- card is a row here with type='card', and it is what every table this
+-- application owns points at.
+--   id: Nullable, which a primary key makes impossible in practice — but this
+--     is what the migrations leave, and reproducing it is the point.
+--   parent_id: The tree inside a board: a comment or a text block hangs off a card.
+--   schema: A version number for the row's own shape. Backticked by the fork's
+--     queries on MySQL, where `schema` is reserved.
+--   fields: The card's field values, {property_id: value}.
+CREATE TABLE "blocks" ("id" character varying(36) NOT NULL, "insert_at" timestamptz NOT NULL DEFAULT NOW(), "parent_id" character varying(36) NULL, "schema" bigint NULL, "type" text NULL, "title" text NULL, "fields" text NULL, "create_at" bigint NULL, "update_at" bigint NULL, "delete_at" bigint NULL, "modified_by" character varying(36) NULL, "channel_id" character varying(36) NULL, "created_by" character varying(36) NULL, "board_id" character varying(36) NULL, PRIMARY KEY ("id"));
+
+-- Everything on a board: cards, views, comments, text, attachments. A
+-- card is a row here with type='card', and it is what every table this
+-- application owns points at.
+--   id: Nullable, which a primary key makes impossible in practice — but this
+--     is what the migrations leave, and reproducing it is the point.
+--   parent_id: The tree inside a board: a comment or a text block hangs off a card.
+--   schema: A version number for the row's own shape. Backticked by the fork's
+--     queries on MySQL, where `schema` is reserved.
+--   fields: The card's field values, {property_id: value}.
+CREATE INDEX "idx_blocks_board_id_parent_id" ON "blocks" ("board_id", "parent_id");
+
+-- A card this machine knows about. The row every table keyed on a card
+-- points at, so the cascade survives the board being somewhere else.
+--   board_id: Which board it is on, and through that which server. Nullable
+--     because three of the writers know a card and not its board — a
+--     stall, a flow event, a checkout — and the board is filled in by
+--     whichever writer knows it.
+--   block_id: The same card in this process's own blocks, when it is ours. This
+--     is the cascade: the card is deleted, the block goes, this row goes,
+--     and everything about the card goes with it.
+CREATE TABLE "card_ref" ("card_id" character varying(36) NOT NULL, "board_id" character varying(36) NULL, "block_id" character varying(36) NULL, "created_at" bigint NOT NULL, PRIMARY KEY ("card_id"), CONSTRAINT "card_ref_board" FOREIGN KEY ("board_id") REFERENCES "board_ref" ("board_id") ON DELETE CASCADE, CONSTRAINT "card_ref_block" FOREIGN KEY ("block_id") REFERENCES "blocks" ("id") ON DELETE CASCADE);
+
 -- A run of an agent over ACP. One process, one verdict: unlike a
 -- conversation, it is never resumed, which is why the two are
 -- separate tables and not one row with a transport column.
 --   card_id: NULL for a run that is about no card — naming a branch is one.
 --   finished_at: NULL means the session is still live.
-CREATE TABLE "agent_session" ("id" character varying(36) NOT NULL, "card_id" character varying(36) NULL, "board_id" character varying(36) NULL, "agent_kind" character varying(32) NOT NULL, "acp_session_id" character varying(100) NULL, "status" character varying(24) NOT NULL, "cwd" text NULL, "worktree_path" text NULL, "branch" character varying(255) NULL, "started_at" bigint NOT NULL, "finished_at" bigint NULL, "error_text" text NULL, PRIMARY KEY ("id"), CONSTRAINT "agent_session_card" FOREIGN KEY ("card_id") REFERENCES "blocks" ("id") ON DELETE CASCADE, CONSTRAINT "agent_session_board" FOREIGN KEY ("board_id") REFERENCES "boards" ("id") ON DELETE CASCADE, CONSTRAINT "agent_session_status" CHECK ("status" IN ('queued', 'running', 'idle', 'waiting_permission', 'done', 'failed', 'cancelled')));
+CREATE TABLE "agent_session" ("id" character varying(36) NOT NULL, "card_id" character varying(36) NULL, "board_id" character varying(36) NULL, "agent_kind" character varying(32) NOT NULL, "acp_session_id" character varying(100) NULL, "status" character varying(24) NOT NULL, "cwd" text NULL, "worktree_path" text NULL, "branch" character varying(255) NULL, "started_at" bigint NOT NULL, "finished_at" bigint NULL, "error_text" text NULL, PRIMARY KEY ("id"), CONSTRAINT "agent_session_card" FOREIGN KEY ("card_id") REFERENCES "card_ref" ("card_id") ON DELETE CASCADE, CONSTRAINT "agent_session_board" FOREIGN KEY ("board_id") REFERENCES "board_ref" ("board_id") ON DELETE CASCADE, CONSTRAINT "agent_session_status" CHECK ("status" IN ('queued', 'running', 'idle', 'waiting_permission', 'done', 'failed', 'cancelled')));
 
 -- A run of an agent over ACP. One process, one verdict: unlike a
 -- conversation, it is never resumed, which is why the two are
@@ -815,7 +878,7 @@ CREATE INDEX "idx_agent_session_card" ON "agent_session" ("card_id", "started_at
 -- — the answers are folders and hosts here — so it cannot live in the
 -- browser's storage, which the desktop window forgets on every launch.
 --   changed_at: Was `at`. AT is a keyword in Postgres and a name not worth having.
-CREATE TABLE "board_setup" ("board_id" character varying(36) NOT NULL, "step" character varying(32) NOT NULL, "status" character varying(16) NOT NULL, "changed_at" bigint NOT NULL, PRIMARY KEY ("board_id", "step"), CONSTRAINT "board_setup_board" FOREIGN KEY ("board_id") REFERENCES "boards" ("id") ON DELETE CASCADE, CONSTRAINT "board_setup_status" CHECK ("status" IN ('pending', 'done', 'skipped', 'offered')));
+CREATE TABLE "board_setup" ("board_id" character varying(36) NOT NULL, "step" character varying(32) NOT NULL, "status" character varying(16) NOT NULL, "changed_at" bigint NOT NULL, PRIMARY KEY ("board_id", "step"), CONSTRAINT "board_setup_board" FOREIGN KEY ("board_id") REFERENCES "board_ref" ("board_id") ON DELETE CASCADE, CONSTRAINT "board_setup_status" CHECK ("status" IN ('pending', 'done', 'skipped', 'offered')));
 
 -- One current reason a card is not moving — not a journal. The reason is
 -- true only until somebody fixes what it is about, and a comment would
@@ -823,7 +886,7 @@ CREATE TABLE "board_setup" ("board_id" character varying(36) NOT NULL, "step" ch
 --   kind: 'conversation' is the one kind with somewhere to go: open the
 --     terminal. The rest have no button, which is why this is a field and
 --     never a reading of the reason's own Russian.
-CREATE TABLE "card_stall" ("card_id" character varying(36) NOT NULL, "node_id" character varying(64) NULL, "kind" character varying(32) NULL, "reason" text NOT NULL, "created_at" bigint NOT NULL, PRIMARY KEY ("card_id"), CONSTRAINT "card_stall_card" FOREIGN KEY ("card_id") REFERENCES "blocks" ("id") ON DELETE CASCADE);
+CREATE TABLE "card_stall" ("card_id" character varying(36) NOT NULL, "node_id" character varying(64) NULL, "kind" character varying(32) NULL, "reason" text NOT NULL, "created_at" bigint NOT NULL, PRIMARY KEY ("card_id"), CONSTRAINT "card_stall_card" FOREIGN KEY ("card_id") REFERENCES "card_ref" ("card_id") ON DELETE CASCADE);
 
 -- A named place an agent can work in. Was the `projects` array in
 -- config.json; a card points at it by id, which is also the id of the
@@ -875,7 +938,7 @@ CREATE UNIQUE INDEX "idx_workspace_name" ON "workspace" ("name");
 --     workspace, and this is the worktree cut from it.
 --   base: What the branch was cut from, and therefore what «merged» means.
 --   released_at: NULL means the checkout is live.
-CREATE TABLE "checkout" ("id" character varying(36) NOT NULL, "workspace_id" character varying(36) NOT NULL, "card_id" character varying(36) NULL, "board_id" character varying(36) NULL, "mode" character varying(16) NOT NULL, "branch" character varying(255) NULL, "path" text NULL, "base" character varying(255) NULL, "created_at" bigint NOT NULL, "released_at" bigint NULL, PRIMARY KEY ("id"), CONSTRAINT "checkout_workspace" FOREIGN KEY ("workspace_id") REFERENCES "workspace" ("id") ON DELETE RESTRICT, CONSTRAINT "checkout_card" FOREIGN KEY ("card_id") REFERENCES "blocks" ("id") ON DELETE CASCADE, CONSTRAINT "checkout_board" FOREIGN KEY ("board_id") REFERENCES "boards" ("id") ON DELETE CASCADE, CONSTRAINT "checkout_mode" CHECK ("mode" IN ('worktree', 'branch', 'plain')));
+CREATE TABLE "checkout" ("id" character varying(36) NOT NULL, "workspace_id" character varying(36) NOT NULL, "card_id" character varying(36) NULL, "board_id" character varying(36) NULL, "mode" character varying(16) NOT NULL, "branch" character varying(255) NULL, "path" text NULL, "base" character varying(255) NULL, "created_at" bigint NOT NULL, "released_at" bigint NULL, PRIMARY KEY ("id"), CONSTRAINT "checkout_workspace" FOREIGN KEY ("workspace_id") REFERENCES "workspace" ("id") ON DELETE RESTRICT, CONSTRAINT "checkout_card" FOREIGN KEY ("card_id") REFERENCES "card_ref" ("card_id") ON DELETE CASCADE, CONSTRAINT "checkout_board" FOREIGN KEY ("board_id") REFERENCES "board_ref" ("board_id") ON DELETE CASCADE, CONSTRAINT "checkout_mode" CHECK ("mode" IN ('worktree', 'branch', 'plain')));
 
 -- The directory and the branch one owner holds in one workspace. The
 -- owner is a card, or a board for a conversation with no card — two
@@ -943,7 +1006,7 @@ CREATE INDEX "idx_checkout_live" ON "checkout" ("workspace_id", "released_at");
 --   summary: The agent's own line about what this conversation is doing.
 --   workdir_path: Was repo_path. Becomes workspace_id in the second half of step 2,
 --     together with the code that resolves a folder to its registry id.
-CREATE TABLE "conversation" ("id" character varying(36) NOT NULL, "card_id" character varying(36) NULL, "board_id" character varying(36) NULL, "node_id" character varying(64) NOT NULL, "column_name" character varying(200) NULL, "title" text NULL, "summary" text NULL, "agent" character varying(100) NULL, "kind" character varying(32) NULL, "workdir_path" text NULL, "cwd" text NULL, "branch" character varying(255) NULL, "started_at" bigint NOT NULL, "ended_at" bigint NULL, "exit_code" bigint NULL, PRIMARY KEY ("id"), CONSTRAINT "conversation_card" FOREIGN KEY ("card_id") REFERENCES "blocks" ("id") ON DELETE CASCADE, CONSTRAINT "conversation_board" FOREIGN KEY ("board_id") REFERENCES "boards" ("id") ON DELETE CASCADE);
+CREATE TABLE "conversation" ("id" character varying(36) NOT NULL, "card_id" character varying(36) NULL, "board_id" character varying(36) NULL, "node_id" character varying(64) NOT NULL, "column_name" character varying(200) NULL, "title" text NULL, "summary" text NULL, "agent" character varying(100) NULL, "kind" character varying(32) NULL, "workdir_path" text NULL, "cwd" text NULL, "branch" character varying(255) NULL, "started_at" bigint NOT NULL, "ended_at" bigint NULL, "exit_code" bigint NULL, PRIMARY KEY ("id"), CONSTRAINT "conversation_card" FOREIGN KEY ("card_id") REFERENCES "card_ref" ("card_id") ON DELETE CASCADE, CONSTRAINT "conversation_board" FOREIGN KEY ("board_id") REFERENCES "board_ref" ("board_id") ON DELETE CASCADE);
 
 -- A conversation with an agent: its CLI in a pty, keyed (card, node).
 -- The row outlives every process that ever drew it — that is what makes
@@ -976,7 +1039,7 @@ CREATE INDEX "idx_conversation_card_node" ON "conversation" ("card_id", "node_id
 -- Every transition a card made, and what the agent said on it.
 --   said: The agent's closing words: what a conversation is told instead of
 --     its task when the card comes back to it.
-CREATE TABLE "flow_event" ("id" character varying(36) NOT NULL, "card_id" character varying(36) NOT NULL, "flow_id" character varying(36) NULL, "from_node" character varying(64) NULL, "to_node" character varying(64) NOT NULL, "on_kind" character varying(32) NOT NULL, "detail" text NULL, "said" text NULL, "created_at" bigint NOT NULL, PRIMARY KEY ("id"), CONSTRAINT "flow_event_card" FOREIGN KEY ("card_id") REFERENCES "blocks" ("id") ON DELETE CASCADE);
+CREATE TABLE "flow_event" ("id" character varying(36) NOT NULL, "card_id" character varying(36) NOT NULL, "flow_id" character varying(36) NULL, "from_node" character varying(64) NULL, "to_node" character varying(64) NOT NULL, "on_kind" character varying(32) NOT NULL, "detail" text NULL, "said" text NULL, "created_at" bigint NOT NULL, PRIMARY KEY ("id"), CONSTRAINT "flow_event_card" FOREIGN KEY ("card_id") REFERENCES "card_ref" ("card_id") ON DELETE CASCADE);
 
 -- Every transition a card made, and what the agent said on it.
 --   said: The agent's closing words: what a conversation is told instead of
@@ -991,7 +1054,7 @@ CREATE INDEX "idx_flow_event_card" ON "flow_event" ("card_id", "id");
 --     foreign key: routes live in the board's JSON, not in a table.
 --     Nullable because a row carried over from before routes had ids
 --     knows only a name; the card's own record supplies the id.
-CREATE TABLE "flow_state" ("card_id" character varying(36) NOT NULL, "board_id" character varying(36) NULL, "flow_id" character varying(36) NULL, "node_id" character varying(64) NOT NULL, "branch" character varying(255) NULL, "workdir_path" text NULL, "entered_at" bigint NOT NULL, PRIMARY KEY ("card_id"), CONSTRAINT "flow_state_card" FOREIGN KEY ("card_id") REFERENCES "blocks" ("id") ON DELETE CASCADE, CONSTRAINT "flow_state_board" FOREIGN KEY ("board_id") REFERENCES "boards" ("id") ON DELETE CASCADE);
+CREATE TABLE "flow_state" ("card_id" character varying(36) NOT NULL, "board_id" character varying(36) NULL, "flow_id" character varying(36) NULL, "node_id" character varying(64) NOT NULL, "branch" character varying(255) NULL, "workdir_path" text NULL, "entered_at" bigint NOT NULL, PRIMARY KEY ("card_id"), CONSTRAINT "flow_state_card" FOREIGN KEY ("card_id") REFERENCES "card_ref" ("card_id") ON DELETE CASCADE, CONSTRAINT "flow_state_board" FOREIGN KEY ("board_id") REFERENCES "board_ref" ("board_id") ON DELETE CASCADE);
 
 -- What happened during a session, in order. The id is a UUIDv7 rather
 -- than an autoincrement: v7 sorts by time, so ORDER BY id still means
@@ -1008,7 +1071,7 @@ CREATE INDEX "idx_session_event_session" ON "session_event" ("session_id", "id")
 -- Why nothing happened — the only question anybody asks of a source.
 -- Deleting the card it produced does not delete the line: what a source
 -- decided is a fact about the source.
-CREATE TABLE "source_event" ("id" character varying(36) NOT NULL, "source" character varying(100) NOT NULL, "external_id" character varying(255) NULL, "rule" character varying(100) NULL, "outcome" character varying(16) NOT NULL, "card_id" character varying(36) NULL, "detail" text NULL, "created_at" bigint NOT NULL, PRIMARY KEY ("id"), CONSTRAINT "source_event_card" FOREIGN KEY ("card_id") REFERENCES "blocks" ("id") ON DELETE SET NULL, CONSTRAINT "source_event_outcome" CHECK ("outcome" IN ('created', 'commented', 'inbox', 'dropped', 'failed', 'skipped')));
+CREATE TABLE "source_event" ("id" character varying(36) NOT NULL, "source" character varying(100) NOT NULL, "external_id" character varying(255) NULL, "rule" character varying(100) NULL, "outcome" character varying(16) NOT NULL, "card_id" character varying(36) NULL, "detail" text NULL, "created_at" bigint NOT NULL, PRIMARY KEY ("id"), CONSTRAINT "source_event_card" FOREIGN KEY ("card_id") REFERENCES "card_ref" ("card_id") ON DELETE SET NULL, CONSTRAINT "source_event_outcome" CHECK ("outcome" IN ('created', 'commented', 'inbox', 'dropped', 'failed', 'skipped')));
 
 -- Why nothing happened — the only question anybody asks of a source.
 -- Deleting the card it produced does not delete the line: what a source
@@ -1019,7 +1082,7 @@ CREATE INDEX "idx_source_event_source" ON "source_event" ("source", "id");
 -- to the card it made rather than making a second one.
 --   version: The service's own updated/etag: changed means there is something
 --     to add.
-CREATE TABLE "source_item" ("source" character varying(100) NOT NULL, "external_id" character varying(255) NOT NULL, "version" character varying(255) NULL, "card_id" character varying(36) NULL, "created_at" bigint NOT NULL, "updated_at" bigint NOT NULL, PRIMARY KEY ("source", "external_id"), CONSTRAINT "source_item_card" FOREIGN KEY ("card_id") REFERENCES "blocks" ("id") ON DELETE SET NULL);
+CREATE TABLE "source_item" ("source" character varying(100) NOT NULL, "external_id" character varying(255) NOT NULL, "version" character varying(255) NULL, "card_id" character varying(36) NULL, "created_at" bigint NOT NULL, "updated_at" bigint NOT NULL, PRIMARY KEY ("source", "external_id"), CONSTRAINT "source_item_card" FOREIGN KEY ("card_id") REFERENCES "card_ref" ("card_id") ON DELETE SET NULL);
 
 -- What a source has already brought. The same letter arriving twice adds
 -- to the card it made rather than making a second one.
@@ -1029,7 +1092,7 @@ CREATE INDEX "idx_source_item_card" ON "source_item" ("card_id");
 
 -- A card waiting for its column to free up a place.
 --   column_key: board|option — the queue belongs to one column of one board.
-CREATE TABLE "stage_queue" ("card_id" character varying(36) NOT NULL, "board_id" character varying(36) NULL, "column_key" character varying(128) NOT NULL, "flow_id" character varying(36) NULL, "node_id" character varying(64) NULL, "queued_at" bigint NOT NULL, PRIMARY KEY ("card_id"), CONSTRAINT "stage_queue_card" FOREIGN KEY ("card_id") REFERENCES "blocks" ("id") ON DELETE CASCADE, CONSTRAINT "stage_queue_board" FOREIGN KEY ("board_id") REFERENCES "boards" ("id") ON DELETE CASCADE);
+CREATE TABLE "stage_queue" ("card_id" character varying(36) NOT NULL, "board_id" character varying(36) NULL, "column_key" character varying(128) NOT NULL, "flow_id" character varying(36) NULL, "node_id" character varying(64) NULL, "queued_at" bigint NOT NULL, PRIMARY KEY ("card_id"), CONSTRAINT "stage_queue_card" FOREIGN KEY ("card_id") REFERENCES "card_ref" ("card_id") ON DELETE CASCADE, CONSTRAINT "stage_queue_board" FOREIGN KEY ("board_id") REFERENCES "board_ref" ("board_id") ON DELETE CASCADE);
 
 -- A card waiting for its column to free up a place.
 --   column_key: board|option — the queue belongs to one column of one board.

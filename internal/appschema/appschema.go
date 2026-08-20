@@ -165,8 +165,16 @@ func AddCard(db *sql.DB, boardID, cardID string) error {
 	if err := AddBoard(db, boardID); err != nil {
 		return err
 	}
-	_, err := db.Exec(`INSERT INTO blocks (id, board_id, type) VALUES (?,?,'card') ON CONFLICT(id) DO NOTHING`,
-		cardID, boardID)
+	if _, err := db.Exec(`INSERT INTO blocks (id, board_id, type) VALUES (?,?,'card') ON CONFLICT(id) DO NOTHING`,
+		cardID, boardID); err != nil {
+		return err
+	}
+	// The row every table keyed on a card points at. Made here rather than by
+	// each test, because "a card exists" is what this helper means and the ref
+	// is now part of it — the app's own writes go through
+	// acp.Store.ensureCardRef and never see this.
+	_, err := db.Exec(`INSERT INTO card_ref (card_id, board_id, block_id, created_at)
+		VALUES (?,?,?,0) ON CONFLICT(card_id) DO NOTHING`, cardID, boardID, cardID)
 	return err
 }
 
@@ -175,7 +183,13 @@ func AddCard(db *sql.DB, boardID, cardID string) error {
 // real ones rather than stubs, so a fixture has to make a board a board: one
 // team ('0', the only one this product has), a type, and a title.
 func AddBoard(db *sql.DB, boardID string) error {
-	_, err := db.Exec(`INSERT INTO boards (id, team_id, type, title, minimum_role)
-		VALUES (?, '0', 'P', ?, '') ON CONFLICT(id) DO NOTHING`, boardID, boardID)
+	if _, err := db.Exec(`INSERT INTO boards (id, team_id, type, title, minimum_role)
+		VALUES (?, '0', 'P', ?, '') ON CONFLICT(id) DO NOTHING`, boardID, boardID); err != nil {
+		return err
+	}
+	// local_board_id set, because a board a fixture makes is this machine's:
+	// that is what carries the cascade.
+	_, err := db.Exec(`INSERT INTO board_ref (board_id, source_id, local_board_id, created_at)
+		VALUES (?, NULL, ?, 0) ON CONFLICT(board_id) DO NOTHING`, boardID, boardID)
 	return err
 }

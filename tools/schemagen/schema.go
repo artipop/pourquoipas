@@ -19,6 +19,11 @@ package main
 // and the board's change in one migration or in none.
 func appTables() []Table {
 	return []Table{
+		// What everything below points at instead of the board's own tables, so
+		// a key still holds when the board is on somebody else's server.
+		boardRef(),
+		cardRef(),
+
 		// The machine's registries. They were arrays in config.json, which is a
 		// file nothing can point at: a card named its folder by an id the
 		// settings file happened to carry, and a column named its agent by the
@@ -222,14 +227,86 @@ const (
 	tableUsers  = "users"
 )
 
+// boardRef and cardRef are what a foreign key can point at when the board is
+// somebody else's.
+//
+// A key can only reach inside its own database. Everything below used to point
+// straight at blocks(id) and boards(id), and that key is the whole reason these
+// tables live in the board's database at all: deleting a card is a real DELETE
+// FROM blocks, which this side never heard about, so conversations, route
+// positions and stalls leaked for ever.
+//
+// A desktop attached to a hosted board has no such rows — a remote card is not
+// in this machine's blocks — so the insert would not be ambiguous, it would be
+// refused. These two tables are the row the key points at instead. The chain is
+// blocks → card_ref → everything, so a local card cascades exactly as it did;
+// a remote one carries no block_id and its ref row is deleted by the client
+// that hears the board say the card is gone.
+//
+// Not a surrogate id: the ref is keyed by the card's own id, so not one query
+// or column anywhere else had to change. Ids are UUIDv7 and two servers
+// colliding on one is not a risk worth a join.
+func boardRef() Table {
+	return Table{
+		Name: "board_ref",
+		Why: "A board this machine knows about, whoever's it is. What the app's own\n" +
+			"tables point at instead of boards(id), which only has the boards\n" +
+			"served by this process.",
+		Columns: []Column{
+			{Name: "board_id", Type: ID(),
+				Why: "The board's own id, on whichever server it lives."},
+			{Name: "source_id", Type: Name(64), Null: true,
+				Why: "Where the board is. NULL is this machine, which is every board\n" +
+					"until a desktop attaches to a hosted one."},
+			{Name: "local_board_id", Type: ID(), Null: true,
+				Why: "The same board in this process's own table, when it is ours. NULL\n" +
+					"for a board on a server: that is what makes the key possible at all."},
+			{Name: "created_at", Type: Millis()},
+		},
+		PK: []string{"board_id"},
+		FKs: []FK{{
+			Name: "board_ref_local", Columns: []string{"local_board_id"},
+			RefTable: tableBoards, RefCols: []string{"id"}, OnDelete: Cascade,
+		}},
+	}
+}
+
+func cardRef() Table {
+	return Table{
+		Name: "card_ref",
+		Why: "A card this machine knows about. The row every table keyed on a card\n" +
+			"points at, so the cascade survives the board being somewhere else.",
+		Columns: []Column{
+			{Name: "card_id", Type: ID()},
+			{Name: "board_id", Type: ID(), Null: true,
+				Why: "Which board it is on, and through that which server. Nullable\n" +
+					"because three of the writers know a card and not its board — a\n" +
+					"stall, a flow event, a checkout — and the board is filled in by\n" +
+					"whichever writer knows it."},
+			{Name: "block_id", Type: ID(), Null: true,
+				Why: "The same card in this process's own blocks, when it is ours. This\n" +
+					"is the cascade: the card is deleted, the block goes, this row goes,\n" +
+					"and everything about the card goes with it."},
+			{Name: "created_at", Type: Millis()},
+		},
+		PK: []string{"card_id"},
+		FKs: []FK{
+			{Name: "card_ref_board", Columns: []string{"board_id"},
+				RefTable: "board_ref", RefCols: []string{"board_id"}, OnDelete: Cascade},
+			{Name: "card_ref_block", Columns: []string{"block_id"},
+				RefTable: tableBlocks, RefCols: []string{"id"}, OnDelete: Cascade},
+		},
+	}
+}
+
 // cardFK is the key almost every table here wants: what we know about a card
 // stops being true the moment the card does.
 func cardFK(table string) FK {
 	return FK{
 		Name:     table + "_card",
 		Columns:  []string{"card_id"},
-		RefTable: tableBlocks,
-		RefCols:  []string{"id"},
+		RefTable: "card_ref",
+		RefCols:  []string{"card_id"},
 		OnDelete: Cascade,
 	}
 }
@@ -238,8 +315,8 @@ func boardFK(table string) FK {
 	return FK{
 		Name:     table + "_board",
 		Columns:  []string{"board_id"},
-		RefTable: tableBoards,
-		RefCols:  []string{"id"},
+		RefTable: "board_ref",
+		RefCols:  []string{"board_id"},
 		OnDelete: Cascade,
 	}
 }
@@ -604,7 +681,7 @@ func sourceItem() Table {
 		PK: []string{"source", "external_id"},
 		FKs: []FK{{
 			Name: "source_item_card", Columns: []string{"card_id"},
-			RefTable: tableBlocks, RefCols: []string{"id"}, OnDelete: SetNull,
+			RefTable: "card_ref", RefCols: []string{"card_id"}, OnDelete: SetNull,
 		}},
 		Indexes: []Index{
 			{Name: "idx_source_item_card", Columns: []string{"card_id"}},
@@ -637,7 +714,7 @@ func sourceEvent() Table {
 		}},
 		FKs: []FK{{
 			Name: "source_event_card", Columns: []string{"card_id"},
-			RefTable: tableBlocks, RefCols: []string{"id"}, OnDelete: SetNull,
+			RefTable: "card_ref", RefCols: []string{"card_id"}, OnDelete: SetNull,
 		}},
 		Indexes: []Index{
 			{Name: "idx_source_event_source", Columns: []string{"source", "id"}},

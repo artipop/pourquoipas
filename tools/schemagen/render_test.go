@@ -61,11 +61,31 @@ func TestEveryDialectCreatesEveryTable(t *testing.T) {
 // A foreign key onto the board's own tables is the whole reason our tables
 // moved into its database: a deleted card used to leave its conversations, its
 // stall and its place in the queue behind for ever.
+//
+// The route is one hop longer than it was — card_ref stands between, so that a
+// board on another server can be pointed at too — and the guarantee is the
+// same, which is what this checks: every table keyed on a card cascades to the
+// ref, and the ref cascades from the block.
 func TestWhatBelongsToACardGoesWithIt(t *testing.T) {
 	byName := map[string]Table{}
 	for _, t := range appTables() {
 		byName[t.Name] = t
 	}
+
+	ref, ok := byName["card_ref"]
+	if !ok {
+		t.Fatal("no card_ref: nothing a card owns can follow it anywhere")
+	}
+	var refFollowsTheBlock bool
+	for _, fk := range ref.FKs {
+		if fk.RefTable == tableBlocks && fk.OnDelete == Cascade {
+			refFollowsTheBlock = true
+		}
+	}
+	if !refFollowsTheBlock {
+		t.Fatal("card_ref does not follow the block into the bin, so nothing behind it does either")
+	}
+
 	for _, name := range []string{
 		"conversation", "agent_session", "flow_state", "flow_event",
 		"card_stall", "stage_queue",
@@ -76,7 +96,7 @@ func TestWhatBelongsToACardGoesWithIt(t *testing.T) {
 		}
 		var found bool
 		for _, fk := range tbl.FKs {
-			if fk.RefTable == tableBlocks && fk.OnDelete == Cascade {
+			if fk.RefTable == "card_ref" && fk.OnDelete == Cascade {
 				found = true
 			}
 		}
@@ -202,12 +222,33 @@ func TestTheCollapsedMigrationBuildsTheSchemaTheLadderBuilt(t *testing.T) {
 			t.Errorf("%s differs\n  ladder:    %s\n  collapsed: %s", name, w, g)
 		}
 	}
+	// Tables that exist now and did not then. Declared for the same reason
+	// intendedTables is: the snapshot is the "before" and stays frozen, so a
+	// table appearing has to be somebody saying it should.
+	intendedAdditions := map[string]string{
+		"table board_ref": refsForARemoteBoard,
+		"table card_ref":  refsForARemoteBoard,
+	}
 	for name := range gotShape {
-		if _, ok := wantShape[name]; !ok {
-			t.Errorf("the collapsed schema adds %s, which the ladder never made", name)
+		if _, ok := wantShape[name]; ok {
+			continue
 		}
+		if why, ok := intendedAdditions[name]; ok {
+			t.Logf("%s is new on purpose — %s", name, why)
+			continue
+		}
+		t.Errorf("the collapsed schema adds %s, which the ladder never made", name)
 	}
 }
+
+// refsForARemoteBoard is why the tables keyed on a card and a board stopped
+// pointing at blocks and boards directly.
+//
+// A foreign key reaches only inside its own database, and a desktop attached to
+// a hosted board has no row for a remote card. The chain became
+// blocks → card_ref → everything, so a local card cascades exactly as it did
+// and a remote one carries no block_id.
+const refsForARemoteBoard = "a key cannot point at a board on another server, so it points at a ref row here"
 
 // routeByID is why the three tables that record a card's place on a route no
 // longer carry the route's name. Renaming a route lost the place of every card

@@ -245,6 +245,36 @@ erDiagram
     }
 ```
 
+## На что смотрят ключи
+
+Внешний ключ достаёт только внутрь своей базы, а доска бывает на
+чужом сервере. Поэтому всё наше указывает не на `blocks`/`boards`
+напрямую, а на эти две строки: цепочка `blocks → card_ref → всё
+остальное` сохраняет каскад для своей карточки, а у чужой
+`block_id` пуст и строку убирает клиент, услышав, что карточки
+больше нет. Ключ — собственный id карточки, не суррогат: поэтому ни
+один запрос в остальных таблицах не поменялся.
+
+```mermaid
+erDiagram
+    blocks ||--o{ card_ref : "block_id CASCADE"
+    board_ref ||--o{ card_ref : "board_id CASCADE"
+    boards ||--o{ board_ref : "local_board_id CASCADE"
+
+    board_ref {
+        id board_id PK "The board's own id, on whichever server it lives."
+        name_64 source_id "Where the board is. NULL is this machine, which is every board until a desktop attaches to a hosted one."
+        id local_board_id FK "The same board in this process's own table, when it is ours. NULL for a board on a server: that is what makes…"
+        millis created_at
+    }
+    card_ref {
+        id card_id PK
+        id board_id FK "Which board it is on, and through that which server. Nullable because three of the writers know a card and…"
+        id block_id FK "The same card in this process's own blocks, when it is ours. This is the cascade: the card is deleted, the…"
+        millis created_at
+    }
+```
+
 ## Реестры
 
 Что знает эта машина: где работать, кем и куда публиковать. Были
@@ -320,10 +350,10 @@ erDiagram
 ```mermaid
 erDiagram
     agent_session ||--o{ session_event : "session_id CASCADE"
-    blocks ||--o{ agent_session : "card_id CASCADE"
-    blocks ||--o{ conversation : "card_id CASCADE"
-    boards ||--o{ agent_session : "board_id CASCADE"
-    boards ||--o{ conversation : "board_id CASCADE"
+    board_ref ||--o{ agent_session : "board_id CASCADE"
+    board_ref ||--o{ conversation : "board_id CASCADE"
+    card_ref ||--o{ agent_session : "card_id CASCADE"
+    card_ref ||--o{ conversation : "card_id CASCADE"
 
     conversation {
         id id PK
@@ -373,12 +403,12 @@ erDiagram
 
 ```mermaid
 erDiagram
-    blocks ||--o{ card_stall : "card_id CASCADE"
-    blocks ||--o{ flow_event : "card_id CASCADE"
-    blocks ||--o{ flow_state : "card_id CASCADE"
-    blocks ||--o{ stage_queue : "card_id CASCADE"
-    boards ||--o{ flow_state : "board_id CASCADE"
-    boards ||--o{ stage_queue : "board_id CASCADE"
+    board_ref ||--o{ flow_state : "board_id CASCADE"
+    board_ref ||--o{ stage_queue : "board_id CASCADE"
+    card_ref ||--o{ card_stall : "card_id CASCADE"
+    card_ref ||--o{ flow_event : "card_id CASCADE"
+    card_ref ||--o{ flow_state : "card_id CASCADE"
+    card_ref ||--o{ stage_queue : "card_id CASCADE"
 
     flow_state {
         id card_id PK, FK
@@ -425,8 +455,8 @@ erDiagram
 
 ```mermaid
 erDiagram
-    blocks ||--o{ checkout : "card_id CASCADE"
-    boards ||--o{ checkout : "board_id CASCADE"
+    board_ref ||--o{ checkout : "board_id CASCADE"
+    card_ref ||--o{ checkout : "card_id CASCADE"
     workspace ||--o{ checkout : "workspace_id RESTRICT"
     workspace ||--o{ vcs_seen : "workspace_id CASCADE"
 
@@ -458,8 +488,8 @@ erDiagram
 
 ```mermaid
 erDiagram
-    blocks ||--o{ source_event : "card_id SET NULL"
-    blocks ||--o{ source_item : "card_id SET NULL"
+    card_ref ||--o{ source_event : "card_id SET NULL"
+    card_ref ||--o{ source_item : "card_id SET NULL"
 
     source_item {
         name_100 source PK
@@ -488,7 +518,7 @@ erDiagram
 
 ```mermaid
 erDiagram
-    boards ||--o{ board_setup : "board_id CASCADE"
+    board_ref ||--o{ board_setup : "board_id CASCADE"
 
     idempotency {
         name_255 token PK

@@ -91,6 +91,9 @@ func (s *Store) SaveSetupStep(st SetupStepState) error {
 	if st.At.IsZero() {
 		st.At = time.Now()
 	}
+	if err := s.ensureBoardRef(st.BoardID, true); err != nil {
+		return err
+	}
 	_, err := s.exec(`INSERT INTO board_setup (board_id, step, status, changed_at)
 		VALUES (?,?,?,?)
 		ON CONFLICT(board_id, step) DO UPDATE SET status=excluded.status, changed_at=excluded.changed_at`,
@@ -186,10 +189,72 @@ type FlowEventRecord struct {
 	CreatedAt time.Time `json:"createdAt"`
 }
 
+// Everything below is keyed on a card or a board, and points at card_ref and
+// board_ref rather than at the board's own tables.
+//
+// A foreign key reaches only inside its own database, and a desktop attached to
+// a hosted board has no row for a remote card — the insert would not be
+// ambiguous, it would be refused. So the ref rows are what the keys point at:
+// blocks → card_ref → everything, which keeps the cascade a local card always
+// had, while a remote card carries no block_id and its ref is removed by the
+// client that hears the board say the card is gone.
+//
+// ensureRefs is called before every write that names one. It is one upsert of
+// each, not a read: two statements are cheaper than a round trip that usually
+// finds the row there, and this runs on the path a card takes through a route.
+
+// LocalSource is the source id of the board this process serves. Written as
+// NULL rather than as a word, because "no source named" is what a machine that
+// has never attached to anything says.
+const LocalSource = ""
+
+// ensureBoardRef makes the row a board key can point at. local says the board
+// is this process's own, which is what carries the cascade.
+func (s *Store) ensureBoardRef(boardID string, local bool) error {
+	if boardID == "" {
+		return nil
+	}
+	var localID any
+	if local {
+		localID = boardID
+	}
+	_, err := s.exec(`INSERT INTO board_ref (board_id, source_id, local_board_id, created_at)
+		VALUES (?,?,?,?)
+		ON CONFLICT(board_id) DO NOTHING`,
+		boardID, nullable(LocalSource), localID, time.Now().UnixMilli())
+	return err
+}
+
+// ensureCardRef makes the row a card key can point at. boardID may be empty:
+// three writers know a card and not its board — a stall, a flow event, a
+// checkout — and the board is filled in by whichever writer knows it.
+func (s *Store) ensureCardRef(cardID, boardID string) error {
+	if cardID == "" {
+		return nil
+	}
+	if err := s.ensureBoardRef(boardID, true); err != nil {
+		return err
+	}
+	_, err := s.exec(`INSERT INTO card_ref (card_id, board_id, block_id, created_at)
+		VALUES (?,?,?,?)
+		ON CONFLICT(card_id) DO UPDATE SET
+			board_id=COALESCE(excluded.board_id, card_ref.board_id)`,
+		cardID, nullable(boardID), cardID, time.Now().UnixMilli())
+	return err
+}
+
+// ensureRefs is the pair, for the writers that know both.
+func (s *Store) ensureRefs(cardID, boardID string) error {
+	return s.ensureCardRef(cardID, boardID)
+}
+
 // SaveFlowState records where the card is now, replacing any previous position.
 func (s *Store) SaveFlowState(st FlowState) error {
 	if st.EnteredAt.IsZero() {
 		st.EnteredAt = time.Now()
+	}
+	if err := s.ensureRefs(st.CardID, st.BoardID); err != nil {
+		return err
 	}
 	_, err := s.exec(`INSERT INTO flow_state (card_id, board_id, flow_id, node_id, branch, workdir_path, entered_at)
 		VALUES (?,?,?,?,?,?,?)
@@ -241,6 +306,9 @@ func (s *Store) ClearFlowState(cardID string) error {
 
 // AppendFlowEvent records one transition.
 func (s *Store) AppendFlowEvent(r FlowEventRecord) error {
+	if err := s.ensureCardRef(r.CardID, ""); err != nil {
+		return err
+	}
 	_, err := s.exec(`INSERT INTO flow_event (id, card_id, flow_id, from_node, to_node, on_kind, detail, said, created_at)
 		VALUES (?,?,?,?,?,?,?,?,?)`,
 		newID(), r.CardID, r.FlowID, r.FromNode, r.ToNode, r.On, r.Detail, r.Said, time.Now().UnixMilli())
@@ -293,6 +361,9 @@ const StallKindConversation = "conversation"
 
 // SetStall records the reason, replacing whatever was there.
 func (s *Store) SetStall(r StallRecord) error {
+	if err := s.ensureCardRef(r.CardID, ""); err != nil {
+		return err
+	}
 	_, err := s.exec(`INSERT INTO card_stall (card_id, node_id, kind, reason, created_at)
 		VALUES (?,?,?,?,?)
 		ON CONFLICT(card_id) DO UPDATE SET
@@ -363,6 +434,9 @@ func scanFlowState(row scanner) (FlowState, error) {
 
 // InsertSession stores a new session row.
 func (s *Store) InsertSession(r SessionRecord) error {
+	if err := s.ensureRefs(r.CardID, r.BoardID); err != nil {
+		return err
+	}
 	_, err := s.exec(`INSERT INTO agent_session
 		(id, card_id, board_id, agent_kind, acp_session_id, status, cwd, worktree_path, branch, started_at, error_text)
 		VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
@@ -526,6 +600,9 @@ type QueuedStage struct {
 // Queueing the same card again keeps its original position: waiting longer must
 // not cost it its turn.
 func (s *Store) EnqueueStage(q QueuedStage) (bool, error) {
+	if err := s.ensureRefs(q.CardID, q.BoardID); err != nil {
+		return false, err
+	}
 	res, err := s.exec(`INSERT INTO stage_queue (card_id, board_id, column_key, flow_id, node_id, queued_at)
 		VALUES (?,?,?,?,?,?) ON CONFLICT(card_id) DO NOTHING`,
 		q.CardID, nullable(q.BoardID), q.ColumnKey, q.FlowID, q.NodeID, time.Now().UnixMilli())
@@ -607,6 +684,9 @@ type TerminalRecord struct {
 
 // InsertTerminal records a terminal session as it starts.
 func (s *Store) InsertTerminal(r TerminalRecord) error {
+	if err := s.ensureRefs(r.CardID, r.BoardID); err != nil {
+		return err
+	}
 	_, err := s.exec(`INSERT INTO conversation
 		(id, card_id, node_id, column_name, board_id, title, workdir_path, cwd, branch, agent, kind, summary, started_at)
 		VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
@@ -780,6 +860,13 @@ func (s *Store) SaveCheckout(c Checkout) error {
 	case err == sql.ErrNoRows:
 		id = newID()
 	case err != nil:
+		return err
+	}
+	// The owner is a card or a board, never both — see the checkout table.
+	if err := s.ensureCardRef(c.CardID, ""); err != nil {
+		return err
+	}
+	if err := s.ensureBoardRef(c.BoardID, true); err != nil {
 		return err
 	}
 	_, err = s.exec(`INSERT INTO checkout
