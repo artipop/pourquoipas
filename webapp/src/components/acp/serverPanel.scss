@@ -1,0 +1,49 @@
+.ServerPanel {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+
+    &__subtitle,
+    &__hint {
+        color: rgba(var(--center-channel-color-rgb), 0.72);
+        font-size: 13px;
+        line-height: 18px;
+    }
+
+    &__form,
+    &__attached {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        align-items: flex-start;
+    }
+
+    &__field {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        width: 100%;
+        max-width: 420px;
+
+        span {
+            font-size: 12px;
+            color: rgba(var(--center-channel-color-rgb), 0.72);
+        }
+    }
+
+    &__where {
+        font-weight: 600;
+        // An address has no spaces and can be long enough to widen the dialog.
+        word-break: break-all;
+    }
+
+    &__restart {
+        padding: 8px 12px;
+        border-radius: 4px;
+        background: rgba(var(--away-indicator-rgb), 0.12);
+    }
+
+    &__error {
+        color: var(--error-text);
+    }
+}

@@ -62,6 +62,25 @@ There are no buttons against your own account. And the last administrator can
 neither step down nor be switched off: an install nobody can administer cannot
 be repaired from inside the app.
 
+## Connecting your own app to the server
+
+You can work the server's board from the app on your own computer as well as
+from a browser — and then the cards live on the server while the agents, the
+terminals and the folders stay on your machine.
+
+1. **Настройки → «Сервер»**.
+2. Type the address (a bare `board.example.com` will do), your name and your
+   password.
+3. **«Подключиться»**, then **restart the app**: which board it works is decided
+   when it starts.
+
+The password is not kept — what is stored is the session it buys. **«Работать
+доской этой машины»** disconnects the app from the server; everything made on
+the server stays there.
+
+This is not the same as «Доступ с телефона»: the tailnet answers where the board
+can be reached *from*, and «Сервер» answers *whose* it is.
+
 ## A forgotten password
 
 A password is changed by whoever is logged in, on the change-password page. If

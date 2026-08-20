@@ -63,6 +63,11 @@ func sourcesDataDir() (string, error) { return appDataDir("sources", 0o750) }
 // node's own state. Tighter than the rest: it holds an auth key.
 func tailnetDataDir() (string, error) { return appDataDir("tailnet", 0o700) }
 
+// attachDataDir returns where the address of the hosted board this desktop is
+// attached to is kept. Tight like the tailnet's: it names a server somebody
+// works on, and the session for it is in the credential store beside it.
+func attachDataDir() (string, error) { return appDataDir("server", 0o700) }
+
 // ignoreViteDevServer removes the variable `wails3 dev` sets to point the app at
 // a Vite dev server. This app never has one: the page is the board webapp,
 // served by the in-process board server behind the front door, in a dev build
@@ -121,6 +126,17 @@ func main() {
 		log.Printf("hosted server: everybody logs in; /login and /register are open")
 	}
 
+	// Whether this desktop works its own board or a hosted one is read once
+	// here, because the page's proxy and the board seam are both built with
+	// the answer (attach.go).
+	var attach *attachController
+	if dir, err := attachDataDir(); err != nil {
+		log.Printf("attach: unavailable, no data dir: %v", err)
+	} else if attach, err = newAttachController(filepath.Join(dir, "settings.json"), openVault()); err != nil {
+		log.Printf("attach: unavailable, settings error: %v", err)
+		attach = nil
+	}
+
 	port, err := getFreePort()
 	if err != nil {
 		log.Fatalf("failed to find a free port: %v", err)
@@ -162,7 +178,16 @@ func main() {
 		log.Printf("templates: %v", err)
 	}
 
-	handler, err := newServerProxy(port, sessionToken)
+	// Which board the page is served is the attachment's answer: this
+	// process's own, or a hosted server this desktop logged in to (attach.go).
+	// The token follows it — the single-user one for our own board, the
+	// session for somebody else's.
+	pageToken := func() string { return sessionToken }
+	if attach.target() != "" {
+		pageToken = attach.token
+		log.Printf("attached to %s: the page is served that board", attach.target())
+	}
+	handler, err := newServerProxy(port, attach.target(), pageToken)
 	if err != nil {
 		log.Fatalf("failed to create the server proxy: %v", err)
 	}
@@ -202,6 +227,7 @@ func main() {
 		tailnet = nil
 	}
 	app.tailnet = tailnet
+	app.attach = attach
 
 	// The front door is the origin the page is served under — a loopback
 	// listener of ours in a desktop build, the published address in a server

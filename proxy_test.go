@@ -32,7 +32,7 @@ func upstream(t *testing.T, contentType, body string) int {
 
 func proxied(t *testing.T, port int) *http.Response {
 	t.Helper()
-	h, err := newServerProxy(port, "su-token")
+	h, err := newServerProxy(port, "", func() string { return "su-token" })
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -139,5 +139,75 @@ func TestTheBootstrapForgetsARuntimeImportThatFailed(t *testing.T) {
 	script := bootstrapScript("")
 	if !strings.Contains(script, "runtimePromise = null;") {
 		t.Fatal("a failed runtime import is kept, so a bound call can never recover")
+	}
+}
+
+// The token is asked for per response rather than baked in when the proxy is
+// built: a hosted board's session is not known until somebody logs in, and it
+// changes when they log out.
+func TestTheBootstrapCarriesWhateverTokenIsCurrent(t *testing.T) {
+	port := upstream(t, "text/html; charset=utf-8", "<html><head></head><body></body></html>")
+	token := "first"
+	h, err := newServerProxy(port, "", func() string { return token })
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	serve := func() string {
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/", nil))
+		body, _ := io.ReadAll(rec.Result().Body)
+		return string(body)
+	}
+
+	if !strings.Contains(serve(), "first") {
+		t.Fatal("the bootstrap did not carry the token")
+	}
+	token = "second"
+	if !strings.Contains(serve(), "second") {
+		t.Fatal("the bootstrap kept a token that is no longer current")
+	}
+}
+
+// Attached, the target is somebody else's server, and three things about the
+// request have to stop describing our loopback door: the Host it names, the
+// Origin it claims, and our own session cookie.
+func TestARequestToAnAttachedServerDoesNotDescribeOurOwnDoor(t *testing.T) {
+	var got *http.Request
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		got = r.Clone(r.Context())
+		w.Header().Set("Content-Type", "application/json")
+	}))
+	t.Cleanup(srv.Close)
+
+	h, err := newServerProxy(1, srv.URL, func() string { return "session" })
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := httptest.NewRequest(http.MethodGet, "/api/v2/boards", nil)
+	req.Host = "127.0.0.1:9000"
+	req.Header.Set("Origin", "http://127.0.0.1:9000")
+	req.Header.Set("Sec-Fetch-Site", "same-origin")
+	req.AddCookie(&http.Cookie{Name: sessionCookie, Value: "ours"})
+	req.AddCookie(&http.Cookie{Name: "somebody-elses", Value: "kept"})
+	h.ServeHTTP(httptest.NewRecorder(), req)
+
+	if got == nil {
+		t.Fatal("nothing reached the server")
+	}
+	if got.Host == "127.0.0.1:9000" {
+		t.Errorf("Host still names our door: %q — the far side's hostGuard would refuse it", got.Host)
+	}
+	if origin := got.Header.Get("Origin"); strings.Contains(origin, "127.0.0.1:9000") {
+		t.Errorf("Origin still claims our door: %q", origin)
+	}
+	if got.Header.Get("Sec-Fetch-Site") != "" {
+		t.Error("Sec-Fetch-* is the browser's account of a fetch and means nothing after a hop")
+	}
+	if _, err := got.Cookie(sessionCookie); err == nil {
+		t.Error("our own front-door cookie went to somebody else's server")
+	}
+	if _, err := got.Cookie("somebody-elses"); err != nil {
+		t.Error("stripping one cookie took the others with it")
 	}
 }

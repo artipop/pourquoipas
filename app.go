@@ -31,6 +31,10 @@ type App struct {
 	// not be read at all. Its own methods are safe on a nil receiver, so the
 	// bindings do not each have to check.
 	tailnet *tailnetController
+	// attach is which board this desktop works: its own, or a hosted server it
+	// has logged in to. Nil when its settings could not be read; safe on a nil
+	// receiver like the tailnet's.
+	attach *attachController
 	// sources turns outside events into cards. Separate from mgr on purpose: a
 	// board of household chores wants cards from a phone and no agents at all.
 	sources *sources.Manager
@@ -842,6 +846,56 @@ func (a *App) SetTailnetAccess(entryJSON string) (string, error) {
 	next.Hostname = strings.TrimSpace(want.Hostname)
 
 	state, err := a.tailnet.update(next)
+	if err != nil {
+		return "", err
+	}
+	out, err := json.Marshal(state)
+	if err != nil {
+		return "", err
+	}
+	return string(out), nil
+}
+
+// GetServerAttachment reports which board this desktop works — its own, or a
+// hosted server. JSON: {"url":…,"username":…,"running":…}, where url and
+// running disagreeing is the app saying a restart is owed: which board the page
+// is served, and which one the agents work against, are both decided when the
+// app is built up.
+func (a *App) GetServerAttachment() (string, error) {
+	out, err := json.Marshal(a.attach.state())
+	if err != nil {
+		return "", err
+	}
+	return string(out), nil
+}
+
+// AttachServer logs in to a hosted board and remembers it for the next launch.
+//
+// The password is not kept: what is stored is the session it bought, in the
+// credential store, and a person who wants out says so with DetachServer.
+func (a *App) AttachServer(entryJSON string) (string, error) {
+	var want struct {
+		URL      string `json:"url"`
+		Username string `json:"username"`
+		Password string `json:"password"`
+	}
+	if err := json.Unmarshal([]byte(entryJSON), &want); err != nil {
+		return "", err
+	}
+	state, err := a.attach.attach(want.URL, want.Username, want.Password)
+	if err != nil {
+		return "", err
+	}
+	out, err := json.Marshal(state)
+	if err != nil {
+		return "", err
+	}
+	return string(out), nil
+}
+
+// DetachServer puts this desktop back on its own board.
+func (a *App) DetachServer() (string, error) {
+	state, err := a.attach.detach()
 	if err != nil {
 		return "", err
 	}

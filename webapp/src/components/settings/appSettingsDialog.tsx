@@ -10,6 +10,7 @@ import Dialog from '../dialog'
 
 import AgentsPanel, {isAgentsAvailable} from '../acp/agentsPanel'
 import ProxiesPanel, {isProxiesAvailable} from '../acp/proxiesPanel'
+import ServerPanel, {isServerAttachAvailable} from '../acp/serverPanel'
 import TailnetPanel, {isTailnetAvailable} from '../acp/tailnetPanel'
 import MachineMiscPanel from '../acp/machineMiscPanel'
 
@@ -110,6 +111,15 @@ const AppSettingsDialog = (props: Props) => {
             name: () => intl.formatMessage({id: 'People.title', defaultMessage: 'People'}),
             when: administersInstall,
             body: PeoplePanel,
+        },
+        {
+
+            // Before the tailnet, because the two are asked in that order: whose
+            // board this is, and then where it can be reached from.
+            id: 'server',
+            name: () => intl.formatMessage({id: 'Server.title', defaultMessage: 'Server'}),
+            when: isServerAttachAvailable,
+            body: ServerPanel,
         },
         {
             id: 'tailnet',

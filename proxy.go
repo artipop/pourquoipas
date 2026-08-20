@@ -128,15 +128,31 @@ func bootstrapScript(sessionToken string) string {
 </script>`, sessionToken)
 }
 
-// newServerProxy builds a reverse proxy to the in-process board server.
-// It sits behind the front door on everything except /wails/, so HTML, /api,
-// /files and the /ws upgrade all reach localhost:port — the upgrade included,
-// which is the one thing Wails' own asset server cannot forward. The bootstrap
-// script is injected into HTML responses on the way back.
-func newServerProxy(port int, sessionToken string) (http.Handler, error) {
+// newServerProxy builds a reverse proxy to the board the page talks to. It sits
+// behind the front door on everything except /wails/, so HTML, /api, /files and
+// the /ws upgrade all reach it — the upgrade included, which is the one thing
+// Wails' own asset server cannot forward. The bootstrap script is injected into
+// HTML responses on the way back.
+//
+// Which board that is, is a question the front door never had to ask: it was
+// always the one in this process. A desktop attached to a hosted server points
+// it somewhere else, and that is the whole of what attaching does to the page —
+// the origin the page is served under does not move, so sameOrigin, hostGuard,
+// /wails/, /acp/* and both of our own sockets are untouched.
+//
+// port is this process's own board; attached is the origin of a server, empty
+// when there is none. token is asked per response rather than baked in, because
+// the session for a hosted board is not known until somebody logs in.
+func newServerProxy(port int, attached string, token func() string) (http.Handler, error) {
 	target, err := url.Parse(fmt.Sprintf("http://localhost:%d", port))
 	if err != nil {
 		return nil, err
+	}
+	if attached != "" {
+		target, err = url.Parse(attached)
+		if err != nil {
+			return nil, fmt.Errorf("attached server %q: %w", attached, err)
+		}
 	}
 
 	proxy := httputil.NewSingleHostReverseProxy(target)
@@ -144,12 +160,25 @@ func newServerProxy(port int, sessionToken string) (http.Handler, error) {
 	baseDirector := proxy.Director
 	proxy.Director = func(req *http.Request) {
 		baseDirector(req)
+		// Load-bearing once the target is somebody else's server: its own
+		// hostGuard checks the Host it was published under and would refuse a
+		// loopback one. Do not "simplify" this away.
 		req.Host = target.Host
+		// Our loopback origin is not who is calling upstream, and saying so is
+		// a lie a guard added there later would believe. Sec-Fetch-* is the
+		// browser's own account of the fetch and means nothing after a hop.
+		req.Header.Set("Origin", target.Scheme+"://"+target.Host)
+		req.Header.Del("Sec-Fetch-Site")
+		req.Header.Del("Sec-Fetch-Mode")
+		req.Header.Del("Sec-Fetch-Dest")
+		req.Header.Del("Sec-Fetch-User")
+		// The front door's own cookie is the front door's business. The board
+		// authenticates by the Authorization header the page sends.
+		stripCookie(req, sessionCookie)
 		// Ask upstream for uncompressed HTML so we can inject the bootstrap script.
 		req.Header.Del("Accept-Encoding")
 	}
 
-	inject := []byte(bootstrapScript(sessionToken))
 	proxy.ModifyResponse = func(resp *http.Response) error {
 		if !strings.HasPrefix(resp.Header.Get("Content-Type"), "text/html") {
 			return nil
@@ -162,6 +191,7 @@ func newServerProxy(port int, sessionToken string) (http.Handler, error) {
 		// Insert right after <head> so the token is set before app scripts load.
 		if idx := bytes.Index(body, []byte("<head>")); idx != -1 {
 			at := idx + len("<head>")
+			inject := []byte(bootstrapScript(token()))
 			body = append(body[:at], append(inject, body[at:]...)...)
 		}
 		resp.Body = io.NopCloser(bytes.NewReader(body))
@@ -171,4 +201,16 @@ func newServerProxy(port int, sessionToken string) (http.Handler, error) {
 	}
 
 	return proxy, nil
+}
+
+// stripCookie removes one cookie from a request, leaving the others.
+func stripCookie(req *http.Request, name string) {
+	cookies := req.Cookies()
+	req.Header.Del("Cookie")
+	for _, cookie := range cookies {
+		if cookie.Name == name {
+			continue
+		}
+		req.AddCookie(cookie)
+	}
 }

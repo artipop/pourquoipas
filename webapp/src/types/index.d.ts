@@ -157,13 +157,14 @@ export interface IAppWindow extends Window {
                 GetTailnetAccess?(): Promise<string>
                 SetTailnetAccess?(entryJson: string): Promise<string>
 
-                // Whether this install has accounts on it, and the link the
-                // second person registers with. Unlike the tailnet pair above,
-                // the switch takes effect at the next launch: which mode the
-                // board server runs in is decided when it is constructed.
-                GetTeamAccess?(): Promise<string>
-                SetTeamAccess?(entryJson: string): Promise<string>
-                RegenerateTeamInvite?(): Promise<string>
+                // Which board this desktop works: its own, or a hosted server
+                // it has logged in to. Unlike the tailnet pair above, attaching
+                // takes effect at the next launch — the board the page is
+                // served and the board the agents work against are both decided
+                // when the app is built up.
+                GetServerAttachment?(): Promise<string>
+                AttachServer?(entryJson: string): Promise<string>
+                DetachServer?(): Promise<string>
 
                 // Replacing this app with a newer one. Everything except the
                 // state read is fire-and-forget: what came of it arrives as the
