@@ -73,7 +73,45 @@ const (
 	// records: the columns already carry the property they were bound to, so
 	// the board can be told what it is the first time its automation is saved.
 	BoardPropColumnProperty = "columnProperty"
+	// BoardPropOutcome is the id of the select property this app writes the
+	// outcome of a stage into — every stage, without anybody declaring it.
+	//
+	// It exists because how a stage ended used to be expressible only as *where
+	// the card went*: a board grew a «Проверено», a «Не прошло» and a
+	// «Заблокировано» column whose whole content was one fact about the stage
+	// before them, and that fact then read as a place where work happens — on
+	// the board and on the canvas alike. An outcome belongs to the card, like
+	// the branch and the folder, and a column is for work.
+	//
+	// Written by the engine and never declared, which is what makes it
+	// "служебное": every node produces one, so no node should have to say so.
+	BoardPropOutcome = "outcomeProperty"
 )
+
+// The values that property takes: one per outcome trigger, and nothing else.
+// They are written by this side and read by an edge's condition, so they are a
+// closed set — which is also what lets a route branch on them at all.
+const (
+	OutcomePassed  = "прошло"
+	OutcomeFailed  = "не прошло"
+	OutcomeBlocked = "заблокировано"
+)
+
+// OutcomeValue is what a stage's outcome is called on the card. Empty for
+// anything that is not a stage's own outcome — a merged branch is news about
+// the world, not a verdict on the work.
+func OutcomeValue(trigger string) string {
+	switch trigger {
+	case TriggerSuccess:
+		return OutcomePassed
+	case TriggerFailure:
+		return OutcomeFailed
+	case TriggerBlocked:
+		return OutcomeBlocked
+	default:
+		return ""
+	}
+}
 
 // The names these keys had before, still read because every board made until
 // now carries them. They are never written: reading a board carries what it

@@ -124,6 +124,7 @@
   "Automation.no-worktrees": "Доска работает веткой в самой папке, поэтому два агента не могут работать в одном репозитории одновременно: состав будет разбирать карточки по очереди.",
   "Automation.on-arrival": "Когда карточка попадает сюда",
   "Automation.open-column": "Настройки самой колонки…",
+  "Automation.outcome-property": "Исход",
   "Automation.palette": "Добавить колонку",
   "Automation.prompt-as-column": "— как в колонке: «{prompt}» —",
   "Automation.prompt-as-column-none": "— как в колонке: ничего особого —",

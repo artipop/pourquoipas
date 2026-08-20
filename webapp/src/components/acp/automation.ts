@@ -429,6 +429,23 @@ export const BOARD_PROP_PROMPT = 'prompt'
 // ever have been matched by luck.
 export const BOARD_PROP_PROJECT_PROPERTY = 'projectProperty'
 
+// And which one this app writes a stage's outcome into — «прошло», «не прошло»,
+// «заблокировано» — for every stage, without anybody declaring it. Written by
+// the engine (acp.BoardPropOutcome); named here because the editor must not
+// offer it as something a stage declares, the way it does not offer the column
+// property: both are the app's own answer about the card.
+export const BOARD_PROP_OUTCOME_PROPERTY = 'outcomeProperty'
+
+// The values it takes, in the engine's own spelling (acp.OutcomeValue). A closed
+// set, which is what lets a transition ask about it.
+export const OUTCOME_VALUES = ['прошло', 'не прошло', 'заблокировано']
+
+// boardOutcomeProperty is the id of that field, or '' for a board without one.
+export function boardOutcomeProperty(board: {properties?: Record<string, unknown>}): string {
+    const recorded = board.properties?.[BOARD_PROP_OUTCOME_PROPERTY]
+    return typeof recorded === 'string' ? recorded : ''
+}
+
 // And which one holds the branch a card's work is on, by id for the same
 // reason. Go writes into it (workspace.go); the page is what creates it,
 // because the board's card properties are the page's to patch.

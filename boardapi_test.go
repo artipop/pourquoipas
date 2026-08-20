@@ -59,6 +59,8 @@ func (w *recordingWriter) UpdateCard(_ context.Context, cardID string, edit acp.
 // the same writer.
 func (w *recordingWriter) SetCardText(context.Context, string, string, string) error { return nil }
 
+func (w *recordingWriter) SetCardOption(context.Context, string, string, string) error { return nil }
+
 func (w *recordingWriter) SetCardFields(_ context.Context, cardID string, fields map[string]string) error {
 	if w.fields == nil {
 		w.fields = map[string]map[string]string{}

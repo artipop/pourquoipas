@@ -33,9 +33,10 @@ type templateBoard struct {
 	Fields struct {
 		CardProperties []templateProperty `json:"cardProperties"`
 		Properties     struct {
-			Columns []ColumnSpec `json:"columns"`
-			Flows   []FlowEntry  `json:"flows"`
-			Setup   BoardSetup   `json:"setup"`
+			Columns         []ColumnSpec `json:"columns"`
+			Flows           []FlowEntry  `json:"flows"`
+			Setup           BoardSetup   `json:"setup"`
+			OutcomeProperty string       `json:"outcomeProperty"`
 		} `json:"properties"`
 	} `json:"fields"`
 }
@@ -378,7 +379,6 @@ func TestTheDeveloperTemplateDeclaresWhatItsMachineStagesProduce(t *testing.T) {
 
 	wantWrites := map[string]string{
 		strings.ToLower(TemplateDeployColumn): "Превью",
-		strings.ToLower(TemplateTestColumn):   "Вердикт",
 	}
 	for _, c := range board.Fields.Properties.Columns {
 		want, machine := wantWrites[strings.ToLower(c.Column)]
@@ -399,24 +399,47 @@ func TestTheDeveloperTemplateDeclaresWhatItsMachineStagesProduce(t *testing.T) {
 		}
 	}
 
-	// And the properties themselves, since a write naming a field the board has
-	// not got is refused at the moment the stage reports — after the work.
+	// And the property itself, since a write naming a field the board has not
+	// got is refused at the moment the stage reports — after the work.
 	if _, ok := board.property("Превью"); !ok {
 		t.Error("the template writes a preview address to a property it does not carry")
 	}
-	verdict, ok := board.property("Вердикт")
-	if !ok {
-		t.Fatal("the template writes a verdict to a property it does not carry")
+}
+
+// How a stage ended is a fact about the card. The template used to say it by
+// having the card land in «Проверено», «Не прошло» or «Заблокировано» — three
+// columns whose whole content was one fact about the stage before them, and
+// which then read as places where work happens, on the board and on the canvas
+// alike. The outcome is a field the engine writes for every stage, and those
+// columns are gone.
+func TestTheDeveloperTemplateKeepsOutcomesOffTheBoard(t *testing.T) {
+	board := readTemplateBoard(t)
+
+	for _, gone := range []string{"Проверено", "Не прошло", "Заблокировано"} {
+		if board.options(t, "Статус")[strings.ToLower(gone)] {
+			t.Errorf("«%s» is still a column: an outcome is not a place work happens", gone)
+		}
 	}
 
-	// A closed set, because that is what an arrow can branch on — and the
-	// values are the ones NormalizeVerdict produces.
-	if verdict.Type != "select" {
-		t.Errorf("the verdict is a %q, so no transition can ask what it is", verdict.Type)
+	outcome, ok := board.property("Исход")
+	if !ok {
+		t.Fatal("the template has no field for a stage's outcome")
 	}
-	for _, want := range []string{"pass", "fail", "blocked"} {
-		if !board.options(t, "Вердикт")[want] {
-			t.Errorf("the verdict cannot be %q", want)
+
+	// A closed set, because an arrow asks "is it this value" and that is the
+	// point of writing it — and the values are the engine's own (OutcomeValue).
+	if outcome.Type != "select" {
+		t.Errorf("the outcome is a %q, so no transition can ask what it is", outcome.Type)
+	}
+	for _, want := range []string{OutcomePassed, OutcomeFailed, OutcomeBlocked} {
+		if !board.options(t, "Исход")[want] {
+			t.Errorf("the outcome cannot be %q", want)
 		}
+	}
+
+	// And the board says which field it is, or the engine writes nowhere.
+	if board.Fields.Properties.OutcomeProperty != outcome.ID {
+		t.Errorf("the board records %q as its outcome field, want %q",
+			board.Fields.Properties.OutcomeProperty, outcome.ID)
 	}
 }

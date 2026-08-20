@@ -83,9 +83,17 @@ The **"Columns"** tab, select a column — in the panel:
   set of values has something to pick from, a text one has not. A text property
   travels to the stages further on and is read there.
 
+  One property the app writes itself, and it is not declared: **«Исход»** — how
+  the stage ended («прошло», «не прошло», «заблокировано»). Every stage writes
+  it, which is why it is not in the writes list; an arrow can still branch on
+  it, like any property with a set of values. Because of it a board no longer
+  needs columns like «Проверено» or «Не прошло»: when a stage has no transition
+  for its outcome the card stays where it is, the outcome is on it, and the
+  route strip carries the reason in amber.
+
   A board made from the «Разработка» template has this set up already: the
-  «Деплой» column writes «Превью» (a link) and «QA» writes «Вердикт»
-  (`pass`/`fail`/`blocked`), and both show on their boxes on the canvas.
+  «Деплой» column writes «Превью» (a link), and it shows on that box on the
+  canvas. How a stage ended goes into «Исход».
 
   The declared writes reach the agent in its brief: what it has to pass in
   `finish_work`, and what each value may be — for a property with a set, the

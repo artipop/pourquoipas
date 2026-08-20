@@ -58,6 +58,10 @@ type BoardWriter interface {
 	// SetCardFields writes named properties: a select by one of its option
 	// names, anything else as text.
 	SetCardFields(ctx context.Context, cardID string, fields map[string]string) error
+	// SetCardOption writes one select property by id, choosing the option of
+	// this name. By id for the reason SetCardText is: this is a field the app
+	// made, and what a person renamed it to is theirs.
+	SetCardOption(ctx context.Context, cardID, propertyID, optionName string) error
 }
 
 // NewCard is a card asked for from outside the board — by an agent through the

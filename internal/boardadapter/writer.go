@@ -171,6 +171,42 @@ func (w *Writer) SetCardText(ctx context.Context, cardID, propertyID, value stri
 	return w.patchCard(cardID, &model.CardPatch{UpdatedProperties: map[string]any{propertyID: value}}, true)
 }
 
+// SetCardOption writes one select property by id, choosing the option whose
+// name this is. Silent, like SetCardText and for the same reason: it is the
+// machine recording a fact about the card, not a person editing it, and a
+// notify here would set the column's automation off.
+//
+// An option the board does not have is not invented: adding options is a
+// deliberate act elsewhere, and a stage outcome arriving at a board whose
+// property somebody has edited must not quietly grow it back.
+func (w *Writer) SetCardOption(ctx context.Context, cardID, propertyID, optionName string) error {
+	if strings.TrimSpace(propertyID) == "" || strings.TrimSpace(optionName) == "" {
+		return nil
+	}
+	card, err := w.cardBlock(cardID)
+	if err != nil {
+		return err
+	}
+	board, err := w.app.GetBoard(card.BoardID)
+	if err != nil {
+		return fmt.Errorf("get board %s: %w", card.BoardID, err)
+	}
+	schema, err := model.ParsePropertySchema(board)
+	if err != nil {
+		return err
+	}
+	def, ok := schema[propertyID]
+	if !ok {
+		return fmt.Errorf("на доске нет свойства с id %q", propertyID)
+	}
+	for oid, opt := range def.Options {
+		if strings.EqualFold(opt.Value, optionName) {
+			return w.patchCard(cardID, &model.CardPatch{UpdatedProperties: map[string]any{propertyID: oid}}, true)
+		}
+	}
+	return fmt.Errorf("у свойства %q нет значения %q", def.Name, optionName)
+}
+
 // SetCardFields writes named properties of a card: a select property gets the
 // option whose name the value is, anything else keeps the value as text. It is
 // the write behind a stage's declared outputs (acp.PropertyWrite) — silent,

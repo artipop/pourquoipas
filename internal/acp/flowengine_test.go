@@ -113,6 +113,57 @@ func TestFlowTakesTheFailureBranch(t *testing.T) {
 	})
 }
 
+// How a stage ended is a fact about the card, and it used to be expressible
+// only as *where the card went* — a board grew «Проверено», «Не прошло» and
+// «Заблокировано» columns whose whole content was one fact about the stage
+// before them. The engine writes it, for every stage and without anybody
+// declaring it, which is what makes those columns unnecessary.
+func TestEveryStageWritesItsOutcomeOntoTheCard(t *testing.T) {
+	m, writer, events, project := flowManager(t, fakeClaudeHappy, sampleFlow())
+	m.SetBoardMeta(&fakeBoardMeta{props: map[string]any{BoardPropOutcome: "prop-outcome"}})
+
+	events.ch <- flowEvent("card-out", project, "Backlog", "To Agent")
+
+	waitFor(t, 20*time.Second, "the outcome lands on the card", func() bool {
+		return writer.cardText("card-out", "prop-outcome") == OutcomePassed
+	})
+}
+
+// And a stage that stops the route still says why it stopped: the card parks
+// where it is, and the outcome is on it — which is the whole of what a column
+// called «Не прошло» used to carry.
+func TestAStageThatStopsTheRouteStillWritesItsOutcome(t *testing.T) {
+	flow := sampleFlow()
+	flow.Edges = nil
+	m, writer, events, project := flowManager(t, fakeClaudeCrash, flow)
+	m.SetBoardMeta(&fakeBoardMeta{props: map[string]any{BoardPropOutcome: "prop-outcome"}})
+
+	events.ch <- flowEvent("card-stop", project, "Backlog", "To Agent")
+
+	waitFor(t, 20*time.Second, "the failure is on the card", func() bool {
+		return writer.cardText("card-stop", "prop-outcome") == OutcomeFailed
+	})
+	if moves := writer.cardMoves(); len(moves) != 0 {
+		t.Fatalf("the card should have stayed put: %+v", moves)
+	}
+}
+
+// A board with no such field gets nothing rather than an error — every board
+// made before this existed, and one whose owner deleted the field.
+func TestABoardWithoutTheOutcomeFieldIsLeftAlone(t *testing.T) {
+	m, writer, events, project := flowManager(t, fakeClaudeHappy, sampleFlow())
+	m.SetBoardMeta(&fakeBoardMeta{})
+
+	events.ch <- flowEvent("card-none", project, "Backlog", "To Agent")
+
+	waitFor(t, 20*time.Second, "the card still travels", func() bool {
+		return len(writer.cardMoves()) == 1
+	})
+	if got := writer.cardText("card-none", "prop-outcome"); got != "" {
+		t.Errorf("something was written to a board that has no outcome field: %q", got)
+	}
+}
+
 func TestFlowWithoutAnEdgeLeavesTheCardPut(t *testing.T) {
 	flow := sampleFlow()
 	flow.Edges = nil // the stage runs, but nothing follows it

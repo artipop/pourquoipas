@@ -1393,6 +1393,26 @@ again — so an override is written by *saying* something, which is the shape th
 crew and the prompt already have. A person's conversation on the node gets the
 same fallback (`cardPlace`), since it is about the same work.
 
+**How a stage ended is a field, not a column** (`BoardPropOutcome`,
+`writeCardOutcome`, `OutcomeValue`). It used to be expressible only as *where
+the card went*: the shipped board grew «Проверено», «Не прошло» and
+«Заблокировано», three columns whose whole content was one fact about the stage
+before them — and a fact read as a place where work happens, on the board where
+nobody works in them and on the canvas where they are stages that «ждёт» for
+ever. The engine writes «прошло»/«не прошло»/«заблокировано» onto the card for
+**every** stage and without anybody declaring it, which is what makes it
+служебное: every node produces one, so no node should have to say so. Written
+before the edges are read, so a condition may branch on it, and written on the
+dead-end path too, because that card is the one somebody will come and look at.
+Silently and by id, like the branch — a notify would set the column's own
+automation off — and by the *card's* board rather than the route's, since a
+route with an empty `BoardID` runs on all of them. A board with no such field
+gets nothing, which is every board made before it existed; the editor keeps it
+out of the writes picker exactly as it keeps the column property out, and a
+condition may still ask about it, which is the point of it being a closed set.
+So a route no longer needs a column to say "this failed": a stage whose outcome
+has no edge parks the card where it is and says why (`stallCardSoft`).
+
 **And the dataflow is on the picture, because that is where the fork is drawn**
 (`StageWrite`, `HANDLE_WRITE`, `stageHeight`). A stage's resolved writes are a
 third line of chips on its box, and each one whose property has a closed set is

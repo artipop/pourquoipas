@@ -81,6 +81,12 @@ type Props = {
     // Every property of the board — what a stage's writes and reads pick from.
     // Broader than `properties` on purpose: a preview URL wants a text field.
     allProperties?: IPropertyTemplate[]
+
+    // The field this app writes every stage's outcome into. It is not a stage's
+    // to declare — the engine writes it for all of them — so it is kept out of
+    // the writes picker, exactly as the column property is. A condition may
+    // still ask about it, which is the whole point of it being a closed set.
+    outcomePropertyId?: string
     columns: BoardColumn[]
 
     automation: Automation
@@ -802,7 +808,7 @@ const AutomationEditor = (props: Props) => {
     // offering an answer that fails at the moment the stage reports.
     const writableProperties = () =>
         (props.allProperties || []).
-            filter((p) => p.id !== props.property?.id && WRITABLE_TYPES.includes(p.type)).
+            filter((p) => p.id !== props.property?.id && p.id !== props.outcomePropertyId && WRITABLE_TYPES.includes(p.type)).
             map((p) => p.name)
 
     // createProperty makes the board property and declares it in the same

@@ -184,6 +184,31 @@ func (m *Manager) upstreamWrites(boardID string, flow FlowEntry, node FlowNode) 
 	})
 }
 
+// writeCardOutcome puts how a stage ended onto the card, in the board's own
+// outcome field. Silent and by id, like the branch: it is the machine recording
+// a fact, and a notify would set the column's automation off.
+//
+// A board with no such field gets nothing — every board made before this one
+// existed, and every board whose owner deleted it. That is the same answer the
+// branch field gives, and it is why nothing downstream may depend on the value
+// being there.
+func (m *Manager) writeCardOutcome(cardID, boardID, trigger string) {
+	value := OutcomeValue(trigger)
+	if value == "" || m.writer == nil {
+		return
+	}
+	propID := m.boardProperty(boardID, BoardPropOutcome)
+	if propID == "" {
+		return
+	}
+	ctx, cancel := context.WithTimeout(m.rootCtx, 10*time.Second)
+	defer cancel()
+	if err := m.forCard(cardID).Writer.SetCardOption(ctx, cardID, propID, value); err != nil {
+		m.log.Warn("acp: could not write the stage's outcome onto the card",
+			"card", cardID, "outcome", value, "err", err)
+	}
+}
+
 // runNodeAction starts whatever the stage does. A stage that cannot even start
 // counts as a failed one, so the route can carry the card to its failure branch
 // instead of silently stalling.
@@ -271,6 +296,14 @@ func (m *Manager) advanceFlowWith(cardID, on, detail, agentText string) {
 		m.stallCardSoft(cardID, st.NodeID, fmt.Sprintf("стадия %q исчезла из маршрута — карточка осталась на месте", st.NodeID))
 		return
 	}
+	// The outcome goes onto the card before anything is decided by it: an edge
+	// may branch on it, and the stall below is a card somebody will read. Every
+	// stage produces one, so nothing has to declare it.
+	// The card's board and not the route's: a route may be registered for every
+	// board (an empty BoardID means "any"), and which board's outcome field to
+	// write is a question about the card.
+	m.writeCardOutcome(cardID, st.BoardID, on)
+
 	if !flow.HasEdge(node.ID, on) {
 		// A missing edge for an outcome is worth saying out loud: the route
 		// stops here and somebody has to know why. VCS events are only polled

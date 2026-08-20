@@ -24,8 +24,11 @@ import {
     FlowTrigger,
     NewProperty,
     automationChanges,
+    BOARD_PROP_OUTCOME_PROPERTY,
+    OUTCOME_VALUES,
     automationProperty,
     boardColumns,
+    boardOutcomeProperty,
     routeOptionMissing,
     selectProperties,
 } from './automation'
@@ -131,10 +134,48 @@ const AutomationDialog = (props: Props) => {
             if (bindings.ListFlowTemplates) {
                 setReady(JSON.parse(await bindings.ListFlowTemplates()) || [])
             }
+            await ensureOutcomeProperty()
             if (bindings.GetBoardFlowOverview) {
                 const overview: FlowOverview[] = JSON.parse(await bindings.GetBoardFlowOverview(props.board.id)) || []
                 setCounts(Object.fromEntries(overview.map((o) => [o.flow, o.stages])))
             }
+        } catch (e) {
+            setError(String(e))
+        }
+    }
+
+    // A board whose automation runs anything gets the field the engine writes a
+    // stage's outcome into. Made here rather than shipped only by the template,
+    // because a board that predates the field — or one built by hand — would
+    // otherwise have its outcomes written nowhere. Add-only and silent: it is
+    // one field, and the alternative is the three columns it replaced.
+    const ensureOutcomeProperty = async () => {
+        if (boardOutcomeProperty(props.board) || !draft().columns.some((c) => c.action && c.action !== 'none')) {
+            return
+        }
+        const created: IPropertyTemplate = {
+            id: Utils.createGuid(IDType.BlockID),
+            name: intl.formatMessage({id: 'Automation.outcome-property', defaultMessage: 'Outcome'}),
+            type: 'select',
+            options: OUTCOME_VALUES.map((value) => ({
+                id: Utils.createGuid(IDType.BlockID),
+                value,
+                color: 'propColorDefault',
+            } as IPropertyOption)),
+        }
+        try {
+            await mutator.updateBoardCardProperties(
+                props.board.id,
+                props.board.cardProperties,
+                [...props.board.cardProperties, created],
+                'add outcome property',
+            )
+
+            // And the board records which field it is, by id — without that the
+            // engine has nowhere to write, the same as the folder and the
+            // branch fields.
+            const properties = {...(props.board.properties || {}), [BOARD_PROP_OUTCOME_PROPERTY]: created.id}
+            await mutator.updateBoard({...props.board, properties}, props.board, 'remember the outcome field')
         } catch (e) {
             setError(String(e))
         }
@@ -327,6 +368,7 @@ const AutomationDialog = (props: Props) => {
                     property={property()}
                     properties={selectProperties(props.board)}
                     allProperties={props.board.cardProperties || []}
+                    outcomePropertyId={boardOutcomeProperty(props.board)}
                     columns={columns()}
                     automation={draft()}
                     triggers={triggers()}
