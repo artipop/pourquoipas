@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	APIURLSuffix = "/api/v2"
+	APIURLSuffix = "/api/v0"
 )
 
 type RequestReaderError struct {

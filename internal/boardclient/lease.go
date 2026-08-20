@@ -21,7 +21,7 @@ const LeasePath = "/acp/lease"
 
 // ClaimStage asks the board whether this install may take a route event.
 //
-// The one call in this package that does not go to /api/v2: a claim is about
+// The one call in this package that does not go to /api/v0: a claim is about
 // which desktop works the card, which is this application's business and not
 // the board's. Everything else about it is the same — the same origin, the same
 // session.
@@ -33,7 +33,7 @@ func (c *Client) ClaimStage(ctx context.Context, token string, window time.Durat
 	if err != nil {
 		return false, err
 	}
-	url := strings.TrimSuffix(c.api.APIURL, "/api/v2") + LeasePath
+	url := strings.TrimSuffix(c.api.APIURL, "/api/v0") + LeasePath
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
 	if err != nil {
 		return false, err

@@ -40,7 +40,7 @@ func TestFrontDoorSendsWailsToWailsAndTheRestToTheBoard(t *testing.T) {
 		"/sources/ingest/phone": "ingest",
 		"/":                     "board",
 		"/ws":                   "board",
-		"/api/v2/teams":         "board",
+		"/api/v0/teams":         "board",
 	} {
 		if got := request(t, door, path, nil).Body.String(); got != want {
 			t.Errorf("%s went to %q, want %q", path, got, want)

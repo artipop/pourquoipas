@@ -5,7 +5,7 @@ import {versionProperty} from '../../src/store/users'
 Cypress.Commands.add('apiRegisterUser', (data: Cypress.UserData, token?: string, failOnError?: boolean) => {
     return cy.request({
         method: 'POST',
-        url: '/api/v2/register',
+        url: '/api/v0/register',
         body: {
             ...data,
             token,
@@ -20,7 +20,7 @@ Cypress.Commands.add('apiRegisterUser', (data: Cypress.UserData, token?: string,
 Cypress.Commands.add('apiLoginUser', (data: Cypress.LoginData) => {
     return cy.request({
         method: 'POST',
-        url: '/api/v2/login',
+        url: '/api/v0/login',
         body: {
             ...data,
             type: 'normal',
@@ -51,7 +51,7 @@ Cypress.Commands.add('apiInitServer', () => {
 })
 
 // What apiInitServer is instead, on this application's server. It runs the
-// board in single-user mode, where /api/v2/register and /api/v2/login are
+// board in single-user mode, where /api/v0/register and /api/v0/login are
 // closed and there is nobody to register: the front door hands the page a
 // session token in the bootstrap script it injects (proxy.go), which the page
 // puts in localStorage. Reading it back out of the app's window is what lets
@@ -68,7 +68,7 @@ Cypress.Commands.add('apiUseSingleUserSession', () => {
 Cypress.Commands.add('apiDeleteBoard', (id: string) => {
     return cy.request({
         method: 'DELETE',
-        url: `/api/v2/boards/${encodeURIComponent(id)}`,
+        url: `/api/v0/boards/${encodeURIComponent(id)}`,
         ...headers(),
     })
 })
@@ -84,7 +84,7 @@ const deleteBoards = (ids: string[]) => {
 Cypress.Commands.add('apiResetBoards', () => {
     return cy.request({
         method: 'GET',
-        url: '/api/v2/teams/0/boards',
+        url: '/api/v0/teams/0/boards',
         ...headers(),
     }).then((response) => {
         if (Array.isArray(response.body)) {
@@ -105,7 +105,7 @@ Cypress.Commands.add('apiSkipTour', (userID: string) => {
 
     return cy.request({
         method: 'PUT',
-        url: `/api/v2/users/${encodeURIComponent(userID)}/config`,
+        url: `/api/v0/users/${encodeURIComponent(userID)}/config`,
         ...headers(),
         body,
     })
@@ -114,7 +114,7 @@ Cypress.Commands.add('apiSkipTour', (userID: string) => {
 Cypress.Commands.add('apiGetMe', () => {
     return cy.request({
         method: 'GET',
-        url: '/api/v2/users/me',
+        url: '/api/v0/users/me',
         ...headers(),
     }).then((response) => response.body.id)
 })
@@ -123,7 +123,7 @@ Cypress.Commands.add('apiChangePassword', (userId: string, oldPassword: string, 
     const body = {oldPassword, newPassword}
     return cy.request({
         method: 'POST',
-        url: `/api/v2/users/${encodeURIComponent(userId)}/changepassword`,
+        url: `/api/v0/users/${encodeURIComponent(userId)}/changepassword`,
         ...headers(),
         body,
     })

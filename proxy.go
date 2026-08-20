@@ -145,7 +145,7 @@ func bootstrapScript(sessionToken string) string {
 // does not match.
 //
 // What genuinely lives on the server is the data, and the page asks for all of
-// it under two prefixes: /api/v2 (the board API, /files included) and /ws (the
+// it under two prefixes: /api/v0 (the board API, /files included) and /ws (the
 // board's own socket). Those go across; everything else — index.html, /static
 // — stays local. The page never knows which is which: every path it builds is
 // relative to window.location.origin, and that is the front door either way.
@@ -202,7 +202,7 @@ func newServerProxy(port int, attached string, token func() string) (http.Handle
 	}
 
 	mux := http.NewServeMux()
-	mux.Handle("/api/v2/", data)
+	mux.Handle("/api/v0/", data)
 	mux.Handle("/ws", data)
 	mux.Handle("/", page)
 	return mux, nil

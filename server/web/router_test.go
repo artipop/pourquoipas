@@ -22,12 +22,12 @@ func get(t *testing.T, h http.Handler, path string) *httptest.ResponseRecorder {
 // hangs is decided in one place.
 func TestAGroupPrefixesEveryRouteRegisteredThroughIt(t *testing.T) {
 	r := NewRouter()
-	api := r.Group("/api/v2")
+	api := r.Group("/api/v0")
 	api.HandleFunc("GET /boards/{boardID}", func(w http.ResponseWriter, req *http.Request) {
 		_, _ = w.Write([]byte(req.PathValue("boardID")))
 	})
 
-	require.Equal(t, "abc", get(t, r, "/api/v2/boards/abc").Body.String())
+	require.Equal(t, "abc", get(t, r, "/api/v0/boards/abc").Body.String())
 	require.Equal(t, http.StatusNotFound, get(t, r, "/boards/abc").Code)
 }
 
@@ -35,9 +35,9 @@ func TestAGroupPrefixesEveryRouteRegisteredThroughIt(t *testing.T) {
 // groups, so a service that knows nothing about it still lands beneath it.
 func TestGroupsNest(t *testing.T) {
 	r := NewRouter()
-	r.Group("/boards").Group("/api/v2").HandleFunc("GET /hello", ok)
+	r.Group("/boards").Group("/api/v0").HandleFunc("GET /hello", ok)
 
-	require.Equal(t, http.StatusOK, get(t, r, "/boards/api/v2/hello").Code)
+	require.Equal(t, http.StatusOK, get(t, r, "/boards/api/v0/hello").Code)
 }
 
 // Middleware belongs to the group, and a route registered elsewhere must not
@@ -53,13 +53,13 @@ func TestMiddlewareRunsOnlyForItsOwnGroup(t *testing.T) {
 			})
 		}
 	}
-	r.Group("/api", mark("outer")).Group("/v2", mark("inner")).HandleFunc("GET /guarded", ok)
+	r.Group("/api", mark("outer")).Group("/v0", mark("inner")).HandleFunc("GET /guarded", ok)
 	r.HandleFunc("GET /open", ok)
 
 	get(t, r, "/open")
 	require.Empty(t, seen, "a route outside the group ran its middleware")
 
-	get(t, r, "/api/v2/guarded")
+	get(t, r, "/api/v0/guarded")
 	require.Equal(t, []string{"outer", "inner"}, seen, "middleware ran out of order")
 }
 

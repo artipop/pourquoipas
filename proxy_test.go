@@ -184,7 +184,7 @@ func TestARequestToAnAttachedServerDoesNotDescribeOurOwnDoor(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	req := httptest.NewRequest(http.MethodGet, "/api/v2/boards", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/v0/boards", nil)
 	req.Host = "127.0.0.1:9000"
 	req.Header.Set("Origin", "http://127.0.0.1:9000")
 	req.Header.Set("Sec-Fetch-Site", "same-origin")
@@ -241,7 +241,7 @@ func TestAttachedTheDataGoesAcrossAndThePageStaysHere(t *testing.T) {
 		return string(body)
 	}
 
-	for _, path := range []string{"/api/v2/boards", "/api/v2/files/teams/0/b/f", "/ws"} {
+	for _, path := range []string{"/api/v0/boards", "/api/v0/files/teams/0/b/f", "/ws"} {
 		if got := get(path); !strings.Contains(got, "the server") {
 			t.Errorf("%s was answered here: %q", path, got)
 		}

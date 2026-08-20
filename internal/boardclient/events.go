@@ -263,7 +263,7 @@ func (c *Client) resync(ctx context.Context) {
 }
 
 // socketURL turns the API base into the socket's address: the board serves it
-// beside /api/v2, on the same origin, and it is ws:// or wss:// by whichever
+// beside /api/v0, on the same origin, and it is ws:// or wss:// by whichever
 // the API is.
 func socketURL(apiURL string) (string, error) {
 	parsed, err := url.Parse(apiURL)
@@ -276,6 +276,6 @@ func socketURL(apiURL string) (string, error) {
 	default:
 		parsed.Scheme = "ws"
 	}
-	parsed.Path = strings.TrimSuffix(parsed.Path, "/api/v2") + "/ws"
+	parsed.Path = strings.TrimSuffix(parsed.Path, "/api/v0") + "/ws"
 	return parsed.String(), nil
 }

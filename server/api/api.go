@@ -69,37 +69,41 @@ func (a *API) synthesizesSingleUser() bool {
 	return len(a.singleUserToken) > 0
 }
 
+// RegisterRoutes mounts the board's API.
+//
+// The version in the path is v0, and it says what is true: this API has never
+// been released and is changed freely — routes were added to it in the same
+// week this comment was written. It was v2, which is the version Focalboard
+// shipped, and carrying somebody else's number is a promise about compatibility
+// with a product this one is not.
+//
+// A v1 that nothing ever served, and a v3 that upstream left as a commented-out
+// group and a "migrate these when ready" note, went with it.
 func (a *API) RegisterRoutes(r *web.Router) {
-	apiv2 := r.Group("/api/v2", a.panicHandler, a.requireCSRFToken)
+	api := r.Group("/api/v0", a.panicHandler, a.requireCSRFToken)
 
-	/* ToDo:
-	apiv3 := r.Group("/api/v3", a.panicHandler, a.requireCSRFToken)
-	*/
+	a.registerUsersRoutes(api)
+	a.registerAuthRoutes(api)
+	a.registerMembersRoutes(api)
+	a.registerCategoriesRoutes(api)
+	a.registerSharingRoutes(api)
+	a.registerTeamsRoutes(api)
+	a.registerAdminRoutes(api)
+	a.registerMachineUsersRoutes(api)
+	a.registerAchivesRoutes(api)
+	a.registerSubscriptionsRoutes(api)
+	a.registerFilesRoutes(api)
+	a.registerSearchRoutes(api)
+	a.registerConfigRoutes(api)
+	a.registerBoardsAndBlocksRoutes(api)
+	a.registerTemplatesRoutes(api)
+	a.registerBoardsRoutes(api)
+	a.registerBlocksRoutes(api)
+	a.registerContentBlocksRoutes(api)
 
-	// V2 routes (ToDo: migrate these to V3 when ready to ship V3)
-	a.registerUsersRoutes(apiv2)
-	a.registerAuthRoutes(apiv2)
-	a.registerMembersRoutes(apiv2)
-	a.registerCategoriesRoutes(apiv2)
-	a.registerSharingRoutes(apiv2)
-	a.registerTeamsRoutes(apiv2)
-	a.registerAdminRoutes(apiv2)
-	a.registerMachineUsersRoutes(apiv2)
-	a.registerAchivesRoutes(apiv2)
-	a.registerSubscriptionsRoutes(apiv2)
-	a.registerFilesRoutes(apiv2)
-	a.registerSearchRoutes(apiv2)
-	a.registerConfigRoutes(apiv2)
-	a.registerBoardsAndBlocksRoutes(apiv2)
-	a.registerTemplatesRoutes(apiv2)
-	a.registerBoardsRoutes(apiv2)
-	a.registerBlocksRoutes(apiv2)
-	a.registerContentBlocksRoutes(apiv2)
+	a.registerCardsRoutes(api)
 
-	// V3 routes
-	a.registerCardsRoutes(apiv2)
-
-	// System routes are outside the /api/v2 path
+	// System routes are outside the /api/v0 path
 	a.registerSystemRoutes(r)
 }
 
