@@ -82,6 +82,7 @@
   "Automation.cond-always": "always",
   "Automation.cond-comment": "only if the agent wrote…",
   "Automation.cond-comment-placeholder": "text in the agent’s closing comment",
+  "Automation.cond-outcome": "When the card is marked “{value}”. That mark is the app’s own — it is set on the card, in one click.",
   "Automation.cond-pick-property": "— property —",
   "Automation.cond-pick-value": "— value —",
   "Automation.cond-property": "only if the card has…",

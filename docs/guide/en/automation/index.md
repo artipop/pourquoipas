@@ -92,7 +92,9 @@ The **"Columns"** tab, select a column — in the panel:
   wakes that arrow.
 
   One property the app writes itself, and it is not declared: **«Исход»** — how
-  the stage ended («прошло», «не прошло», «заблокировано»). Every stage writes
+  the stage ended: «прошло» or «не прошло», and there is no third value — the
+card is asked whether the step worked, and *why not* is written as the reason on
+its route strip, where it can be a sentence rather than a word. Every stage writes
   it, which is why it is not in the writes list; an arrow can still branch on
   it, like any property with a set of values. Because of it a board no longer
   needs columns like «Проверено» or «Не прошло»: when a stage has no transition

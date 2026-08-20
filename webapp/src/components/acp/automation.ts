@@ -436,9 +436,12 @@ export const BOARD_PROP_PROJECT_PROPERTY = 'projectProperty'
 // property: both are the app's own answer about the card.
 export const BOARD_PROP_OUTCOME_PROPERTY = 'outcomeProperty'
 
-// The values it takes, in the engine's own spelling (acp.OutcomeValue). A closed
-// set, which is what lets a transition ask about it.
-export const OUTCOME_VALUES = ['прошло', 'не прошло', 'заблокировано']
+// The values it takes, in the engine's own spelling (acp.OutcomeValue). Two,
+// because what the card carries here is whether the step worked — and every
+// question anybody asks of it is that question. A check that could not run
+// answers «не прошло» like anything else that did not pass; why is the stall's
+// business, where it can be a sentence.
+export const OUTCOME_VALUES = ['прошло', 'не прошло']
 
 // boardOutcomeProperty is the id of that field, or '' for a board without one.
 export function boardOutcomeProperty(board: {properties?: Record<string, unknown>}): string {

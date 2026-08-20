@@ -1409,7 +1409,7 @@ the card went*: the shipped board grew «Проверено», «Не прошл
 «Заблокировано», three columns whose whole content was one fact about the stage
 before them — and a fact read as a place where work happens, on the board where
 nobody works in them and on the canvas where they are stages that «ждёт» for
-ever. The engine writes «прошло»/«не прошло»/«заблокировано» onto the card for
+ever. The engine writes «прошло»/«не прошло» onto the card for
 **every** stage and without anybody declaring it, which is what makes it
 служебное: every node produces one, so no node should have to say so. Written
 before the edges are read, so a condition may branch on it, and written on the
@@ -1419,7 +1419,16 @@ automation off — and by the *card's* board rather than the route's, since a
 route with an empty `BoardID` runs on all of them. A board with no such field
 gets nothing, which is every board made before it existed; the editor keeps it
 out of the writes picker exactly as it keeps the column property out, and a
-condition may still ask about it, which is the point of it being a closed set.
+condition may still ask about it, which is the point of it being a closed set —
+though the editor no longer *offers* it: it is out of the condition picker as
+well as the writes one, and an arrow that already asks about it is shown as a
+sentence rather than as two dropdowns whose answer is the only one there is.
+
+**Two values and not three.** «Заблокировано» was tried and taken out: the card
+is asked whether the step worked, every question anybody asks of the field is
+that question, and «could not run» is a *reason* — which the stall record
+already carries, where it can be a sentence instead of a word. Binary is also
+what makes the field answerable in one click by a person.
 So a route no longer needs a column to say "this failed": a stage whose outcome
 has no edge parks the card where it is and says why (`stallCardSoft`).
 

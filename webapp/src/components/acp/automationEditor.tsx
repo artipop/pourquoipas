@@ -16,6 +16,7 @@ import {
     BoardColumn,
     CARD_CHANGED,
     ColumnSpec,
+    EdgeCond,
     Flow,
     FlowEdge,
     FlowNode,
@@ -628,9 +629,22 @@ const AutomationEditor = (props: Props) => {
         })
     }
 
-    // The select properties a condition may ask about. The route's own column
-    // property is excluded: a change of that is a move, not a mark.
-    const condProperties = () => props.properties.filter((p) => p.name !== (flow()?.property || props.property?.name))
+    // The select properties a condition may ask about. Two are left out. The
+    // route's own column property, because a change of that is a move and not a
+    // mark. And the outcome field: the app writes it for every stage, a person
+    // answers it on the card in one click, and putting it in a list of things
+    // to configure would make a mechanism out of something that has no
+    // settings. An arrow that already asks about it says so and is not offered
+    // for editing (condEditor).
+    const condProperties = () => props.properties.filter((p) =>
+        p.name !== (flow()?.property || props.property?.name) && p.id !== props.outcomePropertyId)
+
+    // Whether this condition is the outcome one — matched by name, because that
+    // is what an edge carries, and by the id the board records for the field.
+    const isOutcomeCond = (cond: EdgeCond | undefined) => {
+        const named = (props.allProperties || []).find((p) => p.id === props.outcomePropertyId)
+        return Boolean(cond?.property && named && cond.property.toLowerCase() === named.name.toLowerCase())
+    }
 
     // The same list, ordered by the graph: what the stage this arrow leaves
     // produces comes first, then what the stages before it produce, then the
@@ -1045,6 +1059,23 @@ const AutomationEditor = (props: Props) => {
     const condEditor = (index: number, edge: FlowEdge) => {
         const cond = edge.if
         const isOutcome = OUTCOMES.includes(edge.on)
+
+        // An arrow that waits for the outcome field is shown and not edited.
+        // There is nothing to choose in it — the field has two values and the
+        // app owns both — so a pair of dropdowns would be asking a question
+        // whose answer is already the only one.
+        if (isOutcomeCond(cond)) {
+            return (
+                <div class='AutomationEditor__cond'>
+                    <span class='AutomationEditor__hint'>
+                        {intl.formatMessage(
+                            {id: 'Automation.cond-outcome', defaultMessage: 'When the card is marked “{value}”. That mark is the app’s own — it is set on the card, in one click.'},
+                            {value: cond?.value},
+                        )}
+                    </span>
+                </div>
+            )
+        }
         const kind = () => {
             if (!cond) {
                 return 'always'

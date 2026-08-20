@@ -88,13 +88,18 @@ const (
 	BoardPropOutcome = "outcomeProperty"
 )
 
-// The values that property takes: one per outcome trigger, and nothing else.
-// They are written by this side and read by an edge's condition, so they are a
-// closed set — which is also what lets a route branch on them at all.
+// The values that property takes, and there are two. A third was tried —
+// «заблокировано», for a check that could not run — and taken out: what a card
+// carries here is whether the step worked, and every question anybody asks of
+// it is that question. «Заблокировано» is not a third answer to it, it is a
+// reason, and the reason is on the card's route strip already (stallCardSoft),
+// where it can be a sentence instead of a word.
+//
+// Binary is also what makes it cheap to answer by hand: a reviewer marking a
+// card picks between two things and not out of a list.
 const (
-	OutcomePassed  = "прошло"
-	OutcomeFailed  = "не прошло"
-	OutcomeBlocked = "заблокировано"
+	OutcomePassed = "прошло"
+	OutcomeFailed = "не прошло"
 )
 
 // OutcomePropertyTitle is what this app calls that field when it makes one. A
@@ -108,14 +113,16 @@ const OutcomePropertyTitle = "Исход"
 // OutcomeValue is what a stage's outcome is called on the card. Empty for
 // anything that is not a stage's own outcome — a merged branch is news about
 // the world, not a verdict on the work.
+//
+// A check that could not run answers «не прошло» like anything else that did
+// not pass: the card is asked whether the step worked, and it did not. Why is
+// the stall's business.
 func OutcomeValue(trigger string) string {
 	switch trigger {
 	case TriggerSuccess:
 		return OutcomePassed
-	case TriggerFailure:
+	case TriggerFailure, TriggerBlocked:
 		return OutcomeFailed
-	case TriggerBlocked:
-		return OutcomeBlocked
 	default:
 		return ""
 	}

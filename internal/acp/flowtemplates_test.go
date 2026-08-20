@@ -431,10 +431,17 @@ func TestTheDeveloperTemplateKeepsOutcomesOffTheBoard(t *testing.T) {
 	if outcome.Type != "select" {
 		t.Errorf("the outcome is a %q, so no transition can ask what it is", outcome.Type)
 	}
-	for _, want := range []string{OutcomePassed, OutcomeFailed, OutcomeBlocked} {
-		if !board.options(t, "Исход")[want] {
+	// Two values, and only two: what the card carries here is whether the step
+	// worked, and «заблокировано» is a reason rather than a third answer to
+	// that. A reviewer marking a card by hand picks between two things.
+	values := board.options(t, "Исход")
+	for _, want := range []string{OutcomePassed, OutcomeFailed} {
+		if !values[want] {
 			t.Errorf("the outcome cannot be %q", want)
 		}
+	}
+	if len(values) != 2 {
+		t.Errorf("the outcome has %d values: %v", len(values), values)
 	}
 
 	// And the board says which field it is, or the engine writes nowhere.

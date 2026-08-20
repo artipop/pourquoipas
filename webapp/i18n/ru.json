@@ -82,6 +82,7 @@
   "Automation.cond-always": "всегда",
   "Automation.cond-comment": "только если агент написал…",
   "Automation.cond-comment-placeholder": "текст в итоговом комментарии агента",
+  "Automation.cond-outcome": "Когда на карточке отмечено «{value}». Эту отметку ставит приложение — или человек на карточке, в одно нажатие.",
   "Automation.cond-pick-property": "— свойство —",
   "Automation.cond-pick-value": "— значение —",
   "Automation.cond-property": "только если на карточке…",
