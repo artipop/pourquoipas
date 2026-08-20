@@ -247,7 +247,9 @@ func (s *SQLStore) refuseOldLadder(engine *migrate.Migrate) error {
 	if err != nil {
 		return err
 	}
-	if version <= 1 {
+	// The schema is two migrations now — the board's tables, then this
+	// application's — so anything at or below the second was made by them.
+	if version <= 2 {
 		return nil
 	}
 	return fmt.Errorf("this database was built by the previous migrations (it records version %d, "+

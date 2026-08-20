@@ -22,11 +22,16 @@ import (
 	"github.com/artipop/xciii/server/services/store/sqlstore"
 )
 
-// migration is the one that creates the schema — the whole of it, the fork's
-// tables and ours, since the ladder was collapsed into it.
-// Named rather than searched for, so that renaming it fails loudly here instead
-// of quietly matching nothing.
-const migration = "migrations/000001_init.up.sql"
+// migrations are the two that create the schema: the board's own tables, then
+// what this application adds beside them. In this order, because every foreign
+// key in the second points at a table the first made.
+//
+// Named rather than searched for, so that renaming one fails loudly here
+// instead of quietly matching nothing.
+var migrations = []string{
+	"migrations/000001_board.up.sql",
+	"migrations/000002_app.up.sql",
+}
 
 // The board's own tables used to be stubbed here, because the migration that
 // made ours did not make them. Since the collapse there is one migration and it
@@ -88,24 +93,27 @@ func alreadyMade(db *sql.DB) (bool, error) {
 // SQLite renders the migration for SQLite — the same rendering the board's own
 // migration source performs, minus the engine that runs it.
 func SQLite() (string, error) {
-	asset, err := fs.ReadFile(sqlstore.Assets, migration)
-	if err != nil {
-		return "", fmt.Errorf("reading %s: %w", migration, err)
-	}
-	tmpl, err := template.New("schema").Parse(string(asset))
-	if err != nil {
-		return "", err
-	}
 	var out bytes.Buffer
-	if err := tmpl.Execute(&out, map[string]any{
-		"sqlite":   true,
-		"mysql":    false,
-		"postgres": false,
-	}); err != nil {
-		return "", err
-	}
-	if !strings.Contains(out.String(), "CREATE TABLE") {
-		return "", fmt.Errorf("%s rendered nothing for SQLite", migration)
+	for _, migration := range migrations {
+		asset, err := fs.ReadFile(sqlstore.Assets, migration)
+		if err != nil {
+			return "", fmt.Errorf("reading %s: %w", migration, err)
+		}
+		tmpl, err := template.New("schema").Parse(string(asset))
+		if err != nil {
+			return "", err
+		}
+		before := out.Len()
+		if err := tmpl.Execute(&out, map[string]any{
+			"sqlite":   true,
+			"mysql":    false,
+			"postgres": false,
+		}); err != nil {
+			return "", err
+		}
+		if !strings.Contains(out.String()[before:], "CREATE TABLE") {
+			return "", fmt.Errorf("%s rendered nothing for SQLite", migration)
+		}
 	}
 	return out.String(), nil
 }

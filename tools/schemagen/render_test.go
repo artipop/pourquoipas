@@ -18,7 +18,11 @@ import (
 // nobody applied, and it would be invisible in review — the SQL in the diff
 // would still look right.
 func TestTheCheckedInMigrationIsWhatTheSchemaSays(t *testing.T) {
-	up, down, err := render()
+	boardUp, boardDown, err := render(boardTables(), boardHeader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	appUp, appDown, err := render(appTables(), appHeader)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -27,8 +31,10 @@ func TestTheCheckedInMigrationIsWhatTheSchemaSays(t *testing.T) {
 		t.Fatal(err)
 	}
 	for name, want := range map[string]string{
-		migrationName + ".up.sql":   up,
-		migrationName + ".down.sql": down,
+		boardMigration + ".up.sql":   boardUp,
+		boardMigration + ".down.sql": boardDown,
+		appMigration + ".up.sql":     appUp,
+		appMigration + ".down.sql":   appDown,
 	} {
 		got, err := os.ReadFile(filepath.Join(root, migrationsDir, name))
 		if err != nil {

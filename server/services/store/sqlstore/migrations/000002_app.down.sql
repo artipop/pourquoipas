@@ -4,6 +4,10 @@
 -- The three dialects below say the same thing. Writing them by hand is what
 -- eighty migrations of this fork do, and every one of them is a place where
 -- somebody has to remember three answers to one question.
+--
+-- What this application adds beside the board: the machine's registries, the
+-- conversations and sessions, where a card stands on its route. Every foreign
+-- key here points at a table the migration before it made.
 
 {{if .sqlite}}
 PRAGMA foreign_keys = off;
@@ -66,57 +70,6 @@ PRAGMA foreign_keys = on;
 PRAGMA foreign_keys = off;
 DROP TABLE `board_ref`;
 PRAGMA foreign_keys = on;
-PRAGMA foreign_keys = off;
-DROP TABLE `notification_hints`;
-PRAGMA foreign_keys = on;
-PRAGMA foreign_keys = off;
-DROP TABLE `subscriptions`;
-PRAGMA foreign_keys = on;
-PRAGMA foreign_keys = off;
-DROP TABLE `preferences`;
-PRAGMA foreign_keys = on;
-PRAGMA foreign_keys = off;
-DROP TABLE `file_info`;
-PRAGMA foreign_keys = on;
-PRAGMA foreign_keys = off;
-DROP TABLE `sharing`;
-PRAGMA foreign_keys = on;
-PRAGMA foreign_keys = off;
-DROP TABLE `category_boards`;
-PRAGMA foreign_keys = on;
-PRAGMA foreign_keys = off;
-DROP TABLE `categories`;
-PRAGMA foreign_keys = on;
-PRAGMA foreign_keys = off;
-DROP TABLE `board_members_history`;
-PRAGMA foreign_keys = on;
-PRAGMA foreign_keys = off;
-DROP TABLE `board_members`;
-PRAGMA foreign_keys = on;
-PRAGMA foreign_keys = off;
-DROP TABLE `blocks_history`;
-PRAGMA foreign_keys = on;
-PRAGMA foreign_keys = off;
-DROP TABLE `blocks`;
-PRAGMA foreign_keys = on;
-PRAGMA foreign_keys = off;
-DROP TABLE `boards_history`;
-PRAGMA foreign_keys = on;
-PRAGMA foreign_keys = off;
-DROP TABLE `boards`;
-PRAGMA foreign_keys = on;
-PRAGMA foreign_keys = off;
-DROP TABLE `system_settings`;
-PRAGMA foreign_keys = on;
-PRAGMA foreign_keys = off;
-DROP TABLE `sessions`;
-PRAGMA foreign_keys = on;
-PRAGMA foreign_keys = off;
-DROP TABLE `teams`;
-PRAGMA foreign_keys = on;
-PRAGMA foreign_keys = off;
-DROP TABLE `users`;
-PRAGMA foreign_keys = on;
 {{end}}
 
 {{if .mysql}}
@@ -140,23 +93,6 @@ DROP TABLE `workspace`;
 DROP TABLE `proxy`;
 DROP TABLE `card_ref`;
 DROP TABLE `board_ref`;
-DROP TABLE `notification_hints`;
-DROP TABLE `subscriptions`;
-DROP TABLE `preferences`;
-DROP TABLE `file_info`;
-DROP TABLE `sharing`;
-DROP TABLE `category_boards`;
-DROP TABLE `categories`;
-DROP TABLE `board_members_history`;
-DROP TABLE `board_members`;
-DROP TABLE `blocks_history`;
-DROP TABLE `blocks`;
-DROP TABLE `boards_history`;
-DROP TABLE `boards`;
-DROP TABLE `system_settings`;
-DROP TABLE `sessions`;
-DROP TABLE `teams`;
-DROP TABLE `users`;
 {{end}}
 
 {{if .postgres}}
@@ -180,21 +116,4 @@ DROP TABLE "workspace";
 DROP TABLE "proxy";
 DROP TABLE "card_ref";
 DROP TABLE "board_ref";
-DROP TABLE "notification_hints";
-DROP TABLE "subscriptions";
-DROP TABLE "preferences";
-DROP TABLE "file_info";
-DROP TABLE "sharing";
-DROP TABLE "category_boards";
-DROP TABLE "categories";
-DROP TABLE "board_members_history";
-DROP TABLE "board_members";
-DROP TABLE "blocks_history";
-DROP TABLE "blocks";
-DROP TABLE "boards_history";
-DROP TABLE "boards";
-DROP TABLE "system_settings";
-DROP TABLE "sessions";
-DROP TABLE "teams";
-DROP TABLE "users";
 {{end}}
