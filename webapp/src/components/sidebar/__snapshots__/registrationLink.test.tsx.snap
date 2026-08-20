@@ -47,6 +47,7 @@ exports[`components/sidebar/RegistrationLink > renders with signupToken in URL q
             Copy link
           </span>
           
+          <!---->
         </button>
       </div>
       <div
@@ -61,6 +62,7 @@ exports[`components/sidebar/RegistrationLink > renders with signupToken in URL q
             Regenerate token
           </span>
           
+          <!---->
         </button>
       </div>
     </div>

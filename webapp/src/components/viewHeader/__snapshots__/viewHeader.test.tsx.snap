@@ -11,9 +11,10 @@ exports[`components/viewHeader/viewHeader > return viewHeader 1`] = `
       <input
         class="Editable "
         placeholder="Untitled View"
-        spellcheck="true"
+        spellcheck=""
         title="view title"
       />
+      <!---->
       <div>
         <div
           aria-label="View menu"
@@ -28,10 +29,15 @@ exports[`components/viewHeader/viewHeader > return viewHeader 1`] = `
               class="CompassIcon icon-chevron-down DropdownIcon"
             />
           </button>
+          <!---->
           
+          <!---->
         </div>
+        <!---->
         
+        <!---->
       </div>
+      <!---->
     </div>
     <div
       class="octo-spacer"
@@ -50,8 +56,11 @@ exports[`components/viewHeader/viewHeader > return viewHeader 1`] = `
           Properties
         </span>
         
+        <!---->
       </button>
+      <!---->
       
+      <!---->
     </div>
     <div
       aria-label="menuwrapper"
@@ -73,8 +82,11 @@ exports[`components/viewHeader/viewHeader > return viewHeader 1`] = `
           </span>
         </span>
         
+        <!---->
       </button>
+      <!---->
       
+      <!---->
     </div>
     <div
       class="ModalWrapper"
@@ -88,6 +100,7 @@ exports[`components/viewHeader/viewHeader > return viewHeader 1`] = `
           Filter
         </span>
         
+        <!---->
       </button>
     </div>
     <div
@@ -104,21 +117,28 @@ exports[`components/viewHeader/viewHeader > return viewHeader 1`] = `
           Sort
         </span>
         
+        <!---->
       </button>
+      <!---->
       
+      <!---->
     </div>
+    <!---->
     <div
       class="board-search-field"
     >
       <i
         class="CompassIcon icon-magnify board-search-icon"
       />
+      <!---->
       <input
         class="Editable "
         placeholder="Search cards"
         title=""
       />
+      <!---->
     </div>
+    <!---->
     <div
       class="ModalWrapper"
     >
@@ -135,7 +155,9 @@ exports[`components/viewHeader/viewHeader > return viewHeader 1`] = `
             class="CompassIcon icon-dots-horizontal OptionsIcon"
           />
         </button>
+        <!---->
         
+        <!---->
       </div>
     </div>
     <div
@@ -158,9 +180,12 @@ exports[`components/viewHeader/viewHeader > return viewHeader 1`] = `
             class="CompassIcon icon-chevron-down DropdownIcon"
           />
         </div>
+        <!---->
         
+        <!---->
       </div>
     </div>
+    <!---->
   </div>
 </div>
 `;
@@ -177,28 +202,35 @@ exports[`components/viewHeader/viewHeader > return viewHeader readonly 1`] = `
         class="Editable readonly "
         placeholder="Untitled View"
         readonly=""
-        spellcheck="true"
+        spellcheck=""
         title="view title"
       />
+      <!---->
       
+      <!---->
     </div>
     <div
       class="octo-spacer"
     />
     
+    <!---->
     <div
       class="board-search-field"
     >
       <i
         class="CompassIcon icon-magnify board-search-icon"
       />
+      <!---->
       <input
         class="Editable "
         placeholder="Search cards"
         title=""
       />
+      <!---->
     </div>
+    <!---->
     
+    <!---->
   </div>
 </div>
 `;
@@ -215,9 +247,10 @@ exports[`components/viewHeader/viewHeader > return viewHeader without permission
         class="Editable readonly "
         placeholder="Untitled View"
         readonly=""
-        spellcheck="true"
+        spellcheck=""
         title="view title"
       />
+      <!---->
       <div>
         <div
           aria-label="View menu"
@@ -232,27 +265,36 @@ exports[`components/viewHeader/viewHeader > return viewHeader without permission
               class="CompassIcon icon-chevron-down DropdownIcon"
             />
           </button>
+          <!---->
           
+          <!---->
         </div>
+        <!---->
         
+        <!---->
       </div>
+      <!---->
     </div>
     <div
       class="octo-spacer"
     />
     
+    <!---->
     <div
       class="board-search-field"
     >
       <i
         class="CompassIcon icon-magnify board-search-icon"
       />
+      <!---->
       <input
         class="Editable "
         placeholder="Search cards"
         title=""
       />
+      <!---->
     </div>
+    <!---->
     <div
       class="ModalWrapper"
     >
@@ -269,9 +311,12 @@ exports[`components/viewHeader/viewHeader > return viewHeader without permission
             class="CompassIcon icon-dots-horizontal OptionsIcon"
           />
         </button>
+        <!---->
         
+        <!---->
       </div>
     </div>
+    <!---->
   </div>
 </div>
 `;

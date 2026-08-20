@@ -36,10 +36,10 @@ exports[`components/markdownEditor > should match snapshot with on click on prev
     >
       <div
         class="MarkdownEditorInput__content"
-        contenteditable="true"
+        contenteditable=""
         data-lexical-editor="true"
         role="textbox"
-        spellcheck="true"
+        spellcheck=""
         style="user-select: text; white-space: pre-wrap; word-break: break-word;"
       >
         <p
@@ -52,8 +52,9 @@ exports[`components/markdownEditor > should match snapshot with on click on prev
           </span>
         </p>
       </div>
+      <!---->
       
-      
+      <!---->
     </div>
   </div>
 </div>
@@ -69,10 +70,10 @@ exports[`components/markdownEditor > should match snapshot with on click on prev
     >
       <div
         class="MarkdownEditorInput__content"
-        contenteditable="true"
+        contenteditable=""
         data-lexical-editor="true"
         role="textbox"
-        spellcheck="true"
+        spellcheck=""
         style="user-select: text; white-space: pre-wrap; word-break: break-word;"
       >
         <p
@@ -85,8 +86,9 @@ exports[`components/markdownEditor > should match snapshot with on click on prev
           </span>
         </p>
       </div>
+      <!---->
       
-      
+      <!---->
     </div>
   </div>
 </div>

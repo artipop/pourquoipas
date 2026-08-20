@@ -1,3 +1,5 @@
+import type {JSX} from '@solidjs/web'
+
 import {render, screen} from '@solidjs/testing-library'
 import userEvent from '@testing-library/user-event'
 

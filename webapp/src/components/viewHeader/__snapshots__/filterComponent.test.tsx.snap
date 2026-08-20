@@ -39,7 +39,9 @@ exports[`components/viewHeader/filterComponent > return filterComponent 1`] = `
               Status
             </span>
             
+            <!---->
           </button>
+          <!---->
           <div
             class="Menu noselect bottom"
           >
@@ -220,7 +222,9 @@ exports[`components/viewHeader/filterComponent > return filterComponent 1`] = `
               </div>
             </div>
           </div>
+          <!---->
         </div>
+        <!---->
         <div
           aria-label="menuwrapper"
           class="MenuWrapper"
@@ -235,9 +239,13 @@ exports[`components/viewHeader/filterComponent > return filterComponent 1`] = `
               includes
             </span>
             
+            <!---->
           </button>
+          <!---->
           
+          <!---->
         </div>
+        <!---->
         <div
           aria-label="menuwrapper"
           class="MenuWrapper filterValue"
@@ -252,8 +260,11 @@ exports[`components/viewHeader/filterComponent > return filterComponent 1`] = `
               Status
             </span>
             
+            <!---->
           </button>
+          <!---->
           
+          <!---->
         </div>
         <div
           class="octo-spacer"
@@ -267,7 +278,9 @@ exports[`components/viewHeader/filterComponent > return filterComponent 1`] = `
             Delete
           </span>
           
+          <!---->
         </button>
+        <!---->
       </div>
       <br />
       <button
@@ -279,7 +292,9 @@ exports[`components/viewHeader/filterComponent > return filterComponent 1`] = `
           + Add filter
         </span>
         
+        <!---->
       </button>
+      <!---->
     </div>
   </div>
 </div>
@@ -324,7 +339,9 @@ exports[`components/viewHeader/filterComponent > return filterComponent and add 
               Status
             </span>
             
+            <!---->
           </button>
+          <!---->
           <div
             class="Menu noselect bottom"
           >
@@ -505,7 +522,9 @@ exports[`components/viewHeader/filterComponent > return filterComponent and add 
               </div>
             </div>
           </div>
+          <!---->
         </div>
+        <!---->
         <div
           aria-label="menuwrapper"
           class="MenuWrapper"
@@ -520,9 +539,13 @@ exports[`components/viewHeader/filterComponent > return filterComponent and add 
               includes
             </span>
             
+            <!---->
           </button>
+          <!---->
           
+          <!---->
         </div>
+        <!---->
         <div
           aria-label="menuwrapper"
           class="MenuWrapper filterValue"
@@ -537,8 +560,11 @@ exports[`components/viewHeader/filterComponent > return filterComponent and add 
               Status
             </span>
             
+            <!---->
           </button>
+          <!---->
           
+          <!---->
         </div>
         <div
           class="octo-spacer"
@@ -552,7 +578,9 @@ exports[`components/viewHeader/filterComponent > return filterComponent and add 
             Delete
           </span>
           
+          <!---->
         </button>
+        <!---->
       </div>
       <br />
       <button
@@ -564,7 +592,9 @@ exports[`components/viewHeader/filterComponent > return filterComponent and add 
           + Add filter
         </span>
         
+        <!---->
       </button>
+      <!---->
     </div>
   </div>
 </div>
@@ -609,9 +639,13 @@ exports[`components/viewHeader/filterComponent > return filterComponent and clic
               Status
             </span>
             
+            <!---->
           </button>
+          <!---->
           
+          <!---->
         </div>
+        <!---->
         <div
           aria-label="menuwrapper"
           class="MenuWrapper override menuOpened"
@@ -626,7 +660,9 @@ exports[`components/viewHeader/filterComponent > return filterComponent and clic
               includes
             </span>
             
+            <!---->
           </button>
+          <!---->
           <div
             class="Menu noselect bottom"
           >
@@ -780,7 +816,9 @@ exports[`components/viewHeader/filterComponent > return filterComponent and clic
               </div>
             </div>
           </div>
+          <!---->
         </div>
+        <!---->
         <div
           aria-label="menuwrapper"
           class="MenuWrapper filterValue"
@@ -795,8 +833,11 @@ exports[`components/viewHeader/filterComponent > return filterComponent and clic
               Status
             </span>
             
+            <!---->
           </button>
+          <!---->
           
+          <!---->
         </div>
         <div
           class="octo-spacer"
@@ -810,7 +851,9 @@ exports[`components/viewHeader/filterComponent > return filterComponent and clic
             Delete
           </span>
           
+          <!---->
         </button>
+        <!---->
       </div>
       <br />
       <button
@@ -822,7 +865,9 @@ exports[`components/viewHeader/filterComponent > return filterComponent and clic
           + Add filter
         </span>
         
+        <!---->
       </button>
+      <!---->
     </div>
   </div>
 </div>
@@ -867,7 +912,9 @@ exports[`components/viewHeader/filterComponent > return filterComponent and filt
               (unknown)
             </span>
             
+            <!---->
           </button>
+          <!---->
           <div
             class="Menu noselect bottom"
           >
@@ -1048,7 +1095,9 @@ exports[`components/viewHeader/filterComponent > return filterComponent and filt
               </div>
             </div>
           </div>
+          <!---->
         </div>
+        <!---->
         <div
           aria-label="menuwrapper"
           class="MenuWrapper"
@@ -1063,9 +1112,13 @@ exports[`components/viewHeader/filterComponent > return filterComponent and filt
               (unknown)
             </span>
             
+            <!---->
           </button>
+          <!---->
           
+          <!---->
         </div>
+        <!---->
         
         <div
           class="octo-spacer"
@@ -1079,7 +1132,9 @@ exports[`components/viewHeader/filterComponent > return filterComponent and filt
             Delete
           </span>
           
+          <!---->
         </button>
+        <!---->
       </div>
       <br />
       <button
@@ -1091,7 +1146,9 @@ exports[`components/viewHeader/filterComponent > return filterComponent and filt
           + Add filter
         </span>
         
+        <!---->
       </button>
+      <!---->
     </div>
   </div>
 </div>

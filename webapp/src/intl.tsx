@@ -9,14 +9,17 @@ import {
     IntlShape,
     MessageDescriptor,
 } from '@formatjs/intl'
-import {Accessor, Component, JSX, ParentComponent, createContext, createMemo, useContext} from 'solid-js'
+import {Accessor, Component, ParentComponent, createContext, createMemo, useContext} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 
 export type {IntlShape, MessageDescriptor}
 
 // react-intl rendered rich-text chunks as React nodes; here a chunk is JSX.
 type MessageValues = Record<string, string | number | boolean | Date | JSX.Element | ((chunks: JSX.Element[]) => JSX.Element)> | undefined
 
-const IntlContext = createContext<Accessor<IntlShape>>()
+// A null default rather than none: Solid 2 throws from useContext when a
+// context has neither, which would hide the message useIntl gives instead.
+const IntlContext = createContext<Accessor<IntlShape> | null>(null)
 
 // createIntl stays available for the few places that format outside any
 // component tree (CSV export, error boundaries).
@@ -35,9 +38,9 @@ export const IntlProvider: ParentComponent<ProviderProps> = (props) => {
         messages: props.messages,
     }, cache))
     return (
-        <IntlContext.Provider value={intl}>
+        <IntlContext value={intl}>
             {props.children}
-        </IntlContext.Provider>
+        </IntlContext>
     )
 }
 

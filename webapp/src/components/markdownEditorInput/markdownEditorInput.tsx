@@ -1,5 +1,5 @@
-import {onCleanup, onMount} from 'solid-js'
-import type {JSX} from 'solid-js'
+import {onSettled} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 
 import {registerPlainText} from '@lexical/plain-text'
 import {createEmptyHistoryState, registerHistory} from '@lexical/history'
@@ -62,7 +62,7 @@ const MarkdownEditorInput = (props: Props): JSX.Element => {
 
     let contentRef: HTMLDivElement | undefined
 
-    onMount(() => {
+    onSettled(() => {
         editor.setRootElement(contentRef!)
 
         const readText = () => editor.getEditorState().read(() => $getRoot().getTextContent())
@@ -138,10 +138,10 @@ const MarkdownEditorInput = (props: Props): JSX.Element => {
         editor.update(() => $rebuildStyledContent(), {tag: 'live-markdown'})
         editor.focus()
 
-        onCleanup(() => {
+        return () => {
             unregister()
             editor.setRootElement(null)
-        })
+        }
     })
 
     /*

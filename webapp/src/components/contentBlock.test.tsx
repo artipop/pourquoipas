@@ -1,4 +1,4 @@
-import type {JSX} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 
 import '@testing-library/jest-dom'
 import {render, screen} from '@solidjs/testing-library'
@@ -88,9 +88,9 @@ describe('components/contentBlock', () => {
     const wrap = (child: () => JSX.Element): JSX.Element => (
         wrapDNDIntl(() =>
             <AppStoreProvider store={store}>
-                <CardDetailContext.Provider value={cardDetailContextValue(true)}>
+                <CardDetailContext value={cardDetailContextValue(true)}>
                     {child()}
-                </CardDetailContext.Provider>
+                </CardDetailContext>
             </AppStoreProvider>,
         )
     )

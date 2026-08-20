@@ -1,5 +1,5 @@
-import {Show, createSignal, onCleanup, onMount} from 'solid-js'
-import type {JSX} from 'solid-js'
+import {Show, createSignal, onCleanup, onSettled} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 
 import {$createTextNode, $getSelection, $isRangeSelection, LexicalEditor, TextNode} from 'lexical'
 
@@ -87,7 +87,7 @@ const MentionsPlugin = (props: Props): JSX.Element => {
     const debouncedLoadSuggestions = debounce(loadSuggestions, 200)
     onCleanup(() => debouncedLoadSuggestions.cancel())
 
-    onMount(() => {
+    onSettled(() => {
         // Prime with the first users (empty search returns first 10 alphabetically).
         loadSuggestions('')
     })

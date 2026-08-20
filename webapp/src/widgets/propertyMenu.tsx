@@ -1,7 +1,7 @@
 import {For} from 'solid-js'
 
 // See LICENSE.txt for license information.
-import type {JSX} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 
 import {useIntl, IntlShape} from '../intl'
 

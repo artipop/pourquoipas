@@ -1,4 +1,4 @@
-import {For, Show, createEffect, createSignal, onCleanup} from 'solid-js'
+import {For, Show, createEffect, createSignal} from 'solid-js'
 
 import {useNavigate} from '@solidjs/router'
 
@@ -78,7 +78,9 @@ const SidebarCategory = (props: Props) => {
     // under the finger rather than after a round trip; the server's answer then
     // arrives as a prop, from this window's own echo or from another window, and
     // the signal follows it.
-    createEffect(() => setCollapsed(props.categoryBoards.collapsed))
+    createEffect(() => props.categoryBoards.collapsed, (next) => {
+        setCollapsed(next)
+    })
 
     // A system category is the one the server made for boards that are in no
     // category of anybody's making -- nobody named it and nobody can rename it,
@@ -152,8 +154,8 @@ const SidebarCategory = (props: Props) => {
                                             onboardingTourCategory() === TOUR_SIDEBAR &&
                                             onboardingTourStep() === SidebarTourSteps.MANAGE_CATEGORIES.toString()
 
-    createEffect(() => {
-        if (shouldViewManageCatergoriesTour() && props.index === 0) {
+    createEffect(shouldViewManageCatergoriesTour, (shouldView) => {
+        if (shouldView && props.index === 0) {
             setCategoryMenuOpen(true)
         }
     })
@@ -303,10 +305,9 @@ const SidebarCategory = (props: Props) => {
 
     // The render prop used to notice isDraggingOver flipping and defer the state
     // change out of render; an effect is where that belonged all along.
-    createEffect(() => {
-        const over = isBoardOver()
+    createEffect(isBoardOver, (over) => {
         const timeout = setTimeout(() => setBoardDraggingOver(over), 200)
-        onCleanup(() => clearTimeout(timeout))
+        return () => clearTimeout(timeout)
     })
 
     const expandedBoardsHidden = () => collapsed() || props.forceCollapse || isDragging() || props.draggedItemID === props.categoryBoards.id

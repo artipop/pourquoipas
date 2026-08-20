@@ -1,5 +1,5 @@
 import {createEffect} from 'solid-js'
-import type {JSX} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 
 import {EditableProps, useEditable} from './editable'
 
@@ -17,8 +17,7 @@ const EditableArea = (props: EditableProps): JSX.Element => {
 
     // The hidden reference textarea carries the same value; whenever that
     // value changes, its scrollHeight is what the visible one grows to.
-    createEffect(() => {
-        void props.value
+    createEffect(() => props.value, () => {
         if (!elementRef || !referenceRef) {
             return
         }
@@ -53,7 +52,7 @@ const EditableArea = (props: EditableProps): JSX.Element => {
                     disabled={true}
                     rows={1}
                     value={elementProps.value}
-                    aria-hidden={true}
+                    aria-hidden='true'
                 />
             </div>
         </div>

@@ -5,7 +5,7 @@
 // before any component test gets to be confusing.
 
 import {createSignal} from 'solid-js'
-import {Portal} from 'solid-js/web'
+import {Portal} from '@solidjs/web'
 import {render, fireEvent, screen} from '@solidjs/testing-library'
 import '@testing-library/jest-dom'
 

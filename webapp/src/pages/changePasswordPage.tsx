@@ -1,5 +1,4 @@
 import {Show, createSignal} from 'solid-js'
-import {A} from '@solidjs/router'
 
 import {useIntl} from '../intl'
 import Button from '../widgets/buttons/button'
@@ -35,7 +34,7 @@ const ChangePasswordPage = () => {
             fallback={
                 <div class='ChangePasswordPage'>
                     <div class='title'>{intl.formatMessage({id: 'ChangePassword.changePassword', defaultMessage: 'Change Password'})}</div>
-                    <A href='/login'>{intl.formatMessage({id: 'ChangePassword.login-first', defaultMessage: 'Log in first'})}</A>
+                    <a href='/login'>{intl.formatMessage({id: 'ChangePassword.login-first', defaultMessage: 'Log in first'})}</a>
                 </div>
             }
         >
@@ -85,12 +84,12 @@ const ChangePasswordPage = () => {
                 </Show>
                 <Show
                     when={succeeded()}
-                    fallback={<A href='/'>{intl.formatMessage({id: 'ChangePassword.cancel', defaultMessage: 'Cancel'})}</A>}
+                    fallback={<a href='/'>{intl.formatMessage({id: 'ChangePassword.cancel', defaultMessage: 'Cancel'})}</a>}
                 >
-                    <A
+                    <a
                         class='succeeded'
                         href='/'
-                    >{intl.formatMessage({id: 'ChangePassword.succeeded', defaultMessage: 'Password changed, click to continue.'})}</A>
+                    >{intl.formatMessage({id: 'ChangePassword.succeeded', defaultMessage: 'Password changed, click to continue.'})}</a>
                 </Show>
             </div>
         </Show>

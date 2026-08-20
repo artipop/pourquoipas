@@ -1,5 +1,4 @@
-import {batch} from 'solid-js'
-import {produce} from 'solid-js/store'
+import {storePath} from 'solid-js'
 
 import {Board, BoardMember} from '../blocks/board'
 import {IUser} from '../user'
@@ -66,16 +65,16 @@ export const createBoardsActions = (ctx: StoreContext) => {
 
     const actions = {
         setCurrent(boardId: string) {
-            setState('boards', 'current', boardId)
+            setState(storePath('boards', 'current', boardId))
         },
         setLinkToChannel(channelId: string) {
-            setState('boards', 'linkToChannel', channelId)
+            setState(storePath('boards', 'linkToChannel', channelId))
         },
         setLoadingBoard(loading: boolean) {
-            setState('boards', 'loadingBoard', loading)
+            setState(storePath('boards', 'loadingBoard', loading))
         },
         updateBoards(boards: Board[]) {
-            setState('boards', produce((s) => {
+            setState(({boards: s}) => {
                 for (const board of boards) {
                     if (board.deleteAt !== 0) {
                         delete s.boards[board.id]
@@ -86,13 +85,17 @@ export const createBoardsActions = (ctx: StoreContext) => {
                         s.boards[board.id] = board
                     }
                 }
-            }))
+            })
         },
         updateMembers(members: BoardMember[]) {
-            setState('boards', produce((s) => applyMembersUpdate(s, members)))
+            // A block, not an expression: Solid 2 reads a setter's return value
+            // as a replacement for the whole state.
+            setState(({boards: s}) => {
+                applyMembersUpdate(s, members)
+            })
         },
         addMyBoardMemberships(members: BoardMember[]) {
-            setState('boards', 'myBoardMemberships', produce((memberships) => {
+            setState(({boards: {myBoardMemberships: memberships}}) => {
                 members.forEach((member) => {
                     if (isDroppedMembership(member)) {
                         delete memberships[member.boardId]
@@ -100,28 +103,26 @@ export const createBoardsActions = (ctx: StoreContext) => {
                         memberships[member.boardId] = member
                     }
                 })
-            }))
+            })
         },
 
         // The full-load slices of this domain, called by the cross-domain
         // loaders in initialLoad.ts.
         setBoardsAndTemplates(boards: Board[], templates: Board[]) {
-            batch(() => {
-                setState('boards', 'boards', boards.reduce((acc: {[key: string]: Board}, b) => {
-                    acc[b.id] = b
-                    return acc
-                }, {}))
-                setState('boards', 'templates', templates.reduce((acc: {[key: string]: Board}, b) => {
-                    acc[b.id] = b
-                    return acc
-                }, {}))
-            })
+            setState(storePath('boards', 'boards', boards.reduce((acc: {[key: string]: Board}, b) => {
+                acc[b.id] = b
+                return acc
+            }, {})))
+            setState(storePath('boards', 'templates', templates.reduce((acc: {[key: string]: Board}, b) => {
+                acc[b.id] = b
+                return acc
+            }, {})))
         },
         setMyBoardMemberships(members: BoardMember[]) {
-            setState('boards', 'myBoardMemberships', members.reduce((acc: {[key: string]: BoardMember}, m) => {
+            setState(storePath('boards', 'myBoardMemberships', members.reduce((acc: {[key: string]: BoardMember}, m) => {
                 acc[m.boardId] = m
                 return acc
-            }, {}))
+            }, {})))
         },
         async fetchBoardMembers({teamId, boardId}: {teamId: string, boardId: string}, setBoardUsers: (users: IUser[]) => void): Promise<void> {
             const members = await deps.client.getBoardMembers(teamId, boardId)
@@ -141,7 +142,7 @@ export const createBoardsActions = (ctx: StoreContext) => {
                 acc[val.userId] = val
                 return acc
             }, {})
-            setState('boards', 'membersInBoards', membersBoardId, boardMembersMap)
+            setState(storePath('boards', 'membersInBoards', membersBoardId, boardMembersMap))
         },
         async updateMembersEnsuringBoardsAndUsers(
             members: BoardMember[],

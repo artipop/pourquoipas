@@ -95,7 +95,9 @@ exports[`components/onboardingTour/addComments/AddDescriptionTourStep > after ho
               Previous
             </span>
             
+            <!---->
           </button>
+          <!---->
           <button
             class="Button filled size--small tipNextButton"
             type="button"
@@ -105,7 +107,9 @@ exports[`components/onboardingTour/addComments/AddDescriptionTourStep > after ho
               Done
             </span>
             
+            <!---->
           </button>
+          <!---->
         </div>
       </div>
       

@@ -1,5 +1,5 @@
-import {onMount} from 'solid-js'
-import type {JSX} from 'solid-js'
+import {onSettled} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 
 import {FormattedMessage} from '../../../intl'
 
@@ -44,7 +44,7 @@ const SidebarCategoriesTourStep = (): JSX.Element => {
     const onboardingTourCategory = useAppSelector(getOnboardingTourCategory)
     const onboardingTourStep = useAppSelector(getOnboardingTourStep)
 
-    onMount(() => {
+    onSettled(() => {
         async function task() {
             const user = me()
             if (!user) {

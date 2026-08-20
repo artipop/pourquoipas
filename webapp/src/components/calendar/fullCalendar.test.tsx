@@ -51,7 +51,7 @@ describe('components/calendar/toolbar', () => {
         vi.clearAllMocks()
     })
 
-    test('return calendar, no date property', () => {
+    test('return calendar, no date property', async () => {
         const {container} = render(() =>
             wrapIntl(() =>
                 <AppStoreProvider store={store}>
@@ -67,10 +67,13 @@ describe('components/calendar/toolbar', () => {
                 </AppStoreProvider>,
             ),
         )
+
+        // The calendar is built one microtask after the settle (fullCalendar.tsx).
+        await Promise.resolve()
         expect(container).toMatchSnapshot()
     })
 
-    test('return calendar, with date property not set', () => {
+    test('return calendar, with date property not set', async () => {
         board.cardProperties.push(dateDisplayProperty)
         card.fields.properties['12345'] = JSON.stringify(rObject)
         const {container} = render(() =>
@@ -88,10 +91,13 @@ describe('components/calendar/toolbar', () => {
                 </AppStoreProvider>,
             ),
         )
+
+        // The calendar is built one microtask after the settle (fullCalendar.tsx).
+        await Promise.resolve()
         expect(container).toMatchSnapshot()
     })
 
-    test('return calendar, with date property set', () => {
+    test('return calendar, with date property set', async () => {
         board.cardProperties.push(dateDisplayProperty)
         card.fields.properties['12345'] = JSON.stringify(rObject)
         const {container} = render(() =>
@@ -110,10 +116,13 @@ describe('components/calendar/toolbar', () => {
                 </AppStoreProvider>,
             ),
         )
+
+        // The calendar is built one microtask after the settle (fullCalendar.tsx).
+        await Promise.resolve()
         expect(container).toMatchSnapshot()
     })
 
-    test('return calendar, without permissions', () => {
+    test('return calendar, without permissions', async () => {
         const localStore = mockAppStore({...state, teams: {current: undefined}})
         const {container} = render(() =>
             wrapIntl(() =>
@@ -130,6 +139,9 @@ describe('components/calendar/toolbar', () => {
                 </AppStoreProvider>,
             ),
         )
+
+        // The calendar is built one microtask after the settle (fullCalendar.tsx).
+        await Promise.resolve()
         expect(container).toMatchSnapshot()
     })
 

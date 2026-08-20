@@ -16,7 +16,9 @@ exports[`components/viewHeader/viewHeaderSortMenu > return sort menu 1`] = `
         Sort
       </span>
       
+      <!---->
     </button>
+    <!---->
     <div
       class="Menu noselect bottom"
     >
@@ -163,7 +165,6 @@ exports[`components/viewHeader/viewHeaderSortMenu > return sort menu 1`] = `
             <svg
               class="SortDownIcon Icon"
               viewBox="0 0 100 100"
-              xmlns="http://www.w3.org/2000/svg"
             >
               <polyline
                 points="50,20 50,80"
@@ -263,6 +264,7 @@ exports[`components/viewHeader/viewHeaderSortMenu > return sort menu 1`] = `
         </div>
       </div>
     </div>
+    <!---->
   </div>
 </div>
 `;
@@ -283,8 +285,11 @@ exports[`components/viewHeader/viewHeaderSortMenu > return sort menu and do Name
         Sort
       </span>
       
+      <!---->
     </button>
+    <!---->
     
+    <!---->
   </div>
 </div>
 `;
@@ -305,8 +310,11 @@ exports[`components/viewHeader/viewHeaderSortMenu > return sort menu and do manu
         Sort
       </span>
       
+      <!---->
     </button>
+    <!---->
     
+    <!---->
   </div>
 </div>
 `;
@@ -327,8 +335,11 @@ exports[`components/viewHeader/viewHeaderSortMenu > return sort menu and do reve
         Sort
       </span>
       
+      <!---->
     </button>
+    <!---->
     
+    <!---->
   </div>
 </div>
 `;

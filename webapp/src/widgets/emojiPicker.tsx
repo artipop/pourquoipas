@@ -1,4 +1,4 @@
-import {onCleanup, onMount} from 'solid-js'
+import {onSettled} from 'solid-js'
 import type {Component} from 'solid-js'
 import {Picker} from 'emoji-mart'
 
@@ -55,10 +55,10 @@ const EmojiPicker: Component<Props> = (props) => {
     const intl = useIntl()
     let host: HTMLDivElement | undefined
 
-    onMount(() => {
+    onSettled(() => {
         const node = host
         if (!node) {
-            return
+            return undefined
         }
 
         // v5 draws native glyphs instead of the sprite sheet v3 needed, so the
@@ -79,10 +79,10 @@ const EmojiPicker: Component<Props> = (props) => {
             },
         }) as unknown as {remove?: () => void}
 
-        onCleanup(() => {
+        return () => {
             picker.remove?.()
             node.replaceChildren()
-        })
+        }
     })
 
     return (

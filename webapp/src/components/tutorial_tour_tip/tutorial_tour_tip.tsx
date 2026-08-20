@@ -1,6 +1,7 @@
-import {For, Show, createEffect, createSignal, createUniqueId, onCleanup} from 'solid-js'
-import {Portal} from 'solid-js/web'
-import type {JSX, ParentComponent} from 'solid-js'
+import {For, Show, createEffect, createSignal, createUniqueId} from 'solid-js'
+import {Portal} from '@solidjs/web'
+import type {ParentComponent} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 
 import {arrow, autoUpdate, computePosition, flip, offset, shift, type Placement} from '@floating-ui/dom'
 
@@ -75,16 +76,13 @@ const TourTipBox = (props: TourTipBoxProps): JSX.Element => {
     const [arrowElement, setArrowElement] = createSignal<HTMLDivElement | null>(null)
     const [position, setPosition] = createSignal<TipPosition | null>(null)
 
-    createEffect(() => {
-        const reference = props.anchor()
-        const positionerEl = positioner()
-        const arrowEl = arrowElement()
+    createEffect(() => [props.anchor(), positioner(), arrowElement()] as const, ([reference, positionerEl, arrowEl]) => {
         if (!reference || !positionerEl || !arrowEl) {
-            return
+            return undefined
         }
 
         // Keeps the box on the dot while the board behind it scrolls or resizes.
-        const stop = autoUpdate(reference, positionerEl, () => {
+        return autoUpdate(reference, positionerEl, () => {
             computePosition(reference, positionerEl, {
                 placement: props.placement || 'top',
                 middleware: [
@@ -103,7 +101,6 @@ const TourTipBox = (props: TourTipBoxProps): JSX.Element => {
                 })
             })
         })
-        onCleanup(stop)
     })
 
     const resolved = () => position()?.placement || props.placement || 'top'
@@ -352,7 +349,7 @@ const TutorialTourTip = (props: Props): JSX.Element => {
             <div
                 ref={triggerRef}
                 onClick={handleOpen}
-                aria-expanded={show()}
+                aria-expanded={String(show())}
                 class={`tutorial-tour-tip__pulsating-dot-ctr ${props.class || ''}`}
             >
                 <PulsatingDot coords={props.pulsatingDotPosition}/>

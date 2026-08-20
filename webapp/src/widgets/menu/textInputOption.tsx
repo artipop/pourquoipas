@@ -1,5 +1,5 @@
-import {createSignal, onMount} from 'solid-js'
-import type {JSX} from 'solid-js'
+import {createSignal, onSettled} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 
 type TextInputOptionProps = {
     initialValue: string
@@ -11,7 +11,7 @@ function TextInputOption(props: TextInputOptionProps): JSX.Element {
     let nameTextbox: HTMLInputElement | undefined
     const [value, setValue] = createSignal(props.initialValue)
 
-    onMount(() => {
+    onSettled(() => {
         nameTextbox?.focus()
         nameTextbox?.setSelectionRange(0, value().length)
     })

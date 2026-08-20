@@ -1,4 +1,4 @@
-import {Component, onMount} from 'solid-js'
+import {Component, onSettled} from 'solid-js'
 
 import {getMessages} from './i18n'
 import {IntlProvider} from './intl'
@@ -14,7 +14,7 @@ const App: Component = () => {
     const {actions} = useAppStore()
     const language = useAppSelector<string>(getLanguage)
 
-    onMount(() => {
+    onSettled(() => {
         actions.language.fetchLanguage()
         actions.users.fetchMe()
         actions.clientConfig.fetchClientConfig()

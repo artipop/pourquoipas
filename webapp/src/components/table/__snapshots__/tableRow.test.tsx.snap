@@ -34,7 +34,7 @@ exports[`components/table/TableRow > should match snapshot 1`] = `
         <input
           class="Editable "
           placeholder="Untitled"
-          spellcheck="true"
+          spellcheck=""
           title="title"
         />
       </div>
@@ -56,9 +56,13 @@ exports[`components/table/TableRow > should match snapshot 1`] = `
               class="CompassIcon icon-dots-horizontal OptionsIcon"
             />
           </button>
+          <!---->
           
+          <!---->
         </div>
+        <!---->
         
+        <!---->
       </div>
       <div
         class="open-button"
@@ -72,11 +76,13 @@ exports[`components/table/TableRow > should match snapshot 1`] = `
             Open
           </span>
           
+          <!---->
         </button>
       </div>
     </div>
+    <!---->
     
-    
+    <!---->
   </div>
 </div>
 `;
@@ -115,7 +121,7 @@ exports[`components/table/TableRow > should match snapshot, collapsed tree 1`] =
         <input
           class="Editable "
           placeholder="Untitled"
-          spellcheck="true"
+          spellcheck=""
           title="title"
         />
       </div>
@@ -137,9 +143,13 @@ exports[`components/table/TableRow > should match snapshot, collapsed tree 1`] =
               class="CompassIcon icon-dots-horizontal OptionsIcon"
             />
           </button>
+          <!---->
           
+          <!---->
         </div>
+        <!---->
         
+        <!---->
       </div>
       <div
         class="open-button"
@@ -153,11 +163,13 @@ exports[`components/table/TableRow > should match snapshot, collapsed tree 1`] =
             Open
           </span>
           
+          <!---->
         </button>
       </div>
     </div>
+    <!---->
     
-    
+    <!---->
   </div>
 </div>
 `;
@@ -196,7 +208,7 @@ exports[`components/table/TableRow > should match snapshot, display properties 1
         <input
           class="Editable "
           placeholder="Untitled"
-          spellcheck="true"
+          spellcheck=""
           title="title"
         />
       </div>
@@ -218,9 +230,13 @@ exports[`components/table/TableRow > should match snapshot, display properties 1
               class="CompassIcon icon-dots-horizontal OptionsIcon"
             />
           </button>
+          <!---->
           
+          <!---->
         </div>
+        <!---->
         
+        <!---->
       </div>
       <div
         class="open-button"
@@ -234,6 +250,7 @@ exports[`components/table/TableRow > should match snapshot, display properties 1
             Open
           </span>
           
+          <!---->
         </button>
       </div>
     </div>
@@ -275,7 +292,9 @@ exports[`components/table/TableRow > should match snapshot, display properties 1
         </span>
       </div>
     </div>
+    <!---->
     
+    <!---->
   </div>
 </div>
 `;
@@ -314,7 +333,7 @@ exports[`components/table/TableRow > should match snapshot, isSelected 1`] = `
         <input
           class="Editable "
           placeholder="Untitled"
-          spellcheck="true"
+          spellcheck=""
           title="title"
         />
       </div>
@@ -336,9 +355,13 @@ exports[`components/table/TableRow > should match snapshot, isSelected 1`] = `
               class="CompassIcon icon-dots-horizontal OptionsIcon"
             />
           </button>
+          <!---->
           
+          <!---->
         </div>
+        <!---->
         
+        <!---->
       </div>
       <div
         class="open-button"
@@ -352,11 +375,13 @@ exports[`components/table/TableRow > should match snapshot, isSelected 1`] = `
             Open
           </span>
           
+          <!---->
         </button>
       </div>
     </div>
+    <!---->
     
-    
+    <!---->
   </div>
 </div>
 `;
@@ -387,7 +412,7 @@ exports[`components/table/TableRow > should match snapshot, read-only 1`] = `
           class="Editable readonly "
           placeholder="Untitled"
           readonly=""
-          spellcheck="true"
+          spellcheck=""
           title="title"
         />
       </div>
@@ -404,11 +429,13 @@ exports[`components/table/TableRow > should match snapshot, read-only 1`] = `
             Open
           </span>
           
+          <!---->
         </button>
       </div>
     </div>
+    <!---->
     
-    
+    <!---->
   </div>
 </div>
 `;
@@ -447,7 +474,7 @@ exports[`components/table/TableRow > should match snapshot, resizing column 1`] 
         <input
           class="Editable "
           placeholder="Untitled"
-          spellcheck="true"
+          spellcheck=""
           title="title"
         />
       </div>
@@ -469,9 +496,13 @@ exports[`components/table/TableRow > should match snapshot, resizing column 1`] 
               class="CompassIcon icon-dots-horizontal OptionsIcon"
             />
           </button>
+          <!---->
           
+          <!---->
         </div>
+        <!---->
         
+        <!---->
       </div>
       <div
         class="open-button"
@@ -485,6 +516,7 @@ exports[`components/table/TableRow > should match snapshot, resizing column 1`] 
             Open
           </span>
           
+          <!---->
         </button>
       </div>
     </div>
@@ -526,7 +558,9 @@ exports[`components/table/TableRow > should match snapshot, resizing column 1`] 
         </span>
       </div>
     </div>
+    <!---->
     
+    <!---->
   </div>
 </div>
 `;

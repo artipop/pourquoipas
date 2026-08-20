@@ -19,11 +19,13 @@ exports[`components/kanban/calculations/KanbanCalculationOptions > base case 1`]
         class="CalculationOptions__value-container"
       >
         
+        <!---->
         <div
           class="CalculationOptions__single-value"
         >
           Count
         </div>
+        <!---->
         
         <input
           aria-controls="cl-0"
@@ -61,11 +63,13 @@ exports[`components/kanban/calculations/KanbanCalculationOptions > with menu ope
         class="CalculationOptions__value-container"
       >
         
+        <!---->
         <div
           class="CalculationOptions__single-value"
         >
           Count
         </div>
+        <!---->
         
         <input
           aria-activedescendant="cl-1-option-0"
@@ -89,6 +93,7 @@ exports[`components/kanban/calculations/KanbanCalculationOptions > with menu ope
         role="listbox"
       >
         
+        <!---->
         <div
           aria-selected="true"
           class="CalculationOptions__option CalculationOptions__option--is-focused CalculationOptions__option--is-selected"
@@ -102,6 +107,7 @@ exports[`components/kanban/calculations/KanbanCalculationOptions > with menu ope
               Count
                
               
+              <!---->
             </span>
             
           </div>
@@ -121,6 +127,7 @@ exports[`components/kanban/calculations/KanbanCalculationOptions > with menu ope
               <i
                 class="CompassIcon icon-chevron-right ChevronRightIcon"
               />
+              <!---->
             </span>
             
           </div>
@@ -140,6 +147,7 @@ exports[`components/kanban/calculations/KanbanCalculationOptions > with menu ope
               <i
                 class="CompassIcon icon-chevron-right ChevronRightIcon"
               />
+              <!---->
             </span>
             
           </div>
@@ -159,6 +167,7 @@ exports[`components/kanban/calculations/KanbanCalculationOptions > with menu ope
               <i
                 class="CompassIcon icon-chevron-right ChevronRightIcon"
               />
+              <!---->
             </span>
             
           </div>
@@ -178,6 +187,7 @@ exports[`components/kanban/calculations/KanbanCalculationOptions > with menu ope
               <i
                 class="CompassIcon icon-chevron-right ChevronRightIcon"
               />
+              <!---->
             </span>
             
           </div>
@@ -197,6 +207,7 @@ exports[`components/kanban/calculations/KanbanCalculationOptions > with menu ope
               <i
                 class="CompassIcon icon-chevron-right ChevronRightIcon"
               />
+              <!---->
             </span>
             
           </div>
@@ -216,10 +227,12 @@ exports[`components/kanban/calculations/KanbanCalculationOptions > with menu ope
               <i
                 class="CompassIcon icon-chevron-right ChevronRightIcon"
               />
+              <!---->
             </span>
             
           </div>
         </div>
+        <!---->
       </div>
     </div>
   </div>
@@ -245,11 +258,13 @@ exports[`components/kanban/calculations/KanbanCalculationOptions > with submenu 
         class="CalculationOptions__value-container"
       >
         
+        <!---->
         <div
           class="CalculationOptions__single-value"
         >
           Count
         </div>
+        <!---->
         
         <input
           aria-activedescendant="cl-2-option-6"
@@ -273,6 +288,7 @@ exports[`components/kanban/calculations/KanbanCalculationOptions > with submenu 
         role="listbox"
       >
         
+        <!---->
         <div
           aria-selected="true"
           class="CalculationOptions__option CalculationOptions__option--is-selected"
@@ -286,6 +302,7 @@ exports[`components/kanban/calculations/KanbanCalculationOptions > with submenu 
               Count
                
               
+              <!---->
             </span>
             
           </div>
@@ -305,6 +322,7 @@ exports[`components/kanban/calculations/KanbanCalculationOptions > with submenu 
               <i
                 class="CompassIcon icon-chevron-right ChevronRightIcon"
               />
+              <!---->
             </span>
             
           </div>
@@ -324,6 +342,7 @@ exports[`components/kanban/calculations/KanbanCalculationOptions > with submenu 
               <i
                 class="CompassIcon icon-chevron-right ChevronRightIcon"
               />
+              <!---->
             </span>
             
           </div>
@@ -343,6 +362,7 @@ exports[`components/kanban/calculations/KanbanCalculationOptions > with submenu 
               <i
                 class="CompassIcon icon-chevron-right ChevronRightIcon"
               />
+              <!---->
             </span>
             
           </div>
@@ -362,6 +382,7 @@ exports[`components/kanban/calculations/KanbanCalculationOptions > with submenu 
               <i
                 class="CompassIcon icon-chevron-right ChevronRightIcon"
               />
+              <!---->
             </span>
             
           </div>
@@ -381,6 +402,7 @@ exports[`components/kanban/calculations/KanbanCalculationOptions > with submenu 
               <i
                 class="CompassIcon icon-chevron-right ChevronRightIcon"
               />
+              <!---->
             </span>
             
           </div>
@@ -400,6 +422,7 @@ exports[`components/kanban/calculations/KanbanCalculationOptions > with submenu 
               <i
                 class="CompassIcon icon-chevron-right ChevronRightIcon"
               />
+              <!---->
             </span>
             <div
               class="dropdown-submenu"
@@ -436,6 +459,7 @@ exports[`components/kanban/calculations/KanbanCalculationOptions > with submenu 
             </div>
           </div>
         </div>
+        <!---->
       </div>
     </div>
   </div>

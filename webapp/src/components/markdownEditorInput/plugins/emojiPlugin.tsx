@@ -1,5 +1,5 @@
-import {createEffect, createSignal, on, onCleanup} from 'solid-js'
-import type {JSX} from 'solid-js'
+import {createEffect, createSignal} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 
 import {SearchIndex} from 'emoji-mart'
 
@@ -30,16 +30,16 @@ const EmojiPlugin = (props: Props): JSX.Element => {
 
     // emoji-mart 5 searches asynchronously and puts the glyph on the emoji's
     // first skin rather than on the emoji itself.
-    createEffect(on(query, (q) => {
+    createEffect(query, (q) => {
         if (!q) {
             setOptions([])
-            return
+            return undefined
         }
 
+        // The cleanup is what drops a search the next keystroke has overtaken:
+        // Solid 2 runs it before the next apply, so `cancelled` is read by
+        // exactly the run that was superseded.
         let cancelled = false
-        onCleanup(() => {
-            cancelled = true
-        })
         SearchIndex.search(q).then((results: Array<{id: string, name: string, skins?: Array<{native?: string}>}>) => {
             if (cancelled) {
                 return
@@ -50,7 +50,10 @@ const EmojiPlugin = (props: Props): JSX.Element => {
                 filter((e) => Boolean(e.native))
             setOptions(found)
         })
-    }))
+        return () => {
+            cancelled = true
+        }
+    })
 
     const onSelectOption = (
         selected: EmojiResult,
@@ -83,7 +86,7 @@ const EmojiPlugin = (props: Props): JSX.Element => {
             itemRender={(emoji, isSelected, select, highlight) => (
                 <div
                     role='option'
-                    aria-selected={isSelected()}
+                    aria-selected={String(isSelected())}
                     class={`EmojiEntry ${isSelected() ? 'EmojiEntry--selected' : ''}`}
                     onMouseDown={(e) => e.preventDefault()}
                     onMouseEnter={highlight}

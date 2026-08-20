@@ -1,4 +1,4 @@
-import {onCleanup, onMount} from 'solid-js'
+import {onSettled} from 'solid-js'
 
 import {useIntl} from '../../intl'
 
@@ -74,12 +74,12 @@ export default function useImagePaste(boardId: () => string, cardId: () => strin
         }
     }
 
-    onMount(() => {
+    onSettled(() => {
         document.addEventListener('paste', onPaste)
         document.addEventListener('drop', onDrop)
-        onCleanup(() => {
+        return () => {
             document.removeEventListener('paste', onPaste)
             document.removeEventListener('drop', onDrop)
-        })
+        }
     })
 }

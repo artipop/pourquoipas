@@ -763,7 +763,9 @@ exports[`components/calendar/toolbar > return calendar, no date property 1`] = `
                                                     class="CompassIcon icon-dots-horizontal OptionsIcon"
                                                   />
                                                 </button>
+                                                <!---->
                                                 
+                                                <!---->
                                               </div>
                                               <div
                                                 class="octo-icontitle"
@@ -779,8 +781,9 @@ exports[`components/calendar/toolbar > return calendar, no date property 1`] = `
                                                   title
                                                 </div>
                                               </div>
+                                              <!---->
                                               
-                                              
+                                              <!---->
                                             </div>
                                           </div>
                                         </div>
@@ -3129,7 +3132,9 @@ exports[`components/calendar/toolbar > return calendar, with date property not s
                                                     class="CompassIcon icon-dots-horizontal OptionsIcon"
                                                   />
                                                 </button>
+                                                <!---->
                                                 
+                                                <!---->
                                               </div>
                                               <div
                                                 class="octo-icontitle"
@@ -3145,8 +3150,9 @@ exports[`components/calendar/toolbar > return calendar, with date property not s
                                                   title
                                                 </div>
                                               </div>
+                                              <!---->
                                               
-                                              
+                                              <!---->
                                             </div>
                                           </div>
                                         </div>
@@ -6223,7 +6229,9 @@ exports[`components/calendar/toolbar > return calendar, with date property set 1
                                                     class="CompassIcon icon-dots-horizontal OptionsIcon"
                                                   />
                                                 </button>
+                                                <!---->
                                                 
+                                                <!---->
                                               </div>
                                               <div
                                                 class="octo-icontitle"
@@ -6239,8 +6247,9 @@ exports[`components/calendar/toolbar > return calendar, with date property set 1
                                                   title
                                                 </div>
                                               </div>
+                                              <!---->
                                               
-                                              
+                                              <!---->
                                             </div>
                                           </div>
                                         </div>
@@ -7867,7 +7876,9 @@ exports[`components/calendar/toolbar > return calendar, without permissions 1`] 
                                                     class="CompassIcon icon-dots-horizontal OptionsIcon"
                                                   />
                                                 </button>
+                                                <!---->
                                                 
+                                                <!---->
                                               </div>
                                               <div
                                                 class="octo-icontitle"
@@ -7883,8 +7894,9 @@ exports[`components/calendar/toolbar > return calendar, without permissions 1`] 
                                                   title
                                                 </div>
                                               </div>
+                                              <!---->
                                               
-                                              
+                                              <!---->
                                             </div>
                                           </div>
                                         </div>

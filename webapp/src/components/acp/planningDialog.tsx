@@ -1,6 +1,6 @@
 // The Wails-generated Go bindings are PascalCase methods, not constructors.
 /* eslint-disable new-cap */
-import {For, Show, createSignal, onCleanup, onMount} from 'solid-js'
+import {For, Show, createSignal, onSettled} from 'solid-js'
 
 import {useIntl} from '../../intl'
 
@@ -110,14 +110,14 @@ const PlanningDialog = (props: Props) => {
         }
     }
 
-    onMount(() => {
+    onSettled(() => {
         refreshTerminals()
         refreshAgents()
 
         // The recap arrives while this is open — the agent writes it mid-turn —
         // and so does a terminal ending on its own. One subscription keeps the
         // list true rather than making a person close and reopen the dialog.
-        onCleanup(onAgentEvent('acp:terminal', () => refreshTerminals()))
+        return onAgentEvent('acp:terminal', () => refreshTerminals())
     })
 
     // The desktop app has already opened the window by the time the binding

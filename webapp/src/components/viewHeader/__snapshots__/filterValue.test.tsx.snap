@@ -14,8 +14,11 @@ exports[`components/viewHeader/filterValue > return date filter value 1`] = `
         Empty
       </span>
       
+      <!---->
     </button>
+    <!---->
     
+    <!---->
   </div>
 </div>
 `;
@@ -36,7 +39,9 @@ exports[`components/viewHeader/filterValue > return filterValue 1`] = `
         Status
       </span>
       
+      <!---->
     </button>
+    <!---->
     <div
       class="Menu noselect bottom"
     >
@@ -67,6 +72,7 @@ exports[`components/viewHeader/filterValue > return filterValue 1`] = `
                 class="octo-switch-inner"
               />
             </div>
+            <!---->
           </div>
         </div>
         <div
@@ -104,6 +110,7 @@ exports[`components/viewHeader/filterValue > return filterValue 1`] = `
         </div>
       </div>
     </div>
+    <!---->
   </div>
 </div>
 `;
@@ -124,7 +131,9 @@ exports[`components/viewHeader/filterValue > return filterValue and click Status
         Status
       </span>
       
+      <!---->
     </button>
+    <!---->
     <div
       class="Menu noselect bottom"
     >
@@ -155,6 +164,7 @@ exports[`components/viewHeader/filterValue > return filterValue and click Status
                 class="octo-switch-inner"
               />
             </div>
+            <!---->
           </div>
         </div>
         <div
@@ -192,6 +202,7 @@ exports[`components/viewHeader/filterValue > return filterValue and click Status
         </div>
       </div>
     </div>
+    <!---->
   </div>
 </div>
 `;
@@ -212,7 +223,9 @@ exports[`components/viewHeader/filterValue > return filterValue and click Status
         (Unknown)
       </span>
       
+      <!---->
     </button>
+    <!---->
     <div
       class="Menu noselect bottom"
     >
@@ -243,6 +256,7 @@ exports[`components/viewHeader/filterValue > return filterValue and click Status
                 class="octo-switch-inner"
               />
             </div>
+            <!---->
           </div>
         </div>
         <div
@@ -280,6 +294,7 @@ exports[`components/viewHeader/filterValue > return filterValue and click Status
         </div>
       </div>
     </div>
+    <!---->
   </div>
 </div>
 `;

@@ -1,5 +1,5 @@
 import {For, Show, createSignal} from 'solid-js'
-import type {JSX} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 
 import {Option as SelectOption, typesByOptions} from '../../calculations/options'
 import {IPropertyTemplate} from '../../../blocks/board'

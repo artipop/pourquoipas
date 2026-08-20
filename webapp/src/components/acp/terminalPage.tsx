@@ -1,7 +1,7 @@
 // The Wails-generated Go bindings are PascalCase methods, not constructors.
 /* eslint-disable new-cap */
-import {For, Show, createSignal, onCleanup, onMount} from 'solid-js'
-import type {JSX} from 'solid-js'
+import {For, Show, createSignal, onSettled} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 import {useParams} from '@solidjs/router'
 
 import {useIntl} from '../../intl'
@@ -73,7 +73,7 @@ const TerminalPage = (props: TerminalProps = {}): JSX.Element => {
     const [error, setError] = createSignal('')
     let writeToPty: (data: string) => void = () => undefined
 
-    onMount(() => {
+    onSettled(() => {
         const bindings = agentBindings()
         if (!bindings?.GetTerminalInfo) {
             setError(intl.formatMessage({id: 'acp.terminal.noBindings', defaultMessage: 'The terminal is only available in the desktop app.'}))
@@ -84,7 +84,7 @@ const TerminalPage = (props: TerminalProps = {}): JSX.Element => {
             catch((e: Error) => setError(String(e?.message || e)))
     })
 
-    onMount(() => {
+    onSettled(() => {
         let disposed = false
         let terminal: any = null
         let fit: any = null
@@ -183,13 +183,13 @@ const TerminalPage = (props: TerminalProps = {}): JSX.Element => {
 
         start().catch((e) => setError(String(e?.message || e)))
 
-        onCleanup(() => {
+        return () => {
             disposed = true
             observer?.disconnect()
             socket?.close()
             socket = null
             terminal?.dispose()
-        })
+        }
     })
 
     const statusText = () => ({

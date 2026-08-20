@@ -1,5 +1,5 @@
-import {Show, Suspense, createSignal, lazy} from 'solid-js'
-import type {JSX} from 'solid-js'
+import {Loading, Show, createSignal, lazy} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 
 import {Utils} from '../utils'
 import './markdownEditor.scss'
@@ -55,7 +55,7 @@ const MarkdownEditor = (props: Props): JSX.Element => {
                     />
                 }
             >
-                <Suspense fallback={<></>}>
+                <Loading fallback={<></>}>
                     <MarkdownEditorInput
                         id={props.id}
                         onChange={props.onChange}
@@ -66,7 +66,7 @@ const MarkdownEditor = (props: Props): JSX.Element => {
                         isEditing={isEditing()}
                         saveOnEnter={props.saveOnEnter}
                     />
-                </Suspense>
+                </Loading>
             </Show>
         </div>
     )

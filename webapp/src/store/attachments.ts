@@ -1,4 +1,4 @@
-import {produce} from 'solid-js/store'
+import {storePath} from 'solid-js'
 
 import {AttachmentBlock} from '../blocks/attachmentBlock'
 import {Block} from '../blocks/block'
@@ -30,7 +30,7 @@ export const attachmentsFromBlocks = (blocks: Block[]): AttachmentsState => {
 
 export const createAttachmentsActions = ({setState}: StoreContext) => ({
     updateAttachments(attachments: AttachmentBlock[]) {
-        setState('attachments', produce((state) => {
+        setState(({attachments: state}) => {
             for (const attachment of attachments) {
                 if (attachment.deleteAt === 0) {
                     state.attachments[attachment.id] = attachment
@@ -55,13 +55,13 @@ export const createAttachmentsActions = ({setState}: StoreContext) => ({
                     delete state.attachments[attachment.id]
                 }
             }
-        }))
+        })
     },
     updateUploadPrecent(payload: {blockId: string, uploadPercent: number}) {
-        setState('attachments', 'attachments', payload.blockId, 'uploadingPercent', payload.uploadPercent)
+        setState(storePath('attachments', 'attachments', payload.blockId, 'uploadingPercent', payload.uploadPercent))
     },
     setAttachments(next: AttachmentsState) {
-        setState('attachments', next)
+        setState(storePath('attachments', next))
     },
 })
 

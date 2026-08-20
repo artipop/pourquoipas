@@ -1,4 +1,4 @@
-import type {JSX} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 
 import Person from '../person/person'
 import {PropertyProps} from '../types'

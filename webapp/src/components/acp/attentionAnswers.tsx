@@ -67,8 +67,7 @@ const AttentionAnswers = (props: {target: Attention}) => {
                     {(option) => (
                         <button
                             type='button'
-                            class='AttentionAnswers__option'
-                            classList={{'AttentionAnswers__option--deny': option.kind?.startsWith('reject')}}
+                            class={['AttentionAnswers__option', {'AttentionAnswers__option--deny': option.kind?.startsWith('reject')}]}
                             disabled={busy() !== ''}
                             title={option.description}
                             onClick={() => answer(option.id)}

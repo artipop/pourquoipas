@@ -20,6 +20,7 @@ exports[`components/content/archivedFile > should match snapshot 1`] = `
         TXT
          
         2.0 KiB
+        <!---->
       </p>
     </div>
   </div>

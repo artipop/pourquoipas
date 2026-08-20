@@ -1,4 +1,4 @@
-import {Match, Show, Switch, createEffect, createMemo, createSignal, onMount, untrack} from 'solid-js'
+import {Match, Show, Switch, createEffect, createMemo, createSignal, onSettled, untrack} from 'solid-js'
 
 import {useIntl} from '../intl'
 
@@ -84,9 +84,8 @@ const CenterPanel = (props: Props) => {
     // доска…» → «Пройти настройку заново…».
     const [showSetup, setShowSetup] = createSignal(false)
     const [plan, refreshPlan] = createSetupPlan(() => props.board)
-    createEffect(() => {
-        const board = props.board
-        if (shouldOfferSetup(plan())) {
+    createEffect(() => [props.board, plan()] as const, ([board, current]) => {
+        if (shouldOfferSetup(current)) {
             // Marked as offered when it opens, not when it closes: closing the
             // window, quitting mid-way or never touching it again all mean the
             // same thing — it has had its turn.
@@ -100,8 +99,8 @@ const CenterPanel = (props: Props) => {
     // answers. A board that still carries it loses it here — on being opened,
     // so a board somebody rarely visits is not left with a field the rest have
     // lost. It writes only when the field is actually there.
-    createEffect(() => {
-        retireAgentProperty(props.board).catch(() => undefined)
+    createEffect(() => props.board, (board) => {
+        retireAgentProperty(board).catch(() => undefined)
     })
 
     const boardCards = useAppSelector(getCurrentBoardCards)
@@ -113,8 +112,7 @@ const CenterPanel = (props: Props) => {
     // view shows, since a card the filter hides holds a value too. The cards
     // are read untracked: what this answers is the board, and the conversion
     // must not be reconsidered on every keystroke in a card.
-    createEffect(() => {
-        const board = props.board
+    createEffect(() => props.board, (board) => {
         narrowWorkdirProperty(board, untrack(boardCards)).catch(() => undefined)
     })
 
@@ -130,7 +128,7 @@ const CenterPanel = (props: Props) => {
 
     const clientConfig = useAppSelector<ClientConfig>(getClientConfig)
 
-    onMount(() => {
+    onSettled(() => {
     })
 
     useHotkeys('esc', (e: KeyboardEvent) => {
@@ -306,8 +304,10 @@ const CenterPanel = (props: Props) => {
         await prepareBoardsTour()
     }
 
-    createEffect(() => {
-        startBoardsTour()
+    createEffect(shouldStartBoardsTour, (should) => {
+        if (should) {
+            startBoardsTour()
+        }
     })
 
     const backgroundClicked = (e: MouseEvent) => {

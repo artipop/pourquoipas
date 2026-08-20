@@ -1,5 +1,4 @@
-import {batch} from 'solid-js'
-import {reconcile} from 'solid-js/store'
+import {reconcile, storePath} from 'solid-js'
 
 import {Subscription} from '../wsclient'
 import {ErrorId} from '../errors'
@@ -27,12 +26,12 @@ export const createInitialLoadActions = (ctx: StoreContext) => {
     // does not redraw every card.
     const applyBlocks = (blocks: Parameters<typeof viewsFromBlocks>[0]) => {
         const {cards, templates} = cardsFromBlocks(blocks)
-        setState('views', 'views', reconcile(viewsFromBlocks(blocks)))
-        setState('cards', 'cards', reconcile(cards))
-        setState('cards', 'templates', reconcile(templates))
-        setState('contents', reconcile(contentsFromBlocks(blocks)))
-        setState('comments', reconcile(commentsFromBlocks(blocks)))
-        setState('attachments', reconcile(attachmentsFromBlocks(blocks)))
+        setState(storePath('views', 'views', reconcile(viewsFromBlocks(blocks))))
+        setState(storePath('cards', 'cards', reconcile(cards)))
+        setState(storePath('cards', 'templates', reconcile(templates)))
+        setState(storePath('contents', reconcile(contentsFromBlocks(blocks))))
+        setState(storePath('comments', reconcile(commentsFromBlocks(blocks))))
+        setState(storePath('attachments', reconcile(attachmentsFromBlocks(blocks))))
     }
 
     return {
@@ -58,31 +57,29 @@ export const createInitialLoadActions = (ctx: StoreContext) => {
                     throw new Error(ErrorId.TeamUndefined)
                 }
 
-                batch(() => {
-                    setState('teams', 'current', team)
-                    setState('teams', 'allTeams', [...teams].sort((a, b) => (a.title < b.title ? -1 : 1)))
+                setState(storePath('teams', 'current', team))
+                setState(storePath('teams', 'allTeams', [...teams].sort((a, b) => (a.title < b.title ? -1 : 1))))
 
-                    setState('boards', 'boards', boards.reduce((acc: {[key: string]: Board}, b: Board) => {
-                        acc[b.id] = b
-                        return acc
-                    }, {}))
-                    setState('boards', 'templates', boardTemplates.reduce((acc: {[key: string]: Board}, b: Board) => {
-                        acc[b.id] = b
-                        return acc
-                    }, {}))
-                    setState('boards', 'myBoardMemberships', boardsMemberships.reduce((acc: {[key: string]: typeof boardsMemberships[0]}, m) => {
-                        acc[m.boardId] = m
-                        return acc
-                    }, {}))
+                setState(storePath('boards', 'boards', boards.reduce((acc: {[key: string]: Board}, b: Board) => {
+                    acc[b.id] = b
+                    return acc
+                }, {})))
+                setState(storePath('boards', 'templates', boardTemplates.reduce((acc: {[key: string]: Board}, b: Board) => {
+                    acc[b.id] = b
+                    return acc
+                }, {})))
+                setState(storePath('boards', 'myBoardMemberships', boardsMemberships.reduce((acc: {[key: string]: typeof boardsMemberships[0]}, m) => {
+                    acc[m.boardId] = m
+                    return acc
+                }, {})))
 
-                    if (myConfig) {
-                        setState('users', 'myConfig', parseUserProps(myConfig))
-                    }
-                })
+                if (myConfig) {
+                    setState(storePath('users', 'myConfig', parseUserProps(myConfig)))
+                }
 
                 return {team, teams, boards, boardsMemberships, boardTemplates, myConfig}
             } catch (e) {
-                setState('globalError', 'value', (e as Error).message || '')
+                setState(storePath('globalError', 'value', (e as Error).message || ''))
                 throw e
             }
         },
@@ -99,56 +96,52 @@ export const createInitialLoadActions = (ctx: StoreContext) => {
                     throw new Error(ErrorId.InvalidReadOnlyBoard)
                 }
 
-                batch(() => {
-                    const boards: {[key: string]: Board} = {}
-                    const templates: {[key: string]: Board} = {}
-                    if (board.isTemplate) {
-                        templates[board.id] = board
-                    } else {
-                        boards[board.id] = board
-                    }
-                    setState('boards', 'boards', reconcile(boards))
-                    setState('boards', 'templates', reconcile(templates))
-                    applyBlocks(blocks)
-                })
+                const boards: {[key: string]: Board} = {}
+                const templates: {[key: string]: Board} = {}
+                if (board.isTemplate) {
+                    templates[board.id] = board
+                } else {
+                    boards[board.id] = board
+                }
+                setState(storePath('boards', 'boards', reconcile(boards)))
+                setState(storePath('boards', 'templates', reconcile(templates)))
+                applyBlocks(blocks)
 
                 return {board, blocks}
             } catch (e) {
-                setState('globalError', 'value', (e as Error).message || '')
+                setState(storePath('globalError', 'value', (e as Error).message || ''))
                 throw e
             }
         },
 
         async loadBoardData(boardID: string) {
-            setState('boards', 'loadingBoard', true)
+            setState(storePath('boards', 'loadingBoard', true))
             try {
                 const blocks = await deps.client.getAllBlocks(boardID)
-                batch(() => {
-                    applyBlocks(blocks)
-                    setState('boards', 'loadingBoard', false)
-                })
+                applyBlocks(blocks)
+                setState(storePath('boards', 'loadingBoard', false))
                 return {blocks}
             } catch (e) {
-                setState('boards', 'loadingBoard', false)
+                setState(storePath('boards', 'loadingBoard', false))
                 throw e
             }
         },
 
         async loadBoards() {
             const boards = await deps.client.getBoards()
-            setState('boards', 'boards', reconcile(boards.reduce((acc: {[key: string]: Board}, b: Board) => {
+            setState(storePath('boards', 'boards', reconcile(boards.reduce((acc: {[key: string]: Board}, b: Board) => {
                 acc[b.id] = b
                 return acc
-            }, {})))
+            }, {}))))
             return {boards}
         },
 
         async loadMyBoardsMemberships() {
             const boardsMemberships = await deps.client.getMyBoardMemberships()
-            setState('boards', 'myBoardMemberships', reconcile(boardsMemberships.reduce((acc: {[key: string]: typeof boardsMemberships[0]}, m) => {
+            setState(storePath('boards', 'myBoardMemberships', reconcile(boardsMemberships.reduce((acc: {[key: string]: typeof boardsMemberships[0]}, m) => {
                 acc[m.boardId] = m
                 return acc
-            }, {})))
+            }, {}))))
             return {boardsMemberships}
         },
     }

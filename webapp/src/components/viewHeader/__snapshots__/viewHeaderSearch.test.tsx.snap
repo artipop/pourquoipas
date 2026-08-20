@@ -8,11 +8,13 @@ exports[`components/viewHeader/ViewHeaderSearch > return search menu 1`] = `
     <i
       class="CompassIcon icon-magnify board-search-icon"
     />
+    <!---->
     <input
       class="Editable "
       placeholder="Search cards"
       title=""
     />
+    <!---->
   </div>
 </div>
 `;
@@ -25,11 +27,13 @@ exports[`components/viewHeader/ViewHeaderSearch > search text after input 1`] = 
     <i
       class="CompassIcon icon-magnify board-search-icon"
     />
+    <!---->
     <input
       class="Editable "
       placeholder="Search cards"
       title="Hello"
     />
+    <!---->
   </div>
 </div>
 `;

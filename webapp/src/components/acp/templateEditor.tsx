@@ -1,6 +1,6 @@
 // The Wails-generated Go bindings are PascalCase methods, not constructors.
 /* eslint-disable new-cap */
-import {For, Show, createSignal, onMount} from 'solid-js'
+import {For, Show, createSignal, onSettled} from 'solid-js'
 
 import {useIntl, IntlShape} from '../../intl'
 
@@ -67,15 +67,18 @@ const TemplateEditor = (props: Props) => {
     // and to be written back untouched when the rest is saved.
     const automation: Automation = readBoardAutomation(props.board)
 
-    onMount(async () => {
-        if (!bindings?.ListSetupSteps) {
-            return
-        }
-        try {
-            setDefs(JSON.parse(await bindings.ListSetupSteps()) || [])
-        } catch (e) {
-            setError(String(e))
-        }
+    onSettled(() => {
+        // Not awaited: onSettled reads a returned promise as a cleanup value.
+        void (async () => {
+            if (!bindings?.ListSetupSteps) {
+                return
+            }
+            try {
+                setDefs(JSON.parse(await bindings.ListSetupSteps()) || [])
+            } catch (e) {
+                setError(String(e))
+            }
+        })()
     })
 
     const columns = () => boardColumns(props.board, columnProperty(props.board)?.name)

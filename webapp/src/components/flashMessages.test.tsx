@@ -1,4 +1,5 @@
 import {render, screen} from '@solidjs/testing-library'
+import {flush} from 'solid-js'
 
 import '@testing-library/jest-dom'
 
@@ -30,6 +31,8 @@ describe('components/flashMessages', () => {
 
         sendFlashMessage({content: 'Mock Content', severity: 'high'})
 
+        flush()
+
         expect(container).toMatchSnapshot()
 
         vi.advanceTimersByTime(200)
@@ -43,6 +46,8 @@ describe('components/flashMessages', () => {
         )
 
         sendFlashMessage({content: 'Mock Content', severity: 'normal'})
+
+        flush()
 
         expect(screen.getByText('Mock Content')).toHaveClass('normal')
 
@@ -60,6 +65,8 @@ describe('components/flashMessages', () => {
 
         sendFlashMessage({content: 'Mock Content', severity: 'low'})
 
+        flush()
+
         expect(screen.getByText('Mock Content')).toHaveClass('low')
 
         expect(container).toMatchSnapshot()
@@ -75,6 +82,8 @@ describe('components/flashMessages', () => {
         )
 
         sendFlashMessage({content: <div data-testid='mock-test-id'>{'Mock Content'}</div>, severity: 'low'})
+
+        flush()
 
         expect(screen.getByTestId('mock-test-id')).toBeVisible()
 
@@ -94,6 +103,8 @@ describe('components/flashMessages', () => {
 
         sendFlashMessage({content: 'Come back any time', severity: 'normal', notice: true, milliseconds: 5000})
 
+        flush()
+
         vi.advanceTimersByTime(1000)
         expect(screen.getByText('Come back any time')).toBeVisible()
 
@@ -110,6 +121,8 @@ describe('components/flashMessages', () => {
 
         sendFlashMessage({content: 'Come back any time', severity: 'normal', notice: true, milliseconds: 5000})
 
+        flush()
+
         userEvent.click(screen.getByRole('button', {name: 'Close'}))
         vi.advanceTimersByTime(200)
 
@@ -124,6 +137,8 @@ describe('components/flashMessages', () => {
 
         sendFlashMessage({content: 'Copied!', severity: 'normal'})
 
+        flush()
+
         expect(screen.queryByRole('button', {name: 'Close'})).toBeNull()
     })
 
@@ -133,6 +148,8 @@ describe('components/flashMessages', () => {
         )
 
         sendFlashMessage({content: 'Mock Content', severity: 'low'})
+
+        flush()
 
         userEvent.click(screen.getByText('Mock Content'))
 

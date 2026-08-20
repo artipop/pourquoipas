@@ -29,7 +29,7 @@ export function floatingPlacement(position?: MenuPlacement): Placement {
 // and none of them should have to learn that placing one needs a measurement.
 const MenuAnchorContext = createContext<() => HTMLElement | undefined>(() => undefined)
 
-export const MenuAnchorProvider = MenuAnchorContext.Provider
+export const MenuAnchorProvider = MenuAnchorContext
 
 export function useMenuAnchor(): () => HTMLElement | undefined {
     return useContext(MenuAnchorContext)

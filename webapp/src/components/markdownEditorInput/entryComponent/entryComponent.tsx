@@ -1,5 +1,5 @@
 import {Show} from 'solid-js'
-import type {JSX} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 
 import {FormattedMessage} from '../../../intl'
 
@@ -34,7 +34,7 @@ const Entry = (props: Props): JSX.Element => {
         <div
             class='EntryContainer'
             role='option'
-            aria-selected={props.isSelected}
+            aria-selected={String(props.isSelected)}
             onMouseDown={(e) => e.preventDefault()}
             onMouseEnter={() => props.onMouseEnter()}
             onClick={() => props.onClick()}

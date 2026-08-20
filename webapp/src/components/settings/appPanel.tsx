@@ -67,7 +67,7 @@ const AppPanel = () => {
                                 <button
                                     type='button'
                                     class={choiceClass(themeName() === theme.id)}
-                                    aria-pressed={themeName() === theme.id}
+                                    aria-pressed={String(themeName() === theme.id)}
                                     onClick={() => {
                                         setTheme(theme.id)
                                         setThemeName(theme.id)
@@ -93,7 +93,7 @@ const AppPanel = () => {
                                 <button
                                     type='button'
                                     class={choiceClass(intl.locale.toLowerCase() === language.code)}
-                                    aria-pressed={intl.locale.toLowerCase() === language.code}
+                                    aria-pressed={String(intl.locale.toLowerCase() === language.code)}
                                     onClick={() => actions.language.storeLanguage(language.code)}
                                 >
                                     <span class='AppPanel__choiceName'>{language.displayName}</span>

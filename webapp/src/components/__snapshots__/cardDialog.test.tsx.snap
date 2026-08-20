@@ -24,7 +24,9 @@ exports[`components/cardDialog > already following card 1`] = `
             >
               <div />
             </h1>
+            <!---->
             
+            <!---->
           </div>
           <div
             class="toolbar--right"
@@ -42,8 +44,10 @@ exports[`components/cardDialog > already following card 1`] = `
                   Attach
                 </span>
                 
+                <!---->
               </button>
             </div>
+            <!---->
             <div
               aria-label="menuwrapper"
               class="MenuWrapper"
@@ -56,8 +60,11 @@ exports[`components/cardDialog > already following card 1`] = `
                   class="CompassIcon icon-dots-horizontal OptionsIcon"
                 />
               </button>
+              <!---->
               
+              <!---->
             </div>
+            <!---->
             <button
               aria-label="Close dialog"
               title="Close dialog"
@@ -67,6 +74,7 @@ exports[`components/cardDialog > already following card 1`] = `
                 class="CompassIcon icon-close CloseIcon"
               />
             </button>
+            <!---->
           </div>
         </div>
         <div
@@ -93,10 +101,14 @@ exports[`components/cardDialog > already following card 1`] = `
                       i
                     </span>
                   </div>
+                  <!---->
                   
+                  <!---->
                 </div>
               </div>
+              <!---->
               
+              <!---->
               <div
                 class="EditableAreaWrap"
               >
@@ -104,7 +116,7 @@ exports[`components/cardDialog > already following card 1`] = `
                   class="EditableArea Editable title"
                   placeholder="Untitled"
                   rows="1"
-                  spellcheck="true"
+                  spellcheck=""
                   title="title"
                 />
                 <div
@@ -119,12 +131,15 @@ exports[`components/cardDialog > already following card 1`] = `
                   />
                 </div>
               </div>
+              <!---->
               
+              <!---->
               <div
                 class="octo-propertylist CardDetailProperties"
               >
+                <!---->
                 
-                
+                <!---->
                 <div
                   class="octo-propertyname add-property"
                 >
@@ -141,14 +156,23 @@ exports[`components/cardDialog > already following card 1`] = `
                         + Add a property
                       </span>
                       
+                      <!---->
                     </button>
+                    <!---->
                     
+                    <!---->
                   </div>
+                  <!---->
                   
+                  <!---->
                 </div>
+                <!---->
               </div>
+              <!---->
               
+              <!---->
               
+              <!---->
             </div>
             <div
               class="CardDetail CardDetail--fullwidth content-blocks"
@@ -188,8 +212,11 @@ exports[`components/cardDialog > already following card 1`] = `
                       Add content
                     </span>
                     
+                    <!---->
                   </button>
+                  <!---->
                   
+                  <!---->
                 </div>
               </div>
             </div>
@@ -226,7 +253,9 @@ exports[`components/cardDialog > return a cardDialog readonly 1`] = `
             >
               <div />
             </h1>
+            <!---->
             
+            <!---->
           </div>
           <div
             class="toolbar--right"
@@ -244,9 +273,12 @@ exports[`components/cardDialog > return a cardDialog readonly 1`] = `
                   Attach
                 </span>
                 
+                <!---->
               </button>
             </div>
+            <!---->
             
+            <!---->
             <button
               aria-label="Close dialog"
               title="Close dialog"
@@ -256,6 +288,7 @@ exports[`components/cardDialog > return a cardDialog readonly 1`] = `
                 class="CompassIcon icon-close CloseIcon"
               />
             </button>
+            <!---->
           </div>
         </div>
         <div
@@ -278,7 +311,9 @@ exports[`components/cardDialog > return a cardDialog readonly 1`] = `
                   </span>
                 </div>
               </div>
+              <!---->
               
+              <!---->
               <div
                 class="EditableAreaWrap"
               >
@@ -287,7 +322,7 @@ exports[`components/cardDialog > return a cardDialog readonly 1`] = `
                   placeholder="Untitled"
                   readonly=""
                   rows="1"
-                  spellcheck="true"
+                  spellcheck=""
                   title="title"
                 />
                 <div
@@ -302,16 +337,23 @@ exports[`components/cardDialog > return a cardDialog readonly 1`] = `
                   />
                 </div>
               </div>
+              <!---->
               
+              <!---->
               <div
                 class="octo-propertylist CardDetailProperties"
               >
+                <!---->
                 
+                <!---->
                 
-                
+                <!---->
               </div>
+              <!---->
               
+              <!---->
               
+              <!---->
             </div>
             <div
               class="CardDetail CardDetail--fullwidth content-blocks"
@@ -362,7 +404,9 @@ exports[`components/cardDialog > return cardDialog menu content 1`] = `
             >
               <div />
             </h1>
+            <!---->
             
+            <!---->
           </div>
           <div
             class="toolbar--right"
@@ -380,8 +424,10 @@ exports[`components/cardDialog > return cardDialog menu content 1`] = `
                   Attach
                 </span>
                 
+                <!---->
               </button>
             </div>
+            <!---->
             <div
               aria-label="menuwrapper"
               class="MenuWrapper override menuOpened"
@@ -394,6 +440,7 @@ exports[`components/cardDialog > return cardDialog menu content 1`] = `
                   class="CompassIcon icon-dots-horizontal OptionsIcon"
                 />
               </button>
+              <!---->
               <div
                 class="Menu noselect left"
               >
@@ -452,7 +499,6 @@ exports[`components/cardDialog > return cardDialog menu content 1`] = `
                             height="24"
                             viewBox="0 0 24 24"
                             width="24"
-                            xmlns="http://www.w3.org/2000/svg"
                           >
                             <g
                               opacity="0.8"
@@ -579,7 +625,9 @@ exports[`components/cardDialog > return cardDialog menu content 1`] = `
                   </div>
                 </div>
               </div>
+              <!---->
             </div>
+            <!---->
             <button
               aria-label="Close dialog"
               title="Close dialog"
@@ -589,6 +637,7 @@ exports[`components/cardDialog > return cardDialog menu content 1`] = `
                 class="CompassIcon icon-close CloseIcon"
               />
             </button>
+            <!---->
           </div>
         </div>
         <div
@@ -615,10 +664,14 @@ exports[`components/cardDialog > return cardDialog menu content 1`] = `
                       i
                     </span>
                   </div>
+                  <!---->
                   
+                  <!---->
                 </div>
               </div>
+              <!---->
               
+              <!---->
               <div
                 class="EditableAreaWrap"
               >
@@ -626,7 +679,7 @@ exports[`components/cardDialog > return cardDialog menu content 1`] = `
                   class="EditableArea Editable title"
                   placeholder="Untitled"
                   rows="1"
-                  spellcheck="true"
+                  spellcheck=""
                   title="title"
                 />
                 <div
@@ -641,12 +694,15 @@ exports[`components/cardDialog > return cardDialog menu content 1`] = `
                   />
                 </div>
               </div>
+              <!---->
               
+              <!---->
               <div
                 class="octo-propertylist CardDetailProperties"
               >
+                <!---->
                 
-                
+                <!---->
                 <div
                   class="octo-propertyname add-property"
                 >
@@ -663,14 +719,23 @@ exports[`components/cardDialog > return cardDialog menu content 1`] = `
                         + Add a property
                       </span>
                       
+                      <!---->
                     </button>
+                    <!---->
                     
+                    <!---->
                   </div>
+                  <!---->
                   
+                  <!---->
                 </div>
+                <!---->
               </div>
+              <!---->
               
+              <!---->
               
+              <!---->
             </div>
             <div
               class="CardDetail CardDetail--fullwidth content-blocks"
@@ -710,8 +775,11 @@ exports[`components/cardDialog > return cardDialog menu content 1`] = `
                       Add content
                     </span>
                     
+                    <!---->
                   </button>
+                  <!---->
                   
+                  <!---->
                 </div>
               </div>
             </div>
@@ -748,7 +816,9 @@ exports[`components/cardDialog > return cardDialog menu content and cancel delet
             >
               <div />
             </h1>
+            <!---->
             
+            <!---->
           </div>
           <div
             class="toolbar--right"
@@ -766,8 +836,10 @@ exports[`components/cardDialog > return cardDialog menu content and cancel delet
                   Attach
                 </span>
                 
+                <!---->
               </button>
             </div>
+            <!---->
             <div
               aria-label="menuwrapper"
               class="MenuWrapper"
@@ -780,8 +852,11 @@ exports[`components/cardDialog > return cardDialog menu content and cancel delet
                   class="CompassIcon icon-dots-horizontal OptionsIcon"
                 />
               </button>
+              <!---->
               
+              <!---->
             </div>
+            <!---->
             <button
               aria-label="Close dialog"
               title="Close dialog"
@@ -791,6 +866,7 @@ exports[`components/cardDialog > return cardDialog menu content and cancel delet
                 class="CompassIcon icon-close CloseIcon"
               />
             </button>
+            <!---->
           </div>
         </div>
         <div
@@ -817,10 +893,14 @@ exports[`components/cardDialog > return cardDialog menu content and cancel delet
                       i
                     </span>
                   </div>
+                  <!---->
                   
+                  <!---->
                 </div>
               </div>
+              <!---->
               
+              <!---->
               <div
                 class="EditableAreaWrap"
               >
@@ -828,7 +908,7 @@ exports[`components/cardDialog > return cardDialog menu content and cancel delet
                   class="EditableArea Editable title"
                   placeholder="Untitled"
                   rows="1"
-                  spellcheck="true"
+                  spellcheck=""
                   title="title"
                 />
                 <div
@@ -843,12 +923,15 @@ exports[`components/cardDialog > return cardDialog menu content and cancel delet
                   />
                 </div>
               </div>
+              <!---->
               
+              <!---->
               <div
                 class="octo-propertylist CardDetailProperties"
               >
+                <!---->
                 
-                
+                <!---->
                 <div
                   class="octo-propertyname add-property"
                 >
@@ -865,14 +948,23 @@ exports[`components/cardDialog > return cardDialog menu content and cancel delet
                         + Add a property
                       </span>
                       
+                      <!---->
                     </button>
+                    <!---->
                     
+                    <!---->
                   </div>
+                  <!---->
                   
+                  <!---->
                 </div>
+                <!---->
               </div>
+              <!---->
               
+              <!---->
               
+              <!---->
             </div>
             <div
               class="CardDetail CardDetail--fullwidth content-blocks"
@@ -912,8 +1004,11 @@ exports[`components/cardDialog > return cardDialog menu content and cancel delet
                       Add content
                     </span>
                     
+                    <!---->
                   </button>
+                  <!---->
                   
+                  <!---->
                 </div>
               </div>
             </div>
@@ -950,7 +1045,9 @@ exports[`components/cardDialog > should match snapshot 1`] = `
             >
               <div />
             </h1>
+            <!---->
             
+            <!---->
           </div>
           <div
             class="toolbar--right"
@@ -968,8 +1065,10 @@ exports[`components/cardDialog > should match snapshot 1`] = `
                   Attach
                 </span>
                 
+                <!---->
               </button>
             </div>
+            <!---->
             <div
               aria-label="menuwrapper"
               class="MenuWrapper"
@@ -982,8 +1081,11 @@ exports[`components/cardDialog > should match snapshot 1`] = `
                   class="CompassIcon icon-dots-horizontal OptionsIcon"
                 />
               </button>
+              <!---->
               
+              <!---->
             </div>
+            <!---->
             <button
               aria-label="Close dialog"
               title="Close dialog"
@@ -993,6 +1095,7 @@ exports[`components/cardDialog > should match snapshot 1`] = `
                 class="CompassIcon icon-close CloseIcon"
               />
             </button>
+            <!---->
           </div>
         </div>
         <div
@@ -1019,10 +1122,14 @@ exports[`components/cardDialog > should match snapshot 1`] = `
                       i
                     </span>
                   </div>
+                  <!---->
                   
+                  <!---->
                 </div>
               </div>
+              <!---->
               
+              <!---->
               <div
                 class="EditableAreaWrap"
               >
@@ -1030,7 +1137,7 @@ exports[`components/cardDialog > should match snapshot 1`] = `
                   class="EditableArea Editable title"
                   placeholder="Untitled"
                   rows="1"
-                  spellcheck="true"
+                  spellcheck=""
                   title="title"
                 />
                 <div
@@ -1045,12 +1152,15 @@ exports[`components/cardDialog > should match snapshot 1`] = `
                   />
                 </div>
               </div>
+              <!---->
               
+              <!---->
               <div
                 class="octo-propertylist CardDetailProperties"
               >
+                <!---->
                 
-                
+                <!---->
                 <div
                   class="octo-propertyname add-property"
                 >
@@ -1067,14 +1177,23 @@ exports[`components/cardDialog > should match snapshot 1`] = `
                         + Add a property
                       </span>
                       
+                      <!---->
                     </button>
+                    <!---->
                     
+                    <!---->
                   </div>
+                  <!---->
                   
+                  <!---->
                 </div>
+                <!---->
               </div>
+              <!---->
               
+              <!---->
               
+              <!---->
             </div>
             <div
               class="CardDetail CardDetail--fullwidth content-blocks"
@@ -1114,8 +1233,11 @@ exports[`components/cardDialog > should match snapshot 1`] = `
                       Add content
                     </span>
                     
+                    <!---->
                   </button>
+                  <!---->
                   
+                  <!---->
                 </div>
               </div>
             </div>
@@ -1152,7 +1274,9 @@ exports[`components/cardDialog > should match snapshot without permissions 1`] =
             >
               <div />
             </h1>
+            <!---->
             
+            <!---->
           </div>
           <div
             class="toolbar--right"
@@ -1160,6 +1284,7 @@ exports[`components/cardDialog > should match snapshot without permissions 1`] =
             <div
               class="d-flex"
             />
+            <!---->
             <div
               aria-label="menuwrapper"
               class="MenuWrapper"
@@ -1172,8 +1297,11 @@ exports[`components/cardDialog > should match snapshot without permissions 1`] =
                   class="CompassIcon icon-dots-horizontal OptionsIcon"
                 />
               </button>
+              <!---->
               
+              <!---->
             </div>
+            <!---->
             <button
               aria-label="Close dialog"
               title="Close dialog"
@@ -1183,6 +1311,7 @@ exports[`components/cardDialog > should match snapshot without permissions 1`] =
                 class="CompassIcon icon-close CloseIcon"
               />
             </button>
+            <!---->
           </div>
         </div>
         <div
@@ -1205,7 +1334,9 @@ exports[`components/cardDialog > should match snapshot without permissions 1`] =
                   </span>
                 </div>
               </div>
+              <!---->
               
+              <!---->
               <div
                 class="EditableAreaWrap"
               >
@@ -1214,7 +1345,7 @@ exports[`components/cardDialog > should match snapshot without permissions 1`] =
                   placeholder="Untitled"
                   readonly=""
                   rows="1"
-                  spellcheck="true"
+                  spellcheck=""
                   title="title"
                 />
                 <div
@@ -1229,16 +1360,23 @@ exports[`components/cardDialog > should match snapshot without permissions 1`] =
                   />
                 </div>
               </div>
+              <!---->
               
+              <!---->
               <div
                 class="octo-propertylist CardDetailProperties"
               >
+                <!---->
                 
+                <!---->
                 
-                
+                <!---->
               </div>
+              <!---->
               
+              <!---->
               
+              <!---->
             </div>
             <div
               class="CardDetail CardDetail--fullwidth content-blocks"

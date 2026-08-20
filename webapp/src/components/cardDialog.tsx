@@ -1,5 +1,5 @@
-import {Show, createSignal, onMount} from 'solid-js'
-import type {JSX} from 'solid-js'
+import {Show, createSignal, onSettled} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 
 import {FormattedMessage, useIntl} from '../intl'
 
@@ -234,7 +234,7 @@ const CardDialog = (props: Props): JSX.Element => {
     // is what a person wrote, and the machinery for working it belongs to the
     // frame around it.
     const agentState = cardAgentState(props.cardId)
-    onMount(() => {
+    onSettled(() => {
         if (isCardTerminalAvailable()) {
             refreshRegisteredAgents()
             refreshCardAgent(props.cardId)

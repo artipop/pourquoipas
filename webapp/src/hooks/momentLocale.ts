@@ -32,8 +32,7 @@ function loadLocales(): Promise<unknown> {
 // signal ticks once the definitions arrive; read it wherever a formatted date
 // is produced so the output leaves the English fallback.
 export default function useMomentLocale(locale: () => string): () => number {
-    createEffect(() => {
-        const current = locale()
+    createEffect(locale, (current) => {
         if (!current || current === 'en' || loaded) {
             return
         }

@@ -8,6 +8,7 @@ exports[`components/boardTemplateSelector/boardTemplateSelector > the template p
     <div
       class="BoardTemplateSelector__backdrop"
     />
+    <!---->
     
     <div
       class="BoardTemplateSelector"
@@ -58,7 +59,9 @@ exports[`components/boardTemplateSelector/boardTemplateSelector > the template p
                 Create new template
               </span>
               
+              <!---->
             </button>
+            <!---->
             <div
               class="BoardTemplateSelectorItem active"
             >
@@ -73,7 +76,9 @@ exports[`components/boardTemplateSelector/boardTemplateSelector > the template p
                 Разработка
               </span>
               
+              <!---->
               
+              <!---->
             </div>
             <div
               class="BoardTemplateSelectorItem"
@@ -89,7 +94,9 @@ exports[`components/boardTemplateSelector/boardTemplateSelector > the template p
                 Домашние дела
               </span>
               
+              <!---->
               
+              <!---->
             </div>
             <div
               class="BoardTemplateSelectorItem"
@@ -116,6 +123,7 @@ exports[`components/boardTemplateSelector/boardTemplateSelector > the template p
                     class="CompassIcon icon-trash-can-outline DeleteIcon trash-can-outline"
                   />
                 </button>
+                <!---->
                 <button
                   aria-label="Edit"
                   title="Edit"
@@ -125,9 +133,13 @@ exports[`components/boardTemplateSelector/boardTemplateSelector > the template p
                     class="CompassIcon icon-pencil-outline EditIcon"
                   />
                 </button>
+                <!---->
               </div>
+              <!---->
               
+              <!---->
             </div>
+            <!---->
           </div>
           <div
             class="templates-sidebar__footer"
@@ -142,6 +154,7 @@ exports[`components/boardTemplateSelector/boardTemplateSelector > the template p
                 Create empty board
               </span>
               
+              <!---->
             </button>
           </div>
         </div>
@@ -155,7 +168,9 @@ exports[`components/boardTemplateSelector/boardTemplateSelector > the template p
               class="BoardTemplateSelectorPreview"
             >
               
+              <!---->
               
+              <!---->
             </div>
           </div>
           <div
@@ -169,6 +184,7 @@ exports[`components/boardTemplateSelector/boardTemplateSelector > the template p
                 Use this template
               </span>
               
+              <!---->
             </button>
           </div>
         </div>
@@ -184,6 +200,7 @@ exports[`components/boardTemplateSelector/boardTemplateSelector > the template p
     class="BoardTemplateSelector__container BoardTemplateSelector__container--page"
   >
     
+    <!---->
     
     <div
       class="BoardTemplateSelector"
@@ -224,7 +241,9 @@ exports[`components/boardTemplateSelector/boardTemplateSelector > the template p
                 Create new template
               </span>
               
+              <!---->
             </button>
+            <!---->
             <div
               class="BoardTemplateSelectorItem active"
             >
@@ -239,7 +258,9 @@ exports[`components/boardTemplateSelector/boardTemplateSelector > the template p
                 Разработка
               </span>
               
+              <!---->
               
+              <!---->
             </div>
             <div
               class="BoardTemplateSelectorItem"
@@ -255,7 +276,9 @@ exports[`components/boardTemplateSelector/boardTemplateSelector > the template p
                 Домашние дела
               </span>
               
+              <!---->
               
+              <!---->
             </div>
             <div
               class="BoardTemplateSelectorItem"
@@ -282,6 +305,7 @@ exports[`components/boardTemplateSelector/boardTemplateSelector > the template p
                     class="CompassIcon icon-trash-can-outline DeleteIcon trash-can-outline"
                   />
                 </button>
+                <!---->
                 <button
                   aria-label="Edit"
                   title="Edit"
@@ -291,9 +315,13 @@ exports[`components/boardTemplateSelector/boardTemplateSelector > the template p
                     class="CompassIcon icon-pencil-outline EditIcon"
                   />
                 </button>
+                <!---->
               </div>
+              <!---->
               
+              <!---->
             </div>
+            <!---->
           </div>
           <div
             class="templates-sidebar__footer"
@@ -308,6 +336,7 @@ exports[`components/boardTemplateSelector/boardTemplateSelector > the template p
                 Create empty board
               </span>
               
+              <!---->
             </button>
           </div>
         </div>
@@ -321,7 +350,9 @@ exports[`components/boardTemplateSelector/boardTemplateSelector > the template p
               class="BoardTemplateSelectorPreview"
             >
               
+              <!---->
               
+              <!---->
             </div>
           </div>
           <div
@@ -335,6 +366,7 @@ exports[`components/boardTemplateSelector/boardTemplateSelector > the template p
                 Use this template
               </span>
               
+              <!---->
             </button>
           </div>
         </div>
@@ -350,6 +382,7 @@ exports[`components/boardTemplateSelector/boardTemplateSelector > the template p
     class="BoardTemplateSelector__container BoardTemplateSelector__container--page"
   >
     
+    <!---->
     
     <div
       class="BoardTemplateSelector"
@@ -390,7 +423,9 @@ exports[`components/boardTemplateSelector/boardTemplateSelector > the template p
                 Create new template
               </span>
               
+              <!---->
             </button>
+            <!---->
             <div
               class="BoardTemplateSelectorItem active"
             >
@@ -405,7 +440,9 @@ exports[`components/boardTemplateSelector/boardTemplateSelector > the template p
                 Разработка
               </span>
               
+              <!---->
               
+              <!---->
             </div>
             <div
               class="BoardTemplateSelectorItem"
@@ -421,7 +458,9 @@ exports[`components/boardTemplateSelector/boardTemplateSelector > the template p
                 Домашние дела
               </span>
               
+              <!---->
               
+              <!---->
             </div>
             <div
               class="BoardTemplateSelectorItem"
@@ -448,6 +487,7 @@ exports[`components/boardTemplateSelector/boardTemplateSelector > the template p
                     class="CompassIcon icon-trash-can-outline DeleteIcon trash-can-outline"
                   />
                 </button>
+                <!---->
                 <button
                   aria-label="Edit"
                   title="Edit"
@@ -457,9 +497,13 @@ exports[`components/boardTemplateSelector/boardTemplateSelector > the template p
                     class="CompassIcon icon-pencil-outline EditIcon"
                   />
                 </button>
+                <!---->
               </div>
+              <!---->
               
+              <!---->
             </div>
+            <!---->
           </div>
           <div
             class="templates-sidebar__footer"
@@ -474,6 +518,7 @@ exports[`components/boardTemplateSelector/boardTemplateSelector > the template p
                 Create empty board
               </span>
               
+              <!---->
             </button>
           </div>
         </div>
@@ -487,7 +532,9 @@ exports[`components/boardTemplateSelector/boardTemplateSelector > the template p
               class="BoardTemplateSelectorPreview"
             >
               
+              <!---->
               
+              <!---->
             </div>
           </div>
           <div
@@ -501,6 +548,7 @@ exports[`components/boardTemplateSelector/boardTemplateSelector > the template p
                 Use this template
               </span>
               
+              <!---->
             </button>
           </div>
         </div>

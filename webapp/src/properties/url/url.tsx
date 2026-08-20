@@ -1,5 +1,5 @@
 import {Show, createEffect, createSignal, onCleanup} from 'solid-js'
-import type {JSX} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 
 import {useIntl} from '../../intl'
 
@@ -48,8 +48,8 @@ const URLProperty = (props: PropertyProps): JSX.Element => {
         }
     })
 
-    createEffect(() => {
-        if (isEditing()) {
+    createEffect(isEditing, (editing) => {
+        if (editing) {
             editableRef?.focus()
         }
     })

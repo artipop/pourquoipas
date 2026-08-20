@@ -1,5 +1,5 @@
-import {Show, createEffect, createSignal, onCleanup} from 'solid-js'
-import type {JSX} from 'solid-js'
+import {Show, createEffect, createSignal} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 
 import './boardSwitcherDialog.scss'
 
@@ -104,17 +104,15 @@ const BoardSwitcherDialog = (props: Props): JSX.Element => {
         }
     }
 
-    createEffect(() => {
-        if (selected() >= 0) {
-            elements[selected()]?.parentElement?.focus()
+    createEffect(selected, (at) => {
+        if (at >= 0) {
+            elements[at]?.parentElement?.focus()
         }
 
         document.addEventListener('keydown', handleEnterKeyPress)
-
-        // cleanup function
-        onCleanup(() => {
+        return () => {
             document.removeEventListener('keydown', handleEnterKeyPress)
-        })
+        }
     })
 
     return (

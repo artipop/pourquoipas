@@ -4,8 +4,7 @@
 // provider hands it down, and dependencies (the HTTP client) are injected so
 // Mutator, WSClient and tests bring their own.
 
-import {createContext, ParentComponent} from 'solid-js'
-import {createStore} from 'solid-js/store'
+import {createContext, createStore, ParentComponent} from 'solid-js'
 
 import octoClient from '../octoClient'
 
@@ -112,13 +111,15 @@ export function createAppStore(deps: StoreDeps = {client: octoClient}, initialSt
     return {state, actions: createActions(ctx)}
 }
 
-export const AppStoreContext = createContext<AppStore>()
+// A null default rather than none: Solid 2 throws from useContext when a
+// context has neither, and hooks.ts says the useful thing instead.
+export const AppStoreContext = createContext<AppStore | null>(null)
 
 export const AppStoreProvider: ParentComponent<{store?: AppStore}> = (props) => {
     const store = props.store ?? createAppStore()
     return (
-        <AppStoreContext.Provider value={store}>
+        <AppStoreContext value={store}>
             {props.children}
-        </AppStoreContext.Provider>
+        </AppStoreContext>
     )
 }

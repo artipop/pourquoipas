@@ -25,7 +25,9 @@ exports[`components/blocksEditor/blocksEditor > should match snapshot on empty 1
             class="RootInput__value-container"
           >
             
+            <!---->
             
+            <!---->
             <div
               class="RootInput__placeholder"
             >
@@ -45,7 +47,9 @@ exports[`components/blocksEditor/blocksEditor > should match snapshot on empty 1
         </div>
         
       </div>
+      <!---->
       
+      <!---->
     </div>
   </div>
 </div>
@@ -76,7 +80,6 @@ exports[`components/blocksEditor/blocksEditor > should match snapshot with block
           <svg
             class="GripIcon Icon"
             viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
           >
             <path
               d="M0 0h24v24H0V0z"
@@ -99,7 +102,9 @@ exports[`components/blocksEditor/blocksEditor > should match snapshot with block
           </div>
         </div>
       </div>
+      <!---->
       
+      <!---->
     </div>
     <div>
       <div
@@ -121,7 +126,6 @@ exports[`components/blocksEditor/blocksEditor > should match snapshot with block
           <svg
             class="GripIcon Icon"
             viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
           >
             <path
               d="M0 0h24v24H0V0z"
@@ -144,7 +148,9 @@ exports[`components/blocksEditor/blocksEditor > should match snapshot with block
           </div>
         </div>
       </div>
+      <!---->
       
+      <!---->
     </div>
     <div>
       <div
@@ -166,7 +172,6 @@ exports[`components/blocksEditor/blocksEditor > should match snapshot with block
           <svg
             class="GripIcon Icon"
             viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
           >
             <path
               d="M0 0h24v24H0V0z"
@@ -189,7 +194,9 @@ exports[`components/blocksEditor/blocksEditor > should match snapshot with block
           </div>
         </div>
       </div>
+      <!---->
       
+      <!---->
     </div>
     <div>
       <div
@@ -211,7 +218,6 @@ exports[`components/blocksEditor/blocksEditor > should match snapshot with block
           <svg
             class="GripIcon Icon"
             viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
           >
             <path
               d="M0 0h24v24H0V0z"
@@ -238,7 +244,9 @@ exports[`components/blocksEditor/blocksEditor > should match snapshot with block
           </div>
         </div>
       </div>
+      <!---->
       
+      <!---->
     </div>
     <div>
       <div
@@ -260,7 +268,6 @@ exports[`components/blocksEditor/blocksEditor > should match snapshot with block
           <svg
             class="GripIcon Icon"
             viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
           >
             <path
               d="M0 0h24v24H0V0z"
@@ -316,7 +323,9 @@ exports[`components/blocksEditor/blocksEditor > should match snapshot with block
           </div>
         </div>
       </div>
+      <!---->
       
+      <!---->
     </div>
     <div>
       <div
@@ -338,7 +347,6 @@ exports[`components/blocksEditor/blocksEditor > should match snapshot with block
           <svg
             class="GripIcon Icon"
             viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
           >
             <path
               d="M0 0h24v24H0V0z"
@@ -367,7 +375,9 @@ exports[`components/blocksEditor/blocksEditor > should match snapshot with block
           </div>
         </div>
       </div>
+      <!---->
       
+      <!---->
     </div>
     <div
       class="Editor"
@@ -389,7 +399,9 @@ exports[`components/blocksEditor/blocksEditor > should match snapshot with block
             class="RootInput__value-container"
           >
             
+            <!---->
             
+            <!---->
             <div
               class="RootInput__placeholder"
             >
@@ -409,7 +421,9 @@ exports[`components/blocksEditor/blocksEditor > should match snapshot with block
         </div>
         
       </div>
+      <!---->
       
+      <!---->
     </div>
   </div>
 </div>

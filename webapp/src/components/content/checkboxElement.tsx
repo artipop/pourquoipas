@@ -28,15 +28,15 @@ const CheckboxElement = (props: Props) => {
     const [active, setActive] = createSignal(Boolean(props.block.fields.value))
     const [title, setTitle] = createSignal(props.block.title)
 
-    createEffect(() => {
-        if (props.block.id === addedBlockId()) {
+    createEffect(addedBlockId, (added) => {
+        if (props.block.id === added) {
             titleRef?.focus()
             setAddedBlockId('')
         }
     })
 
-    createEffect(() => {
-        setActive(Boolean(props.block.fields.value))
+    createEffect(() => Boolean(props.block.fields.value), (next) => {
+        setActive(next)
     })
 
     return (

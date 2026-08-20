@@ -27,8 +27,11 @@ exports[`widgets/NotificationBox > should match snapshot with close with tooltip
           class="CompassIcon icon-close CloseIcon"
         />
       </button>
+      <!---->
       
+      <!---->
     </div>
+    <!---->
   </div>
 </div>
 `;
@@ -57,6 +60,7 @@ exports[`widgets/NotificationBox > should match snapshot with close without tool
         class="CompassIcon icon-close CloseIcon"
       />
     </button>
+    <!---->
   </div>
 </div>
 `;
@@ -82,6 +86,7 @@ exports[`widgets/NotificationBox > should match snapshot with icon 1`] = `
       CONTENT
     </div>
     
+    <!---->
   </div>
 </div>
 `;
@@ -117,8 +122,11 @@ exports[`widgets/NotificationBox > should match snapshot with icon and close wit
           class="CompassIcon icon-close CloseIcon"
         />
       </button>
+      <!---->
       
+      <!---->
     </div>
+    <!---->
   </div>
 </div>
 `;
@@ -140,6 +148,7 @@ exports[`widgets/NotificationBox > should match snapshot without icon and close 
       CONTENT
     </div>
     
+    <!---->
   </div>
 </div>
 `;

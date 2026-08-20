@@ -22,13 +22,17 @@ exports[`/components/confirmAddUserForNotifications > should match snapshot 1`] 
             <h1
               class="dialog-title"
             />
+            <!---->
             
+            <!---->
           </div>
           <div
             class="toolbar--right"
           >
             
+            <!---->
             
+            <!---->
             <button
               aria-label="Close dialog"
               class="IconButton dialog__close size--medium"
@@ -39,6 +43,7 @@ exports[`/components/confirmAddUserForNotifications > should match snapshot 1`] 
                 class="CompassIcon icon-close CloseIcon"
               />
             </button>
+            <!---->
           </div>
         </div>
         <div
@@ -86,11 +91,13 @@ exports[`/components/confirmAddUserForNotifications > should match snapshot 1`] 
                     class="select__value-container"
                   >
                     
+                    <!---->
                     <div
                       class="select__single-value"
                     >
                       Editor
                     </div>
+                    <!---->
                     
                     <input
                       aria-controls="cl-0"
@@ -106,6 +113,7 @@ exports[`/components/confirmAddUserForNotifications > should match snapshot 1`] 
                 </div>
                 
               </div>
+              <!---->
             </div>
           </div>
           <div
@@ -121,7 +129,9 @@ exports[`/components/confirmAddUserForNotifications > should match snapshot 1`] 
                 Cancel
               </span>
               
+              <!---->
             </button>
+            <!---->
             <button
               class="Button filled size--medium"
               title="Add to board"
@@ -132,7 +142,9 @@ exports[`/components/confirmAddUserForNotifications > should match snapshot 1`] 
                 Add to board
               </span>
               
+              <!---->
             </button>
+            <!---->
           </div>
         </div>
       </div>

@@ -20,8 +20,7 @@ const TeamToBoardAndViewRedirect = (): null => {
     const boards = useAppSelector(getBoards)
     const teamId = () => match().params.teamId || UserSettings.lastTeamId || Constants.globalTeamId
 
-    createEffect(() => {
-        const currentMatch = match()
+    createEffect(() => [match(), teamId(), categories(), boards(), boardId(), boardViews()] as const, ([currentMatch]) => {
         let boardID = currentMatch.params.boardId
         if (!currentMatch.params.boardId) {
             // first preference is for last visited board

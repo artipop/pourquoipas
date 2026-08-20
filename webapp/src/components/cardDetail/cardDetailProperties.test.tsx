@@ -170,10 +170,13 @@ describe('components/cardDetail/CardDetailProperties', () => {
     describe('the folder of a card that has been worked', () => {
         const folderBoard = TestBlockFactory.createBoard()
         folderBoard.cardProperties = [
-            {id: 'prop_folder', name: 'Папка', type: 'select', options: [
-                {id: 'opt_alpha', value: 'alpha', color: 'propColorDefault'},
-                {id: 'opt_beta', value: 'beta', color: 'propColorDefault'},
-            ]},
+            {id: 'prop_folder',
+                name: 'Папка',
+                type: 'select',
+                options: [
+                    {id: 'opt_alpha', value: 'alpha', color: 'propColorDefault'},
+                    {id: 'opt_beta', value: 'beta', color: 'propColorDefault'},
+                ]},
         ]
         folderBoard.properties = {xciiiProjectProperty: 'prop_folder'}
 

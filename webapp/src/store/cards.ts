@@ -1,5 +1,4 @@
-import {batch} from 'solid-js'
-import {produce} from 'solid-js/store'
+import {storePath} from 'solid-js'
 
 import {Card} from '../blocks/card'
 import {IUser} from '../user'
@@ -49,16 +48,16 @@ export const cardsFromBlocks = (blocks: Block[]): {cards: {[key: string]: Card},
 
 export const createCardsActions = ({setState}: StoreContext) => ({
     setCurrent(cardId: string) {
-        setState('cards', 'current', cardId)
+        setState(storePath('cards', 'current', cardId))
     },
     addCard(card: Card) {
-        setState('cards', 'cards', card.id, card)
+        setState(storePath('cards', 'cards', card.id, card))
     },
     addTemplate(template: Card) {
-        setState('cards', 'templates', template.id, template)
+        setState(storePath('cards', 'templates', template.id, template))
     },
     updateCards(cards: Card[]) {
-        setState('cards', produce((s) => {
+        setState(({cards: s}) => {
             for (const card of cards) {
                 if (card.deleteAt !== 0) {
                     delete s.cards[card.id]
@@ -69,13 +68,11 @@ export const createCardsActions = ({setState}: StoreContext) => ({
                     s.cards[card.id] = card
                 }
             }
-        }))
+        })
     },
     setCardsAndTemplates(cards: {[key: string]: Card}, templates: {[key: string]: Card}) {
-        batch(() => {
-            setState('cards', 'cards', cards)
-            setState('cards', 'templates', templates)
-        })
+        setState(storePath('cards', 'cards', cards))
+        setState(storePath('cards', 'templates', templates))
     },
 })
 

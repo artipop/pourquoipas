@@ -1,6 +1,6 @@
 // The Wails-generated Go bindings are PascalCase methods, not constructors.
 /* eslint-disable new-cap */
-import {For, Show, createEffect, createSignal, onCleanup, onMount} from 'solid-js'
+import {For, Show, createEffect, createSignal, onSettled} from 'solid-js'
 import {useNavigate} from '@solidjs/router'
 
 import {useIntl} from '../../intl'
@@ -96,8 +96,7 @@ const MobilePage = () => {
     // served by us and its origin is the platform's business; a count of open
     // questions is nothing to protect, and the frame's own origin is what the
     // app checks on the way in.
-    createEffect(() => {
-        const count = waiting().length
+    createEffect(() => waiting().length, (count) => {
         if (window.parent === window) {
             return
         }
@@ -109,7 +108,7 @@ const MobilePage = () => {
         }
     })
 
-    onMount(() => {
+    onSettled(() => {
         refreshTerminals()
         refreshInbox()
         listBoards().then(setBoards)
@@ -121,10 +120,10 @@ const MobilePage = () => {
             refreshTerminals()
             refreshInbox()
         })
-        onCleanup(() => {
+        return () => {
             off()
             offSession()
-        })
+        }
     })
 
     // A terminal that exists is reached by its address alone — no binding call,

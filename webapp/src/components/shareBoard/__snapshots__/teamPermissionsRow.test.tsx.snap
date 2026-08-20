@@ -27,10 +27,13 @@ exports[`src/components/shareBoard/teamPermissionsRow > should match snapshot 1`
           class="user-item__button"
         >
           None
+          <!---->
           <i
             class="CompassIcon icon-chevron-down CompassIcon"
           />
+          <!---->
         </button>
+        <!---->
         <div
           class="Menu noselect left"
         >
@@ -148,7 +151,6 @@ exports[`src/components/shareBoard/teamPermissionsRow > should match snapshot 1`
                     <svg
                       class="CheckIcon Icon"
                       viewBox="0 0 100 100"
-                      xmlns="http://www.w3.org/2000/svg"
                     >
                       <polyline
                         points="20,60 40,80 80,40"
@@ -206,8 +208,11 @@ exports[`src/components/shareBoard/teamPermissionsRow > should match snapshot 1`
             </div>
           </div>
         </div>
+        <!---->
       </div>
+      <!---->
       
+      <!---->
     </div>
   </div>
 </div>
@@ -240,10 +245,13 @@ exports[`src/components/shareBoard/teamPermissionsRow > should match snapshot in
           class="user-item__button"
         >
           None
+          <!---->
           <i
             class="CompassIcon icon-chevron-down CompassIcon"
           />
+          <!---->
         </button>
+        <!---->
         <div
           class="Menu noselect left"
         >
@@ -361,7 +369,6 @@ exports[`src/components/shareBoard/teamPermissionsRow > should match snapshot in
                     <svg
                       class="CheckIcon Icon"
                       viewBox="0 0 100 100"
-                      xmlns="http://www.w3.org/2000/svg"
                     >
                       <polyline
                         points="20,60 40,80 80,40"
@@ -419,8 +426,11 @@ exports[`src/components/shareBoard/teamPermissionsRow > should match snapshot in
             </div>
           </div>
         </div>
+        <!---->
       </div>
+      <!---->
       
+      <!---->
     </div>
   </div>
 </div>
@@ -453,10 +463,13 @@ exports[`src/components/shareBoard/teamPermissionsRow > should match snapshot in
           class="user-item__button"
         >
           None
+          <!---->
           <i
             class="CompassIcon icon-chevron-down CompassIcon"
           />
+          <!---->
         </button>
+        <!---->
         <div
           class="Menu noselect left"
         >
@@ -512,7 +525,6 @@ exports[`src/components/shareBoard/teamPermissionsRow > should match snapshot in
                     <svg
                       class="CheckIcon Icon"
                       viewBox="0 0 100 100"
-                      xmlns="http://www.w3.org/2000/svg"
                     >
                       <polyline
                         points="20,60 40,80 80,40"
@@ -570,8 +582,11 @@ exports[`src/components/shareBoard/teamPermissionsRow > should match snapshot in
             </div>
           </div>
         </div>
+        <!---->
       </div>
+      <!---->
       
+      <!---->
     </div>
   </div>
 </div>

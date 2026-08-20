@@ -1,4 +1,4 @@
-import {onCleanup, onMount} from 'solid-js'
+import {onSettled} from 'solid-js'
 
 import {bindHotkey, type HotkeyHandler} from '../hotkeys'
 
@@ -7,7 +7,7 @@ import {bindHotkey, type HotkeyHandler} from '../hotkeys'
 // React version did to keep the handler current is simply how closures work
 // under fine-grained reactivity.
 export function useHotkeys(shortcut: string, handler: HotkeyHandler): void {
-    onMount(() => {
-        onCleanup(bindHotkey(shortcut, (event) => handler(event)))
+    onSettled(() => {
+        return bindHotkey(shortcut, (event) => handler(event))
     })
 }

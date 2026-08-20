@@ -1,5 +1,6 @@
-import type {JSX, ParentComponent} from 'solid-js'
-import {MemoryRouter, Route, createMemoryHistory} from '@solidjs/router'
+import type {ParentComponent} from 'solid-js'
+import type {JSX} from '@solidjs/web'
+import {createRouter, memoryHistory} from '@solidjs/router'
 import {fireEvent, within} from '@solidjs/testing-library'
 
 import {IntlProvider} from './intl'
@@ -45,17 +46,17 @@ export const wrapRBDNDDroppable = (children?: () => JSX.Element): JSX.Element =>
 // the test starts at, and children are read inside it, so router context is
 // there by the time they are created. What react-router tests spelled as
 // <Router history={history}> around the component.
+//
+// Built per render rather than once at module scope, because each test starts
+// at its own path and the instance owns its history.
 export const TestRouter: ParentComponent<{path?: string}> = (props) => {
-    const history = createMemoryHistory()
+    const history = memoryHistory()
     history.set({value: props.path || '/'})
-    return (
-        <MemoryRouter history={history}>
-            <Route
-                path='*rest'
-                component={() => props.children}
-            />
-        </MemoryRouter>
-    )
+    const Instance = createRouter({
+        routes: [{path: '*rest', component: () => props.children}],
+        history,
+    })
+    return <Instance/>
 }
 
 // The successor of redux-mock-store's mockStateStore: a real app store seeded

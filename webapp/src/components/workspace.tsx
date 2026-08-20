@@ -1,5 +1,5 @@
-import {Match, Show, Switch, createEffect, createSignal, onCleanup} from 'solid-js'
-import type {JSX} from 'solid-js'
+import {Match, Show, Switch, createEffect, createSignal, onSettled} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 
 import {useNavigate} from '@solidjs/router'
 
@@ -74,15 +74,16 @@ function CenterContent(props: Props) {
         actions.cards.setCurrent(cardId || '')
     }
 
-    createEffect(() => {
+    // Nothing tracked: the subscription is made once and dropped on disposal.
+    onSettled(() => {
         const onConfigChangeHandler = (_: WSClient, config: ClientConfig) => {
             actions.clientConfig.setClientConfig(config)
         }
         wsClient.addOnConfigChange(onConfigChangeHandler)
 
-        onCleanup(() => {
+        return () => {
             wsClient.removeOnConfigChange(onConfigChangeHandler)
-        })
+        }
     })
 
     const templateSelector = () => (
@@ -162,9 +163,7 @@ const Workspace = (props: Props): JSX.Element => {
             setBoardTemplateSelectorOpen(true)
         }
     }
-    createEffect(() => {
-        board()
-        viewId()
+    createEffect(() => [board(), viewId()] as const, () => {
         setBoardTemplateSelectorOpen(false)
     })
 

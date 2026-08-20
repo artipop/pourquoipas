@@ -1,4 +1,4 @@
-import {createSignal, onCleanup, onMount} from 'solid-js'
+import {createSignal, onSettled} from 'solid-js'
 import type {Accessor} from 'solid-js'
 
 export default function useElementAvailable(
@@ -7,7 +7,7 @@ export default function useElementAvailable(
     let checkAvailableInterval: ReturnType<typeof setInterval> | null = null
     const [available, setAvailable] = createSignal(false)
 
-    onMount(() => {
+    onSettled(() => {
         checkAvailableInterval = setInterval(() => {
             if (elementIds.every((x) => document.querySelector(x))) {
                 setAvailable(true)
@@ -17,12 +17,12 @@ export default function useElementAvailable(
                 }
             }
         }, 500)
-        onCleanup(() => {
+        return () => {
             if (checkAvailableInterval) {
                 clearInterval(checkAvailableInterval)
                 checkAvailableInterval = null
             }
-        })
+        }
     })
 
     return available

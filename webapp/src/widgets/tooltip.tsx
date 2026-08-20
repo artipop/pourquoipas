@@ -1,6 +1,6 @@
-import {Show, createEffect, createSignal, onCleanup} from 'solid-js'
+import {Show, createEffect, createSignal} from 'solid-js'
 import {arrow, autoUpdate, computePosition, flip, offset, shift, type Placement} from '@floating-ui/dom'
-import type {JSX} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 
 import './tooltip.scss'
 
@@ -39,11 +39,9 @@ function Tooltip(props: Props): JSX.Element {
     const [at, setAt] = createSignal<{x: number, y: number, arrowX?: number, arrowY?: number, side: string} | null>(null)
     let host: HTMLDivElement | undefined
 
-    createEffect(() => {
-        const floating = bubble()
-        const arrowEl = point()
+    createEffect(() => [bubble(), point()] as const, ([floating, arrowEl]) => {
         if (!host || !floating || !arrowEl) {
-            return
+            return undefined
         }
 
         // An anchor with no box is one nothing has laid out — jsdom, or a
@@ -72,10 +70,10 @@ function Tooltip(props: Props): JSX.Element {
                 side: computed.placement.split('-')[0],
             }))
         })
-        onCleanup(() => {
+        return () => {
             stop()
             setAt(null)
-        })
+        }
     })
 
     // Focus says the tooltip too, for somebody reaching it with the keyboard —

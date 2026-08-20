@@ -37,7 +37,6 @@ exports[`/components/viewMenu > should match snapshot 1`] = `
                         height="24"
                         viewBox="0 0 24 24"
                         width="24"
-                        xmlns="http://www.w3.org/2000/svg"
                       >
                         <g
                           opacity="0.8"
@@ -83,7 +82,6 @@ exports[`/components/viewMenu > should match snapshot 1`] = `
                         height="24"
                         viewBox="0 0 24 24"
                         width="24"
-                        xmlns="http://www.w3.org/2000/svg"
                       >
                         <g
                           opacity="0.8"
@@ -198,7 +196,9 @@ exports[`/components/viewMenu > should match snapshot 1`] = `
                 <i
                   class="CompassIcon icon-chevron-right"
                 />
+                <!---->
                 
+                <!---->
               </div>
             </div>
             <div
@@ -272,7 +272,6 @@ exports[`/components/viewMenu > should match snapshot 1`] = `
                       height="24"
                       viewBox="0 0 24 24"
                       width="24"
-                      xmlns="http://www.w3.org/2000/svg"
                     >
                       <g
                         opacity="0.8"
@@ -318,7 +317,6 @@ exports[`/components/viewMenu > should match snapshot 1`] = `
                       height="24"
                       viewBox="0 0 24 24"
                       width="24"
-                      xmlns="http://www.w3.org/2000/svg"
                     >
                       <g
                         opacity="0.8"
@@ -433,7 +431,9 @@ exports[`/components/viewMenu > should match snapshot 1`] = `
               <i
                 class="CompassIcon icon-chevron-right"
               />
+              <!---->
               
+              <!---->
             </div>
           </div>
           <div
@@ -563,7 +563,6 @@ exports[`/components/viewMenu > should match snapshot, read only 1`] = `
                         height="24"
                         viewBox="0 0 24 24"
                         width="24"
-                        xmlns="http://www.w3.org/2000/svg"
                       >
                         <g
                           opacity="0.8"
@@ -609,7 +608,6 @@ exports[`/components/viewMenu > should match snapshot, read only 1`] = `
                         height="24"
                         viewBox="0 0 24 24"
                         width="24"
-                        xmlns="http://www.w3.org/2000/svg"
                       >
                         <g
                           opacity="0.8"
@@ -714,7 +712,6 @@ exports[`/components/viewMenu > should match snapshot, read only 1`] = `
                       height="24"
                       viewBox="0 0 24 24"
                       width="24"
-                      xmlns="http://www.w3.org/2000/svg"
                     >
                       <g
                         opacity="0.8"
@@ -760,7 +757,6 @@ exports[`/components/viewMenu > should match snapshot, read only 1`] = `
                       height="24"
                       viewBox="0 0 24 24"
                       width="24"
-                      xmlns="http://www.w3.org/2000/svg"
                     >
                       <g
                         opacity="0.8"

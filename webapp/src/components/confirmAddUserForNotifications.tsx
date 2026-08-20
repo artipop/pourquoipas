@@ -1,5 +1,5 @@
-import {Show, createSignal, onMount} from 'solid-js'
-import type {JSX} from 'solid-js'
+import {Show, createSignal, onSettled} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 
 import {useIntl, FormattedMessage} from '../intl'
 
@@ -34,7 +34,7 @@ const ConfirmAddUserForNotifications = (props: Props): JSX.Element => {
     // answer that means anything — and it joins as an editor, because that is
     // what a thing that works cards is.
     const isAgent = () => isAgentUsername(props.user.username)
-    onMount(() => {
+    onSettled(() => {
         refreshRegisteredAgents()
     })
 

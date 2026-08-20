@@ -1,4 +1,4 @@
-import type {JSX} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 
 import {fireEvent, render, screen, waitFor} from '@solidjs/testing-library'
 import '@testing-library/jest-dom'
@@ -117,12 +117,12 @@ describe('components/content/checkboxElement', () => {
 
     it('should have focus when last added', () => {
         render(() => wrapIntl(() =>
-            <CardDetailContext.Provider value={cardDetailContextValue(false)}>
+            <CardDetailContext value={cardDetailContextValue(false)}>
                 <CheckboxElement
                     block={checkboxBlock}
                     readonly={false}
                 />
-            </CardDetailContext.Provider>,
+            </CardDetailContext>,
         ))
         const input = screen.getByRole('textbox', {name: /test-title/i})
         expect(input).toHaveFocus()
@@ -156,13 +156,13 @@ describe('components/content/checkboxElement', () => {
         const deleteElement = vi.fn()
 
         render(() => wrapIntl(() =>
-            <CardDetailContext.Provider value={cardDetailContextValue(true)}>
+            <CardDetailContext value={cardDetailContextValue(true)}>
                 <CheckboxElement
                     block={addedBlock}
                     readonly={false}
                     onDeleteElement={deleteElement}
                 />
-            </CardDetailContext.Provider>,
+            </CardDetailContext>,
         ))
 
         const input = screen.getByRole('textbox')

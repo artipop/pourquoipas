@@ -116,11 +116,10 @@ const ConversationRow = (props: Props) => {
 
     return (
         <li
-            class='ConversationRow'
-            classList={{
+            class={['ConversationRow', {
                 'ConversationRow--selected': Boolean(props.selected),
                 'ConversationRow--pickable': Boolean(props.onPick),
-            }}
+            }]}
             title={props.title}
             onClick={pickRow}
         >
@@ -138,8 +137,7 @@ const ConversationRow = (props: Props) => {
                                 </span>
                             </Show>
                             <span
-                                class='ConversationRow__dot'
-                                classList={{'ConversationRow__dot--running': Boolean(props.running)}}
+                                class={['ConversationRow__dot', {'ConversationRow__dot--running': Boolean(props.running)}]}
                                 title={props.running ? intl.formatMessage({id: 'Conversation.running', defaultMessage: 'A CLI is running in it'}) : intl.formatMessage({id: 'Conversation.idle', defaultMessage: 'Nothing is running in it'})}
                             />
                             <Show

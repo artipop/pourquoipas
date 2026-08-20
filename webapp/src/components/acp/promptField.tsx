@@ -1,4 +1,5 @@
-import type {JSX, ParentComponent} from 'solid-js'
+import type {ParentComponent} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 
 import './promptField.scss'
 

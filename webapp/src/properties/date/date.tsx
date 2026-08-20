@@ -1,5 +1,5 @@
-import {Show, createEffect, createMemo, createSignal, on} from 'solid-js'
-import type {JSX} from 'solid-js'
+import {Show, createEffect, createMemo, createSignal} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 
 import moment from 'moment'
 
@@ -56,9 +56,9 @@ function DateRange(props: PropertyProps): JSX.Element {
 
     // Track only the prop: an effect that also read value() would fire on the
     // local edit it is meant to survive and stomp it with the stale prop.
-    createEffect(on(() => props.propertyValue, (propertyValue) => {
+    createEffect(() => props.propertyValue, (propertyValue) => {
         setValue(propertyValue)
-    }, {defer: true}))
+    }, {defer: true})
 
     const onChange = (newValue: string) => {
         if (value() !== newValue) {

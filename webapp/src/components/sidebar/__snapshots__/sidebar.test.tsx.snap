@@ -62,7 +62,9 @@ exports[`components/sidebarSidebar > a board in no category is filed under the d
                   </span>
                 </div>
               </div>
+              <!---->
               
+              <!---->
             </div>
           </div>
         </div>
@@ -80,7 +82,6 @@ exports[`components/sidebarSidebar > a board in no category is filed under the d
           <svg
             class="HideSidebarIcon Icon"
             viewBox="0 0 100 100"
-            xmlns="http://www.w3.org/2000/svg"
           >
             <polyline
               points="80,20 50,50 80,80"
@@ -95,6 +96,7 @@ exports[`components/sidebarSidebar > a board in no category is filed under the d
     <div
       class="WorkspaceTitle"
     />
+    <!---->
     <div
       class="BoardsSwitcherWrapper"
     >
@@ -111,8 +113,11 @@ exports[`components/sidebarSidebar > a board in no category is filed under the d
         </div>
       </div>
       
+      <!---->
       
+      <!---->
       
+      <!---->
     </div>
     <div
       class="octo-sidebar-list"
@@ -134,6 +139,7 @@ exports[`components/sidebarSidebar > a board in no category is filed under the d
                 <i
                   class="CompassIcon icon-chevron-down ChevronDownIcon"
                 />
+                <!---->
                 Category 1
                 <div
                   class="sidebarCategoriesTour"
@@ -143,7 +149,9 @@ exports[`components/sidebarSidebar > a board in no category is filed under the d
                 class=""
               >
                 
+                <!---->
                 
+                <!---->
                 <div
                   aria-label="menuwrapper"
                   class="MenuWrapper"
@@ -157,17 +165,26 @@ exports[`components/sidebarSidebar > a board in no category is filed under the d
                       class="CompassIcon icon-dots-horizontal OptionsIcon"
                     />
                   </button>
+                  <!---->
                   
+                  <!---->
                 </div>
+                <!---->
               </div>
             </div>
             
+            <!---->
             
+            <!---->
+            <!---->
             
+            <!---->
             
+            <!---->
             
+            <!---->
             
-            
+            <!---->
           </div>
         </div>
       </div>
@@ -188,6 +205,7 @@ exports[`components/sidebarSidebar > a board in no category is filed under the d
                 <i
                   class="CompassIcon icon-chevron-down ChevronDownIcon"
                 />
+                <!---->
                 Boards
                 <div
                   class="sidebarCategoriesTour"
@@ -197,7 +215,9 @@ exports[`components/sidebarSidebar > a board in no category is filed under the d
                 class=""
               >
                 
+                <!---->
                 
+                <!---->
                 <div
                   aria-label="menuwrapper"
                   class="MenuWrapper"
@@ -211,8 +231,11 @@ exports[`components/sidebarSidebar > a board in no category is filed under the d
                       class="CompassIcon icon-dots-horizontal OptionsIcon"
                     />
                   </button>
+                  <!---->
                   
+                  <!---->
                 </div>
+                <!---->
               </div>
             </div>
             <div>
@@ -221,14 +244,22 @@ exports[`components/sidebarSidebar > a board in no category is filed under the d
               >
                 No boards inside
               </div>
+              <!---->
               
+              <!---->
             </div>
+            <!---->
             
+            <!---->
+            <!---->
             
+            <!---->
             
+            <!---->
             
+            <!---->
             
-            
+            <!---->
           </div>
         </div>
       </div>
@@ -252,11 +283,15 @@ exports[`components/sidebarSidebar > a board in no category is filed under the d
         <i
           class="CompassIcon icon-settings-outline SettingsIcon"
         />
+        <!---->
         Settings
+        <!---->
         
+        <!---->
       </button>
       
     </div>
+    <!---->
   </div>
 </div>
 `;
@@ -323,7 +358,9 @@ exports[`components/sidebarSidebar > dont show hidden boards 1`] = `
                   </span>
                 </div>
               </div>
+              <!---->
               
+              <!---->
             </div>
           </div>
         </div>
@@ -341,7 +378,6 @@ exports[`components/sidebarSidebar > dont show hidden boards 1`] = `
           <svg
             class="HideSidebarIcon Icon"
             viewBox="0 0 100 100"
-            xmlns="http://www.w3.org/2000/svg"
           >
             <polyline
               points="80,20 50,50 80,80"
@@ -356,6 +392,7 @@ exports[`components/sidebarSidebar > dont show hidden boards 1`] = `
     <div
       class="WorkspaceTitle"
     />
+    <!---->
     <div
       class="BoardsSwitcherWrapper"
     >
@@ -372,8 +409,11 @@ exports[`components/sidebarSidebar > dont show hidden boards 1`] = `
         </div>
       </div>
       
+      <!---->
       
+      <!---->
       
+      <!---->
     </div>
     <div
       class="octo-sidebar-list"
@@ -395,6 +435,7 @@ exports[`components/sidebarSidebar > dont show hidden boards 1`] = `
                 <i
                   class="CompassIcon icon-chevron-down ChevronDownIcon"
                 />
+                <!---->
                 Category 1
                 <div
                   class="sidebarCategoriesTour"
@@ -404,7 +445,9 @@ exports[`components/sidebarSidebar > dont show hidden boards 1`] = `
                 class=""
               >
                 
+                <!---->
                 
+                <!---->
                 <div
                   aria-label="menuwrapper"
                   class="MenuWrapper"
@@ -418,8 +461,11 @@ exports[`components/sidebarSidebar > dont show hidden boards 1`] = `
                       class="CompassIcon icon-dots-horizontal OptionsIcon"
                     />
                   </button>
+                  <!---->
                   
+                  <!---->
                 </div>
+                <!---->
               </div>
             </div>
             <div>
@@ -428,14 +474,22 @@ exports[`components/sidebarSidebar > dont show hidden boards 1`] = `
               >
                 No boards inside
               </div>
+              <!---->
               
+              <!---->
             </div>
+            <!---->
             
+            <!---->
+            <!---->
             
+            <!---->
             
+            <!---->
             
+            <!---->
             
-            
+            <!---->
           </div>
         </div>
       </div>
@@ -459,11 +513,15 @@ exports[`components/sidebarSidebar > dont show hidden boards 1`] = `
         <i
           class="CompassIcon icon-settings-outline SettingsIcon"
         />
+        <!---->
         Settings
+        <!---->
         
+        <!---->
       </button>
       
     </div>
+    <!---->
   </div>
 </div>
 `;
@@ -530,7 +588,9 @@ exports[`components/sidebarSidebar > shouldnt do any category assignment is boar
                   </span>
                 </div>
               </div>
+              <!---->
               
+              <!---->
             </div>
           </div>
         </div>
@@ -548,7 +608,6 @@ exports[`components/sidebarSidebar > shouldnt do any category assignment is boar
           <svg
             class="HideSidebarIcon Icon"
             viewBox="0 0 100 100"
-            xmlns="http://www.w3.org/2000/svg"
           >
             <polyline
               points="80,20 50,50 80,80"
@@ -563,6 +622,7 @@ exports[`components/sidebarSidebar > shouldnt do any category assignment is boar
     <div
       class="WorkspaceTitle"
     />
+    <!---->
     <div
       class="BoardsSwitcherWrapper"
     >
@@ -579,8 +639,11 @@ exports[`components/sidebarSidebar > shouldnt do any category assignment is boar
         </div>
       </div>
       
+      <!---->
       
+      <!---->
       
+      <!---->
     </div>
     <div
       class="octo-sidebar-list"
@@ -602,6 +665,7 @@ exports[`components/sidebarSidebar > shouldnt do any category assignment is boar
                 <i
                   class="CompassIcon icon-chevron-down ChevronDownIcon"
                 />
+                <!---->
                 Category 1
                 <div
                   class="sidebarCategoriesTour"
@@ -611,7 +675,9 @@ exports[`components/sidebarSidebar > shouldnt do any category assignment is boar
                 class=""
               >
                 
+                <!---->
                 
+                <!---->
                 <div
                   aria-label="menuwrapper"
                   class="MenuWrapper"
@@ -625,17 +691,26 @@ exports[`components/sidebarSidebar > shouldnt do any category assignment is boar
                       class="CompassIcon icon-dots-horizontal OptionsIcon"
                     />
                   </button>
+                  <!---->
                   
+                  <!---->
                 </div>
+                <!---->
               </div>
             </div>
             
+            <!---->
             
+            <!---->
+            <!---->
             
+            <!---->
             
+            <!---->
             
+            <!---->
             
-            
+            <!---->
           </div>
         </div>
       </div>
@@ -656,6 +731,7 @@ exports[`components/sidebarSidebar > shouldnt do any category assignment is boar
                 <i
                   class="CompassIcon icon-chevron-down ChevronDownIcon"
                 />
+                <!---->
                 Category 2
                 <div
                   class="sidebarCategoriesTour"
@@ -665,7 +741,9 @@ exports[`components/sidebarSidebar > shouldnt do any category assignment is boar
                 class=""
               >
                 
+                <!---->
                 
+                <!---->
                 <div
                   aria-label="menuwrapper"
                   class="MenuWrapper"
@@ -679,12 +757,17 @@ exports[`components/sidebarSidebar > shouldnt do any category assignment is boar
                       class="CompassIcon icon-dots-horizontal OptionsIcon"
                     />
                   </button>
+                  <!---->
                   
+                  <!---->
                 </div>
+                <!---->
               </div>
             </div>
             
+            <!---->
             
+            <!---->
             <div>
               <div
                 class="SidebarBoardItem subitem "
@@ -714,16 +797,23 @@ exports[`components/sidebarSidebar > shouldnt do any category assignment is boar
                         class="CompassIcon icon-dots-horizontal OptionsIcon"
                       />
                     </button>
+                    <!---->
                     
+                    <!---->
                   </div>
                 </div>
               </div>
               
             </div>
+            <!---->
             
+            <!---->
             
+            <!---->
             
+            <!---->
             
+            <!---->
           </div>
         </div>
       </div>
@@ -744,6 +834,7 @@ exports[`components/sidebarSidebar > shouldnt do any category assignment is boar
                 <i
                   class="CompassIcon icon-chevron-down ChevronDownIcon"
                 />
+                <!---->
                 Boards
                 <div
                   class="sidebarCategoriesTour"
@@ -753,7 +844,9 @@ exports[`components/sidebarSidebar > shouldnt do any category assignment is boar
                 class=""
               >
                 
+                <!---->
                 
+                <!---->
                 <div
                   aria-label="menuwrapper"
                   class="MenuWrapper"
@@ -767,8 +860,11 @@ exports[`components/sidebarSidebar > shouldnt do any category assignment is boar
                       class="CompassIcon icon-dots-horizontal OptionsIcon"
                     />
                   </button>
+                  <!---->
                   
+                  <!---->
                 </div>
+                <!---->
               </div>
             </div>
             <div>
@@ -777,14 +873,22 @@ exports[`components/sidebarSidebar > shouldnt do any category assignment is boar
               >
                 No boards inside
               </div>
+              <!---->
               
+              <!---->
             </div>
+            <!---->
             
+            <!---->
+            <!---->
             
+            <!---->
             
+            <!---->
             
+            <!---->
             
-            
+            <!---->
           </div>
         </div>
       </div>
@@ -808,11 +912,15 @@ exports[`components/sidebarSidebar > shouldnt do any category assignment is boar
         <i
           class="CompassIcon icon-settings-outline SettingsIcon"
         />
+        <!---->
         Settings
+        <!---->
         
+        <!---->
       </button>
       
     </div>
+    <!---->
   </div>
 </div>
 `;
@@ -835,7 +943,6 @@ exports[`components/sidebarSidebar > sidebar expect hidden 1`] = `
           <svg
             class="HamburgerIcon Icon"
             viewBox="0 0 100 100"
-            xmlns="http://www.w3.org/2000/svg"
           >
             <polyline
               points="20,25 80,25"
@@ -859,7 +966,6 @@ exports[`components/sidebarSidebar > sidebar expect hidden 1`] = `
           <svg
             class="ShowSidebarIcon Icon"
             viewBox="0 0 100 100"
-            xmlns="http://www.w3.org/2000/svg"
           >
             <polyline
               points="20,20 50,50 20,80"
@@ -937,7 +1043,9 @@ exports[`components/sidebarSidebar > sidebar hidden 1`] = `
                   </span>
                 </div>
               </div>
+              <!---->
               
+              <!---->
             </div>
           </div>
         </div>
@@ -955,7 +1063,6 @@ exports[`components/sidebarSidebar > sidebar hidden 1`] = `
           <svg
             class="HideSidebarIcon Icon"
             viewBox="0 0 100 100"
-            xmlns="http://www.w3.org/2000/svg"
           >
             <polyline
               points="80,20 50,50 80,80"
@@ -970,6 +1077,7 @@ exports[`components/sidebarSidebar > sidebar hidden 1`] = `
     <div
       class="WorkspaceTitle"
     />
+    <!---->
     <div
       class="BoardsSwitcherWrapper"
     >
@@ -986,8 +1094,11 @@ exports[`components/sidebarSidebar > sidebar hidden 1`] = `
         </div>
       </div>
       
+      <!---->
       
+      <!---->
       
+      <!---->
     </div>
     <div
       class="octo-sidebar-list"
@@ -1009,6 +1120,7 @@ exports[`components/sidebarSidebar > sidebar hidden 1`] = `
                 <i
                   class="CompassIcon icon-chevron-down ChevronDownIcon"
                 />
+                <!---->
                 Category 1
                 <div
                   class="sidebarCategoriesTour"
@@ -1018,7 +1130,9 @@ exports[`components/sidebarSidebar > sidebar hidden 1`] = `
                 class=""
               >
                 
+                <!---->
                 
+                <!---->
                 <div
                   aria-label="menuwrapper"
                   class="MenuWrapper"
@@ -1032,12 +1146,17 @@ exports[`components/sidebarSidebar > sidebar hidden 1`] = `
                       class="CompassIcon icon-dots-horizontal OptionsIcon"
                     />
                   </button>
+                  <!---->
                   
+                  <!---->
                 </div>
+                <!---->
               </div>
             </div>
             
+            <!---->
             
+            <!---->
             <div>
               <div
                 class="SidebarBoardItem subitem "
@@ -1067,16 +1186,23 @@ exports[`components/sidebarSidebar > sidebar hidden 1`] = `
                         class="CompassIcon icon-dots-horizontal OptionsIcon"
                       />
                     </button>
+                    <!---->
                     
+                    <!---->
                   </div>
                 </div>
               </div>
               
             </div>
+            <!---->
             
+            <!---->
             
+            <!---->
             
+            <!---->
             
+            <!---->
           </div>
         </div>
       </div>
@@ -1100,11 +1226,15 @@ exports[`components/sidebarSidebar > sidebar hidden 1`] = `
         <i
           class="CompassIcon icon-settings-outline SettingsIcon"
         />
+        <!---->
         Settings
+        <!---->
         
+        <!---->
       </button>
       
     </div>
+    <!---->
   </div>
 </div>
 `;
@@ -1127,7 +1257,6 @@ exports[`components/sidebarSidebar > sidebar hidden 2`] = `
           <svg
             class="HamburgerIcon Icon"
             viewBox="0 0 100 100"
-            xmlns="http://www.w3.org/2000/svg"
           >
             <polyline
               points="20,25 80,25"
@@ -1151,7 +1280,6 @@ exports[`components/sidebarSidebar > sidebar hidden 2`] = `
           <svg
             class="ShowSidebarIcon Icon"
             viewBox="0 0 100 100"
-            xmlns="http://www.w3.org/2000/svg"
           >
             <polyline
               points="20,20 50,50 20,80"
@@ -1229,7 +1357,9 @@ exports[`components/sidebarSidebar > some categories hidden 1`] = `
                   </span>
                 </div>
               </div>
+              <!---->
               
+              <!---->
             </div>
           </div>
         </div>
@@ -1247,7 +1377,6 @@ exports[`components/sidebarSidebar > some categories hidden 1`] = `
           <svg
             class="HideSidebarIcon Icon"
             viewBox="0 0 100 100"
-            xmlns="http://www.w3.org/2000/svg"
           >
             <polyline
               points="80,20 50,50 80,80"
@@ -1262,6 +1391,7 @@ exports[`components/sidebarSidebar > some categories hidden 1`] = `
     <div
       class="WorkspaceTitle"
     />
+    <!---->
     <div
       class="BoardsSwitcherWrapper"
     >
@@ -1278,8 +1408,11 @@ exports[`components/sidebarSidebar > some categories hidden 1`] = `
         </div>
       </div>
       
+      <!---->
       
+      <!---->
       
+      <!---->
     </div>
     <div
       class="octo-sidebar-list"
@@ -1301,6 +1434,7 @@ exports[`components/sidebarSidebar > some categories hidden 1`] = `
                 <i
                   class="CompassIcon icon-chevron-down ChevronDownIcon"
                 />
+                <!---->
                 Category 1
                 <div
                   class="sidebarCategoriesTour"
@@ -1310,7 +1444,9 @@ exports[`components/sidebarSidebar > some categories hidden 1`] = `
                 class=""
               >
                 
+                <!---->
                 
+                <!---->
                 <div
                   aria-label="menuwrapper"
                   class="MenuWrapper"
@@ -1324,12 +1460,17 @@ exports[`components/sidebarSidebar > some categories hidden 1`] = `
                       class="CompassIcon icon-dots-horizontal OptionsIcon"
                     />
                   </button>
+                  <!---->
                   
+                  <!---->
                 </div>
+                <!---->
               </div>
             </div>
             
+            <!---->
             
+            <!---->
             <div>
               <div
                 class="SidebarBoardItem subitem "
@@ -1359,16 +1500,23 @@ exports[`components/sidebarSidebar > some categories hidden 1`] = `
                         class="CompassIcon icon-dots-horizontal OptionsIcon"
                       />
                     </button>
+                    <!---->
                     
+                    <!---->
                   </div>
                 </div>
               </div>
               
             </div>
+            <!---->
             
+            <!---->
             
+            <!---->
             
+            <!---->
             
+            <!---->
           </div>
         </div>
       </div>
@@ -1389,6 +1537,7 @@ exports[`components/sidebarSidebar > some categories hidden 1`] = `
                 <i
                   class="CompassIcon icon-chevron-right ChevronRightIcon"
                 />
+                <!---->
                 Category 2
                 <div
                   class="sidebarCategoriesTour"
@@ -1398,7 +1547,9 @@ exports[`components/sidebarSidebar > some categories hidden 1`] = `
                 class=""
               >
                 
+                <!---->
                 
+                <!---->
                 <div
                   aria-label="menuwrapper"
                   class="MenuWrapper"
@@ -1412,17 +1563,26 @@ exports[`components/sidebarSidebar > some categories hidden 1`] = `
                       class="CompassIcon icon-dots-horizontal OptionsIcon"
                     />
                   </button>
+                  <!---->
                   
+                  <!---->
                 </div>
+                <!---->
               </div>
             </div>
             
+            <!---->
+            <!---->
             
+            <!---->
             
+            <!---->
             
+            <!---->
             
+            <!---->
             
-            
+            <!---->
           </div>
         </div>
       </div>
@@ -1446,11 +1606,15 @@ exports[`components/sidebarSidebar > some categories hidden 1`] = `
         <i
           class="CompassIcon icon-settings-outline SettingsIcon"
         />
+        <!---->
         Settings
+        <!---->
         
+        <!---->
       </button>
       
     </div>
+    <!---->
   </div>
 </div>
 `;

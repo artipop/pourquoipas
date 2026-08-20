@@ -95,7 +95,9 @@ exports[`components/onboardingTour/addComments/AddCommentTourStep > after hover 
               Previous
             </span>
             
+            <!---->
           </button>
+          <!---->
           <button
             class="Button filled size--small tipNextButton"
             type="button"
@@ -107,7 +109,9 @@ exports[`components/onboardingTour/addComments/AddCommentTourStep > after hover 
             <i
               class="CompassIcon icon-chevron-right icon"
             />
+            <!---->
           </button>
+          <!---->
         </div>
       </div>
       

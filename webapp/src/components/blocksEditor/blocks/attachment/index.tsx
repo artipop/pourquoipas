@@ -1,4 +1,4 @@
-import {createEffect, createSignal, onMount} from 'solid-js'
+import {createEffect, createSignal, onSettled} from 'solid-js'
 
 import {BlockInputProps, ContentType} from '../types'
 import octoClient from '../../../../octoClient'
@@ -20,7 +20,7 @@ const Attachment: ContentType<FileInfo> = {
     Display: (props: BlockInputProps<FileInfo>) => {
         const [fileDataUrl, setFileDataUrl] = createSignal<string|null>(null)
 
-        createEffect(() => {
+        createEffect(() => props.value, () => {
             if (!fileDataUrl() && props.value && props.value.file && typeof props.value.file === 'string') {
                 octoClient.getFileAsDataUrl(props.currentBoardId || '', props.value.file).then((fileURL) => {
                     setFileDataUrl(fileURL.url || '')
@@ -45,7 +45,7 @@ const Attachment: ContentType<FileInfo> = {
     },
     Input: (props: BlockInputProps<FileInfo>) => {
         let ref: HTMLInputElement|undefined
-        onMount(() => {
+        onSettled(() => {
             ref?.click()
         })
 

@@ -1,5 +1,6 @@
-import {Show, createEffect, createSignal, onCleanup} from 'solid-js'
-import type {JSX, ParentComponent} from 'solid-js'
+import {Show, createEffect, createSignal} from 'solid-js'
+import type {ParentComponent} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 
 import {MenuAnchorProvider, menuOptions} from './menu/menuUtil'
 
@@ -122,16 +123,17 @@ const MenuWrapper: ParentComponent<Props> = (props) => {
         }
     }
 
-    createEffect(() => {
-        if (open()) {
-            document.addEventListener('menuItemClicked', close, true)
-            document.addEventListener('click', closeOnBlur, true)
-            document.addEventListener('keyup', keyboardClose, true)
-            onCleanup(() => {
-                document.removeEventListener('menuItemClicked', close, true)
-                document.removeEventListener('click', closeOnBlur, true)
-                document.removeEventListener('keyup', keyboardClose, true)
-            })
+    createEffect(open, (isOpen) => {
+        if (!isOpen) {
+            return undefined
+        }
+        document.addEventListener('menuItemClicked', close, true)
+        document.addEventListener('click', closeOnBlur, true)
+        document.addEventListener('keyup', keyboardClose, true)
+        return () => {
+            document.removeEventListener('menuItemClicked', close, true)
+            document.removeEventListener('click', closeOnBlur, true)
+            document.removeEventListener('keyup', keyboardClose, true)
         }
     })
 

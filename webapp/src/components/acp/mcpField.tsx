@@ -1,4 +1,4 @@
-import {Show, createEffect, createSignal, on} from 'solid-js'
+import {Show, createEffect, createSignal} from 'solid-js'
 
 import {useIntl} from '../../intl'
 
@@ -42,10 +42,10 @@ const MCPField = (props: Props) => {
     // panel moves to another stage, and never while somebody is typing — a
     // value re-serialized under the cursor is a field that reformats what it
     // is being told.
-    createEffect(on(() => props.owner, () => {
+    createEffect(() => props.owner, () => {
         setText(serversToText(props.value))
         setError('')
-    }))
+    })
 
     const names = () => Object.keys(props.value || {})
 

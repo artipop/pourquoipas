@@ -1,4 +1,4 @@
-import type {JSX} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 
 import './pulsating_dot.scss'
 import {Coords} from '../tutorial_tour_tip/tutorial_tour_tip_backdrop'

@@ -1,5 +1,5 @@
 import {For, Show, createEffect, createSignal} from 'solid-js'
-import type {JSX} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 
 import {FormattedMessage, useIntl} from '../../intl'
 
@@ -41,8 +41,8 @@ const TableGroupHeaderRow = (props: Props): JSX.Element => {
     const intl = useIntl()
     const columnResize = useColumnResize()
 
-    createEffect(() => {
-        setGroupTitle(props.group.option.value)
+    createEffect(() => props.group.option.value, (next) => {
+        setGroupTitle(next)
     })
 
     const classes = () => {

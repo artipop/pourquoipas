@@ -1,5 +1,5 @@
-import {For, Match, Switch, createEffect, createSignal, onCleanup} from 'solid-js'
-import type {JSX} from 'solid-js'
+import {For, Match, Switch, createSignal, onSettled} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 
 import './searchDialog.scss'
 import debounce from 'lodash/debounce'
@@ -93,13 +93,12 @@ const SearchDialog = (props: Props): JSX.Element => {
         }
     }
 
-    createEffect(() => {
+    // Nothing tracked: the listener is put on once and taken off on disposal.
+    onSettled(() => {
         document.addEventListener('keydown', handleUpDownKeyPress)
-
-        // cleanup function
-        onCleanup(() => {
+        return () => {
             document.removeEventListener('keydown', handleUpDownKeyPress)
-        })
+        }
     })
 
     return (

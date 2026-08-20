@@ -23,6 +23,7 @@ exports[`components/contentBlock > return commentBlock and click on menuwrapper 
               class="CompassIcon icon-dots-horizontal OptionsIcon"
             />
           </button>
+          <!---->
           <div
             class="Menu noselect bottom"
           >
@@ -47,7 +48,6 @@ exports[`components/contentBlock > return commentBlock and click on menuwrapper 
                       <svg
                         class="SortUpIcon Icon"
                         viewBox="0 0 100 100"
-                        xmlns="http://www.w3.org/2000/svg"
                       >
                         <polyline
                           points="50,20 50,80"
@@ -87,7 +87,6 @@ exports[`components/contentBlock > return commentBlock and click on menuwrapper 
                       <svg
                         class="SortDownIcon Icon"
                         viewBox="0 0 100 100"
-                        xmlns="http://www.w3.org/2000/svg"
                       >
                         <polyline
                           points="50,20 50,80"
@@ -132,7 +131,9 @@ exports[`components/contentBlock > return commentBlock and click on menuwrapper 
                   <i
                     class="CompassIcon icon-chevron-right"
                   />
+                  <!---->
                   
+                  <!---->
                 </div>
                 <div
                   aria-label="Delete"
@@ -201,6 +202,7 @@ exports[`components/contentBlock > return commentBlock and click on menuwrapper 
               </div>
             </div>
           </div>
+          <!---->
         </div>
         <div
           class="dnd-handle"
@@ -208,7 +210,6 @@ exports[`components/contentBlock > return commentBlock and click on menuwrapper 
           <svg
             class="GripIcon Icon"
             viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
           >
             <path
               d="M0 0h24v24H0V0z"
@@ -224,7 +225,9 @@ exports[`components/contentBlock > return commentBlock and click on menuwrapper 
         class="addToRow "
         style="flex:none;height:100%"
       />
+      <!---->
       
+      <!---->
     </div>
     <div
       class="addToRow "
@@ -256,7 +259,9 @@ exports[`components/contentBlock > should match snapshot with commentBlock 1`] =
               class="CompassIcon icon-dots-horizontal OptionsIcon"
             />
           </button>
+          <!---->
           
+          <!---->
         </div>
         <div
           class="dnd-handle"
@@ -264,7 +269,6 @@ exports[`components/contentBlock > should match snapshot with commentBlock 1`] =
           <svg
             class="GripIcon Icon"
             viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
           >
             <path
               d="M0 0h24v24H0V0z"
@@ -280,7 +284,9 @@ exports[`components/contentBlock > should match snapshot with commentBlock 1`] =
         class="addToRow "
         style="flex:none;height:100%"
       />
+      <!---->
       
+      <!---->
     </div>
     <div
       class="addToRow "
@@ -304,7 +310,9 @@ exports[`components/contentBlock > should match snapshot with commentBlock reado
         class="addToRow "
         style="flex:none;height:100%"
       />
+      <!---->
       
+      <!---->
     </div>
     <div
       class="addToRow "
@@ -336,7 +344,9 @@ exports[`components/contentBlock > should match snapshot with dividerBlock 1`] =
               class="CompassIcon icon-dots-horizontal OptionsIcon"
             />
           </button>
+          <!---->
           
+          <!---->
         </div>
         <div
           class="dnd-handle"
@@ -344,7 +354,6 @@ exports[`components/contentBlock > should match snapshot with dividerBlock 1`] =
           <svg
             class="GripIcon Icon"
             viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
           >
             <path
               d="M0 0h24v24H0V0z"
@@ -360,9 +369,11 @@ exports[`components/contentBlock > should match snapshot with dividerBlock 1`] =
         class="addToRow "
         style="flex:none;height:100%"
       />
+      <!---->
       <div
         class="DividerElement"
       />
+      <!---->
     </div>
     <div
       class="addToRow "
@@ -394,7 +405,9 @@ exports[`components/contentBlock > should match snapshot with imageBlock 1`] = `
               class="CompassIcon icon-dots-horizontal OptionsIcon"
             />
           </button>
+          <!---->
           
+          <!---->
         </div>
         <div
           class="dnd-handle"
@@ -402,7 +415,6 @@ exports[`components/contentBlock > should match snapshot with imageBlock 1`] = `
           <svg
             class="GripIcon Icon"
             viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
           >
             <path
               d="M0 0h24v24H0V0z"
@@ -418,7 +430,9 @@ exports[`components/contentBlock > should match snapshot with imageBlock 1`] = `
         class="addToRow "
         style="flex:none;height:100%"
       />
+      <!---->
       
+      <!---->
     </div>
     <div
       class="addToRow "
@@ -450,7 +464,9 @@ exports[`components/contentBlock > should match snapshot with textBlock 1`] = `
               class="CompassIcon icon-dots-horizontal OptionsIcon"
             />
           </button>
+          <!---->
           
+          <!---->
         </div>
         <div
           class="dnd-handle"
@@ -458,7 +474,6 @@ exports[`components/contentBlock > should match snapshot with textBlock 1`] = `
           <svg
             class="GripIcon Icon"
             viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
           >
             <path
               d="M0 0h24v24H0V0z"
@@ -474,6 +489,7 @@ exports[`components/contentBlock > should match snapshot with textBlock 1`] = `
         class="addToRow "
         style="flex:none;height:100%"
       />
+      <!---->
       <div
         class="TextElement"
       >
@@ -485,8 +501,11 @@ exports[`components/contentBlock > should match snapshot with textBlock 1`] = `
             data-testid="preview-element"
           />
         </div>
+        <!---->
         
+        <!---->
       </div>
+      <!---->
     </div>
     <div
       class="addToRow "

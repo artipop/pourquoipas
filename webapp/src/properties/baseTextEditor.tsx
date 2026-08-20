@@ -1,5 +1,5 @@
 import {Show, createSignal, onCleanup} from 'solid-js'
-import type {JSX} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 
 import {useIntl} from '../intl'
 

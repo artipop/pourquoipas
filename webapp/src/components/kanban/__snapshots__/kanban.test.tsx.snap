@@ -20,17 +20,20 @@ exports[`src/component/kanban/kanban > return kanban and change title on KanbanC
         style="opacity: 1;"
       >
         
+        <!---->
         
+        <!---->
         <span
           class="Label propColorOrange "
         >
           <input
             class="Editable "
             placeholder="New Select"
-            spellcheck="true"
+            spellcheck=""
             title="New Q1"
           />
         </span>
+        <!---->
         <div
           class="KanbanCalculation"
         >
@@ -43,9 +46,13 @@ exports[`src/component/kanban/kanban > return kanban and change title on KanbanC
               2
             </span>
             
+            <!---->
           </button>
+          <!---->
           
+          <!---->
         </div>
+        <!---->
         
         <div
           class="octo-spacer"
@@ -62,7 +69,9 @@ exports[`src/component/kanban/kanban > return kanban and change title on KanbanC
               class="CompassIcon icon-dots-horizontal OptionsIcon"
             />
           </button>
+          <!---->
           
+          <!---->
         </div>
         <button
           type="button"
@@ -71,23 +80,27 @@ exports[`src/component/kanban/kanban > return kanban and change title on KanbanC
             class="CompassIcon icon-plus AddIcon"
           />
         </button>
+        <!---->
       </div>
       <div
         class="octo-board-header-cell KanbanColumnHeader"
         style="opacity: 1;"
       >
         
+        <!---->
         
+        <!---->
         <span
           class="Label propColorBlue "
         >
           <input
             class="Editable "
             placeholder="New Select"
-            spellcheck="true"
+            spellcheck=""
             title="Q2"
           />
         </span>
+        <!---->
         <div
           class="KanbanCalculation"
         >
@@ -100,9 +113,13 @@ exports[`src/component/kanban/kanban > return kanban and change title on KanbanC
               1
             </span>
             
+            <!---->
           </button>
+          <!---->
           
+          <!---->
         </div>
+        <!---->
         
         <div
           class="octo-spacer"
@@ -119,7 +136,9 @@ exports[`src/component/kanban/kanban > return kanban and change title on KanbanC
               class="CompassIcon icon-dots-horizontal OptionsIcon"
             />
           </button>
+          <!---->
           
+          <!---->
         </div>
         <button
           type="button"
@@ -128,12 +147,15 @@ exports[`src/component/kanban/kanban > return kanban and change title on KanbanC
             class="CompassIcon icon-plus AddIcon"
           />
         </button>
+        <!---->
       </div>
+      <!---->
       <div
         class="octo-board-header-cell narrow"
       >
         Hidden columns
       </div>
+      <!---->
       <div
         class="octo-board-header-cell narrow"
       >
@@ -145,8 +167,10 @@ exports[`src/component/kanban/kanban > return kanban and change title on KanbanC
             + Add a group
           </span>
           
+          <!---->
         </button>
       </div>
+      <!---->
     </div>
     <div
       class="octo-board-body"
@@ -160,6 +184,7 @@ exports[`src/component/kanban/kanban > return kanban and change title on KanbanC
           style="opacity: 1;"
         >
           
+          <!---->
           <div
             aria-label="menuwrapper"
             class="MenuWrapper optionsMenu"
@@ -172,7 +197,9 @@ exports[`src/component/kanban/kanban > return kanban and change title on KanbanC
                 class="CompassIcon icon-dots-horizontal OptionsIcon"
               />
             </button>
+            <!---->
             
+            <!---->
           </div>
           <div
             class="octo-icontitle"
@@ -188,15 +215,18 @@ exports[`src/component/kanban/kanban > return kanban and change title on KanbanC
               title
             </div>
           </div>
+          <!---->
           
+          <!---->
           
-          
+          <!---->
         </div>
         <div
           class="KanbanCard"
           style="opacity: 1;"
         >
           
+          <!---->
           <div
             aria-label="menuwrapper"
             class="MenuWrapper optionsMenu"
@@ -209,7 +239,9 @@ exports[`src/component/kanban/kanban > return kanban and change title on KanbanC
                 class="CompassIcon icon-dots-horizontal OptionsIcon"
               />
             </button>
+            <!---->
             
+            <!---->
           </div>
           <div
             class="octo-icontitle"
@@ -225,9 +257,11 @@ exports[`src/component/kanban/kanban > return kanban and change title on KanbanC
               title
             </div>
           </div>
+          <!---->
           
+          <!---->
           
-          
+          <!---->
         </div>
         <button
           type="button"
@@ -237,6 +271,7 @@ exports[`src/component/kanban/kanban > return kanban and change title on KanbanC
             + New
           </span>
           
+          <!---->
         </button>
       </div>
       <div
@@ -247,6 +282,7 @@ exports[`src/component/kanban/kanban > return kanban and change title on KanbanC
           style="opacity: 1;"
         >
           
+          <!---->
           <div
             aria-label="menuwrapper"
             class="MenuWrapper optionsMenu"
@@ -259,7 +295,9 @@ exports[`src/component/kanban/kanban > return kanban and change title on KanbanC
                 class="CompassIcon icon-dots-horizontal OptionsIcon"
               />
             </button>
+            <!---->
             
+            <!---->
           </div>
           <div
             class="octo-icontitle"
@@ -275,9 +313,11 @@ exports[`src/component/kanban/kanban > return kanban and change title on KanbanC
               title
             </div>
           </div>
+          <!---->
           
+          <!---->
           
-          
+          <!---->
         </div>
         <button
           type="button"
@@ -287,8 +327,10 @@ exports[`src/component/kanban/kanban > return kanban and change title on KanbanC
             + New
           </span>
           
+          <!---->
         </button>
       </div>
+      <!---->
       <div
         class="octo-board-column narrow"
       >
@@ -305,8 +347,11 @@ exports[`src/component/kanban/kanban > return kanban and change title on KanbanC
             >
               Q3
             </span>
+            <!---->
             
+            <!---->
           </div>
+          <!---->
           <button
             type="button"
           >
@@ -315,9 +360,12 @@ exports[`src/component/kanban/kanban > return kanban and change title on KanbanC
               0
             </span>
             
+            <!---->
           </button>
+          <!---->
         </div>
       </div>
+      <!---->
     </div>
     
   </div>
@@ -338,17 +386,20 @@ exports[`src/component/kanban/kanban > return kanban and click on KanbanCalculat
         style="opacity: 1;"
       >
         
+        <!---->
         
+        <!---->
         <span
           class="Label propColorOrange "
         >
           <input
             class="Editable "
             placeholder="New Select"
-            spellcheck="true"
+            spellcheck=""
             title="Q1"
           />
         </span>
+        <!---->
         <div
           class="KanbanCalculation"
         >
@@ -361,7 +412,9 @@ exports[`src/component/kanban/kanban > return kanban and click on KanbanCalculat
               2
             </span>
             
+            <!---->
           </button>
+          <!---->
           <div
             class="Combobox CalculationOptions"
           >
@@ -379,11 +432,13 @@ exports[`src/component/kanban/kanban > return kanban and click on KanbanCalculat
                 class="CalculationOptions__value-container"
               >
                 
+                <!---->
                 <div
                   class="CalculationOptions__single-value"
                 >
                   Count
                 </div>
+                <!---->
                 
                 <input
                   aria-activedescendant="cl-22-option-0"
@@ -407,6 +462,7 @@ exports[`src/component/kanban/kanban > return kanban and click on KanbanCalculat
                 role="listbox"
               >
                 
+                <!---->
                 <div
                   aria-selected="true"
                   class="CalculationOptions__option CalculationOptions__option--is-focused CalculationOptions__option--is-selected"
@@ -420,6 +476,7 @@ exports[`src/component/kanban/kanban > return kanban and click on KanbanCalculat
                       Count
                        
                       
+                      <!---->
                     </span>
                     
                   </div>
@@ -439,6 +496,7 @@ exports[`src/component/kanban/kanban > return kanban and click on KanbanCalculat
                       <i
                         class="CompassIcon icon-chevron-right ChevronRightIcon"
                       />
+                      <!---->
                     </span>
                     
                   </div>
@@ -458,6 +516,7 @@ exports[`src/component/kanban/kanban > return kanban and click on KanbanCalculat
                       <i
                         class="CompassIcon icon-chevron-right ChevronRightIcon"
                       />
+                      <!---->
                     </span>
                     
                   </div>
@@ -477,6 +536,7 @@ exports[`src/component/kanban/kanban > return kanban and click on KanbanCalculat
                       <i
                         class="CompassIcon icon-chevron-right ChevronRightIcon"
                       />
+                      <!---->
                     </span>
                     
                   </div>
@@ -496,6 +556,7 @@ exports[`src/component/kanban/kanban > return kanban and click on KanbanCalculat
                       <i
                         class="CompassIcon icon-chevron-right ChevronRightIcon"
                       />
+                      <!---->
                     </span>
                     
                   </div>
@@ -515,6 +576,7 @@ exports[`src/component/kanban/kanban > return kanban and click on KanbanCalculat
                       <i
                         class="CompassIcon icon-chevron-right ChevronRightIcon"
                       />
+                      <!---->
                     </span>
                     
                   </div>
@@ -534,14 +596,18 @@ exports[`src/component/kanban/kanban > return kanban and click on KanbanCalculat
                       <i
                         class="CompassIcon icon-chevron-right ChevronRightIcon"
                       />
+                      <!---->
                     </span>
                     
                   </div>
                 </div>
+                <!---->
               </div>
             </div>
           </div>
+          <!---->
         </div>
+        <!---->
         
         <div
           class="octo-spacer"
@@ -558,7 +624,9 @@ exports[`src/component/kanban/kanban > return kanban and click on KanbanCalculat
               class="CompassIcon icon-dots-horizontal OptionsIcon"
             />
           </button>
+          <!---->
           
+          <!---->
         </div>
         <button
           type="button"
@@ -567,23 +635,27 @@ exports[`src/component/kanban/kanban > return kanban and click on KanbanCalculat
             class="CompassIcon icon-plus AddIcon"
           />
         </button>
+        <!---->
       </div>
       <div
         class="octo-board-header-cell KanbanColumnHeader"
         style="opacity: 1;"
       >
         
+        <!---->
         
+        <!---->
         <span
           class="Label propColorBlue "
         >
           <input
             class="Editable "
             placeholder="New Select"
-            spellcheck="true"
+            spellcheck=""
             title="Q2"
           />
         </span>
+        <!---->
         <div
           class="KanbanCalculation"
         >
@@ -596,9 +668,13 @@ exports[`src/component/kanban/kanban > return kanban and click on KanbanCalculat
               1
             </span>
             
+            <!---->
           </button>
+          <!---->
           
+          <!---->
         </div>
+        <!---->
         
         <div
           class="octo-spacer"
@@ -615,7 +691,9 @@ exports[`src/component/kanban/kanban > return kanban and click on KanbanCalculat
               class="CompassIcon icon-dots-horizontal OptionsIcon"
             />
           </button>
+          <!---->
           
+          <!---->
         </div>
         <button
           type="button"
@@ -624,12 +702,15 @@ exports[`src/component/kanban/kanban > return kanban and click on KanbanCalculat
             class="CompassIcon icon-plus AddIcon"
           />
         </button>
+        <!---->
       </div>
+      <!---->
       <div
         class="octo-board-header-cell narrow"
       >
         Hidden columns
       </div>
+      <!---->
       <div
         class="octo-board-header-cell narrow"
       >
@@ -641,8 +722,10 @@ exports[`src/component/kanban/kanban > return kanban and click on KanbanCalculat
             + Add a group
           </span>
           
+          <!---->
         </button>
       </div>
+      <!---->
     </div>
     <div
       class="octo-board-body"
@@ -656,6 +739,7 @@ exports[`src/component/kanban/kanban > return kanban and click on KanbanCalculat
           style="opacity: 1;"
         >
           
+          <!---->
           <div
             aria-label="menuwrapper"
             class="MenuWrapper optionsMenu"
@@ -668,7 +752,9 @@ exports[`src/component/kanban/kanban > return kanban and click on KanbanCalculat
                 class="CompassIcon icon-dots-horizontal OptionsIcon"
               />
             </button>
+            <!---->
             
+            <!---->
           </div>
           <div
             class="octo-icontitle"
@@ -684,15 +770,18 @@ exports[`src/component/kanban/kanban > return kanban and click on KanbanCalculat
               title
             </div>
           </div>
+          <!---->
           
+          <!---->
           
-          
+          <!---->
         </div>
         <div
           class="KanbanCard"
           style="opacity: 1;"
         >
           
+          <!---->
           <div
             aria-label="menuwrapper"
             class="MenuWrapper optionsMenu"
@@ -705,7 +794,9 @@ exports[`src/component/kanban/kanban > return kanban and click on KanbanCalculat
                 class="CompassIcon icon-dots-horizontal OptionsIcon"
               />
             </button>
+            <!---->
             
+            <!---->
           </div>
           <div
             class="octo-icontitle"
@@ -721,9 +812,11 @@ exports[`src/component/kanban/kanban > return kanban and click on KanbanCalculat
               title
             </div>
           </div>
+          <!---->
           
+          <!---->
           
-          
+          <!---->
         </div>
         <button
           type="button"
@@ -733,6 +826,7 @@ exports[`src/component/kanban/kanban > return kanban and click on KanbanCalculat
             + New
           </span>
           
+          <!---->
         </button>
       </div>
       <div
@@ -743,6 +837,7 @@ exports[`src/component/kanban/kanban > return kanban and click on KanbanCalculat
           style="opacity: 1;"
         >
           
+          <!---->
           <div
             aria-label="menuwrapper"
             class="MenuWrapper optionsMenu"
@@ -755,7 +850,9 @@ exports[`src/component/kanban/kanban > return kanban and click on KanbanCalculat
                 class="CompassIcon icon-dots-horizontal OptionsIcon"
               />
             </button>
+            <!---->
             
+            <!---->
           </div>
           <div
             class="octo-icontitle"
@@ -771,9 +868,11 @@ exports[`src/component/kanban/kanban > return kanban and click on KanbanCalculat
               title
             </div>
           </div>
+          <!---->
           
+          <!---->
           
-          
+          <!---->
         </div>
         <button
           type="button"
@@ -783,8 +882,10 @@ exports[`src/component/kanban/kanban > return kanban and click on KanbanCalculat
             + New
           </span>
           
+          <!---->
         </button>
       </div>
+      <!---->
       <div
         class="octo-board-column narrow"
       >
@@ -801,8 +902,11 @@ exports[`src/component/kanban/kanban > return kanban and click on KanbanCalculat
             >
               Q3
             </span>
+            <!---->
             
+            <!---->
           </div>
+          <!---->
           <button
             type="button"
           >
@@ -811,9 +915,12 @@ exports[`src/component/kanban/kanban > return kanban and click on KanbanCalculat
               0
             </span>
             
+            <!---->
           </button>
+          <!---->
         </div>
       </div>
+      <!---->
     </div>
     
   </div>
@@ -834,17 +941,20 @@ exports[`src/component/kanban/kanban > should match snapshot 1`] = `
         style="opacity: 1;"
       >
         
+        <!---->
         
+        <!---->
         <span
           class="Label propColorOrange "
         >
           <input
             class="Editable "
             placeholder="New Select"
-            spellcheck="true"
+            spellcheck=""
             title="Q1"
           />
         </span>
+        <!---->
         <div
           class="KanbanCalculation"
         >
@@ -857,9 +967,13 @@ exports[`src/component/kanban/kanban > should match snapshot 1`] = `
               2
             </span>
             
+            <!---->
           </button>
+          <!---->
           
+          <!---->
         </div>
+        <!---->
         
         <div
           class="octo-spacer"
@@ -876,7 +990,9 @@ exports[`src/component/kanban/kanban > should match snapshot 1`] = `
               class="CompassIcon icon-dots-horizontal OptionsIcon"
             />
           </button>
+          <!---->
           
+          <!---->
         </div>
         <button
           type="button"
@@ -885,23 +1001,27 @@ exports[`src/component/kanban/kanban > should match snapshot 1`] = `
             class="CompassIcon icon-plus AddIcon"
           />
         </button>
+        <!---->
       </div>
       <div
         class="octo-board-header-cell KanbanColumnHeader"
         style="opacity: 1;"
       >
         
+        <!---->
         
+        <!---->
         <span
           class="Label propColorBlue "
         >
           <input
             class="Editable "
             placeholder="New Select"
-            spellcheck="true"
+            spellcheck=""
             title="Q2"
           />
         </span>
+        <!---->
         <div
           class="KanbanCalculation"
         >
@@ -914,9 +1034,13 @@ exports[`src/component/kanban/kanban > should match snapshot 1`] = `
               1
             </span>
             
+            <!---->
           </button>
+          <!---->
           
+          <!---->
         </div>
+        <!---->
         
         <div
           class="octo-spacer"
@@ -933,7 +1057,9 @@ exports[`src/component/kanban/kanban > should match snapshot 1`] = `
               class="CompassIcon icon-dots-horizontal OptionsIcon"
             />
           </button>
+          <!---->
           
+          <!---->
         </div>
         <button
           type="button"
@@ -942,12 +1068,15 @@ exports[`src/component/kanban/kanban > should match snapshot 1`] = `
             class="CompassIcon icon-plus AddIcon"
           />
         </button>
+        <!---->
       </div>
+      <!---->
       <div
         class="octo-board-header-cell narrow"
       >
         Hidden columns
       </div>
+      <!---->
       <div
         class="octo-board-header-cell narrow"
       >
@@ -959,8 +1088,10 @@ exports[`src/component/kanban/kanban > should match snapshot 1`] = `
             + Add a group
           </span>
           
+          <!---->
         </button>
       </div>
+      <!---->
     </div>
     <div
       class="octo-board-body"
@@ -974,6 +1105,7 @@ exports[`src/component/kanban/kanban > should match snapshot 1`] = `
           style="opacity: 1;"
         >
           
+          <!---->
           <div
             aria-label="menuwrapper"
             class="MenuWrapper optionsMenu"
@@ -986,7 +1118,9 @@ exports[`src/component/kanban/kanban > should match snapshot 1`] = `
                 class="CompassIcon icon-dots-horizontal OptionsIcon"
               />
             </button>
+            <!---->
             
+            <!---->
           </div>
           <div
             class="octo-icontitle"
@@ -1002,15 +1136,18 @@ exports[`src/component/kanban/kanban > should match snapshot 1`] = `
               title
             </div>
           </div>
+          <!---->
           
+          <!---->
           
-          
+          <!---->
         </div>
         <div
           class="KanbanCard"
           style="opacity: 1;"
         >
           
+          <!---->
           <div
             aria-label="menuwrapper"
             class="MenuWrapper optionsMenu"
@@ -1023,7 +1160,9 @@ exports[`src/component/kanban/kanban > should match snapshot 1`] = `
                 class="CompassIcon icon-dots-horizontal OptionsIcon"
               />
             </button>
+            <!---->
             
+            <!---->
           </div>
           <div
             class="octo-icontitle"
@@ -1039,9 +1178,11 @@ exports[`src/component/kanban/kanban > should match snapshot 1`] = `
               title
             </div>
           </div>
+          <!---->
           
+          <!---->
           
-          
+          <!---->
         </div>
         <button
           type="button"
@@ -1051,6 +1192,7 @@ exports[`src/component/kanban/kanban > should match snapshot 1`] = `
             + New
           </span>
           
+          <!---->
         </button>
       </div>
       <div
@@ -1061,6 +1203,7 @@ exports[`src/component/kanban/kanban > should match snapshot 1`] = `
           style="opacity: 1;"
         >
           
+          <!---->
           <div
             aria-label="menuwrapper"
             class="MenuWrapper optionsMenu"
@@ -1073,7 +1216,9 @@ exports[`src/component/kanban/kanban > should match snapshot 1`] = `
                 class="CompassIcon icon-dots-horizontal OptionsIcon"
               />
             </button>
+            <!---->
             
+            <!---->
           </div>
           <div
             class="octo-icontitle"
@@ -1089,9 +1234,11 @@ exports[`src/component/kanban/kanban > should match snapshot 1`] = `
               title
             </div>
           </div>
+          <!---->
           
+          <!---->
           
-          
+          <!---->
         </div>
         <button
           type="button"
@@ -1101,8 +1248,10 @@ exports[`src/component/kanban/kanban > should match snapshot 1`] = `
             + New
           </span>
           
+          <!---->
         </button>
       </div>
+      <!---->
       <div
         class="octo-board-column narrow"
       >
@@ -1119,8 +1268,11 @@ exports[`src/component/kanban/kanban > should match snapshot 1`] = `
             >
               Q3
             </span>
+            <!---->
             
+            <!---->
           </div>
+          <!---->
           <button
             type="button"
           >
@@ -1129,9 +1281,12 @@ exports[`src/component/kanban/kanban > should match snapshot 1`] = `
               0
             </span>
             
+            <!---->
           </button>
+          <!---->
         </div>
       </div>
+      <!---->
     </div>
     
   </div>
@@ -1152,7 +1307,9 @@ exports[`src/component/kanban/kanban > should match snapshot without permissions
         style="opacity: 1;"
       >
         
+        <!---->
         
+        <!---->
         <span
           class="Label propColorOrange "
         >
@@ -1160,10 +1317,11 @@ exports[`src/component/kanban/kanban > should match snapshot without permissions
             class="Editable readonly "
             placeholder="New Select"
             readonly=""
-            spellcheck="true"
+            spellcheck=""
             title="Q1"
           />
         </span>
+        <!---->
         <div
           class="KanbanCalculation"
         >
@@ -1176,21 +1334,27 @@ exports[`src/component/kanban/kanban > should match snapshot without permissions
               2
             </span>
             
+            <!---->
           </button>
+          <!---->
           
+          <!---->
         </div>
+        <!---->
         
         <div
           class="octo-spacer"
         />
-        
+        <!---->
       </div>
       <div
         class="octo-board-header-cell KanbanColumnHeader"
         style="opacity: 1;"
       >
         
+        <!---->
         
+        <!---->
         <span
           class="Label propColorBlue "
         >
@@ -1198,10 +1362,11 @@ exports[`src/component/kanban/kanban > should match snapshot without permissions
             class="Editable readonly "
             placeholder="New Select"
             readonly=""
-            spellcheck="true"
+            spellcheck=""
             title="Q2"
           />
         </span>
+        <!---->
         <div
           class="KanbanCalculation"
         >
@@ -1214,21 +1379,28 @@ exports[`src/component/kanban/kanban > should match snapshot without permissions
               1
             </span>
             
+            <!---->
           </button>
+          <!---->
           
+          <!---->
         </div>
+        <!---->
         
         <div
           class="octo-spacer"
         />
-        
+        <!---->
       </div>
+      <!---->
       <div
         class="octo-board-header-cell narrow"
       >
         Hidden columns
       </div>
+      <!---->
       
+      <!---->
     </div>
     <div
       class="octo-board-body"
@@ -1242,6 +1414,7 @@ exports[`src/component/kanban/kanban > should match snapshot without permissions
           style="opacity: 1;"
         >
           
+          <!---->
           <div
             aria-label="menuwrapper"
             class="MenuWrapper optionsMenu"
@@ -1254,7 +1427,9 @@ exports[`src/component/kanban/kanban > should match snapshot without permissions
                 class="CompassIcon icon-dots-horizontal OptionsIcon"
               />
             </button>
+            <!---->
             
+            <!---->
           </div>
           <div
             class="octo-icontitle"
@@ -1270,15 +1445,18 @@ exports[`src/component/kanban/kanban > should match snapshot without permissions
               title
             </div>
           </div>
+          <!---->
           
+          <!---->
           
-          
+          <!---->
         </div>
         <div
           class="KanbanCard"
           style="opacity: 1;"
         >
           
+          <!---->
           <div
             aria-label="menuwrapper"
             class="MenuWrapper optionsMenu"
@@ -1291,7 +1469,9 @@ exports[`src/component/kanban/kanban > should match snapshot without permissions
                 class="CompassIcon icon-dots-horizontal OptionsIcon"
               />
             </button>
+            <!---->
             
+            <!---->
           </div>
           <div
             class="octo-icontitle"
@@ -1307,9 +1487,11 @@ exports[`src/component/kanban/kanban > should match snapshot without permissions
               title
             </div>
           </div>
+          <!---->
           
+          <!---->
           
-          
+          <!---->
         </div>
       </div>
       <div
@@ -1320,6 +1502,7 @@ exports[`src/component/kanban/kanban > should match snapshot without permissions
           style="opacity: 1;"
         >
           
+          <!---->
           <div
             aria-label="menuwrapper"
             class="MenuWrapper optionsMenu"
@@ -1332,7 +1515,9 @@ exports[`src/component/kanban/kanban > should match snapshot without permissions
                 class="CompassIcon icon-dots-horizontal OptionsIcon"
               />
             </button>
+            <!---->
             
+            <!---->
           </div>
           <div
             class="octo-icontitle"
@@ -1348,11 +1533,14 @@ exports[`src/component/kanban/kanban > should match snapshot without permissions
               title
             </div>
           </div>
+          <!---->
           
+          <!---->
           
-          
+          <!---->
         </div>
       </div>
+      <!---->
       <div
         class="octo-board-column narrow"
       >
@@ -1369,8 +1557,11 @@ exports[`src/component/kanban/kanban > should match snapshot without permissions
             >
               Q3
             </span>
+            <!---->
             
+            <!---->
           </div>
+          <!---->
           <button
             type="button"
           >
@@ -1379,9 +1570,12 @@ exports[`src/component/kanban/kanban > should match snapshot without permissions
               0
             </span>
             
+            <!---->
           </button>
+          <!---->
         </div>
       </div>
+      <!---->
     </div>
     
   </div>

@@ -1,6 +1,6 @@
 // The Wails-generated Go bindings are PascalCase methods, not constructors.
 /* eslint-disable new-cap */
-import {Show, createSignal, onMount} from 'solid-js'
+import {Show, createSignal, onSettled} from 'solid-js'
 
 import {useIntl} from '../../intl'
 
@@ -45,14 +45,17 @@ const BoardPromptsDialog = (props: Props) => {
     const [error, setError] = createSignal('')
     const [saving, setSaving] = createSignal(false)
 
-    onMount(async () => {
-        try {
-            if (bindings?.GetBoardPrompt) {
-                setPrompt(await bindings.GetBoardPrompt(props.board.id))
+    onSettled(() => {
+        // Not awaited: onSettled reads a returned promise as a cleanup value.
+        void (async () => {
+            try {
+                if (bindings?.GetBoardPrompt) {
+                    setPrompt(await bindings.GetBoardPrompt(props.board.id))
+                }
+            } catch (e) {
+                setError(String(e))
             }
-        } catch (e) {
-            setError(String(e))
-        }
+        })()
     })
 
     const save = async () => {

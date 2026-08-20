@@ -14,8 +14,11 @@ exports[`properties/dateRange > cancel set via text input 1`] = `
         June 15 → June 20
       </span>
       
+      <!---->
     </button>
+    <!---->
     
+    <!---->
   </div>
 </div>
 `;
@@ -34,8 +37,11 @@ exports[`properties/dateRange > handle clear 1`] = `
         June 15
       </span>
       
+      <!---->
     </button>
+    <!---->
     
+    <!---->
   </div>
 </div>
 `;
@@ -54,8 +60,11 @@ exports[`properties/dateRange > returns component with new date after prop chang
         June 15
       </span>
       
+      <!---->
     </button>
+    <!---->
     
+    <!---->
   </div>
 </div>
 `;
@@ -72,8 +81,11 @@ exports[`properties/dateRange > returns default correctly 1`] = `
       
       <span />
       
+      <!---->
     </button>
+    <!---->
     
+    <!---->
   </div>
 </div>
 `;
@@ -92,8 +104,11 @@ exports[`properties/dateRange > returns local correctly - es local 1`] = `
         15 de junio
       </span>
       
+      <!---->
     </button>
+    <!---->
     
+    <!---->
   </div>
 </div>
 `;
@@ -112,8 +127,11 @@ exports[`properties/dateRange > set via text input 1`] = `
         June 15 → June 20
       </span>
       
+      <!---->
     </button>
+    <!---->
     
+    <!---->
   </div>
 </div>
 `;
@@ -132,8 +150,11 @@ exports[`properties/dateRange > set via text input, es locale 1`] = `
         15 de junio → 20 de junio
       </span>
       
+      <!---->
     </button>
+    <!---->
     
+    <!---->
   </div>
 </div>
 `;

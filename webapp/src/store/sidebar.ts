@@ -1,5 +1,4 @@
-import {batch} from 'solid-js'
-import {produce} from 'solid-js/store'
+import {storePath} from 'solid-js'
 
 import {Utils} from '../utils'
 
@@ -52,7 +51,7 @@ export const initialSidebarState = (): SidebarState => ({categoryAttributes: [],
 
 export const createSidebarActions = ({setState, deps}: StoreContext) => ({
     updateCategories(categories: Category[]) {
-        setState('sidebar', 'categoryAttributes', produce((categoryAttributes) => {
+        setState(({sidebar: {categoryAttributes}}) => {
             categories.forEach((updatedCategory) => {
                 const index = categoryAttributes.findIndex((c) => c.id === updatedCategory.id)
 
@@ -86,10 +85,10 @@ export const createSidebarActions = ({setState, deps}: StoreContext) => ({
                     existing.isNew = false
                 }
             })
-        }))
+        })
     },
     updateBoardCategories(boardCategories: BoardCategoryWebsocketData[]) {
-        setState('sidebar', produce((sidebar) => {
+        setState(({sidebar}) => {
             const updatedCategoryAttributes: CategoryBoards[] = []
             let updatedHiddenBoardIDs = sidebar.hiddenBoardIDs
 
@@ -129,14 +128,14 @@ export const createSidebarActions = ({setState, deps}: StoreContext) => ({
                 sidebar.categoryAttributes = updatedCategoryAttributes
             }
             sidebar.hiddenBoardIDs = updatedHiddenBoardIDs
-        }))
+        })
     },
     updateCategoryOrder(categoryOrder: string[]) {
         if (categoryOrder.length === 0) {
             return
         }
 
-        setState('sidebar', 'categoryAttributes', (categoryAttributes) => {
+        setState(storePath('sidebar', 'categoryAttributes', (categoryAttributes) => {
             const categoryById = new Map<string, CategoryBoards>()
             categoryAttributes.forEach((categoryBoards: CategoryBoards) => categoryById.set(categoryBoards.id, categoryBoards))
 
@@ -151,14 +150,14 @@ export const createSidebarActions = ({setState, deps}: StoreContext) => ({
             })
 
             return newOrderedCategories
-        })
+        }))
     },
     updateCategoryBoardsOrder(reorderData: CategoryBoardsReorderData) {
         if (reorderData.boardsMetadata.length === 0) {
             return
         }
 
-        setState('sidebar', 'categoryAttributes', produce((categoryAttributes) => {
+        setState(({sidebar: {categoryAttributes}}) => {
             const categoryIndex = categoryAttributes.findIndex((categoryBoards) => categoryBoards.id === reorderData.categoryID)
             if (categoryIndex < 0) {
                 Utils.logError('Category ID from updated category boards order not found in store. CategoryID: ' + reorderData.categoryID)
@@ -171,24 +170,22 @@ export const createSidebarActions = ({setState, deps}: StoreContext) => ({
                 boardMetadata: reorderData.boardsMetadata,
                 isNew: false,
             }
-        }))
+        })
     },
     async fetchSidebarCategories(teamID: string): Promise<void> {
         const categoryAttributes = await deps.client.getSidebarCategories(teamID) || []
-        batch(() => {
-            setState('sidebar', 'categoryAttributes', categoryAttributes)
-            setState('sidebar', 'hiddenBoardIDs', categoryAttributes.flatMap(
-                (ca) => {
-                    return ca.boardMetadata.reduce((collector, m) => {
-                        if (m.hidden) {
-                            collector.push(m.boardID)
-                        }
+        setState(storePath('sidebar', 'categoryAttributes', categoryAttributes))
+        setState(storePath('sidebar', 'hiddenBoardIDs', categoryAttributes.flatMap(
+            (ca) => {
+                return ca.boardMetadata.reduce((collector, m) => {
+                    if (m.hidden) {
+                        collector.push(m.boardID)
+                    }
 
-                        return collector
-                    }, [] as string[])
-                },
-            ))
-        })
+                    return collector
+                }, [] as string[])
+            },
+        )))
     },
 })
 

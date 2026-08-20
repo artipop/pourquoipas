@@ -1,6 +1,6 @@
 // The Wails-generated Go bindings are PascalCase methods, not constructors.
 /* eslint-disable new-cap */
-import {Accessor, Show, createMemo, createSignal, onCleanup, onMount} from 'solid-js'
+import {Accessor, Show, createMemo, createSignal, onSettled} from 'solid-js'
 
 import {useIntl} from '../../intl'
 
@@ -61,7 +61,7 @@ export function useBoardColumns(boardId: string): Accessor<ColumnSpec[]> {
         }).catch(() => setSpecs([]))
     }
 
-    onMount(() => {
+    onSettled(() => {
         refresh()
         listeners.add(refresh)
 
@@ -70,11 +70,11 @@ export function useBoardColumns(boardId: string): Accessor<ColumnSpec[]> {
             cache.clear()
             refresh()
         })
-        onCleanup(() => {
+        return () => {
             cancelled = true
             listeners.delete(refresh)
             off?.()
-        })
+        }
     })
 
     return specs

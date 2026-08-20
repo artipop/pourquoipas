@@ -1,4 +1,4 @@
-import {createMemo, onMount} from 'solid-js'
+import {createMemo, onSettled} from 'solid-js'
 import type {Accessor} from 'solid-js'
 
 import {Board} from '../blocks/board'
@@ -15,7 +15,7 @@ export const useGetAllTemplates = (): Accessor<Board[]> => {
     const {actions} = useAppStore()
     const globalTemplates = useAppSelector<Board[]>(getGlobalTemplates)
 
-    onMount(() => {
+    onSettled(() => {
         if (octoClient.teamId !== Constants.globalTeamId && globalTemplates().length === 0) {
             actions.globalTemplates.fetchGlobalTemplates()
         }

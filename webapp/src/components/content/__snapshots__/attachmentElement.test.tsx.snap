@@ -22,17 +22,23 @@ exports[`component/content/FileBlock > archived file 1`] = `
         <div
           class="fileElement-file-name"
         />
+        <!---->
         
+        <!---->
       </div>
+      <!---->
       <div
         class="fileElement-file-ext-and-size"
       >
         
          
         
+        <!---->
       </div>
+      <!---->
     </div>
     
+    <!---->
     <div
       class="fileElement-delete-download"
     >
@@ -49,8 +55,11 @@ exports[`component/content/FileBlock > archived file 1`] = `
             class="CompassIcon icon-dots-vertical"
           />
         </button>
+        <!---->
         
+        <!---->
       </div>
+      <!---->
       <div
         class="octo-tooltip"
       >
@@ -61,9 +70,13 @@ exports[`component/content/FileBlock > archived file 1`] = `
             class="CompassIcon icon-download-outline"
           />
         </div>
+        <!---->
         
+        <!---->
       </div>
+      <!---->
     </div>
+    <!---->
   </div>
 </div>
 `;
@@ -90,17 +103,23 @@ exports[`component/content/FileBlock > should match snapshot 1`] = `
         <div
           class="fileElement-file-name"
         />
+        <!---->
         
+        <!---->
       </div>
+      <!---->
       <div
         class="fileElement-file-ext-and-size"
       >
         
          
         
+        <!---->
       </div>
+      <!---->
     </div>
     
+    <!---->
     <div
       class="fileElement-delete-download"
     >
@@ -117,8 +136,11 @@ exports[`component/content/FileBlock > should match snapshot 1`] = `
             class="CompassIcon icon-dots-vertical"
           />
         </button>
+        <!---->
         
+        <!---->
       </div>
+      <!---->
       <div
         class="octo-tooltip"
       >
@@ -129,9 +151,13 @@ exports[`component/content/FileBlock > should match snapshot 1`] = `
             class="CompassIcon icon-download-outline"
           />
         </div>
+        <!---->
         
+        <!---->
       </div>
+      <!---->
     </div>
+    <!---->
   </div>
 </div>
 `;

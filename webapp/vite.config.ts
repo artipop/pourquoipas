@@ -6,7 +6,9 @@ import {fileURLToPath} from 'url'
 import formatjs from '@formatjs/unplugin/vite'
 import {defineConfig} from 'vite'
 import type {Connect, Plugin, ViteDevServer} from 'vite'
-import solid from 'vite-plugin-solid'
+import solid from '@solidjs/vite-plugin'
+
+import {solid1Compat} from './solid1/plugin'
 
 const root = path.dirname(fileURLToPath(import.meta.url))
 const staticDir = path.join(root, 'static')
@@ -88,6 +90,7 @@ export default defineConfig(({mode}) => {
                 ast: true,
                 idInterpolationPattern: '[sha512:contenthash:base64:6]',
             }),
+            solid1Compat(),
             solid(),
             appHtml(),
             appStatic(),

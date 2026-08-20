@@ -1,5 +1,5 @@
-import {Show, createEffect, createMemo, createSignal, onCleanup, onMount} from 'solid-js'
-import type {JSX} from 'solid-js'
+import {Show, createEffect, createMemo, createSignal, onCleanup, onSettled} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 
 import {FormattedMessage, useIntl, IntlShape} from '../../intl'
 
@@ -139,17 +139,17 @@ const CardDetail = (props: Props): JSX.Element => {
 
     useImagePaste(() => props.board.id, () => props.card.id, () => props.card.fields.contentOrder)
 
-    onMount(() => {
+    onSettled(() => {
         if (!title()) {
             setTimeout(() => titleRef?.focus(), 300)
         }
     })
 
-    createEffect(() => {
+    createEffect(() => props.card.title, (fromServer) => {
         if (serverTitle() === title()) {
-            setTitle(props.card.title)
+            setTitle(fromServer)
         }
-        setServerTitle(props.card.title)
+        setServerTitle(fromServer)
     })
 
     onCleanup(() => {
@@ -162,9 +162,7 @@ const CardDetail = (props: Props): JSX.Element => {
     }
 
     const {actions} = useAppStore()
-    createEffect(() => {
-        actions.cards.setCurrent(props.card.id)
-    })
+    createEffect(() => props.card.id, (id) => actions.cards.setCurrent(id))
 
     const blocks = createMemo(() => props.contents.flatMap((value: Block | Block[]): BlockData<any> => {
         const v: Block = Array.isArray(value) ? value[0] : value

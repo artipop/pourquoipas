@@ -1,5 +1,5 @@
-import {onMount} from 'solid-js'
-import type {JSX} from 'solid-js'
+import {onSettled} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 
 import './editable.scss'
 
@@ -136,7 +136,7 @@ const Editable = (props: EditableProps): JSX.Element => {
     let elementRef: HTMLInputElement | undefined
     const elementProps = useEditable(props, () => elementRef)
 
-    onMount(() => {
+    onSettled(() => {
         if (props.autoExpand && elementRef) {
             elementRef.style.width = '100%'
         }

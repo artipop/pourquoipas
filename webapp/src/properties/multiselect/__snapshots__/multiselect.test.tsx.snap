@@ -25,7 +25,9 @@ exports[`properties/multiSelect > shows only the selected options when menu is n
         b
       </span>
     </span>
+    <!---->
     
+    <!---->
   </div>
 </div>
 `;

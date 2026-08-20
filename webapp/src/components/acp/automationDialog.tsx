@@ -1,6 +1,6 @@
 // The Wails-generated Go bindings are PascalCase methods, not constructors.
 /* eslint-disable new-cap */
-import {For, Show, createMemo, createSignal, onMount} from 'solid-js'
+import {For, Show, createMemo, createSignal, onSettled} from 'solid-js'
 
 import {useIntl} from '../../intl'
 
@@ -139,8 +139,9 @@ const AutomationDialog = (props: Props) => {
         }
     }
 
-    onMount(() => {
-        refresh()
+    onSettled(() => {
+        // Not awaited: onSettled reads a returned promise as a cleanup value.
+        void refresh()
 
         // The agents are the machine's and are edited there; this is the board
         // where they have to be nameable, so it picks them up on its own rather

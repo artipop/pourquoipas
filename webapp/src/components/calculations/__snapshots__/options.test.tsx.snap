@@ -19,11 +19,13 @@ exports[`components/calculations/Options > should match snapshot 1`] = `
         class="CalculationOptions__value-container"
       >
         
+        <!---->
         <div
           class="CalculationOptions__single-value"
         >
           Calculate
         </div>
+        <!---->
         
         <input
           aria-controls="cl-0"
@@ -61,11 +63,13 @@ exports[`components/calculations/Options > should match snapshot menu open 1`] =
         class="CalculationOptions__value-container"
       >
         
+        <!---->
         <div
           class="CalculationOptions__single-value"
         >
           Calculate
         </div>
+        <!---->
         
         <input
           aria-activedescendant="cl-1-option-0"
@@ -89,6 +93,7 @@ exports[`components/calculations/Options > should match snapshot menu open 1`] =
         role="listbox"
       >
         
+        <!---->
         <div
           aria-selected="false"
           class="CalculationOptions__option CalculationOptions__option--is-focused"
@@ -105,6 +110,7 @@ exports[`components/calculations/Options > should match snapshot menu open 1`] =
         >
           Max
         </div>
+        <!---->
       </div>
     </div>
   </div>

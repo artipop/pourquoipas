@@ -1,3 +1,5 @@
+import {storePath} from 'solid-js'
+
 import {getCurrentLanguage, storeLanguage as i18nStoreLanguage} from '../i18n'
 
 import type {StoreContext} from './context'
@@ -14,11 +16,11 @@ export const createLanguageActions = ({setState}: StoreContext) => ({
     // already hydrated localStorage from the install's own memory
     // (ui-settings.json), so this read is the right answer, not a guess.
     fetchLanguage() {
-        setState('language', 'value', getCurrentLanguage())
+        setState(storePath('language', 'value', getCurrentLanguage()))
     },
     storeLanguage(lang: string) {
         i18nStoreLanguage(lang)
-        setState('language', 'value', lang)
+        setState(storePath('language', 'value', lang))
     },
 })
 

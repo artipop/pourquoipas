@@ -21,7 +21,6 @@ exports[`components/blocksEditor/blockContent > should match snapshot 1`] = `
       <svg
         class="GripIcon Icon"
         viewBox="0 0 24 24"
-        xmlns="http://www.w3.org/2000/svg"
       >
         <path
           d="M0 0h24v24H0V0z"
@@ -53,10 +52,12 @@ exports[`components/blocksEditor/blockContent > should match snapshot editing 1`
     class="Editor"
   >
     
+    <!---->
     <input
       class="H1"
       data-testid="h1"
     />
+    <!---->
   </div>
 </div>
 `;

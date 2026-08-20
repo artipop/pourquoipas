@@ -1,6 +1,6 @@
 // The Wails-generated Go bindings are PascalCase methods, not constructors.
 /* eslint-disable new-cap */
-import {Show, createSignal, onMount} from 'solid-js'
+import {Show, createSignal, onSettled} from 'solid-js'
 
 import {useIntl} from '../../intl'
 
@@ -49,16 +49,19 @@ const AgentQuickAdd = (props: Props) => {
     // alternative is finding out on a card an hour later.
     const adapter = () => adapters().find((a) => a.kind === kind())
 
-    onMount(async () => {
-        if (!bindings?.ListAgentAdapters) {
-            return
-        }
-        try {
-            setAdapters(JSON.parse(await bindings.ListAgentAdapters()) || [])
-        } catch {
-            // An adapter list we could not read is a warning we cannot show,
-            // not a reason to refuse the form.
-        }
+    onSettled(() => {
+        // Not awaited: onSettled reads a returned promise as a cleanup value.
+        void (async () => {
+            if (!bindings?.ListAgentAdapters) {
+                return
+            }
+            try {
+                setAdapters(JSON.parse(await bindings.ListAgentAdapters()) || [])
+            } catch {
+                // An adapter list we could not read is a warning we cannot show,
+                // not a reason to refuse the form.
+            }
+        })()
     })
 
     const installAdapter = async () => {

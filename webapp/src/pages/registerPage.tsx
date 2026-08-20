@@ -1,5 +1,8 @@
 import {Show, createSignal} from 'solid-js'
-import {A, Navigate, useNavigate} from '@solidjs/router'
+
+import {useNavigate} from '@solidjs/router'
+
+import {Redirect} from '../route'
 
 import {FormattedMessage, useIntl} from '../intl'
 
@@ -41,7 +44,7 @@ const RegisterPage = () => {
     return (
         <Show
             when={!loggedIn()}
-            fallback={<Navigate href={'/'}/>}
+            fallback={<Redirect href={'/'}/>}
         >
             <div class='RegisterPage'>
                 <form
@@ -88,12 +91,12 @@ const RegisterPage = () => {
                         {intl.formatMessage({id: 'register.signup-button', defaultMessage: 'Register'})}
                     </Button>
                 </form>
-                <A href='/login'>
+                <a href='/login'>
                     <FormattedMessage
                         id='register.login-button'
                         defaultMessage={'or log in if you already have an account'}
                     />
-                </A>
+                </a>
                 <Show when={errorMessage()}>
                     <div class='error'>
                         {errorMessage()}

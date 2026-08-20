@@ -1,5 +1,5 @@
 import {For, Show, createEffect, createSignal} from 'solid-js'
-import type {JSX} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 
 import {FormattedMessage, IntlShape} from '../../intl'
 
@@ -93,8 +93,8 @@ export default function KanbanColumnHeader(props: Props): JSX.Element {
         (src: IPropertyOption) => props.onDropToColumn(src, undefined, props.group.option),
     )
 
-    createEffect(() => {
-        setGroupTitle(props.group.option.value)
+    createEffect(() => props.group.option.value, (next) => {
+        setGroupTitle(next)
     })
 
     const classes = () => {

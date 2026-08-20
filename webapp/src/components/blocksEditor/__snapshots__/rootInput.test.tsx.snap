@@ -19,7 +19,9 @@ exports[`components/blocksEditor/rootInput > should match Display snapshot 1`] =
         class="RootInput__value-container"
       >
         
+        <!---->
         
+        <!---->
         
         <input
           aria-controls="cl-0"
@@ -57,7 +59,9 @@ exports[`components/blocksEditor/rootInput > should match Input snapshot 1`] = `
         class="RootInput__value-container"
       >
         
+        <!---->
         
+        <!---->
         
         <input
           aria-controls="cl-1"
@@ -95,7 +99,9 @@ exports[`components/blocksEditor/rootInput > should match Input snapshot with me
         class="RootInput__value-container"
       >
         
+        <!---->
         
+        <!---->
         <div
           class="RootInput__placeholder"
         >
@@ -123,6 +129,7 @@ exports[`components/blocksEditor/rootInput > should match Input snapshot with me
         role="listbox"
       >
         
+        <!---->
         <div
           aria-selected="false"
           class="RootInput__option RootInput__option--is-focused"
@@ -211,6 +218,7 @@ exports[`components/blocksEditor/rootInput > should match Input snapshot with me
         >
           /checkbox Creates a new Checkbox block.
         </div>
+        <!---->
       </div>
     </div>
   </div>

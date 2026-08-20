@@ -24,9 +24,13 @@ exports[`components/cardDetail/CommentsList > comments show up 1`] = `
           </p>
         </div>
       </div>
+      <!---->
       
+      <!---->
       
+      <!---->
     </div>
+    <!---->
     <div
       class="Comment comment"
     >
@@ -41,6 +45,7 @@ exports[`components/cardDetail/CommentsList > comments show up 1`] = `
           class="comment-username"
         />
         
+        <!---->
         <div
           class="octo-tooltip"
         >
@@ -49,8 +54,11 @@ exports[`components/cardDetail/CommentsList > comments show up 1`] = `
           >
             a long time ago
           </div>
+          <!---->
           
+          <!---->
         </div>
+        <!---->
         <div
           aria-label="menuwrapper"
           class="MenuWrapper"
@@ -64,8 +72,11 @@ exports[`components/cardDetail/CommentsList > comments show up 1`] = `
               class="CompassIcon icon-dots-horizontal OptionsIcon"
             />
           </button>
+          <!---->
           
+          <!---->
         </div>
+        <!---->
       </div>
       <div
         class="comment-text"
@@ -89,6 +100,7 @@ exports[`components/cardDetail/CommentsList > comments show up 1`] = `
           class="comment-username"
         />
         
+        <!---->
         <div
           class="octo-tooltip"
         >
@@ -97,8 +109,11 @@ exports[`components/cardDetail/CommentsList > comments show up 1`] = `
           >
             a long time ago
           </div>
+          <!---->
           
+          <!---->
         </div>
+        <!---->
         <div
           aria-label="menuwrapper"
           class="MenuWrapper"
@@ -112,8 +127,11 @@ exports[`components/cardDetail/CommentsList > comments show up 1`] = `
               class="CompassIcon icon-dots-horizontal OptionsIcon"
             />
           </button>
+          <!---->
           
+          <!---->
         </div>
+        <!---->
       </div>
       <div
         class="comment-text"
@@ -123,9 +141,11 @@ exports[`components/cardDetail/CommentsList > comments show up 1`] = `
         </p>
       </div>
     </div>
+    <!---->
     <hr
       class="CommentsList__divider"
     />
+    <!---->
   </div>
 </div>
 `;
@@ -136,6 +156,7 @@ exports[`components/cardDetail/CommentsList > comments show up in readonly mode 
     class="CommentsList"
   >
     
+    <!---->
     <div
       class="Comment comment"
     >
@@ -150,6 +171,7 @@ exports[`components/cardDetail/CommentsList > comments show up in readonly mode 
           class="comment-username"
         />
         
+        <!---->
         <div
           class="octo-tooltip"
         >
@@ -158,9 +180,13 @@ exports[`components/cardDetail/CommentsList > comments show up in readonly mode 
           >
             a long time ago
           </div>
+          <!---->
           
+          <!---->
         </div>
+        <!---->
         
+        <!---->
       </div>
       <div
         class="comment-text"
@@ -184,6 +210,7 @@ exports[`components/cardDetail/CommentsList > comments show up in readonly mode 
           class="comment-username"
         />
         
+        <!---->
         <div
           class="octo-tooltip"
         >
@@ -192,9 +219,13 @@ exports[`components/cardDetail/CommentsList > comments show up in readonly mode 
           >
             a long time ago
           </div>
+          <!---->
           
+          <!---->
         </div>
+        <!---->
         
+        <!---->
       </div>
       <div
         class="comment-text"
@@ -204,9 +235,11 @@ exports[`components/cardDetail/CommentsList > comments show up in readonly mode 
         </p>
       </div>
     </div>
+    <!---->
     <hr
       class="CommentsList__divider"
     />
+    <!---->
   </div>
 </div>
 `;

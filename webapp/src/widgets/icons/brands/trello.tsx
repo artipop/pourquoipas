@@ -1,4 +1,4 @@
-import type {JSX} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 
 // The three marks in this folder are drawn rather than fetched: they stand
 // beside each other in one list, so they have to share a box, a weight and a

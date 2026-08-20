@@ -1,6 +1,6 @@
-import {For, Show, createEffect, createSignal, onCleanup, onMount} from 'solid-js'
-import {render} from 'solid-js/web'
-import type {JSX} from 'solid-js'
+import {For, Show, createEffect, createSignal, onSettled} from 'solid-js'
+import {render} from '@solidjs/web'
+import type {JSX} from '@solidjs/web'
 
 import {Calendar} from '@fullcalendar/core'
 import type {EventChangeArg, EventInput, EventContentArg, DayCellContentArg, LocaleInput} from '@fullcalendar/core'
@@ -278,9 +278,9 @@ const CalendarFullView = (props: Props): JSX.Element => {
     // their own chunk, fetched only when the UI is not English, which is the
     // same bargain hooks/momentLocale.ts takes with moment's.
     const [locales, setLocales] = createSignal<LocaleInput[]>([])
-    createEffect(() => {
-        if (intl.locale.toLowerCase() === 'en' || locales().length > 0) {
-            return
+    createEffect(() => [intl.locale, locales().length] as const, ([locale, loaded]) => {
+        if (locale.toLowerCase() === 'en' || loaded > 0) {
+            return undefined
         }
         let cancelled = false
         import('@fullcalendar/core/locales-all').then((mod) => {
@@ -288,9 +288,9 @@ const CalendarFullView = (props: Props): JSX.Element => {
                 setLocales(mod.default)
             }
         })
-        onCleanup(() => {
+        return () => {
             cancelled = true
-        })
+        }
     })
 
     // Named only once the definitions are here: FullCalendar warns about a
@@ -325,7 +325,13 @@ const CalendarFullView = (props: Props): JSX.Element => {
         return {domNodes: [container]}
     }
 
-    onMount(() => {
+    // Every content hook builds a Solid tree of its own (mountInto), and
+    // FullCalendar calls them while it is being constructed — so the whole
+    // construction creates reactive roots, which Solid 2 refuses to do inside
+    // a settle. It therefore happens in the microtask straight after one, and
+    // `live` is what stops a component disposed in between from building a
+    // calendar nobody is looking at.
+    const build = () => {
         calendar = new Calendar(host!, {
             plugins: [dayGridPlugin, interactionPlugin],
             initialView: span(),
@@ -368,36 +374,48 @@ const CalendarFullView = (props: Props): JSX.Element => {
             },
         })
         calendar.render()
+    }
 
-        onCleanup(() => {
+    onSettled(() => {
+        let live = true
+        queueMicrotask(() => {
+            if (live) {
+                build()
+            }
+        })
+
+        return () => {
+            live = false
             calendar?.destroy()
             eventDisposers.forEach((dispose) => dispose())
             eventDisposers.clear()
             cellDisposers.forEach((dispose) => dispose())
             cellDisposers.clear()
-        })
+        }
     })
 
     // The options that follow the store: the event list, and what dragging is
     // allowed to do with it.
-    createEffect(() => {
-        if (!calendar) {
-            return
-        }
-        calendar.setOption('events', myEventsList())
-        calendar.setOption('editable', isEditable())
-        calendar.setOption('eventResizableFromStart', isEditable())
-        calendar.setOption('selectable', isSelectable())
-        calendar.setOption('buttonText', buttonText())
-        calendar.setOption('locales', locales())
-        calendar.setOption('locale', calendarLocale())
-    })
+    createEffect(
+        () => [myEventsList(), isEditable(), isSelectable(), buttonText(), locales(), calendarLocale()] as const,
+        ([events, editable, selectable, text, all, locale]) => {
+            if (!calendar) {
+                return
+            }
+            calendar.setOption('events', events)
+            calendar.setOption('editable', editable)
+            calendar.setOption('eventResizableFromStart', editable)
+            calendar.setOption('selectable', selectable)
+            calendar.setOption('buttonText', text)
+            calendar.setOption('locales', all)
+            calendar.setOption('locale', locale)
+        },
+    )
 
     // …and the span itself, when it was changed somewhere else: another window
     // on the same board, or this one coming back to a view it already had an
     // answer for.
-    createEffect(() => {
-        const wanted = span()
+    createEffect(span, (wanted) => {
         if (calendar && calendar.view.type !== wanted) {
             calendar.changeView(wanted)
         }

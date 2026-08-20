@@ -9,9 +9,13 @@ exports[`properties/createdBy > should match snapshot 1`] = `
       class="Person-item"
     >
       
+      <!---->
       username_1
+      <!---->
       
+      <!---->
       
+      <!---->
     </div>
   </div>
 </div>
@@ -26,7 +30,9 @@ exports[`properties/createdBy > should match snapshot as guest 1`] = `
       class="Person-item"
     >
       
+      <!---->
       username_1
+      <!---->
       <div
         class="GuestBadge"
       >
@@ -36,7 +42,9 @@ exports[`properties/createdBy > should match snapshot as guest 1`] = `
           Guest
         </div>
       </div>
+      <!---->
       
+      <!---->
     </div>
   </div>
 </div>

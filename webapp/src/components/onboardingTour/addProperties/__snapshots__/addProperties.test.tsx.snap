@@ -84,6 +84,7 @@ exports[`components/onboardingTour/addComments/AddPropertiesTourStep > after hov
           class="tutorial-tour-tip__btn-ctr"
         >
           
+          <!---->
           <button
             class="Button filled size--small tipNextButton"
             type="button"
@@ -95,7 +96,9 @@ exports[`components/onboardingTour/addComments/AddPropertiesTourStep > after hov
             <i
               class="CompassIcon icon-chevron-right icon"
             />
+            <!---->
           </button>
+          <!---->
         </div>
       </div>
       

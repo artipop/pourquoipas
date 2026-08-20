@@ -1,6 +1,6 @@
 // The Wails-generated Go bindings are PascalCase methods, not constructors.
 /* eslint-disable new-cap */
-import {Accessor, createMemo, createSignal, onCleanup, onMount} from 'solid-js'
+import {Accessor, createMemo, createSignal, onSettled} from 'solid-js'
 
 import {agentBindings} from './bindings'
 import {onAgentEvent} from './agentEvents'
@@ -98,7 +98,7 @@ function subscribe(): () => void {
 // useCardTerminal is the terminal running on one card, for as long as the
 // component asking lives — the id, so whoever shows it can say which one.
 export function useCardTerminal(cardId: Accessor<string>): Accessor<string | undefined> {
-    onMount(() => onCleanup(subscribe()))
+    onSettled(() => subscribe())
     return createMemo(() => byCard()[cardId()])
 }
 
@@ -106,7 +106,7 @@ export function useCardTerminal(cardId: Accessor<string>): Accessor<string | und
 // or nothing when it did not — what the card's button draws its paused state
 // from, and the sentence it says when hovered.
 export function useCardCutOff(cardId: Accessor<string>): Accessor<string | undefined> {
-    onMount(() => onCleanup(subscribe()))
+    onSettled(() => subscribe())
     return createMemo(() => cutOffByCard()[cardId()])
 }
 

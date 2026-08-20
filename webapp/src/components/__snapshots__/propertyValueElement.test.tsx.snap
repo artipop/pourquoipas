@@ -5,7 +5,7 @@ exports[`components/propertyValueElement > Generic fields should allow cancel 1`
   <input
     class="Editable octo-propertyvalue"
     placeholder="Empty"
-    spellcheck="true"
+    spellcheck=""
     title=""
   />
 </div>
@@ -34,6 +34,7 @@ exports[`components/propertyValueElement > URL fields should allow cancel 1`] = 
         class="CompassIcon icon-pencil-outline EditIcon"
       />
     </button>
+    <!---->
     <button
       aria-label="Copy"
       class="IconButton Button_Copy"
@@ -44,6 +45,7 @@ exports[`components/propertyValueElement > URL fields should allow cancel 1`] = 
         class="CompassIcon icon-content-copy content-copy"
       />
     </button>
+    <!---->
   </div>
 </div>
 `;
@@ -62,8 +64,11 @@ exports[`components/propertyValueElement > should match snapshot, date, array va
         Empty
       </span>
       
+      <!---->
     </button>
+    <!---->
     
+    <!---->
   </div>
 </div>
 `;
@@ -113,7 +118,9 @@ exports[`components/propertyValueElement > should match snapshot, multi-select 1
         />
       </button>
     </span>
+    <!---->
     
+    <!---->
   </div>
 </div>
 `;
@@ -123,7 +130,7 @@ exports[`components/propertyValueElement > should match snapshot, person, array 
   <input
     class="Editable octo-propertyvalue"
     placeholder="Empty"
-    spellcheck="true"
+    spellcheck=""
     title=""
   />
 </div>
@@ -202,6 +209,7 @@ exports[`components/propertyValueElement > should match snapshot, url, array val
         class="CompassIcon icon-pencil-outline EditIcon"
       />
     </button>
+    <!---->
     <button
       aria-label="Copy"
       class="IconButton Button_Copy"
@@ -212,6 +220,7 @@ exports[`components/propertyValueElement > should match snapshot, url, array val
         class="CompassIcon icon-content-copy content-copy"
       />
     </button>
+    <!---->
   </div>
 </div>
 `;

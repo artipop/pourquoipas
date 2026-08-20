@@ -34,7 +34,7 @@ exports[`components/table/TableRows > should match snapshot, fire events 1`] = `
         <input
           class="Editable "
           placeholder="Untitled"
-          spellcheck="true"
+          spellcheck=""
           title="title"
         />
       </div>
@@ -56,9 +56,13 @@ exports[`components/table/TableRows > should match snapshot, fire events 1`] = `
               class="CompassIcon icon-dots-horizontal OptionsIcon"
             />
           </button>
+          <!---->
           
+          <!---->
         </div>
+        <!---->
         
+        <!---->
       </div>
       <div
         class="open-button"
@@ -72,11 +76,13 @@ exports[`components/table/TableRows > should match snapshot, fire events 1`] = `
             Open
           </span>
           
+          <!---->
         </button>
       </div>
     </div>
+    <!---->
     
-    
+    <!---->
   </div>
 </div>
 `;

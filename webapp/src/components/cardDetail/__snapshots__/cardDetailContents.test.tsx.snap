@@ -60,7 +60,9 @@ exports[`components/cardDetail/cardDetailContents > should match snapshot after 
                   class="CompassIcon icon-dots-horizontal OptionsIcon"
                 />
               </button>
+              <!---->
               
+              <!---->
             </div>
             <div
               class="dnd-handle"
@@ -68,7 +70,6 @@ exports[`components/cardDetail/cardDetailContents > should match snapshot after 
               <svg
                 class="GripIcon Icon"
                 viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
               >
                 <path
                   d="M0 0h24v24H0V0z"
@@ -84,15 +85,19 @@ exports[`components/cardDetail/cardDetailContents > should match snapshot after 
             class="addToRow "
             style="flex:none;height:100%"
           />
+          <!---->
           <div
             class="DividerElement"
           />
+          <!---->
         </div>
         <div
           class="addToRow "
         />
       </div>
+      <!---->
       
+      <!---->
     </div>
     <div>
       <div
@@ -125,7 +130,9 @@ exports[`components/cardDetail/cardDetailContents > should match snapshot after 
                     class="CompassIcon icon-dots-horizontal OptionsIcon"
                   />
                 </button>
+                <!---->
                 
+                <!---->
               </div>
               <div
                 class="dnd-handle"
@@ -133,7 +140,6 @@ exports[`components/cardDetail/cardDetailContents > should match snapshot after 
                 <svg
                   class="GripIcon Icon"
                   viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
                     d="M0 0h24v24H0V0z"
@@ -149,9 +155,11 @@ exports[`components/cardDetail/cardDetailContents > should match snapshot after 
               class="addToRow "
               style="flex:none;height:100%"
             />
+            <!---->
             <div
               class="DividerElement"
             />
+            <!---->
           </div>
           <div
             class="addToRow "
@@ -180,7 +188,9 @@ exports[`components/cardDetail/cardDetailContents > should match snapshot after 
                     class="CompassIcon icon-dots-horizontal OptionsIcon"
                   />
                 </button>
+                <!---->
                 
+                <!---->
               </div>
               <div
                 class="dnd-handle"
@@ -188,7 +198,6 @@ exports[`components/cardDetail/cardDetailContents > should match snapshot after 
                 <svg
                   class="GripIcon Icon"
                   viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
                     d="M0 0h24v24H0V0z"
@@ -201,9 +210,11 @@ exports[`components/cardDetail/cardDetailContents > should match snapshot after 
               </div>
             </div>
             
+            <!---->
             <div
               class="DividerElement"
             />
+            <!---->
           </div>
           <div
             class="addToRow "
@@ -251,7 +262,9 @@ exports[`components/cardDetail/cardDetailContents > should match snapshot after 
                   class="CompassIcon icon-dots-horizontal OptionsIcon"
                 />
               </button>
+              <!---->
               
+              <!---->
             </div>
             <div
               class="dnd-handle"
@@ -259,7 +272,6 @@ exports[`components/cardDetail/cardDetailContents > should match snapshot after 
               <svg
                 class="GripIcon Icon"
                 viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
               >
                 <path
                   d="M0 0h24v24H0V0z"
@@ -275,15 +287,19 @@ exports[`components/cardDetail/cardDetailContents > should match snapshot after 
             class="addToRow "
             style="flex:none;height:100%"
           />
+          <!---->
           <div
             class="DividerElement"
           />
+          <!---->
         </div>
         <div
           class="addToRow "
         />
       </div>
+      <!---->
       
+      <!---->
     </div>
     <div>
       <div
@@ -312,7 +328,9 @@ exports[`components/cardDetail/cardDetailContents > should match snapshot after 
                   class="CompassIcon icon-dots-horizontal OptionsIcon"
                 />
               </button>
+              <!---->
               
+              <!---->
             </div>
             <div
               class="dnd-handle"
@@ -320,7 +338,6 @@ exports[`components/cardDetail/cardDetailContents > should match snapshot after 
               <svg
                 class="GripIcon Icon"
                 viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
               >
                 <path
                   d="M0 0h24v24H0V0z"
@@ -336,18 +353,22 @@ exports[`components/cardDetail/cardDetailContents > should match snapshot after 
             class="addToRow "
             style="flex:none;height:100%"
           />
+          <!---->
           <div
             class="DividerElement"
           />
+          <!---->
         </div>
         <div
           class="addToRow "
         />
       </div>
+      <!---->
       <div
         class="addToRow "
         style="width:94%;height:10px;margin-left:48px"
       />
+      <!---->
     </div>
   </div>
 </div>
@@ -385,7 +406,9 @@ exports[`components/cardDetail/cardDetailContents > should match snapshot after 
                   class="CompassIcon icon-dots-horizontal OptionsIcon"
                 />
               </button>
+              <!---->
               
+              <!---->
             </div>
             <div
               class="dnd-handle"
@@ -393,7 +416,6 @@ exports[`components/cardDetail/cardDetailContents > should match snapshot after 
               <svg
                 class="GripIcon Icon"
                 viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
               >
                 <path
                   d="M0 0h24v24H0V0z"
@@ -409,15 +431,19 @@ exports[`components/cardDetail/cardDetailContents > should match snapshot after 
             class="addToRow "
             style="flex:none;height:100%"
           />
+          <!---->
           <div
             class="DividerElement"
           />
+          <!---->
         </div>
         <div
           class="addToRow "
         />
       </div>
+      <!---->
       
+      <!---->
     </div>
     <div>
       <div
@@ -446,7 +472,9 @@ exports[`components/cardDetail/cardDetailContents > should match snapshot after 
                   class="CompassIcon icon-dots-horizontal OptionsIcon"
                 />
               </button>
+              <!---->
               
+              <!---->
             </div>
             <div
               class="dnd-handle"
@@ -454,7 +482,6 @@ exports[`components/cardDetail/cardDetailContents > should match snapshot after 
               <svg
                 class="GripIcon Icon"
                 viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
               >
                 <path
                   d="M0 0h24v24H0V0z"
@@ -470,18 +497,22 @@ exports[`components/cardDetail/cardDetailContents > should match snapshot after 
             class="addToRow "
             style="flex:none;height:100%"
           />
+          <!---->
           <div
             class="DividerElement"
           />
+          <!---->
         </div>
         <div
           class="addToRow "
         />
       </div>
+      <!---->
       <div
         class="addToRow "
         style="width:94%;height:10px;margin-left:48px"
       />
+      <!---->
     </div>
   </div>
 </div>
@@ -519,7 +550,9 @@ exports[`components/cardDetail/cardDetailContents > should match snapshot with c
                   class="CompassIcon icon-dots-horizontal OptionsIcon"
                 />
               </button>
+              <!---->
               
+              <!---->
             </div>
             <div
               class="dnd-handle"
@@ -527,7 +560,6 @@ exports[`components/cardDetail/cardDetailContents > should match snapshot with c
               <svg
                 class="GripIcon Icon"
                 viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
               >
                 <path
                   d="M0 0h24v24H0V0z"
@@ -543,18 +575,22 @@ exports[`components/cardDetail/cardDetailContents > should match snapshot with c
             class="addToRow "
             style="flex:none;height:100%"
           />
+          <!---->
           <div
             class="DividerElement"
           />
+          <!---->
         </div>
         <div
           class="addToRow "
         />
       </div>
+      <!---->
       <div
         class="addToRow "
         style="width:94%;height:10px;margin-left:48px"
       />
+      <!---->
     </div>
   </div>
 </div>
@@ -592,7 +628,9 @@ exports[`components/cardDetail/cardDetailContents > should match snapshot with c
                   class="CompassIcon icon-dots-horizontal OptionsIcon"
                 />
               </button>
+              <!---->
               
+              <!---->
             </div>
             <div
               class="dnd-handle"
@@ -600,7 +638,6 @@ exports[`components/cardDetail/cardDetailContents > should match snapshot with c
               <svg
                 class="GripIcon Icon"
                 viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
               >
                 <path
                   d="M0 0h24v24H0V0z"
@@ -616,15 +653,19 @@ exports[`components/cardDetail/cardDetailContents > should match snapshot with c
             class="addToRow "
             style="flex:none;height:100%"
           />
+          <!---->
           <div
             class="DividerElement"
           />
+          <!---->
         </div>
         <div
           class="addToRow "
         />
       </div>
+      <!---->
       
+      <!---->
     </div>
     <div>
       <div
@@ -657,7 +698,9 @@ exports[`components/cardDetail/cardDetailContents > should match snapshot with c
                     class="CompassIcon icon-dots-horizontal OptionsIcon"
                   />
                 </button>
+                <!---->
                 
+                <!---->
               </div>
               <div
                 class="dnd-handle"
@@ -665,7 +708,6 @@ exports[`components/cardDetail/cardDetailContents > should match snapshot with c
                 <svg
                   class="GripIcon Icon"
                   viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
                     d="M0 0h24v24H0V0z"
@@ -681,9 +723,11 @@ exports[`components/cardDetail/cardDetailContents > should match snapshot with c
               class="addToRow "
               style="flex:none;height:100%"
             />
+            <!---->
             <div
               class="DividerElement"
             />
+            <!---->
           </div>
           <div
             class="addToRow "
@@ -712,7 +756,9 @@ exports[`components/cardDetail/cardDetailContents > should match snapshot with c
                     class="CompassIcon icon-dots-horizontal OptionsIcon"
                   />
                 </button>
+                <!---->
                 
+                <!---->
               </div>
               <div
                 class="dnd-handle"
@@ -720,7 +766,6 @@ exports[`components/cardDetail/cardDetailContents > should match snapshot with c
                 <svg
                   class="GripIcon Icon"
                   viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
                     d="M0 0h24v24H0V0z"
@@ -733,9 +778,11 @@ exports[`components/cardDetail/cardDetailContents > should match snapshot with c
               </div>
             </div>
             
+            <!---->
             <div
               class="DividerElement"
             />
+            <!---->
           </div>
           <div
             class="addToRow "

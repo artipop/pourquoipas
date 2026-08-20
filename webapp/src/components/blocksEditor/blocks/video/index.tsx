@@ -1,4 +1,4 @@
-import {Show, createEffect, createSignal, onMount} from 'solid-js'
+import {Show, createEffect, createSignal, onSettled} from 'solid-js'
 
 import {BlockInputProps, ContentType} from '../types'
 import octoClient from '../../../../octoClient'
@@ -22,7 +22,7 @@ const Video: ContentType<FileInfo> = {
     Display: (props: BlockInputProps<FileInfo>) => {
         const [videoDataUrl, setVideoDataUrl] = createSignal<string|null>(null)
 
-        createEffect(() => {
+        createEffect(() => props.value, () => {
             if (!videoDataUrl() && props.value && props.value.file && typeof props.value.file === 'string') {
                 octoClient.getFileAsDataUrl(props.currentBoardId || '', props.value.file).then((fileURL) => {
                     setVideoDataUrl(fileURL.url || '')
@@ -46,7 +46,7 @@ const Video: ContentType<FileInfo> = {
     },
     Input: (props: BlockInputProps<FileInfo>) => {
         let ref: HTMLInputElement|undefined
-        onMount(() => {
+        onSettled(() => {
             ref?.click()
         })
 

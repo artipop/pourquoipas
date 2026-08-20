@@ -1,6 +1,6 @@
 // The Wails-generated Go bindings are PascalCase methods, not constructors.
 /* eslint-disable new-cap */
-import {Accessor, createSignal, onCleanup, onMount} from 'solid-js'
+import {Accessor, createSignal, onSettled} from 'solid-js'
 
 import {agentBindings} from '../acp/bindings'
 import {onAgentEvent} from '../acp/agentEvents'
@@ -99,7 +99,7 @@ function subscribe(): () => void {
 
 // useUpdateState keeps a component current for as long as it lives.
 export function useUpdateState(): Accessor<UpdateState> {
-    onMount(() => onCleanup(subscribe()))
+    onSettled(() => subscribe())
     return state
 }
 

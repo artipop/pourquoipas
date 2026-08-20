@@ -1,4 +1,4 @@
-import {produce} from 'solid-js/store'
+import {storePath} from 'solid-js'
 
 import {ContentBlock} from '../blocks/contentBlock'
 import {Block} from '../blocks/block'
@@ -33,7 +33,7 @@ export const contentsFromBlocks = (blocks: Block[]): ContentsState => {
 
 export const createContentsActions = ({setState}: StoreContext) => ({
     updateContents(contents: ContentBlock[]) {
-        setState('contents', produce((state) => {
+        setState(({contents: state}) => {
             for (const content of contents) {
                 if (content.deleteAt === 0) {
                     let existsInParent = false
@@ -66,10 +66,10 @@ export const createContentsActions = ({setState}: StoreContext) => ({
                     delete state.contents[content.id]
                 }
             }
-        }))
+        })
     },
     setContents(next: ContentsState) {
-        setState('contents', next)
+        setState(storePath('contents', next))
     },
 })
 

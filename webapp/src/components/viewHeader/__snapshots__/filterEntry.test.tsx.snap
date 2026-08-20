@@ -19,7 +19,9 @@ exports[`components/viewHeader/filterEntry > return filterEntry 1`] = `
           Status
         </span>
         
+        <!---->
       </button>
+      <!---->
       <div
         class="Menu noselect bottom"
       >
@@ -200,7 +202,9 @@ exports[`components/viewHeader/filterEntry > return filterEntry 1`] = `
           </div>
         </div>
       </div>
+      <!---->
     </div>
+    <!---->
     <div
       aria-label="menuwrapper"
       class="MenuWrapper"
@@ -215,9 +219,13 @@ exports[`components/viewHeader/filterEntry > return filterEntry 1`] = `
           includes
         </span>
         
+        <!---->
       </button>
+      <!---->
       
+      <!---->
     </div>
+    <!---->
     <div
       aria-label="menuwrapper"
       class="MenuWrapper filterValue"
@@ -232,8 +240,11 @@ exports[`components/viewHeader/filterEntry > return filterEntry 1`] = `
           Status
         </span>
         
+        <!---->
       </button>
+      <!---->
       
+      <!---->
     </div>
     <div
       class="octo-spacer"
@@ -247,7 +258,9 @@ exports[`components/viewHeader/filterEntry > return filterEntry 1`] = `
         Delete
       </span>
       
+      <!---->
     </button>
+    <!---->
   </div>
 </div>
 `;
@@ -271,9 +284,13 @@ exports[`components/viewHeader/filterEntry > return filterEntry and click on del
           Status
         </span>
         
+        <!---->
       </button>
+      <!---->
       
+      <!---->
     </div>
+    <!---->
     <div
       aria-label="menuwrapper"
       class="MenuWrapper override menuOpened"
@@ -288,7 +305,9 @@ exports[`components/viewHeader/filterEntry > return filterEntry and click on del
           includes
         </span>
         
+        <!---->
       </button>
+      <!---->
       <div
         class="Menu noselect bottom"
       >
@@ -442,7 +461,9 @@ exports[`components/viewHeader/filterEntry > return filterEntry and click on del
           </div>
         </div>
       </div>
+      <!---->
     </div>
+    <!---->
     <div
       aria-label="menuwrapper"
       class="MenuWrapper filterValue"
@@ -457,8 +478,11 @@ exports[`components/viewHeader/filterEntry > return filterEntry and click on del
           Status
         </span>
         
+        <!---->
       </button>
+      <!---->
       
+      <!---->
     </div>
     <div
       class="octo-spacer"
@@ -472,7 +496,9 @@ exports[`components/viewHeader/filterEntry > return filterEntry and click on del
         Delete
       </span>
       
+      <!---->
     </button>
+    <!---->
   </div>
 </div>
 `;
@@ -496,7 +522,9 @@ exports[`components/viewHeader/filterEntry > return filterEntry and click on dif
           Status
         </span>
         
+        <!---->
       </button>
+      <!---->
       <div
         class="Menu noselect bottom"
       >
@@ -677,7 +705,9 @@ exports[`components/viewHeader/filterEntry > return filterEntry and click on dif
           </div>
         </div>
       </div>
+      <!---->
     </div>
+    <!---->
     <div
       aria-label="menuwrapper"
       class="MenuWrapper"
@@ -692,9 +722,13 @@ exports[`components/viewHeader/filterEntry > return filterEntry and click on dif
           includes
         </span>
         
+        <!---->
       </button>
+      <!---->
       
+      <!---->
     </div>
+    <!---->
     <div
       aria-label="menuwrapper"
       class="MenuWrapper filterValue"
@@ -709,8 +743,11 @@ exports[`components/viewHeader/filterEntry > return filterEntry and click on dif
           Status
         </span>
         
+        <!---->
       </button>
+      <!---->
       
+      <!---->
     </div>
     <div
       class="octo-spacer"
@@ -724,7 +761,9 @@ exports[`components/viewHeader/filterEntry > return filterEntry and click on dif
         Delete
       </span>
       
+      <!---->
     </button>
+    <!---->
   </div>
 </div>
 `;
@@ -748,7 +787,9 @@ exports[`components/viewHeader/filterEntry > return filterEntry and click on dif
           Property 1
         </span>
         
+        <!---->
       </button>
+      <!---->
       <div
         class="Menu noselect bottom"
       >
@@ -929,7 +970,9 @@ exports[`components/viewHeader/filterEntry > return filterEntry and click on dif
           </div>
         </div>
       </div>
+      <!---->
     </div>
+    <!---->
     <div
       aria-label="menuwrapper"
       class="MenuWrapper"
@@ -944,9 +987,13 @@ exports[`components/viewHeader/filterEntry > return filterEntry and click on dif
           is set
         </span>
         
+        <!---->
       </button>
+      <!---->
       
+      <!---->
     </div>
+    <!---->
     
     <div
       class="octo-spacer"
@@ -960,7 +1007,9 @@ exports[`components/viewHeader/filterEntry > return filterEntry and click on dif
         Delete
       </span>
       
+      <!---->
     </button>
+    <!---->
   </div>
 </div>
 `;
@@ -984,9 +1033,13 @@ exports[`components/viewHeader/filterEntry > return filterEntry and click on doe
           Status
         </span>
         
+        <!---->
       </button>
+      <!---->
       
+      <!---->
     </div>
+    <!---->
     <div
       aria-label="menuwrapper"
       class="MenuWrapper override menuOpened"
@@ -1001,7 +1054,9 @@ exports[`components/viewHeader/filterEntry > return filterEntry and click on doe
           includes
         </span>
         
+        <!---->
       </button>
+      <!---->
       <div
         class="Menu noselect bottom"
       >
@@ -1155,7 +1210,9 @@ exports[`components/viewHeader/filterEntry > return filterEntry and click on doe
           </div>
         </div>
       </div>
+      <!---->
     </div>
+    <!---->
     <div
       aria-label="menuwrapper"
       class="MenuWrapper filterValue"
@@ -1170,8 +1227,11 @@ exports[`components/viewHeader/filterEntry > return filterEntry and click on doe
           Status
         </span>
         
+        <!---->
       </button>
+      <!---->
       
+      <!---->
     </div>
     <div
       class="octo-spacer"
@@ -1185,7 +1245,9 @@ exports[`components/viewHeader/filterEntry > return filterEntry and click on doe
         Delete
       </span>
       
+      <!---->
     </button>
+    <!---->
   </div>
 </div>
 `;
@@ -1209,9 +1271,13 @@ exports[`components/viewHeader/filterEntry > return filterEntry and click on inc
           Status
         </span>
         
+        <!---->
       </button>
+      <!---->
       
+      <!---->
     </div>
+    <!---->
     <div
       aria-label="menuwrapper"
       class="MenuWrapper override menuOpened"
@@ -1226,7 +1292,9 @@ exports[`components/viewHeader/filterEntry > return filterEntry and click on inc
           includes
         </span>
         
+        <!---->
       </button>
+      <!---->
       <div
         class="Menu noselect bottom"
       >
@@ -1380,7 +1448,9 @@ exports[`components/viewHeader/filterEntry > return filterEntry and click on inc
           </div>
         </div>
       </div>
+      <!---->
     </div>
+    <!---->
     <div
       aria-label="menuwrapper"
       class="MenuWrapper filterValue"
@@ -1395,8 +1465,11 @@ exports[`components/viewHeader/filterEntry > return filterEntry and click on inc
           Status
         </span>
         
+        <!---->
       </button>
+      <!---->
       
+      <!---->
     </div>
     <div
       class="octo-spacer"
@@ -1410,7 +1483,9 @@ exports[`components/viewHeader/filterEntry > return filterEntry and click on inc
         Delete
       </span>
       
+      <!---->
     </button>
+    <!---->
   </div>
 </div>
 `;
@@ -1434,9 +1509,13 @@ exports[`components/viewHeader/filterEntry > return filterEntry and click on is 
           Status
         </span>
         
+        <!---->
       </button>
+      <!---->
       
+      <!---->
     </div>
+    <!---->
     <div
       aria-label="menuwrapper"
       class="MenuWrapper override menuOpened"
@@ -1451,7 +1530,9 @@ exports[`components/viewHeader/filterEntry > return filterEntry and click on is 
           includes
         </span>
         
+        <!---->
       </button>
+      <!---->
       <div
         class="Menu noselect bottom"
       >
@@ -1605,7 +1686,9 @@ exports[`components/viewHeader/filterEntry > return filterEntry and click on is 
           </div>
         </div>
       </div>
+      <!---->
     </div>
+    <!---->
     <div
       aria-label="menuwrapper"
       class="MenuWrapper filterValue"
@@ -1620,8 +1703,11 @@ exports[`components/viewHeader/filterEntry > return filterEntry and click on is 
           Status
         </span>
         
+        <!---->
       </button>
+      <!---->
       
+      <!---->
     </div>
     <div
       class="octo-spacer"
@@ -1635,7 +1721,9 @@ exports[`components/viewHeader/filterEntry > return filterEntry and click on is 
         Delete
       </span>
       
+      <!---->
     </button>
+    <!---->
   </div>
 </div>
 `;
@@ -1659,9 +1747,13 @@ exports[`components/viewHeader/filterEntry > return filterEntry and click on is 
           Status
         </span>
         
+        <!---->
       </button>
+      <!---->
       
+      <!---->
     </div>
+    <!---->
     <div
       aria-label="menuwrapper"
       class="MenuWrapper override menuOpened"
@@ -1676,7 +1768,9 @@ exports[`components/viewHeader/filterEntry > return filterEntry and click on is 
           includes
         </span>
         
+        <!---->
       </button>
+      <!---->
       <div
         class="Menu noselect bottom"
       >
@@ -1830,7 +1924,9 @@ exports[`components/viewHeader/filterEntry > return filterEntry and click on is 
           </div>
         </div>
       </div>
+      <!---->
     </div>
+    <!---->
     <div
       aria-label="menuwrapper"
       class="MenuWrapper filterValue"
@@ -1845,8 +1941,11 @@ exports[`components/viewHeader/filterEntry > return filterEntry and click on is 
           Status
         </span>
         
+        <!---->
       </button>
+      <!---->
       
+      <!---->
     </div>
     <div
       class="octo-spacer"
@@ -1860,7 +1959,9 @@ exports[`components/viewHeader/filterEntry > return filterEntry and click on is 
         Delete
       </span>
       
+      <!---->
     </button>
+    <!---->
   </div>
 </div>
 `;
@@ -1884,7 +1985,9 @@ exports[`components/viewHeader/filterEntry > return filterEntry and click on sta
           (unknown)
         </span>
         
+        <!---->
       </button>
+      <!---->
       <div
         class="Menu noselect bottom"
       >
@@ -2065,7 +2168,9 @@ exports[`components/viewHeader/filterEntry > return filterEntry and click on sta
           </div>
         </div>
       </div>
+      <!---->
     </div>
+    <!---->
     <div
       aria-label="menuwrapper"
       class="MenuWrapper"
@@ -2080,9 +2185,13 @@ exports[`components/viewHeader/filterEntry > return filterEntry and click on sta
           (unknown)
         </span>
         
+        <!---->
       </button>
+      <!---->
       
+      <!---->
     </div>
+    <!---->
     
     <div
       class="octo-spacer"
@@ -2096,7 +2205,9 @@ exports[`components/viewHeader/filterEntry > return filterEntry and click on sta
         Delete
       </span>
       
+      <!---->
     </button>
+    <!---->
   </div>
 </div>
 `;
@@ -2120,9 +2231,13 @@ exports[`components/viewHeader/filterEntry > return filterEntry for boolean fiel
           Property 1
         </span>
         
+        <!---->
       </button>
+      <!---->
       
+      <!---->
     </div>
+    <!---->
     <div
       aria-label="menuwrapper"
       class="MenuWrapper"
@@ -2137,9 +2252,13 @@ exports[`components/viewHeader/filterEntry > return filterEntry for boolean fiel
           is set
         </span>
         
+        <!---->
       </button>
+      <!---->
       
+      <!---->
     </div>
+    <!---->
     
     <div
       class="octo-spacer"
@@ -2153,7 +2272,9 @@ exports[`components/viewHeader/filterEntry > return filterEntry for boolean fiel
         Delete
       </span>
       
+      <!---->
     </button>
+    <!---->
   </div>
 </div>
 `;
@@ -2177,9 +2298,13 @@ exports[`components/viewHeader/filterEntry > return filterEntry for boolean fiel
           Property 1
         </span>
         
+        <!---->
       </button>
+      <!---->
       
+      <!---->
     </div>
+    <!---->
     <div
       aria-label="menuwrapper"
       class="MenuWrapper override menuOpened"
@@ -2194,7 +2319,9 @@ exports[`components/viewHeader/filterEntry > return filterEntry for boolean fiel
           is set
         </span>
         
+        <!---->
       </button>
+      <!---->
       <div
         class="Menu noselect bottom"
       >
@@ -2294,7 +2421,9 @@ exports[`components/viewHeader/filterEntry > return filterEntry for boolean fiel
           </div>
         </div>
       </div>
+      <!---->
     </div>
+    <!---->
     
     <div
       class="octo-spacer"
@@ -2308,7 +2437,9 @@ exports[`components/viewHeader/filterEntry > return filterEntry for boolean fiel
         Delete
       </span>
       
+      <!---->
     </button>
+    <!---->
   </div>
 </div>
 `;
@@ -2332,9 +2463,13 @@ exports[`components/viewHeader/filterEntry > return filterEntry for date field 1
           Property 3
         </span>
         
+        <!---->
       </button>
+      <!---->
       
+      <!---->
     </div>
+    <!---->
     <div
       aria-label="menuwrapper"
       class="MenuWrapper"
@@ -2349,9 +2484,13 @@ exports[`components/viewHeader/filterEntry > return filterEntry for date field 1
           is
         </span>
         
+        <!---->
       </button>
+      <!---->
       
+      <!---->
     </div>
+    <!---->
     <div
       class="DateFilter empty "
     >
@@ -2364,8 +2503,11 @@ exports[`components/viewHeader/filterEntry > return filterEntry for date field 1
           Empty
         </span>
         
+        <!---->
       </button>
+      <!---->
       
+      <!---->
     </div>
     <div
       class="octo-spacer"
@@ -2379,7 +2521,9 @@ exports[`components/viewHeader/filterEntry > return filterEntry for date field 1
         Delete
       </span>
       
+      <!---->
     </button>
+    <!---->
   </div>
 </div>
 `;
@@ -2403,9 +2547,13 @@ exports[`components/viewHeader/filterEntry > return filterEntry for date field 2
           Property 3
         </span>
         
+        <!---->
       </button>
+      <!---->
       
+      <!---->
     </div>
+    <!---->
     <div
       aria-label="menuwrapper"
       class="MenuWrapper override menuOpened"
@@ -2420,7 +2568,9 @@ exports[`components/viewHeader/filterEntry > return filterEntry for date field 2
           is
         </span>
         
+        <!---->
       </button>
+      <!---->
       <div
         class="Menu noselect bottom"
       >
@@ -2601,7 +2751,9 @@ exports[`components/viewHeader/filterEntry > return filterEntry for date field 2
           </div>
         </div>
       </div>
+      <!---->
     </div>
+    <!---->
     <div
       class="DateFilter empty "
     >
@@ -2614,8 +2766,11 @@ exports[`components/viewHeader/filterEntry > return filterEntry for date field 2
           Empty
         </span>
         
+        <!---->
       </button>
+      <!---->
       
+      <!---->
     </div>
     <div
       class="octo-spacer"
@@ -2629,7 +2784,9 @@ exports[`components/viewHeader/filterEntry > return filterEntry for date field 2
         Delete
       </span>
       
+      <!---->
     </button>
+    <!---->
   </div>
 </div>
 `;
@@ -2653,9 +2810,13 @@ exports[`components/viewHeader/filterEntry > return filterEntry for text field 1
           Property 2
         </span>
         
+        <!---->
       </button>
+      <!---->
       
+      <!---->
     </div>
+    <!---->
     <div
       aria-label="menuwrapper"
       class="MenuWrapper"
@@ -2670,9 +2831,13 @@ exports[`components/viewHeader/filterEntry > return filterEntry for text field 1
           contains
         </span>
         
+        <!---->
       </button>
+      <!---->
       
+      <!---->
     </div>
+    <!---->
     <input
       class="Editable "
       placeholder="filter text"
@@ -2690,7 +2855,9 @@ exports[`components/viewHeader/filterEntry > return filterEntry for text field 1
         Delete
       </span>
       
+      <!---->
     </button>
+    <!---->
   </div>
 </div>
 `;
@@ -2714,9 +2881,13 @@ exports[`components/viewHeader/filterEntry > return filterEntry for text field 2
           Property 2
         </span>
         
+        <!---->
       </button>
+      <!---->
       
+      <!---->
     </div>
+    <!---->
     <div
       aria-label="menuwrapper"
       class="MenuWrapper override menuOpened"
@@ -2731,7 +2902,9 @@ exports[`components/viewHeader/filterEntry > return filterEntry for text field 2
           contains
         </span>
         
+        <!---->
       </button>
+      <!---->
       <div
         class="Menu noselect bottom"
       >
@@ -2966,7 +3139,9 @@ exports[`components/viewHeader/filterEntry > return filterEntry for text field 2
           </div>
         </div>
       </div>
+      <!---->
     </div>
+    <!---->
     <input
       class="Editable "
       placeholder="filter text"
@@ -2984,7 +3159,9 @@ exports[`components/viewHeader/filterEntry > return filterEntry for text field 2
         Delete
       </span>
       
+      <!---->
     </button>
+    <!---->
   </div>
 </div>
 `;

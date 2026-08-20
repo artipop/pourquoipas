@@ -1,4 +1,4 @@
-import {ParentComponent, createEffect, onMount} from 'solid-js'
+import {ParentComponent, createEffect, onSettled} from 'solid-js'
 
 import wsClient from '../wsclient'
 
@@ -11,7 +11,7 @@ type Props = {
 const WithWebSockets: ParentComponent<Props> = (props) => {
     const queryString = new URLSearchParams(window.location.search)
 
-    onMount(() => {
+    onSettled(() => {
         // if the websocket client was already connected, do nothing
         if (wsClient.state !== 'init') {
             return
@@ -24,8 +24,8 @@ const WithWebSockets: ParentComponent<Props> = (props) => {
         wsClient.open()
     })
 
-    createEffect(() => {
-        if (!props.userId) {
+    createEffect(() => props.userId, (userId) => {
+        if (!userId) {
             return
         }
 

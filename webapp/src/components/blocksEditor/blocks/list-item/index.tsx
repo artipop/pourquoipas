@@ -1,4 +1,4 @@
-import {onMount} from 'solid-js'
+import {onSettled} from 'solid-js'
 
 import {BlockInputProps, ContentType} from '../types'
 
@@ -15,7 +15,7 @@ const ListItem: ContentType = {
     Display: (props: BlockInputProps) => <ul><li>{props.value}</li></ul>,
     Input: (props: BlockInputProps) => {
         let ref: HTMLInputElement|undefined
-        onMount(() => {
+        onSettled(() => {
             ref?.focus()
         })
         return (

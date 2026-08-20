@@ -1,6 +1,6 @@
-import isEqual from 'lodash/isEqual'
+import {storePath} from 'solid-js'
 
-import {produce} from 'solid-js/store'
+import isEqual from 'lodash/isEqual'
 
 import {BoardView, createBoardView} from '../blocks/boardView'
 import {Block} from '../blocks/block'
@@ -72,10 +72,10 @@ export const viewsFromBlocks = (blocks: Block[]): {[key: string]: BoardView} => 
 
 export const createViewsActions = ({setState}: StoreContext) => ({
     setCurrent(viewId: string) {
-        setState('views', 'current', viewId)
+        setState(storePath('views', 'current', viewId))
     },
     updateViews(views: BoardView[]) {
-        setState('views', 'views', produce((stateViews) => {
+        setState(({views: {views: stateViews}}) => {
             for (const view of views) {
                 if (view.deleteAt === 0) {
                     stateViews[view.id] = smartViewUpdate(stateViews[view.id], view)
@@ -83,13 +83,13 @@ export const createViewsActions = ({setState}: StoreContext) => ({
                     delete stateViews[view.id]
                 }
             }
-        }))
+        })
     },
     updateView(view: BoardView) {
-        setState('views', 'views', view.id, view)
+        setState(storePath('views', 'views', view.id, view))
     },
     setViews(views: {[key: string]: BoardView}) {
-        setState('views', 'views', views)
+        setState(storePath('views', 'views', views))
     },
 })
 

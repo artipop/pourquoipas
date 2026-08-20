@@ -60,7 +60,6 @@ exports[`components/cardActionsMenu > should match snapshot 1`] = `
                 height="24"
                 viewBox="0 0 24 24"
                 width="24"
-                xmlns="http://www.w3.org/2000/svg"
               >
                 <g
                   opacity="0.8"
@@ -219,7 +218,6 @@ exports[`components/cardActionsMenu > should match snapshot w/ children prop 1`]
                 height="24"
                 viewBox="0 0 24 24"
                 width="24"
-                xmlns="http://www.w3.org/2000/svg"
               >
                 <g
                   opacity="0.8"
@@ -410,7 +408,6 @@ exports[`components/cardActionsMenu > should match snapshot w/ onClickDuplicate 
                 height="24"
                 viewBox="0 0 24 24"
                 width="24"
-                xmlns="http://www.w3.org/2000/svg"
               >
                 <g
                   opacity="0.8"

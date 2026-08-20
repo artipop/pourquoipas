@@ -52,13 +52,14 @@ const Kanban = (props: Props) => {
     const cardTemplates = useAppSelector(getCurrentBoardTemplates)
     const [defaultTemplateID, setDefaultTemplateID] = createSignal<string>()
 
-    createEffect(() => {
-        if (props.activeView.fields.defaultTemplateId) {
-            if (cardTemplates().find((ct) => ct.id === props.activeView.fields.defaultTemplateId)) {
-                setDefaultTemplateID(props.activeView.fields.defaultTemplateId)
+    createEffect(
+        () => [props.activeView.fields.defaultTemplateId, cardTemplates()] as const,
+        ([wanted, templates]) => {
+            if (wanted && templates.find((ct) => ct.id === wanted)) {
+                setDefaultTemplateID(wanted)
             }
-        }
-    })
+        },
+    )
 
     const visiblePropertyTemplates = () => {
         return props.board.cardProperties.filter(

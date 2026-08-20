@@ -13,7 +13,7 @@ exports[`widgets/PropertyMenu > should match snapshot 1`] = `
       >
         <input
           class="PropertyMenu menu-textbox menu-option"
-          spellcheck="true"
+          spellcheck=""
           title="test-property"
           type="text"
         />
@@ -33,6 +33,7 @@ exports[`widgets/PropertyMenu > should match snapshot 1`] = `
           <i
             class="CompassIcon icon-chevron-right"
           />
+          <!---->
           <div
             class="SubMenu Menu noselect auto"
             style="top: 0px; max-height: 756px;"
@@ -489,6 +490,7 @@ exports[`widgets/PropertyMenu > should match snapshot 1`] = `
               </div>
             </div>
           </div>
+          <!---->
         </div>
         <div
           aria-label="Delete"

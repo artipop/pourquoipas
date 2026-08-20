@@ -1,6 +1,6 @@
 // The Wails-generated Go bindings are PascalCase methods, not constructors.
 /* eslint-disable new-cap */
-import {For, Show, createSignal, onCleanup, onMount} from 'solid-js'
+import {For, Show, createSignal, onSettled} from 'solid-js'
 
 import {useIntl} from '../../intl'
 
@@ -90,12 +90,12 @@ const FlowStrip = (props: Props) => {
         }
     }
 
-    onMount(() => {
+    onSettled(() => {
         refresh()
 
         // A session starting, finishing or moving the card changes the answer.
         const off = onAgentEvent('acp:session', () => refresh())
-        onCleanup(() => off?.())
+        return () => off?.()
     })
 
     const since = () => {
@@ -142,8 +142,7 @@ const FlowStrip = (props: Props) => {
                     </For>
                 </div>
                 <div
-                    class='FlowStrip__status'
-                    classList={{'FlowStrip__status--stalled': Boolean(flow()?.stalled) && !flow()?.running && !flow()?.queued}}
+                    class={['FlowStrip__status', {'FlowStrip__status--stalled': Boolean(flow()?.stalled) && !flow()?.running && !flow()?.queued}]}
                 >
                     {status()}
                     {since() && ` · ${since()}`}

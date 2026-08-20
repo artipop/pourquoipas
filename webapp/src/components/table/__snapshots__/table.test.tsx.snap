@@ -26,13 +26,17 @@ exports[`components/table/Table > should match snapshot 1`] = `
             >
               Name
             </span>
+            <!---->
             
+            <!---->
           </div>
           <div
             class="octo-spacer"
           />
           
+          <!---->
         </div>
+        <!---->
         <div
           class="octo-table-cell header-cell"
           style="overflow: unset; opacity: 1; width: 100px;"
@@ -49,7 +53,6 @@ exports[`components/table/Table > should match snapshot 1`] = `
               <svg
                 class="SortDownIcon Icon"
                 viewBox="0 0 100 100"
-                xmlns="http://www.w3.org/2000/svg"
               >
                 <polyline
                   points="50,20 50,80"
@@ -59,12 +62,15 @@ exports[`components/table/Table > should match snapshot 1`] = `
                 />
               </svg>
             </span>
+            <!---->
             
+            <!---->
           </div>
           <div
             class="octo-spacer"
           />
           
+          <!---->
         </div>
         <div
           class="octo-table-cell header-cell"
@@ -82,7 +88,6 @@ exports[`components/table/Table > should match snapshot 1`] = `
               <svg
                 class="SortUpIcon Icon"
                 viewBox="0 0 100 100"
-                xmlns="http://www.w3.org/2000/svg"
               >
                 <polyline
                   points="50,20 50,80"
@@ -92,18 +97,23 @@ exports[`components/table/Table > should match snapshot 1`] = `
                 />
               </svg>
             </span>
+            <!---->
             
+            <!---->
           </div>
           <div
             class="octo-spacer"
           />
           
+          <!---->
         </div>
+        <!---->
       </div>
       <div
         class="table-row-container"
       >
         
+        <!---->
         <div
           class="TableRow octo-table-row readonly"
           style="opacity: 1;"
@@ -128,7 +138,7 @@ exports[`components/table/Table > should match snapshot 1`] = `
                 class="Editable readonly "
                 placeholder="Untitled"
                 readonly=""
-                spellcheck="true"
+                spellcheck=""
                 title="title"
               />
             </div>
@@ -144,6 +154,7 @@ exports[`components/table/Table > should match snapshot 1`] = `
                   Open
                 </span>
                 
+                <!---->
               </button>
             </div>
           </div>
@@ -185,8 +196,11 @@ exports[`components/table/Table > should match snapshot 1`] = `
               </span>
             </div>
           </div>
+          <!---->
           
+          <!---->
         </div>
+        <!---->
       </div>
       <div
         class="octo-table-footer"
@@ -206,11 +220,13 @@ exports[`components/table/Table > should match snapshot 1`] = `
             Count
           </span>
           
+          <!---->
           <span
             class="calculationValue"
           >
             1
           </span>
+          <!---->
         </div>
         <div
           class="Calculation none octo-table-cell disabled  "
@@ -226,7 +242,9 @@ exports[`components/table/Table > should match snapshot 1`] = `
           <i
             class="CompassIcon icon-chevron-up ChevronUpIcon"
           />
+          <!---->
           
+          <!---->
         </div>
         <div
           class="Calculation none octo-table-cell disabled  "
@@ -242,9 +260,12 @@ exports[`components/table/Table > should match snapshot 1`] = `
           <i
             class="CompassIcon icon-chevron-up ChevronUpIcon"
           />
+          <!---->
           
+          <!---->
         </div>
       </div>
+      <!---->
     </div>
   </div>
 </div>
@@ -276,13 +297,17 @@ exports[`components/table/Table > should match snapshot with GroupBy 1`] = `
             >
               Name
             </span>
+            <!---->
             
+            <!---->
           </div>
           <div
             class="octo-spacer"
           />
           
+          <!---->
         </div>
+        <!---->
         <div
           class="octo-table-cell header-cell"
           style="overflow: unset; opacity: 1; width: 100px;"
@@ -299,7 +324,6 @@ exports[`components/table/Table > should match snapshot with GroupBy 1`] = `
               <svg
                 class="SortDownIcon Icon"
                 viewBox="0 0 100 100"
-                xmlns="http://www.w3.org/2000/svg"
               >
                 <polyline
                   points="50,20 50,80"
@@ -309,12 +333,15 @@ exports[`components/table/Table > should match snapshot with GroupBy 1`] = `
                 />
               </svg>
             </span>
+            <!---->
             
+            <!---->
           </div>
           <div
             class="octo-spacer"
           />
           
+          <!---->
         </div>
         <div
           class="octo-table-cell header-cell"
@@ -332,7 +359,6 @@ exports[`components/table/Table > should match snapshot with GroupBy 1`] = `
               <svg
                 class="SortUpIcon Icon"
                 viewBox="0 0 100 100"
-                xmlns="http://www.w3.org/2000/svg"
               >
                 <polyline
                   points="50,20 50,80"
@@ -342,13 +368,17 @@ exports[`components/table/Table > should match snapshot with GroupBy 1`] = `
                 />
               </svg>
             </span>
+            <!---->
             
+            <!---->
           </div>
           <div
             class="octo-spacer"
           />
           
+          <!---->
         </div>
+        <!---->
       </div>
       <div
         class="table-row-container"
@@ -371,14 +401,18 @@ exports[`components/table/Table > should match snapshot with GroupBy 1`] = `
                   class="CompassIcon icon-menu-right"
                 />
               </button>
+              <!---->
               <span
                 class="Label empty "
                 title="Items with an empty Property 1 property will go here. This column cannot be removed."
               >
                 No Property 1
               </span>
+              <!---->
               
+              <!---->
               
+              <!---->
             </div>
             <button
               type="button"
@@ -388,12 +422,19 @@ exports[`components/table/Table > should match snapshot with GroupBy 1`] = `
                 0
               </span>
               
+              <!---->
             </button>
+            <!---->
             
+            <!---->
           </div>
+          <!---->
           
+          <!---->
         </div>
+        <!---->
         
+        <!---->
       </div>
       <div
         class="octo-table-footer"
@@ -413,11 +454,13 @@ exports[`components/table/Table > should match snapshot with GroupBy 1`] = `
             Count
           </span>
           
+          <!---->
           <span
             class="calculationValue"
           >
             1
           </span>
+          <!---->
         </div>
         <div
           class="Calculation none octo-table-cell disabled  "
@@ -433,7 +476,9 @@ exports[`components/table/Table > should match snapshot with GroupBy 1`] = `
           <i
             class="CompassIcon icon-chevron-up ChevronUpIcon"
           />
+          <!---->
           
+          <!---->
         </div>
         <div
           class="Calculation none octo-table-cell disabled  "
@@ -449,9 +494,12 @@ exports[`components/table/Table > should match snapshot with GroupBy 1`] = `
           <i
             class="CompassIcon icon-chevron-up ChevronUpIcon"
           />
+          <!---->
           
+          <!---->
         </div>
       </div>
+      <!---->
     </div>
   </div>
 </div>
@@ -483,13 +531,17 @@ exports[`components/table/Table > should match snapshot without permissions 1`] 
             >
               Name
             </span>
+            <!---->
             
+            <!---->
           </div>
           <div
             class="octo-spacer"
           />
           
+          <!---->
         </div>
+        <!---->
         <div
           class="octo-table-cell header-cell"
           style="overflow: unset; opacity: 1; width: 100px;"
@@ -506,7 +558,6 @@ exports[`components/table/Table > should match snapshot without permissions 1`] 
               <svg
                 class="SortDownIcon Icon"
                 viewBox="0 0 100 100"
-                xmlns="http://www.w3.org/2000/svg"
               >
                 <polyline
                   points="50,20 50,80"
@@ -516,12 +567,15 @@ exports[`components/table/Table > should match snapshot without permissions 1`] 
                 />
               </svg>
             </span>
+            <!---->
             
+            <!---->
           </div>
           <div
             class="octo-spacer"
           />
           
+          <!---->
         </div>
         <div
           class="octo-table-cell header-cell"
@@ -539,7 +593,6 @@ exports[`components/table/Table > should match snapshot without permissions 1`] 
               <svg
                 class="SortUpIcon Icon"
                 viewBox="0 0 100 100"
-                xmlns="http://www.w3.org/2000/svg"
               >
                 <polyline
                   points="50,20 50,80"
@@ -549,18 +602,23 @@ exports[`components/table/Table > should match snapshot without permissions 1`] 
                 />
               </svg>
             </span>
+            <!---->
             
+            <!---->
           </div>
           <div
             class="octo-spacer"
           />
           
+          <!---->
         </div>
+        <!---->
       </div>
       <div
         class="table-row-container"
       >
         
+        <!---->
         <div
           class="TableRow octo-table-row readonly"
           style="opacity: 1;"
@@ -585,7 +643,7 @@ exports[`components/table/Table > should match snapshot without permissions 1`] 
                 class="Editable readonly "
                 placeholder="Untitled"
                 readonly=""
-                spellcheck="true"
+                spellcheck=""
                 title="title"
               />
             </div>
@@ -601,6 +659,7 @@ exports[`components/table/Table > should match snapshot without permissions 1`] 
                   Open
                 </span>
                 
+                <!---->
               </button>
             </div>
           </div>
@@ -642,8 +701,11 @@ exports[`components/table/Table > should match snapshot without permissions 1`] 
               </span>
             </div>
           </div>
+          <!---->
           
+          <!---->
         </div>
+        <!---->
       </div>
       <div
         class="octo-table-footer"
@@ -663,11 +725,13 @@ exports[`components/table/Table > should match snapshot without permissions 1`] 
             Count
           </span>
           
+          <!---->
           <span
             class="calculationValue"
           >
             1
           </span>
+          <!---->
         </div>
         <div
           class="Calculation none octo-table-cell disabled  "
@@ -683,7 +747,9 @@ exports[`components/table/Table > should match snapshot without permissions 1`] 
           <i
             class="CompassIcon icon-chevron-up ChevronUpIcon"
           />
+          <!---->
           
+          <!---->
         </div>
         <div
           class="Calculation none octo-table-cell disabled  "
@@ -699,9 +765,12 @@ exports[`components/table/Table > should match snapshot without permissions 1`] 
           <i
             class="CompassIcon icon-chevron-up ChevronUpIcon"
           />
+          <!---->
           
+          <!---->
         </div>
       </div>
+      <!---->
     </div>
   </div>
 </div>
@@ -733,13 +802,17 @@ exports[`components/table/Table > should match snapshot, read-only 1`] = `
             >
               Name
             </span>
+            <!---->
             
+            <!---->
           </div>
           <div
             class="octo-spacer"
           />
           
+          <!---->
         </div>
+        <!---->
         <div
           class="octo-table-cell header-cell"
           style="overflow: unset; opacity: 1; width: 100px;"
@@ -756,7 +829,6 @@ exports[`components/table/Table > should match snapshot, read-only 1`] = `
               <svg
                 class="SortDownIcon Icon"
                 viewBox="0 0 100 100"
-                xmlns="http://www.w3.org/2000/svg"
               >
                 <polyline
                   points="50,20 50,80"
@@ -766,12 +838,15 @@ exports[`components/table/Table > should match snapshot, read-only 1`] = `
                 />
               </svg>
             </span>
+            <!---->
             
+            <!---->
           </div>
           <div
             class="octo-spacer"
           />
           
+          <!---->
         </div>
         <div
           class="octo-table-cell header-cell"
@@ -789,7 +864,6 @@ exports[`components/table/Table > should match snapshot, read-only 1`] = `
               <svg
                 class="SortUpIcon Icon"
                 viewBox="0 0 100 100"
-                xmlns="http://www.w3.org/2000/svg"
               >
                 <polyline
                   points="50,20 50,80"
@@ -799,18 +873,23 @@ exports[`components/table/Table > should match snapshot, read-only 1`] = `
                 />
               </svg>
             </span>
+            <!---->
             
+            <!---->
           </div>
           <div
             class="octo-spacer"
           />
           
+          <!---->
         </div>
+        <!---->
       </div>
       <div
         class="table-row-container"
       >
         
+        <!---->
         <div
           class="TableRow octo-table-row readonly"
           style="opacity: 1;"
@@ -835,7 +914,7 @@ exports[`components/table/Table > should match snapshot, read-only 1`] = `
                 class="Editable readonly "
                 placeholder="Untitled"
                 readonly=""
-                spellcheck="true"
+                spellcheck=""
                 title="title"
               />
             </div>
@@ -851,6 +930,7 @@ exports[`components/table/Table > should match snapshot, read-only 1`] = `
                   Open
                 </span>
                 
+                <!---->
               </button>
             </div>
           </div>
@@ -892,8 +972,11 @@ exports[`components/table/Table > should match snapshot, read-only 1`] = `
               </span>
             </div>
           </div>
+          <!---->
           
+          <!---->
         </div>
+        <!---->
       </div>
       <div
         class="octo-table-footer"
@@ -913,11 +996,13 @@ exports[`components/table/Table > should match snapshot, read-only 1`] = `
             Count
           </span>
           
+          <!---->
           <span
             class="calculationValue"
           >
             1
           </span>
+          <!---->
         </div>
         <div
           class="Calculation none octo-table-cell disabled  "
@@ -933,7 +1018,9 @@ exports[`components/table/Table > should match snapshot, read-only 1`] = `
           <i
             class="CompassIcon icon-chevron-up ChevronUpIcon"
           />
+          <!---->
           
+          <!---->
         </div>
         <div
           class="Calculation none octo-table-cell disabled  "
@@ -949,9 +1036,12 @@ exports[`components/table/Table > should match snapshot, read-only 1`] = `
           <i
             class="CompassIcon icon-chevron-up ChevronUpIcon"
           />
+          <!---->
           
+          <!---->
         </div>
       </div>
+      <!---->
     </div>
   </div>
 </div>
@@ -983,7 +1073,9 @@ exports[`components/table/Table extended > should have Duplicate Button 1`] = `
             >
               Name
             </span>
+            <!---->
             
+            <!---->
           </div>
           <div
             class="octo-spacer"
@@ -991,7 +1083,9 @@ exports[`components/table/Table extended > should have Duplicate Button 1`] = `
           <div
             class="HorizontalGrip"
           />
+          <!---->
         </div>
+        <!---->
         <div
           class="octo-table-cell header-cell"
           style="overflow: unset; opacity: 1; width: 100px;"
@@ -1008,7 +1102,6 @@ exports[`components/table/Table extended > should have Duplicate Button 1`] = `
               <svg
                 class="SortDownIcon Icon"
                 viewBox="0 0 100 100"
-                xmlns="http://www.w3.org/2000/svg"
               >
                 <polyline
                   points="50,20 50,80"
@@ -1018,7 +1111,9 @@ exports[`components/table/Table extended > should have Duplicate Button 1`] = `
                 />
               </svg>
             </span>
+            <!---->
             
+            <!---->
           </div>
           <div
             class="octo-spacer"
@@ -1026,6 +1121,7 @@ exports[`components/table/Table extended > should have Duplicate Button 1`] = `
           <div
             class="HorizontalGrip"
           />
+          <!---->
         </div>
         <div
           class="octo-table-cell header-cell"
@@ -1043,7 +1139,6 @@ exports[`components/table/Table extended > should have Duplicate Button 1`] = `
               <svg
                 class="SortUpIcon Icon"
                 viewBox="0 0 100 100"
-                xmlns="http://www.w3.org/2000/svg"
               >
                 <polyline
                   points="50,20 50,80"
@@ -1053,7 +1148,9 @@ exports[`components/table/Table extended > should have Duplicate Button 1`] = `
                 />
               </svg>
             </span>
+            <!---->
             
+            <!---->
           </div>
           <div
             class="octo-spacer"
@@ -1061,6 +1158,7 @@ exports[`components/table/Table extended > should have Duplicate Button 1`] = `
           <div
             class="HorizontalGrip"
           />
+          <!---->
         </div>
         <div
           class="octo-table-cell header-cell"
@@ -1076,7 +1174,9 @@ exports[`components/table/Table extended > should have Duplicate Button 1`] = `
             >
               Status
             </span>
+            <!---->
             
+            <!---->
           </div>
           <div
             class="octo-spacer"
@@ -1084,12 +1184,15 @@ exports[`components/table/Table extended > should have Duplicate Button 1`] = `
           <div
             class="HorizontalGrip"
           />
+          <!---->
         </div>
+        <!---->
       </div>
       <div
         class="table-row-container"
       >
         
+        <!---->
         <div
           class="TableRow octo-table-row"
           style="opacity: 1;"
@@ -1121,7 +1224,7 @@ exports[`components/table/Table extended > should have Duplicate Button 1`] = `
               <input
                 class="Editable "
                 placeholder="Untitled"
-                spellcheck="true"
+                spellcheck=""
                 title="card1"
               />
             </div>
@@ -1142,9 +1245,13 @@ exports[`components/table/Table extended > should have Duplicate Button 1`] = `
                     class="CompassIcon icon-dots-horizontal OptionsIcon"
                   />
                 </button>
+                <!---->
                 
+                <!---->
               </div>
+              <!---->
               
+              <!---->
             </div>
             <div
               class="open-button"
@@ -1157,6 +1264,7 @@ exports[`components/table/Table extended > should have Duplicate Button 1`] = `
                   Open
                 </span>
                 
+                <!---->
               </button>
             </div>
           </div>
@@ -1216,7 +1324,9 @@ exports[`components/table/Table extended > should have Duplicate Button 1`] = `
               </span>
             </div>
           </div>
+          <!---->
           
+          <!---->
         </div>
         <div
           class="TableRow octo-table-row"
@@ -1249,7 +1359,7 @@ exports[`components/table/Table extended > should have Duplicate Button 1`] = `
               <input
                 class="Editable "
                 placeholder="Untitled"
-                spellcheck="true"
+                spellcheck=""
                 title="card2"
               />
             </div>
@@ -1270,9 +1380,13 @@ exports[`components/table/Table extended > should have Duplicate Button 1`] = `
                     class="CompassIcon icon-dots-horizontal OptionsIcon"
                   />
                 </button>
+                <!---->
                 
+                <!---->
               </div>
+              <!---->
               
+              <!---->
             </div>
             <div
               class="open-button"
@@ -1285,6 +1399,7 @@ exports[`components/table/Table extended > should have Duplicate Button 1`] = `
                   Open
                 </span>
                 
+                <!---->
               </button>
             </div>
           </div>
@@ -1344,8 +1459,11 @@ exports[`components/table/Table extended > should have Duplicate Button 1`] = `
               </span>
             </div>
           </div>
+          <!---->
           
+          <!---->
         </div>
+        <!---->
       </div>
       <div
         class="octo-table-footer"
@@ -1371,11 +1489,13 @@ exports[`components/table/Table extended > should have Duplicate Button 1`] = `
             Count
           </span>
           
+          <!---->
           <span
             class="calculationValue"
           >
             2
           </span>
+          <!---->
         </div>
         <div
           class="Calculation none octo-table-cell   "
@@ -1391,7 +1511,9 @@ exports[`components/table/Table extended > should have Duplicate Button 1`] = `
           <i
             class="CompassIcon icon-chevron-up ChevronUpIcon"
           />
+          <!---->
           
+          <!---->
         </div>
         <div
           class="Calculation none octo-table-cell   "
@@ -1407,7 +1529,9 @@ exports[`components/table/Table extended > should have Duplicate Button 1`] = `
           <i
             class="CompassIcon icon-chevron-up ChevronUpIcon"
           />
+          <!---->
           
+          <!---->
         </div>
         <div
           class="Calculation none octo-table-cell   "
@@ -1423,9 +1547,12 @@ exports[`components/table/Table extended > should have Duplicate Button 1`] = `
           <i
             class="CompassIcon icon-chevron-up ChevronUpIcon"
           />
+          <!---->
           
+          <!---->
         </div>
       </div>
+      <!---->
     </div>
   </div>
 </div>
@@ -1457,13 +1584,17 @@ exports[`components/table/Table extended > should match snapshot with CreatedAt 
             >
               Name
             </span>
+            <!---->
             
+            <!---->
           </div>
           <div
             class="octo-spacer"
           />
           
+          <!---->
         </div>
+        <!---->
         <div
           class="octo-table-cell header-cell"
           style="overflow: unset; opacity: 1; width: 100px;"
@@ -1480,7 +1611,6 @@ exports[`components/table/Table extended > should match snapshot with CreatedAt 
               <svg
                 class="SortDownIcon Icon"
                 viewBox="0 0 100 100"
-                xmlns="http://www.w3.org/2000/svg"
               >
                 <polyline
                   points="50,20 50,80"
@@ -1490,12 +1620,15 @@ exports[`components/table/Table extended > should match snapshot with CreatedAt 
                 />
               </svg>
             </span>
+            <!---->
             
+            <!---->
           </div>
           <div
             class="octo-spacer"
           />
           
+          <!---->
         </div>
         <div
           class="octo-table-cell header-cell"
@@ -1513,7 +1646,6 @@ exports[`components/table/Table extended > should match snapshot with CreatedAt 
               <svg
                 class="SortUpIcon Icon"
                 viewBox="0 0 100 100"
-                xmlns="http://www.w3.org/2000/svg"
               >
                 <polyline
                   points="50,20 50,80"
@@ -1523,12 +1655,15 @@ exports[`components/table/Table extended > should match snapshot with CreatedAt 
                 />
               </svg>
             </span>
+            <!---->
             
+            <!---->
           </div>
           <div
             class="octo-spacer"
           />
           
+          <!---->
         </div>
         <div
           class="octo-table-cell header-cell"
@@ -1544,18 +1679,23 @@ exports[`components/table/Table extended > should match snapshot with CreatedAt 
             >
               Status
             </span>
+            <!---->
             
+            <!---->
           </div>
           <div
             class="octo-spacer"
           />
           
+          <!---->
         </div>
+        <!---->
       </div>
       <div
         class="table-row-container"
       >
         
+        <!---->
         <div
           class="TableRow octo-table-row readonly"
           style="opacity: 1;"
@@ -1580,7 +1720,7 @@ exports[`components/table/Table extended > should match snapshot with CreatedAt 
                 class="Editable readonly "
                 placeholder="Untitled"
                 readonly=""
-                spellcheck="true"
+                spellcheck=""
                 title="title"
               />
             </div>
@@ -1596,6 +1736,7 @@ exports[`components/table/Table extended > should match snapshot with CreatedAt 
                   Open
                 </span>
                 
+                <!---->
               </button>
             </div>
           </div>
@@ -1655,7 +1796,9 @@ exports[`components/table/Table extended > should match snapshot with CreatedAt 
               </span>
             </div>
           </div>
+          <!---->
           
+          <!---->
         </div>
         <div
           class="TableRow octo-table-row readonly"
@@ -1681,7 +1824,7 @@ exports[`components/table/Table extended > should match snapshot with CreatedAt 
                 class="Editable readonly "
                 placeholder="Untitled"
                 readonly=""
-                spellcheck="true"
+                spellcheck=""
                 title="title"
               />
             </div>
@@ -1697,6 +1840,7 @@ exports[`components/table/Table extended > should match snapshot with CreatedAt 
                   Open
                 </span>
                 
+                <!---->
               </button>
             </div>
           </div>
@@ -1756,8 +1900,11 @@ exports[`components/table/Table extended > should match snapshot with CreatedAt 
               </span>
             </div>
           </div>
+          <!---->
           
+          <!---->
         </div>
+        <!---->
       </div>
       <div
         class="octo-table-footer"
@@ -1777,11 +1924,13 @@ exports[`components/table/Table extended > should match snapshot with CreatedAt 
             Count
           </span>
           
+          <!---->
           <span
             class="calculationValue"
           >
             2
           </span>
+          <!---->
         </div>
         <div
           class="Calculation none octo-table-cell disabled  "
@@ -1797,7 +1946,9 @@ exports[`components/table/Table extended > should match snapshot with CreatedAt 
           <i
             class="CompassIcon icon-chevron-up ChevronUpIcon"
           />
+          <!---->
           
+          <!---->
         </div>
         <div
           class="Calculation none octo-table-cell disabled  "
@@ -1813,7 +1964,9 @@ exports[`components/table/Table extended > should match snapshot with CreatedAt 
           <i
             class="CompassIcon icon-chevron-up ChevronUpIcon"
           />
+          <!---->
           
+          <!---->
         </div>
         <div
           class="Calculation none octo-table-cell disabled  "
@@ -1829,9 +1982,12 @@ exports[`components/table/Table extended > should match snapshot with CreatedAt 
           <i
             class="CompassIcon icon-chevron-up ChevronUpIcon"
           />
+          <!---->
           
+          <!---->
         </div>
       </div>
+      <!---->
     </div>
   </div>
 </div>
@@ -1863,7 +2019,9 @@ exports[`components/table/Table extended > should match snapshot with CreatedBy 
             >
               Name
             </span>
+            <!---->
             
+            <!---->
           </div>
           <div
             class="octo-spacer"
@@ -1871,7 +2029,9 @@ exports[`components/table/Table extended > should match snapshot with CreatedBy 
           <div
             class="HorizontalGrip"
           />
+          <!---->
         </div>
+        <!---->
         <div
           class="octo-table-cell header-cell"
           style="overflow: unset; opacity: 1; width: 100px;"
@@ -1888,7 +2048,6 @@ exports[`components/table/Table extended > should match snapshot with CreatedBy 
               <svg
                 class="SortDownIcon Icon"
                 viewBox="0 0 100 100"
-                xmlns="http://www.w3.org/2000/svg"
               >
                 <polyline
                   points="50,20 50,80"
@@ -1898,7 +2057,9 @@ exports[`components/table/Table extended > should match snapshot with CreatedBy 
                 />
               </svg>
             </span>
+            <!---->
             
+            <!---->
           </div>
           <div
             class="octo-spacer"
@@ -1906,6 +2067,7 @@ exports[`components/table/Table extended > should match snapshot with CreatedBy 
           <div
             class="HorizontalGrip"
           />
+          <!---->
         </div>
         <div
           class="octo-table-cell header-cell"
@@ -1923,7 +2085,6 @@ exports[`components/table/Table extended > should match snapshot with CreatedBy 
               <svg
                 class="SortUpIcon Icon"
                 viewBox="0 0 100 100"
-                xmlns="http://www.w3.org/2000/svg"
               >
                 <polyline
                   points="50,20 50,80"
@@ -1933,7 +2094,9 @@ exports[`components/table/Table extended > should match snapshot with CreatedBy 
                 />
               </svg>
             </span>
+            <!---->
             
+            <!---->
           </div>
           <div
             class="octo-spacer"
@@ -1941,6 +2104,7 @@ exports[`components/table/Table extended > should match snapshot with CreatedBy 
           <div
             class="HorizontalGrip"
           />
+          <!---->
         </div>
         <div
           class="octo-table-cell header-cell"
@@ -1956,7 +2120,9 @@ exports[`components/table/Table extended > should match snapshot with CreatedBy 
             >
               Status
             </span>
+            <!---->
             
+            <!---->
           </div>
           <div
             class="octo-spacer"
@@ -1964,12 +2130,15 @@ exports[`components/table/Table extended > should match snapshot with CreatedBy 
           <div
             class="HorizontalGrip"
           />
+          <!---->
         </div>
+        <!---->
       </div>
       <div
         class="table-row-container"
       >
         
+        <!---->
         <div
           class="TableRow octo-table-row"
           style="opacity: 1;"
@@ -2001,7 +2170,7 @@ exports[`components/table/Table extended > should match snapshot with CreatedBy 
               <input
                 class="Editable "
                 placeholder="Untitled"
-                spellcheck="true"
+                spellcheck=""
                 title="title"
               />
             </div>
@@ -2022,9 +2191,13 @@ exports[`components/table/Table extended > should match snapshot with CreatedBy 
                     class="CompassIcon icon-dots-horizontal OptionsIcon"
                   />
                 </button>
+                <!---->
                 
+                <!---->
               </div>
+              <!---->
               
+              <!---->
             </div>
             <div
               class="open-button"
@@ -2037,6 +2210,7 @@ exports[`components/table/Table extended > should match snapshot with CreatedBy 
                   Open
                 </span>
                 
+                <!---->
               </button>
             </div>
           </div>
@@ -2096,7 +2270,9 @@ exports[`components/table/Table extended > should match snapshot with CreatedBy 
               </span>
             </div>
           </div>
+          <!---->
           
+          <!---->
         </div>
         <div
           class="TableRow octo-table-row"
@@ -2129,7 +2305,7 @@ exports[`components/table/Table extended > should match snapshot with CreatedBy 
               <input
                 class="Editable "
                 placeholder="Untitled"
-                spellcheck="true"
+                spellcheck=""
                 title="title"
               />
             </div>
@@ -2150,9 +2326,13 @@ exports[`components/table/Table extended > should match snapshot with CreatedBy 
                     class="CompassIcon icon-dots-horizontal OptionsIcon"
                   />
                 </button>
+                <!---->
                 
+                <!---->
               </div>
+              <!---->
               
+              <!---->
             </div>
             <div
               class="open-button"
@@ -2165,6 +2345,7 @@ exports[`components/table/Table extended > should match snapshot with CreatedBy 
                   Open
                 </span>
                 
+                <!---->
               </button>
             </div>
           </div>
@@ -2224,8 +2405,11 @@ exports[`components/table/Table extended > should match snapshot with CreatedBy 
               </span>
             </div>
           </div>
+          <!---->
           
+          <!---->
         </div>
+        <!---->
       </div>
       <div
         class="octo-table-footer"
@@ -2251,11 +2435,13 @@ exports[`components/table/Table extended > should match snapshot with CreatedBy 
             Count
           </span>
           
+          <!---->
           <span
             class="calculationValue"
           >
             2
           </span>
+          <!---->
         </div>
         <div
           class="Calculation none octo-table-cell   "
@@ -2271,7 +2457,9 @@ exports[`components/table/Table extended > should match snapshot with CreatedBy 
           <i
             class="CompassIcon icon-chevron-up ChevronUpIcon"
           />
+          <!---->
           
+          <!---->
         </div>
         <div
           class="Calculation none octo-table-cell   "
@@ -2287,7 +2475,9 @@ exports[`components/table/Table extended > should match snapshot with CreatedBy 
           <i
             class="CompassIcon icon-chevron-up ChevronUpIcon"
           />
+          <!---->
           
+          <!---->
         </div>
         <div
           class="Calculation none octo-table-cell   "
@@ -2303,9 +2493,12 @@ exports[`components/table/Table extended > should match snapshot with CreatedBy 
           <i
             class="CompassIcon icon-chevron-up ChevronUpIcon"
           />
+          <!---->
           
+          <!---->
         </div>
       </div>
+      <!---->
     </div>
   </div>
 </div>
@@ -2337,7 +2530,9 @@ exports[`components/table/Table extended > should match snapshot with UpdatedAt 
             >
               Name
             </span>
+            <!---->
             
+            <!---->
           </div>
           <div
             class="octo-spacer"
@@ -2345,7 +2540,9 @@ exports[`components/table/Table extended > should match snapshot with UpdatedAt 
           <div
             class="HorizontalGrip"
           />
+          <!---->
         </div>
+        <!---->
         <div
           class="octo-table-cell header-cell"
           style="overflow: unset; opacity: 1; width: 100px;"
@@ -2362,7 +2559,6 @@ exports[`components/table/Table extended > should match snapshot with UpdatedAt 
               <svg
                 class="SortDownIcon Icon"
                 viewBox="0 0 100 100"
-                xmlns="http://www.w3.org/2000/svg"
               >
                 <polyline
                   points="50,20 50,80"
@@ -2372,7 +2568,9 @@ exports[`components/table/Table extended > should match snapshot with UpdatedAt 
                 />
               </svg>
             </span>
+            <!---->
             
+            <!---->
           </div>
           <div
             class="octo-spacer"
@@ -2380,6 +2578,7 @@ exports[`components/table/Table extended > should match snapshot with UpdatedAt 
           <div
             class="HorizontalGrip"
           />
+          <!---->
         </div>
         <div
           class="octo-table-cell header-cell"
@@ -2397,7 +2596,6 @@ exports[`components/table/Table extended > should match snapshot with UpdatedAt 
               <svg
                 class="SortUpIcon Icon"
                 viewBox="0 0 100 100"
-                xmlns="http://www.w3.org/2000/svg"
               >
                 <polyline
                   points="50,20 50,80"
@@ -2407,7 +2605,9 @@ exports[`components/table/Table extended > should match snapshot with UpdatedAt 
                 />
               </svg>
             </span>
+            <!---->
             
+            <!---->
           </div>
           <div
             class="octo-spacer"
@@ -2415,6 +2615,7 @@ exports[`components/table/Table extended > should match snapshot with UpdatedAt 
           <div
             class="HorizontalGrip"
           />
+          <!---->
         </div>
         <div
           class="octo-table-cell header-cell"
@@ -2430,7 +2631,9 @@ exports[`components/table/Table extended > should match snapshot with UpdatedAt 
             >
               Status
             </span>
+            <!---->
             
+            <!---->
           </div>
           <div
             class="octo-spacer"
@@ -2438,12 +2641,15 @@ exports[`components/table/Table extended > should match snapshot with UpdatedAt 
           <div
             class="HorizontalGrip"
           />
+          <!---->
         </div>
+        <!---->
       </div>
       <div
         class="table-row-container"
       >
         
+        <!---->
         <div
           class="TableRow octo-table-row"
           style="opacity: 1;"
@@ -2475,7 +2681,7 @@ exports[`components/table/Table extended > should match snapshot with UpdatedAt 
               <input
                 class="Editable "
                 placeholder="Untitled"
-                spellcheck="true"
+                spellcheck=""
                 title="title"
               />
             </div>
@@ -2496,9 +2702,13 @@ exports[`components/table/Table extended > should match snapshot with UpdatedAt 
                     class="CompassIcon icon-dots-horizontal OptionsIcon"
                   />
                 </button>
+                <!---->
                 
+                <!---->
               </div>
+              <!---->
               
+              <!---->
             </div>
             <div
               class="open-button"
@@ -2511,6 +2721,7 @@ exports[`components/table/Table extended > should match snapshot with UpdatedAt 
                   Open
                 </span>
                 
+                <!---->
               </button>
             </div>
           </div>
@@ -2570,7 +2781,9 @@ exports[`components/table/Table extended > should match snapshot with UpdatedAt 
               </span>
             </div>
           </div>
+          <!---->
           
+          <!---->
         </div>
         <div
           class="TableRow octo-table-row"
@@ -2603,7 +2816,7 @@ exports[`components/table/Table extended > should match snapshot with UpdatedAt 
               <input
                 class="Editable "
                 placeholder="Untitled"
-                spellcheck="true"
+                spellcheck=""
                 title="title"
               />
             </div>
@@ -2624,9 +2837,13 @@ exports[`components/table/Table extended > should match snapshot with UpdatedAt 
                     class="CompassIcon icon-dots-horizontal OptionsIcon"
                   />
                 </button>
+                <!---->
                 
+                <!---->
               </div>
+              <!---->
               
+              <!---->
             </div>
             <div
               class="open-button"
@@ -2639,6 +2856,7 @@ exports[`components/table/Table extended > should match snapshot with UpdatedAt 
                   Open
                 </span>
                 
+                <!---->
               </button>
             </div>
           </div>
@@ -2698,8 +2916,11 @@ exports[`components/table/Table extended > should match snapshot with UpdatedAt 
               </span>
             </div>
           </div>
+          <!---->
           
+          <!---->
         </div>
+        <!---->
       </div>
       <div
         class="octo-table-footer"
@@ -2725,11 +2946,13 @@ exports[`components/table/Table extended > should match snapshot with UpdatedAt 
             Count
           </span>
           
+          <!---->
           <span
             class="calculationValue"
           >
             2
           </span>
+          <!---->
         </div>
         <div
           class="Calculation none octo-table-cell   "
@@ -2745,7 +2968,9 @@ exports[`components/table/Table extended > should match snapshot with UpdatedAt 
           <i
             class="CompassIcon icon-chevron-up ChevronUpIcon"
           />
+          <!---->
           
+          <!---->
         </div>
         <div
           class="Calculation none octo-table-cell   "
@@ -2761,7 +2986,9 @@ exports[`components/table/Table extended > should match snapshot with UpdatedAt 
           <i
             class="CompassIcon icon-chevron-up ChevronUpIcon"
           />
+          <!---->
           
+          <!---->
         </div>
         <div
           class="Calculation none octo-table-cell   "
@@ -2777,9 +3004,12 @@ exports[`components/table/Table extended > should match snapshot with UpdatedAt 
           <i
             class="CompassIcon icon-chevron-up ChevronUpIcon"
           />
+          <!---->
           
+          <!---->
         </div>
       </div>
+      <!---->
     </div>
   </div>
 </div>
@@ -2811,7 +3041,9 @@ exports[`components/table/Table extended > should match snapshot with UpdatedBy 
             >
               Name
             </span>
+            <!---->
             
+            <!---->
           </div>
           <div
             class="octo-spacer"
@@ -2819,7 +3051,9 @@ exports[`components/table/Table extended > should match snapshot with UpdatedBy 
           <div
             class="HorizontalGrip"
           />
+          <!---->
         </div>
+        <!---->
         <div
           class="octo-table-cell header-cell"
           style="overflow: unset; opacity: 1; width: 100px;"
@@ -2836,7 +3070,6 @@ exports[`components/table/Table extended > should match snapshot with UpdatedBy 
               <svg
                 class="SortDownIcon Icon"
                 viewBox="0 0 100 100"
-                xmlns="http://www.w3.org/2000/svg"
               >
                 <polyline
                   points="50,20 50,80"
@@ -2846,7 +3079,9 @@ exports[`components/table/Table extended > should match snapshot with UpdatedBy 
                 />
               </svg>
             </span>
+            <!---->
             
+            <!---->
           </div>
           <div
             class="octo-spacer"
@@ -2854,6 +3089,7 @@ exports[`components/table/Table extended > should match snapshot with UpdatedBy 
           <div
             class="HorizontalGrip"
           />
+          <!---->
         </div>
         <div
           class="octo-table-cell header-cell"
@@ -2871,7 +3107,6 @@ exports[`components/table/Table extended > should match snapshot with UpdatedBy 
               <svg
                 class="SortUpIcon Icon"
                 viewBox="0 0 100 100"
-                xmlns="http://www.w3.org/2000/svg"
               >
                 <polyline
                   points="50,20 50,80"
@@ -2881,7 +3116,9 @@ exports[`components/table/Table extended > should match snapshot with UpdatedBy 
                 />
               </svg>
             </span>
+            <!---->
             
+            <!---->
           </div>
           <div
             class="octo-spacer"
@@ -2889,6 +3126,7 @@ exports[`components/table/Table extended > should match snapshot with UpdatedBy 
           <div
             class="HorizontalGrip"
           />
+          <!---->
         </div>
         <div
           class="octo-table-cell header-cell"
@@ -2904,7 +3142,9 @@ exports[`components/table/Table extended > should match snapshot with UpdatedBy 
             >
               Status
             </span>
+            <!---->
             
+            <!---->
           </div>
           <div
             class="octo-spacer"
@@ -2912,12 +3152,15 @@ exports[`components/table/Table extended > should match snapshot with UpdatedBy 
           <div
             class="HorizontalGrip"
           />
+          <!---->
         </div>
+        <!---->
       </div>
       <div
         class="table-row-container"
       >
         
+        <!---->
         <div
           class="TableRow octo-table-row"
           style="opacity: 1;"
@@ -2949,7 +3192,7 @@ exports[`components/table/Table extended > should match snapshot with UpdatedBy 
               <input
                 class="Editable "
                 placeholder="Untitled"
-                spellcheck="true"
+                spellcheck=""
                 title="title"
               />
             </div>
@@ -2970,9 +3213,13 @@ exports[`components/table/Table extended > should match snapshot with UpdatedBy 
                     class="CompassIcon icon-dots-horizontal OptionsIcon"
                   />
                 </button>
+                <!---->
                 
+                <!---->
               </div>
+              <!---->
               
+              <!---->
             </div>
             <div
               class="open-button"
@@ -2985,6 +3232,7 @@ exports[`components/table/Table extended > should match snapshot with UpdatedBy 
                   Open
                 </span>
                 
+                <!---->
               </button>
             </div>
           </div>
@@ -3044,7 +3292,9 @@ exports[`components/table/Table extended > should match snapshot with UpdatedBy 
               </span>
             </div>
           </div>
+          <!---->
           
+          <!---->
         </div>
         <div
           class="TableRow octo-table-row"
@@ -3077,7 +3327,7 @@ exports[`components/table/Table extended > should match snapshot with UpdatedBy 
               <input
                 class="Editable "
                 placeholder="Untitled"
-                spellcheck="true"
+                spellcheck=""
                 title="title"
               />
             </div>
@@ -3098,9 +3348,13 @@ exports[`components/table/Table extended > should match snapshot with UpdatedBy 
                     class="CompassIcon icon-dots-horizontal OptionsIcon"
                   />
                 </button>
+                <!---->
                 
+                <!---->
               </div>
+              <!---->
               
+              <!---->
             </div>
             <div
               class="open-button"
@@ -3113,6 +3367,7 @@ exports[`components/table/Table extended > should match snapshot with UpdatedBy 
                   Open
                 </span>
                 
+                <!---->
               </button>
             </div>
           </div>
@@ -3172,8 +3427,11 @@ exports[`components/table/Table extended > should match snapshot with UpdatedBy 
               </span>
             </div>
           </div>
+          <!---->
           
+          <!---->
         </div>
+        <!---->
       </div>
       <div
         class="octo-table-footer"
@@ -3199,11 +3457,13 @@ exports[`components/table/Table extended > should match snapshot with UpdatedBy 
             Count
           </span>
           
+          <!---->
           <span
             class="calculationValue"
           >
             2
           </span>
+          <!---->
         </div>
         <div
           class="Calculation none octo-table-cell   "
@@ -3219,7 +3479,9 @@ exports[`components/table/Table extended > should match snapshot with UpdatedBy 
           <i
             class="CompassIcon icon-chevron-up ChevronUpIcon"
           />
+          <!---->
           
+          <!---->
         </div>
         <div
           class="Calculation none octo-table-cell   "
@@ -3235,7 +3497,9 @@ exports[`components/table/Table extended > should match snapshot with UpdatedBy 
           <i
             class="CompassIcon icon-chevron-up ChevronUpIcon"
           />
+          <!---->
           
+          <!---->
         </div>
         <div
           class="Calculation none octo-table-cell   "
@@ -3251,9 +3515,12 @@ exports[`components/table/Table extended > should match snapshot with UpdatedBy 
           <i
             class="CompassIcon icon-chevron-up ChevronUpIcon"
           />
+          <!---->
           
+          <!---->
         </div>
       </div>
+      <!---->
     </div>
   </div>
 </div>

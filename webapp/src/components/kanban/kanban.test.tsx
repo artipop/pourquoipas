@@ -175,6 +175,7 @@ describe('src/component/kanban/kanban', () => {
         ), {wrapper: TestRouter})
         expect(container).toMatchSnapshot()
     })
+
     // «Входящие» is a kanban grouped by who brought the card, so its columns
     // are not places a card can be put: dropping one in another column would be
     // asking the board to have been written by somebody else. The cards do not
@@ -201,6 +202,7 @@ describe('src/component/kanban/kanban', () => {
         ), {wrapper: TestRouter})
 
         expect(screen.queryByText('+ Add a group')).toBeNull()
+
         // The card is there and opens; what it does not do is start a drag.
         expect(container.querySelector('.KanbanCard')).not.toBeNull()
         expect(container.querySelector('.KanbanCard[draggable="true"]')).toBeNull()

@@ -1,5 +1,5 @@
 import {For, Show, createSignal} from 'solid-js'
-import {Dynamic} from 'solid-js/web'
+import {Dynamic} from '@solidjs/web'
 import type {Component} from 'solid-js'
 
 import {useIntl} from '../../intl'

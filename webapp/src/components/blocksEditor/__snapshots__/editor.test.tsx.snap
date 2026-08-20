@@ -6,6 +6,7 @@ exports[`components/blocksEditor/editor > should match snapshot 1`] = `
     class="Editor"
   >
     
+    <!---->
     <div
       class="TextContent"
       data-testid="text"
@@ -14,6 +15,7 @@ exports[`components/blocksEditor/editor > should match snapshot 1`] = `
         class="MarkdownEditor octo-editor  active"
       />
     </div>
+    <!---->
   </div>
 </div>
 `;
@@ -40,7 +42,9 @@ exports[`components/blocksEditor/editor > should match snapshot on empty 1`] = `
           class="RootInput__value-container"
         >
           
+          <!---->
           
+          <!---->
           <div
             class="RootInput__placeholder"
           >
@@ -60,7 +64,9 @@ exports[`components/blocksEditor/editor > should match snapshot on empty 1`] = `
       </div>
       
     </div>
+    <!---->
     
+    <!---->
   </div>
 </div>
 `;

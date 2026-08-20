@@ -1,4 +1,4 @@
-import {For, Show, createEffect, createSignal, onMount} from 'solid-js'
+import {For, Show, createEffect, createSignal, onSettled} from 'solid-js'
 import type {Component} from 'solid-js'
 import {useSearchParams} from '@solidjs/router'
 
@@ -57,26 +57,29 @@ const SharePage: Component = () => {
     // The title is what the sharing app called the page, and the note starts
     // with anything it sent as text — a selection, usually, which is exactly
     // what somebody sharing a quote wants to keep.
-    onMount(() => {
+    onSettled(() => {
         setTitle(String(params.title || ''))
         setNote(String(params.text || ''))
     })
 
-    onMount(async () => {
-        const list = await listBoards()
-        setBoards(list)
-        setReady(true)
+    onSettled(() => {
+        // Not awaited: onSettled reads a returned promise as a cleanup value.
+        void (async () => {
+            const list = await listBoards()
+            setBoards(list)
+            setReady(true)
+        })()
     })
 
     // Preselected once the boards are known: the one used last time if it is
     // still there, otherwise the first. A dialog that opens with nothing
     // selected asks two questions instead of one.
-    createEffect(() => {
-        if (target() || boards().length === 0) {
+    createEffect(() => [target(), boards()] as const, ([chosen, available]) => {
+        if (chosen || available.length === 0) {
             return
         }
-        const remembered = boards().find((board) => board.id === recalledBoard())
-        setTarget(remembered?.id || boards()[0].id)
+        const remembered = available.find((board) => board.id === recalledBoard())
+        setTarget(remembered?.id || available[0].id)
     })
 
     const send = async () => {
@@ -182,9 +185,8 @@ const SharePage: Component = () => {
                             {(board) => (
                                 <button
                                     type='button'
-                                    class='SharePage__board'
-                                    classList={{'SharePage__board--picked': target() === board.id}}
-                                    aria-pressed={target() === board.id}
+                                    class={['SharePage__board', {'SharePage__board--picked': target() === board.id}]}
+                                    aria-pressed={String(target() === board.id)}
                                     onClick={() => setTarget(board.id)}
                                 >
                                     <span class='SharePage__icon'>{board.icon}</span>

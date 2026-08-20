@@ -1,7 +1,7 @@
 import {TextDecoder as NodeTextDecoder, TextEncoder as NodeTextEncoder} from 'util'
 
 import {render, screen, waitFor} from '@solidjs/testing-library'
-import {MemoryRouter, Route, createMemoryHistory} from '@solidjs/router'
+import {createRouter, memoryHistory} from '@solidjs/router'
 
 import {IntlProvider} from '../../intl'
 import '@testing-library/jest-dom'
@@ -62,19 +62,18 @@ class FakeSocket {
 }
 
 const renderPage = () => {
-    const history = createMemoryHistory()
+    const history = memoryHistory()
     history.set({value: '/acp/terminal/term-1'})
+    const Instance = createRouter({
+        history,
+        routes: [{path: '/acp/terminal/:terminalId', component: TerminalPage}],
+    })
     return render(() =>
         <IntlProvider
             locale='en'
             messages={{}}
         >
-            <MemoryRouter history={history}>
-                <Route
-                    path='/acp/terminal/:terminalId'
-                    component={TerminalPage}
-                />
-            </MemoryRouter>
+            <Instance/>
         </IntlProvider>,
     )
 }
@@ -182,17 +181,16 @@ describe('components/acp/terminalPage', () => {
     // is no route to read the terminal from — so it hands one in, and the page
     // has to wire itself to that one rather than to the address bar.
     it('draws the terminal it was handed when there is no route to read', async () => {
+        const Instance = createRouter({
+            history: memoryHistory(),
+            routes: [{path: '/', component: () => <TerminalPage terminalId='term-42'/>}],
+        })
         render(() =>
             <IntlProvider
                 locale='en'
                 messages={{}}
             >
-                <MemoryRouter history={createMemoryHistory()}>
-                    <Route
-                        path='/'
-                        component={() => <TerminalPage terminalId='term-42'/>}
-                    />
-                </MemoryRouter>
+                <Instance/>
             </IntlProvider>,
         )
 

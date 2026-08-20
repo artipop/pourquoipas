@@ -13,7 +13,7 @@ exports[`components/content/contentElement > should match snapshot for checkbox 
     <input
       class="Editable "
       placeholder="Edit text..."
-      spellcheck="true"
+      spellcheck=""
       title="test-title"
     />
   </div>

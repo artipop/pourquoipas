@@ -26,6 +26,7 @@ exports[`component/BoardSwitcherDialog > base case 1`] = `
                 Find Boards
               </div>
             </h1>
+            <!---->
             <h5
               class="dialog-subtitle"
             >
@@ -45,12 +46,15 @@ exports[`component/BoardSwitcherDialog > base case 1`] = `
                  to dismiss
               </div>
             </h5>
+            <!---->
           </div>
           <div
             class="toolbar--right"
           >
             
+            <!---->
             
+            <!---->
             <button
               aria-label="Close dialog"
               class="IconButton dialog__close size--medium"
@@ -61,6 +65,7 @@ exports[`component/BoardSwitcherDialog > base case 1`] = `
                 class="CompassIcon icon-close CloseIcon"
               />
             </button>
+            <!---->
           </div>
         </div>
         <div

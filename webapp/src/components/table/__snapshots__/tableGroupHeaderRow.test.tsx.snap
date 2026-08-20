@@ -18,8 +18,11 @@ exports[`should match snapshot on read only 1`] = `
           class="CompassIcon icon-menu-right"
         />
       </button>
+      <!---->
       
+      <!---->
       
+      <!---->
       <span
         class="Label propColorBrown "
       >
@@ -27,10 +30,11 @@ exports[`should match snapshot on read only 1`] = `
           class="Editable readonly "
           placeholder="New Select"
           readonly=""
-          spellcheck="true"
+          spellcheck=""
           title="value 1"
         />
       </span>
+      <!---->
     </div>
     <button
       class="Button"
@@ -41,8 +45,11 @@ exports[`should match snapshot on read only 1`] = `
         0
       </span>
       
+      <!---->
     </button>
+    <!---->
     
+    <!---->
   </div>
 </div>
 `;
@@ -65,18 +72,22 @@ exports[`should match snapshot with Group 1`] = `
           class="CompassIcon icon-menu-right"
         />
       </button>
+      <!---->
       
+      <!---->
       
+      <!---->
       <span
         class="Label propColorBrown "
       >
         <input
           class="Editable "
           placeholder="New Select"
-          spellcheck="true"
+          spellcheck=""
           title="value 1"
         />
       </span>
+      <!---->
     </div>
     <button
       class="Button"
@@ -87,7 +98,9 @@ exports[`should match snapshot with Group 1`] = `
         0
       </span>
       
+      <!---->
     </button>
+    <!---->
     <div
       aria-label="menuwrapper"
       class="MenuWrapper"
@@ -101,7 +114,9 @@ exports[`should match snapshot with Group 1`] = `
           class="CompassIcon icon-dots-horizontal OptionsIcon"
         />
       </button>
+      <!---->
       
+      <!---->
     </div>
     <button
       class="IconButton"
@@ -111,6 +126,7 @@ exports[`should match snapshot with Group 1`] = `
         class="CompassIcon icon-plus AddIcon"
       />
     </button>
+    <!---->
   </div>
 </div>
 `;
@@ -133,18 +149,22 @@ exports[`should match snapshot, add new 1`] = `
           class="CompassIcon icon-menu-right"
         />
       </button>
+      <!---->
       
+      <!---->
       
+      <!---->
       <span
         class="Label propColorBrown "
       >
         <input
           class="Editable "
           placeholder="New Select"
-          spellcheck="true"
+          spellcheck=""
           title="value 1"
         />
       </span>
+      <!---->
     </div>
     <button
       class="Button"
@@ -155,7 +175,9 @@ exports[`should match snapshot, add new 1`] = `
         0
       </span>
       
+      <!---->
     </button>
+    <!---->
     <div
       aria-label="menuwrapper"
       class="MenuWrapper"
@@ -169,7 +191,9 @@ exports[`should match snapshot, add new 1`] = `
           class="CompassIcon icon-dots-horizontal OptionsIcon"
         />
       </button>
+      <!---->
       
+      <!---->
     </div>
     <button
       class="IconButton"
@@ -179,6 +203,7 @@ exports[`should match snapshot, add new 1`] = `
         class="CompassIcon icon-plus AddIcon"
       />
     </button>
+    <!---->
   </div>
 </div>
 `;
@@ -201,18 +226,22 @@ exports[`should match snapshot, edit title 1`] = `
           class="CompassIcon icon-menu-right"
         />
       </button>
+      <!---->
       
+      <!---->
       
+      <!---->
       <span
         class="Label propColorBrown "
       >
         <input
           class="Editable "
           placeholder="New Select"
-          spellcheck="true"
+          spellcheck=""
           title="value 1"
         />
       </span>
+      <!---->
     </div>
     <button
       class="Button"
@@ -223,7 +252,9 @@ exports[`should match snapshot, edit title 1`] = `
         0
       </span>
       
+      <!---->
     </button>
+    <!---->
     <div
       aria-label="menuwrapper"
       class="MenuWrapper"
@@ -237,7 +268,9 @@ exports[`should match snapshot, edit title 1`] = `
           class="CompassIcon icon-dots-horizontal OptionsIcon"
         />
       </button>
+      <!---->
       
+      <!---->
     </div>
     <button
       class="IconButton"
@@ -247,6 +280,7 @@ exports[`should match snapshot, edit title 1`] = `
         class="CompassIcon icon-plus AddIcon"
       />
     </button>
+    <!---->
   </div>
 </div>
 `;
@@ -269,18 +303,22 @@ exports[`should match snapshot, hide group 1`] = `
           class="CompassIcon icon-menu-right"
         />
       </button>
+      <!---->
       
+      <!---->
       
+      <!---->
       <span
         class="Label propColorBrown "
       >
         <input
           class="Editable "
           placeholder="New Select"
-          spellcheck="true"
+          spellcheck=""
           title="value 1"
         />
       </span>
+      <!---->
     </div>
     <button
       class="Button"
@@ -291,7 +329,9 @@ exports[`should match snapshot, hide group 1`] = `
         0
       </span>
       
+      <!---->
     </button>
+    <!---->
     <div
       aria-label="menuwrapper"
       class="MenuWrapper"
@@ -305,7 +345,9 @@ exports[`should match snapshot, hide group 1`] = `
           class="CompassIcon icon-dots-horizontal OptionsIcon"
         />
       </button>
+      <!---->
       
+      <!---->
     </div>
     <button
       class="IconButton"
@@ -315,6 +357,7 @@ exports[`should match snapshot, hide group 1`] = `
         class="CompassIcon icon-plus AddIcon"
       />
     </button>
+    <!---->
   </div>
 </div>
 `;
@@ -337,14 +380,18 @@ exports[`should match snapshot, no groups 1`] = `
           class="CompassIcon icon-menu-right"
         />
       </button>
+      <!---->
       <span
         class="Label empty "
         title="Items with an empty Property 1 property will go here. This column cannot be removed."
       >
         No Property 1
       </span>
+      <!---->
       
+      <!---->
       
+      <!---->
     </div>
     <button
       class="Button"
@@ -355,7 +402,9 @@ exports[`should match snapshot, no groups 1`] = `
         0
       </span>
       
+      <!---->
     </button>
+    <!---->
     <div
       aria-label="menuwrapper"
       class="MenuWrapper"
@@ -369,7 +418,9 @@ exports[`should match snapshot, no groups 1`] = `
           class="CompassIcon icon-dots-horizontal OptionsIcon"
         />
       </button>
+      <!---->
       
+      <!---->
     </div>
     <button
       class="IconButton"
@@ -379,6 +430,7 @@ exports[`should match snapshot, no groups 1`] = `
         class="CompassIcon icon-plus AddIcon"
       />
     </button>
+    <!---->
   </div>
 </div>
 `;

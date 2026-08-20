@@ -7,9 +7,11 @@ exports[`src/components/gallery/GalleryCard > with a comment content > return Ga
     style="opacity: 1;"
   >
     
+    <!---->
     <div
       class="gallery-item"
     />
+    <!---->
     <div
       class="gallery-title"
     >
@@ -24,8 +26,11 @@ exports[`src/components/gallery/GalleryCard > with a comment content > return Ga
         title
       </div>
     </div>
+    <!---->
     
+    <!---->
     
+    <!---->
   </div>
 </div>
 `;
@@ -48,6 +53,7 @@ exports[`src/components/gallery/GalleryCard > with a comment content > should ma
           class="CompassIcon icon-dots-horizontal OptionsIcon"
         />
       </button>
+      <!---->
       <div
         class="Menu noselect left"
       >
@@ -137,7 +143,6 @@ exports[`src/components/gallery/GalleryCard > with a comment content > should ma
                     height="24"
                     viewBox="0 0 24 24"
                     width="24"
-                    xmlns="http://www.w3.org/2000/svg"
                   >
                     <g
                       opacity="0.8"
@@ -233,10 +238,13 @@ exports[`src/components/gallery/GalleryCard > with a comment content > should ma
           </div>
         </div>
       </div>
+      <!---->
     </div>
+    <!---->
     <div
       class="gallery-item"
     />
+    <!---->
     <div
       class="gallery-title"
     >
@@ -251,8 +259,11 @@ exports[`src/components/gallery/GalleryCard > with a comment content > should ma
         title
       </div>
     </div>
+    <!---->
     
+    <!---->
     
+    <!---->
   </div>
 </div>
 `;
@@ -275,6 +286,7 @@ exports[`src/components/gallery/GalleryCard > with an image content > should mat
           class="CompassIcon icon-dots-horizontal OptionsIcon"
         />
       </button>
+      <!---->
       <div
         class="Menu noselect left"
       >
@@ -364,7 +376,6 @@ exports[`src/components/gallery/GalleryCard > with an image content > should mat
                     height="24"
                     viewBox="0 0 24 24"
                     width="24"
-                    xmlns="http://www.w3.org/2000/svg"
                   >
                     <g
                       opacity="0.8"
@@ -460,10 +471,13 @@ exports[`src/components/gallery/GalleryCard > with an image content > should mat
           </div>
         </div>
       </div>
+      <!---->
     </div>
+    <!---->
     <div
-      class="gallery-item"
+      class="gallery-image"
     />
+    <!---->
     <div
       class="gallery-title"
     >
@@ -478,8 +492,11 @@ exports[`src/components/gallery/GalleryCard > with an image content > should mat
         title
       </div>
     </div>
+    <!---->
     
+    <!---->
     
+    <!---->
   </div>
 </div>
 `;
@@ -491,9 +508,15 @@ exports[`src/components/gallery/GalleryCard > with many contents > return Galler
     style="opacity: 1;"
   >
     
+    <!---->
     <div
       class="gallery-item"
-    />
+    >
+      <div
+        class="DividerElement"
+      />
+    </div>
+    <!---->
     <div
       class="gallery-title"
     >
@@ -508,8 +531,11 @@ exports[`src/components/gallery/GalleryCard > with many contents > return Galler
         title
       </div>
     </div>
+    <!---->
     
+    <!---->
     
+    <!---->
   </div>
 </div>
 `;
@@ -532,6 +558,7 @@ exports[`src/components/gallery/GalleryCard > with many contents > should match 
           class="CompassIcon icon-dots-horizontal OptionsIcon"
         />
       </button>
+      <!---->
       <div
         class="Menu noselect left"
       >
@@ -621,7 +648,6 @@ exports[`src/components/gallery/GalleryCard > with many contents > should match 
                     height="24"
                     viewBox="0 0 24 24"
                     width="24"
-                    xmlns="http://www.w3.org/2000/svg"
                   >
                     <g
                       opacity="0.8"
@@ -717,10 +743,17 @@ exports[`src/components/gallery/GalleryCard > with many contents > should match 
           </div>
         </div>
       </div>
+      <!---->
     </div>
+    <!---->
     <div
       class="gallery-item"
-    />
+    >
+      <div
+        class="DividerElement"
+      />
+    </div>
+    <!---->
     <div
       class="gallery-title"
     >
@@ -735,8 +768,11 @@ exports[`src/components/gallery/GalleryCard > with many contents > should match 
         title
       </div>
     </div>
+    <!---->
     
+    <!---->
     
+    <!---->
   </div>
 </div>
 `;
@@ -759,6 +795,7 @@ exports[`src/components/gallery/GalleryCard > with many images content > should 
           class="CompassIcon icon-dots-horizontal OptionsIcon"
         />
       </button>
+      <!---->
       <div
         class="Menu noselect left"
       >
@@ -848,7 +885,6 @@ exports[`src/components/gallery/GalleryCard > with many images content > should 
                     height="24"
                     viewBox="0 0 24 24"
                     width="24"
-                    xmlns="http://www.w3.org/2000/svg"
                   >
                     <g
                       opacity="0.8"
@@ -944,10 +980,13 @@ exports[`src/components/gallery/GalleryCard > with many images content > should 
           </div>
         </div>
       </div>
+      <!---->
     </div>
+    <!---->
     <div
-      class="gallery-item"
+      class="gallery-image"
     />
+    <!---->
     <div
       class="gallery-title"
     >
@@ -962,8 +1001,11 @@ exports[`src/components/gallery/GalleryCard > with many images content > should 
         title
       </div>
     </div>
+    <!---->
     
+    <!---->
     
+    <!---->
   </div>
 </div>
 `;
@@ -986,11 +1028,15 @@ exports[`src/components/gallery/GalleryCard > without block content > return Gal
           class="CompassIcon icon-dots-horizontal OptionsIcon"
         />
       </button>
+      <!---->
       
+      <!---->
     </div>
+    <!---->
     <div
       class="gallery-item"
     />
+    <!---->
     <div
       class="gallery-title"
     >
@@ -1005,8 +1051,11 @@ exports[`src/components/gallery/GalleryCard > without block content > return Gal
         title
       </div>
     </div>
+    <!---->
     
+    <!---->
     
+    <!---->
   </div>
 </div>
 `;
@@ -1029,11 +1078,15 @@ exports[`src/components/gallery/GalleryCard > without block content > return Gal
           class="CompassIcon icon-dots-horizontal OptionsIcon"
         />
       </button>
+      <!---->
       
+      <!---->
     </div>
+    <!---->
     <div
       class="gallery-item"
     />
+    <!---->
     <div
       class="gallery-title"
     >
@@ -1048,8 +1101,11 @@ exports[`src/components/gallery/GalleryCard > without block content > return Gal
         title
       </div>
     </div>
+    <!---->
     
+    <!---->
     
+    <!---->
   </div>
 </div>
 `;
@@ -1072,11 +1128,15 @@ exports[`src/components/gallery/GalleryCard > without block content > return Gal
           class="CompassIcon icon-dots-horizontal OptionsIcon"
         />
       </button>
+      <!---->
       
+      <!---->
     </div>
+    <!---->
     <div
       class="gallery-item"
     />
+    <!---->
     <div
       class="gallery-title"
     >
@@ -1091,8 +1151,11 @@ exports[`src/components/gallery/GalleryCard > without block content > return Gal
         title
       </div>
     </div>
+    <!---->
     
+    <!---->
     
+    <!---->
   </div>
   <div
     class="Dialog dialog-back confirmation-dialog-box size--small"
@@ -1114,13 +1177,17 @@ exports[`src/components/gallery/GalleryCard > without block content > return Gal
             <h1
               class="dialog-title"
             />
+            <!---->
             
+            <!---->
           </div>
           <div
             class="toolbar--right"
           >
             
+            <!---->
             
+            <!---->
             <button
               aria-label="Close dialog"
               title="Close dialog"
@@ -1130,6 +1197,7 @@ exports[`src/components/gallery/GalleryCard > without block content > return Gal
                 class="CompassIcon icon-close CloseIcon"
               />
             </button>
+            <!---->
           </div>
         </div>
         <div
@@ -1156,7 +1224,9 @@ exports[`src/components/gallery/GalleryCard > without block content > return Gal
                 Cancel
               </span>
               
+              <!---->
             </button>
+            <!---->
             <button
               title="Delete"
               type="submit"
@@ -1166,7 +1236,9 @@ exports[`src/components/gallery/GalleryCard > without block content > return Gal
                 Delete
               </span>
               
+              <!---->
             </button>
+            <!---->
           </div>
         </div>
       </div>
@@ -1193,11 +1265,15 @@ exports[`src/components/gallery/GalleryCard > without block content > return Gal
           class="CompassIcon icon-dots-horizontal OptionsIcon"
         />
       </button>
+      <!---->
       
+      <!---->
     </div>
+    <!---->
     <div
       class="gallery-item"
     />
+    <!---->
     <div
       class="gallery-title"
     >
@@ -1212,8 +1288,11 @@ exports[`src/components/gallery/GalleryCard > without block content > return Gal
         title
       </div>
     </div>
+    <!---->
     
+    <!---->
     
+    <!---->
   </div>
 </div>
 `;
@@ -1236,6 +1315,7 @@ exports[`src/components/gallery/GalleryCard > without block content > should mat
           class="CompassIcon icon-dots-horizontal OptionsIcon"
         />
       </button>
+      <!---->
       <div
         class="Menu noselect left"
       >
@@ -1325,7 +1405,6 @@ exports[`src/components/gallery/GalleryCard > without block content > should mat
                     height="24"
                     viewBox="0 0 24 24"
                     width="24"
-                    xmlns="http://www.w3.org/2000/svg"
                   >
                     <g
                       opacity="0.8"
@@ -1421,10 +1500,13 @@ exports[`src/components/gallery/GalleryCard > without block content > should mat
           </div>
         </div>
       </div>
+      <!---->
     </div>
+    <!---->
     <div
       class="gallery-item"
     />
+    <!---->
     <div
       class="gallery-title"
     >
@@ -1439,6 +1521,7 @@ exports[`src/components/gallery/GalleryCard > without block content > should mat
         title
       </div>
     </div>
+    <!---->
     <div
       class="gallery-props"
     >
@@ -1448,10 +1531,14 @@ exports[`src/components/gallery/GalleryCard > without block content > should mat
         <div
           class="octo-propertyvalue octo-propertyvalue--readonly"
         />
+        <!---->
         
+        <!---->
       </div>
     </div>
+    <!---->
     
+    <!---->
   </div>
 </div>
 `;

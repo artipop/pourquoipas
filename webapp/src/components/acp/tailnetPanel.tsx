@@ -1,6 +1,6 @@
 // The Wails-generated Go bindings are PascalCase methods, not constructors.
 /* eslint-disable new-cap */
-import {Show, createSignal, onCleanup, onMount} from 'solid-js'
+import {Show, createSignal, onSettled} from 'solid-js'
 
 import {useIntl} from '../../intl'
 import {IAppWindow} from '../../types'
@@ -64,7 +64,7 @@ const TailnetPanel = () => {
         }
     }
 
-    onMount(() => {
+    onSettled(() => {
         refresh()
 
         // Joining a tailnet is not a moment: the node registers, waits for a
@@ -76,7 +76,7 @@ const TailnetPanel = () => {
                 refresh()
             }
         }, 1000)
-        onCleanup(() => clearInterval(timer))
+        return () => clearInterval(timer)
     })
 
     const save = async (enabled: boolean) => {

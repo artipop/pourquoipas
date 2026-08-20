@@ -1,4 +1,4 @@
-import {createMemo, createSignal, onCleanup, onMount} from 'solid-js'
+import {createMemo, createSignal, onSettled} from 'solid-js'
 import type {Accessor} from 'solid-js'
 import throttle from 'lodash/throttle'
 
@@ -20,10 +20,10 @@ export function useMeasurePunchouts(elementIds: string[], offset?: PunchoutOffse
         setSize(document.getElementById('root')?.getBoundingClientRect())
     }, 100)
 
-    onMount(() => {
+    onSettled(() => {
         window.addEventListener('resize', updateSize)
-        onCleanup(() =>
-            window.removeEventListener('resize', updateSize))
+        return () =>
+            window.removeEventListener('resize', updateSize)
     })
 
     return createMemo(() => {

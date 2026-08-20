@@ -1,5 +1,5 @@
 import {Show, createUniqueId} from 'solid-js'
-import {Dynamic} from 'solid-js/web'
+import {Dynamic} from '@solidjs/web'
 import {useDraggable, useDragOperation, useDroppable} from '@dnd-kit/solid'
 
 import GripIcon from '../../widgets/icons/grip'

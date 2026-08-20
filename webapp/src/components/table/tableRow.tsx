@@ -1,4 +1,4 @@
-import {For, Show, createSignal, onMount} from 'solid-js'
+import {For, Show, createSignal, onSettled} from 'solid-js'
 
 import {FormattedMessage, useIntl} from '../../intl'
 
@@ -53,7 +53,7 @@ const TableRow = (props: Props) => {
     const [showConfirmationDialogBox, setShowConfirmationDialogBox] = createSignal<boolean>(false)
     const columnResize = useColumnResize()
 
-    onMount(() => {
+    onSettled(() => {
         if (props.focusOnMount) {
             setTimeout(() => titleRef?.focus(), 10)
         }

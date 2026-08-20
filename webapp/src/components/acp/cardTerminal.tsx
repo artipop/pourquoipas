@@ -1,6 +1,6 @@
 // The Wails-generated Go bindings are PascalCase methods, not constructors.
 /* eslint-disable new-cap */
-import {For, Index, Show, Suspense, createEffect, createSignal, lazy, on, onCleanup, onMount} from 'solid-js'
+import {For, Loading, Show, createEffect, createSignal, lazy, onSettled} from 'solid-js'
 
 import {useIntl} from '../../intl'
 
@@ -169,38 +169,45 @@ const CardTerminal = (props: Props) => {
         await start(false)
     }
 
-    onMount(async () => {
-        // A stage of the route may start, end or be named while somebody is
-        // reading this panel, and the list has to say so without being closed
-        // and opened again. Subscribed before anything is awaited: what happens
-        // in between is exactly what a card with a route running on it does.
-        onCleanup(onAgentEvent('acp:terminal', () => refreshCardAgent(props.cardId)))
+    // A stage of the route may start, end or be named while somebody is
+    // reading this panel, and the list has to say so without being closed and
+    // opened again. Its own onSettled, and before the one below: a cleanup is
+    // returned in Solid 2, and an async callback returns a promise instead —
+    // so the subscription cannot share a block with anything awaited. It still
+    // lands before the first await, which is what matters: what happens in
+    // between is exactly what a card with a route running on it does.
+    onSettled(() => onAgentEvent('acp:terminal', () => refreshCardAgent(props.cardId)))
 
-        // What is known about the card comes first, because «no folder» is a
-        // question for the person sitting here, never a silent temp directory:
-        // a conversation that exists (live or resumable on the current stage)
-        // or a card that resolves a folder opens straight away; anything else
-        // is the ask below, with «— без папки —» as one of its answers.
-        await refreshCardAgent(props.cardId)
-        const known = state()
+    onSettled(() => {
+        // Not awaited: onSettled reads a returned promise as a cleanup value.
+        void (async () => {
+            // What is known about the card comes first, because «no folder» is a
+            // question for the person sitting here, never a silent temp directory:
+            // a conversation that exists (live or resumable on the current stage)
+            // or a card that resolves a folder opens straight away; anything else
+            // is the ask below, with «— без папки —» as one of its answers.
+            await refreshCardAgent(props.cardId)
+            const known = state()
 
-        // The current node's conversation, when there is one to continue —
-        // or a card that resolves a folder, which opens without a question.
-        const hasConversation = (known.conversations || []).some((c) => c.current && (c.running || c.startedAt))
-        if (known.running || hasConversation || known.folder) {
-            start(false)
-            return
-        }
-        await offerChoices()
-        setChoosing(true)
-        setBusy(false)
+            // The current node's conversation, when there is one to continue —
+            // or a card that resolves a folder, which opens without a question.
+            const hasConversation = (known.conversations || []).some((c) => c.current && (c.running || c.startedAt))
+            if (known.running || hasConversation || known.folder) {
+                start(false)
+                return
+            }
+            await offerChoices()
+            setChoosing(true)
+            setBusy(false)
+        })()
     })
 
     // Re-read the list when the card's properties change — a move most of all.
-    // `on` with defer skips the mount, which already refreshes.
-    createEffect(on(() => JSON.stringify(card()?.fields?.properties || {}), () => {
+    // The tracked half is the compute; `defer` skips the mount, which already
+    // refreshes.
+    createEffect(() => JSON.stringify(card()?.fields?.properties || {}), () => {
         refreshCardAgent(props.cardId)
-    }, {defer: true}))
+    }, {defer: true})
 
     // One row per node the card has stood on, the current node's first — Go
     // orders and synthesizes it, because it is the one the panel opens.
@@ -426,8 +433,7 @@ const CardTerminal = (props: Props) => {
                 thing being listed. */}
             <Show when={rows().length > 0}>
                 <ul
-                    class='ConversationList CardTerminal__conversations'
-                    classList={{'CardTerminal__conversations--capped': Boolean(terminalId())}}
+                    class={['ConversationList CardTerminal__conversations', {'CardTerminal__conversations--capped': Boolean(terminalId())}]}
                 >
                     {/* Index, not For: the list is re-read whenever a terminal
                         starts, ends or is named, and For keys by identity — so
@@ -436,7 +442,10 @@ const CardTerminal = (props: Props) => {
                         about, with them. The order here is fixed (the card's
                         own conversation, then the stages), which is what makes
                         keying by position honest. */}
-                    <Index each={rows()}>
+                    <For
+                        each={rows()}
+                        keyed={false}
+                    >
                         {(c) => (
                             <ConversationRow
                                 name={rowName(c())}
@@ -452,7 +461,7 @@ const CardTerminal = (props: Props) => {
                                 title={rowTitle(c())}
                             />
                         )}
-                    </Index>
+                    </For>
                 </ul>
             </Show>
 
@@ -498,9 +507,9 @@ const CardTerminal = (props: Props) => {
                             </button>
                         </div>
                         <div class='CardTerminal__screen'>
-                            <Suspense fallback={null}>
+                            <Loading fallback={null}>
                                 <InlineTerminal terminalId={id}/>
-                            </Suspense>
+                            </Loading>
                         </div>
                     </div>
                 )}

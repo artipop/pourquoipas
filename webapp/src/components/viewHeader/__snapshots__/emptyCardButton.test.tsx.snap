@@ -16,7 +16,6 @@ exports[`components/viewHeader/emptyCardButton > return EmptyCardButton 1`] = `
         <svg
           class="CardIcon Icon"
           viewBox="0 0 100 100"
-          xmlns="http://www.w3.org/2000/svg"
         >
           <rect
             height="40"
@@ -52,7 +51,9 @@ exports[`components/viewHeader/emptyCardButton > return EmptyCardButton 1`] = `
           class="CompassIcon icon-dots-horizontal OptionsIcon"
         />
       </button>
+      <!---->
       
+      <!---->
     </div>
   </div>
 </div>
@@ -74,7 +75,6 @@ exports[`components/viewHeader/emptyCardButton > return EmptyCardButton and Set 
         <svg
           class="CardIcon Icon"
           viewBox="0 0 100 100"
-          xmlns="http://www.w3.org/2000/svg"
         >
           <rect
             height="40"
@@ -110,6 +110,7 @@ exports[`components/viewHeader/emptyCardButton > return EmptyCardButton and Set 
           class="CompassIcon icon-dots-horizontal OptionsIcon"
         />
       </button>
+      <!---->
       <div
         class="Menu noselect left"
       >
@@ -134,7 +135,6 @@ exports[`components/viewHeader/emptyCardButton > return EmptyCardButton and Set 
                   <svg
                     class="CheckIcon Icon"
                     viewBox="0 0 100 100"
-                    xmlns="http://www.w3.org/2000/svg"
                   >
                     <polyline
                       points="20,60 40,80 80,40"
@@ -192,6 +192,7 @@ exports[`components/viewHeader/emptyCardButton > return EmptyCardButton and Set 
           </div>
         </div>
       </div>
+      <!---->
     </div>
   </div>
 </div>
@@ -213,7 +214,6 @@ exports[`components/viewHeader/emptyCardButton > return EmptyCardButton and addC
         <svg
           class="CardIcon Icon"
           viewBox="0 0 100 100"
-          xmlns="http://www.w3.org/2000/svg"
         >
           <rect
             height="40"
@@ -249,7 +249,9 @@ exports[`components/viewHeader/emptyCardButton > return EmptyCardButton and addC
           class="CompassIcon icon-dots-horizontal OptionsIcon"
         />
       </button>
+      <!---->
       
+      <!---->
     </div>
   </div>
 </div>

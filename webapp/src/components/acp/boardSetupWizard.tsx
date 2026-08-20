@@ -1,6 +1,6 @@
 // The Wails-generated Go bindings are PascalCase methods, not constructors.
 /* eslint-disable new-cap */
-import {For, Show, createEffect, createSignal, onMount} from 'solid-js'
+import {For, Show, createEffect, createSignal, onSettled} from 'solid-js'
 
 import {useIntl} from '../../intl'
 
@@ -181,7 +181,7 @@ const BoardSetupWizard = (props: Props) => {
         }
     }
 
-    onMount(() => {
+    onSettled(() => {
         refresh()
         listBoards().then(setBoards).catch(() => setBoards([]))
     })
@@ -190,8 +190,7 @@ const BoardSetupWizard = (props: Props) => {
     // the answer it was given last time rather than on nobody. Only until
     // somebody touches the chips — a plan is refetched after every answer, and
     // it must never reinstate a name just taken off.
-    createEffect(() => {
-        const named = plan()?.workAgents
+    createEffect(() => plan()?.workAgents, (named) => {
         if (named?.length && !agentPicked()) {
             setBoardAgents(named)
         }
@@ -203,8 +202,7 @@ const BoardSetupWizard = (props: Props) => {
     // arrives, though: it is refetched after every answer, and moving the
     // person then would take the step out of their hands.
     let opened = false
-    createEffect(() => {
-        const list = steps()
+    createEffect(steps, (list) => {
         if (opened || list.length === 0) {
             return
         }
@@ -494,9 +492,8 @@ const BoardSetupWizard = (props: Props) => {
                                     {(a) => (
                                         <button
                                             type='button'
-                                            class='BoardSetupWizard__agentChoice'
-                                            classList={{'BoardSetupWizard__agentChoice--chosen': chosenAgent(a.name)}}
-                                            aria-pressed={chosenAgent(a.name)}
+                                            class={['BoardSetupWizard__agentChoice', {'BoardSetupWizard__agentChoice--chosen': chosenAgent(a.name)}]}
+                                            aria-pressed={String(chosenAgent(a.name))}
                                             disabled={busy()}
                                             onClick={() => toggleAgent(a.name)}
                                         >
@@ -606,9 +603,8 @@ const BoardSetupWizard = (props: Props) => {
                             {(a) => (
                                 <button
                                     type='button'
-                                    class='BoardSetupWizard__agentChoice'
-                                    classList={{'BoardSetupWizard__agentChoice--chosen': a.name === testAgent()}}
-                                    aria-pressed={a.name === testAgent()}
+                                    class={['BoardSetupWizard__agentChoice', {'BoardSetupWizard__agentChoice--chosen': a.name === testAgent()}]}
+                                    aria-pressed={String(a.name === testAgent())}
                                     disabled={busy()}
                                     onClick={() => setTestAgent(a.name)}
                                 >

@@ -1,4 +1,4 @@
-import {createSignal, onCleanup} from 'solid-js'
+import {createSignal, onSettled} from 'solid-js'
 
 // Something has taken the whole window, and the sidebar stands down while it
 // has it.
@@ -20,7 +20,14 @@ export const screenTaken = (): boolean => taken() > 0
 // useWholeScreen is called by the component that takes the window. It releases
 // on cleanup, so a dialog that is closed — or a page that navigates away with
 // one open — gives the sidebar back without anybody having to remember to.
+//
+// Taken on the settle rather than in the caller's body: the write is the whole
+// point of the call, and Solid 2 refuses one during render. The sidebar
+// therefore stands down a frame after the dialog appears, which nobody sees —
+// it is drawn over the sidebar either way.
 export function useWholeScreen(): void {
-    setTaken((n) => n + 1)
-    onCleanup(() => setTaken((n) => n - 1))
+    onSettled(() => {
+        setTaken((n) => n + 1)
+        return () => setTaken((n) => n - 1)
+    })
 }

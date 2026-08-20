@@ -49,7 +49,9 @@ exports[`components/onboardingTour/addComments/OpenCardTourStep > after hover 1`
           class="tutorial-tour-tip__btn-ctr"
         >
           
+          <!---->
           
+          <!---->
         </div>
       </div>
       

@@ -1,6 +1,6 @@
 // The Wails-generated Go bindings are PascalCase methods, not constructors.
 /* eslint-disable new-cap */
-import {For, Show, createSignal, onMount} from 'solid-js'
+import {For, Show, createSignal, onSettled} from 'solid-js'
 
 import {Board} from '../../blocks/board'
 import {useIntl} from '../../intl'
@@ -149,7 +149,10 @@ const SourcesDialog = (props: Props) => {
         }
     }
 
-    onMount(refresh)
+    // Not awaited: onSettled reads a returned promise as a cleanup value.
+    onSettled(() => {
+        void refresh()
+    })
 
     const add = async () => {
         const title = name().trim()

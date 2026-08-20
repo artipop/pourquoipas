@@ -228,12 +228,28 @@ every migration bug found so far has been one — `useAppSelector` returns an
 **accessor**, so `foo()` is the value and bare `foo` is a function and therefore
 always truthy; props are getters, so destructuring one takes a snapshot.
 
+It is **Solid 2**, and that is a different reactive model rather than a version
+bump: an effect is a tracked compute and an untracked apply
+(`createEffect(() => dep(), (value) => …)`), the apply's return value is its
+cleanup, a write is staged until the microtask drains, `onMount`/`batch`/
+`produce`/`createResource`/`classList` are gone, and a boolean handed to
+`aria-expanded` drops the attribute. `docs/solid2.md` is what changed, the
+three bugs the move nearly shipped, and what is still owed.
+
+Two dependencies are Solid 1 only — `@dnd-kit/solid` and `@dschz/solid-flow` —
+and run on a compat layer in `webapp/solid1/`, pointed at those packages alone
+by importer path. Applied globally it rewrites what `@solidjs/web` itself
+imports, which builds the Solid 2 renderer on Solid 1 semantics; that is the
+whole reason it is scoped.
+
 State lives in `src/store`: `createAppStore(deps, initialState)` builds one
-`solid-js/store` tree with per-domain actions, passed down by `AppStoreProvider`
+store tree with per-domain actions, passed down by `AppStoreProvider`
 and read with `useAppSelector(selector)`, which memoizes on the fields the
 selector touched. There is no dispatch and no thunk — an action is a method that
 writes the store, and the client it calls arrives through `deps` rather than a
-module import, which is what lets a test hand it a mock.
+module import, which is what lets a test hand it a mock. A path setter goes
+through `storePath`; a `produce` call site is a draft callback, never
+`storePath`, which reads an updater's return value and so wipes the branch.
 
 React-only libraries were replaced rather than wrapped: `@dnd-kit/solid`,
 `@dschz/solid-flow` for the workflow canvas, `@solidjs/router`, `@formatjs/intl`

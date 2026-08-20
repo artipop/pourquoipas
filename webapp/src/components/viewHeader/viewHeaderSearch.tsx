@@ -1,5 +1,5 @@
 import {createEffect, createSignal, onCleanup} from 'solid-js'
-import type {JSX} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 import debounce from 'lodash/debounce'
 
 import {useIntl} from '../../intl'
@@ -28,8 +28,7 @@ const ViewHeaderSearch = (): JSX.Element => {
 
     const debouncedDispatchSearchText = debounce(dispatchSearchText, 200)
 
-    createEffect(() => {
-        const viewId = match().params.viewId
+    createEffect(() => match().params.viewId, (viewId) => {
         if (viewId !== currentView()) {
             setCurrentView(viewId)
             setSearchValue('')

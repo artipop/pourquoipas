@@ -83,12 +83,14 @@ const CardDetailProperties = (props: Props) => {
         return property?.options.find((o) => o.id === optionId)?.value || ''
     }
 
-    createEffect(() => {
-        const newProperty = props.board.cardProperties.find((property) => property.id === newTemplateId())
-        if (newProperty) {
-            setNewTemplateId('')
-        }
-    })
+    createEffect(
+        () => props.board.cardProperties.find((property) => property.id === newTemplateId()),
+        (newProperty) => {
+            if (newProperty) {
+                setNewTemplateId('')
+            }
+        },
+    )
 
     const [confirmationDialogBox, setConfirmationDialogBox] = createSignal<ConfirmationDialogBoxProps>({heading: '', onConfirm: () => {}, onClose: () => {}})
     const [showConfirmationDialog, setShowConfirmationDialog] = createSignal<boolean>(false)

@@ -9,7 +9,9 @@ import path from 'path'
 import {fileURLToPath} from 'url'
 
 import {defineConfig} from 'vitest/config'
-import solid from 'vite-plugin-solid'
+import solid from '@solidjs/vite-plugin'
+
+import {solid1Compat} from './solid1/plugin'
 
 const root = path.dirname(fileURLToPath(import.meta.url))
 
@@ -19,7 +21,7 @@ export default defineConfig({
     // The plugin also settles what jest needed customExportConditions for: in
     // test mode it resolves solid-js to its browser development build, without
     // which a component renders once and never reacts again.
-    plugins: [solid()],
+    plugins: [solid1Compat(), solid()],
 
     resolve: {
         alias: [
@@ -38,6 +40,16 @@ export default defineConfig({
     },
 
     test: {
+
+        // The Solid 1 packages have to go through Vite, or solid1Compat never
+        // sees them: vitest hands a dependency straight to Node unless it is
+        // inlined, and Node then resolves `solid-js/web` against a Solid 2
+        // package that does not publish it.
+        server: {
+            deps: {
+                inline: [/@dnd-kit\//, /@dschz\//, /@solid-primitives\//],
+            },
+        },
 
         // The suite was written against jest's injected globals, so `describe`,
         // `expect` and `vi` are expected to exist without an import.
@@ -61,6 +73,7 @@ export default defineConfig({
         setupFiles: [
             path.join(root, 'src/test/jsdomPolyfills.ts'),
             path.join(root, 'src/test/dndKitSnapshotSerializer.ts'),
+            path.join(root, 'src/test/flushAfterEvents.ts'),
         ],
 
         // Half the cores, as under jest: the suite is wide enough that full

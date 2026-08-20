@@ -18,8 +18,11 @@ exports[`components/viewTitle > add random icon 1`] = `
           Add icon
         </span>
         
+        <!---->
       </button>
+      <!---->
       
+      <!---->
       <button
         type="button"
       >
@@ -30,18 +33,22 @@ exports[`components/viewTitle > add random icon 1`] = `
           Show description
         </span>
         
+        <!---->
       </button>
+      <!---->
     </div>
     <div
       class="title"
     >
       
+      <!---->
       <input
         class="Editable title"
         placeholder="Untitled board"
-        spellcheck="true"
+        spellcheck=""
         title="board title"
       />
+      <!---->
     </div>
     
   </div>
@@ -57,7 +64,9 @@ exports[`components/viewTitle > hide description 1`] = `
       class="add-buttons add-visible"
     >
       
+      <!---->
       
+      <!---->
       <button
         type="button"
       >
@@ -68,7 +77,9 @@ exports[`components/viewTitle > hide description 1`] = `
           Show description
         </span>
         
+        <!---->
       </button>
+      <!---->
     </div>
     <div
       class="title"
@@ -88,15 +99,19 @@ exports[`components/viewTitle > hide description 1`] = `
               i
             </span>
           </div>
+          <!---->
           
+          <!---->
         </div>
       </div>
+      <!---->
       <input
         class="Editable title"
         placeholder="Untitled board"
-        spellcheck="true"
+        spellcheck=""
         title="board title"
       />
+      <!---->
     </div>
     
   </div>
@@ -112,6 +127,7 @@ exports[`components/viewTitle > should match snapshot 1`] = `
       class="add-buttons add-visible"
     >
       
+      <!---->
       <button
         type="button"
       >
@@ -122,8 +138,11 @@ exports[`components/viewTitle > should match snapshot 1`] = `
           Hide description
         </span>
         
+        <!---->
       </button>
+      <!---->
       
+      <!---->
     </div>
     <div
       class="title"
@@ -143,15 +162,19 @@ exports[`components/viewTitle > should match snapshot 1`] = `
               i
             </span>
           </div>
+          <!---->
           
+          <!---->
         </div>
       </div>
+      <!---->
       <input
         class="Editable title"
         placeholder="Untitled board"
-        spellcheck="true"
+        spellcheck=""
         title="board title"
       />
+      <!---->
     </div>
     <div
       class="description"
@@ -178,8 +201,11 @@ exports[`components/viewTitle > should match snapshot readonly 1`] = `
       class="add-buttons add-visible"
     >
       
+      <!---->
       
+      <!---->
       
+      <!---->
     </div>
     <div
       class="title"
@@ -195,13 +221,15 @@ exports[`components/viewTitle > should match snapshot readonly 1`] = `
           </span>
         </div>
       </div>
+      <!---->
       <input
         class="Editable readonly title"
         placeholder="Untitled board"
         readonly=""
-        spellcheck="true"
+        spellcheck=""
         title="board title"
       />
+      <!---->
     </div>
     <div
       class="description"
@@ -228,6 +256,7 @@ exports[`components/viewTitle > show description 1`] = `
       class="add-buttons add-visible"
     >
       
+      <!---->
       <button
         type="button"
       >
@@ -238,8 +267,11 @@ exports[`components/viewTitle > show description 1`] = `
           Hide description
         </span>
         
+        <!---->
       </button>
+      <!---->
       
+      <!---->
     </div>
     <div
       class="title"
@@ -259,15 +291,19 @@ exports[`components/viewTitle > show description 1`] = `
               i
             </span>
           </div>
+          <!---->
           
+          <!---->
         </div>
       </div>
+      <!---->
       <input
         class="Editable title"
         placeholder="Untitled board"
-        spellcheck="true"
+        spellcheck=""
         title="board title"
       />
+      <!---->
     </div>
     <div
       class="description"

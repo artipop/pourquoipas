@@ -1,6 +1,6 @@
 // The Wails-generated Go bindings are PascalCase methods, not constructors.
 /* eslint-disable new-cap */
-import {For, Show, createSignal, onMount} from 'solid-js'
+import {For, Show, createSignal, onSettled} from 'solid-js'
 
 import {useIntl} from '../../intl'
 
@@ -62,7 +62,10 @@ const FolderChoices = (props: Props) => {
         }
     }
 
-    onMount(load)
+    // Not awaited: onSettled reads a returned promise as a cleanup value.
+    onSettled(() => {
+        void load()
+    })
 
     // A folder is two answers — where it is and what to call it — and the native
     // picker gives both. It is registered on this board (never globally: that is

@@ -1,5 +1,6 @@
 import {createContext, useContext} from 'solid-js'
-import type {JSX, ParentComponent} from 'solid-js'
+import type {ParentComponent} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 
 import {Constants} from '../../constants'
 
@@ -77,8 +78,8 @@ export const ColumnResizeProvider: ParentComponent<ColumnResizeProviderProps> = 
     }
 
     return (
-        <ColumnResizeContext.Provider value={contextValue}>
+        <ColumnResizeContext value={contextValue}>
             {props.children}
-        </ColumnResizeContext.Provider>
+        </ColumnResizeContext>
     )
 }

@@ -1,5 +1,5 @@
 import {Show} from 'solid-js'
-import type {JSX} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 
 import {Board, IPropertyOption, IPropertyTemplate, BoardGroup} from '../../blocks/board'
 import {BoardView} from '../../blocks/boardView'

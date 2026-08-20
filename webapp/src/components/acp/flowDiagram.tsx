@@ -1,4 +1,4 @@
-import {Show, createEffect, createMemo, createSignal, onCleanup} from 'solid-js'
+import {Show, createEffect, createMemo, createSignal, onCleanup, onSettled} from 'solid-js'
 import {
     Background,
     Connection,
@@ -370,7 +370,13 @@ const fitWhenMeasured = (handle: FlowHandle, ids: string[], frame: number) => {
 // events land on the wrapper div, which is outside, and converting a drop
 // point into graph coordinates is the canvas' own knowledge.
 const CanvasHook = (props: {onReady: (flow: FlowHandle) => void}) => {
-    props.onReady(useSolidFlow() as unknown as FlowHandle)
+    // The API is read in the body, because that is the only place the canvas'
+    // context is in scope; handing it out is a write, which Solid 2 refuses
+    // during render, so that half waits for the settle.
+    const flow = useSolidFlow() as unknown as FlowHandle
+    onSettled(() => {
+        props.onReady(flow)
+    })
     return null
 }
 
@@ -540,9 +546,9 @@ const FlowDiagram = (props: Props) => {
     const [drawnNodes, setDrawnNodes] = createNodeStore([]) as unknown as [Node[], (nodes: Node[]) => void]
     const [drawnEdges, setDrawnEdges] = createEdgeStore([]) as unknown as [Edge[], (edges: Edge[]) => void]
 
-    createEffect(() => {
-        setDrawnNodes(graph().rfNodes)
-        setDrawnEdges(graph().rfEdges)
+    createEffect(graph, (drawn) => {
+        setDrawnNodes(drawn.rfNodes)
+        setDrawnEdges(drawn.rfEdges)
     })
 
     // An arrow drawn to or from a faded column puts it on the route first: the
@@ -627,10 +633,8 @@ const FlowDiagram = (props: Props) => {
     // be there on the first run.
     const shape = createMemo(() => drawnNodes.map((n) => n.id).join('|'))
     const [paneSize, setPaneSize] = createSignal('')
-    createEffect(() => {
-        const ids = shape().split('|').filter(Boolean)
-        paneSize()
-        const handle = flowHandle()
+    createEffect(() => [shape(), paneSize(), flowHandle()] as const, ([drawn, , handle]) => {
+        const ids = drawn.split('|').filter(Boolean)
         if (handle?.fitView && ids.length > 0) {
             fitWhenMeasured(handle, ids, 0)
         }

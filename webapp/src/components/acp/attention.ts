@@ -1,6 +1,6 @@
 // The Wails-generated Go bindings are PascalCase methods, not constructors.
 /* eslint-disable new-cap */
-import {Accessor, createMemo, createSignal, onCleanup, onMount} from 'solid-js'
+import {Accessor, createMemo, createSignal, onSettled} from 'solid-js'
 
 import {UserSettings} from '../../userSettings'
 
@@ -129,14 +129,14 @@ function subscribe(): () => void {
 // useAttention gives a component everything waiting for a person, oldest wait
 // first, and keeps it current for as long as the component lives.
 export function useAttention(): Accessor<Attention[]> {
-    onMount(() => onCleanup(subscribe()))
+    onSettled(() => subscribe())
     return waiting
 }
 
 // useCardAttention is the same thing asked about one card — what a card on the
 // board shows an indicator for.
 export function useCardAttention(cardId: Accessor<string>): Accessor<Attention | undefined> {
-    onMount(() => onCleanup(subscribe()))
+    onSettled(() => subscribe())
     return createMemo(() => waiting().find((a) => a.cardId === cardId()))
 }
 

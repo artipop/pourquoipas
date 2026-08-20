@@ -1,5 +1,5 @@
 import {Show, createEffect, createSignal} from 'solid-js'
-import {Dynamic} from 'solid-js/web'
+import {Dynamic} from '@solidjs/web'
 
 import * as contentBlocks from './blocks/'
 import {ContentType, BlockData} from './blocks/types'
@@ -19,7 +19,7 @@ export default function Editor(props: Props) {
     const [value, setValue] = createSignal(props.initialValue || '')
     const [currentBlockType, setCurrentBlockType] = createSignal<ContentType|null>(contentBlocks.get(props.initialContentType || '') || null)
 
-    createEffect(() => {
+    createEffect(() => [currentBlockType(), value()] as const, () => {
         if (!currentBlockType()) {
             const block = contentBlocks.getByPrefix(value())
             if (block) {

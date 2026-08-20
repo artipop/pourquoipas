@@ -1,4 +1,4 @@
-import {produce} from 'solid-js/store'
+import {storePath} from 'solid-js'
 
 import {CommentBlock} from '../blocks/commentBlock'
 import {Block} from '../blocks/block'
@@ -30,7 +30,7 @@ export const commentsFromBlocks = (blocks: Block[]): CommentsState => {
 
 export const createCommentsActions = ({setState}: StoreContext) => ({
     updateComments(comments: CommentBlock[]) {
-        setState('comments', produce((state) => {
+        setState(({comments: state}) => {
             for (const comment of comments) {
                 if (comment.deleteAt === 0) {
                     state.comments[comment.id] = comment
@@ -64,10 +64,10 @@ export const createCommentsActions = ({setState}: StoreContext) => ({
                     delete state.comments[comment.id]
                 }
             }
-        }))
+        })
     },
     setComments(next: CommentsState) {
-        setState('comments', next)
+        setState(storePath('comments', next))
     },
 })
 

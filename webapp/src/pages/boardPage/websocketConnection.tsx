@@ -1,4 +1,4 @@
-import {Show, createEffect, createSignal, onCleanup} from 'solid-js'
+import {Show, createEffect, createSignal} from 'solid-js'
 
 import {FormattedMessage} from '../../intl'
 
@@ -17,8 +17,7 @@ const WebsocketConnection = () => {
     const [websocketClosed, setWebsocketClosed] = createSignal(false)
     const me = useAppSelector<IUser|null>(getMe)
 
-    createEffect(() => {
-        void me()?.id
+    createEffect(() => me()?.id, () => {
         let timeout: ReturnType<typeof setTimeout>
         const updateWebsocketState = (_: WSClient, newState: 'init'|'open'|'close'): void => {
             if (timeout) {
@@ -36,12 +35,12 @@ const WebsocketConnection = () => {
 
         wsClient.addOnStateChange(updateWebsocketState)
 
-        onCleanup(() => {
+        return () => {
             if (timeout) {
                 clearTimeout(timeout)
             }
             wsClient.removeOnStateChange(updateWebsocketState)
-        })
+        }
     })
 
     return (

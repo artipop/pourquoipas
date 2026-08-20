@@ -1,4 +1,4 @@
-import {onCleanup, onMount} from 'solid-js'
+import {onSettled} from 'solid-js'
 import type {ParentComponent} from 'solid-js'
 
 import {useIntl} from '../intl'
@@ -22,11 +22,11 @@ const Modal: ParentComponent<Props> = (props) => {
         props.onClose()
     }
 
-    onMount(() => {
+    onSettled(() => {
         document.addEventListener('click', closeOnBlur, true)
-        onCleanup(() => {
+        return () => {
             document.removeEventListener('click', closeOnBlur, true)
-        })
+        }
     })
 
     return (

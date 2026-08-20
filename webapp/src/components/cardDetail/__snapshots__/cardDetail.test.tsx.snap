@@ -95,7 +95,9 @@ exports[`components/cardDetail/CardDetail > should show add description tour tip
               Previous
             </span>
             
+            <!---->
           </button>
+          <!---->
           <button
             class="Button filled size--small tipNextButton"
             type="button"
@@ -105,7 +107,9 @@ exports[`components/cardDetail/CardDetail > should show add description tour tip
               Done
             </span>
             
+            <!---->
           </button>
+          <!---->
         </div>
       </div>
       
@@ -198,6 +202,7 @@ exports[`components/cardDetail/CardDetail > should show add properties tour tip 
           class="tutorial-tour-tip__btn-ctr"
         >
           
+          <!---->
           <button
             class="Button filled size--small tipNextButton"
             type="button"
@@ -209,7 +214,9 @@ exports[`components/cardDetail/CardDetail > should show add properties tour tip 
             <i
               class="CompassIcon icon-chevron-right icon"
             />
+            <!---->
           </button>
+          <!---->
         </div>
       </div>
       

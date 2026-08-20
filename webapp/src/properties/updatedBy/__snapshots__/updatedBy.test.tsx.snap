@@ -9,9 +9,13 @@ exports[`properties/updatedBy > should match snapshot 1`] = `
       class="Person-item"
     >
       
+      <!---->
       username_1
+      <!---->
       
+      <!---->
       
+      <!---->
     </div>
   </div>
 </div>

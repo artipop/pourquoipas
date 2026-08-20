@@ -16,7 +16,9 @@ exports[`components/table/TableHeaderMenu > should match snapshot, title column 
       >
         my Name
       </span>
+      <!---->
       
+      <!---->
     </div>
     <div
       class="octo-spacer"
@@ -24,6 +26,7 @@ exports[`components/table/TableHeaderMenu > should match snapshot, title column 
     <div
       class="HorizontalGrip"
     />
+    <!---->
   </div>
 </div>
 `;

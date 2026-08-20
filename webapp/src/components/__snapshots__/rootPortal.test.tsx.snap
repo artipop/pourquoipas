@@ -6,9 +6,9 @@ exports[`components/RootPortal > should match snapshot 1`] = `
 >
   
   <div>
-    <div>
-      Testing Portal
-    </div>
+    Testing Portal
   </div>
+  
+  
 </div>
 `;

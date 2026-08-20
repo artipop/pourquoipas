@@ -1,4 +1,4 @@
-import {For, Show, createEffect, createSignal, onCleanup, onMount} from 'solid-js'
+import {For, Show, createEffect, createSignal, onSettled} from 'solid-js'
 
 import {useDragDropMonitor} from '@dnd-kit/solid'
 import {isSortable} from '@dnd-kit/dom/sortable'
@@ -194,7 +194,7 @@ const Sidebar = (props: Props) => {
     const activeViewID = useAppSelector(getCurrentViewId)
     const currentBoard = useAppSelector(getCurrentBoard)
 
-    onMount(() => {
+    onSettled(() => {
         const categoryOnChangeHandler = (_: WSClient, categories: Category[]) => {
             actions.sidebar.updateCategories(categories)
         }
@@ -206,38 +206,35 @@ const Sidebar = (props: Props) => {
         wsClient.addOnChange(categoryOnChangeHandler, 'category')
         wsClient.addOnChange(blockCategoryOnChangeHandler, 'blockCategories')
 
-        onCleanup(() => {
+        return () => {
             wsClient.removeOnChange(categoryOnChangeHandler, 'category')
             wsClient.removeOnChange(blockCategoryOnChangeHandler, 'blockCategories')
-        })
+        }
     })
 
     const teamId = useAppSelector(getCurrentTeamId)
     const team = useAppSelector(getCurrentTeam)
 
-    createEffect(() => {
-        if (team()) {
-            actions.sidebar.fetchSidebarCategories(team()!.id)
+    createEffect(team, (current) => {
+        if (current) {
+            actions.sidebar.fetchSidebarCategories(current.id)
         }
     })
 
-    onMount(() => {
+    onSettled(() => {
         loadTheme()
     })
 
-    onMount(() => {
+    onSettled(() => {
         function handleResize() {
             setWindowDimensions(getWindowDimensions())
         }
 
         window.addEventListener('resize', handleResize)
-        onCleanup(() => window.removeEventListener('resize', handleResize))
+        return () => window.removeEventListener('resize', handleResize)
     })
 
-    createEffect(() => {
-        windowDimensions()
-        hideSidebar()
-    })
+    createEffect(windowDimensions, () => hideSidebar())
 
     // This handles the case when a user opens a linked board from Channels RHS
     // and thats the first time that user is opening that board.
@@ -246,10 +243,7 @@ const Sidebar = (props: Props) => {
     // We do this on the client side rather than the server side like for all other cases
     // because there is no good, explicit API call to add this logic to when opening
     // a board that you have implicit access to.
-    createEffect(() => {
-        const categories = sidebarCategories()
-        const board = currentBoard()
-        const currentTeam = team()
+    createEffect(() => [sidebarCategories(), currentBoard(), team()] as const, ([categories, board, currentTeam]) => {
         if (!categories || categories.length === 0 || !board || !currentTeam || board.isTemplate) {
             return
         }

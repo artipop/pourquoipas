@@ -1,5 +1,5 @@
-import {Show, createSignal, onCleanup, onMount} from 'solid-js'
-import type {JSX} from 'solid-js'
+import {Show, createSignal, onSettled} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 
 import {FormattedMessage, useIntl} from '../../intl'
 
@@ -59,15 +59,15 @@ const BoardsSwitcher = (): JSX.Element => {
         }
     }
 
-    onMount(() => {
+    onSettled(() => {
         document.addEventListener('keydown', handleQuickSwitchKeyPress)
         document.addEventListener('keydown', handleEscKeyPress)
 
         // cleanup function
-        onCleanup(() => {
+        return () => {
             document.removeEventListener('keydown', handleQuickSwitchKeyPress)
             document.removeEventListener('keydown', handleEscKeyPress)
-        })
+        }
     })
 
     return (

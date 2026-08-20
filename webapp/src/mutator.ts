@@ -1,4 +1,3 @@
-import {batch} from 'solid-js'
 
 import cloneDeep from 'lodash/cloneDeep'
 
@@ -32,14 +31,12 @@ function updateAllBoardsAndBlocks(boards: Board[], blocks: Block[]) {
     if (!actions) {
         return
     }
-    batch(() => {
-        actions.boards.updateBoards(boards.filter((b: Board) => b.deleteAt !== 0) as Board[])
-        actions.views.updateViews(blocks.filter((b: Block) => b.type === 'view' || b.deleteAt !== 0) as BoardView[])
-        actions.cards.updateCards(blocks.filter((b: Block) => b.type === 'card' || b.deleteAt !== 0) as Card[])
-        actions.attachments.updateAttachments(blocks.filter((b: Block) => b.type === 'attachment' || b.deleteAt !== 0) as AttachmentBlock[])
-        actions.comments.updateComments(blocks.filter((b: Block) => b.type === 'comment' || b.deleteAt !== 0) as CommentBlock[])
-        actions.contents.updateContents(blocks.filter((b: Block) => b.type !== 'card' && b.type !== 'view' && b.type !== 'board' && b.type !== 'comment') as ContentBlock[])
-    })
+    actions.boards.updateBoards(boards.filter((b: Board) => b.deleteAt !== 0) as Board[])
+    actions.views.updateViews(blocks.filter((b: Block) => b.type === 'view' || b.deleteAt !== 0) as BoardView[])
+    actions.cards.updateCards(blocks.filter((b: Block) => b.type === 'card' || b.deleteAt !== 0) as Card[])
+    actions.attachments.updateAttachments(blocks.filter((b: Block) => b.type === 'attachment' || b.deleteAt !== 0) as AttachmentBlock[])
+    actions.comments.updateComments(blocks.filter((b: Block) => b.type === 'comment' || b.deleteAt !== 0) as CommentBlock[])
+    actions.contents.updateContents(blocks.filter((b: Block) => b.type !== 'card' && b.type !== 'view' && b.type !== 'board' && b.type !== 'comment') as ContentBlock[])
 }
 
 //

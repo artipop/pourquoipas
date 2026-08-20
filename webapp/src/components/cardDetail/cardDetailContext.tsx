@@ -1,5 +1,6 @@
 import {createContext, createSignal, useContext} from 'solid-js'
-import type {JSX, ParentComponent} from 'solid-js'
+import type {ParentComponent} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 
 import {useIntl} from '../../intl'
 
@@ -90,8 +91,8 @@ export const CardDetailProvider: ParentComponent<CardDetailProps> = (props): JSX
     }
 
     return (
-        <CardDetailContext.Provider value={contextValue}>
+        <CardDetailContext value={contextValue}>
             {props.children}
-        </CardDetailContext.Provider>
+        </CardDetailContext>
     )
 }

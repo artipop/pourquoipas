@@ -22,8 +22,11 @@ exports[`src/components/gallery/Gallery > return Gallery and click new 1`] = `
             class="CompassIcon icon-dots-horizontal OptionsIcon"
           />
         </button>
+        <!---->
         
+        <!---->
       </div>
+      <!---->
       <div
         class="gallery-item"
       >
@@ -34,9 +37,13 @@ exports[`src/components/gallery/Gallery > return Gallery and click new 1`] = `
           class="DividerElement"
         />
       </div>
+      <!---->
       
+      <!---->
       
+      <!---->
       
+      <!---->
     </div>
     <div
       class="GalleryCard"
@@ -55,20 +62,29 @@ exports[`src/components/gallery/Gallery > return Gallery and click new 1`] = `
             class="CompassIcon icon-dots-horizontal OptionsIcon"
           />
         </button>
+        <!---->
         
+        <!---->
       </div>
+      <!---->
       <div
         class="gallery-item"
       />
+      <!---->
       
+      <!---->
       
+      <!---->
       
+      <!---->
     </div>
+    <!---->
     <div
       class="octo-gallery-new"
     >
       + New
     </div>
+    <!---->
   </div>
 </div>
 `;
@@ -83,6 +99,7 @@ exports[`src/components/gallery/Gallery > return Gallery readonly 1`] = `
       style="opacity: 1;"
     >
       
+      <!---->
       <div
         class="gallery-item"
       >
@@ -93,23 +110,34 @@ exports[`src/components/gallery/Gallery > return Gallery readonly 1`] = `
           class="DividerElement"
         />
       </div>
+      <!---->
       
+      <!---->
       
+      <!---->
       
+      <!---->
     </div>
     <div
       class="GalleryCard"
       style="opacity: 1;"
     >
       
+      <!---->
       <div
         class="gallery-item"
       />
+      <!---->
       
+      <!---->
       
+      <!---->
       
+      <!---->
     </div>
+    <!---->
     
+    <!---->
   </div>
 </div>
 `;
@@ -136,6 +164,7 @@ exports[`src/components/gallery/Gallery > should match snapshot 1`] = `
             class="CompassIcon icon-dots-horizontal OptionsIcon"
           />
         </button>
+        <!---->
         <div
           class="Menu noselect left"
         >
@@ -225,7 +254,6 @@ exports[`src/components/gallery/Gallery > should match snapshot 1`] = `
                       height="24"
                       viewBox="0 0 24 24"
                       width="24"
-                      xmlns="http://www.w3.org/2000/svg"
                     >
                       <g
                         opacity="0.8"
@@ -321,7 +349,9 @@ exports[`src/components/gallery/Gallery > should match snapshot 1`] = `
             </div>
           </div>
         </div>
+        <!---->
       </div>
+      <!---->
       <div
         class="gallery-item"
       >
@@ -332,9 +362,13 @@ exports[`src/components/gallery/Gallery > should match snapshot 1`] = `
           class="DividerElement"
         />
       </div>
+      <!---->
       
+      <!---->
       
+      <!---->
       
+      <!---->
     </div>
     <div
       class="GalleryCard"
@@ -353,20 +387,29 @@ exports[`src/components/gallery/Gallery > should match snapshot 1`] = `
             class="CompassIcon icon-dots-horizontal OptionsIcon"
           />
         </button>
+        <!---->
         
+        <!---->
       </div>
+      <!---->
       <div
         class="gallery-item"
       />
+      <!---->
       
+      <!---->
       
+      <!---->
       
+      <!---->
     </div>
+    <!---->
     <div
       class="octo-gallery-new"
     >
       + New
     </div>
+    <!---->
   </div>
 </div>
 `;
@@ -393,6 +436,7 @@ exports[`src/components/gallery/Gallery > should match snapshot without permissi
             class="CompassIcon icon-dots-horizontal OptionsIcon"
           />
         </button>
+        <!---->
         <div
           class="Menu noselect left"
         >
@@ -469,7 +513,9 @@ exports[`src/components/gallery/Gallery > should match snapshot without permissi
             </div>
           </div>
         </div>
+        <!---->
       </div>
+      <!---->
       <div
         class="gallery-item"
       >
@@ -480,9 +526,13 @@ exports[`src/components/gallery/Gallery > should match snapshot without permissi
           class="DividerElement"
         />
       </div>
+      <!---->
       
+      <!---->
       
+      <!---->
       
+      <!---->
     </div>
     <div
       class="GalleryCard"
@@ -501,16 +551,25 @@ exports[`src/components/gallery/Gallery > should match snapshot without permissi
             class="CompassIcon icon-dots-horizontal OptionsIcon"
           />
         </button>
+        <!---->
         
+        <!---->
       </div>
+      <!---->
       <div
         class="gallery-item"
       />
+      <!---->
       
+      <!---->
       
+      <!---->
       
+      <!---->
     </div>
+    <!---->
     
+    <!---->
   </div>
 </div>
 `;

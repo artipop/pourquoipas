@@ -1,5 +1,5 @@
-import {For, Show, createEffect, createMemo, createSignal, onMount} from 'solid-js'
-import type {JSX} from 'solid-js'
+import {For, Show, createEffect, createMemo, createSignal, onSettled} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 
 import {useNavigate} from '@solidjs/router'
 
@@ -116,7 +116,7 @@ const BoardTemplateSelector = (props: Props) => {
         }
     }
 
-    onMount(() => {
+    onSettled(() => {
         if (octoClient.teamId !== Constants.globalTeamId && (globalTemplates() || []).length === 0) {
             actions.globalTemplates.fetchGlobalTemplates()
         }
@@ -201,9 +201,9 @@ const BoardTemplateSelector = (props: Props) => {
     // itself now.
     const [editing, setEditing] = createSignal<Board | null>(null)
 
-    createEffect(() => {
+    createEffect(allTemplates, (templates) => {
         if (!activeTemplate()) {
-            setActiveTemplate(allTemplates()[0])
+            setActiveTemplate(templates[0])
         }
     })
 

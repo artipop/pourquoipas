@@ -22,13 +22,17 @@ exports[`/components/confirmationDialogBox > confirmDialog should match snapshot
             <h1
               class="dialog-title"
             />
+            <!---->
             
+            <!---->
           </div>
           <div
             class="toolbar--right"
           >
             
+            <!---->
             
+            <!---->
             <button
               aria-label="Close dialog"
               class="IconButton dialog__close size--medium"
@@ -39,6 +43,7 @@ exports[`/components/confirmationDialogBox > confirmDialog should match snapshot
                 class="CompassIcon icon-close CloseIcon"
               />
             </button>
+            <!---->
           </div>
         </div>
         <div
@@ -68,7 +73,9 @@ exports[`/components/confirmationDialogBox > confirmDialog should match snapshot
                 Cancel
               </span>
               
+              <!---->
             </button>
+            <!---->
             <button
               class="Button filled size--medium"
               title="test-btn-text"
@@ -79,7 +86,9 @@ exports[`/components/confirmationDialogBox > confirmDialog should match snapshot
                 test-btn-text
               </span>
               
+              <!---->
             </button>
+            <!---->
           </div>
         </div>
       </div>
@@ -110,13 +119,17 @@ exports[`/components/confirmationDialogBox > confirmDialog with Confirm Button T
             <h1
               class="dialog-title"
             />
+            <!---->
             
+            <!---->
           </div>
           <div
             class="toolbar--right"
           >
             
+            <!---->
             
+            <!---->
             <button
               aria-label="Close dialog"
               class="IconButton dialog__close size--medium"
@@ -127,6 +140,7 @@ exports[`/components/confirmationDialogBox > confirmDialog with Confirm Button T
                 class="CompassIcon icon-close CloseIcon"
               />
             </button>
+            <!---->
           </div>
         </div>
         <div
@@ -156,7 +170,9 @@ exports[`/components/confirmationDialogBox > confirmDialog with Confirm Button T
                 Cancel
               </span>
               
+              <!---->
             </button>
+            <!---->
             <button
               class="Button filled size--medium"
               title="test-btn-text"
@@ -167,7 +183,9 @@ exports[`/components/confirmationDialogBox > confirmDialog with Confirm Button T
                 test-btn-text
               </span>
               
+              <!---->
             </button>
+            <!---->
           </div>
         </div>
       </div>

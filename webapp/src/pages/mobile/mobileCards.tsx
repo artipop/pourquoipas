@@ -1,9 +1,9 @@
-import {For, Show, createResource, createSignal} from 'solid-js'
+import {For, Show, createEffect, createSignal} from 'solid-js'
 import type {Component} from 'solid-js'
 
 import {useIntl} from '../../intl'
 
-import {BindingBoard, listBoardCards} from '../../bindings/boards'
+import {BindingBoard, BindingCard, listBoardCards} from '../../bindings/boards'
 
 // The board's cards on a phone: one board at a time, newest first, each with
 // the column it stands in.
@@ -23,7 +23,31 @@ const MobileCards: Component<Props> = (props) => {
     // The first board until somebody picks another, so the screen has content
     // the moment it opens.
     const current = () => chosen() || props.boards[0]?.id || ''
-    const [cards] = createResource(current, listBoardCards)
+
+    // A signal fed by an effect rather than Solid 2's async memo: the screen
+    // shows «нет карточек» until the answer arrives and has no loading state of
+    // its own, where an async memo makes the first read throw for a Loading
+    // boundary to catch. An empty list is what «not read yet» has always looked
+    // like here.
+    const [cards, setCards] = createSignal<BindingCard[]>([])
+    createEffect(current, (boardId) => {
+        if (!boardId) {
+            setCards([])
+            return undefined
+        }
+
+        // Tapping another board while this one is in flight must not land the
+        // wrong board's cards on the screen.
+        let live = true
+        listBoardCards(boardId).then((next) => {
+            if (live) {
+                setCards(next || [])
+            }
+        })
+        return () => {
+            live = false
+        }
+    })
 
     return (
         <section class='MobilePage__section'>

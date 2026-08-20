@@ -1,6 +1,6 @@
-import {Component, Suspense, createEffect, lazy, onMount} from 'solid-js'
-import {Router, useLocation, useNavigate, useParams} from '@solidjs/router'
-import type {JSX} from 'solid-js'
+import {Component, Loading, createEffect, lazy, onSettled} from 'solid-js'
+import {createRouter, useLocation, useNavigate, useParams} from '@solidjs/router'
+import type {JSX} from '@solidjs/web'
 
 import BoardPage from './pages/boardPage/boardPage'
 import ChangePasswordPage from './pages/changePasswordPage'
@@ -11,7 +11,7 @@ import {Utils} from './utils'
 import octoClient from './octoClient'
 import {getGlobalError} from './store/globalError'
 import {useAppSelector, useAppStore} from './store/hooks'
-import FBRoute from './route'
+import fbRoute from './route'
 
 // The desktop app's terminal window: the agent's own CLI on a card, drawn by
 // xterm.js. Its own route so the window is just a URL — and lazily loaded so a
@@ -36,7 +36,7 @@ const workspaceToTeamRedirect = (shared: boolean): Component => () => {
     const params = useParams()
     const location = useLocation()
     const navigate = useNavigate()
-    onMount(() => {
+    onSettled(() => {
         if (!params.boardId) {
             return
         }
@@ -63,8 +63,7 @@ const GlobalErrorRedirect: Component = () => {
     const globalError = useAppSelector<string>(getGlobalError)
     const navigate = useNavigate()
 
-    createEffect(() => {
-        const error = globalError()
+    createEffect(globalError, (error) => {
         if (error) {
             actions.globalError.setGlobalError('')
             navigate(`/error?id=${error}`, {replace: true})
@@ -74,115 +73,107 @@ const GlobalErrorRedirect: Component = () => {
     return null
 }
 
-const rootLayout = (props: {children?: JSX.Element}) => (
-    <>
-        <GlobalErrorRedirect/>
-        {props.children}
-    </>
+// Every route wrapped in one that draws the error redirect above them: Solid
+// Router 2 has no `root` prop, and the render-prop child of the instance is
+// where a layout goes instead.
+const routes = [
+    fbRoute({path: '/error', component: ErrorPage}),
+    fbRoute({path: '/login', component: LoginPage}),
+    fbRoute({path: '/register', component: RegisterPage}),
+    fbRoute({path: '/change_password', component: ChangePasswordPage}),
+
+    fbRoute({
+        path: '/acp/terminal/:terminalId',
+        component: () => (
+            <Loading fallback={null}>
+                <TerminalPage/>
+            </Loading>
+        ),
+    }),
+
+    fbRoute({
+        path: '/m',
+        component: () => (
+            <Loading fallback={null}>
+                <MobilePage/>
+            </Loading>
+        ),
+    }),
+    fbRoute({
+        path: '/share',
+        component: () => (
+            <Loading fallback={null}>
+                <SharePage/>
+            </Loading>
+        ),
+    }),
+
+    fbRoute({
+        path: '/m/terminal/:terminalId',
+        component: () => (
+            <Loading fallback={null}>
+                <TerminalPage softKeys={true}/>
+            </Loading>
+        ),
+    }),
+
+    fbRoute({
+        path: ['/team/:teamId/shared/:boardId?/:viewId?/:cardId?', '/shared/:boardId?/:viewId?/:cardId?'],
+        component: () => <BoardPage readonly={true}/>,
+    }),
+
+    fbRoute({
+        loginRequired: true,
+        path: '/board/:boardId?/:viewId?/:cardId?',
+        getOriginalPath: ({boardId, viewId, cardId}) => `/board/${Utils.buildOriginalPath('', boardId, viewId, cardId)}`,
+        component: BoardPage,
+    }),
+    fbRoute({
+        path: '/workspace/:workspaceId/shared/:boardId?/:viewId?/:cardId?',
+        component: workspaceToTeamRedirect(true),
+    }),
+    fbRoute({
+        path: '/workspace/:workspaceId/:boardId?/:viewId?/:cardId?',
+        component: workspaceToTeamRedirect(false),
+    }),
+    fbRoute({
+        loginRequired: true,
+        path: '/team/:teamId/:boardId?/:viewId?/:cardId?',
+        getOriginalPath: ({teamId, boardId, viewId, cardId}) => `/team/${Utils.buildOriginalPath(teamId, boardId, viewId, cardId)}`,
+        component: BoardPage,
+    }),
+
+    fbRoute({
+        path: '/:boardId?/:viewId?/:cardId?',
+        loginRequired: true,
+        getOriginalPath: ({boardId, viewId, cardId}) => {
+            const boardIdIsValidUUIDV4 = UUID_REGEX.test(boardId || '')
+            if (boardIdIsValidUUIDV4) {
+                return `/${Utils.buildOriginalPath('', boardId, viewId, cardId)}`
+            }
+            return ''
+        },
+        component: BoardPage,
+    }),
+]
+
+// The base URL is read once, at module scope, because the router instance is
+// built rather than rendered: createRouter takes the config, and the component
+// it hands back is what goes in the tree.
+const Instance = createRouter({
+    routes,
+    base: Utils.getBaseURL(),
+})
+
+const AppRouter: Component = () => (
+    <Instance>
+        {(props: {children?: JSX.Element}) => (
+            <>
+                <GlobalErrorRedirect/>
+                {props.children}
+            </>
+        )}
+    </Instance>
 )
-
-const AppRouter: Component = () => {
-    return (
-        <Router
-            base={Utils.getBaseURL()}
-            root={rootLayout}
-        >
-            <FBRoute
-                path='/error'
-                component={ErrorPage}
-            />
-            <FBRoute
-                path='/login'
-                component={LoginPage}
-            />
-            <FBRoute
-                path='/register'
-                component={RegisterPage}
-            />
-            <FBRoute
-                path='/change_password'
-                component={ChangePasswordPage}
-            />
-
-            <FBRoute
-                path='/acp/terminal/:terminalId'
-                component={() => (
-                    <Suspense fallback={null}>
-                        <TerminalPage/>
-                    </Suspense>
-                )}
-            />
-
-            <FBRoute
-                path='/m'
-                component={() => (
-                    <Suspense fallback={null}>
-                        <MobilePage/>
-                    </Suspense>
-                )}
-            />
-            <FBRoute
-                path='/share'
-                component={() => (
-                    <Suspense fallback={null}>
-                        <SharePage/>
-                    </Suspense>
-                )}
-            />
-
-            <FBRoute
-                path='/m/terminal/:terminalId'
-                component={() => (
-                    <Suspense fallback={null}>
-                        <TerminalPage softKeys={true}/>
-                    </Suspense>
-                )}
-            />
-
-            <FBRoute
-                path={['/team/:teamId/shared/:boardId?/:viewId?/:cardId?', '/shared/:boardId?/:viewId?/:cardId?']}
-                component={() => <BoardPage readonly={true}/>}
-            />
-
-            <FBRoute
-                loginRequired={true}
-                path='/board/:boardId?/:viewId?/:cardId?'
-                getOriginalPath={({boardId, viewId, cardId}) => {
-                    return `/board/${Utils.buildOriginalPath('', boardId, viewId, cardId)}`
-                }}
-                component={BoardPage}
-            />
-            <FBRoute
-                path='/workspace/:workspaceId/shared/:boardId?/:viewId?/:cardId?'
-                component={workspaceToTeamRedirect(true)}
-            />
-            <FBRoute
-                path='/workspace/:workspaceId/:boardId?/:viewId?/:cardId?'
-                component={workspaceToTeamRedirect(false)}
-            />
-            <FBRoute
-                loginRequired={true}
-                path='/team/:teamId/:boardId?/:viewId?/:cardId?'
-                getOriginalPath={({teamId, boardId, viewId, cardId}) => {
-                    return `/team/${Utils.buildOriginalPath(teamId, boardId, viewId, cardId)}`
-                }}
-                component={BoardPage}
-            />
-
-            <FBRoute
-                path='/:boardId?/:viewId?/:cardId?'
-                loginRequired={true}
-                getOriginalPath={({boardId, viewId, cardId}) => {
-                    const boardIdIsValidUUIDV4 = UUID_REGEX.test(boardId || '')
-                    if (boardIdIsValidUUIDV4) {
-                        return `/${Utils.buildOriginalPath('', boardId, viewId, cardId)}`
-                    }
-                    return ''
-                }}
-                component={BoardPage}
-            />
-        </Router>
-    )
-}
 
 export default AppRouter

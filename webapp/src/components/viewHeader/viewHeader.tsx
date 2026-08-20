@@ -1,4 +1,4 @@
-import {Show, createEffect, createSignal, onMount} from 'solid-js'
+import {Show, createEffect, createSignal, onSettled} from 'solid-js'
 
 import {FormattedMessage, useIntl} from '../../intl'
 
@@ -70,8 +70,8 @@ const ViewHeader = (props: Props) => {
 
     const [viewTitle, setViewTitle] = createSignal(props.activeView.title)
 
-    createEffect(() => {
-        setViewTitle(props.activeView.title)
+    createEffect(() => props.activeView.title, (next) => {
+        setViewTitle(next)
     })
 
     const hasFilter = () => props.activeView.fields.filter && props.activeView.fields.filter.filters?.length > 0
@@ -92,15 +92,15 @@ const ViewHeader = (props: Props) => {
 
     const [delayComplete, setDelayComplete] = createSignal(false)
 
-    createEffect(() => {
-        if (showTourBaseCondition()) {
-            setTimeout(() => {
-                setDelayComplete(true)
-            }, 800)
+    createEffect(showTourBaseCondition, (shown) => {
+        if (!shown) {
+            return undefined
         }
+        const timeout = setTimeout(() => setDelayComplete(true), 800)
+        return () => clearTimeout(timeout)
     })
 
-    onMount(() => {
+    onSettled(() => {
         if (!BoardTourSteps.SHARE_BOARD) {
             BoardTourSteps.SHARE_BOARD = 2
         }

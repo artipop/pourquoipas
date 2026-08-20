@@ -1,4 +1,4 @@
-import {onMount} from 'solid-js'
+import {onSettled} from 'solid-js'
 import {marked} from 'marked'
 
 import {BlockInputProps, ContentType} from '../types'
@@ -24,7 +24,7 @@ const Quote: ContentType = {
     editable: true,
     Input: (props: BlockInputProps) => {
         let ref: HTMLInputElement|undefined
-        onMount(() => {
+        onSettled(() => {
             ref?.focus()
         })
         return (

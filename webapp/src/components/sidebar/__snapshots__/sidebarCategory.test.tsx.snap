@@ -19,6 +19,7 @@ exports[`components/sidebarCategory > sidebar call hideSidebar 1`] = `
             <i
               class="CompassIcon icon-chevron-down ChevronDownIcon"
             />
+            <!---->
             Category 1
             <div
               class="sidebarCategoriesTour"
@@ -28,7 +29,9 @@ exports[`components/sidebarCategory > sidebar call hideSidebar 1`] = `
             class=""
           >
             
+            <!---->
             
+            <!---->
             <div
               aria-label="menuwrapper"
               class="MenuWrapper"
@@ -42,12 +45,17 @@ exports[`components/sidebarCategory > sidebar call hideSidebar 1`] = `
                   class="CompassIcon icon-dots-horizontal OptionsIcon"
                 />
               </button>
+              <!---->
               
+              <!---->
             </div>
+            <!---->
           </div>
         </div>
         
+        <!---->
         
+        <!---->
         <div>
           <div
             class="SidebarBoardItem subitem "
@@ -77,7 +85,9 @@ exports[`components/sidebarCategory > sidebar call hideSidebar 1`] = `
                     class="CompassIcon icon-dots-horizontal OptionsIcon"
                   />
                 </button>
+                <!---->
                 
+                <!---->
               </div>
             </div>
           </div>
@@ -112,16 +122,23 @@ exports[`components/sidebarCategory > sidebar call hideSidebar 1`] = `
                     class="CompassIcon icon-dots-horizontal OptionsIcon"
                   />
                 </button>
+                <!---->
                 
+                <!---->
               </div>
             </div>
           </div>
           
         </div>
+        <!---->
         
+        <!---->
         
+        <!---->
         
+        <!---->
         
+        <!---->
       </div>
     </div>
   </div>
@@ -147,6 +164,7 @@ exports[`components/sidebarCategory > sidebar call hideSidebar 2`] = `
             <i
               class="CompassIcon icon-chevron-down ChevronDownIcon"
             />
+            <!---->
             Category 1
             <div
               class="sidebarCategoriesTour"
@@ -156,7 +174,9 @@ exports[`components/sidebarCategory > sidebar call hideSidebar 2`] = `
             class=""
           >
             
+            <!---->
             
+            <!---->
             <div
               aria-label="menuwrapper"
               class="MenuWrapper"
@@ -170,12 +190,17 @@ exports[`components/sidebarCategory > sidebar call hideSidebar 2`] = `
                   class="CompassIcon icon-dots-horizontal OptionsIcon"
                 />
               </button>
+              <!---->
               
+              <!---->
             </div>
+            <!---->
           </div>
         </div>
         
+        <!---->
         
+        <!---->
         <div>
           <div
             class="SidebarBoardItem subitem "
@@ -205,7 +230,9 @@ exports[`components/sidebarCategory > sidebar call hideSidebar 2`] = `
                     class="CompassIcon icon-dots-horizontal OptionsIcon"
                   />
                 </button>
+                <!---->
                 
+                <!---->
               </div>
             </div>
           </div>
@@ -240,16 +267,23 @@ exports[`components/sidebarCategory > sidebar call hideSidebar 2`] = `
                     class="CompassIcon icon-dots-horizontal OptionsIcon"
                   />
                 </button>
+                <!---->
                 
+                <!---->
               </div>
             </div>
           </div>
           
         </div>
+        <!---->
         
+        <!---->
         
+        <!---->
         
+        <!---->
         
+        <!---->
       </div>
     </div>
   </div>
@@ -275,6 +309,7 @@ exports[`components/sidebarCategory > sidebar collapsed with active board in it 
             <i
               class="CompassIcon icon-chevron-right ChevronRightIcon"
             />
+            <!---->
             Category 1
             <div
               class="sidebarCategoriesTour"
@@ -284,7 +319,9 @@ exports[`components/sidebarCategory > sidebar collapsed with active board in it 
             class=""
           >
             
+            <!---->
             
+            <!---->
             <div
               aria-label="menuwrapper"
               class="MenuWrapper"
@@ -298,11 +335,15 @@ exports[`components/sidebarCategory > sidebar collapsed with active board in it 
                   class="CompassIcon icon-dots-horizontal OptionsIcon"
                 />
               </button>
+              <!---->
               
+              <!---->
             </div>
+            <!---->
           </div>
         </div>
         
+        <!---->
         <div>
           <div
             class="SidebarBoardItem subitem active"
@@ -332,7 +373,9 @@ exports[`components/sidebarCategory > sidebar collapsed with active board in it 
                     class="CompassIcon icon-dots-horizontal OptionsIcon"
                   />
                 </button>
+                <!---->
                 
+                <!---->
               </div>
             </div>
           </div>
@@ -345,7 +388,6 @@ exports[`components/sidebarCategory > sidebar collapsed with active board in it 
               height="24"
               viewBox="0 0 24 24"
               width="24"
-              xmlns="http://www.w3.org/2000/svg"
             >
               <g
                 opacity="0.8"
@@ -366,11 +408,17 @@ exports[`components/sidebarCategory > sidebar collapsed with active board in it 
             </div>
           </div>
         </div>
+        <!---->
         
+        <!---->
         
+        <!---->
         
+        <!---->
         
+        <!---->
         
+        <!---->
       </div>
     </div>
   </div>
@@ -396,6 +444,7 @@ exports[`components/sidebarCategory > sidebar collapsed without active board 1`]
             <i
               class="CompassIcon icon-chevron-right ChevronRightIcon"
             />
+            <!---->
             Category 1
             <div
               class="sidebarCategoriesTour"
@@ -405,7 +454,9 @@ exports[`components/sidebarCategory > sidebar collapsed without active board 1`]
             class=""
           >
             
+            <!---->
             
+            <!---->
             <div
               aria-label="menuwrapper"
               class="MenuWrapper"
@@ -419,17 +470,26 @@ exports[`components/sidebarCategory > sidebar collapsed without active board 1`]
                   class="CompassIcon icon-dots-horizontal OptionsIcon"
                 />
               </button>
+              <!---->
               
+              <!---->
             </div>
+            <!---->
           </div>
         </div>
         
+        <!---->
+        <!---->
         
+        <!---->
         
+        <!---->
         
+        <!---->
         
+        <!---->
         
-        
+        <!---->
       </div>
     </div>
   </div>
@@ -455,6 +515,7 @@ exports[`components/sidebarCategory > sidebar template close other 1`] = `
             <i
               class="CompassIcon icon-chevron-down ChevronDownIcon"
             />
+            <!---->
             Category 1
             <div
               class="sidebarCategoriesTour"
@@ -464,7 +525,9 @@ exports[`components/sidebarCategory > sidebar template close other 1`] = `
             class=""
           >
             
+            <!---->
             
+            <!---->
             <div
               aria-label="menuwrapper"
               class="MenuWrapper"
@@ -478,12 +541,17 @@ exports[`components/sidebarCategory > sidebar template close other 1`] = `
                   class="CompassIcon icon-dots-horizontal OptionsIcon"
                 />
               </button>
+              <!---->
               
+              <!---->
             </div>
+            <!---->
           </div>
         </div>
         
+        <!---->
         
+        <!---->
         <div>
           <div
             class="SidebarBoardItem subitem "
@@ -513,7 +581,9 @@ exports[`components/sidebarCategory > sidebar template close other 1`] = `
                     class="CompassIcon icon-dots-horizontal OptionsIcon"
                   />
                 </button>
+                <!---->
                 
+                <!---->
               </div>
             </div>
           </div>
@@ -548,7 +618,9 @@ exports[`components/sidebarCategory > sidebar template close other 1`] = `
                     class="CompassIcon icon-dots-horizontal OptionsIcon"
                   />
                 </button>
+                <!---->
                 
+                <!---->
               </div>
             </div>
           </div>
@@ -561,7 +633,6 @@ exports[`components/sidebarCategory > sidebar template close other 1`] = `
               height="24"
               viewBox="0 0 24 24"
               width="24"
-              xmlns="http://www.w3.org/2000/svg"
             >
               <g
                 opacity="0.8"
@@ -582,10 +653,15 @@ exports[`components/sidebarCategory > sidebar template close other 1`] = `
             </div>
           </div>
         </div>
+        <!---->
         
+        <!---->
         
+        <!---->
         
+        <!---->
         
+        <!---->
       </div>
     </div>
   </div>
@@ -611,6 +687,7 @@ exports[`components/sidebarCategory > sidebar template close self 1`] = `
             <i
               class="CompassIcon icon-chevron-down ChevronDownIcon"
             />
+            <!---->
             Category 1
             <div
               class="sidebarCategoriesTour"
@@ -620,7 +697,9 @@ exports[`components/sidebarCategory > sidebar template close self 1`] = `
             class=""
           >
             
+            <!---->
             
+            <!---->
             <div
               aria-label="menuwrapper"
               class="MenuWrapper"
@@ -634,12 +713,17 @@ exports[`components/sidebarCategory > sidebar template close self 1`] = `
                   class="CompassIcon icon-dots-horizontal OptionsIcon"
                 />
               </button>
+              <!---->
               
+              <!---->
             </div>
+            <!---->
           </div>
         </div>
         
+        <!---->
         
+        <!---->
         <div>
           <div
             class="SidebarBoardItem subitem active"
@@ -669,7 +753,9 @@ exports[`components/sidebarCategory > sidebar template close self 1`] = `
                     class="CompassIcon icon-dots-horizontal OptionsIcon"
                   />
                 </button>
+                <!---->
                 
+                <!---->
               </div>
             </div>
           </div>
@@ -682,7 +768,6 @@ exports[`components/sidebarCategory > sidebar template close self 1`] = `
               height="24"
               viewBox="0 0 24 24"
               width="24"
-              xmlns="http://www.w3.org/2000/svg"
             >
               <g
                 opacity="0.8"
@@ -732,16 +817,23 @@ exports[`components/sidebarCategory > sidebar template close self 1`] = `
                     class="CompassIcon icon-dots-horizontal OptionsIcon"
                   />
                 </button>
+                <!---->
                 
+                <!---->
               </div>
             </div>
           </div>
           
         </div>
+        <!---->
         
+        <!---->
         
+        <!---->
         
+        <!---->
         
+        <!---->
       </div>
     </div>
   </div>

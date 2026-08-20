@@ -179,8 +179,7 @@ const KanbanCard = (props: Props) => {
         <>
             <div
                 ref={props.readonly || props.dragDisabled ? undefined : cardRef}
-                class={classes()}
-                classList={{'KanbanCard--agent': showsAgent()}}
+                class={[classes(), {'KanbanCard--agent': showsAgent()}]}
                 style={{opacity: isDragging() ? 0.5 : 1}}
                 onClick={handleOnClick}
             >
@@ -196,11 +195,10 @@ const KanbanCard = (props: Props) => {
                         when={canOpenTerminal()}
                         fallback={
                             <span
-                                class='KanbanCard__terminal'
-                                classList={{
+                                class={['KanbanCard__terminal', {
                                     'KanbanCard__terminal--asking': Boolean(attention()),
                                     'KanbanCard__terminal--paused': paused(),
-                                }}
+                                }]}
                                 role='status'
                                 title={agentTitle()}
                                 aria-label={agentTitle()}
@@ -211,11 +209,10 @@ const KanbanCard = (props: Props) => {
                     >
                         <button
                             type='button'
-                            class='KanbanCard__terminal'
-                            classList={{
+                            class={['KanbanCard__terminal', {
                                 'KanbanCard__terminal--asking': Boolean(attention()),
                                 'KanbanCard__terminal--paused': paused(),
-                            }}
+                            }]}
                             title={agentTitle()}
                             aria-label={agentTitle()}
                             onClick={openTerminal}

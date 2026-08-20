@@ -22,6 +22,7 @@ exports[`components/viewHeader/newCardButton > return NewCardButton 1`] = `
           class="CompassIcon icon-chevron-down DropdownIcon"
         />
       </div>
+      <!---->
       <div
         class="Menu noselect left"
       >
@@ -46,7 +47,6 @@ exports[`components/viewHeader/newCardButton > return NewCardButton 1`] = `
                   <svg
                     class="CardIcon Icon"
                     viewBox="0 0 100 100"
-                    xmlns="http://www.w3.org/2000/svg"
                   >
                     <rect
                       height="40"
@@ -82,7 +82,9 @@ exports[`components/viewHeader/newCardButton > return NewCardButton 1`] = `
                     class="CompassIcon icon-dots-horizontal OptionsIcon"
                   />
                 </button>
+                <!---->
                 
+                <!---->
               </div>
             </div>
             <div
@@ -152,6 +154,7 @@ exports[`components/viewHeader/newCardButton > return NewCardButton 1`] = `
           </div>
         </div>
       </div>
+      <!---->
     </div>
   </div>
 </div>
@@ -179,6 +182,7 @@ exports[`components/viewHeader/newCardButton > return NewCardButton and addCard 
           class="CompassIcon icon-chevron-down DropdownIcon"
         />
       </div>
+      <!---->
       <div
         class="Menu noselect left"
       >
@@ -203,7 +207,6 @@ exports[`components/viewHeader/newCardButton > return NewCardButton and addCard 
                   <svg
                     class="CardIcon Icon"
                     viewBox="0 0 100 100"
-                    xmlns="http://www.w3.org/2000/svg"
                   >
                     <rect
                       height="40"
@@ -239,7 +242,9 @@ exports[`components/viewHeader/newCardButton > return NewCardButton and addCard 
                     class="CompassIcon icon-dots-horizontal OptionsIcon"
                   />
                 </button>
+                <!---->
                 
+                <!---->
               </div>
             </div>
             <div
@@ -309,6 +314,7 @@ exports[`components/viewHeader/newCardButton > return NewCardButton and addCard 
           </div>
         </div>
       </div>
+      <!---->
     </div>
   </div>
 </div>
@@ -336,6 +342,7 @@ exports[`components/viewHeader/newCardButton > return NewCardButton and addCardT
           class="CompassIcon icon-chevron-down DropdownIcon"
         />
       </div>
+      <!---->
       <div
         class="Menu noselect left"
       >
@@ -360,7 +367,6 @@ exports[`components/viewHeader/newCardButton > return NewCardButton and addCardT
                   <svg
                     class="CardIcon Icon"
                     viewBox="0 0 100 100"
-                    xmlns="http://www.w3.org/2000/svg"
                   >
                     <rect
                       height="40"
@@ -396,7 +402,9 @@ exports[`components/viewHeader/newCardButton > return NewCardButton and addCardT
                     class="CompassIcon icon-dots-horizontal OptionsIcon"
                   />
                 </button>
+                <!---->
                 
+                <!---->
               </div>
             </div>
             <div
@@ -466,6 +474,7 @@ exports[`components/viewHeader/newCardButton > return NewCardButton and addCardT
           </div>
         </div>
       </div>
+      <!---->
     </div>
   </div>
 </div>

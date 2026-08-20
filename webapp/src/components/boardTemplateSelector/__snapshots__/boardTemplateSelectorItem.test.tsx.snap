@@ -27,6 +27,7 @@ exports[`components/boardTemplateSelector/boardTemplateSelectorItem > should mat
           class="CompassIcon icon-trash-can-outline DeleteIcon trash-can-outline"
         />
       </button>
+      <!---->
       <button
         aria-label="Edit"
         title="Edit"
@@ -36,8 +37,11 @@ exports[`components/boardTemplateSelector/boardTemplateSelectorItem > should mat
           class="CompassIcon icon-pencil-outline EditIcon"
         />
       </button>
+      <!---->
     </div>
+    <!---->
     
+    <!---->
   </div>
 </div>
 `;
@@ -69,6 +73,7 @@ exports[`components/boardTemplateSelector/boardTemplateSelectorItem > should mat
           class="CompassIcon icon-trash-can-outline DeleteIcon trash-can-outline"
         />
       </button>
+      <!---->
       <button
         aria-label="Edit"
         title="Edit"
@@ -78,8 +83,11 @@ exports[`components/boardTemplateSelector/boardTemplateSelectorItem > should mat
           class="CompassIcon icon-pencil-outline EditIcon"
         />
       </button>
+      <!---->
     </div>
+    <!---->
     
+    <!---->
   </div>
 </div>
 `;
@@ -100,7 +108,9 @@ exports[`components/boardTemplateSelector/boardTemplateSelectorItem > should mat
       Template global
     </span>
     
+    <!---->
     
+    <!---->
   </div>
 </div>
 `;
@@ -134,6 +144,7 @@ exports[`components/boardTemplateSelector/boardTemplateSelectorItem > should tri
           class="CompassIcon icon-trash-can-outline DeleteIcon trash-can-outline"
         />
       </button>
+      <!---->
       <button
         aria-label="Edit"
         title="Edit"
@@ -143,87 +154,99 @@ exports[`components/boardTemplateSelector/boardTemplateSelectorItem > should tri
           class="CompassIcon icon-pencil-outline EditIcon"
         />
       </button>
+      <!---->
     </div>
+    <!---->
     
+    <!---->
   </div>
-  <div>
+  
+  <div
+    class="Dialog dialog-back DeleteBoardDialog size--medium"
+  >
     <div
-      class="Dialog dialog-back DeleteBoardDialog size--medium"
+      class="backdrop"
+    />
+    <div
+      class="wrapper"
     >
       <div
-        class="backdrop"
-      />
-      <div
-        class="wrapper"
+        class="dialog"
+        role="dialog"
       >
         <div
-          class="dialog"
-          role="dialog"
+          class="toolbar"
         >
-          <div
-            class="toolbar"
-          >
-            <div>
-              <h1
-                class="dialog-title"
-              />
-              
-            </div>
-            <div
-              class="toolbar--right"
-            >
-              
-              
-              <button
-                aria-label="Close dialog"
-                title="Close dialog"
-                type="button"
-              >
-                <i
-                  class="CompassIcon icon-close CloseIcon"
-                />
-              </button>
-            </div>
+          <div>
+            <h1
+              class="dialog-title"
+            />
+            <!---->
+            
+            <!---->
           </div>
           <div
-            class="container"
+            class="toolbar--right"
           >
-            <h2
-              class="header text-heading5"
+            
+            <!---->
+            
+            <!---->
+            <button
+              aria-label="Close dialog"
+              title="Close dialog"
+              type="button"
             >
-              Confirm delete board template
-            </h2>
-            <p
-              class="body"
+              <i
+                class="CompassIcon icon-close CloseIcon"
+              />
+            </button>
+            <!---->
+          </div>
+        </div>
+        <div
+          class="container"
+        >
+          <h2
+            class="header text-heading5"
+          >
+            Confirm delete board template
+          </h2>
+          <p
+            class="body"
+          >
+            Are you sure you want to delete the board template “Template 1”?
+          </p>
+          <div
+            class="footer"
+          >
+            <button
+              type="button"
             >
-              Are you sure you want to delete the board template “Template 1”?
-            </p>
-            <div
-              class="footer"
+              
+              <span>
+                Cancel
+              </span>
+              
+              <!---->
+            </button>
+            <!---->
+            <button
+              type="button"
             >
-              <button
-                type="button"
-              >
-                
-                <span>
-                  Cancel
-                </span>
-                
-              </button>
-              <button
-                type="button"
-              >
-                
-                <span>
-                  Delete
-                </span>
-                
-              </button>
-            </div>
+              
+              <span>
+                Delete
+              </span>
+              
+              <!---->
+            </button>
+            <!---->
           </div>
         </div>
       </div>
     </div>
   </div>
+  
 </div>
 `;

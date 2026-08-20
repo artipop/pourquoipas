@@ -1,5 +1,5 @@
 import {createEffect} from 'solid-js'
-import type {JSX} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 
 import {FormattedMessage} from '../../../intl'
 
@@ -55,10 +55,8 @@ const AddPropertiesTourStep = (): JSX.Element => {
 
     // start the card tour if onboarding card is opened up
     // and the user is still on the base tour
-    createEffect(() => {
+    createEffect(() => [me(), card(), onboardingTourCategory(), onboardingTourStep()] as const, ([user, currentCard]) => {
         async function task() {
-            const user = me()
-            const currentCard = card()
             if (!user || !currentCard) {
                 return
             }

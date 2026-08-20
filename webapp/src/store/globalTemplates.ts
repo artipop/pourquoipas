@@ -1,3 +1,5 @@
+import {storePath} from 'solid-js'
+
 import {Board} from '../blocks/board'
 import {Constants} from '../constants'
 
@@ -15,7 +17,7 @@ export const createGlobalTemplatesActions = ({setState, deps}: StoreContext) => 
         // back with nothing used to throw here, and `|| []` on the far side of
         // `.sort` could never have caught it.
         const templates = await deps.client.getTeamTemplates(Constants.globalTeamId) || []
-        setState('globalTemplates', 'value', templates.sort((a, b) => a.title.localeCompare(b.title)))
+        setState(storePath('globalTemplates', 'value', templates.sort((a, b) => a.title.localeCompare(b.title))))
     },
 })
 

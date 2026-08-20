@@ -11,14 +11,17 @@ exports[`src/components/shareBoard/shareBoard > should match snapshot, Open Boar
       type="button"
     >
       <i
-        class="CompassIcon icon-lock-outline LockOutlineIcon"
+        class="CompassIcon icon-globe GlobeIcon"
       />
       <span>
         Share
       </span>
       
+      <!---->
     </button>
+    <!---->
     
+    <!---->
   </div>
 </div>
 `;
@@ -40,8 +43,11 @@ exports[`src/components/shareBoard/shareBoard > should match snapshot, Private B
         Share
       </span>
       
+      <!---->
     </button>
+    <!---->
     
+    <!---->
   </div>
 </div>
 `;

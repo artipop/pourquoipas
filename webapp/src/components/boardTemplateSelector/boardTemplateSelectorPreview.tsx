@@ -1,4 +1,4 @@
-import {Match, Show, Switch, createEffect, createMemo, createSignal, onCleanup} from 'solid-js'
+import {Match, Show, Switch, createEffect, createMemo, createSignal} from 'solid-js'
 
 import {Board} from '../../blocks/board'
 import {Card} from '../../blocks/card'
@@ -24,8 +24,7 @@ const BoardTemplateSelectorPreview = (props: Props) => {
     const [activeView, setActiveView] = createSignal<BoardView|null>(null)
     const [activeTemplateCards, setActiveTemplateCards] = createSignal<Card[]>([])
 
-    createEffect(() => {
-        const activeTemplate = props.activeTemplate
+    createEffect(() => props.activeTemplate, (activeTemplate) => {
         let isSubscribed = true
         if (activeTemplate) {
             setActiveTemplateCards([])
@@ -50,9 +49,9 @@ const BoardTemplateSelectorPreview = (props: Props) => {
                 }
             })
         }
-        onCleanup(() => {
+        return () => {
             isSubscribed = false
-        })
+        }
     })
 
     const dateDisplayProperty = createMemo(() => {

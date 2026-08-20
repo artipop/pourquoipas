@@ -9,12 +9,9 @@ const SetWindowTitleAndIcon = (): null => {
     const board = useAppSelector(getCurrentBoard)
     const activeView = useAppSelector(getCurrentView)
 
-    createEffect(() => {
-        Utils.setFavicon(board()?.icon)
-    })
+    createEffect(() => board()?.icon, (icon) => Utils.setFavicon(icon))
 
-    createEffect(() => {
-        const currentBoard = board()
+    createEffect(() => [board(), activeView()?.title] as const, ([currentBoard]) => {
         if (currentBoard) {
             let title = `${currentBoard.title}`
             if (activeView()?.title) {

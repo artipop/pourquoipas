@@ -1,5 +1,5 @@
 import {Show, createSignal} from 'solid-js'
-import type {JSX} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 import {render} from '@solidjs/testing-library'
 import {useDragDropManager} from '@dnd-kit/solid'
 

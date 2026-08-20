@@ -1,5 +1,5 @@
-import {Show, createSignal, onMount} from 'solid-js'
-import type {JSX} from 'solid-js'
+import {Show, createSignal, onSettled} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 
 import {useIntl} from '../../intl'
 import CompassIcon from '../../widgets/icons/compassIcon'
@@ -31,7 +31,7 @@ function SubMenuOption(props: SubMenuOptionProps): JSX.Element {
     // is not placed against the viewport the way the menu itself is — all it
     // asks is which end of the option to hang from, and the answer is the side
     // of the screen with more room.
-    onMount(() => {
+    onSettled(() => {
         const newStyle: JSX.CSSProperties = {}
         if (props.position === 'auto' && ref) {
             const box = ref.getBoundingClientRect()

@@ -14,8 +14,11 @@ exports[`components/viewHeader/dateFilter > handle clear 1`] = `
         June 15
       </span>
       
+      <!---->
     </button>
+    <!---->
     
+    <!---->
   </div>
 </div>
 `;
@@ -34,8 +37,11 @@ exports[`components/viewHeader/dateFilter > handles \`Today\` button click event
         Empty
       </span>
       
+      <!---->
     </button>
+    <!---->
     
+    <!---->
   </div>
 </div>
 `;
@@ -56,8 +62,11 @@ exports[`components/viewHeader/dateFilter > return dateFilter default value 1`] 
         Empty
       </span>
       
+      <!---->
     </button>
+    <!---->
     
+    <!---->
   </div>
 </div>
 `;
@@ -76,8 +85,11 @@ exports[`components/viewHeader/dateFilter > return dateFilter invalid value 1`] 
         Invalid Date
       </span>
       
+      <!---->
     </button>
+    <!---->
     
+    <!---->
   </div>
 </div>
 `;
@@ -96,8 +108,11 @@ exports[`components/viewHeader/dateFilter > return dateFilter valid value 1`] = 
         June 15
       </span>
       
+      <!---->
     </button>
+    <!---->
     
+    <!---->
   </div>
 </div>
 `;
@@ -116,8 +131,11 @@ exports[`components/viewHeader/dateFilter > returns local correctly - es local 1
         15 de junio
       </span>
       
+      <!---->
     </button>
+    <!---->
     
+    <!---->
   </div>
 </div>
 `;
@@ -136,8 +154,11 @@ exports[`components/viewHeader/dateFilter > set via text input 1`] = `
         Empty
       </span>
       
+      <!---->
     </button>
+    <!---->
     
+    <!---->
   </div>
 </div>
 `;

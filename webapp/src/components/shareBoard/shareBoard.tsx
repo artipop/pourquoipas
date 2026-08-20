@@ -1,5 +1,5 @@
-import {For, Show, createSignal, onMount} from 'solid-js'
-import type {JSX} from 'solid-js'
+import {For, Show, createSignal, onSettled} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 
 import {useIntl, FormattedMessage} from '../../intl'
 
@@ -200,7 +200,7 @@ export default function ShareBoardDialog(props: Props): JSX.Element {
         mutator.deleteBoardMember(member)
     }
 
-    onMount(() => {
+    onSettled(() => {
         loadData()
     })
 

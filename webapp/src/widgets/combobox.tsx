@@ -1,6 +1,6 @@
-import {For, Show, createEffect, createMemo, createSignal, createUniqueId, onCleanup, onMount} from 'solid-js'
-import {Portal} from 'solid-js/web'
-import type {JSX} from 'solid-js'
+import {For, Show, createEffect, createMemo, createSignal, createUniqueId, onSettled} from 'solid-js'
+import {Portal} from '@solidjs/web'
+import type {JSX} from '@solidjs/web'
 import {autoUpdate, computePosition, flip, offset, shift, size} from '@floating-ui/dom'
 
 import {
@@ -113,7 +113,7 @@ function Combobox<T>(props: Props<T>): JSX.Element {
     // Programmatic, the way react-select's autoFocus prop was: the attribute
     // alone is a hint browsers apply inconsistently to elements inserted after
     // load, and the single-select menu opens on focus.
-    onMount(() => {
+    onSettled(() => {
         if (props.autoFocus) {
             inputRef?.focus()
         }
@@ -135,13 +135,14 @@ function Combobox<T>(props: Props<T>): JSX.Element {
     // Loaded on mount as well as on every query, which is what react-select's
     // `defaultOptions` did: the list is expected to be there before the menu is
     // opened, not fetched in the moment it opens.
-    createEffect(() => {
-        if (!props.loadOptions) {
-            return
+    createEffect(query, (text) => {
+        const load = props.loadOptions
+        if (!load) {
+            return undefined
         }
 
         let cancelled = false
-        props.loadOptions(query()).then((items) => {
+        load(text).then((items) => {
             if (!cancelled) {
                 setLoaded(items)
             }
@@ -150,16 +151,19 @@ function Combobox<T>(props: Props<T>): JSX.Element {
                 setLoaded([])
             }
         })
-        onCleanup(() => {
+        return () => {
             cancelled = true
-        })
+        }
     })
 
     // Nothing is highlighted until the list has something to highlight, and a
     // list that changed under the cursor starts again at the top.
-    createEffect(() => {
-        setHighlight(isOpen() ? firstOption(rows()) : -1)
-    })
+    createEffect(
+        () => (isOpen() ? firstOption(rows()) : -1),
+        (next) => {
+            setHighlight(next)
+        },
+    )
 
     const choose = (option: ComboboxOption<T>) => {
         if (props.isMulti) {
@@ -322,7 +326,7 @@ function Combobox<T>(props: Props<T>): JSX.Element {
                         class={`Combobox__input ${props.classNamePrefix}__input`}
                         type='text'
                         role='combobox'
-                        aria-expanded={isOpen()}
+                        aria-expanded={String(isOpen())}
                         aria-controls={listId}
                         aria-activedescendant={highlight() >= 0 ? `${listId}-option-${highlight()}` : undefined}
                         aria-label={props.ariaLabel}
@@ -400,7 +404,7 @@ function Combobox<T>(props: Props<T>): JSX.Element {
                                         id={`${listId}-option-${index()}`}
                                         class={names()}
                                         role='option'
-                                        aria-selected={isSelected()}
+                                        aria-selected={String(isSelected())}
 
                                         // mousedown only holds the focus on the input, so
                                         // the menu is still there when the click lands on
@@ -434,14 +438,12 @@ const ComboboxMenu = (props: MenuProps): JSX.Element => {
     const [menu, setMenu] = createSignal<HTMLDivElement | null>(null)
     const [position, setPosition] = createSignal<{x: number, y: number} | null>(null)
 
-    createEffect(() => {
-        const reference = props.anchor()
-        const floating = menu()
+    createEffect(() => [props.anchor(), menu()] as const, ([reference, floating]) => {
         if (!reference || !floating) {
-            return
+            return undefined
         }
 
-        const stop = autoUpdate(reference, floating, () => {
+        return autoUpdate(reference, floating, () => {
             computePosition(reference, floating, {
                 placement: 'bottom-start',
                 middleware: [
@@ -458,7 +460,6 @@ const ComboboxMenu = (props: MenuProps): JSX.Element => {
                 ],
             }).then(({x, y}) => setPosition({x, y}))
         })
-        onCleanup(stop)
     })
 
     const node = (

@@ -16,7 +16,9 @@ exports[`components/viewHeader/viewHeaderPropertiesMenu > return properties menu
         Properties
       </span>
       
+      <!---->
     </button>
+    <!---->
     <div
       class="Menu noselect bottom"
     >
@@ -47,6 +49,7 @@ exports[`components/viewHeader/viewHeaderPropertiesMenu > return properties menu
                 class="octo-switch-inner"
               />
             </div>
+            <!---->
           </div>
           <div
             aria-label="Property 1"
@@ -69,6 +72,7 @@ exports[`components/viewHeader/viewHeaderPropertiesMenu > return properties menu
                 class="octo-switch-inner"
               />
             </div>
+            <!---->
           </div>
           <div
             aria-label="Property 2"
@@ -91,6 +95,7 @@ exports[`components/viewHeader/viewHeaderPropertiesMenu > return properties menu
                 class="octo-switch-inner"
               />
             </div>
+            <!---->
           </div>
           <div
             aria-label="Property 3"
@@ -113,6 +118,7 @@ exports[`components/viewHeader/viewHeaderPropertiesMenu > return properties menu
                 class="octo-switch-inner"
               />
             </div>
+            <!---->
           </div>
           <div
             aria-label="Comments and description"
@@ -135,6 +141,7 @@ exports[`components/viewHeader/viewHeaderPropertiesMenu > return properties menu
                 class="octo-switch-inner"
               />
             </div>
+            <!---->
           </div>
         </div>
         <div
@@ -172,6 +179,7 @@ exports[`components/viewHeader/viewHeaderPropertiesMenu > return properties menu
         </div>
       </div>
     </div>
+    <!---->
   </div>
 </div>
 `;
@@ -192,7 +200,9 @@ exports[`components/viewHeader/viewHeaderPropertiesMenu > return properties menu
         Properties
       </span>
       
+      <!---->
     </button>
+    <!---->
     <div
       class="Menu noselect bottom"
     >
@@ -223,6 +233,7 @@ exports[`components/viewHeader/viewHeaderPropertiesMenu > return properties menu
                 class="octo-switch-inner"
               />
             </div>
+            <!---->
           </div>
           <div
             aria-label="Status"
@@ -245,6 +256,7 @@ exports[`components/viewHeader/viewHeaderPropertiesMenu > return properties menu
                 class="octo-switch-inner"
               />
             </div>
+            <!---->
           </div>
           <div
             aria-label="Property 1"
@@ -267,6 +279,7 @@ exports[`components/viewHeader/viewHeaderPropertiesMenu > return properties menu
                 class="octo-switch-inner"
               />
             </div>
+            <!---->
           </div>
           <div
             aria-label="Property 2"
@@ -289,6 +302,7 @@ exports[`components/viewHeader/viewHeaderPropertiesMenu > return properties menu
                 class="octo-switch-inner"
               />
             </div>
+            <!---->
           </div>
           <div
             aria-label="Property 3"
@@ -311,6 +325,7 @@ exports[`components/viewHeader/viewHeaderPropertiesMenu > return properties menu
                 class="octo-switch-inner"
               />
             </div>
+            <!---->
           </div>
           <div
             aria-label="Comments and description"
@@ -333,6 +348,7 @@ exports[`components/viewHeader/viewHeaderPropertiesMenu > return properties menu
                 class="octo-switch-inner"
               />
             </div>
+            <!---->
           </div>
         </div>
         <div
@@ -370,6 +386,7 @@ exports[`components/viewHeader/viewHeaderPropertiesMenu > return properties menu
         </div>
       </div>
     </div>
+    <!---->
   </div>
 </div>
 `;

@@ -38,6 +38,7 @@ exports[`properties/link > should match snapshot for link with non-empty url 1`]
         class="CompassIcon icon-pencil-outline EditIcon"
       />
     </button>
+    <!---->
     <button
       aria-label="Copy"
       class="IconButton Button_Copy"
@@ -48,6 +49,7 @@ exports[`properties/link > should match snapshot for link with non-empty url 1`]
         class="CompassIcon icon-content-copy content-copy"
       />
     </button>
+    <!---->
   </div>
 </div>
 `;
@@ -66,6 +68,7 @@ exports[`properties/link > should match snapshot for readonly link with non-empt
       https://deffun.com/xciii/
     </a>
     
+    <!---->
     <button
       aria-label="Copy"
       class="IconButton Button_Copy"
@@ -76,6 +79,7 @@ exports[`properties/link > should match snapshot for readonly link with non-empt
         class="CompassIcon icon-content-copy content-copy"
       />
     </button>
+    <!---->
   </div>
 </div>
 `;

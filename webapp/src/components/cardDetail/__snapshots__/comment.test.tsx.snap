@@ -18,6 +18,7 @@ exports[`components/cardDetail/comment > return comment 1`] = `
         username_1
       </div>
       
+      <!---->
       <div
         class="octo-tooltip"
       >
@@ -26,8 +27,11 @@ exports[`components/cardDetail/comment > return comment 1`] = `
         >
           a day ago
         </div>
+        <!---->
         
+        <!---->
       </div>
+      <!---->
       <div
         aria-label="menuwrapper"
         class="MenuWrapper override menuOpened"
@@ -41,6 +45,7 @@ exports[`components/cardDetail/comment > return comment 1`] = `
             class="CompassIcon icon-dots-horizontal OptionsIcon"
           />
         </button>
+        <!---->
         <div
           class="Menu noselect left"
         >
@@ -117,7 +122,9 @@ exports[`components/cardDetail/comment > return comment 1`] = `
             </div>
           </div>
         </div>
+        <!---->
       </div>
+      <!---->
     </div>
     <div
       class="comment-text"
@@ -148,6 +155,7 @@ exports[`components/cardDetail/comment > return comment and delete comment 1`] =
         username_1
       </div>
       
+      <!---->
       <div
         class="octo-tooltip"
       >
@@ -156,8 +164,11 @@ exports[`components/cardDetail/comment > return comment and delete comment 1`] =
         >
           a day ago
         </div>
+        <!---->
         
+        <!---->
       </div>
+      <!---->
       <div
         aria-label="menuwrapper"
         class="MenuWrapper override menuOpened"
@@ -171,6 +182,7 @@ exports[`components/cardDetail/comment > return comment and delete comment 1`] =
             class="CompassIcon icon-dots-horizontal OptionsIcon"
           />
         </button>
+        <!---->
         <div
           class="Menu noselect left"
         >
@@ -247,7 +259,9 @@ exports[`components/cardDetail/comment > return comment and delete comment 1`] =
             </div>
           </div>
         </div>
+        <!---->
       </div>
+      <!---->
     </div>
     <div
       class="comment-text"
@@ -278,6 +292,7 @@ exports[`components/cardDetail/comment > return comment readonly 1`] = `
         username_1
       </div>
       
+      <!---->
       <div
         class="octo-tooltip"
       >
@@ -286,9 +301,13 @@ exports[`components/cardDetail/comment > return comment readonly 1`] = `
         >
           a day ago
         </div>
+        <!---->
         
+        <!---->
       </div>
+      <!---->
       
+      <!---->
     </div>
     <div
       class="comment-text"
@@ -327,6 +346,7 @@ exports[`components/cardDetail/comment > return guest comment 1`] = `
           Guest
         </div>
       </div>
+      <!---->
       <div
         class="octo-tooltip"
       >
@@ -335,8 +355,11 @@ exports[`components/cardDetail/comment > return guest comment 1`] = `
         >
           a day ago
         </div>
+        <!---->
         
+        <!---->
       </div>
+      <!---->
       <div
         aria-label="menuwrapper"
         class="MenuWrapper override menuOpened"
@@ -350,6 +373,7 @@ exports[`components/cardDetail/comment > return guest comment 1`] = `
             class="CompassIcon icon-dots-horizontal OptionsIcon"
           />
         </button>
+        <!---->
         <div
           class="Menu noselect left"
         >
@@ -426,7 +450,9 @@ exports[`components/cardDetail/comment > return guest comment 1`] = `
             </div>
           </div>
         </div>
+        <!---->
       </div>
+      <!---->
     </div>
     <div
       class="comment-text"
@@ -465,6 +491,7 @@ exports[`components/cardDetail/comment > return guest comment and delete comment
           Guest
         </div>
       </div>
+      <!---->
       <div
         class="octo-tooltip"
       >
@@ -473,8 +500,11 @@ exports[`components/cardDetail/comment > return guest comment and delete comment
         >
           a day ago
         </div>
+        <!---->
         
+        <!---->
       </div>
+      <!---->
       <div
         aria-label="menuwrapper"
         class="MenuWrapper override menuOpened"
@@ -488,6 +518,7 @@ exports[`components/cardDetail/comment > return guest comment and delete comment
             class="CompassIcon icon-dots-horizontal OptionsIcon"
           />
         </button>
+        <!---->
         <div
           class="Menu noselect left"
         >
@@ -564,7 +595,9 @@ exports[`components/cardDetail/comment > return guest comment and delete comment
             </div>
           </div>
         </div>
+        <!---->
       </div>
+      <!---->
     </div>
     <div
       class="comment-text"
@@ -603,6 +636,7 @@ exports[`components/cardDetail/comment > return guest comment readonly 1`] = `
           Guest
         </div>
       </div>
+      <!---->
       <div
         class="octo-tooltip"
       >
@@ -611,9 +645,13 @@ exports[`components/cardDetail/comment > return guest comment readonly 1`] = `
         >
           a day ago
         </div>
+        <!---->
         
+        <!---->
       </div>
+      <!---->
       
+      <!---->
     </div>
     <div
       class="comment-text"

@@ -1,4 +1,4 @@
-import {For, Show, onMount} from 'solid-js'
+import {For, Show, onSettled} from 'solid-js'
 
 import {agentBindings} from './bindings'
 import {cardAgentState, refreshCardAgent} from './cardAgentState'
@@ -37,7 +37,7 @@ const CaseStamp = (props: Props) => {
     // The stamp asks for itself rather than relying on the agent's row further
     // down the card: that row is hidden on a read-only board, and the stamp is
     // not. The shared refresh folds the two requests into one when both mount.
-    onMount(() => {
+    onSettled(() => {
         refreshCardAgent(props.cardId)
     })
 

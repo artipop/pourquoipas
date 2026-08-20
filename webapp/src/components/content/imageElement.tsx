@@ -1,5 +1,5 @@
-import {Show, createSignal, onMount} from 'solid-js'
-import type {JSX} from 'solid-js'
+import {Show, createSignal, onSettled} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 
 import {IntlShape} from '../../intl'
 
@@ -23,7 +23,7 @@ const ImageElement = (props: Props): JSX.Element => {
     const [imageDataUrl, setImageDataUrl] = createSignal<string|null>(null)
     const [fileInfo, setFileInfo] = createSignal<FileInfo>({})
 
-    onMount(() => {
+    onSettled(() => {
         if (!imageDataUrl()) {
             const loadImage = async () => {
                 const fileURL = await octoClient.getFileAsDataUrl(props.block.boardId, props.block.fields.fileId)

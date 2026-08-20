@@ -1,6 +1,7 @@
-import {For, children, createEffect, createSignal, onCleanup} from 'solid-js'
+import {For, children, createEffect, createSignal} from 'solid-js'
 import {autoUpdate, computePosition, flip, shift, size} from '@floating-ui/dom'
-import type {Component, JSX} from 'solid-js'
+import type {Component} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 
 import {useIntl} from '../../intl'
 
@@ -67,8 +68,7 @@ const Menu: Component<Props> & {
     const [placed, setPlaced] = createSignal<{x: number, y: number} | null>(null)
 
     // Focusable, but none of them tabbable: tabbing out is how a menu is left.
-    createEffect(() => {
-        resolved()
+    createEffect(resolved, () => {
         for (const option of menuOptions(root)) {
             option.setAttribute('tabindex', '-1')
         }
@@ -87,16 +87,15 @@ const Menu: Component<Props> & {
     // when the column under it scrolls. The wrapper is the anchor unless a
     // caller names another element — sidebarBoardItem hangs its menu off the
     // whole row rather than off the ⋯ it was pressed on.
-    createEffect(() => {
-        const anchor = props.parentRef?.current || wrapperAnchor()
+    createEffect(() => props.parentRef?.current || wrapperAnchor(), (anchor) => {
         if (!anchor || !root) {
-            return
+            return undefined
         }
 
         // Below 430px a menu is a sheet covering the screen (menu.scss), with
         // nothing to anchor to and nothing to keep on screen.
         if (window.matchMedia?.('(max-width: 430px)').matches) {
-            return
+            return undefined
         }
 
         const floating = root
@@ -124,10 +123,10 @@ const Menu: Component<Props> & {
                 middleware,
             }).then(({x, y}) => setPlaced({x, y}))
         })
-        onCleanup(() => {
+        return () => {
             stop()
             setPlaced(null)
-        })
+        }
     })
 
     const onKeyDown = (e: KeyboardEvent) => {

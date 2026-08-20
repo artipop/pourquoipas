@@ -11,6 +11,7 @@ exports[`components/kanban/calculations/Option > base case 1`] = `
       <i
         class="CompassIcon icon-chevron-right ChevronRightIcon"
       />
+      <!---->
     </span>
     
   </div>

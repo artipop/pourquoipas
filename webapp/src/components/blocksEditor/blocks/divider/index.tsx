@@ -1,4 +1,4 @@
-import {onMount} from 'solid-js'
+import {onSettled} from 'solid-js'
 
 import {BlockInputProps, ContentType} from '../types'
 
@@ -13,7 +13,7 @@ const Divider: ContentType = {
     editable: false,
     Display: () => <hr class='Divider'/>,
     Input: (props: BlockInputProps) => {
-        onMount(() => {
+        onSettled(() => {
             props.onSave(props.value)
         })
         return null

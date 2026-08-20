@@ -1,5 +1,5 @@
 import {render} from '@solidjs/testing-library'
-import {MemoryRouter, Route, createMemoryHistory} from '@solidjs/router'
+import {createRouter, memoryHistory} from '@solidjs/router'
 
 import {TestBlockFactory} from '../../test/testBlockFactory'
 import {wrapDNDIntl} from '../../testUtils'
@@ -21,17 +21,14 @@ describe('src/components/shareBoard/shareBoardLoginButton', () => {
 
     test('should match snapshot', async () => {
         window.location = Object.assign(new URL('https://example.org/mattermost'))
-        const history = createMemoryHistory()
+        const history = memoryHistory()
         history.set({value: '/team1/boardId1/viewId1/cardId1'})
+        const Instance = createRouter({
+            history,
+            routes: [{path: '/:teamId/:boardId?/:viewId?/:cardId?', component: ShareBoardLoginButton}],
+        })
         const result = render(() =>
-            wrapDNDIntl(() =>
-                <MemoryRouter history={history}>
-                    <Route
-                        path='/:teamId/:boardId?/:viewId?/:cardId?'
-                        component={ShareBoardLoginButton}
-                    />
-                </MemoryRouter>,
-            ))
+            wrapDNDIntl(() => <Instance/>))
         const renderer = result.container
 
         expect(renderer).toMatchSnapshot()

@@ -1,4 +1,4 @@
-import {Portal} from 'solid-js/web'
+import {Portal} from '@solidjs/web'
 import type {ParentComponent} from 'solid-js'
 
 // Renders into #xciii-root-portal — the node index.html provides above

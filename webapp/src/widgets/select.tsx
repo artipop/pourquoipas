@@ -1,5 +1,5 @@
 import {For, Show} from 'solid-js'
-import type {JSX} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 
 import Menu from './menu'
 import MenuWrapper from './menuWrapper'

@@ -1,6 +1,6 @@
 // The Wails-generated Go bindings are PascalCase methods, not constructors.
 /* eslint-disable new-cap */
-import {For, Show, createSignal, onMount} from 'solid-js'
+import {For, Show, createSignal, onSettled} from 'solid-js'
 
 import {useIntl} from '../../intl'
 
@@ -127,7 +127,7 @@ const WorkdirsPanel = (props: Props) => {
         props.onChange?.()
     }
 
-    onMount(() => {
+    onSettled(() => {
         refresh()
     })
 

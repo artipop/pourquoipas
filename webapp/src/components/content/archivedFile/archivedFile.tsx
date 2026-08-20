@@ -1,4 +1,4 @@
-import type {JSX} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 
 import {FileInfo} from '../../../blocks/block'
 import BrokenFile from '../../../widgets/icons/brokenFile'

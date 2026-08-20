@@ -1,4 +1,4 @@
-import {createEffect, createSignal, onCleanup, onMount} from 'solid-js'
+import {createSignal, onSettled} from 'solid-js'
 import type {Accessor} from 'solid-js'
 
 import {FINISHED, TourCategoriesMapToSteps, TOUR_ORDER} from '../onboardingTour'
@@ -80,16 +80,17 @@ const useTutorialTourTipManager = ({
         }
     }
 
-    createEffect(() => {
+    // Nothing tracked: autoTour is a plain value the caller passed in.
+    onSettled(() => {
         if (autoTour) {
             setShow(true)
         }
     })
 
-    onMount(() => {
+    onSettled(() => {
         window.addEventListener('keydown', handleKeyDown)
-        onCleanup(() =>
-            window.removeEventListener('keydown', handleKeyDown))
+        return () =>
+            window.removeEventListener('keydown', handleKeyDown)
     })
 
     const handleHide = (): void => {

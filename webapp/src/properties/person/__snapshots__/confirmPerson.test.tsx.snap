@@ -19,6 +19,7 @@ exports[`properties/person > select user - cancel 1`] = `
         class="react-select__value-container"
       >
         
+        <!---->
         <div
           class="react-select__single-value"
         >
@@ -26,8 +27,11 @@ exports[`properties/person > select user - cancel 1`] = `
             class="Person-item"
           >
             
+            <!---->
             username-1
+            <!---->
             
+            <!---->
             <button
               aria-label="Clear"
               class="Person-clear"
@@ -38,8 +42,10 @@ exports[`properties/person > select user - cancel 1`] = `
                 class="CompassIcon icon-close"
               />
             </button>
+            <!---->
           </div>
         </div>
+        <!---->
         
         <input
           aria-controls="cl-2"
@@ -76,6 +82,7 @@ exports[`properties/person > select user - cancel 2`] = `
         class="react-select__value-container"
       >
         
+        <!---->
         <div
           class="react-select__single-value"
         >
@@ -83,8 +90,11 @@ exports[`properties/person > select user - cancel 2`] = `
             class="Person-item"
           >
             
+            <!---->
             username-1
+            <!---->
             
+            <!---->
             <button
               aria-label="Clear"
               class="Person-clear"
@@ -95,8 +105,10 @@ exports[`properties/person > select user - cancel 2`] = `
                 class="CompassIcon icon-close"
               />
             </button>
+            <!---->
           </div>
         </div>
+        <!---->
         
         <input
           aria-activedescendant="cl-2-option-1"
@@ -119,6 +131,7 @@ exports[`properties/person > select user - cancel 2`] = `
         role="listbox"
       >
         
+        <!---->
         <div
           class="react-select__group-heading"
         >
@@ -134,9 +147,13 @@ exports[`properties/person > select user - cancel 2`] = `
             class="Person-item"
           >
             
+            <!---->
             username-4
+            <!---->
             
+            <!---->
             
+            <!---->
           </div>
         </div>
         <div
@@ -149,11 +166,16 @@ exports[`properties/person > select user - cancel 2`] = `
             class="Person-item"
           >
             
+            <!---->
             username-5
+            <!---->
             
+            <!---->
             
+            <!---->
           </div>
         </div>
+        <!---->
       </div>
     </div>
   </div>
@@ -179,6 +201,7 @@ exports[`properties/person > select user - confirm 1`] = `
         class="react-select__value-container"
       >
         
+        <!---->
         <div
           class="react-select__single-value"
         >
@@ -186,8 +209,11 @@ exports[`properties/person > select user - confirm 1`] = `
             class="Person-item"
           >
             
+            <!---->
             username-1
+            <!---->
             
+            <!---->
             <button
               aria-label="Clear"
               class="Person-clear"
@@ -198,8 +224,10 @@ exports[`properties/person > select user - confirm 1`] = `
                 class="CompassIcon icon-close"
               />
             </button>
+            <!---->
           </div>
         </div>
+        <!---->
         
         <input
           aria-controls="cl-0"
@@ -236,6 +264,7 @@ exports[`properties/person > select user - confirm 2`] = `
         class="react-select__value-container"
       >
         
+        <!---->
         <div
           class="react-select__single-value"
         >
@@ -243,8 +272,11 @@ exports[`properties/person > select user - confirm 2`] = `
             class="Person-item"
           >
             
+            <!---->
             username-1
+            <!---->
             
+            <!---->
             <button
               aria-label="Clear"
               class="Person-clear"
@@ -255,8 +287,10 @@ exports[`properties/person > select user - confirm 2`] = `
                 class="CompassIcon icon-close"
               />
             </button>
+            <!---->
           </div>
         </div>
+        <!---->
         
         <input
           aria-activedescendant="cl-0-option-1"
@@ -279,6 +313,7 @@ exports[`properties/person > select user - confirm 2`] = `
         role="listbox"
       >
         
+        <!---->
         <div
           class="react-select__group-heading"
         >
@@ -294,9 +329,13 @@ exports[`properties/person > select user - confirm 2`] = `
             class="Person-item"
           >
             
+            <!---->
             username-4
+            <!---->
             
+            <!---->
             
+            <!---->
           </div>
         </div>
         <div
@@ -309,11 +348,16 @@ exports[`properties/person > select user - confirm 2`] = `
             class="Person-item"
           >
             
+            <!---->
             username-5
+            <!---->
             
+            <!---->
             
+            <!---->
           </div>
         </div>
+        <!---->
       </div>
     </div>
   </div>

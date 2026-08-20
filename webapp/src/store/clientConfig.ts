@@ -1,3 +1,5 @@
+import {storePath} from 'solid-js'
+
 import {ClientConfig} from '../config/clientConfig'
 
 import {ShowUsername} from '../utils'
@@ -14,11 +16,11 @@ export const initialClientConfigState = (): ClientConfigState => ({value: defaul
 
 export const createClientConfigActions = ({setState, deps}: StoreContext) => ({
     setClientConfig(config: ClientConfig) {
-        setState('clientConfig', 'value', config)
+        setState(storePath('clientConfig', 'value', config))
     },
     async fetchClientConfig(): Promise<void> {
         const config = await deps.client.getClientConfig()
-        setState('clientConfig', 'value', config || defaultClientConfig())
+        setState(storePath('clientConfig', 'value', config || defaultClientConfig()))
     },
 })
 

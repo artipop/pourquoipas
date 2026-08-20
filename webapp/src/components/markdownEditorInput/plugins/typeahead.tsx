@@ -6,9 +6,9 @@
 // (MIT, Meta Platforms); the positioning is @floating-ui/dom, which is what
 // the rest of this codebase floats menus with.
 
-import {For, Show, createEffect, createMemo, createSignal, onCleanup, onMount} from 'solid-js'
-import type {JSX} from 'solid-js'
-import {Portal} from 'solid-js/web'
+import {For, Show, createEffect, createMemo, createSignal, onSettled} from 'solid-js'
+import type {JSX} from '@solidjs/web'
+import {Portal} from '@solidjs/web'
 import {autoUpdate, computePosition, flip, offset, shift} from '@floating-ui/dom'
 import {
     $getSelection,
@@ -162,7 +162,7 @@ export function TypeaheadMenu<T>(props: Props<T>): JSX.Element {
 
     const close = () => setResolution(null)
 
-    onMount(() => {
+    onSettled(() => {
         const editor = props.editor
         const unregister = mergeRegister(
             editor.registerUpdateListener(() => {
@@ -208,7 +208,7 @@ export function TypeaheadMenu<T>(props: Props<T>): JSX.Element {
                 }
             }),
         )
-        onCleanup(unregister)
+        return unregister
     })
 
     const selectOptionAndCleanUp = (option: T) => {
@@ -222,12 +222,12 @@ export function TypeaheadMenu<T>(props: Props<T>): JSX.Element {
     // The keyboard drives the menu only while it is open and has options; the
     // registrations come and go with it so the editor keeps its own keymap
     // the rest of the time.
-    createEffect(() => {
-        if (!resolution() || props.options.length === 0) {
-            return
+    createEffect(() => [resolution(), props.options.length] as const, ([res, count]) => {
+        if (!res || count === 0) {
+            return undefined
         }
         const editor = props.editor
-        const unregister = mergeRegister(
+        return mergeRegister(
             editor.registerCommand<KeyboardEvent>(
                 KEY_ARROW_DOWN_COMMAND,
                 (event) => {
@@ -285,20 +285,18 @@ export function TypeaheadMenu<T>(props: Props<T>): JSX.Element {
                 COMMAND_PRIORITY_LOW,
             ),
         )
-        onCleanup(unregister)
     })
 
     // The list floats at the caret: the resolution's live range is the virtual
     // reference, flip/shift keep it on screen.
     let menuRef: HTMLDivElement | undefined
-    createEffect(() => {
-        const res = resolution()
+    createEffect(() => [resolution(), props.options.length] as const, ([res, count]) => {
         const floating = menuRef
-        if (!res || props.options.length === 0 || !floating) {
-            return
+        if (!res || count === 0 || !floating) {
+            return undefined
         }
         const reference = {getBoundingClientRect: res.getRect}
-        const stop = autoUpdate(reference, floating, () => {
+        return autoUpdate(reference, floating, () => {
             computePosition(reference, floating, {
                 placement: 'bottom-start',
                 middleware: [offset(4), flip(), shift({padding: 8})],
@@ -307,7 +305,6 @@ export function TypeaheadMenu<T>(props: Props<T>): JSX.Element {
                 floating.style.top = `${y}px`
             })
         })
-        onCleanup(stop)
     })
 
     return (

@@ -1,4 +1,4 @@
-import type {JSX} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 
 import {DividerBlock, createDividerBlock} from '../../blocks/dividerBlock'
 import DividerIcon from '../../widgets/icons/divider'

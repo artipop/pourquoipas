@@ -1,4 +1,4 @@
-import {SetStoreFunction} from 'solid-js/store'
+import type {StoreSetter} from 'solid-js'
 
 import {OctoClient} from '../octoClient'
 
@@ -15,6 +15,6 @@ export type StoreDeps = {
 // state (for reads inside actions), the setter, and the injected dependencies.
 export type StoreContext = {
     state: RootState
-    setState: SetStoreFunction<RootState>
+    setState: StoreSetter<RootState>
     deps: StoreDeps
 }

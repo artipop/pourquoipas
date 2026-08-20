@@ -1,5 +1,5 @@
-import {Show, createEffect, createSignal, onMount} from 'solid-js'
-import type {JSX} from 'solid-js'
+import {Show, createEffect, createSignal, onSettled} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 
 import {useIntl} from '../../intl'
 
@@ -40,7 +40,7 @@ const AttachmentElement = (props: Props): JSX.Element => {
     const uploadPercent = useAppSelector((state) => getUploadPercent(props.block.id)(state))
     const intl = useIntl()
 
-    onMount(() => {
+    onSettled(() => {
         const loadFile = async () => {
             if (props.block.isUploading) {
                 setFileInfo({
@@ -55,7 +55,7 @@ const AttachmentElement = (props: Props): JSX.Element => {
         loadFile()
     })
 
-    createEffect(() => {
+    createEffect(fileInfo, () => {
         if (fileInfo().size && !fileSize()) {
             setFileSize(Utils.humanFileSize(fileInfo().size!))
         }
@@ -72,8 +72,7 @@ const AttachmentElement = (props: Props): JSX.Element => {
         }
     })
 
-    createEffect(() => {
-        const extension = fileInfo().extension
+    createEffect(() => fileInfo().extension, (extension) => {
         if (extension) {
             const getFileIcon = (fileExt: string) => {
                 const extType = (Object.keys(Files) as string[]).find((key) => Files[key].find((ext) => ext === fileExt))

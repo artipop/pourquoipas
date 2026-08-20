@@ -25,10 +25,14 @@ exports[`components/cardDetail/CardDetailProperties > cancel on delete dialog sh
               Owner
             </span>
             
+            <!---->
           </button>
         </div>
+        <!---->
         
+        <!---->
       </div>
+      <!---->
       <div
         class="octo-propertyvalue"
         data-testid="select-non-editable"
@@ -54,6 +58,7 @@ exports[`components/cardDetail/CardDetailProperties > cancel on delete dialog sh
           </button>
         </span>
       </div>
+      <!---->
     </div>
     <div
       class="octo-propertyrow"
@@ -75,17 +80,24 @@ exports[`components/cardDetail/CardDetailProperties > cancel on delete dialog sh
               MockStatus
             </span>
             
+            <!---->
           </button>
         </div>
+        <!---->
         
+        <!---->
       </div>
+      <!---->
       <input
         class="Editable octo-propertyvalue"
         placeholder="Empty"
         title="1234"
       />
+      <!---->
     </div>
+    <!---->
     
+    <!---->
     <div
       class="octo-propertyname add-property"
     >
@@ -103,11 +115,17 @@ exports[`components/cardDetail/CardDetailProperties > cancel on delete dialog sh
             + Add a property
           </span>
           
+          <!---->
         </button>
+        <!---->
         
+        <!---->
       </div>
+      <!---->
       
+      <!---->
     </div>
+    <!---->
   </div>
 </div>
 `;
@@ -137,10 +155,14 @@ exports[`components/cardDetail/CardDetailProperties > should match snapshot 1`] 
               Owner
             </span>
             
+            <!---->
           </button>
         </div>
+        <!---->
         
+        <!---->
       </div>
+      <!---->
       <div
         class="octo-propertyvalue"
         data-testid="select-non-editable"
@@ -166,6 +188,7 @@ exports[`components/cardDetail/CardDetailProperties > should match snapshot 1`] 
           </button>
         </span>
       </div>
+      <!---->
     </div>
     <div
       class="octo-propertyrow"
@@ -187,17 +210,24 @@ exports[`components/cardDetail/CardDetailProperties > should match snapshot 1`] 
               MockStatus
             </span>
             
+            <!---->
           </button>
         </div>
+        <!---->
         
+        <!---->
       </div>
+      <!---->
       <input
         class="Editable octo-propertyvalue"
         placeholder="Empty"
         title="1234"
       />
+      <!---->
     </div>
+    <!---->
     
+    <!---->
     <div
       class="octo-propertyname add-property"
     >
@@ -215,11 +245,17 @@ exports[`components/cardDetail/CardDetailProperties > should match snapshot 1`] 
             + Add a property
           </span>
           
+          <!---->
         </button>
+        <!---->
         
+        <!---->
       </div>
+      <!---->
       
+      <!---->
     </div>
+    <!---->
   </div>
 </div>
 `;
@@ -249,10 +285,14 @@ exports[`components/cardDetail/CardDetailProperties > should show property types
               Owner
             </span>
             
+            <!---->
           </button>
         </div>
+        <!---->
         
+        <!---->
       </div>
+      <!---->
       <div
         class="octo-propertyvalue"
         data-testid="select-non-editable"
@@ -278,6 +318,7 @@ exports[`components/cardDetail/CardDetailProperties > should show property types
           </button>
         </span>
       </div>
+      <!---->
     </div>
     <div
       class="octo-propertyrow"
@@ -299,17 +340,24 @@ exports[`components/cardDetail/CardDetailProperties > should show property types
               MockStatus
             </span>
             
+            <!---->
           </button>
         </div>
+        <!---->
         
+        <!---->
       </div>
+      <!---->
       <input
         class="Editable octo-propertyvalue"
         placeholder="Empty"
         title="1234"
       />
+      <!---->
     </div>
+    <!---->
     
+    <!---->
     <div
       class="octo-propertyname add-property"
     >
@@ -327,7 +375,9 @@ exports[`components/cardDetail/CardDetailProperties > should show property types
             + Add a property
           </span>
           
+          <!---->
         </button>
+        <!---->
         <div
           class="Menu noselect bottom"
         >
@@ -798,9 +848,13 @@ exports[`components/cardDetail/CardDetailProperties > should show property types
             </div>
           </div>
         </div>
+        <!---->
       </div>
+      <!---->
       
+      <!---->
     </div>
+    <!---->
   </div>
 </div>
 `;

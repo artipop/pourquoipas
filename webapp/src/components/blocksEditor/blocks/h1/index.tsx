@@ -1,4 +1,4 @@
-import {onMount} from 'solid-js'
+import {onSettled} from 'solid-js'
 import {marked} from 'marked'
 
 import {BlockInputProps, ContentType} from '../types'
@@ -22,7 +22,7 @@ const H1: ContentType = {
     },
     Input: (props: BlockInputProps) => {
         let ref: HTMLInputElement|undefined
-        onMount(() => {
+        onSettled(() => {
             ref?.focus()
         })
         return (

@@ -1,5 +1,5 @@
-import {Show, batch, createEffect, createSignal} from 'solid-js'
-import type {JSX} from 'solid-js'
+import {Show, createEffect, createSignal} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 
 import {useNavigate} from '@solidjs/router'
 
@@ -63,10 +63,10 @@ const BoardPage = (props: Props): JSX.Element => {
     const navigate = useNavigate()
 
     // TODO: Make this less brittle. This only works because this is the root render function
-    createEffect(() => {
-        UserSettings.lastTeamId = teamId()
-        octoClient.teamId = teamId()
-        actions.teams.setTeam(teamId())
+    createEffect(teamId, (team) => {
+        UserSettings.lastTeamId = team
+        octoClient.teamId = team
+        actions.teams.setTeam(team)
     })
 
     const loadAction = (id: string) => {
@@ -80,13 +80,11 @@ const BoardPage = (props: Props): JSX.Element => {
         const incrementalBlockUpdate = (_: WSClient, blocks: Block[]) => {
             const teamBlocks = blocks
 
-            batch(() => {
-                actions.views.updateViews(teamBlocks.filter((b: Block) => b.type === 'view' || b.deleteAt !== 0) as BoardView[])
-                actions.cards.updateCards(teamBlocks.filter((b: Block) => b.type === 'card' || b.deleteAt !== 0) as Card[])
-                actions.comments.updateComments(teamBlocks.filter((b: Block) => b.type === 'comment' || b.deleteAt !== 0) as CommentBlock[])
-                actions.attachments.updateAttachments(teamBlocks.filter((b: Block) => b.type === 'attachment' || b.deleteAt !== 0) as AttachmentBlock[])
-                actions.contents.updateContents(teamBlocks.filter((b: Block) => b.type !== 'card' && b.type !== 'view' && b.type !== 'board' && b.type !== 'comment' && b.type !== 'attachment') as ContentBlock[])
-            })
+            actions.views.updateViews(teamBlocks.filter((b: Block) => b.type === 'view' || b.deleteAt !== 0) as BoardView[])
+            actions.cards.updateCards(teamBlocks.filter((b: Block) => b.type === 'card' || b.deleteAt !== 0) as Card[])
+            actions.comments.updateComments(teamBlocks.filter((b: Block) => b.type === 'comment' || b.deleteAt !== 0) as CommentBlock[])
+            actions.attachments.updateAttachments(teamBlocks.filter((b: Block) => b.type === 'attachment' || b.deleteAt !== 0) as AttachmentBlock[])
+            actions.contents.updateContents(teamBlocks.filter((b: Block) => b.type !== 'card' && b.type !== 'view' && b.type !== 'board' && b.type !== 'comment' && b.type !== 'attachment') as ContentBlock[])
         }
 
         const incrementalBoardUpdate = (_: WSClient, boards: Board[]) => {
@@ -186,11 +184,7 @@ const BoardPage = (props: Props): JSX.Element => {
         })
     }
 
-    createEffect(() => {
-        void teamId()
-        void me()?.id
-        const currentBoardId = boardId()
-        const currentViewId = viewId()
+    createEffect(() => [teamId(), me()?.id, boardId(), viewId()] as const, ([, , currentBoardId, currentViewId]) => {
         loadAction(currentBoardId)
 
         if (currentBoardId) {
@@ -208,10 +202,9 @@ const BoardPage = (props: Props): JSX.Element => {
         }
     })
 
-    createEffect(() => {
-        const user = me()
-        if (boardId() && !props.readonly && user) {
-            loadOrJoinBoard(user, teamId(), boardId())
+    createEffect(() => [me(), boardId(), teamId()] as const, ([user, board, team]) => {
+        if (board && !props.readonly && user) {
+            loadOrJoinBoard(user, team, board)
         }
     })
 
@@ -223,14 +216,13 @@ const BoardPage = (props: Props): JSX.Element => {
         await octoClient.unhideBoard(category()!.id, boardID)
     }
 
-    createEffect(() => {
-        void me()?.id
-        if (!teamId() || !boardId()) {
+    createEffect(() => [me()?.id, teamId(), boardId(), hiddenBoardIDs()] as const, ([, team, board, hidden]) => {
+        if (!team || !board) {
             return
         }
 
-        if (hiddenBoardIDs().indexOf(boardId()!) >= 0) {
-            handleUnhideBoard(boardId()!)
+        if (hidden.indexOf(board) >= 0) {
+            handleUnhideBoard(board)
         }
     })
 

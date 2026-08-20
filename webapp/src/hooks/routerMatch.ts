@@ -1,4 +1,4 @@
-import {useCurrentMatches, useParams} from '@solidjs/router'
+import {useRouteMatches, useParams} from '@solidjs/router'
 import type {Accessor} from 'solid-js'
 
 import type {RouterMatch} from '../utils'
@@ -8,7 +8,7 @@ import type {RouterMatch} from '../utils'
 // Utils.showBoard and the redirect pages fill the pattern with new params.
 export function useRouteMatch(): Accessor<RouterMatch> {
     const params = useParams()
-    const matches = useCurrentMatches()
+    const matches = useRouteMatches()
     return () => ({
         params: {...params},
         path: matches()[matches().length - 1]?.route.originalPath ?? '',

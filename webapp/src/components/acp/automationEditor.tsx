@@ -186,8 +186,7 @@ const AutomationEditor = (props: Props) => {
     // draw rather than as a different view of the same board. The columns are
     // one tab away — and they are still what a click on a column's own badge
     // opens, because that click is about one column and not about a route.
-    createEffect(() => {
-        const first = flows()[0]
+    createEffect(() => flows()[0], (first) => {
         if (first && !picked() && !props.focusColumnId) {
             setRoute(first.name)
         }

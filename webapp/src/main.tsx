@@ -1,4 +1,4 @@
-import {render} from 'solid-js/web'
+import {render} from '@solidjs/web'
 import {init as initEmojiMart} from 'emoji-mart'
 import emojiMartData from '@emoji-mart/data'
 

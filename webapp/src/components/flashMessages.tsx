@@ -1,5 +1,6 @@
-import {Show, createSignal, onCleanup, onMount} from 'solid-js'
-import type {Component, JSX} from 'solid-js'
+import {Show, createSignal, onSettled} from 'solid-js'
+import type {Component} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 import {createNanoEvents} from 'nanoevents'
 
 import {useIntl} from '../intl'
@@ -54,7 +55,7 @@ export const FlashMessages: Component<Props> = (props) => {
         handleFadeOut()
     }
 
-    onMount(() => {
+    onSettled(() => {
         let isSubscribed = true
         emitter.on('message', (newMessage: FlashMessage) => {
             if (isSubscribed) {
@@ -66,9 +67,9 @@ export const FlashMessages: Component<Props> = (props) => {
                 setMessage(newMessage)
             }
         })
-        onCleanup(() => {
+        return () => {
             isSubscribed = false
-        })
+        }
     })
 
     return (
