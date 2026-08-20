@@ -130,33 +130,23 @@ func bootstrapScript(sessionToken string) string {
 }
 
 // newServerProxy builds what the front door puts behind everything that is not
-// /wails/ or /acp/: the page, and the board the page talks to.
+// /wails/ or /acp/: the page, and the board the page talks to. Unattached those
+// are the same thing.
 //
-// Unattached those are the same thing — this process's own board server serves
-// both the webapp and the API, and one reverse proxy carries the lot.
+// Attached they come apart, and the split is the point: **the page is not
+// fetched from the server.** webapp/pack is embedded in this binary, so
+// proxying somebody's HTML would ask the network for a file already on this
+// disk — and it would be *their* page, while the bootstrap injected into it
+// assumes one this desktop's Go side matches.
 //
-// Attached, they come apart, and the split is the point. **The page is not
-// fetched from the server.** It is already here: webapp/pack is go:embed'ed
-// into this binary and served off disk, so proxying somebody's HTML would be
-// asking the network for a file already on this disk — and worse, it would be
-// *their* page rather than ours. The bootstrap script injected into it builds
-// window.go.main.App and assumes a page that knows what to do with it, so a
-// server on a different version would hand back a page this desktop's Go side
-// does not match.
+// What lives on the server is the data, and the page asks for it under two
+// prefixes: /api/v0 (with /files inside it) and /ws. Everything else stays
+// local. The page never knows which is which — every path it builds is relative
+// to window.location.origin, and that is the front door either way.
 //
-// What genuinely lives on the server is the data, and the page asks for all of
-// it under two prefixes: /api/v0 (the board API, /files included) and /ws (the
-// board's own socket). Those go across; everything else — index.html, /static
-// — stays local. The page never knows which is which: every path it builds is
-// relative to window.location.origin, and that is the front door either way.
-//
-// port is this process's own board; attached is the origin of a server, empty
-// when there is none. token is asked per response rather than baked in, because
-// the session for a hosted board is not known until somebody logs in.
-//
-// Which one is behind it can change while the app runs — that is what the
-// sidebar's switcher does — so what the front door holds is a boardRouter and
-// this builds the handler it points at.
+// token is asked per response rather than baked in: the session for a hosted
+// board is not known until somebody logs in. Which board is behind it can
+// change while the app runs, which is what boardRouter below is for.
 func newServerProxy(port int, attached string, token func() string) (http.Handler, error) {
 	local, err := url.Parse(fmt.Sprintf("http://localhost:%d", port))
 	if err != nil {
@@ -245,12 +235,8 @@ func stripCookie(req *http.Request, name string) {
 }
 
 // boardRouter is the handler the front door holds, so which board the page
-// talks to can change without rebuilding the door.
-//
-// A switch is a rebuild and a page reload rather than something the running
-// page absorbs: everything it holds — the board, the members, the sockets —
-// came from the board it loaded against, and pretending otherwise would be a
-// screen showing one board's cards under another's name.
+// talks to can change without rebuilding the door. A switch is a rebuild and a
+// reload: everything the page holds came from the board it loaded against.
 type boardRouter struct {
 	port  int
 	token func() string

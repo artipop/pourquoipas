@@ -6,23 +6,14 @@ import (
 	"time"
 )
 
-// Where a board lives.
+// Where a board lives. The six fields the manager used to hold became the first
+// source, and everything reads through forBoard/forCard instead.
 //
-// This package asks a board six questions and does not care who answers them.
-// Until a desktop could attach to a hosted board there was exactly one answerer
-// and the manager held it in six fields. Two can answer now — the board in this
-// process and one on a server — so the fields became the *first* source and
-// everything reads through forBoard/forCard instead.
+// With one source registered — every install that has not attached to anything
+// — both return it without asking anything at all.
 //
-// With one source registered, which is every install that has not attached to
-// anything, both return it without asking a question. That is deliberate: the
-// change has to be invisible where nothing changed, and the existing suite is
-// what says so.
-//
-// Routing needs no new interface method. A card is asked for by id, and the
-// source that has it is the one that answers CardByID; a board likewise answers
-// BoardProperties. With two sources that is at worst one wasted request, once
-// per card, and the answer is remembered.
+// Routing needs no new interface method: the source that has the card is the
+// one that answers CardByID, and the answer is remembered.
 type BoardSource struct {
 	// ID names the source: empty is the board this process serves, and a
 	// server's origin is its own name.
@@ -39,17 +30,12 @@ type BoardSource struct {
 	Lease BoardLease
 }
 
-// BoardLease is the one question that cannot be answered locally once a board
-// is shared: may this install take this route event.
-//
-// Every desktop attached to a hosted board hears the same card move, and each
-// has its own database — so the latch that made one drag one stage is a latch
-// per machine, and three desktops would run three stages. The claim has to be
-// made where all the candidates can see it, which is the board's own side.
-//
-// The window is what it always was: an event claimed and never released stops
-// being claimed once it is old enough to be swept, so a machine that dies
-// mid-stage costs that one stage rather than the card for ever.
+// BoardLease is the one question that cannot be answered locally once a board is
+// shared: may this install take this route event. Every attached desktop hears
+// the same card move and each has its own database, so the claim is made on the
+// board's own side. The window is what it always was — a claim old enough to be
+// swept stops standing, so a machine that dies costs that stage and not the
+// card.
 type BoardLease interface {
 	ClaimStage(ctx context.Context, token string, window time.Duration) (bool, error)
 }
@@ -67,8 +53,7 @@ type boardRouting struct {
 	ofCard  map[string]int
 }
 
-// ensureIndexes makes the maps on first use. A manager that never attaches to
-// anything never allocates them.
+// ensureIndexes makes the maps on first use.
 func (r *boardRouting) ensureIndexes() {
 	if r.ofBoard == nil {
 		r.ofBoard = map[string]int{}
@@ -86,8 +71,7 @@ func (m *Manager) AddBoardSource(src BoardSource) {
 	m.routing.extra = append(m.routing.extra, src)
 }
 
-// primary is the source the setters configured: the board this process serves,
-// or — on a desktop attached to a server and working only that — the server's.
+// primary is the source the setters configured.
 func (m *Manager) primary() BoardSource {
 	return BoardSource{
 		Writer:    m.writer,
@@ -98,9 +82,7 @@ func (m *Manager) primary() BoardSource {
 	}
 }
 
-// sources is every source, primary first. Read under the lock because a source
-// may be added after the manager has started — attaching does not wait for a
-// restart on the Go side.
+// sources is every source, primary first.
 func (m *Manager) sources() []BoardSource {
 	m.routing.mu.Lock()
 	defer m.routing.mu.Unlock()
@@ -128,8 +110,8 @@ func (m *Manager) sourceAt(i int) BoardSource {
 	return m.primary()
 }
 
-// rememberBoard and rememberCard are separate rather than one taking a map,
-// because a map read outside the lock is a race whatever it is passed as.
+// Separate rather than one function taking a map: a map read outside the lock
+// is a race whatever it is passed as.
 func (m *Manager) rememberBoard(boardID string, at int) {
 	if boardID == "" {
 		return
@@ -187,8 +169,7 @@ func (m *Manager) forBoard(boardID string) BoardSource {
 	return m.primary()
 }
 
-// forCard is the source a card lives on. The card's board is remembered with
-// it, so the next question about the same board costs nothing.
+// forCard is the source a card lives on. Its board is remembered with it.
 func (m *Manager) forCard(cardID string) BoardSource {
 	if m.only() {
 		return m.primary()
@@ -220,10 +201,9 @@ func (m *Manager) forgetCardRoute(cardID string) {
 	delete(m.routing.ofCard, cardID)
 }
 
-// claimStage takes a route event for this install, and reports whether it got
-// it. The claim is made wherever the card's board keeps its own — this
-// machine's store for a board this process serves, and the server's for a board
-// on one, so that of several desktops hearing the same move exactly one acts.
+// claimStage takes a route event for this install. The claim is made wherever
+// the card's board keeps its own, so that of several desktops hearing one move
+// exactly one acts.
 func (m *Manager) claimStage(cardID, token string) bool {
 	window := m.cfg.IdempotencyWindow()
 	if lease := m.forCard(cardID).Lease; lease != nil {

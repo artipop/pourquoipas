@@ -133,10 +133,9 @@ func (c *Client) SetCardFields(_ context.Context, cardID string, fields map[stri
 	return c.patchCard(cardID, &model.CardPatch{UpdatedProperties: properties}, true)
 }
 
-// AttachFile puts a file on the card and adds the block that shows it. The
-// block type and the id prefix follow the file's kind exactly as the in-process
-// adapter's do: the page reads them, and a card must not look different for
-// having been written from here.
+// AttachFile puts a file on the card and adds the block that shows it. The type
+// and id prefix follow the file's kind as the in-process adapter's do: a card
+// must not look different for having been written from here.
 func (c *Client) AttachFile(_ context.Context, cardID, filename, mime string, data []byte) error {
 	boardID, err := c.boardOfCard(cardID)
 	if err != nil {
@@ -171,8 +170,7 @@ func (c *Client) AttachFile(_ context.Context, cardID, filename, mime string, da
 	return c.appendContent(cardID, block.ID)
 }
 
-// appendContent puts a block at the end of the card's content, keeping whatever
-// nesting it already had.
+// appendContent puts a block at the end of the card's content.
 func (c *Client) appendContent(cardID, blockID string) error {
 	boardID, err := c.boardOfCard(cardID)
 	if err != nil {
@@ -256,8 +254,7 @@ func (c *Client) CreateCard(_ context.Context, spec acp.NewCard) (string, error)
 	return card.ID, nil
 }
 
-// cardSchema is the board a card is on and that board's property schema — the
-// pair almost every write needs.
+// cardSchema is the pair almost every write needs.
 func (c *Client) cardSchema(cardID string) (string, model.PropSchema, error) {
 	boardID, err := c.boardOfCard(cardID)
 	if err != nil {
@@ -272,13 +269,10 @@ func (c *Client) cardSchema(cardID string) (string, model.PropSchema, error) {
 
 // patchCard applies a card patch as a block patch.
 //
-// The read-then-write here is the one place this adapter is weaker than the
-// in-process one: merging the card's current properties needs them, and over
-// HTTP another writer can land between the read and the write. Only the one
-// property being set is at stake — everything else is carried through
-// unchanged from a picture that may be a moment old — and the alternative is
-// worse, because a block patch replaces the `properties` field whole and a
-// one-key patch would erase the rest.
+// The read-then-write is where this adapter is weaker than the in-process one:
+// another writer can land between them. Only the property being set is at
+// stake, and the alternative is worse — a block patch replaces `properties`
+// whole, so a one-key patch would erase the rest.
 func (c *Client) patchCard(cardID string, patch *model.CardPatch, disableNotify bool) error {
 	boardID, err := c.boardOfCard(cardID)
 	if err != nil {

@@ -11,20 +11,15 @@ import (
 
 var _ acp.BoardUsers = (*Client)(nil)
 
-// EnsureAgentAccounts makes the account each registered agent is named by. It
-// needs no board: an account is the machine's, made when an agent is
-// registered, and every board reads the same table when it offers people to
-// assign a card to.
+// EnsureAgentAccounts makes the account each registered agent is named by.
 //
-// This is the one thing in the seam the board's REST API could not already do,
-// and the route it calls is ours (POST /teams/{id}/machine-users). /register
-// wants the signup token and cannot say what kind of account it is making.
+// The one thing in the seam the board's REST API could not already do:
+// /register wants the signup token and cannot say what kind of account it is
+// making, so the route is ours.
 //
-// Idempotent by username, which has a consequence worth stating: three desktops
-// with an agent called «клаус» share one account on the board. That is right —
-// the board says what it needs, the machine says what it can run — and it is
-// also a trap, because behind it are three registry entries with three
-// different binaries.
+// Idempotent by username, with a consequence worth stating: three desktops with
+// an agent called «клаус» share one account on the board. That is right, and it
+// is a trap — behind it are three registry entries with three binaries.
 func (c *Client) EnsureAgentAccounts(_ context.Context, agents []acp.AgentUser) ([]acp.AgentUser, error) {
 	out := make([]acp.AgentUser, 0, len(agents))
 	for _, agent := range agents {
@@ -39,10 +34,9 @@ func (c *Client) EnsureAgentAccounts(_ context.Context, agents []acp.AgentUser) 
 	return out, nil
 }
 
-// ensureAccount fills in one agent's user id. An agent whose name folds to
-// nothing has no account and is skipped, reported by an empty UserID rather
-// than by an error: the registry is a person's own list and one unusable entry
-// must not stop the rest.
+// ensureAccount fills in one agent's user id. A name that folds to nothing is
+// skipped with an empty UserID rather than an error: one unusable registry
+// entry must not stop the rest.
 func (c *Client) ensureAccount(agent acp.AgentUser) (acp.AgentUser, error) {
 	if agent.Username == "" {
 		return agent, nil
@@ -86,12 +80,9 @@ func (c *Client) EnsureAgentUsers(_ context.Context, boardID string, agents []ac
 }
 
 // RetireAgentUser drops the agent's board memberships and reports how many. The
-// account stays: cards may still name it.
-//
-// It costs a request per board here, where the in-process adapter asks the
-// store for the memberships of one user. The board has no route for that, and
-// adding one for a thing that happens when somebody deletes an agent is a route
-// for nothing.
+// account stays: cards may still name it. A request per board, because the
+// board has no route for "the memberships of one user" and adding one for a
+// thing that happens when an agent is deleted is a route for nothing.
 func (c *Client) RetireAgentUser(_ context.Context, agent acp.AgentUser) (int, error) {
 	if agent.Username == "" {
 		return 0, nil

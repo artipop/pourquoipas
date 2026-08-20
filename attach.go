@@ -15,20 +15,13 @@ import (
 	"github.com/artipop/xciii/server/model"
 )
 
-// Attaching this desktop to a hosted board.
-//
-// The board moves and the agents do not: terminals, folders, worktrees and the
-// CLIs stay on this machine, and the cards live on somebody else's server. What
-// makes that cheap is that the front door already owns the origin — the page
-// has always been served through a reverse proxy to a board, and which board
-// that is was simply never a question anybody asked.
-//
-// So this holds the answer: an address in a settings file beside the tailnet's,
-// and the session token in the credential store, because a token is a
-// credential and a settings file is not the place for one.
+// Attaching this desktop to a hosted board: the cards move, the agents do not
+// (docs/teamwork.md). The address lives in a settings file beside the
+// tailnet's; the session lives in the credential store, because a token is a
+// credential.
 
 // attachSettings is <dataDir>/server/settings.json. No file means this desktop
-// works its own board, which is what every install starts as.
+// works its own board.
 type attachSettings struct {
 	// URL is the server's origin as a person typed it — scheme and host, no
 	// path. Empty means not attached.
@@ -44,10 +37,8 @@ type attachSettings struct {
 	Selected string `json:"selected,omitempty"`
 }
 
-// attachState is what the settings panel draws. Running is the answer the app
-// actually started with, so Running disagreeing with URL is the app saying a
-// restart is owed — the same shape the tailnet's status has, and for a harder
-// reason: the board a card lives on is decided when the seam is built.
+// attachState is what the settings panel draws. Running is what the app
+// started with, so Running disagreeing with URL says a restart is owed.
 type attachState struct {
 	URL      string `json:"url"`
 	Username string `json:"username"`
@@ -94,21 +85,8 @@ func saveAttachSettings(path string, cfg attachSettings) error {
 	return os.WriteFile(path, append(data, '\n'), 0o600)
 }
 
-// attachableBuild says this build can work somebody else's board.
-//
-// A desktop can; a hosted server cannot, and refusing is better than the
-// half-working thing it would otherwise be. Its own front door guards
-// /wails/ and both sockets against *its* session table, while the page it
-// serves carries the attached board's sessions — so every bound call, every
-// terminal and every event socket would be refused, and the screen would say
-// nothing about why.
-//
-// It is also not a configuration anybody wants: a server that is a client of
-// another server is two installs where one was asked for.
-
 // attachController owns the settings file and the token behind it. Safe on a
-// nil receiver, like the tailnet controller: no data dir costs the feature, not
-// the app.
+// nil receiver, like the tailnet controller.
 type attachController struct {
 	mu sync.Mutex
 
@@ -182,9 +160,8 @@ func (c *attachController) state() attachState {
 // «here» and «the server».
 const thisMachine = "Эта машина"
 
-// selected is the board the page shows. A server that has been detached, or one
-// selected before the app was restarted without it, falls back to this
-// machine's own rather than to a blank screen.
+// selected is the board the page shows. A server since detached falls back to
+// this machine's own rather than to a blank screen.
 func (c *attachController) selected() string {
 	if c == nil || !attachableBuild {
 		return ""
@@ -197,8 +174,7 @@ func (c *attachController) selected() string {
 	return ""
 }
 
-// selectBoard remembers which board to show. It changes nothing about which
-// boards the agents work: both are theirs, whichever one is on screen.
+// selectBoard remembers which board to show. The agents work both regardless.
 func (c *attachController) selectBoard(id string) (attachState, error) {
 	if c == nil {
 		return attachState{}, errors.New("подключение недоступно")
@@ -222,12 +198,9 @@ func (c *attachController) selectBoard(id string) (attachState, error) {
 	return out, nil
 }
 
-// attach logs in to a server and remembers it for the next launch.
-//
-// The login happens here rather than on the page, and that is not a detail of
-// where the form is: the Go side needs the token for its own board client, and
-// the page is served by a proxy that cannot point anywhere until there is an
-// address. One login, both halves.
+// attach logs in to a server and remembers it for the next launch. Here rather
+// than on the page: the Go side needs the token for its own board client, and
+// the proxy has nowhere to point until there is an address.
 func (c *attachController) attach(rawURL, username, password string) (attachState, error) {
 	if c == nil {
 		return attachState{}, errors.New("подключение недоступно")
@@ -288,10 +261,9 @@ func (c *attachController) detach() (attachState, error) {
 	return attachState{Running: c.running, Sources: []boardChoice{{ID: "", Title: thisMachine}}}, nil
 }
 
-// serverOrigin normalizes what a person typed into the origin every request
-// will be sent to. A path is dropped rather than kept: the board is served at
-// the root of its own host, and a trailing "/board" would make every route a
-// 404 that reads as the server being down.
+// serverOrigin normalizes what a person typed. A path is dropped: the board is
+// served at the root of its host, and "/board" would 404 every route in a way
+// that reads as the server being down.
 func serverOrigin(raw string) (string, error) {
 	raw = strings.TrimSpace(raw)
 	if raw == "" {

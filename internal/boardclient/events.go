@@ -23,34 +23,21 @@ var _ acp.BoardEvents = (*Client)(nil)
 
 // The board's own websocket, read as the card moves internal/acp acts on.
 //
-// The socket carries the *new* block and nothing else, where the in-process
-// adapter is handed the old one beside it. So this keeps a shadow: the select
-// values of every card of every board it has read. The diff against it is what
-// makes a move, and it is boardmodel.MovedEvents either way — the shadow is the
-// whole of the difference between the two adapters.
+// The socket carries the new block alone, where the in-process adapter is handed
+// the old one beside it — so this keeps a shadow of every card's select values
+// and diffs against it. That shadow is the whole difference between the two
+// adapters; everything after it is boardmodel.MovedEvents either way.
 //
-// Three things follow, and each is a bug if it is not handled.
-//
-//   - **A card the shadow has never seen records and emits nothing.** Treating
-//     an unknown previous value as a move would start a stage for every card on
-//     the board at every launch.
-//   - **Our own writes come back.** Every bookkeeping write this app makes is
-//     broadcast, because the page has to redraw. What tells them apart is the
-//     `silent` flag the board now puts on the message; without it this client
-//     would read its own flow_state write as somebody dragging the card and
-//     start the stage it has just finished.
-//   - **A reconnect loses whatever happened while it was down.** The socket
-//     carries no cursor, so every subscribed board is re-read and diffed
-//     against the shadow: a missed move becomes a late move rather than a lost
-//     one.
+// Three things follow, and each is a bug if unhandled: a card the shadow has
+// never seen is recorded and announced to nobody, or every launch starts a stage
+// per card; our own bookkeeping comes back over the socket and is told apart by
+// the board's `silent` flag; and a reconnect re-reads rather than replays,
+// because the socket carries no cursor.
 
 const (
-	// How long to wait before dialling again. The board's own page uses a
-	// backoff; this is a fixed pause because a desktop is one client and the
-	// server it is attached to is not being protected from it.
+	// A fixed pause rather than the page's backoff: a desktop is one client.
 	reconnectAfter = 5 * time.Second
-	// The board expects a ping now and then, and a dead connection is
-	// otherwise noticed only when something is sent.
+	// A dead connection is otherwise noticed only when something is sent.
 	pingEvery = 30 * time.Second
 )
 
@@ -77,8 +64,8 @@ type shadow struct {
 func newShadow() *shadow { return &shadow{seen: make(map[string]map[string]any)} }
 
 // remember records a card's select values and answers what they were before.
-// known is false the first time a card is seen, which is what stops a listing
-// from reading as a board full of moves.
+// known is false the first time, which stops a listing reading as a board full
+// of moves.
 func (s *shadow) remember(cardID string, props map[string]any) (previous map[string]any, known bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -128,8 +115,7 @@ func (c *Client) watch(ctx context.Context) {
 	}
 }
 
-// readSocket runs one connection: dial, authenticate, subscribe, then read
-// until it breaks.
+// readSocket runs one connection until it breaks.
 func (c *Client) readSocket(ctx context.Context) error {
 	endpoint, err := socketURL(c.api.APIURL)
 	if err != nil {
@@ -149,9 +135,7 @@ func (c *Client) readSocket(ctx context.Context) error {
 	}
 
 	// A fresh connection knows nothing about what happened while there was
-	// none, so the boards this client has been asked about are re-read and
-	// diffed. On the first connection this is what fills the shadow, which is
-	// why nothing is emitted for a card seen for the first time.
+	// none. On the first one this is also what fills the shadow.
 	c.resync(ctx)
 
 	done := make(chan struct{})
@@ -234,10 +218,8 @@ func (c *Client) handle(msg wsMessage) {
 	}
 }
 
-// resync re-reads every board this client has seen a card of and records where
-// its cards stand now. It emits nothing: a move that happened while the socket
-// was down is picked up by the next diff, and announcing every card of every
-// board on reconnect is how a reconnect would become a stampede.
+// resync re-reads every board this client has seen a card of. It emits nothing:
+// announcing every card on reconnect is how a reconnect becomes a stampede.
 func (c *Client) resync(ctx context.Context) {
 	c.mu.Lock()
 	boards := make(map[string]struct{}, len(c.cardBoard))
@@ -262,9 +244,8 @@ func (c *Client) resync(ctx context.Context) {
 	}
 }
 
-// socketURL turns the API base into the socket's address: the board serves it
-// beside /api/v0, on the same origin, and it is ws:// or wss:// by whichever
-// the API is.
+// socketURL turns the API base into the socket's address, beside it on the same
+// origin.
 func socketURL(apiURL string) (string, error) {
 	parsed, err := url.Parse(apiURL)
 	if err != nil {

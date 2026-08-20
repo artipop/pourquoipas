@@ -16,19 +16,11 @@ import (
 	"github.com/artipop/xciii/internal/sources"
 )
 
-// Which board the agents work.
-//
-// internal/acp asks a board six questions and does not care who answers them.
-// Two things can: internal/boardadapter, which has the board in this process,
-// and internal/boardclient, which has one over HTTP. This is the one place that
-// chooses, so nothing downstream has to know there was a choice.
-//
-// Attached, there are two and both are worked: the manager keeps a source for
-// each and routes by which one has the card (internal/acp/boardsource.go), so
-// an agent on the server's card goes on working while somebody looks at their
-// own board. What the *page* shows is a separate question with a separate
-// answer — the switcher — because a page holds one board's cards, members and
-// sockets and cannot hold two.
+// Which board the agents work. Two things can answer internal/acp's questions —
+// the board in this process and one over HTTP — and this is the one place that
+// chooses. Attached, both are worked and the manager routes by which one has
+// the card; what the *page* shows is the switcher's separate question, because
+// a page holds one board's cards, members and sockets and cannot hold two.
 type boardSeam struct {
 	writer    acp.BoardWriter
 	cardState acp.BoardCardState
@@ -50,9 +42,8 @@ type boardSeam struct {
 	notifyBackend notify.Backend
 }
 
-// boardLists is the small, flat surface a phone reads. Both adapters have it,
-// and which one answers follows what the page is showing rather than what the
-// agents are working: this is the board somebody is looking at.
+// boardLists is the small, flat surface a phone reads. Which one answers
+// follows what the page is showing, not what the agents are working.
 type boardLists interface {
 	Boards(ctx context.Context) ([]boardmodel.BoardSummary, error)
 	BoardCards(ctx context.Context, boardID string) ([]boardmodel.CardSummary, error)
@@ -92,8 +83,8 @@ func remoteSeam(serverURL, token string, log mlog.LoggerIFace) (boardSeam, *boar
 	}, client
 }
 
-// selectedLists picks the reader for the board on screen. A function rather
-// than a field, because the switcher moves it while the app runs.
+// selectedLists picks the reader for the board on screen. A function because
+// the switcher moves it while the app runs.
 type selectedLists struct {
 	local  boardLists
 	remote boardLists
@@ -120,19 +111,15 @@ func (s selectedLists) MoveCardToBoard(ctx context.Context, cardID, toBoardID, c
 	return s.pick().MoveCardToBoard(ctx, cardID, toBoardID, column)
 }
 
-// sourceBoard is everything internal/sources does to a board. Both adapters
-// have it.
+// sourceBoard is everything internal/sources does to a board.
 type sourceBoard interface {
 	sources.BoardWriter
 	sources.BoardItems
 }
 
-// sourcesByBoard sends a source's writes to the board it names.
-//
-// A source entry belongs to a board (SourceEntry.BoardID), and a board belongs
-// to this machine or to a server — so where a source writes is not a question
-// anybody has to answer. Somebody who points a source at a server's board has
-// said what they meant by pointing it there.
+// sourcesByBoard sends a source's writes to the board it names. A source entry
+// belongs to a board (SourceEntry.BoardID) and a board belongs to this machine
+// or to a server, so nobody has to decide where it writes.
 type sourcesByBoard struct {
 	local  sourceBoard
 	remote sourceBoard
@@ -207,12 +194,9 @@ func (s *sourcesByBoard) MoveCardByOptionName(ctx context.Context, cardID, prope
 	return s.forCard(cardID).MoveCardByOptionName(ctx, cardID, propertyName, optionName)
 }
 
-// onServerBoard answers whether a board is the attached server's.
-//
-// By asking it, the same way the agent seam routes: the one that has the board
-// is the one that answers. A yes is remembered — a board does not move between
-// servers — and a no is not, because a board made on the server after this
-// launch has to become a yes.
+// onServerBoard answers whether a board is the attached server's, by asking it.
+// A yes is remembered — a board does not move between servers — and a no is
+// not, or a board made on the server later could never become a yes.
 func onServerBoard(meta acp.BoardMeta) func(string) bool {
 	if meta == nil {
 		return func(string) bool { return false }

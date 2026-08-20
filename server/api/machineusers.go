@@ -12,18 +12,13 @@ import (
 )
 
 // An account for something that never logs in: one per registered agent, one
-// per source. The board names an agent by a card being assigned to it, so the
-// name needs a row in the users table, and until now the only way to make one
-// was to be the process holding the database.
+// per source. A card names its agent by being assigned to it, so the name needs
+// a row in the users table — and until a desktop could attach to a hosted board,
+// the only way to make one was to be the process holding the database.
 //
-// A desktop attached to a hosted board is not that process, and this is the one
-// thing in the whole seam that REST could not already do — /register wants the
-// signup token and cannot say what kind of account it is making.
-//
-// Any member may call it. Registering an agent is what a person does in order
-// to work here, and the account it makes has no password anybody knows and no
-// authority: role=member, kind=agent. What it is *not* allowed to make is a
-// person, which is the door /register owns.
+// Any member may call it: registering an agent is what a person does in order to
+// work here, and the account has no password anybody knows and no authority.
+// What it may not make is a person, which is the door /register owns.
 
 type machineUserRequest struct {
 	Username string `json:"username"`
@@ -86,17 +81,15 @@ func (a *API) handleEnsureMachineUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Idempotent by username: several machines register the same agent, and the
-	// board wants one account for the name. That they are three different
-	// installations behind it is the machine's business and not the board's.
+	// Idempotent by username: several machines register the same agent and the
+	// board wants one account for the name.
 	user, err := a.app.GetUserByUsername(want.Username)
 	if err != nil && !model.IsErrNotFound(err) {
 		a.errorResponse(w, r, err)
 		return
 	}
 	if user == nil {
-		// A password nobody knows: the account exists to be named, and there is
-		// no door it opens.
+		// A password nobody knows: the account exists to be named.
 		buf := make([]byte, machineUserPasswordBytes)
 		if _, pErr := rand.Read(buf); pErr != nil {
 			a.errorResponse(w, r, pErr)
@@ -122,10 +115,8 @@ func (a *API) handleEnsureMachineUser(w http.ResponseWriter, r *http.Request) {
 }
 
 const (
-	// A reserved TLD, so an address nobody reads can never be an address
-	// somebody else owns (RFC 2606).
-	machineUserDomain = "agents.invalid"
-	// Long enough that the server's own password rules pass and short enough to
-	// be one line in a log nobody should ever see it in.
+	// A reserved TLD (RFC 2606), so an address nobody reads is never one
+	// somebody else owns.
+	machineUserDomain        = "agents.invalid"
 	machineUserPasswordBytes = 24
 )

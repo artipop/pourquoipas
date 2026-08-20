@@ -193,23 +193,16 @@ type FlowEventRecord struct {
 	CreatedAt time.Time `json:"createdAt"`
 }
 
-// Everything below is keyed on a card or a board, and points at card_ref and
-// board_ref rather than at the board's own tables.
+// Everything below is keyed on a card or a board and points at card_ref and
+// board_ref rather than at the board's own tables: a key reaches only inside its
+// own database, and a desktop attached to a hosted board has no row for a remote
+// card. See tools/schemagen for the chain.
 //
-// A foreign key reaches only inside its own database, and a desktop attached to
-// a hosted board has no row for a remote card — the insert would not be
-// ambiguous, it would be refused. So the ref rows are what the keys point at:
-// blocks → card_ref → everything, which keeps the cascade a local card always
-// had, while a remote card carries no block_id and its ref is removed by the
-// client that hears the board say the card is gone.
-//
-// ensureRefs is called before every write that names one. It is one upsert of
-// each, not a read: two statements are cheaper than a round trip that usually
-// finds the row there, and this runs on the path a card takes through a route.
+// ensureRefs runs before every write that names one — an upsert rather than a
+// read, because this is the path a card takes through a route.
 
-// LocalSource is the source id of the board this process serves. Written as
-// NULL rather than as a word, because "no source named" is what a machine that
-// has never attached to anything says.
+// LocalSource is the board this process serves, written as NULL: "no source
+// named" is what a machine that never attached to anything says.
 const LocalSource = ""
 
 // ensureBoardRef makes the row a board key can point at. local says the board
@@ -230,8 +223,8 @@ func (s *Store) ensureBoardRef(boardID string, local bool) error {
 }
 
 // ensureCardRef makes the row a card key can point at. boardID may be empty:
-// three writers know a card and not its board — a stall, a flow event, a
-// checkout — and the board is filled in by whichever writer knows it.
+// three writers know a card and not its board, and it is filled in by whichever
+// does.
 func (s *Store) ensureCardRef(cardID, boardID string) error {
 	if cardID == "" {
 		return nil
@@ -1000,12 +993,9 @@ func nullable(v string) any {
 
 // RunningInColumn counts the sessions of one column that have not finished.
 //
-// In the database rather than in this process's memory, which is where it was.
-// A column's limit is a fact about the board — "how many of its crew may work
-// it at once" — and two windows of this app were each counting their own
-// sessions, so a limit of one ran two. Sessions left behind by a crash are
-// swept at launch (StaleSessions), so a stale row cannot hold a column shut for
-// ever.
+// In the database rather than in this process's memory: a column's limit is a
+// fact about the board, and two windows of this app each counted their own, so a
+// limit of one ran two. A row left by a crash is swept at launch.
 func (s *Store) RunningInColumn(columnKey string) (int, error) {
 	if columnKey == "" {
 		return 0, nil

@@ -12,11 +12,9 @@ import (
 	"github.com/artipop/xciii/internal/sources"
 )
 
-// The board as internal/sources writes to it, over HTTP.
-//
-// A wrapper type rather than more methods on Client, for the reason the
-// in-process one is: a source's CreateCard names a board and a spec where an
-// agent's names a column and a property, and Go allows one method of a name.
+// The board as internal/sources writes to it, over HTTP. A wrapper type for the
+// reason the in-process one is: a source's CreateCard and an agent's have
+// different signatures, and Go allows one method of a name.
 type SourceWriter struct {
 	*Client
 }
@@ -46,24 +44,16 @@ func (w *SourceWriter) ColumnProperty(_ context.Context, boardID string) (string
 	return name, nil
 }
 
-// EnsureInbox makes the column a source's cards land in.
-//
-// The column and not the view, which is where this stops short of the
-// in-process writer. The column is what the pipeline cannot do without; the
-// view is how a person finds what landed in it, and it exists for boards that
-// predate the inbox. A hosted server imports the templates itself, so every
-// board made on one has the view already — and there is no release, so a board
-// on a server that predates the inbox is a set with nothing in it. Building the
-// view twice, in two places, to serve that set would be the drift this package
-// is arranged to avoid.
+// EnsureInbox makes the column a source's cards land in — and not the view,
+// which is where this stops short of the in-process writer. The view exists for
+// boards that predate the inbox; a hosted server imports the templates itself
+// and there is no release, so that is a set with nothing in it.
 func (w *SourceWriter) EnsureInbox(ctx context.Context, boardID, propertyName, optionName string) (string, error) {
 	return w.ensureColumn(ctx, boardID, propertyName, optionName)
 }
 
-// ensureColumn returns the id of the named option of the named select property,
-// adding the option if the board does not have it yet. Add-only: an option
-// somebody renamed stays renamed, and nothing here removes one, because cards
-// refer to options by id and a removed option is a card that lost its column.
+// ensureColumn returns the id of the named option, adding it if the board has
+// none. Add-only: a removed option is a card that lost its column.
 func (w *SourceWriter) ensureColumn(_ context.Context, boardID, propertyName, optionName string) (string, error) {
 	board, schema, err := w.board(boardID)
 	if err != nil {
@@ -91,13 +81,9 @@ func (w *SourceWriter) ensureColumn(_ context.Context, boardID, propertyName, op
 	return optionID, nil
 }
 
-// CreateCard puts a card a source brought on the board.
-//
-// Written silently like every other write here: the trigger only fires on a
-// *change* of the column property, so a card created straight into a working
-// column would start nothing anyway. Whoever wants the automation creates the
-// card where nothing happens and then moves it, which is a real move with a
-// real previous state.
+// CreateCard puts a card a source brought on the board. Silent, like every
+// write here: the trigger fires on a *change* of the column property, so a card
+// created into a working column would start nothing anyway.
 func (w *SourceWriter) CreateCard(ctx context.Context, boardID string, spec sources.CardSpec) (string, error) {
 	board, schema, err := w.board(boardID)
 	if err != nil {
@@ -201,9 +187,8 @@ func cardOrigin(spec sources.CardSpec) map[string]any {
 	}
 }
 
-// ensureLinkProperty is the board's url property, made if the board has none.
-// The board and its schema are passed in because the caller has just read them
-// and a second request for the same board is a request for nothing.
+// ensureLinkProperty is the board's url property, made if it has none. The
+// board is passed in because the caller has just read it.
 func (w *SourceWriter) ensureLinkProperty(boardID string, board *model.Board, schema model.PropSchema) (string, error) {
 	if id, ok := boardmodel.PropertyOfType(board, schema, "url"); ok {
 		return id, nil

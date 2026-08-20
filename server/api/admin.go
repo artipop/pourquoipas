@@ -9,14 +9,13 @@ import (
 	"github.com/artipop/xciii/server/web"
 )
 
-// Administering the install, as opposed to administering a board. Board roles
-// are membership (board_members.minimum_role) and answer "what may this person
-// do here"; these answer "who runs this server" — invite people, see all of
-// them, hand the job to somebody else.
+// Administering the install, as opposed to administering a board: board roles
+// are membership and answer "what may this person do here", these answer "who
+// runs this server".
 //
-// There is no such thing on a desktop: nobody logs in, so nobody is an admin
-// and every one of these answers 403. That is right rather than a gap — an
-// install of one person has nobody to administer against.
+// Nobody is an admin on a desktop, so every one of these answers 403 there —
+// right rather than a gap, since an install of one person has nobody to
+// administer against.
 
 func (a *API) registerAdminRoutes(r *web.Router) {
 	r.HandleFunc("GET /admin/users", a.adminRequired(a.handleAdminGetUsers))
@@ -61,8 +60,8 @@ func (a *API) handleAdminGetUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// The admin's list is the one place an account's address is its owner's
-	// business rather than private: it is how you tell two people apart.
+	// Addresses are shown here and nowhere else: it is how you tell two people
+	// apart.
 	data, err := json.Marshal(users)
 	if err != nil {
 		a.errorResponse(w, r, err)
@@ -202,9 +201,7 @@ func (a *API) handleAdminActivate(w http.ResponseWriter, r *http.Request) {
 }
 
 // refuseLosingTheLastAdmin: an install nobody can administer cannot be repaired
-// from inside the product — there is no console and no unix socket any more —
-// so the API refuses to make one. It says nothing about accounts that are not
-// the last admin, deactivated or otherwise.
+// from inside the product, so the API refuses to make one.
 func (a *API) refuseLosingTheLastAdmin(userID string) error {
 	user, err := a.app.GetUser(userID)
 	if err != nil {

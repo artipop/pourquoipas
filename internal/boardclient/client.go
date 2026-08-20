@@ -1,13 +1,10 @@
 // Package boardclient is the board over HTTP: the same interfaces
-// internal/acp is handed by internal/boardadapter, backed by the board's own
-// REST API and its websocket instead of by the app layer in this process.
+// internal/boardadapter hands internal/acp, backed by the board's REST API and
+// its websocket instead of by the app layer in this process.
 //
 // The two are siblings and neither imports the other. What they must not do is
 // disagree about what a card says, which is why everything that reads a block
 // lives in internal/boardmodel and both call it.
-//
-// What it is for: a desktop attached to a hosted board runs the agents on this
-// machine and keeps the cards on somebody else's server.
 package boardclient
 
 import (
@@ -30,19 +27,15 @@ type Client struct {
 	log    mlog.LoggerIFace
 
 	mu sync.Mutex
-	// cardBoard is which board a card is on. A card id is all most of the seam
-	// carries, and every route here is addressed by board — so this is the one
-	// index without which each write would cost an extra round trip. A card
-	// changes board only through MoveCardToBoard, and the socket says so.
+	// cardBoard is which board a card is on: most of the seam carries only a
+	// card id and every route here is addressed by board. A card changes board
+	// only through MoveCardToBoard, and the socket says so.
 	cardBoard map[string]string
 	// events is the normalized stream Subscribe hands out, and shadow is what
 	// makes a diff possible at all — see events.go.
 	events chan acp.CardMoved
 	shadow *shadow
-	// users is the username behind a user id. A person property stores ids and
-	// an agent is matched by the name, so this is asked for on every card read;
-	// the answer changes when somebody is renamed, which is not something this
-	// app does — it makes a new account instead.
+	// users is the username behind a user id, asked for on every card read.
 	users map[string]string
 }
 
@@ -104,9 +97,7 @@ func (c *Client) boardOfCard(cardID string) (string, error) {
 	return card.BoardID, nil
 }
 
-// rememberCard records which board a card is on. Called from the socket too, so
-// a card carried to another board from somewhere else stops being looked for on
-// the old one.
+// rememberCard records which board a card is on. Called from the socket too.
 func (c *Client) rememberCard(cardID, boardID string) {
 	if cardID == "" || boardID == "" {
 		return
@@ -122,8 +113,8 @@ func (c *Client) forgetCard(cardID string) {
 	c.mu.Unlock()
 }
 
-// resolver reads usernames through the API, memoized across calls: a board full
-// of assigned cards would otherwise be one request per person value per read.
+// resolver reads usernames through the API, memoized: a board full of assigned
+// cards would otherwise be one request per person value per read.
 func (c *Client) resolver() *boardmodel.Resolver {
 	return boardmodel.NewResolver(func(userID string) string {
 		c.mu.Lock()
@@ -146,9 +137,8 @@ func (c *Client) resolver() *boardmodel.Resolver {
 	})
 }
 
-// failed turns the REST client's two-value answer into an ordinary error. The
-// client reports failure in a Response rather than in the error it returns, so
-// every call site here would otherwise carry the same three lines.
+// failed turns the REST client's two-value answer into an ordinary error: it
+// reports failure in the Response rather than in the error it returns.
 func failed(resp *client.Response, what string, args ...any) error {
 	if resp == nil {
 		return fmt.Errorf(what+": no response", args...)
