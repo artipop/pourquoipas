@@ -81,7 +81,13 @@ The **"Columns"** tab, select a column — in the panel:
   What it holds decides whether an arrow can branch on it. An arrow asks "only
   if the card has this value", which is a question to a set: a property with a
   set of values has something to pick from, a text one has not. A text property
-  travels to the stages further on and is read there;
+  travels to the stages further on and is read there.
+
+  The declared writes reach the agent in its brief: what it has to pass in
+  `finish_work`, and what each value may be — for a property with a set, the
+  values themselves. To check while working, the agent has the
+  `list_card_fields` tool: every card property of this board, which of them can
+  be written to at all, and which this stage has to report;
 - **"Gets from the card"** — the properties the stage reads: their values open
   its brief ("From the card: Превью: …"), so the agent does not have to think
   of asking `get_card`;

@@ -297,6 +297,76 @@ type BoardToolCard struct {
 	Queued  bool     `json:"queued,omitempty"`
 }
 
+// BoardToolField is one property of the granted board's cards, with what this
+// stage owes on it.
+type BoardToolField struct {
+	Name     string   `json:"name"`
+	Kind     string   `json:"kind"`
+	Values   []string `json:"values,omitempty"`
+	Writable bool     `json:"writable"`
+	Declared bool     `json:"declared,omitempty"`
+	Required bool     `json:"required,omitempty"`
+}
+
+// BoardToolFields is the board's card properties as an agent needs them: what a
+// value may be, and which of them this stage has to report. The stage half
+// comes from the grant — the conversation names the stage waiting on it — so an
+// agent that asks gets an answer about its own run and not about the board in
+// general.
+//
+// It exists because nothing else describes a property. The brief names the
+// declared writes (stageOutputs), and an agent that wants to check what a
+// select accepts before reporting had no way to but to be refused.
+func (m *Manager) BoardToolFields(ctx context.Context, token string) ([]BoardToolField, error) {
+	g, ok := m.boardGrant(token)
+	if !ok {
+		return nil, fmt.Errorf("нет доступа к доске")
+	}
+	if m.meta == nil {
+		return nil, fmt.Errorf("доска недоступна")
+	}
+	props, err := m.meta.CardProperties(ctx, g.BoardID)
+	if err != nil {
+		return nil, err
+	}
+	declared := map[string]PropertyWrite{}
+	m.stageMu.Lock()
+	wait, waiting := m.stageWaits[g.TerminalID]
+	m.stageMu.Unlock()
+	if waiting {
+		for _, w := range wait.writes {
+			declared[strings.ToLower(w.Property)] = w
+		}
+	}
+	out := make([]BoardToolField, 0, len(props))
+	for _, p := range props {
+		// The column property is left out of the writable set on purpose: the
+		// card moves by the stage's own outcome or by move_card, and
+		// finish_work refuses it (FinishWorkFromTools).
+		writable := writableProperty(p.Type) && !strings.EqualFold(p.Name, g.Property)
+		w, mine := declared[strings.ToLower(p.Name)]
+		out = append(out, BoardToolField{
+			Name: p.Name, Kind: p.Type, Values: p.Values,
+			Writable: writable, Declared: mine, Required: mine && w.Required,
+		})
+	}
+	return out, nil
+}
+
+// writableProperty says a stage can put a value in this kind of field at all.
+// SetCardFields resolves a select by one of its option names and stores
+// everything else as text, so a date or a person would take a string the board
+// cannot read back, and createdBy and its kin are the board's own bookkeeping.
+// The same closed set the editor offers (WRITABLE_TYPES in automation.ts).
+func writableProperty(kind string) bool {
+	switch kind {
+	case "text", "url", "email", "phone", "number", "select":
+		return true
+	default:
+		return false
+	}
+}
+
 // BoardToolCards lists the granted board's cards, optionally only those in one
 // column. Nothing else an agent can do to a card is possible without this: every
 // other call takes an id, and an id is not something a conversation carries.

@@ -542,6 +542,47 @@ func TestDeclaredReadsOpenTheBrief(t *testing.T) {
 	}
 }
 
+// The declared writes open the brief too, as the contract they are: what
+// finish_work must carry and what each value may be. Nothing said this before,
+// so an agent asked for a verdict found out what «Вердикт» accepts by being
+// refused, and a required write it was never told about failed the stage on the
+// first attempt to end it.
+func TestDeclaredWritesAreSaidToTheAgent(t *testing.T) {
+	fields := []CardProperty{
+		{Name: "Вердикт", Type: "select", Values: []string{"blocked", "fail", "pass"}},
+		{Name: "Превью", Type: "url"},
+	}
+	outputs := stageOutputs([]PropertyWrite{
+		{Property: "Вердикт", Required: true},
+		{Property: "Превью"},
+	}, fields)
+	for _, want := range []string{
+		"finish_work",
+		"Вердикт: one of blocked, fail, pass (required)",
+		"Превью: a link",
+	} {
+		if !strings.Contains(outputs, want) {
+			t.Errorf("the outputs block is missing %q:\n%s", want, outputs)
+		}
+	}
+	if strings.Contains(outputs, "Превью: a link (required)") {
+		t.Error("an optional write was announced as required")
+	}
+	if stageOutputs(nil, fields) != "" {
+		t.Error("a stage with no writes got an outputs block")
+	}
+}
+
+// The values come from the board rather than from the declaration: a stage
+// declares a name, and an option renamed on the board must not leave a stale
+// list standing in every brief.
+func TestAWriteWithNoPropertyOnTheBoardIsStillNamed(t *testing.T) {
+	outputs := stageOutputs([]PropertyWrite{{Property: "Заметка"}}, nil)
+	if !strings.Contains(outputs, "Заметка: text") {
+		t.Errorf("a write the board has no property for was dropped:\n%s", outputs)
+	}
+}
+
 // A column's own MCP servers reach the stage that runs there, in the file the
 // CLI is pointed at — beside the board's tools rather than instead of them.
 // This is what saves registering one agent twice to have it configured two ways

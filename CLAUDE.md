@@ -1348,6 +1348,36 @@ machine value) and warns per route about a conditional edge whose property no
 stage writes (`unwrittenConditions`) — named, not refused, since the value may
 be a person's own click.
 
+**The property a stage needs is made where the stage is declared**
+(`onCreateProperty`, `NewPropertyForm`). Not one shipped template declared a
+single write, and the reason was the picker: it offered the board's existing
+fields, which on every board here are Приоритет, Папка, Срок, Ветка, Автор and
+Создана — none of them a preview address. The list was never closed, it was
+empty of the right answers, and the way to one led out of the dialog and onto
+the board. So the last item makes the field, the dialog is what patches the
+board (the editor knows nothing about it, the same bargain `onCreateColumn`
+takes), and the form asks what the property *holds* — because that is the
+question that decides something: an edge asks "is it this value", which only a
+closed set can answer, and a text write is carried to the stages further on
+instead. A deploy and a test stage are not asked, one producing an address and
+the other a verdict. The same picker offers only what `SetCardFields` can
+actually write (`WRITABLE_TYPES`, `writableProperty` in Go): a date or a person
+would take a string the board cannot read back, and `createdBy` and its kin are
+not writable at all.
+
+**And the contract is said to the agent, twice.** In the brief — `stageOutputs`
+beside `cardInputs`, naming every declared write and what its value may be, with
+a select's own options read off the board (`BoardMeta.CardProperties` →
+`boardmodel.ReadCardProperties`) rather than copied into the declaration, where
+a renamed option would leave a stale list standing. And as a tool —
+`list_card_fields`, which answers about *this* run: the grant names the
+conversation, the conversation names the stage waiting on it, so the declared
+and required ones are marked (`BoardToolFields`). Neither is decoration. An
+agent asked for a verdict used to find out what «Вердикт» accepts by being
+refused, and a required write nobody had mentioned failed the stage on the first
+attempt to end it — the deploy/test half is excluded from the brief on purpose,
+since this side writes those values and the agent has no way to produce them.
+
 **Tools are the column's answer too, and inherited exactly as the crew is**
 (`MCPServers` on `ColumnSpec` and `FlowNode`, resolved by `startOptions.
 stageMCP` and by `cardPlace`). A browser belongs to «QA» and not to whoever

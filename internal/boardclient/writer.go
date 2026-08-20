@@ -112,7 +112,7 @@ func (c *Client) SetCardFields(_ context.Context, cardID string, fields map[stri
 	for name, value := range fields {
 		propID, def, ok := boardmodel.FindPropertyByName(schema, name)
 		if !ok {
-			return fmt.Errorf("на доске нет свойства %q", name)
+			return fmt.Errorf("на доске нет свойства %q — посмотрите list_card_fields", name)
 		}
 		if def.Type == "select" {
 			optionID := ""
@@ -123,7 +123,7 @@ func (c *Client) SetCardFields(_ context.Context, cardID string, fields map[stri
 				}
 			}
 			if optionID == "" {
-				return fmt.Errorf("у свойства %q нет значения %q", name, value)
+				return fmt.Errorf("у свойства %q нет значения %q — допустимые перечислены в list_card_fields", name, value)
 			}
 			properties[propID] = optionID
 			continue

@@ -10,6 +10,7 @@ package boardmodel
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -301,6 +302,26 @@ func ColumnPropertyName(board *model.Board, schema model.PropSchema, views []*mo
 // board recorded for itself, and failing that the one a person reads as the
 // columns. Empty when the board has no such property — a board of notes need
 // not have one.
+// ReadCardProperties is a board's card fields as the agent integration reads
+// them: name, kind, and the closed set where there is one. Sorted, because a
+// PropSchema is a map and this is read by a model — the same board answering in
+// a different order on two runs of one stage is a difference with no meaning.
+//
+// Not CardProperties, which is the other direction: named values onto a card.
+func ReadCardProperties(schema model.PropSchema) []acp.CardProperty {
+	out := make([]acp.CardProperty, 0, len(schema))
+	for _, def := range schema {
+		p := acp.CardProperty{Name: def.Name, Type: def.Type}
+		for _, opt := range def.Options {
+			p.Values = append(p.Values, opt.Value)
+		}
+		sort.Strings(p.Values)
+		out = append(out, p)
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].Name < out[j].Name })
+	return out
+}
+
 func ColumnOptions(board *model.Board, schema model.PropSchema, views []*model.Block, recordedPropID string) []acp.Column {
 	propID := recordedPropID
 	if _, ok := schema[propID]; !ok {

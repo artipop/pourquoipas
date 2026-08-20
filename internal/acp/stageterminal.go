@@ -333,7 +333,7 @@ func (m *Manager) FinishWorkFromTools(token string, ok bool, summary string, fie
 			continue
 		}
 		if strings.TrimSpace(fieldValue(fields, w.Property)) == "" {
-			return fmt.Errorf("стадия обязана записать свойство %q — передай его в properties", w.Property)
+			return fmt.Errorf("стадия обязана записать свойство %q — передай его в properties (что оно принимает, покажет list_card_fields)", w.Property)
 		}
 	}
 	if len(fields) > 0 {

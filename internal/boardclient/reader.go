@@ -158,6 +158,15 @@ func (c *Client) IsBoardTemplate(_ context.Context, boardID string) (bool, error
 	return board.IsTemplate, nil
 }
 
+// CardProperties is the board's card fields — see boardmodel.ReadCardProperties.
+func (c *Client) CardProperties(_ context.Context, boardID string) ([]acp.CardProperty, error) {
+	_, schema, err := c.board(boardID)
+	if err != nil {
+		return nil, err
+	}
+	return boardmodel.ReadCardProperties(schema), nil
+}
+
 // BoardColumnOptions is the board's column property and every option of it.
 func (c *Client) BoardColumnOptions(_ context.Context, boardID string) ([]acp.Column, error) {
 	board, schema, err := c.board(boardID)

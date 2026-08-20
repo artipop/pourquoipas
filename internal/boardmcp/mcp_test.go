@@ -32,6 +32,14 @@ func (b *fakeBoard) Flows(context.Context) ([]Flow, error) {
 	}}}, nil
 }
 
+func (b *fakeBoard) Fields(context.Context) ([]FieldInfo, error) {
+	return []FieldInfo{
+		{Name: "Вердикт", Kind: "select", Values: []string{"blocked", "fail", "pass"}, Writable: true, Declared: true, Required: true},
+		{Name: "Превью", Kind: "url", Writable: true},
+		{Name: "Автор", Kind: "createdBy"},
+	}, nil
+}
+
 func (b *fakeBoard) Cards(_ context.Context, column string) ([]CardInfo, error) {
 	all := []CardInfo{
 		{ID: "card-1", Title: "Починить окно", Column: "К агенту", Options: []string{"xciii"}, Mine: true,
@@ -179,6 +187,31 @@ func TestACardSaysWhatActingOnItNeeds(t *testing.T) {
 	plain := cardLine(CardInfo{ID: "card-2", Title: "Вторая", Column: "Идеи"})
 	if strings.Contains(plain, "route:") {
 		t.Errorf("a card on no route talks about one:\n%s", plain)
+	}
+}
+
+// A property is described so an agent can report a value without guessing at
+// it: the closed set is spelled out, and the stage's own obligation is on the
+// line rather than only in the brief it may have scrolled past.
+func TestAFieldSaysWhatAValueMayBeAndWhatIsOwed(t *testing.T) {
+	verdict := fieldLine(FieldInfo{
+		Name: "Вердикт", Kind: "select", Values: []string{"blocked", "fail", "pass"},
+		Writable: true, Declared: true, Required: true,
+	})
+	if !strings.Contains(verdict, "one of blocked, fail, pass") || !strings.Contains(verdict, "must report it") {
+		t.Errorf("the verdict's line says too little:\n%s", verdict)
+	}
+
+	// A field nothing can write to says so, or an agent spends a turn being
+	// refused by the board.
+	if !strings.Contains(fieldLine(FieldInfo{Name: "Автор", Kind: "createdBy"}), "read-only") {
+		t.Error("a read-only property was offered as writable")
+	}
+
+	// And an ordinary writable one carries no verdict about the stage at all.
+	preview := fieldLine(FieldInfo{Name: "Превью", Kind: "url", Writable: true})
+	if preview != "- Превью — a link" {
+		t.Errorf("a plain property picked up a suffix: %q", preview)
 	}
 }
 

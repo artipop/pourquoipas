@@ -493,12 +493,22 @@ func (m *Manager) startSession(ev CardMoved, opts startOptions) (*Session, error
 	systemPrompt, deployPrompt, testPrompt := m.cfg.BoardPrompts[ev.BoardID], m.cfg.DeployPrompt, m.cfg.TestPrompt
 	m.cfgMu.RUnlock()
 	inputs := cardInputs(ev, opts.declaredReads())
-	prompt := composePrompt(ev, agent, systemPrompt, joinPrompts(opts.prompt(), inputs), worktreeAvailable)
+
+	// The contract, but only where the agent is the one who delivers it: a
+	// deploy stage's address and a test stage's verdict are written by this side
+	// (writeStageFields), so naming them here would ask for something the agent
+	// has no way to produce.
+	outputs := ""
+	if deploy == nil && test == nil {
+		outputs = stageOutputs(opts.declaredWrites(), m.boardCardProperties(ev.BoardID))
+	}
+	stage := joinPrompts(opts.prompt(), inputs, outputs)
+	prompt := composePrompt(ev, agent, systemPrompt, stage, worktreeAvailable)
 	switch {
 	case deploy != nil:
-		prompt = composeDeployPrompt(ev, agent, systemPrompt, deployPrompt, joinPrompts(opts.prompt(), inputs), *deploy, deployBranch)
+		prompt = composeDeployPrompt(ev, agent, systemPrompt, deployPrompt, stage, *deploy, deployBranch)
 	case test != nil:
-		prompt = composeTestPrompt(ev, agent, systemPrompt, testPrompt, joinPrompts(opts.prompt(), inputs), *test)
+		prompt = composeTestPrompt(ev, agent, systemPrompt, testPrompt, stage, *test)
 	}
 	// The tools of the deploy server are allowed up front: nobody is watching a
 	// card-triggered run, and an unanswered prompt is a rejected one. Seeding
@@ -927,6 +937,75 @@ func cardInputs(ev CardMoved, reads []string) string {
 		fmt.Fprintf(&b, "\n%s: %s", name, ev.Props[strings.ToLower(name)])
 	}
 	return b.String()
+}
+
+// boardCardProperties is the board's fields, or nothing. A brief that cannot
+// name a select's values is still a brief that names the properties, and the
+// board being unreachable must not stop a stage from starting.
+func (m *Manager) boardCardProperties(boardID string) []CardProperty {
+	if m.meta == nil || boardID == "" {
+		return nil
+	}
+	ctx, cancel := context.WithTimeout(m.rootCtx, 5*time.Second)
+	defer cancel()
+	fields, err := m.meta.CardProperties(ctx, boardID)
+	if err != nil {
+		m.log.Warn("acp: could not read the board's card properties", "board", boardID, "err", err)
+		return nil
+	}
+	return fields
+}
+
+// stageOutputs is the stage's declared writes, said as the contract they are:
+// what finish_work must carry, and — for a property with a closed set — which
+// values it may be. Nothing said this before, so an agent asked for a verdict
+// found out what «Вердикт» accepts by being refused, and a required write it
+// was never told about failed the whole stage on the first attempt to end it.
+//
+// The values come from the board rather than from the declaration, so renaming
+// an option cannot leave a stale list standing in a brief.
+func stageOutputs(writes []PropertyWrite, fields []CardProperty) string {
+	if len(writes) == 0 {
+		return ""
+	}
+	var b strings.Builder
+	b.WriteString("Before this stage can end, report these card properties in finish_work's `properties`:")
+	for _, w := range writes {
+		fmt.Fprintf(&b, "\n%s: %s", w.Property, propertyShape(w.Property, fields))
+		if w.Required {
+			b.WriteString(" (required)")
+		}
+	}
+	return b.String()
+}
+
+// propertyShape is what a value for this property may be, in the words a model
+// needs: the closed set where there is one, and the kind otherwise.
+func propertyShape(name string, fields []CardProperty) string {
+	for _, f := range fields {
+		if !strings.EqualFold(f.Name, name) {
+			continue
+		}
+		if len(f.Values) > 0 {
+			return "one of " + strings.Join(f.Values, ", ")
+		}
+		switch f.Type {
+		case "url":
+			return "a link"
+		case "number":
+			return "a number"
+		case "email":
+			return "an email address"
+		case "phone":
+			return "a phone number"
+		default:
+			return "text"
+		}
+	}
+	// The board has no such property. Said as text rather than left out: the
+	// stage still declares it, and the refusal SetCardFields answers with names
+	// the real problem to the one party that can report it.
+	return "text"
 }
 
 // composePrompt builds the agent task text from the card: what the board says

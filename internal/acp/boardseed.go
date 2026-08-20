@@ -112,10 +112,26 @@ type BoardMeta interface {
 	// recorded an option id to the option it always meant, once, so nothing has
 	// to go on matching a column by its name (contradiction 5).
 	BoardColumnOptions(ctx context.Context, boardID string) ([]Column, error)
+	// CardProperties is the board's card fields, for the one thing a stage's
+	// declared outputs cannot say by themselves: what a value may be. A select
+	// takes one of its option names and nothing else, and until this the agent
+	// found that out by being refused.
+	CardProperties(ctx context.Context, boardID string) ([]CardProperty, error)
 	// IsBoardTemplate says this board is one to copy rather than to work in.
 	// Nothing runs in a template — no card moves in it, no session starts from
 	// it — so nothing about this machine is asked for on its behalf.
 	IsBoardTemplate(ctx context.Context, boardID string) (bool, error)
+}
+
+// CardProperty is one field of a board's cards: what it is called, what kind of
+// value it takes, and — for a closed set — which values those are. Named rather
+// than identified, because that is how a stage declares a write and how
+// finish_work delivers one.
+type CardProperty struct {
+	Name string `json:"name"`
+	Type string `json:"type"`
+	// Values is the closed set, for a select. Empty for everything else.
+	Values []string `json:"values,omitempty"`
 }
 
 // SetBoardMeta supplies the board's own property store.

@@ -258,6 +258,10 @@ type fakeBoardMeta struct {
 	// that knows only a column's name to the option it means.
 	options []Column
 
+	// cardProps is what the board's cards have, for the stage contract a brief
+	// names and list_card_fields answers with.
+	cardProps []CardProperty
+
 	// written is what each board was told to keep, by board id — the board
 	// database stands in for itself here.
 	written map[string]map[string]any
@@ -293,6 +297,10 @@ func (f *fakeBoardMeta) SetBoardProperties(_ context.Context, boardID string, pr
 		delete(board, k)
 	}
 	return nil
+}
+
+func (f *fakeBoardMeta) CardProperties(context.Context, string) ([]CardProperty, error) {
+	return f.cardProps, nil
 }
 
 func (f *fakeBoardMeta) IsBoardTemplate(context.Context, string) (bool, error) {

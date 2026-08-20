@@ -49,6 +49,68 @@ func TestBoardToolsWriteOnlyToTheGrantedBoard(t *testing.T) {
 	}
 }
 
+// A property is described to the agent, and the description carries the stage's
+// own contract: what has to be reported, and what a value may be. Without it an
+// agent asked for a verdict learns what «Вердикт» accepts by being refused.
+func TestBoardToolFieldsSayWhatThisStageOwes(t *testing.T) {
+	m, _, _, _ := testManager(t, "idle", func(cfg *Config) {
+		cfg.TriggerProperty = "Статус"
+	})
+	m.SetBoardMeta(&fakeBoardMeta{cardProps: []CardProperty{
+		{Name: "Автор", Type: "createdBy"},
+		{Name: "Вердикт", Type: "select", Values: []string{"blocked", "fail", "pass"}},
+		{Name: "Превью", Type: "url"},
+		{Name: "Статус", Type: "select", Values: []string{"QA", "Готово"}},
+	}})
+
+	token := m.GrantBoardTools("board-1", "card-1", "term-1")
+	m.awaitStage("term-1", &Session{CardID: "card-1", Writes: []PropertyWrite{
+		{Property: "Вердикт", Required: true},
+	}})
+	defer m.forgetStage("term-1")
+
+	fields, err := m.BoardToolFields(t.Context(), token)
+	if err != nil {
+		t.Fatal(err)
+	}
+	by := map[string]BoardToolField{}
+	for _, f := range fields {
+		by[f.Name] = f
+	}
+
+	verdict := by["Вердикт"]
+	if !verdict.Declared || !verdict.Required || len(verdict.Values) != 3 {
+		t.Errorf("the stage's own contract is not on the property: %+v", verdict)
+	}
+	if by["Превью"].Declared || !by["Превью"].Writable {
+		t.Errorf("a property this stage does not report should still be writable: %+v", by["Превью"])
+	}
+	// Two the stage must not be told it can write: the board's own bookkeeping,
+	// and the column — a card moves by its outcome or by move_card, and
+	// finish_work refuses the column property outright.
+	if by["Автор"].Writable {
+		t.Error("createdBy was offered as writable")
+	}
+	if by["Статус"].Writable {
+		t.Error("the column property was offered as writable")
+	}
+}
+
+// A conversation that is not a stage still gets the board's properties — it may
+// be about to call update_card — but owes nothing.
+func TestBoardToolFieldsOutsideAStageDeclareNothing(t *testing.T) {
+	m, _, _, _ := testManager(t, "idle", nil)
+	m.SetBoardMeta(&fakeBoardMeta{cardProps: []CardProperty{{Name: "Превью", Type: "url"}}})
+
+	fields, err := m.BoardToolFields(t.Context(), m.GrantBoardTools("board-1", "", ""))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(fields) != 1 || fields[0].Declared || fields[0].Required {
+		t.Errorf("a planning conversation was handed a contract: %+v", fields)
+	}
+}
+
 // A grant that outlived its agent run would be a door left open, so revoking is
 // what closing a run means — and a card still needs a title.
 func TestBoardToolsRefuseWhatTheyShould(t *testing.T) {

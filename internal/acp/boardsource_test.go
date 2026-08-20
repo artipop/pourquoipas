@@ -43,6 +43,9 @@ func (k *knownCards) IsBoardTemplate(context.Context, string) (bool, error) { re
 func (k *knownCards) BoardColumnOptions(context.Context, string) ([]Column, error) {
 	return nil, nil
 }
+func (k *knownCards) CardProperties(context.Context, string) ([]CardProperty, error) {
+	return nil, nil
+}
 
 // An install that works its own board must not pay for the possibility of a
 // second one, and must not behave differently for it existing in the code.

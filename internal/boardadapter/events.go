@@ -286,6 +286,29 @@ func (b *EventsBackend) cardBody(boardID string, card *model.Block) string {
 	return strings.Join(parts, "\n\n")
 }
 
+// CardProperties is the board's card fields for acp.BoardMeta — see
+// boardmodel.ReadCardProperties, which is the half boardclient shares.
+func (b *EventsBackend) CardProperties(_ context.Context, boardID string) ([]acp.CardProperty, error) {
+	b.mu.Lock()
+	a := b.app
+	b.mu.Unlock()
+	if a == nil {
+		return nil, fmt.Errorf("board app is not ready")
+	}
+	board, err := a.GetBoard(boardID)
+	if err != nil {
+		return nil, fmt.Errorf("get board %s: %w", boardID, err)
+	}
+	if board == nil {
+		return nil, nil
+	}
+	schema, err := model.ParsePropertySchema(board)
+	if err != nil {
+		return nil, err
+	}
+	return boardmodel.ReadCardProperties(schema), nil
+}
+
 // BoardColumnOptions is the board's column property and its options, for
 // acp.BoardMeta. The property is the one the board recorded for itself, and
 // failing that the one a person reads as the columns — what a view groups by.
