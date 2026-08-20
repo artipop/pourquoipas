@@ -594,12 +594,6 @@ func arrivedAuthor(board *model.Board, schema model.PropSchema) (string, bool) {
 	return boardmodel.PropertyOfType(board, schema, "createdBy")
 }
 
-// LinkPropertyTitle is what the board calls the way back to what a source
-// brought. Like AuthorPropertyTitle it is a name given at creation and never a
-// key: the property is found by its *type*, so a board that calls it "Link", or
-// whose owner renamed it, keeps working and does not grow a second one.
-const LinkPropertyTitle = "Ссылка"
-
 // ensureLinkProperty returns the id of the board's url property, adding one if
 // it has none. A card from a source is the only thing that asks for it, so a
 // board nothing arrives on never grows the field — the same bargain the inbox
@@ -619,7 +613,7 @@ func (w *Writer) ensureLinkProperty(boardID string) (string, error) {
 	propID := utils.NewID(utils.IDTypeBlock)
 	prop := map[string]any{
 		"id":      propID,
-		"name":    LinkPropertyTitle,
+		"name":    boardmodel.LinkPropertyTitle,
 		"type":    "url",
 		"options": []any{},
 	}

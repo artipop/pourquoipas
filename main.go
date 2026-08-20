@@ -298,14 +298,7 @@ func main() {
 	// its step set is closed and lives in internal/acp, which cannot import
 	// this registry, so the answer is handed over as a function below.
 	sourcesReady := func() bool { return false }
-	// Not against a server, and not silently either: a source writes cards onto
-	// a board, and the only writer this has is the local one — so an attached
-	// desktop would be filling in a board nobody is looking at. Whose sources
-	// feed a shared board is a question with an owner, and it has not been
-	// asked yet (docs/todo.md).
-	if attach.target() != "" {
-		log.Printf("sources: off while attached to %s — they would write to this machine's own board", attach.target())
-	} else if dir, err := sourcesDataDir(); err != nil {
+	if dir, err := sourcesDataDir(); err != nil {
 		log.Printf("sources: disabled, no data dir: %v", err)
 	} else if cfg, err := sources.LoadConfig(filepath.Join(dir, "sources.json")); err != nil {
 		log.Printf("sources: disabled, config error: %v", err)
@@ -313,7 +306,13 @@ func main() {
 		log.Printf("sources: disabled, store error: %v", err)
 		sourceStore = nil
 	} else {
-		sourceWriter := boardadapter.NewSourceWriter(srv.App())
+		// A source belongs to a board (SourceEntry.BoardID) and a board belongs
+		// to this machine or to the server, so where a source writes is not a
+		// question anybody has to answer: it writes to the board it names.
+		sourceWriter := newSourcesByBoard(seam.sourceWriter, nil, nil)
+		if attached != nil {
+			sourceWriter = newSourcesByBoard(seam.sourceWriter, attached.sourceWriter, onServerBoard(attached.meta))
+		}
 		sourceMgr := sources.NewManager(cfg, filepath.Join(dir, "sources.json"),
 			sourceStore, sourceWriter, nil)
 		// Lets the board answer "have we brought this one already", so a board

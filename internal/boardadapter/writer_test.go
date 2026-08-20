@@ -127,7 +127,7 @@ func TestCardPropertiesAreResolvedByName(t *testing.T) {
 
 	// A source names the property and, for a select, the option; the board
 	// answers with ids. Case does not matter, as it does not for the columns.
-	got := cardProperties(schema, map[string]string{
+	got := boardmodel.CardProperties(schema, map[string]string{
 		"status":    "backlog",
 		"repo_path": "/tmp/project",
 	})
@@ -147,14 +147,14 @@ func TestCardPropertiesSkipWhatTheBoardDoesNotHave(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got := cardProperties(schema, map[string]string{
+	got := boardmodel.CardProperties(schema, map[string]string{
 		"Заметка": "что-то", // no such property
 		"Status":  "Tested", // no such option
 	})
 	if len(got) != 0 {
 		t.Fatalf("nothing should have resolved: %+v", got)
 	}
-	if cardProperties(schema, nil) != nil {
+	if boardmodel.CardProperties(schema, nil) != nil {
 		t.Fatal("no properties at all must stay nil, not an empty map")
 	}
 }

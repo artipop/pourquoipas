@@ -71,7 +71,7 @@ func (w *SourceWriter) CreateCard(ctx context.Context, boardID string, spec Card
 		}
 	}
 
-	properties := cardProperties(schema, spec.Properties)
+	properties := boardmodel.CardProperties(schema, spec.Properties)
 	if properties == nil {
 		properties = map[string]any{}
 	}
@@ -149,34 +149,6 @@ func (w *Writer) appendText(cardID, boardID, text string) error {
 // A name the board does not have is skipped rather than refused. A source
 // describes what it brought, and boards differ — one carries «Ссылка», the next
 // does not — so a missing property must cost that property and not the card.
-func cardProperties(schema model.PropSchema, props map[string]string) map[string]any {
-	if len(props) == 0 {
-		return nil
-	}
-	out := make(map[string]any, len(props))
-	for name, value := range props {
-		for id, def := range schema {
-			if !strings.EqualFold(def.Name, name) {
-				continue
-			}
-			if def.Type != "select" {
-				out[id] = value
-				break
-			}
-			// An option the board does not have is not invented here: adding
-			// options to a board is a deliberate, add-only act elsewhere.
-			for oid, opt := range def.Options {
-				if strings.EqualFold(opt.Value, value) {
-					out[id] = oid
-					break
-				}
-			}
-			break
-		}
-	}
-	return out
-}
-
 // Where a card came from lives on the card, under one key of its own — the same
 // bargain as flow (cardstate.go): a card block is what an export carries and
 // an import renumbers, and a table keyed by card id is neither.
@@ -188,19 +160,6 @@ func cardProperties(schema model.PropSchema, props map[string]string) map[string
 //
 // The prefix is the app's, not the agent integration's: sources must keep
 // working with it switched off (docs/sources.md §18).
-const cardFieldSource = "source"
-
-var _ sources.BoardItems = (*SourceWriter)(nil)
-
-// cardSource is the field's shape. sources.ItemRef is the half the pipeline
-// knows; the source's name is added here because the field has to stand on its
-// own on the card.
-type cardSource struct {
-	Source     string `json:"source,omitempty"`
-	ExternalID string `json:"externalId,omitempty"`
-	Version    string `json:"version,omitempty"`
-}
-
 // setCardSource records the origin. A card with no origin — one a person typed
 // — is left alone rather than given an empty key.
 func (w *Writer) setCardSource(cardID, source string, ref sources.ItemRef) error {
@@ -212,7 +171,7 @@ func (w *Writer) setCardSource(cardID, source string, ref sources.ItemRef) error
 		"externalId": ref.ExternalID,
 		"version":    ref.Version,
 	}
-	return w.patchCardFields(cardID, &model.BlockPatch{UpdatedFields: map[string]any{cardFieldSource: field}})
+	return w.patchCardFields(cardID, &model.BlockPatch{UpdatedFields: map[string]any{boardmodel.CardFieldSource: field}})
 }
 
 // CardBySourceItem asks the board whether this source has already brought this
@@ -231,7 +190,7 @@ func (w *SourceWriter) CardBySourceItem(_ context.Context, boardID, source, exte
 		if block == nil || block.DeleteAt != 0 {
 			continue
 		}
-		origin, ok := cardSourceOf(block)
+		origin, ok := boardmodel.CardSourceOf(block)
 		if !ok {
 			continue
 		}
@@ -241,18 +200,6 @@ func (w *SourceWriter) CardBySourceItem(_ context.Context, boardID, source, exte
 		return block.ID, origin.Version, true, nil
 	}
 	return "", "", false, nil
-}
-
-func cardSourceOf(block *model.Block) (cardSource, bool) {
-	raw, ok := block.Fields[cardFieldSource]
-	if !ok || raw == nil {
-		return cardSource{}, false
-	}
-	var origin cardSource
-	if err := boardmodel.ReinterpretField(raw, &origin); err != nil {
-		return cardSource{}, false
-	}
-	return origin, origin.ExternalID != ""
 }
 
 // logSourceOrigin reports a card that was created but could not be stamped with
