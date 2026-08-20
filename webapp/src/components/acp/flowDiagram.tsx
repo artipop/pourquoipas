@@ -1,4 +1,4 @@
-import {Show, createEffect, createMemo, createSignal, onCleanup} from 'solid-js'
+import {For, Show, createEffect, createMemo, createSignal, onCleanup} from 'solid-js'
 import {
     Background,
     Connection,
@@ -33,6 +33,15 @@ import './flowDiagram.scss'
 
 export const NODE_WIDTH = 190
 export const NODE_HEIGHT = 58
+
+// How much taller a stage stands when it declares outputs: one row of chips,
+// which are also the ports a conditional arrow is pulled from.
+export const WRITE_ROW = 22
+
+// HANDLE_WRITE is the prefix of a data port's handle id — the property's own
+// name follows it. A prefix rather than a second field because a handle id is
+// the only thing a connection carries back.
+export const HANDLE_WRITE = 'write:'
 const GAP_X = 80
 const GAP_Y = 24
 
@@ -70,6 +79,12 @@ type Props = {
     // crewOf is who works the stage, for the second line of the box.
     crewOf?: (node: FlowNode) => string[]
 
+    // writesOf is what the stage leaves on the card — the chips on the box, and
+    // the ports a conditional arrow is pulled from. Resolved by the caller,
+    // which is the half that knows a stage inherits its column's outputs and
+    // which board properties have a closed set.
+    writesOf?: (node: FlowNode) => StageWrite[]
+
     // onChange makes it a builder rather than a picture: stages are dragged,
     // joined by pulling from an output, and removed with the keyboard. Absent
     // means the route is only being looked at.
@@ -90,15 +105,31 @@ type Props = {
     onSelect?: (selection: {kind: 'node' | 'edge', id: string} | null) => void
 }
 
+// StageWrite is one property the stage leaves on the card, as the box draws it.
+// `branchable` is whether an arrow can ask about it, which is a question only a
+// closed set can answer — so a text output is drawn and not connectable.
+export type StageWrite = {
+    name: string
+    branchable: boolean
+}
+
 type StageData = {
     column: string
     action: string
     actionLabel: string
     crew?: string[]
     count?: StageCount
+    writes?: StageWrite[]
     editable?: boolean
     spare?: boolean
     selected?: boolean
+}
+
+// stageHeight is how tall this stage stands: the base, plus the row of outputs
+// when it has any. Stated rather than measured, like everything else about the
+// box — the arrows are drawn on the first paint.
+export function stageHeight(writes?: StageWrite[]): number {
+    return NODE_HEIGHT + ((writes && writes.length > 0) ? WRITE_ROW : 0)
 }
 
 // forward drops the transitions that lead back the way the card came — a failed
@@ -177,7 +208,7 @@ export function depths(nodes: FlowNode[], edges: FlowEdge[]): Map<string, number
 
 // layout places the stages in columns of equal depth, keeping the editor's own
 // order within a column.
-export function layout(nodes: FlowNode[], edges: FlowEdge[]): Map<string, {x: number, y: number}> {
+export function layout(nodes: FlowNode[], edges: FlowEdge[], rowHeight = NODE_HEIGHT): Map<string, {x: number, y: number}> {
     const depth = depths(nodes, edges)
     const taken = new Map<number, number>()
     const out = new Map<string, {x: number, y: number}>()
@@ -192,7 +223,7 @@ export function layout(nodes: FlowNode[], edges: FlowEdge[]): Map<string, {x: nu
         taken.set(column, row + 1)
         out.set(node.id, {
             x: column * (NODE_WIDTH + GAP_X),
-            y: row * (NODE_HEIGHT + GAP_Y),
+            y: row * (rowHeight + GAP_Y),
         })
     }
     return out
@@ -262,6 +293,7 @@ export const HANDLE_EVENT = 'event'
 // and — on a board being watched rather than edited — how many cards stand on
 // it. A faded one is a column the route does not use yet.
 const StageNode = (props: NodeProps) => {
+    const intl = useIntl()
     const data = () => props.data as StageData
     const count = () => data().count
     const classes = () => [
@@ -319,6 +351,38 @@ const StageNode = (props: NodeProps) => {
                 class='FlowDiagram__out FlowDiagram__out--event'
                 isConnectable={Boolean(data().editable)}
             />
+
+            {/* What the stage leaves on the card, and — for a property with a
+                closed set — the port a fork is pulled from. This is where the
+                dataflow becomes visible: the arrow that asks «Вердикт = fail»
+                is drawn from the thing that produces «Вердикт», rather than
+                being assembled in a panel out of a list of every board field.
+
+                A text output is drawn and not connectable, because an arrow
+                asks "is it this value" and only a set has values to offer. */}
+            <Show when={data().writes && data().writes!.length > 0}>
+                <div class='FlowDiagram__writes'>
+                    <For each={data().writes}>
+                        {(w) => (
+                            <span
+                                class={`FlowDiagram__write${w.branchable ? ' FlowDiagram__write--branchable' : ''}`}
+                                title={w.branchable ? undefined : intl.formatMessage({id: 'FlowDiagram.write-not-branchable', defaultMessage: '{property} travels to the stages further on. To branch on it, give the property a set of values.'}, {property: w.name})}
+                            >
+                                {w.name}
+                                <Show when={w.branchable && data().editable}>
+                                    <Handle
+                                        id={HANDLE_WRITE + w.name}
+                                        type='source'
+                                        position='bottom'
+                                        class='FlowDiagram__out FlowDiagram__out--write'
+                                        isConnectable={true}
+                                    />
+                                </Show>
+                            </span>
+                        )}
+                    </For>
+                </div>
+            </Show>
         </div>
     )
 }
@@ -387,6 +451,16 @@ export function connectEdge(
     if (!from || !to || from === to) {
         return edges
     }
+
+    // A connection pulled from a data port is the fork this whole row exists
+    // for: "the card goes here depending on that property". The value is left
+    // empty and the caption says so, because which value is the one thing the
+    // gesture cannot carry — it is chosen where the arrow is, in the panel.
+    if (handle && handle.startsWith(HANDLE_WRITE)) {
+        const property = handle.slice(HANDLE_WRITE.length)
+        return [...edges, {from, to, on: SUCCESS, if: {property, value: ''}}]
+    }
+
     let on = handle || HANDLE_SUCCESS
     if (on === HANDLE_EVENT) {
         // card.changed is never auto-picked: it is meaningless without its
@@ -411,6 +485,12 @@ export function condLabel(intl: IntlShape, cond: EdgeCond | undefined): string {
     }
     if (cond.commentContains) {
         return intl.formatMessage({id: 'FlowDiagram.cond-comment', defaultMessage: 'agent said "{text}"'}, {text: cond.commentContains})
+    }
+    if (!cond.value) {
+        // A fork pulled from a data port arrives without its value, and an
+        // arrow captioned «Вердикт = » reads as a bug rather than as a question
+        // waiting to be answered. The stylesheet draws this one in amber.
+        return intl.formatMessage({id: 'FlowDiagram.cond-no-value', defaultMessage: '{property} = ?'}, {property: cond.property})
     }
     return `${cond.property} = ${cond.value}`
 }
@@ -441,7 +521,8 @@ const FlowDiagram = (props: Props) => {
     const spareById = createMemo(() => new Map(spare().map((c) => [nodeId(c), c])))
 
     const graph = createMemo(() => {
-        const positions = layout(props.nodes, props.edges)
+        const tallest = props.nodes.reduce((at, n) => Math.max(at, stageHeight(props.writesOf?.(n))), NODE_HEIGHT)
+        const positions = layout(props.nodes, props.edges, tallest)
         const sparePositions = spareLayout(positions, spare())
         const box = (id: string, data: StageData, position: {x: number, y: number}): Node => ({
             id,
@@ -459,12 +540,29 @@ const FlowDiagram = (props: Props) => {
             // is then NaN and the path is drawn as `MNaN NaN…`, which renders
             // as nothing.
             width: NODE_WIDTH,
-            height: NODE_HEIGHT,
+            height: stageHeight(data.writes),
             handles: [
                 {type: 'target', position: Position.Left, x: 0, y: NODE_HEIGHT / 2, width: 1, height: 1},
                 {type: 'source', id: HANDLE_SUCCESS, position: Position.Right, x: NODE_WIDTH, y: NODE_HEIGHT * 0.3, width: 1, height: 1},
                 {type: 'source', id: HANDLE_FAILURE, position: Position.Right, x: NODE_WIDTH, y: NODE_HEIGHT * 0.7, width: 1, height: 1},
                 {type: 'source', id: HANDLE_EVENT, position: Position.Bottom, x: NODE_WIDTH / 2, y: NODE_HEIGHT, width: 1, height: 1},
+
+                // The data ports, spread along the bottom of the row of chips.
+                // Their x is an even share of the width rather than the chip's
+                // real position: the box is stated and not measured, and an
+                // arrow leaving a little to one side of its own chip is a
+                // smaller lie than an arrow drawn from NaN.
+                ...(data.writes || []).
+                    filter((w) => w.branchable).
+                    map((w, i, all) => ({
+                        type: 'source' as const,
+                        id: HANDLE_WRITE + w.name,
+                        position: Position.Bottom,
+                        x: (NODE_WIDTH * (i + 1)) / (all.length + 1),
+                        y: stageHeight(data.writes),
+                        width: 1,
+                        height: 1,
+                    })),
             ],
             data,
             sourcePosition: Position.Right,
@@ -478,6 +576,7 @@ const FlowDiagram = (props: Props) => {
                 action,
                 actionLabel: stageLabel(intl, action),
                 crew: props.crewOf?.(node),
+                writes: props.writesOf?.(node),
                 count: props.counts?.find((c) => c.nodeId === node.id),
                 editable: editable(),
                 selected: props.selected?.kind === 'node' && props.selected.id === node.id,
@@ -515,6 +614,14 @@ const FlowDiagram = (props: Props) => {
                     parts.push(edge.on === CARD_CHANGED ? cond : intl.formatMessage({id: 'FlowDiagram.cond-if', defaultMessage: 'if {cond}'}, {cond}))
                 }
                 const chosen = props.selected?.kind === 'edge' && props.selected.id === edgeId(edge, index)
+
+                // A fork pulled from a data port arrives without its value, and
+                // its caption reads «Вердикт = ?». Amber rather than red: the
+                // arrow is not wrong, it is waiting for the one thing the
+                // gesture could not carry. Said as a style rather than as a
+                // class, because the label is rendered into a portal of the
+                // library's own and nothing of the edge's class reaches it.
+                const unanswered = Boolean(edge.if && !edge.if.value && !edge.if.commentContains)
                 return {
                     id: edgeId(edge, index),
                     source: edge.from,
@@ -523,6 +630,7 @@ const FlowDiagram = (props: Props) => {
                     type: 'smoothstep',
                     class: `FlowDiagram__edge FlowDiagram__edge--${kind}${chosen ? ' FlowDiagram__edge--selected' : ''}`,
                     label: parts.join(' · '),
+                    labelStyle: unanswered ? {color: 'rgb(var(--away-indicator-rgb))', 'font-weight': '600'} : undefined,
                     style: {stroke: color, 'stroke-width': chosen ? '3' : '1.5', 'stroke-dasharray': kind === 'event' ? '4 3' : undefined},
                     markerEnd: {type: MarkerType.ArrowClosed, width: 16, height: 16, color},
                 }

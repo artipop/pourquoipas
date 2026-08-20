@@ -236,13 +236,16 @@ describe('components/acp/automation', () => {
         expect(condIsComplete({property: 'Приоритет', value: 'Высокий', commentContains: 'x'})).toBe(false)
     })
 
-
     // A value an earlier stage put on the card is on the card, so a stage that
     // declares no reads is handed what the route wrote ahead of it — and the
     // chip says which stage, which is the half that makes it readable.
     describe('upstreamWrites', () => {
-        const specs = [{boardId: 'b', property: 'Статус', column: 'В работе', action: 'agent',
-            optionId: 'opt-work', writes: [{property: 'Заметка'}]}]
+        const specs = [{boardId: 'b',
+            property: 'Статус',
+            column: 'В работе',
+            action: 'agent',
+            optionId: 'opt-work',
+            writes: [{property: 'Заметка'}]}]
         const flow: Flow = {
             name: 'Фича',
             nodes: [

@@ -19,7 +19,12 @@
 
     .FlowDiagram__stage {
         width: 190px;
-        height: 58px;
+
+        // The base of stageHeight(), which the canvas is told before it paints:
+        // a stage with outputs stands WRITE_ROW taller and says so here rather
+        // than measuring, or the arrows would be drawn from the wrong corner on
+        // the first frame. Keep the two in step.
+        min-height: 58px;
         box-sizing: border-box;
         padding: 8px 10px;
         border: 1px solid rgba(var(--center-channel-color-rgb), 0.32);
@@ -27,6 +32,33 @@
         border-radius: var(--radius-md);
         background: rgb(var(--surface-bg-rgb));
         overflow: hidden;
+    }
+
+    // What the stage leaves on the card. A branchable one is also the port a
+    // fork is pulled from, so it is drawn as something to grab: the ordinary
+    // chip is quiet, this one carries the board's own ink.
+    .FlowDiagram__writes {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 4px;
+        margin-top: 3px;
+        overflow: hidden;
+    }
+
+    .FlowDiagram__write {
+        position: relative;
+        padding: 1px 5px;
+        border-radius: var(--radius-sm);
+        background: rgba(var(--center-channel-color-rgb), 0.08);
+        color: rgba(var(--center-channel-color-rgb), 0.56);
+        font-size: 10px;
+        line-height: 14px;
+        white-space: nowrap;
+    }
+
+    .FlowDiagram__write--branchable {
+        background: rgba(var(--link-color-rgb), 0.12);
+        color: rgba(var(--link-color-rgb), 1);
     }
 
     // The left edge says what happens in the stage, so a route can be read
@@ -132,6 +164,12 @@
 
         .FlowDiagram__out--event {
             background: rgba(var(--center-channel-color-rgb), 0.4);
+        }
+
+        // A data port sits under its own chip, and is the colour of the chip:
+        // what it produces is what the arrow will ask about.
+        .FlowDiagram__out--write {
+            background: rgba(var(--link-color-rgb), 1);
         }
 
         .solid-flow__handle-left {

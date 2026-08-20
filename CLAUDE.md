@@ -1393,6 +1393,24 @@ again — so an override is written by *saying* something, which is the shape th
 crew and the prompt already have. A person's conversation on the node gets the
 same fallback (`cardPlace`), since it is about the same work.
 
+**And the dataflow is on the picture, because that is where the fork is drawn**
+(`StageWrite`, `HANDLE_WRITE`, `stageHeight`). A stage's resolved writes are a
+third line of chips on its box, and each one whose property has a closed set is
+also a `Handle`: pulling from it makes `{on: SUCCESS, if: {property, value: ''}}`
+— "the card goes here depending on this" — with the value left for the panel,
+since that is the one thing the gesture cannot carry. The caption says
+«Вердикт = ?» in amber until it is answered, written as `labelStyle` rather than
+a class because the library renders the label into a portal of its own that no
+edge class reaches. **Only a closed set is connectable**: an arrow asks "is it
+this value", so a text output is drawn faint and carries no port — which is why
+the new-property form asks what the property holds. The box grows by
+`WRITE_ROW`, stated in both the geometry and the stylesheet (the canvas is told
+the size before it paints; a measured box draws its arrows from the wrong corner
+on the first frame), and the row pitch takes the tallest stage on the route. The
+condition picker is ordered by the same graph: what this stage writes, then what
+the stages before it write with their names, then the board — an alphabetical
+list of every select buried the three that a route actually produces.
+
 **Tools are the column's answer too, and inherited exactly as the crew is**
 (`MCPServers` on `ColumnSpec` and `FlowNode`, resolved by `startOptions.
 stageMCP` and by `cardPlace`). A browser belongs to «QA» and not to whoever

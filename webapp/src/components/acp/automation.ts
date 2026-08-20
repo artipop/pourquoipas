@@ -565,9 +565,18 @@ export function resolvedWrites(node: FlowNode, specs: ColumnSpec[]): PropertyWri
     if (node.writes?.length) {
         return node.writes
     }
-    const spec = specs.find((c) => (node.optionId && c.optionId === node.optionId) ||
-        c.column.toLowerCase() === node.column.toLowerCase())
-    return spec?.writes || []
+    return specForNode(node, specs)?.writes || []
+}
+
+// specForNode is the column a stage stands on — the option first, across the
+// whole list, and only then the name. The two passes must not be merged into
+// one `find`: a board that has both a spec bound to the option and an older one
+// carrying only the column's name would then be answered by whichever came
+// first, which is the order somebody edited things in. That is specFor's rule,
+// said again for a node — specFor takes a BoardColumn, which a route has not.
+export function specForNode(node: FlowNode, specs: ColumnSpec[]): ColumnSpec | undefined {
+    return (node.optionId ? specs.find((c) => c.optionId === node.optionId) : undefined) ||
+        specs.find((c) => c.column.toLowerCase() === node.column.toLowerCase())
 }
 
 // UpstreamWrite is one property a stage will find on the card when it starts,

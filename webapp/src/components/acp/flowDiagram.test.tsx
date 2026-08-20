@@ -4,7 +4,7 @@ import '@testing-library/jest-dom'
 import {wrapIntl} from '../../testUtils'
 import {setupReactFlowEnvironment} from '../../test/reactFlowEnvironment'
 
-import FlowDiagram, {depths, layout, edgeKind, connectEdge, HANDLE_EVENT, HANDLE_FAILURE, HANDLE_SUCCESS, NODE_WIDTH} from './flowDiagram'
+import FlowDiagram, {depths, layout, edgeKind, connectEdge, stageHeight, HANDLE_EVENT, HANDLE_FAILURE, HANDLE_SUCCESS, HANDLE_WRITE, NODE_HEIGHT, NODE_WIDTH, WRITE_ROW} from './flowDiagram'
 import {SUCCESS, FAILURE} from './automation'
 
 setupReactFlowEnvironment()
@@ -200,5 +200,48 @@ describe('components/acp/flowDiagram builder', () => {
             />,
         ))
         expect(screen.getByText('3')).toBeInTheDocument()
+    })
+
+    // The dataflow is drawn on the box, and the fork is pulled from the thing
+    // that produces the value: this is the whole point of the row. An arrow
+    // dragged from ○Вердикт is «поедет сюда, если Вердикт = …», assembled from
+    // the gesture rather than from a panel listing every field on the board.
+    test('an arrow pulled from an output branches on that property', () => {
+        const next = connectEdge([], 'test', 'agent', HANDLE_WRITE + 'Вердикт', triggers)
+        expect(next).toEqual([{from: 'test', to: 'agent', on: SUCCESS, if: {property: 'Вердикт', value: ''}}])
+
+        // The value is the one thing the gesture cannot carry, so it is left
+        // empty on purpose and the caption says «Вердикт = ?» until it is
+        // chosen. Pulling again makes a second branch rather than replacing the
+        // first — which is what a fork is, and what the plain outputs do not do.
+        const twice = connectEdge(next, 'test', 'review', HANDLE_WRITE + 'Вердикт', triggers)
+        expect(twice.length).toBe(2)
+    })
+
+    // A stage with outputs stands taller, and the canvas is told so before it
+    // paints — the box is stated, never measured, or the arrows are drawn from
+    // the wrong corner on the first frame.
+    test('a stage with outputs is taller than one without', () => {
+        expect(stageHeight()).toBe(NODE_HEIGHT)
+        expect(stageHeight([])).toBe(NODE_HEIGHT)
+        expect(stageHeight([{name: 'Вердикт', branchable: true}])).toBe(NODE_HEIGHT + WRITE_ROW)
+    })
+
+    // Only a property with a closed set can be branched on, because an arrow
+    // asks "is it this value". A text output is drawn — it is what the stages
+    // further on will read — but there is nothing to pull from it.
+    test('only an output with a set of values carries a port', () => {
+        const {container} = render(() => wrapIntl(() =>
+            <FlowDiagram
+                nodes={nodes}
+                edges={edges}
+                triggers={triggers}
+                onChange={vi.fn()}
+                writesOf={(node) => (node.id === 'test' ? [{name: 'Вердикт', branchable: true}, {name: 'Заметка', branchable: false}] : [])}
+            />,
+        ))
+        expect(screen.getByText('Вердикт')).toBeInTheDocument()
+        expect(screen.getByText('Заметка')).toBeInTheDocument()
+        expect(container.querySelectorAll('.FlowDiagram__out--write').length).toBe(1)
     })
 })

@@ -402,6 +402,38 @@ describe('components/acp/automationEditor', () => {
         expect(within(form).getByText(/It will hold a link/)).toBeInTheDocument()
     })
 
+    // The outputs are on the box, and which of them a fork can be pulled from is
+    // read off the board: an arrow asks "is it this value", which only a
+    // property with a set of values can answer.
+    test('a stage’s outputs are chips on its box, and only a set of values is a port', () => {
+        const {container} = renderEditor({
+            allProperties: [
+                property,
+                {id: 'prop-verdict',
+                    name: 'Вердикт',
+                    type: 'select',
+                    options: [{id: 'v-pass', value: 'pass', color: ''}, {id: 'v-fail', value: 'fail', color: ''}]},
+                {id: 'prop-note', name: 'Заметка', type: 'text', options: []},
+            ] as IPropertyTemplate[],
+            automation: {
+                columns: [{boardId: 'board-1',
+                    optionId: 'opt-work',
+                    property: 'Статус',
+                    column: 'В работе',
+                    action: 'agent',
+                    writes: [{property: 'Вердикт'}, {property: 'Заметка'}]}],
+                flows: automation.flows,
+            },
+        })
+
+        expect(screen.getByText('Вердикт')).toBeInTheDocument()
+        expect(screen.getByText('Заметка')).toBeInTheDocument()
+
+        // The stage inherits the column's outputs without declaring any of its
+        // own, and one port for the one property that has values.
+        expect(container.querySelectorAll('.FlowDiagram__out--write').length).toBe(1)
+    })
+
     // A value an earlier stage put on the card is on the card. Making somebody
     // tick «Превью» again on every stage after the deploy is asking for the
     // same fact twice, so the route hands it over and the panel says who wrote
@@ -409,8 +441,12 @@ describe('components/acp/automationEditor', () => {
     test('a stage is shown what the route hands it, with the stage that wrote it', () => {
         const {container} = renderEditor({
             automation: {
-                columns: [{boardId: 'board-1', optionId: 'opt-work', property: 'Статус', column: 'В работе',
-                    action: 'agent', writes: [{property: 'Ветка'}]}],
+                columns: [{boardId: 'board-1',
+                    optionId: 'opt-work',
+                    property: 'Статус',
+                    column: 'В работе',
+                    action: 'agent',
+                    writes: [{property: 'Ветка'}]}],
                 flows: [{
                     name: 'Фича',
                     boardId: 'board-1',

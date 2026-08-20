@@ -7,7 +7,7 @@ import Button from '../../widgets/buttons/button'
 import Select from '../../widgets/select'
 import CompassIcon from '../../widgets/icons/compassIcon'
 
-import FlowDiagram, {BLOCK_DRAG_TYPE, NODE_HEIGHT, NODE_WIDTH, StageCount, condLabel, edgeId, edgeIndexOf, stageLabel} from './flowDiagram'
+import FlowDiagram, {BLOCK_DRAG_TYPE, NODE_HEIGHT, NODE_WIDTH, StageCount, StageWrite, condLabel, edgeId, edgeIndexOf, stageLabel} from './flowDiagram'
 import MCPField from './mcpField'
 import {MCPServers} from './mcpServers'
 import {
@@ -31,6 +31,7 @@ import {
     columnsOf,
     nodeFor,
     outgoing,
+    resolvedWrites,
     specFor,
     unwrittenConditions,
     upsertSpec,
@@ -617,6 +618,47 @@ const AutomationEditor = (props: Props) => {
     // property is excluded: a change of that is a move, not a mark.
     const condProperties = () => props.properties.filter((p) => p.name !== (flow()?.property || props.property?.name))
 
+    // The same list, ordered by the graph: what the stage this arrow leaves
+    // produces comes first, then what the stages before it produce, then the
+    // rest of the board. A condition is a question about a value, and the
+    // useful ones are the values this route actually puts on the card — an
+    // alphabetical list of every select on the board buries them.
+    //
+    // Each is labelled with the stage that writes it, which is the answer to
+    // "will this ever be filled in" — the question unwrittenConditions warns
+    // about after the fact.
+    const condChoices = (from: string) => {
+        const current = flow()
+        const written = new Map<string, string>()
+        if (current) {
+            const node = current.nodes.find((n) => n.id === from)
+            if (node) {
+                for (const w of resolvedWrites(node, specs())) {
+                    written.set(w.property.toLowerCase(), node.column)
+                }
+            }
+            for (const w of upstreamWrites(current, from, specs())) {
+                if (!written.has(w.property.toLowerCase())) {
+                    written.set(w.property.toLowerCase(), w.from)
+                }
+            }
+        }
+        const rank = (p: IPropertyTemplate) => (written.has(p.name.toLowerCase()) ? 0 : 1)
+        return condProperties().
+            slice().
+            sort((a, b) => rank(a) - rank(b)).
+            map((p) => {
+                const stage = written.get(p.name.toLowerCase())
+                return {
+                    value: p.name,
+                    label: stage ? intl.formatMessage(
+                        {id: 'Automation.cond-property-from', defaultMessage: '{property} · written by “{stage}”'},
+                        {property: p.name, stage},
+                    ) : p.name,
+                }
+            })
+    }
+
     // Who works something, ticked off the registry. One component for both
     // answers a stage has — the column's crew and the stage's own — because
     // they are the same question asked of two owners, and two hand-written
@@ -727,6 +769,17 @@ const AutomationEditor = (props: Props) => {
             {servers: names.join(', ')},
         )
     }
+
+    // What a stage leaves on the card, for the chips on its box: its own list
+    // or its column's, with each marked branchable or not. Only a property with
+    // a closed set can be branched on — an arrow asks "is it this value" — so
+    // that is read off the board rather than guessed at from the name.
+    const writesOf = (node: FlowNode): StageWrite[] =>
+        resolvedWrites(node, specs()).map((w) => ({
+            name: w.property,
+            branchable: Boolean((props.allProperties || []).
+                find((p) => p.name === w.property && p.type === 'select')),
+        }))
 
     // The properties a stage may read: every board property except the column
     // one — moving between columns is the route's own business.
@@ -1009,7 +1062,7 @@ const AutomationEditor = (props: Props) => {
                             value={cond?.property || ''}
                             options={[
                                 {value: '', label: intl.formatMessage({id: 'Automation.cond-pick-property', defaultMessage: '— property —'})},
-                                ...condProperties().map((p) => ({value: p.name, label: p.name})),
+                                ...condChoices(edge.from),
                             ]}
                             onChange={(next) => patchEdge(index, {if: {property: next, value: ''}})}
                             label={intl.formatMessage({id: 'Automation.cond-pick-property', defaultMessage: '— property —'})}
@@ -1114,6 +1167,7 @@ const AutomationEditor = (props: Props) => {
                         counts={props.counts?.[route()]}
                         actionOf={actionOf}
                         crewOf={(node) => agentNamesOf(crewOf(node))}
+                        writesOf={writesOf}
                         selected={selected()}
                         onSelect={setSelected}
                         onChange={flow() ? onCanvasChange : undefined}

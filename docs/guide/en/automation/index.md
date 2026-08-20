@@ -114,6 +114,24 @@ The **"Columns"** tab, select a column — in the panel:
 These settings apply on every route. An exception for one route is set in the
 stage panel — select the stage on the route's tab.
 
+## Outputs on the box, and a fork drawn from one
+
+On a route tab a stage's box carries a third line: what the stage writes onto
+the card. It is not a caption but a point to pull from — drag from a property
+that has a set of values to another stage and you get a transition "the card
+goes here if this property equals…". The value is chosen in the panel; until
+then the arrow is captioned «Вердикт = ?» in amber, because the transition
+exists and the answer does not yet.
+
+A property with no set of values (text, a link) is drawn faint and cannot be
+pulled from: an arrow asks "is the value this one", and text has no set. Such a
+property travels on down the route and is read by the stages further on.
+
+An arrow you have already drawn asks about properties in the same order: first
+what the stage it leaves writes, then what the stages before it write — with the
+writing stage named beside each — and only then the rest of the board's
+properties.
+
 ### A column that tests
 
 Testing is an agent clicking through a browser, and the browser is an MCP
