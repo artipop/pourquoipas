@@ -68,7 +68,7 @@ func TestACardIsAskedOfTheSourceThatHasIt(t *testing.T) {
 	server := &knownCards{boardID: "board-2", cards: map[string]bool{"card-2": true}}
 
 	m := &Manager{reader: own, meta: own}
-	m.AddBoardSource(boardSource{ID: "https://board.example.com", Reader: server, Meta: server})
+	m.AddBoardSource(BoardSource{ID: "https://board.example.com", Reader: server, Meta: server})
 
 	if src := m.forCard("card-2"); src.Reader != server {
 		t.Fatal("a card on the server was asked of this machine's own board")
@@ -88,7 +88,7 @@ func TestWhereACardLivesIsAskedOnce(t *testing.T) {
 	server := &knownCards{boardID: "board-2", cards: map[string]bool{"card-2": true}}
 
 	m := &Manager{reader: own, meta: own}
-	m.AddBoardSource(boardSource{ID: "server", Reader: server, Meta: server})
+	m.AddBoardSource(BoardSource{ID: "server", Reader: server, Meta: server})
 
 	for i := 0; i < 5; i++ {
 		if src := m.forCard("card-2"); src.Reader != server {

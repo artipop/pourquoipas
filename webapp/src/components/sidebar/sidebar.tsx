@@ -47,6 +47,7 @@ import {Board} from '../../blocks/board'
 
 import SidebarCategory, {CategoryBoardsDroppableData} from './sidebarCategory'
 import SidebarSettingsButton from './sidebarSettingsButton'
+import BoardSourceSwitcher from './boardSourceSwitcher'
 import SidebarUserMenu from './sidebarUserMenu'
 
 type Props = {
@@ -540,6 +541,10 @@ const Sidebar = (props: Props) => {
                     <Show when={team() && team()!.id !== Constants.globalTeamId}>
                         <div class='WorkspaceTitle'/>
                     </Show>
+
+                    {/* Above the boards, because it decides which boards those
+                        are: this machine's, or the server's. */}
+                    <BoardSourceSwitcher/>
 
                     <BoardsSwitcher/>
 

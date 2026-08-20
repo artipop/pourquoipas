@@ -81,6 +81,16 @@ the server stays there.
 This is not the same as «Доступ с телефона»: the tailnet answers where the board
 can be reached *from*, and «Сервер» answers *whose* it is.
 
+## Switching between your own board and the server's
+
+Once connected, a switcher appears in the sidebar above the list of boards, with
+two entries: **«Эта машина»** and the server's address.
+
+It decides only **what the window shows**. The agents work both boards: a stage
+running on the server's card keeps going while you look at your own. The page
+reloads when you switch — everything open on it was fetched against the board it
+came from.
+
 ## A forgotten password
 
 A password is changed by whoever is logged in, on the change-password page. If

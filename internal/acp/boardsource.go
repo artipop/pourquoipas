@@ -22,7 +22,7 @@ import (
 // source that has it is the one that answers CardByID; a board likewise answers
 // BoardProperties. With two sources that is at worst one wasted request, once
 // per card, and the answer is remembered.
-type boardSource struct {
+type BoardSource struct {
 	// ID names the source: empty is the board this process serves, and a
 	// server's origin is its own name.
 	ID        string
@@ -39,7 +39,7 @@ type boardRouting struct {
 	mu sync.Mutex
 	// extra are the sources beyond the first. Empty on every install that
 	// works its own board.
-	extra []boardSource
+	extra []BoardSource
 	// ofBoard and ofCard are indexes into the sources by id, filled as things
 	// are found. A card cannot change source — it would have to change board,
 	// and moving a card between servers is not something this app does.
@@ -60,7 +60,7 @@ func (r *boardRouting) ensureIndexes() {
 
 // AddBoardSource registers a board this manager also works. The first source is
 // the one the setters configure; this is for the ones after it.
-func (m *Manager) AddBoardSource(src boardSource) {
+func (m *Manager) AddBoardSource(src BoardSource) {
 	m.routing.mu.Lock()
 	defer m.routing.mu.Unlock()
 	m.routing.extra = append(m.routing.extra, src)
@@ -68,8 +68,8 @@ func (m *Manager) AddBoardSource(src boardSource) {
 
 // primary is the source the setters configured: the board this process serves,
 // or — on a desktop attached to a server and working only that — the server's.
-func (m *Manager) primary() boardSource {
-	return boardSource{
+func (m *Manager) primary() BoardSource {
+	return BoardSource{
 		Writer:    m.writer,
 		Reader:    m.reader,
 		Users:     m.users,
@@ -81,10 +81,10 @@ func (m *Manager) primary() boardSource {
 // sources is every source, primary first. Read under the lock because a source
 // may be added after the manager has started — attaching does not wait for a
 // restart on the Go side.
-func (m *Manager) sources() []boardSource {
+func (m *Manager) sources() []BoardSource {
 	m.routing.mu.Lock()
 	defer m.routing.mu.Unlock()
-	out := make([]boardSource, 0, len(m.routing.extra)+1)
+	out := make([]BoardSource, 0, len(m.routing.extra)+1)
 	out = append(out, m.primary())
 	return append(out, m.routing.extra...)
 }
@@ -96,7 +96,7 @@ func (m *Manager) only() bool {
 	return len(m.routing.extra) == 0
 }
 
-func (m *Manager) sourceAt(i int) boardSource {
+func (m *Manager) sourceAt(i int) BoardSource {
 	if i <= 0 {
 		return m.primary()
 	}
@@ -145,7 +145,7 @@ func (m *Manager) recallCard(cardID string) (int, bool) {
 }
 
 // forBoard is the source a board lives on.
-func (m *Manager) forBoard(boardID string) boardSource {
+func (m *Manager) forBoard(boardID string) BoardSource {
 	if m.only() {
 		return m.primary()
 	}
@@ -169,7 +169,7 @@ func (m *Manager) forBoard(boardID string) boardSource {
 
 // forCard is the source a card lives on. The card's board is remembered with
 // it, so the next question about the same board costs nothing.
-func (m *Manager) forCard(cardID string) boardSource {
+func (m *Manager) forCard(cardID string) BoardSource {
 	if m.only() {
 		return m.primary()
 	}

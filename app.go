@@ -35,6 +35,9 @@ type App struct {
 	// has logged in to. Nil when its settings could not be read; safe on a nil
 	// receiver like the tailnet's.
 	attach *attachController
+	// boards is the page's own door: which board it is served. Switching aims
+	// it somewhere else, and the page reloads onto what it now answers.
+	boards *boardRouter
 	// sources turns outside events into cards. Separate from mgr on purpose: a
 	// board of household chores wants cards from a phone and no agents at all.
 	sources *sources.Manager
@@ -898,6 +901,34 @@ func (a *App) DetachServer() (string, error) {
 	state, err := a.attach.detach()
 	if err != nil {
 		return "", err
+	}
+	out, err := json.Marshal(state)
+	if err != nil {
+		return "", err
+	}
+	return string(out), nil
+}
+
+// SelectBoardSource changes which board the page shows — this machine's own, or
+// the server this desktop is attached to.
+//
+// It changes nothing about which boards the *agents* work: both are theirs,
+// whichever is on screen, so a stage running on the server's card goes on
+// running while somebody looks at their own board.
+//
+// The page has to reload, and does not absorb the change: everything it holds —
+// the boards, the members, both sockets — came from the board it loaded
+// against, and a screen showing one board's cards under another's name is worse
+// than a reload.
+func (a *App) SelectBoardSource(id string) (string, error) {
+	state, err := a.attach.selectBoard(id)
+	if err != nil {
+		return "", err
+	}
+	if a.boards != nil {
+		if err := a.boards.point(a.attach.selected()); err != nil {
+			return "", err
+		}
 	}
 	out, err := json.Marshal(state)
 	if err != nil {

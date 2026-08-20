@@ -137,3 +137,80 @@ func TestAFreshAttachmentOwesARestart(t *testing.T) {
 		t.Fatalf("running = %q, want this machine's own board", state.Running)
 	}
 }
+
+// Attached and looked at are different questions, which is the whole reason the
+// sidebar has a switcher rather than the settings having a second toggle: a
+// desktop can be working a server's cards while its owner reads their own board.
+func TestWhatIsShownIsNotWhatIsAttached(t *testing.T) {
+	c, vault := attachAt(t)
+	vault[attachTokenKey] = "a-live-session"
+	if err := saveAttachSettings(c.path, attachSettings{
+		URL: "https://board.example.com", Username: "anna", Selected: "https://board.example.com",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	c, err := newAttachController(c.path, vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if c.selected() != "https://board.example.com" {
+		t.Fatalf("selected = %q", c.selected())
+	}
+
+	state, err := c.selectBoard("")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if state.Selected != "" {
+		t.Errorf("state.Selected = %q after choosing this machine", state.Selected)
+	}
+	if c.selected() != "" {
+		t.Errorf("selected = %q after choosing this machine", c.selected())
+	}
+	// Still attached: the agents go on working the server's cards.
+	if c.target() != "https://board.example.com" {
+		t.Errorf("looking at this machine detached the server: target = %q", c.target())
+	}
+	if c.token() == "" {
+		t.Error("the server's session was dropped by looking away from it")
+	}
+}
+
+// A board nobody is attached to cannot be shown, and a selection left over from
+// an attachment that is gone falls back rather than showing nothing.
+func TestAServerThatIsGoneCannotBeShown(t *testing.T) {
+	c, _ := attachAt(t)
+
+	if _, err := c.selectBoard("https://board.example.com"); err == nil {
+		t.Error("a server this desktop has never logged in to was selected")
+	}
+
+	if err := saveAttachSettings(c.path, attachSettings{Selected: "https://board.example.com"}); err != nil {
+		t.Fatal(err)
+	}
+	stale, err := newAttachController(c.path, fakeVault{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if stale.selected() != "" {
+		t.Errorf("selected = %q, want this machine's own board", stale.selected())
+	}
+}
+
+// The switcher's own list: this machine always, the server when there is one.
+func TestTheSwitcherOffersWhatThereIs(t *testing.T) {
+	c, _ := attachAt(t)
+	if got := c.state().Sources; len(got) != 1 || got[0].ID != "" {
+		t.Fatalf("sources = %v, want this machine alone", got)
+	}
+
+	if err := saveAttachSettings(c.path, attachSettings{URL: "https://board.example.com", Username: "anna"}); err != nil {
+		t.Fatal(err)
+	}
+	c.cfg.URL, c.cfg.Username = "https://board.example.com", "anna"
+	got := c.state().Sources
+	if len(got) != 2 || got[0].ID != "" || got[1].ID != "https://board.example.com" {
+		t.Fatalf("sources = %v, want this machine and the server", got)
+	}
+}

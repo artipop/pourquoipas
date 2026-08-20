@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"time"
@@ -137,6 +138,10 @@ func main() {
 		attach = nil
 	}
 
+	// The board on a server, once there is one. Declared here because the page's
+	// router is built before it and the manager after.
+	var attached *boardSeam
+
 	port, err := getFreePort()
 	if err != nil {
 		log.Fatalf("failed to find a free port: %v", err)
@@ -193,15 +198,23 @@ func main() {
 	if !attachableBuild && attach != nil && attach.state().URL != "" {
 		log.Printf("attach: ignoring %s — a hosted server works its own board", attach.state().URL)
 	}
-	pageToken := func() string { return sessionToken }
-	if attach.target() != "" {
-		pageToken = attach.token
-		log.Printf("attached to %s: the page is served that board", attach.target())
+	// Which board the page is served is the selection's answer, not the
+	// attachment's: a desktop can be attached to a server and looking at its
+	// own board. The token follows the same answer.
+	pageToken := func() string {
+		if attach.selected() != "" {
+			return attach.token()
+		}
+		return sessionToken
 	}
-	handler, err := newServerProxy(port, attach.target(), pageToken)
+	if attach.selected() != "" {
+		log.Printf("showing %s: the page is served that board", attach.selected())
+	}
+	router, err := newBoardRouter(port, attach.selected(), pageToken)
 	if err != nil {
 		log.Fatalf("failed to create the server proxy: %v", err)
 	}
+	handler := http.Handler(router)
 
 	// The terminal sockets live on the front door beside the board. The routes
 	// are created before the manager exists — the manager needs the board
@@ -224,13 +237,16 @@ func main() {
 	// The board as the page at /m reads it. Set here rather than beside the
 	// sources registry because a phone lists boards and cards whether or not
 	// this machine has a source or an agent.
-	// Which board everything below works. The page was pointed at the same one
-	// (proxy.go); this is the other half of that answer.
+	// The board this process serves is always worked: it is where this
+	// machine's own cards are, whether or not anybody is looking at them.
 	seam := localSeam(events, srv.App())
+	lists := selectedLists{local: seam.lists, on: attach.selected}
 	if target := attach.target(); target != "" {
-		seam, _ = remoteSeam(target, attach.token(), logger)
+		remote, _ := remoteSeam(target, attach.token(), logger)
+		attached = &remote
+		lists.remote = remote.lists
 	}
-	app.board = seam.lists
+	app.board = lists
 
 	// The tailnet door publishes the same front door to the user's own tailnet,
 	// so a phone can reach the board. Off unless its settings file says
@@ -245,6 +261,7 @@ func main() {
 	}
 	app.tailnet = tailnet
 	app.attach = attach
+	app.boards = router
 
 	// The front door is the origin the page is served under — a loopback
 	// listener of ours in a desktop build, the published address in a server
@@ -364,6 +381,16 @@ func main() {
 				log.Printf("acp: disabled, start error: %v", err)
 				mgr = nil
 			} else {
+				// Both boards are worked, whichever one is on screen: an agent
+				// on the server's card must not stop because somebody went to
+				// look at their own board.
+				if attached != nil {
+					mgr.AddBoardSource(acp.BoardSource{
+						ID: attach.target(), Writer: attached.writer, Reader: attached.reader,
+						Users: attached.users, Meta: attached.meta, CardState: attached.cardState,
+						Events: attached.events,
+					})
+				}
 				app.mgr = mgr
 				terminals.SetManager(mgr)
 				boardTools.SetManager(mgr)

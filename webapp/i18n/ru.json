@@ -218,6 +218,8 @@
   "BoardSetup.step-source": "Источник",
   "BoardSetup.subtitle": "Колонки и маршруты у доски уже есть. Осталось указать, что где находится на вашей машине.",
   "BoardSetup.title": "Настройка доски: {step}",
+  "BoardSource.hint": "Агенты работают обе доски.",
+  "BoardSource.title": "Какую доску показывает это окно",
   "BoardTemplateSelector.add-template": "Новый шаблон",
   "BoardTemplateSelector.create-empty-board": "Создать пустую доску",
   "BoardTemplateSelector.delete-template": "Удалить",

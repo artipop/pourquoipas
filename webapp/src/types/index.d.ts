@@ -166,6 +166,12 @@ export interface IAppWindow extends Window {
                 AttachServer?(entryJson: string): Promise<string>
                 DetachServer?(): Promise<string>
 
+                // Which board this window shows. Not which boards the agents
+                // work: both are theirs, whichever is on screen. The page has
+                // to reload, because everything it holds came from the board it
+                // loaded against.
+                SelectBoardSource?(id: string): Promise<string>
+
                 // Replacing this app with a newer one. Everything except the
                 // state read is fire-and-forget: what came of it arrives as the
                 // acp:update event, so a check somebody else started looks the

@@ -97,6 +97,7 @@ exports[`src/components/workspace > return workspace and showcard 1`] = `
       <div
         class="WorkspaceTitle"
       />
+      
       <div
         class="BoardsSwitcherWrapper"
       >
@@ -1147,6 +1148,7 @@ exports[`src/components/workspace > should match snapshot 1`] = `
       <div
         class="WorkspaceTitle"
       />
+      
       <div
         class="BoardsSwitcherWrapper"
       >

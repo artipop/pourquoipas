@@ -8,6 +8,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"strings"
+	"sync/atomic"
 )
 
 // bootstrapScript is injected into the served index.html <head>, before any app
@@ -152,6 +153,10 @@ func bootstrapScript(sessionToken string) string {
 // port is this process's own board; attached is the origin of a server, empty
 // when there is none. token is asked per response rather than baked in, because
 // the session for a hosted board is not known until somebody logs in.
+//
+// Which one is behind it can change while the app runs — that is what the
+// sidebar's switcher does — so what the front door holds is a boardRouter and
+// this builds the handler it points at.
 func newServerProxy(port int, attached string, token func() string) (http.Handler, error) {
 	local, err := url.Parse(fmt.Sprintf("http://localhost:%d", port))
 	if err != nil {
@@ -237,4 +242,46 @@ func stripCookie(req *http.Request, name string) {
 		}
 		req.AddCookie(cookie)
 	}
+}
+
+// boardRouter is the handler the front door holds, so which board the page
+// talks to can change without rebuilding the door.
+//
+// A switch is a rebuild and a page reload rather than something the running
+// page absorbs: everything it holds — the board, the members, the sockets —
+// came from the board it loaded against, and pretending otherwise would be a
+// screen showing one board's cards under another's name.
+type boardRouter struct {
+	port  int
+	token func() string
+
+	current atomic.Pointer[http.Handler]
+}
+
+func newBoardRouter(port int, attached string, token func() string) (*boardRouter, error) {
+	r := &boardRouter{port: port, token: token}
+	if err := r.point(attached); err != nil {
+		return nil, err
+	}
+	return r, nil
+}
+
+// point aims the router at a board: a server's origin, or empty for the one
+// this process serves.
+func (r *boardRouter) point(attached string) error {
+	next, err := newServerProxy(r.port, attached, r.token)
+	if err != nil {
+		return err
+	}
+	r.current.Store(&next)
+	return nil
+}
+
+func (r *boardRouter) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	handler := r.current.Load()
+	if handler == nil {
+		http.Error(w, "no board", http.StatusServiceUnavailable)
+		return
+	}
+	(*handler).ServeHTTP(w, req)
 }

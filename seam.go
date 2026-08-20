@@ -21,10 +21,12 @@ import (
 // and internal/boardclient, which has one over HTTP. This is the one place that
 // chooses, so nothing downstream has to know there was a choice.
 //
-// It is a swap rather than a set: attached, the board is the server's, and the
-// page was pointed at the same one (proxy.go). Working both at once is a
-// different thing — it needs the manager to route by board id — and it is what
-// the sidebar switcher waits for.
+// Attached, there are two and both are worked: the manager keeps a source for
+// each and routes by which one has the card (internal/acp/boardsource.go), so
+// an agent on the server's card goes on working while somebody looks at their
+// own board. What the *page* shows is a separate question with a separate
+// answer — the switcher — because a page holds one board's cards, members and
+// sockets and cannot hold two.
 type boardSeam struct {
 	writer    acp.BoardWriter
 	cardState acp.BoardCardState
@@ -41,8 +43,9 @@ type boardSeam struct {
 	notifyBackend notify.Backend
 }
 
-// boardLists is the small, flat surface a phone reads. Both adapters have it;
-// app.go holds one of them.
+// boardLists is the small, flat surface a phone reads. Both adapters have it,
+// and which one answers follows what the page is showing rather than what the
+// agents are working: this is the board somebody is looking at.
 type boardLists interface {
 	Boards(ctx context.Context) ([]boardmodel.BoardSummary, error)
 	BoardCards(ctx context.Context, boardID string) ([]boardmodel.CardSummary, error)
@@ -77,4 +80,32 @@ func remoteSeam(serverURL, token string, log mlog.LoggerIFace) (boardSeam, *boar
 		events:    client,
 		lists:     client,
 	}, client
+}
+
+// selectedLists picks the reader for the board on screen. A function rather
+// than a field, because the switcher moves it while the app runs.
+type selectedLists struct {
+	local  boardLists
+	remote boardLists
+	// on is the selected source's id: empty for this machine's own board.
+	on func() string
+}
+
+func (s selectedLists) pick() boardLists {
+	if s.remote != nil && s.on != nil && s.on() != "" {
+		return s.remote
+	}
+	return s.local
+}
+
+func (s selectedLists) Boards(ctx context.Context) ([]boardmodel.BoardSummary, error) {
+	return s.pick().Boards(ctx)
+}
+
+func (s selectedLists) BoardCards(ctx context.Context, boardID string) ([]boardmodel.CardSummary, error) {
+	return s.pick().BoardCards(ctx, boardID)
+}
+
+func (s selectedLists) MoveCardToBoard(ctx context.Context, cardID, toBoardID, column string) error {
+	return s.pick().MoveCardToBoard(ctx, cardID, toBoardID, column)
 }

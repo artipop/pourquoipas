@@ -218,6 +218,8 @@
   "BoardSetup.step-source": "Source",
   "BoardSetup.subtitle": "The board's columns and routes are already in place. What is left is to say where things are on your machine.",
   "BoardSetup.title": "Set up this board: {step}",
+  "BoardSource.hint": "Agents keep working both boards.",
+  "BoardSource.title": "Which board this window shows",
   "BoardTemplateSelector.add-template": "Create new template",
   "BoardTemplateSelector.create-empty-board": "Create empty board",
   "BoardTemplateSelector.delete-template": "Delete",
