@@ -592,8 +592,13 @@ const AutomationEditor = (props: Props) => {
     }
 
     const removeRoute = (name: string) => {
-        props.onChange({...props.automation, flows: flows().filter((f) => f.name !== name)})
-        showRoute(COLUMNS_VIEW)
+        const left = flows().filter((f) => f.name !== name)
+        props.onChange({...props.automation, flows: left})
+
+        // The next route, or the columns when that was the last one — landing
+        // on the columns while three routes are still there reads as having
+        // deleted more than was asked for.
+        showRoute(left[0]?.name ?? COLUMNS_VIEW)
         setSelected(null)
     }
 
@@ -1096,17 +1101,15 @@ const AutomationEditor = (props: Props) => {
 
     return (
         <div class='AutomationEditor'>
+            {/* Routes, and nothing else. «Колонки» stood at the head of this
+                row and is not a route — a list of routes with something that
+                is not one in it makes the reader ask what kind of thing the
+                row holds. The columns are still there to be edited: the way in
+                is «Настройки самой колонки…» in a stage's panel, and a board
+                with no routes opens on them. While they are what is on screen
+                no tab is active, which is true — the card is not on a route —
+                and every route is still one click away. */}
             <div class='AutomationEditor__routes'>
-                <button
-                    type='button'
-                    class={`AutomationEditor__route${route() === COLUMNS_VIEW ? ' AutomationEditor__route--active' : ''}`}
-                    onClick={() => {
-                        showRoute(COLUMNS_VIEW)
-                        setSelected(null)
-                    }}
-                >
-                    {intl.formatMessage({id: 'Automation.columns-view', defaultMessage: 'Columns'})}
-                </button>
                 <For each={flows()}>
                     {(f) => (
                         <button

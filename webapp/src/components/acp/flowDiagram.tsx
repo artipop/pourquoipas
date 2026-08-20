@@ -488,7 +488,7 @@ export const BLOCK_DRAG_TYPE = 'application/x-xciii-block'
 // under jsdom, where the canvas measures nothing and has nothing to fit.
 type FlowHandle = {
     screenToFlowPosition: (p: {x: number, y: number}) => {x: number, y: number}
-    fitView?: (options?: {padding?: number, maxZoom?: number}) => Promise<boolean> | void
+    fitView?: (options?: {padding?: number, maxZoom?: number, nodes?: Array<{id: string}>}) => Promise<boolean> | void
     getInternalNode?: (id: string) => {measured?: {width?: number, height?: number}} | undefined
 }
 
@@ -516,7 +516,13 @@ const fitWhenMeasured = (handle: FlowHandle, ids: string[], frame: number) => {
         requestAnimationFrame(() => fitWhenMeasured(handle, ids, frame + 1))
         return
     }
-    void handle.fitView?.(FIT_VIEW)
+
+    // To the route and not to the canvas: the board's other columns are parked
+    // on a shelf under the graph, and fitting to them too pushed a short route
+    // — «Хотфикс» is three stages — into a corner of a picture mostly made of
+    // columns it does not use. The shelf is there to be dragged from, not to be
+    // read, so it does not decide the zoom.
+    void handle.fitView?.({...FIT_VIEW, nodes: ids.map((id) => ({id}))})
 }
 
 // CanvasHook runs inside the canvas' context and hands its API out: the drop
@@ -832,8 +838,11 @@ const FlowDiagram = (props: Props) => {
     const shape = createMemo(() => drawnNodes.map((n) => n.id).join('|'))
     const [paneSize, setPaneSize] = createSignal('')
     createEffect(() => {
-        const ids = shape().split('|').filter(Boolean)
+        // What the fit is *about* is the route; what it is *keyed on* is every
+        // box, so joining a faded column to the route re-fits to the new shape.
+        shape()
         paneSize()
+        const ids = props.nodes.map((n) => n.id)
         const handle = flowHandle()
         if (handle?.fitView && ids.length > 0) {
             fitWhenMeasured(handle, ids, 0)

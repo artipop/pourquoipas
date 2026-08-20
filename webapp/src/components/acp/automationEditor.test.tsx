@@ -472,6 +472,28 @@ describe('components/acp/automationEditor', () => {
         expect(ghost.querySelector('.AutomationEditor__writeRemove')).toBeNull()
     })
 
+    // The row above the canvas lists routes. «Колонки» stood at its head and is
+    // not one — a list with something of another kind in it makes the reader
+    // ask what the row holds. The columns are still reached from a stage.
+    test('the row above the canvas holds routes and nothing else', async () => {
+        renderEditor()
+
+        expect(screen.getByRole('button', {name: 'Фича'})).toBeInTheDocument()
+        expect(screen.getByRole('button', {name: '+ route'})).toBeInTheDocument()
+        expect(screen.queryByRole('button', {name: 'Columns'})).toBeNull()
+
+        // And the way in is on the stage, so nothing is stranded.
+        userEvent.click(screen.getByRole('button', {name: 'Фича'}))
+        const stage = await waitFor(() => {
+            const found = [...screen.getByTestId('flow-diagram').querySelectorAll('.FlowDiagram__stage')].
+                find((el) => el.textContent?.includes('В работе'))
+            expect(found).toBeTruthy()
+            return found!
+        })
+        fireEvent.click(stage)
+        expect(await screen.findByRole('button', {name: 'Settings of the column itself…'})).toBeInTheDocument()
+    })
+
     // A caption is not a control. The Select's trigger is a <button>, which a
     // <label> counts as the control it names, so clicking the words "Deploy
     // target" opened the menu — a field that answers to a click three
