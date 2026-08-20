@@ -325,6 +325,29 @@ describe('components/acp/automationEditor', () => {
         expect(screen.getByText(/No deploy targets yet/)).toBeInTheDocument()
     })
 
+    // A caption is not a control. The Select's trigger is a <button>, which a
+    // <label> counts as the control it names, so clicking the words "Deploy
+    // target" opened the menu — a field that answers to a click three
+    // centimetres above itself.
+    test('clicking a field’s caption does not open its menu', () => {
+        const {container} = renderEditor({
+            automation: {
+                ...automation,
+                columns: [{boardId: 'board-1', optionId: 'opt-work', property: 'Статус', column: 'В работе', action: 'deploy'}],
+            },
+            deploys: [{id: 'dep-1', name: 'dokku-1'}],
+            focusColumnId: 'opt-work',
+        })
+
+        const caption = screen.getByText('Deploy target')
+        fireEvent.click(caption)
+        expect(container.querySelector('.Menu')).toBeNull()
+
+        // The control itself still opens it, or the field would be dead.
+        fireEvent.click(screen.getByRole('button', {name: 'Deploy target'}))
+        expect(container.querySelector('.Menu')).not.toBeNull()
+    })
+
     test('the hint is not shown once a target exists', () => {
         renderEditor({
             automation: {

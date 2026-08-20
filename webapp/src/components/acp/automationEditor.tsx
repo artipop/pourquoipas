@@ -681,8 +681,10 @@ const AutomationEditor = (props: Props) => {
 
     const deployPicker = (value: () => string, write: (next: string) => void, blank: string) => (
         <>
-            <label>
-                {intl.formatMessage({id: 'Automation.deploy', defaultMessage: 'Deploy target'})}
+            <div class='AutomationEditor__field'>
+                <span class='AutomationEditor__label'>
+                    {intl.formatMessage({id: 'Automation.deploy', defaultMessage: 'Deploy target'})}
+                </span>
                 <Select
                     value={value()}
                     options={[
@@ -692,7 +694,7 @@ const AutomationEditor = (props: Props) => {
                     onChange={write}
                     label={intl.formatMessage({id: 'Automation.deploy', defaultMessage: 'Deploy target'})}
                 />
-            </label>
+            </div>
 
             {/* The registry moved out of the app's settings, and this select is
                 exactly where somebody discovers it is empty — so this is where
@@ -900,15 +902,17 @@ const AutomationEditor = (props: Props) => {
                                     lands in it, and who works it on every
                                     route. */}
                                 <Show when={!flow()}>
-                                    <label>
-                                        {intl.formatMessage({id: 'Automation.on-arrival', defaultMessage: 'When a card lands here'})}
+                                    <div class='AutomationEditor__field'>
+                                        <span class='AutomationEditor__label'>
+                                            {intl.formatMessage({id: 'Automation.on-arrival', defaultMessage: 'When a card lands here'})}
+                                        </span>
                                         <Select
                                             value={specOf(node())?.action || 'none'}
                                             options={ACTIONS.map((a) => ({value: a, label: actionLabel(intl, a)}))}
                                             onChange={(action) => updateNodeSpec(node(), {action})}
                                             label={intl.formatMessage({id: 'Automation.on-arrival', defaultMessage: 'When a card lands here'})}
                                         />
-                                    </label>
+                                    </div>
 
                                     <Show when={(specOf(node())?.action || 'none') !== 'none'}>
                                         {crewPicker(
@@ -1002,8 +1006,10 @@ const AutomationEditor = (props: Props) => {
                                     list, and two crews for one question read as
                                     a bug rather than as an override. */}
                                 <Show when={flow()}>
-                                    <label>
-                                        {intl.formatMessage({id: 'Automation.stage-action', defaultMessage: 'What happens at this stage'})}
+                                    <div class='AutomationEditor__field'>
+                                        <span class='AutomationEditor__label'>
+                                            {intl.formatMessage({id: 'Automation.stage-action', defaultMessage: 'What happens at this stage'})}
+                                        </span>
                                         <Select
                                             value={node().action || ''}
                                             options={[
@@ -1025,7 +1031,7 @@ const AutomationEditor = (props: Props) => {
                                             onChange={(action) => updateFlow(flow()!.name, (f) => withNode(f, node().id, {action}))}
                                             label={intl.formatMessage({id: 'Automation.stage-action', defaultMessage: 'What happens at this stage'})}
                                         />
-                                    </label>
+                                    </div>
 
                                     <Show when={actionOf(node()) !== 'none'}>
                                         {crewPicker(
@@ -1042,8 +1048,10 @@ const AutomationEditor = (props: Props) => {
                                             checks the work before anything is
                                             merged, one in the folder checks
                                             what is already published. */}
-                                        <label>
-                                            {intl.formatMessage({id: 'Automation.run-in', defaultMessage: 'The stage works'})}
+                                        <div class='AutomationEditor__field'>
+                                            <span class='AutomationEditor__label'>
+                                                {intl.formatMessage({id: 'Automation.run-in', defaultMessage: 'The stage works'})}
+                                            </span>
                                             <Select
                                                 value={node().runIn || ''}
                                                 options={[
@@ -1054,7 +1062,7 @@ const AutomationEditor = (props: Props) => {
                                                 onChange={(runIn) => updateFlow(flow()!.name, (f) => withNode(f, node().id, {runIn: runIn || undefined}))}
                                                 label={intl.formatMessage({id: 'Automation.run-in', defaultMessage: 'The stage works'})}
                                             />
-                                        </label>
+                                        </div>
                                     </Show>
 
                                     <Show when={actionOf(node()) === 'deploy'}>
@@ -1189,25 +1197,29 @@ const AutomationEditor = (props: Props) => {
                                         <span class='AutomationEditor__condBadge'>{condLabel(intl, edge().if)}</span>
                                     </Show>
                                 </div>
-                                <label>
-                                    {intl.formatMessage({id: 'Automation.transition-on', defaultMessage: 'When'})}
+                                <div class='AutomationEditor__field'>
+                                    <span class='AutomationEditor__label'>
+                                        {intl.formatMessage({id: 'Automation.transition-on', defaultMessage: 'When'})}
+                                    </span>
                                     <Select
                                         value={edge().on}
                                         options={props.triggers.map((t) => ({value: t.kind, label: t.label}))}
                                         onChange={(on) => patchEdge(selectedEdgeIndex(), {on})}
                                         label={intl.formatMessage({id: 'Automation.transition-on', defaultMessage: 'When'})}
                                     />
-                                </label>
+                                </div>
                                 {condEditor(selectedEdgeIndex(), edge())}
-                                <label>
-                                    {intl.formatMessage({id: 'Automation.transition-to', defaultMessage: 'The card moves to'})}
+                                <div class='AutomationEditor__field'>
+                                    <span class='AutomationEditor__label'>
+                                        {intl.formatMessage({id: 'Automation.transition-to', defaultMessage: 'The card moves to'})}
+                                    </span>
                                     <Select
                                         value={edge().to}
                                         options={nodes().filter((n) => n.id !== edge().from).map((n) => ({value: n.id, label: n.column}))}
                                         onChange={(to) => patchEdge(selectedEdgeIndex(), {to})}
                                         label={intl.formatMessage({id: 'Automation.transition-to', defaultMessage: 'The card moves to'})}
                                     />
-                                </label>
+                                </div>
                                 <Button onClick={() => dropEdge(selectedEdgeIndex())}>
                                     {intl.formatMessage({id: 'Automation.remove-transition', defaultMessage: 'Remove'})}
                                 </Button>
@@ -1254,8 +1266,10 @@ const AutomationEditor = (props: Props) => {
                                         </div>
                                     )}
                                 </For>
-                                <label>
-                                    {intl.formatMessage({id: 'Automation.route-project', defaultMessage: 'Folder (optional)'})}
+                                <div class='AutomationEditor__field'>
+                                    <span class='AutomationEditor__label'>
+                                        {intl.formatMessage({id: 'Automation.route-project', defaultMessage: 'Folder (optional)'})}
+                                    </span>
                                     <Select
                                         value={current().workspaceId || ''}
                                         options={[
@@ -1265,7 +1279,7 @@ const AutomationEditor = (props: Props) => {
                                         onChange={(workspaceId) => updateFlow(current().name, (f) => ({...f, workspaceId}))}
                                         label={intl.formatMessage({id: 'Automation.route-project', defaultMessage: 'Folder (optional)'})}
                                     />
-                                </label>
+                                </div>
                                 <div class='AutomationEditor__hint'>
                                     {intl.formatMessage(
                                         {id: 'Automation.route-columns', defaultMessage: 'Goes through: {columns}'},

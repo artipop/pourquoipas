@@ -38,6 +38,11 @@
         border: 1px solid rgba(var(--center-channel-color-rgb), 0.12);
         border-radius: var(--radius-md);
 
+        // A caption and its control. `label` stays for the ones a label may own
+        // — input, textarea, checkbox — and __field is for a Select, whose
+        // trigger is a <button>: a label counts that as its control, so a click
+        // on the caption opened the menu.
+        .AgentsPanel__field,
         label {
             display: flex;
             flex-direction: column;

@@ -53,11 +53,13 @@ const Select = (props: Props): JSX.Element => {
             label={props.label}
             disabled={props.disabled}
 
-            // Most of these stand inside a <label> with their caption, and a
-            // click anywhere in a label is forwarded by the browser to the
-            // control it labels — our own trigger, which had just opened the
-            // menu and now closed it again. The field looked dead. Cancelling
-            // the click is what stops the label from acting on it.
+            // The trigger is a <button>, so anything that acts on a click of its
+            // own further up — a row, a card, a menu — would act on opening the
+            // menu too. **A <label> must not be one of those ancestors**: a
+            // label counts a button as its control and forwards a click on the
+            // caption to it, which opened the menu from the caption; that is
+            // not fixable from here, and every call site puts the caption in a
+            // plain element beside the field instead.
             stopPropagationOnToggle={true}
             menu={
                 <Menu

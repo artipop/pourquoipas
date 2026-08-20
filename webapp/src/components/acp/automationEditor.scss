@@ -248,6 +248,12 @@
         color: rgba(var(--center-channel-color-rgb), 0.64);
     }
 
+    // A caption and the control under it. `label` is the same shape and is kept
+    // for the controls a label may legitimately own — an input, a textarea, a
+    // checkbox — where forwarding the caption's click is what a person expects.
+    // A Select is not one of those: it is a <button>, which is labelable too, so
+    // a caption click opened the menu.
+    .AutomationEditor__field,
     label {
         display: flex;
         flex-direction: column;
