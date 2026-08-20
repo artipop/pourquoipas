@@ -479,6 +479,7 @@
   "GroupBy.showHiddenGroups": "Show {count, plural, one {# hidden group} other {# hidden groups}}",
   "GroupBy.ungroup": "Ungroup",
   "HideBoard.MenuOption": "Hide board",
+  "KanbanCard.mark": "Mark “{value}” — the card goes to “{column}”",
   "KanbanCard.open-terminal": "Open the terminal",
   "KanbanCard.untitled": "Untitled",
   "Machine.agent-notifications-hint": "The notification shows the question itself, and the agent can be answered right in it; when the app is in the background it comes from the system instead. The dot on the card and the dot on the tray icon stay even with this off.",

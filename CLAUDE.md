@@ -1450,7 +1450,10 @@ answers leads, so the strip draws them named by the stage they lead to — «←
 `UpdateCard`**, which is the one board write of ours that notifies, because the
 notify is what wakes `handleCardChanged` and moves the card. Offered only where
 the route has such an edge and nothing is running: a stage that decides for
-itself must not grow a second way to answer for it.
+itself must not grow a second way to answer for it. Asked **per board and not
+per card** (`CardMarksForBoard` → `ListCardMarks`), the bargain `ListTerminals`
+already takes for the console button: a board has as many cards as it likes and
+a call each would be a round trip for every card drawn.
 
 **Those two transitions are not drawn at all** (`isOutcomeEdge`). Not as arrows
 — they were a faint dashed line running the width of the graph in a corridor of

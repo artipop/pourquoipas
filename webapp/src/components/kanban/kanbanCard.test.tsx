@@ -1,4 +1,4 @@
-import {render, screen, within} from '@solidjs/testing-library'
+import {render, screen, waitFor, within} from '@solidjs/testing-library'
 import '@testing-library/jest-dom'
 
 import userEvent from '@testing-library/user-event'
@@ -21,6 +21,10 @@ const mockedMutator = vi.mocked(Mutator)
 describe('src/components/kanban/kanbanCard', () => {
     const board = TestBlockFactory.createBoard()
     const card = TestBlockFactory.createCard(board)
+
+    // …and the board for the same reason: what the card offers from where it
+    // stands is asked for the whole board at once, by its id.
+    board.id = 'board_id_1'
 
     // Utils is mocked here, so createGuid returns undefined and the card would
     // have no id -- which dnd-kit reads as `source?.id === this.id`, i.e. every
@@ -270,6 +274,53 @@ describe('src/components/kanban/kanbanCard', () => {
         ), {wrapper: TestRouter})
 
         expect(await screen.findByTitle('clauuus is asking')).toBeInTheDocument()
+        delete anyWindow.go
+    })
+
+    // Where the card goes next, when that is a person's to say. It is on the
+    // card because the card is what somebody is looking at when they decide —
+    // the alternative was opening it, finding «Исход» among its fields, and
+    // picking a value out of a dropdown.
+    test('offers where the card goes next, and writes the answer', async () => {
+        const anyWindow = window as any
+        const bindings = {
+            ListAttention: vi.fn().mockResolvedValue('[]'),
+            ListCardMarks: vi.fn().mockResolvedValue(JSON.stringify({
+                [card.id]: [
+                    {value: 'не прошло', column: 'В работе', forward: false},
+                    {value: 'прошло', column: 'Деплой', forward: true},
+                ],
+            })),
+            MarkCardOutcome: vi.fn().mockResolvedValue(undefined),
+        }
+        anyWindow.go = {main: {App: bindings}}
+
+        render(() => wrapDNDIntl(() =>
+            <AppStoreProvider store={store}>
+                <KanbanCard
+                    card={card}
+                    board={board}
+                    visiblePropertyTemplates={[propertyTemplate]}
+                    visibleBadges={false}
+                    isSelected={false}
+                    readonly={false}
+                    onDrop={vi.fn()}
+                    showCard={vi.fn()}
+                    isManualSort={false}
+                    index={0}
+                    groupId='group-1'
+                />
+            </AppStoreProvider>,
+        ), {wrapper: TestRouter})
+
+        const forward = await screen.findByRole('button', {name: /Деплой/})
+        expect(await screen.findByRole('button', {name: /В работе/})).toBeInTheDocument()
+
+        // The board asks once for every card, not once per card.
+        expect(bindings.ListCardMarks).toHaveBeenCalledWith(board.id)
+
+        forward.click()
+        await waitFor(() => expect(bindings.MarkCardOutcome).toHaveBeenCalledWith(card.id, 'прошло'))
         delete anyWindow.go
     })
 

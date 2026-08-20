@@ -84,11 +84,13 @@ The **"Columns"** tab, select a column — in the panel:
   set of values has something to pick from, a text one has not. A text property
   travels to the stages further on and is read there.
 
-  Setting it by hand does not mean going into the field. On a column where
-  nothing runs, the card grows two buttons — «← В работе» and «Деплой →» — named
-  by the stage each leads to. Pressing one sets «Исход» and moves the card: the
-  same thing as picking the value, in one press and with the consequence
-  visible.
+  Setting it by hand does not mean going into the field. While the card stands
+  on a stage where nothing runs, two buttons appear **on the card itself, on the
+  board** — named by the stage each leads to: «← В работе» and «Деплой →».
+  Pressing one sets «Исход» and moves the card. Nothing to open, nothing to find.
+
+  There are no buttons where the stage answers for itself: while an agent is
+  working, the card has no question for a person.
 
   On the canvas those two transitions are not shown at all, and that is
   deliberate: they are answered on the card, and the editor has nothing to add
