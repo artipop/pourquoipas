@@ -216,8 +216,12 @@ CREATE UNIQUE INDEX `idx_deploy_target_name` ON `deploy_target` (`name`);
 -- conversation, it is never resumed, which is why the two are
 -- separate tables and not one row with a transport column.
 --   card_id: NULL for a run that is about no card — naming a branch is one.
+--   column_key: Which column's limit this run counts against. Here rather than in
+--     memory because a column's limit is about the board and not about
+--     one process: two windows of this app, and one day two machines on
+--     one board, all have to be counting the same sessions.
 --   finished_at: NULL means the session is still live.
-CREATE TABLE `agent_session` (`id` varchar NOT NULL, `card_id` varchar NULL, `board_id` varchar NULL, `agent_kind` varchar NOT NULL, `acp_session_id` varchar NULL, `status` varchar NOT NULL, `cwd` text NULL, `worktree_path` text NULL, `branch` varchar NULL, `started_at` bigint NOT NULL, `finished_at` bigint NULL, `error_text` text NULL, PRIMARY KEY (`id`), CONSTRAINT `agent_session_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE CASCADE, CONSTRAINT `agent_session_board` FOREIGN KEY (`board_id`) REFERENCES `board_ref` (`board_id`) ON DELETE CASCADE, CONSTRAINT `agent_session_status` CHECK (`status` IN ('queued', 'running', 'idle', 'waiting_permission', 'done', 'failed', 'cancelled')));
+CREATE TABLE `agent_session` (`id` varchar NOT NULL, `card_id` varchar NULL, `board_id` varchar NULL, `agent_kind` varchar NOT NULL, `acp_session_id` varchar NULL, `status` varchar NOT NULL, `column_key` varchar NULL, `cwd` text NULL, `worktree_path` text NULL, `branch` varchar NULL, `started_at` bigint NOT NULL, `finished_at` bigint NULL, `error_text` text NULL, PRIMARY KEY (`id`), CONSTRAINT `agent_session_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE CASCADE, CONSTRAINT `agent_session_board` FOREIGN KEY (`board_id`) REFERENCES `board_ref` (`board_id`) ON DELETE CASCADE, CONSTRAINT `agent_session_status` CHECK (`status` IN ('queued', 'running', 'idle', 'waiting_permission', 'done', 'failed', 'cancelled')));
 
 CREATE INDEX `idx_agent_session_card` ON `agent_session` (`card_id`, `started_at`);
 
@@ -498,8 +502,12 @@ CREATE TABLE `card_ref` (`card_id` varchar(36) NOT NULL, `board_id` varchar(36) 
 -- conversation, it is never resumed, which is why the two are
 -- separate tables and not one row with a transport column.
 --   card_id: NULL for a run that is about no card — naming a branch is one.
+--   column_key: Which column's limit this run counts against. Here rather than in
+--     memory because a column's limit is about the board and not about
+--     one process: two windows of this app, and one day two machines on
+--     one board, all have to be counting the same sessions.
 --   finished_at: NULL means the session is still live.
-CREATE TABLE `agent_session` (`id` varchar(36) NOT NULL, `card_id` varchar(36) NULL, `board_id` varchar(36) NULL, `agent_kind` varchar(32) NOT NULL, `acp_session_id` varchar(100) NULL, `status` varchar(24) NOT NULL, `cwd` text NULL, `worktree_path` text NULL, `branch` varchar(255) NULL, `started_at` bigint NOT NULL, `finished_at` bigint NULL, `error_text` text NULL, PRIMARY KEY (`id`), INDEX `idx_agent_session_card` (`card_id`, `started_at`), CONSTRAINT `agent_session_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE CASCADE, CONSTRAINT `agent_session_board` FOREIGN KEY (`board_id`) REFERENCES `board_ref` (`board_id`) ON DELETE CASCADE, CONSTRAINT `agent_session_status` CHECK (`status` IN ('queued', 'running', 'idle', 'waiting_permission', 'done', 'failed', 'cancelled'))) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
+CREATE TABLE `agent_session` (`id` varchar(36) NOT NULL, `card_id` varchar(36) NULL, `board_id` varchar(36) NULL, `agent_kind` varchar(32) NOT NULL, `acp_session_id` varchar(100) NULL, `status` varchar(24) NOT NULL, `column_key` varchar(128) NULL, `cwd` text NULL, `worktree_path` text NULL, `branch` varchar(255) NULL, `started_at` bigint NOT NULL, `finished_at` bigint NULL, `error_text` text NULL, PRIMARY KEY (`id`), INDEX `idx_agent_session_card` (`card_id`, `started_at`), CONSTRAINT `agent_session_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE CASCADE, CONSTRAINT `agent_session_board` FOREIGN KEY (`board_id`) REFERENCES `board_ref` (`board_id`) ON DELETE CASCADE, CONSTRAINT `agent_session_status` CHECK (`status` IN ('queued', 'running', 'idle', 'waiting_permission', 'done', 'failed', 'cancelled'))) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
 
 -- Which setup questions a board has been asked. It is about this machine
 -- — the answers are folders and hosts here — so it cannot live in the
@@ -864,13 +872,21 @@ CREATE TABLE "card_ref" ("card_id" character varying(36) NOT NULL, "board_id" ch
 -- conversation, it is never resumed, which is why the two are
 -- separate tables and not one row with a transport column.
 --   card_id: NULL for a run that is about no card — naming a branch is one.
+--   column_key: Which column's limit this run counts against. Here rather than in
+--     memory because a column's limit is about the board and not about
+--     one process: two windows of this app, and one day two machines on
+--     one board, all have to be counting the same sessions.
 --   finished_at: NULL means the session is still live.
-CREATE TABLE "agent_session" ("id" character varying(36) NOT NULL, "card_id" character varying(36) NULL, "board_id" character varying(36) NULL, "agent_kind" character varying(32) NOT NULL, "acp_session_id" character varying(100) NULL, "status" character varying(24) NOT NULL, "cwd" text NULL, "worktree_path" text NULL, "branch" character varying(255) NULL, "started_at" bigint NOT NULL, "finished_at" bigint NULL, "error_text" text NULL, PRIMARY KEY ("id"), CONSTRAINT "agent_session_card" FOREIGN KEY ("card_id") REFERENCES "card_ref" ("card_id") ON DELETE CASCADE, CONSTRAINT "agent_session_board" FOREIGN KEY ("board_id") REFERENCES "board_ref" ("board_id") ON DELETE CASCADE, CONSTRAINT "agent_session_status" CHECK ("status" IN ('queued', 'running', 'idle', 'waiting_permission', 'done', 'failed', 'cancelled')));
+CREATE TABLE "agent_session" ("id" character varying(36) NOT NULL, "card_id" character varying(36) NULL, "board_id" character varying(36) NULL, "agent_kind" character varying(32) NOT NULL, "acp_session_id" character varying(100) NULL, "status" character varying(24) NOT NULL, "column_key" character varying(128) NULL, "cwd" text NULL, "worktree_path" text NULL, "branch" character varying(255) NULL, "started_at" bigint NOT NULL, "finished_at" bigint NULL, "error_text" text NULL, PRIMARY KEY ("id"), CONSTRAINT "agent_session_card" FOREIGN KEY ("card_id") REFERENCES "card_ref" ("card_id") ON DELETE CASCADE, CONSTRAINT "agent_session_board" FOREIGN KEY ("board_id") REFERENCES "board_ref" ("board_id") ON DELETE CASCADE, CONSTRAINT "agent_session_status" CHECK ("status" IN ('queued', 'running', 'idle', 'waiting_permission', 'done', 'failed', 'cancelled')));
 
 -- A run of an agent over ACP. One process, one verdict: unlike a
 -- conversation, it is never resumed, which is why the two are
 -- separate tables and not one row with a transport column.
 --   card_id: NULL for a run that is about no card — naming a branch is one.
+--   column_key: Which column's limit this run counts against. Here rather than in
+--     memory because a column's limit is about the board and not about
+--     one process: two windows of this app, and one day two machines on
+--     one board, all have to be counting the same sessions.
 --   finished_at: NULL means the session is still live.
 CREATE INDEX "idx_agent_session_card" ON "agent_session" ("card_id", "started_at");
 

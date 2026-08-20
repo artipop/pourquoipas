@@ -609,3 +609,44 @@ func TestStageMCPPrefersTheNodesOwnServers(t *testing.T) {
 		t.Fatalf("the node's own set should replace the column's whole answer: %+v", got)
 	}
 }
+
+// A column's limit is a fact about the board, not about a process. It used to
+// be counted over the manager's own map of live sessions, so two windows of
+// this app each counted their own and a limit of one ran two — and one day two
+// machines on one board will ask the same question.
+//
+// Counted over the sessions the database has, which is also why a session left
+// behind by a crash cannot hold a column shut for ever: those are swept at
+// launch.
+func TestAColumnsLimitIsCountedWhereEverybodyCanSeeIt(t *testing.T) {
+	m, _, _, _ := testManager(t, fakeClaudeHang, func(c *Config) {
+		spec := workColumn(c.TriggerProperty, FlowActionAgent)
+		spec.MaxRunning = 2
+		c.Columns = []ColumnSpec{spec}
+	})
+
+	key := m.cfg.Columns[0].Key()
+	if n := m.runningInColumn(key); n != 0 {
+		t.Fatalf("an idle column counts %d", n)
+	}
+
+	// A session this manager never put in its own map — which is what another
+	// window's session looks like from here.
+	if err := m.store.InsertSession(SessionRecord{
+		ID: "elsewhere", CardID: "cardOne", AgentKind: "claude",
+		Status: StatusRunning, ColumnKey: key, StartedAt: time.Now(),
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if n := m.runningInColumn(key); n != 1 {
+		t.Errorf("counted %d, want the session this window did not start", n)
+	}
+
+	// And a finished one stops counting, or the column would close for good.
+	if err := m.store.SetSessionStatus("elsewhere", StatusDone, ""); err != nil {
+		t.Fatal(err)
+	}
+	if n := m.runningInColumn(key); n != 0 {
+		t.Errorf("counted %d after the session finished", n)
+	}
+}

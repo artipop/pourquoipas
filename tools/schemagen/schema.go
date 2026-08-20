@@ -339,6 +339,11 @@ func agentSession() Table {
 			{Name: "agent_kind", Type: Name(32)},
 			{Name: "acp_session_id", Type: Name(100), Null: true},
 			{Name: "status", Type: Name(24)},
+			{Name: "column_key", Type: Name(128), Null: true,
+				Why: "Which column's limit this run counts against. Here rather than in\n" +
+					"memory because a column's limit is about the board and not about\n" +
+					"one process: two windows of this app, and one day two machines on\n" +
+					"one board, all have to be counting the same sessions."},
 			{Name: "cwd", Type: Text(), Null: true},
 			{Name: "worktree_path", Type: Text(), Null: true},
 			{Name: "branch", Type: Name(255), Null: true},

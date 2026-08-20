@@ -13,17 +13,21 @@ import (
 // somebody finishes. That is what a WIP limit means on a board.
 
 // runningInColumn counts the live sessions of one column.
+//
+// Asked of the database rather than of this process's own map, which is what it
+// used to be. A column's limit is a fact about the board — how many of its crew
+// may work it at once — and two windows of this app each counted their own
+// sessions, so a limit of one ran two. A database that cannot be read counts
+// nothing, which lets the stage start: refusing work because a count failed is
+// the worse of the two wrong answers.
 func (m *Manager) runningInColumn(key string) int {
 	if key == "" {
 		return 0
 	}
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	n := 0
-	for _, s := range m.active {
-		if s.ColumnKey == key {
-			n++
-		}
+	n, err := m.store.RunningInColumn(key)
+	if err != nil {
+		m.log.Error("acp: cannot count what is running in a column", "column", key, "err", err)
+		return 0
 	}
 	return n
 }

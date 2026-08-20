@@ -1053,6 +1053,10 @@ table "agent_session" {
     null = false
     type = varchar(24)
   }
+  column "column_key" {
+    null = true
+    type = varchar(128)
+  }
   column "cwd" {
     null = true
     type = text

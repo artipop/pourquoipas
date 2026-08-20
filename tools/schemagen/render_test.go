@@ -206,6 +206,8 @@ func TestTheCollapsedMigrationBuildsTheSchemaTheLadderBuilt(t *testing.T) {
 		"table flow_state":  {routeByID},
 		"table flow_event":  {routeByID},
 		"table stage_queue": {routeByID},
+		// A column's limit stopped being counted in one process's memory.
+		"table agent_session": {"column_key: which column's limit this run counts against"},
 	}
 
 	for name, w := range wantShape {

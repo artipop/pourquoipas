@@ -64,12 +64,16 @@ type SessionRecord struct {
 	AgentKind    string        `json:"agentKind"`
 	ACPSessionID string        `json:"acpSessionId"`
 	Status       SessionStatus `json:"status"`
-	Cwd          string        `json:"cwd"`
-	WorktreePath string        `json:"worktreePath"`
-	Branch       string        `json:"branch"`
-	StartedAt    time.Time     `json:"startedAt"`
-	FinishedAt   *time.Time    `json:"finishedAt,omitempty"`
-	ErrorText    string        `json:"errorText,omitempty"`
+	// ColumnKey is which column's limit this run counts against. Recorded so
+	// the count is a question for the database rather than for one process's
+	// memory — see RunningInColumn.
+	ColumnKey    string     `json:"columnKey,omitempty"`
+	Cwd          string     `json:"cwd"`
+	WorktreePath string     `json:"worktreePath"`
+	Branch       string     `json:"branch"`
+	StartedAt    time.Time  `json:"startedAt"`
+	FinishedAt   *time.Time `json:"finishedAt,omitempty"`
+	ErrorText    string     `json:"errorText,omitempty"`
 }
 
 // SessionEventRecord mirrors one session_event row. There is no `seq`: the id
@@ -438,10 +442,10 @@ func (s *Store) InsertSession(r SessionRecord) error {
 		return err
 	}
 	_, err := s.exec(`INSERT INTO agent_session
-		(id, card_id, board_id, agent_kind, acp_session_id, status, cwd, worktree_path, branch, started_at, error_text)
-		VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+		(id, card_id, board_id, agent_kind, acp_session_id, status, column_key, cwd, worktree_path, branch, started_at, error_text)
+		VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
 		r.ID, nullable(r.CardID), nullable(r.BoardID), r.AgentKind, r.ACPSessionID, string(r.Status),
-		r.Cwd, r.WorktreePath, r.Branch, r.StartedAt.UnixMilli(), r.ErrorText)
+		nullable(r.ColumnKey), r.Cwd, r.WorktreePath, r.Branch, r.StartedAt.UnixMilli(), r.ErrorText)
 	return err
 }
 
@@ -483,7 +487,7 @@ func (s *Store) AppendEvent(sessionID, kind string, payload any) error {
 // SessionsForCard returns all sessions of a card, newest first, with events.
 func (s *Store) SessionsForCard(cardID string) ([]SessionRecord, []SessionEventRecord, error) {
 	rows, err := s.query(`SELECT id, COALESCE(card_id,''), COALESCE(board_id,''), agent_kind, COALESCE(acp_session_id,''), status,
-		COALESCE(cwd,''), COALESCE(worktree_path,''), COALESCE(branch,''), started_at, finished_at, COALESCE(error_text,'')
+		COALESCE(column_key,''), COALESCE(cwd,''), COALESCE(worktree_path,''), COALESCE(branch,''), started_at, finished_at, COALESCE(error_text,'')
 		FROM agent_session WHERE card_id=? ORDER BY started_at DESC`, cardID)
 	if err != nil {
 		return nil, nil, err
@@ -531,7 +535,7 @@ func (s *Store) SessionsForCard(cardID string) ([]SessionRecord, []SessionEventR
 // app crash/restart).
 func (s *Store) StaleSessions() ([]SessionRecord, error) {
 	rows, err := s.query(`SELECT id, COALESCE(card_id,''), COALESCE(board_id,''), agent_kind, COALESCE(acp_session_id,''), status,
-		COALESCE(cwd,''), COALESCE(worktree_path,''), COALESCE(branch,''), started_at, finished_at, COALESCE(error_text,'')
+		COALESCE(column_key,''), COALESCE(cwd,''), COALESCE(worktree_path,''), COALESCE(branch,''), started_at, finished_at, COALESCE(error_text,'')
 		FROM agent_session WHERE status IN (?,?,?)`,
 		string(StatusQueued), string(StatusRunning), string(StatusWaitingPermission))
 	if err != nil {
@@ -573,7 +577,7 @@ func scanSession(rows *sql.Rows) (SessionRecord, error) {
 	var status string
 	var started int64
 	var finished sql.NullInt64
-	if err := rows.Scan(&r.ID, &r.CardID, &r.BoardID, &r.AgentKind, &r.ACPSessionID, &status,
+	if err := rows.Scan(&r.ID, &r.CardID, &r.BoardID, &r.AgentKind, &r.ACPSessionID, &status, &r.ColumnKey,
 		&r.Cwd, &r.WorktreePath, &r.Branch, &started, &finished, &r.ErrorText); err != nil {
 		return r, err
 	}
@@ -992,4 +996,23 @@ func nullable(v string) any {
 		return nil
 	}
 	return v
+}
+
+// RunningInColumn counts the sessions of one column that have not finished.
+//
+// In the database rather than in this process's memory, which is where it was.
+// A column's limit is a fact about the board — "how many of its crew may work
+// it at once" — and two windows of this app were each counting their own
+// sessions, so a limit of one ran two. Sessions left behind by a crash are
+// swept at launch (StaleSessions), so a stale row cannot hold a column shut for
+// ever.
+func (s *Store) RunningInColumn(columnKey string) (int, error) {
+	if columnKey == "" {
+		return 0, nil
+	}
+	row := s.queryRow(`SELECT COUNT(*) FROM agent_session WHERE column_key=? AND status IN (?,?,?)`,
+		columnKey, string(StatusQueued), string(StatusRunning), string(StatusWaitingPermission))
+	var n int
+	err := row.Scan(&n)
+	return n, err
 }

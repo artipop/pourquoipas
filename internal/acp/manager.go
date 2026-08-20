@@ -551,6 +551,10 @@ func (m *Manager) startSession(ev CardMoved, opts startOptions) (*Session, error
 		BoardID:   s.BoardID,
 		AgentKind: agent.Kind,
 		Status:    StatusQueued,
+		// What the column's limit counts. Written with the row rather than
+		// held in memory, so every window and every restart counts the same
+		// sessions (Store.RunningInColumn).
+		ColumnKey: s.ColumnKey,
 		StartedAt: time.Now(),
 	}
 	if err := m.store.InsertSession(rec); err != nil {

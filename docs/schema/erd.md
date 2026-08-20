@@ -379,6 +379,7 @@ erDiagram
         name_32 agent_kind
         name_100 acp_session_id "nullable"
         name_24 status "queued | running | idle | waiting_permission | done | failed | cancelled"
+        name_128 column_key "Which column's limit this run counts against. Here rather than in memory because a column's limit is about…"
         text cwd "nullable"
         text worktree_path "nullable"
         name_255 branch "nullable"
