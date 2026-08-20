@@ -47,6 +47,15 @@
         // shrinks below its content (automationDialog.scss), so this only ever
         // distributes growth.
         flex: 1 1 auto;
+
+        // **The row's height is the canvas's, never the panel's.** The panel is
+        // taken out of the flow and stretched to the row instead, because a
+        // panel that is as tall as its own fields made selecting a stage resize
+        // the canvas — a deploy column's settings took the row from 713 to 1077
+        // — and a canvas that changes size re-fits its camera. So every click on
+        // a stage threw the picture across the screen, and a click that began a
+        // drag threw it mid-gesture.
+        position: relative;
     }
 
     // The buttons carry the colour of the stage they become and nothing else:
@@ -92,6 +101,10 @@
     .AutomationEditor__canvas {
         flex: 1 1 auto;
 
+        // The panel floats over the row's right edge, so the canvas keeps clear
+        // of it by hand: 300 of panel and the row's own 12 of gap.
+        margin-right: 312px;
+
         // Never below this: the panel is a fixed column, and on a narrow
         // window `min-width: 0` let it squeeze the canvas — the point of the
         // screen — into a sliver.
@@ -113,7 +126,13 @@
     }
 
     .AutomationEditor__panel {
-        flex: 0 0 300px;
+        // Out of the row's height calculation — see __body. Width is stated
+        // rather than flexed for the same reason: it is not a flex item now.
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: 300px;
 
         // Without this the panel is only as narrow as its widest select, and a
         // long column name in one of them pushed its content half again past
@@ -432,7 +451,16 @@
             flex-direction: column;
         }
 
+        .AutomationEditor__canvas {
+            // The panel is under the canvas here, not beside it.
+            margin-right: 0;
+        }
+
         .AutomationEditor__panel {
+            // Back into the flow: stacked, its height is the point rather than
+            // something to keep out of the canvas's way.
+            position: static;
+            width: auto;
             flex: 0 0 auto;
 
             // It is no longer a column of its own height, so it scrolls with
