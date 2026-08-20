@@ -95,23 +95,13 @@ func (a *API) handleGetTeam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var team *model.Team
-	var err error
-
-	if a.MattermostAuth {
-		team, err = a.app.GetTeam(teamID)
-		if model.IsErrNotFound(err) {
-			a.errorResponse(w, r, model.NewErrUnauthorized("invalid team"))
-		}
-		if err != nil {
-			a.errorResponse(w, r, err)
-		}
-	} else {
-		team, err = a.app.GetRootTeam()
-		if err != nil {
-			a.errorResponse(w, r, err)
-			return
-		}
+	// The root team, whatever id was asked for: this install has exactly one
+	// and its id is '0' (docs/teamwork.md). The other branch answered a team
+	// named by the plugin host, and there is no host.
+	team, err := a.app.GetRootTeam()
+	if err != nil {
+		a.errorResponse(w, r, err)
+		return
 	}
 
 	// The signup token is the door into this install, and this handler is
@@ -155,11 +145,6 @@ func (a *API) handlePostTeamRegenerateSignupToken(w http.ResponseWriter, r *http
 	//     description: internal error
 	//     schema:
 	//       "$ref": "#/definitions/ErrorResponse"
-	if a.MattermostAuth {
-		a.errorResponse(w, r, model.NewErrNotImplemented("not permitted in plugin mode"))
-		return
-	}
-
 	// Retiring the invite link and minting a new one is administering the
 	// install. This checked nothing but the session, so any member could take
 	// away everybody else's link.
@@ -203,11 +188,6 @@ func (a *API) handleGetTeamUsers(w http.ResponseWriter, r *http.Request) {
 	//   description: string to filter users list
 	//   required: false
 	//   type: string
-	// - name: exclude_bots
-	//   in: query
-	//   description: exclude bot users
-	//   required: false
-	//   type: boolean
 	// security:
 	// - BearerAuth: []
 	// responses:
@@ -226,7 +206,6 @@ func (a *API) handleGetTeamUsers(w http.ResponseWriter, r *http.Request) {
 	userID := getUserID(r)
 	query := r.URL.Query()
 	searchQuery := query.Get("search")
-	excludeBots := r.URL.Query().Get("exclude_bots") == True
 
 	if !a.permissions.HasPermissionToTeam(userID, teamID, model.PermissionViewTeam) {
 		a.errorResponse(w, r, model.NewErrPermission("access denied to team"))
@@ -243,7 +222,7 @@ func (a *API) handleGetTeamUsers(w http.ResponseWriter, r *http.Request) {
 		asGuestUser = userID
 	}
 
-	users, err := a.app.SearchTeamUsers(teamID, searchQuery, asGuestUser, excludeBots)
+	users, err := a.app.SearchTeamUsers(teamID, searchQuery, asGuestUser)
 	if err != nil {
 		a.errorResponse(w, r, err)
 		return

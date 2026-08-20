@@ -1,69 +1,16 @@
 package model
 
-import (
-	"github.com/artipop/xciii/server/mlog"
-)
-
-// This is a list of all the current versions including any patches.
-// It should be maintained in chronological order with most current
-// release at the front of the list.
-var versions = []string{
-	"8.0.0",
-	"7.12.0",
-	"7.11.1",
-	"7.11.0",
-	"7.10.0",
-	"7.9.0",
-	"7.8.0",
-	"7.7.0",
-	"7.6.0",
-	"7.5.0",
-	"7.4.0",
-	"7.3.0",
-	"7.2.0",
-	"7.0.0",
-	"0.16.0",
-	"0.15.0",
-	"0.14.0",
-	"0.12.0",
-	"0.11.0",
-	"0.10.0",
-	"0.9.4",
-	"0.9.3",
-	"0.9.2",
-	"0.9.1",
-	"0.9.0",
-	"0.8.2",
-	"0.8.1",
-	"0.8.0",
-	"0.7.3",
-	"0.7.2",
-	"0.7.1",
-	"0.7.0",
-	"0.6.7",
-	"0.6.6",
-	"0.6.5",
-	"0.6.2",
-	"0.6.1",
-	"0.6.0",
-	"0.5.0",
-}
-
-var (
-	CurrentVersion = versions[0]
-	BuildNumber    string
-	BuildDate      string
-	BuildHash      string
-	Edition        string
-)
-
-// LogServerInfo logs information about the server instance.
-func LogServerInfo(logger mlog.LoggerIFace) {
-	logger.Info("Focalboard server",
-		mlog.String("version", CurrentVersion),
-		mlog.String("edition", Edition),
-		mlog.String("build_number", BuildNumber),
-		mlog.String("build_date", BuildDate),
-		mlog.String("build_hash", BuildHash),
-	)
-}
+// CurrentVersion is what this application calls itself.
+//
+// It is a constant rather than an -ldflags injection for the reason version.go
+// in the root gives: threading a value through four Taskfiles makes the version
+// a property of how the binary was built, which is exactly what `wails3 dev`
+// then gets wrong. This file is one of the places internal/buildversion keeps
+// in step, and version_test.go fails when they disagree.
+//
+// What was here was Focalboard's own list of twenty-odd released versions, with
+// CurrentVersion set to the newest of them — so /ping answered "8.0.0" for an
+// application whose own version is elsewhere and different. A version list of a
+// product this one is not is not history, it is a wrong answer with a
+// changelog.
+const CurrentVersion = "1.0.0"

@@ -30,7 +30,6 @@ const (
 
 	minSessionExpiryTime = int64(60 * 60 * 24 * 31) // 31 days
 
-	MattermostAuthMod = "mattermost"
 )
 
 type Server struct {
@@ -58,7 +57,7 @@ func New(params Params) (*Server, error) {
 	// if no ws adapter is provided, we spin up a websocket server
 	wsAdapter := params.WSAdapter
 	if wsAdapter == nil {
-		wsAdapter = ws.NewServer(authenticator, params.SingleUserToken, params.Cfg.AuthMode == MattermostAuthMod, params.Logger, params.DBStore)
+		wsAdapter = ws.NewServer(authenticator, params.SingleUserToken, params.Logger, params.DBStore)
 	}
 
 	// Attachments go on the disk, under the directory the config names. The S3
@@ -120,8 +119,6 @@ func New(params Params) (*Server, error) {
 		api:                 focalboardAPI,
 		app:                 app,
 	}
-
-	server.initHandlers()
 
 	return &server, nil
 }
@@ -201,18 +198,18 @@ func (s *Server) Start() error {
 	s.servicesStartStopMutex.Lock()
 	defer s.servicesStartStopMutex.Unlock()
 
-	if s.config.AuthMode != MattermostAuthMod {
-		s.cleanUpSessionsTask = scheduler.CreateRecurringTask("cleanUpSessions", func() {
-			secondsAgo := minSessionExpiryTime
-			if secondsAgo < s.config.SessionExpireTime {
-				secondsAgo = s.config.SessionExpireTime
-			}
+	// Sessions are this install's own to reap: nothing else keeps them, which
+	// is why this task survived the fork shrink.
+	s.cleanUpSessionsTask = scheduler.CreateRecurringTask("cleanUpSessions", func() {
+		secondsAgo := minSessionExpiryTime
+		if secondsAgo < s.config.SessionExpireTime {
+			secondsAgo = s.config.SessionExpireTime
+		}
 
-			if err := s.store.CleanUpSessions(secondsAgo); err != nil {
-				s.logger.Error("Unable to clean up the sessions", mlog.Err(err))
-			}
-		}, cleanupSessionTaskFrequency)
-	}
+		if err := s.store.CleanUpSessions(secondsAgo); err != nil {
+			s.logger.Error("Unable to clean up the sessions", mlog.Err(err))
+		}
+	}, cleanupSessionTaskFrequency)
 
 	return nil
 }

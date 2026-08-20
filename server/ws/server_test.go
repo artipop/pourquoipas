@@ -14,7 +14,7 @@ import (
 )
 
 func TestTeamSubscription(t *testing.T) {
-	server := NewServer(&auth.Auth{}, "token", false, &mlog.Logger{}, nil)
+	server := NewServer(&auth.Auth{}, "token", &mlog.Logger{}, nil)
 	session := &websocketSession{
 		conn:   &websocket.Conn{},
 		mu:     sync.Mutex{},
@@ -146,7 +146,7 @@ func TestTeamSubscription(t *testing.T) {
 }
 
 func TestBlocksSubscription(t *testing.T) {
-	server := NewServer(&auth.Auth{}, "token", false, &mlog.Logger{}, nil)
+	server := NewServer(&auth.Auth{}, "token", &mlog.Logger{}, nil)
 	session := &websocketSession{
 		conn:   &websocket.Conn{},
 		mu:     sync.Mutex{},
@@ -266,7 +266,7 @@ func TestBlocksSubscription(t *testing.T) {
 
 func TestGetUserIDForTokenInSingleUserMode(t *testing.T) {
 	singleUserToken := "single-user-token"
-	server := NewServer(&auth.Auth{}, "token", false, &mlog.Logger{}, nil)
+	server := NewServer(&auth.Auth{}, "token", &mlog.Logger{}, nil)
 	server.singleUserToken = singleUserToken
 
 	t.Run("Should return nothing if the token is empty", func(t *testing.T) {

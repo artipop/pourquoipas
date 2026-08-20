@@ -71,10 +71,6 @@ type User struct {
 	// required: true
 	DeleteAt int64 `json:"delete_at"`
 
-	// If the user is a bot or not
-	// required: true
-	IsBot bool `json:"is_bot"`
-
 	// If the user is a guest or not
 	// required: true
 	IsGuest bool `json:"is_guest"`

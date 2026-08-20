@@ -40,6 +40,10 @@ var Sites = []Site{{
 	Pattern: regexp.MustCompile(`const appVersion = "([^"]*)"`),
 	Why:     "what the running binary calls itself, and what the updater compares",
 }, {
+	Path:    "server/model/version.go",
+	Pattern: regexp.MustCompile(`const CurrentVersion = "([^"]*)"`),
+	Why:     "what the board's own /ping answers, which cannot import package main",
+}, {
 	Path:    "build/config.yml",
 	Pattern: regexp.MustCompile(`(?m)^  version: "([^"]*)"$`),
 	Why:     "the wails3 project config every build asset is generated from",

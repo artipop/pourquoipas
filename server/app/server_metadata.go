@@ -6,17 +6,19 @@ import (
 	"github.com/artipop/xciii/server/model"
 )
 
+// ServerMetadata is what /ping answers: enough to tell which application is
+// running and on what.
+//
+// Four fields went with the plugin mode: build_number, build_date and commit
+// were -ldflags upstream injected and this tree never sets, and edition named
+// whether the board was a Mattermost plugin, which it cannot be any more. sku
+// went with them — it existed to say "suite" for that same edition.
 type ServerMetadata struct {
-	Version     string `json:"version"`
-	BuildNumber string `json:"build_number"`
-	BuildDate   string `json:"build_date"`
-	Commit      string `json:"commit"`
-	Edition     string `json:"edition"`
-	DBType      string `json:"db_type"`
-	DBVersion   string `json:"db_version"`
-	OSType      string `json:"os_type"`
-	OSArch      string `json:"os_arch"`
-	SKU         string `json:"sku"`
+	Version   string `json:"version"`
+	DBType    string `json:"db_type"`
+	DBVersion string `json:"db_version"`
+	OSType    string `json:"os_type"`
+	OSArch    string `json:"os_arch"`
 }
 
 func (a *App) GetServerMetadata() *ServerMetadata {
@@ -28,15 +30,10 @@ func (a *App) GetServerMetadata() *ServerMetadata {
 	}
 
 	return &ServerMetadata{
-		Version:     model.CurrentVersion,
-		BuildNumber: model.BuildNumber,
-		BuildDate:   model.BuildDate,
-		Commit:      model.BuildHash,
-		Edition:     model.Edition,
-		DBType:      dbType,
-		DBVersion:   dbVersion,
-		OSType:      runtime.GOOS,
-		OSArch:      runtime.GOARCH,
-		SKU:         "personal_server",
+		Version:   model.CurrentVersion,
+		DBType:    dbType,
+		DBVersion: dbVersion,
+		OSType:    runtime.GOOS,
+		OSArch:    runtime.GOARCH,
 	}
 }

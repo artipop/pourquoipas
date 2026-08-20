@@ -156,8 +156,7 @@ const PersonSelector = (props: Props): JSX.Element => {
             }
             return (await offerable(returnUsers)).map(asOption)
         }
-        const excludeBots = true
-        const allUsers = await client.searchTeamUsers(value, excludeBots)
+        const allUsers = await client.searchTeamUsers(value)
         const usersInsideBoard: IUser[] = []
         const usersOutsideBoard: IUser[] = []
         for (const u of await offerable(allUsers)) {

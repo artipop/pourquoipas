@@ -50,7 +50,6 @@ type Server struct {
 	mu               sync.RWMutex
 	auth             *auth.Auth
 	singleUserToken  string
-	isMattermostAuth bool
 	logger           mlog.LoggerIFace
 	store            Store
 }
@@ -68,7 +67,7 @@ func (wss *websocketSession) isAuthenticated() bool {
 }
 
 // NewServer creates a new Server.
-func NewServer(auth *auth.Auth, singleUserToken string, isMattermostAuth bool, logger mlog.LoggerIFace, store Store) *Server {
+func NewServer(auth *auth.Auth, singleUserToken string, logger mlog.LoggerIFace, store Store) *Server {
 	return &Server{
 		listeners:        make(map[*websocketSession]bool),
 		listenersByTeam:  make(map[string][]*websocketSession),
@@ -78,11 +77,10 @@ func NewServer(auth *auth.Auth, singleUserToken string, isMattermostAuth bool, l
 				return true
 			},
 		},
-		auth:             auth,
-		singleUserToken:  singleUserToken,
-		isMattermostAuth: isMattermostAuth,
-		logger:           logger,
-		store:            store,
+		auth:            auth,
+		singleUserToken: singleUserToken,
+		logger:          logger,
+		store:           store,
 	}
 }
 
@@ -106,10 +104,6 @@ func (ws *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 		mu:     sync.Mutex{},
 		teams:  []string{},
 		blocks: []string{},
-	}
-
-	if ws.isMattermostAuth {
-		wsSession.userID = r.Header.Get("Mattermost-User-Id")
 	}
 
 	ws.addListener(wsSession)

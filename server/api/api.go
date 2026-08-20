@@ -37,7 +37,6 @@ type API struct {
 	authService     string
 	permissions     permissions.PermissionsService
 	singleUserToken string
-	MattermostAuth  bool
 	logger          mlog.LoggerIFace
 }
 

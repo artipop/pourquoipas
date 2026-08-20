@@ -743,8 +743,8 @@ func (s *SQLStore) SearchBoardsForUserInTeam(teamID string, term string, userID 
 
 }
 
-func (s *SQLStore) SearchUsersByTeam(teamID string, searchQuery string, asGuestID string, excludeBots bool, showEmail bool, showName bool) ([]*model.User, error) {
-	return s.searchUsersByTeam(s.db, teamID, searchQuery, asGuestID, excludeBots, showEmail, showName)
+func (s *SQLStore) SearchUsersByTeam(teamID string, searchQuery string, asGuestID string, showEmail bool, showName bool) ([]*model.User, error) {
+	return s.searchUsersByTeam(s.db, teamID, searchQuery, asGuestID, showEmail, showName)
 
 }
 
