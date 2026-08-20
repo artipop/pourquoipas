@@ -170,6 +170,20 @@ func (m *Manager) cardBranch(cardID string) string {
 	return branch
 }
 
+// upstreamWrites is what the stages ahead of this one leave on the card, with
+// each stage's column folded in — a node that declares no writes of its own
+// still produces whatever working in that column produces.
+func (m *Manager) upstreamWrites(boardID string, flow FlowEntry, node FlowNode) []string {
+	property := flow.PropertyOr(m.triggerProperty())
+	return flow.UpstreamWrites(node.ID, func(n FlowNode) []PropertyWrite {
+		if len(n.Writes) > 0 {
+			return n.Writes
+		}
+		spec, _ := m.columnFor(boardID, n.asColumn(property))
+		return spec.Writes
+	})
+}
+
 // runNodeAction starts whatever the stage does. A stage that cannot even start
 // counts as a failed one, so the route can carry the card to its failure branch
 // instead of silently stalling.
@@ -179,7 +193,8 @@ func (m *Manager) runNodeAction(ev CardMoved, flow FlowEntry, node FlowNode) {
 	spec, _ := m.columnFor(ev.BoardID, node.asColumn(flow.PropertyOr(m.triggerProperty())))
 	opts := startOptions{flowID: flow.ID, flowNodeID: node.ID, column: spec,
 		deployOverride: node.DeployID, agentCrew: node.Crew(), stagePrompt: node.Prompt,
-		writes: node.Writes, reads: node.Reads, mcp: node.MCPServers}
+		writes: node.Writes, reads: node.Reads, mcp: node.MCPServers,
+		upstream: m.upstreamWrites(ev.BoardID, flow, node)}
 
 	action := node.Action
 	if action == "" {

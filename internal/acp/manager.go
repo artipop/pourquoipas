@@ -312,6 +312,10 @@ type startOptions struct {
 	// column's. Empty falls back, like the crew.
 	writes []PropertyWrite
 	reads  []string
+	// upstream is what the stages ahead of this one on the route write, which
+	// is what reads fall back to when nothing was declared at all. Filled by
+	// the engine, which is the only caller that has a route to walk.
+	upstream []string
 	// mcp are the node's own MCP servers, overriding the column's. Empty falls
 	// back, like the crew.
 	mcp MCPServerSet
@@ -336,12 +340,23 @@ func (o startOptions) declaredWrites() []PropertyWrite {
 	return o.column.Writes
 }
 
-// declaredReads is what this stage is handed on the way in.
+// declaredReads is what this stage is handed on the way in: the node's own
+// list, else the column's — and, when neither says anything, whatever the
+// stages ahead of it on the route declare that they write (upstreamReads).
+//
+// The graph is the third answer rather than nothing because it is the true one:
+// a value put on the card by an earlier stage is on the card, and making
+// somebody tick it again on every stage that needs it is asking for the same
+// fact twice. An explicit list still wins, which is how a stage says "not all
+// of it" — and clearing the list gives the graph's answer back.
 func (o startOptions) declaredReads() []string {
 	if len(o.reads) > 0 {
 		return o.reads
 	}
-	return o.column.Reads
+	if len(o.column.Reads) > 0 {
+		return o.column.Reads
+	}
+	return o.upstream
 }
 
 // prompt is what this stage wants said to whoever works it: the node's own

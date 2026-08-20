@@ -402,6 +402,37 @@ describe('components/acp/automationEditor', () => {
         expect(within(form).getByText(/It will hold a link/)).toBeInTheDocument()
     })
 
+    // A value an earlier stage put on the card is on the card. Making somebody
+    // tick «Превью» again on every stage after the deploy is asking for the
+    // same fact twice, so the route hands it over and the panel says who wrote
+    // it — shown rather than editable, the crew's and the prompt's own shape.
+    test('a stage is shown what the route hands it, with the stage that wrote it', () => {
+        const {container} = renderEditor({
+            automation: {
+                columns: [{boardId: 'board-1', optionId: 'opt-work', property: 'Статус', column: 'В работе',
+                    action: 'agent', writes: [{property: 'Ветка'}]}],
+                flows: [{
+                    name: 'Фича',
+                    boardId: 'board-1',
+                    property: 'Статус',
+                    nodes: [
+                        {id: 'opt-work', column: 'В работе', optionId: 'opt-work', action: ''},
+                        {id: 'opt-review', column: 'На ревью', optionId: 'opt-review', action: 'agent'},
+                    ],
+                    edges: [{from: 'opt-work', to: 'opt-review', on: SUCCESS}],
+                }],
+            },
+        })
+
+        fireEvent.click(screen.getByText('На ревью'))
+        expect(screen.getByText('Ветка · written by “В работе”')).toBeInTheDocument()
+
+        // No ✕ on it: with one row left, removing it would write an empty list,
+        // and an empty list is what asks the route again.
+        const ghost = container.querySelector('.AutomationEditor__writeRow--inherited') as HTMLElement
+        expect(ghost.querySelector('.AutomationEditor__writeRemove')).toBeNull()
+    })
+
     // A caption is not a control. The Select's trigger is a <button>, which a
     // <label> counts as the control it names, so clicking the words "Deploy
     // target" opened the menu — a field that answers to a click three

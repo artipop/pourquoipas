@@ -196,6 +196,13 @@
             min-width: 0;
         }
 
+        // What the route hands over by itself: shown, not edited — the same
+        // voice the crew's and the prompt's inherited answers are named in.
+        .AutomationEditor__writeRow--inherited .AutomationEditor__writeName {
+            color: rgba(var(--center-channel-color-rgb), 0.56);
+            font-style: italic;
+        }
+
         .AutomationEditor__writeName {
             flex: 1 1 auto;
             min-width: 0;

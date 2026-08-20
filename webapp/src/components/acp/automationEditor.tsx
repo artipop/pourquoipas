@@ -24,6 +24,7 @@ import {
     OUTCOMES,
     PropertyWrite,
     SUCCESS,
+    UpstreamWrite,
     VERDICT_VALUES,
     WRITABLE_TYPES,
     blankSpec,
@@ -33,6 +34,7 @@ import {
     specFor,
     unwrittenConditions,
     upsertSpec,
+    upstreamWrites,
     withColumn,
     withEdge,
     withNode,
@@ -860,17 +862,44 @@ const AutomationEditor = (props: Props) => {
     }
 
     // readsPicker is the mirror: what the stage is handed on the way in.
+    //
+    // `inherited` is the third answer, and the one nobody has to tick: what the
+    // stages ahead of this one on the route declare they write. Shown as ghost
+    // rows naming the stage that produces each, and shown rather than editable
+    // — this is the crew's and the prompt's own shape, where an override is
+    // written by *saying* something and an empty field means the answer above.
+    // A ✕ on a ghost could not work: with one row left, removing it would write
+    // an empty list, and an empty list is what asks the route again.
     const readsPicker = (
         value: () => string[],
         write: (next: string[] | undefined) => void,
         note?: () => string,
+        inherited?: () => UpstreamWrite[],
     ) => {
         const free = () => dataProperties().filter((name) => !value().includes(name))
+        const ghosts = () => (value().length > 0 ? [] : (inherited?.() || []))
         return (
             <div class='AutomationEditor__writes'>
                 <span class='AutomationEditor__label'>
                     {intl.formatMessage({id: 'Automation.reads', defaultMessage: 'Gets from the card'})}
                 </span>
+                <For each={ghosts()}>
+                    {(w) => (
+                        <div class='AutomationEditor__writeRow AutomationEditor__writeRow--inherited'>
+                            <span class='AutomationEditor__writeName'>
+                                {intl.formatMessage(
+                                    {id: 'Automation.reads-from-stage', defaultMessage: '{property} · written by “{stage}”'},
+                                    {property: w.property, stage: w.from},
+                                )}
+                            </span>
+                        </div>
+                    )}
+                </For>
+                <Show when={ghosts().length > 0}>
+                    <span class='AutomationEditor__hint'>
+                        {intl.formatMessage({id: 'Automation.reads-inherited', defaultMessage: 'The route hands these over by itself. Naming a property below replaces the whole list.'})}
+                    </span>
+                </Show>
                 <For each={value()}>
                     {(name) => (
                         <div class='AutomationEditor__writeRow'>
@@ -1328,6 +1357,8 @@ const AutomationEditor = (props: Props) => {
                                         {readsPicker(
                                             () => node().reads || specOf(node())?.reads || [],
                                             (reads) => updateFlow(flow()!.name, (f) => withNode(f, node().id, {reads})),
+                                            undefined,
+                                            () => upstreamWrites(flow()!, node().id, specs()),
                                         )}
 
                                         {/* The stage's own tools, replacing the

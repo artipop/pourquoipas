@@ -558,6 +558,64 @@ export function routeOptionMissing(board: Board, flow: Flow): boolean {
         (p.options || []).some((o) => o.value.trim().toLowerCase() === name))
 }
 
+// resolvedWrites is what a stage actually leaves on the card: its own list, or
+// the column's — the inheritance the route itself knows nothing about, spelled
+// once so the canvas, the reads and the condition pickers cannot disagree.
+export function resolvedWrites(node: FlowNode, specs: ColumnSpec[]): PropertyWrite[] {
+    if (node.writes?.length) {
+        return node.writes
+    }
+    const spec = specs.find((c) => (node.optionId && c.optionId === node.optionId) ||
+        c.column.toLowerCase() === node.column.toLowerCase())
+    return spec?.writes || []
+}
+
+// UpstreamWrite is one property a stage will find on the card when it starts,
+// and the stage that put it there — which is the half that makes the answer
+// readable: «Превью · пишет «Деплой»».
+export type UpstreamWrite = {
+    property: string
+    from: string
+}
+
+// upstreamWrites is every property the stages ahead of this one declare. It is
+// what a stage's reads fall back to (Go's FlowEntry.UpstreamWrites, kept in step
+// with it), so declaring a write once carries the value on by itself.
+//
+// Walked backwards over the incoming edges with a visited set, because a route
+// has cycles on purpose: a failed check sends the card back to the agent. A
+// stage never reads its own output back.
+export function upstreamWrites(flow: Flow, from: string, specs: ColumnSpec[]): UpstreamWrite[] {
+    const nodes = new Map(flow.nodes.map((n) => [n.id, n]))
+    const seen = new Set([from])
+    const taken = new Set<string>()
+    const out: UpstreamWrite[] = []
+    const queue = [from]
+    while (queue.length > 0) {
+        const at = queue.shift() as string
+        for (const edge of flow.edges) {
+            if (edge.to !== at || seen.has(edge.from)) {
+                continue
+            }
+            seen.add(edge.from)
+            queue.push(edge.from)
+            const node = nodes.get(edge.from)
+            if (!node) {
+                continue
+            }
+            for (const w of resolvedWrites(node, specs)) {
+                const key = w.property.trim().toLowerCase()
+                if (!key || taken.has(key)) {
+                    continue
+                }
+                taken.add(key)
+                out.push({property: w.property, from: node.column})
+            }
+        }
+    }
+    return out
+}
+
 // unwrittenConditions is the dataflow check: every conditional edge of the
 // route whose property no stage of the route declares as a write. Not an
 // error — an approved option may be a person's own click — but worth a sentence, since
@@ -567,9 +625,7 @@ export function routeOptionMissing(board: Board, flow: Flow): boolean {
 export function unwrittenConditions(flow: Flow, specs: ColumnSpec[], columnPropertyName?: string): string[] {
     const written = new Set<string>()
     for (const node of flow.nodes) {
-        const spec = specs.find((c) => (node.optionId && c.optionId === node.optionId) ||
-            c.column.toLowerCase() === node.column.toLowerCase())
-        for (const w of (node.writes?.length ? node.writes : spec?.writes) || []) {
+        for (const w of resolvedWrites(node, specs)) {
             written.add(w.property.toLowerCase())
         }
     }

@@ -1378,6 +1378,21 @@ refused, and a required write nobody had mentioned failed the stage on the first
 attempt to end it — the deploy/test half is excluded from the brief on purpose,
 since this side writes those values and the agent has no way to produce them.
 
+**Reads have a third answer, and it is the graph** (`FlowEntry.UpstreamWrites`,
+`upstreamWrites` on the page, kept in step). Node's own list, else the column's,
+else what every stage ahead of this one on the route declares that it writes. A
+value an earlier stage put on the card is *on the card*, and ticking «Превью»
+again on each stage after the deploy was asking for the same fact twice — the
+commonest reason a route's dataflow was declared on one stage and nowhere else.
+The walk is backwards over the incoming edges with a visited set, because a
+route has cycles on purpose (a failed check returns the card to the agent), and
+a stage never reads its own output back. The editor draws them as ghost rows
+naming the writer and **does not let them be removed**: with one row left, a ✕
+would write an empty list, and an empty list is exactly what asks the route
+again — so an override is written by *saying* something, which is the shape the
+crew and the prompt already have. A person's conversation on the node gets the
+same fallback (`cardPlace`), since it is about the same work.
+
 **Tools are the column's answer too, and inherited exactly as the crew is**
 (`MCPServers` on `ColumnSpec` and `FlowNode`, resolved by `startOptions.
 stageMCP` and by `cardPlace`). A browser belongs to «QA» and not to whoever

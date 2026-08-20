@@ -586,6 +586,13 @@ func (m *Manager) cardPlace(ev CardMoved) cardPlace {
 				if len(place.reads) == 0 {
 					place.reads = spec.Reads
 				}
+				if len(place.reads) == 0 {
+					// The same third answer a stage of this node gets
+					// (startOptions.declaredReads): a value an earlier stage put
+					// on the card is on the card, and the person who opens a
+					// conversation here is looking at the same work.
+					place.reads = m.upstreamWrites(ev.BoardID, flow, node)
+				}
 				place.mcp = node.MCPServers
 				if len(place.mcp) == 0 {
 					place.mcp = spec.MCPServers

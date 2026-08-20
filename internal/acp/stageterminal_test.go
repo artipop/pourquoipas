@@ -542,6 +542,68 @@ func TestDeclaredReadsOpenTheBrief(t *testing.T) {
 	}
 }
 
+// A value an earlier stage put on the card is on the card, so a stage that
+// declares no reads is handed what the route wrote ahead of it. Ticking «Превью»
+// again on every stage after the deploy is asking for the same fact twice.
+func TestAStageReadsWhatTheRouteWroteBeforeIt(t *testing.T) {
+	flow := FlowEntry{
+		Name: "Фича",
+		Nodes: []FlowNode{
+			{ID: "work", Column: "В работе", Writes: []PropertyWrite{{Property: "Заметка"}}},
+			{ID: "deploy", Column: "Деплой", Writes: []PropertyWrite{{Property: "Превью"}}},
+			{ID: "qa", Column: "QA", Writes: []PropertyWrite{{Property: "Вердикт"}}},
+			{ID: "fixed", Column: "Проверено"},
+		},
+		Edges: []FlowEdge{
+			{From: "work", To: "deploy", On: TriggerSuccess},
+			{From: "deploy", To: "qa", On: TriggerSuccess},
+			{From: "qa", To: "fixed", On: TriggerSuccess},
+
+			// The arrow back: a failed check returns the card to the agent, so
+			// the graph has a cycle and the walk has to survive it.
+			{From: "qa", To: "work", On: TriggerFailure},
+		},
+	}
+	own := func(n FlowNode) []PropertyWrite { return n.Writes }
+
+	got := flow.UpstreamWrites("qa", own)
+	if len(got) != 2 || got[0] != "Превью" || got[1] != "Заметка" {
+		t.Errorf("QA is handed %v, want the deploy's preview and the work's note", got)
+	}
+
+	// A stage never reads its own output back, and the cycle must terminate
+	// rather than walk «В работе» round to itself: the card comes back here
+	// with the verdict that sent it, and the preview it was judged on.
+	if got := flow.UpstreamWrites("work", own); len(got) != 2 || got[0] != "Вердикт" || got[1] != "Превью" {
+		t.Errorf("the stage the failure arrow returns to is handed %v", got)
+	}
+
+	// And a stage reachable both ways round sees both sides, once each.
+	if got := flow.UpstreamWrites("deploy", own); len(got) != 2 || got[0] != "Заметка" || got[1] != "Вердикт" {
+		t.Errorf("the deploy is handed %v", got)
+	}
+}
+
+// A stage that declares its own reads keeps them: the graph is what answers
+// when nobody said anything, not a list added to whatever was said.
+func TestADeclaredReadWinsOverTheGraph(t *testing.T) {
+	opts := startOptions{reads: []string{"Превью"}, upstream: []string{"Вердикт", "Заметка"}}
+	if got := opts.declaredReads(); len(got) != 1 || got[0] != "Превью" {
+		t.Errorf("the stage's own list was not kept: %v", got)
+	}
+
+	// And the column's answer stands between the two.
+	column := startOptions{column: ColumnSpec{Reads: []string{"Ветка"}}, upstream: []string{"Вердикт"}}
+	if got := column.declaredReads(); len(got) != 1 || got[0] != "Ветка" {
+		t.Errorf("the column's list was not kept: %v", got)
+	}
+
+	graph := startOptions{upstream: []string{"Вердикт"}}
+	if got := graph.declaredReads(); len(got) != 1 || got[0] != "Вердикт" {
+		t.Errorf("a stage that declared nothing was handed %v", got)
+	}
+}
+
 // The declared writes open the brief too, as the contract they are: what
 // finish_work must carry and what each value may be. Nothing said this before,
 // so an agent asked for a verdict found out what «Вердикт» accepts by being

@@ -90,7 +90,13 @@ The **"Columns"** tab, select a column — in the panel:
   be written to at all, and which this stage has to report;
 - **"Gets from the card"** — the properties the stage reads: their values open
   its brief ("From the card: Превью: …"), so the agent does not have to think
-  of asking `get_card`;
+  of asking `get_card`.
+
+  They do not always have to be ticked. When a route stage's list is empty, it
+  gets whatever the stages before it write — the panel shows those in a faint
+  row naming the stage that produces each: «Превью · пишет «Деплой»». Declare a
+  write once and the value travels on by itself. Naming anything in the list
+  replaces that set whole;
 - **"MCP servers of this column"** — the tools the agent working here is given.
   The same JSON any MCP client takes, so it can be copied from a server's own
   README:

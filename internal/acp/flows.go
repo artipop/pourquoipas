@@ -331,6 +331,49 @@ func (f FlowEntry) NodeByColumn(column string) (FlowNode, bool) {
 	return FlowNode{}, false
 }
 
+// UpstreamWrites is every property a stage can count on finding on the card
+// when it starts: what the stages ahead of it on this route declare as outputs.
+// It is what a stage's reads fall back to, so declaring a write once carries
+// the value on by itself instead of being ticked again on each later stage.
+//
+// resolve is what a node writes with its column's answer folded in — the
+// inheritance the route knows nothing about (startOptions.declaredWrites).
+//
+// The walk is backwards over the incoming edges, with a visited set, because
+// the graph has cycles by design: a failed check sends the card back to the
+// agent, and that arrow is an ordinary part of a route rather than a mistake.
+// The order is the order the properties are met in, so two runs of one stage
+// produce the same brief.
+func (f FlowEntry) UpstreamWrites(nodeID string, resolve func(FlowNode) []PropertyWrite) []string {
+	nodes := make(map[string]FlowNode, len(f.Nodes))
+	for _, n := range f.Nodes {
+		nodes[n.ID] = n
+	}
+	seen := map[string]bool{nodeID: true}
+	taken := map[string]bool{}
+	var out []string
+	for queue := []string{nodeID}; len(queue) > 0; {
+		at := queue[0]
+		queue = queue[1:]
+		for _, e := range f.Edges {
+			if e.To != at || seen[e.From] {
+				continue
+			}
+			seen[e.From] = true
+			queue = append(queue, e.From)
+			for _, w := range resolve(nodes[e.From]) {
+				key := strings.ToLower(strings.TrimSpace(w.Property))
+				if key == "" || taken[key] {
+					continue
+				}
+				taken[key] = true
+				out = append(out, w.Property)
+			}
+		}
+	}
+	return out
+}
+
 // Next returns the node an event moves the card to: among the edges for this
 // event, the first whose condition holds against the card — and an edge with no
 // condition holds always, which makes it the fallback however the editor

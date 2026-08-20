@@ -127,6 +127,8 @@
   "Automation.prompt-as-column": "— as the column: “{prompt}” —",
   "Automation.prompt-as-column-none": "— as the column: nothing extra —",
   "Automation.reads": "Gets from the card",
+  "Automation.reads-from-stage": "{property} · written by “{stage}”",
+  "Automation.reads-inherited": "The route hands these over by itself. Naming a property below replaces the whole list.",
   "Automation.ready-routes": "Ready-made routes for these columns:",
   "Automation.remove-from-route": "Take off this route",
   "Automation.remove-route": "Delete this route",

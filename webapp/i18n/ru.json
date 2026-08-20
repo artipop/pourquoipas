@@ -127,6 +127,8 @@
   "Automation.prompt-as-column": "— как в колонке: «{prompt}» —",
   "Automation.prompt-as-column-none": "— как в колонке: ничего особого —",
   "Automation.reads": "Получает с карточки",
+  "Automation.reads-from-stage": "{property} · пишет «{stage}»",
+  "Automation.reads-inherited": "Их маршрут передаёт сам. Если назвать свойство ниже, список заменится целиком.",
   "Automation.ready-routes": "Готовые маршруты для этих колонок:",
   "Automation.remove-from-route": "Убрать из маршрута",
   "Automation.remove-route": "Удалить маршрут",
