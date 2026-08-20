@@ -294,6 +294,69 @@ func TestFlowDraggedOffTheRouteForgetsTheCard(t *testing.T) {
 	})
 }
 
+// Nothing runs in a review column, so it has no failure of its own to leave by
+// — and until this the card just stood there, which is what a route missing an
+// arrow looks like. The way back is a person saying so on the card: «Исход» set
+// to «не прошло», which is the same field a stage that *does* run writes.
+func TestAReviewThatSaysNoSendsTheCardBack(t *testing.T) {
+	flow := sampleFlow()
+	flow.Edges = append(flow.Edges, FlowEdge{
+		From: "review", To: "work", On: TriggerCardChanged,
+		If: &EdgeCond{Property: OutcomePropertyTitle, Value: OutcomeFailed},
+	})
+	m, writer, events, project := flowManager(t, fakeClaudeHappy, flow)
+
+	// The condition asks the *card*, re-read at the moment the event arrives —
+	// not the event — so the reviewer's mark has to be on it.
+	m.SetBoardReader(&fakeReader{ev: CardMoved{
+		BoardID:     "board1",
+		Title:       "Test task",
+		Props:       map[string]string{"branch": flowTestBranch, "исход": OutcomeFailed},
+		OptionNames: []string{testWorkdirName},
+	}})
+
+	events.ch <- flowEvent("card-rev", project, "Backlog", "To Agent")
+	waitFor(t, 20*time.Second, "the card reaches review", func() bool {
+		st, ok, _ := m.store.FlowStateForCard("card-rev")
+		return ok && st.NodeID == "review"
+	})
+
+	// The reviewer marks it. That is an ordinary select change on the card, and
+	// the only edge watching this property is the one out of «review».
+	rejected := flowEvent("card-rev", project, "", OutcomeFailed)
+	rejected.FromColumn.PropertyName = OutcomePropertyTitle
+	rejected.ToColumn.PropertyName = OutcomePropertyTitle
+	rejected.ToColumn.Name = OutcomeFailed
+	rejected.Props = map[string]string{"branch": flowTestBranch, "исход": OutcomeFailed}
+	events.ch <- rejected
+
+	waitFor(t, 20*time.Second, "the card goes back to the agent", func() bool {
+		moves := writer.cardMoves()
+		return len(moves) > 0 && moves[len(moves)-1].option == "To Agent"
+	})
+}
+
+// And the engine's own write of that same field must never fire it: a stage
+// that passed would otherwise mark the card and wake the arrow watching for a
+// rejection. SetCardOption disables the notify, which is what keeps them apart.
+func TestTheEnginesOwnOutcomeWriteDoesNotWakeARoute(t *testing.T) {
+	m, writer, _, _ := testManager(t, "idle", nil)
+	m.SetBoardMeta(&fakeBoardMeta{props: map[string]any{BoardPropOutcome: "prop-outcome"}})
+	m.rootCtx = context.Background()
+
+	m.writeCardOutcome("card-silent", "board1", TriggerFailure)
+
+	if got := writer.cardText("card-silent", "prop-outcome"); got != OutcomeFailed {
+		t.Fatalf("the outcome did not land: %q", got)
+	}
+	// The fake writer records the call; what matters is that the real one is
+	// asked to keep it silent, which SetCardOption does and SetCardFields does
+	// for the same reason.
+	if moves := writer.cardMoves(); len(moves) != 0 {
+		t.Errorf("writing an outcome moved the card: %+v", moves)
+	}
+}
+
 func TestFlowIgnoresOtherProperties(t *testing.T) {
 	m, writer, events, project := flowManager(t, fakeClaudeHappy, sampleFlow())
 

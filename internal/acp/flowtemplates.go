@@ -82,6 +82,25 @@ func (b *flowBuilder) edge(from, to, on string) {
 	b.flow.Edges = append(b.flow.Edges, FlowEdge{From: from, To: to, On: on})
 }
 
+// rejected is the way back from a stage where nobody works and nothing runs.
+// A wait stage produces no outcome — «На ревью» has no "failed" of its own to
+// leave by — so the signal is a person saying so on the card: «Исход» set to
+// «не прошло». The same field the engine writes for a stage that does run, and
+// the same three values, because "how did this step end" is one question
+// whether a machine or a reviewer answers it.
+//
+// The engine's own write is silent (SetCardOption disables notify), so it can
+// never fire this edge itself.
+func (b *flowBuilder) rejected(from, to string) {
+	if from == "" || to == "" || from == to {
+		return
+	}
+	b.flow.Edges = append(b.flow.Edges, FlowEdge{
+		From: from, To: to, On: TriggerCardChanged,
+		If: &EdgeCond{Property: OutcomePropertyTitle, Value: OutcomeFailed},
+	})
+}
+
 // TemplateFlows builds the routes the editor offers a board that has none. The
 // column names are the templates' own; the property is the machine's default,
 // which is the last thing here that is still a name rather than an id.
@@ -120,6 +139,11 @@ func featureFlow(cfg Config) FlowEntry {
 	b.edge(deploy, agent, TriggerFailure)
 	b.edge(qa, agent, TriggerFailure)
 
+	// A review that says no. Nothing runs in «На ревью», so this is the one
+	// arrow out of it a person draws by hand — and until it existed the card
+	// simply stood there, which is what the route looked like it was missing.
+	b.rejected(review, agent)
+
 	// Except the agent's own stage and «проверить не удалось»: sending a task
 	// back to the agent that just failed it is a loop with nothing new in it,
 	// and a check that could not run is a person's to fix — no browser, no
@@ -152,6 +176,7 @@ func reviewFlow(cfg Config) FlowEntry {
 
 	b.edge(agent, review, TriggerSuccess)
 	b.edge(review, done, TriggerBranchMerged)
+	b.rejected(review, agent)
 	return b.flow
 }
 

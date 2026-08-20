@@ -97,6 +97,14 @@ const (
 	OutcomeBlocked = "заблокировано"
 )
 
+// OutcomePropertyTitle is what this app calls that field when it makes one. A
+// name and not an id, unlike everything else that finds a field of ours — but
+// this one is never *found* by it: it is what a shipped route's condition asks
+// about, and a condition names a property the way a person reading the canvas
+// does. A board whose owner renamed the field renames the condition with it,
+// which is the same bargain every condition on the canvas takes.
+const OutcomePropertyTitle = "Исход"
+
 // OutcomeValue is what a stage's outcome is called on the card. Empty for
 // anything that is not a stage's own outcome — a merged branch is news about
 // the world, not a verdict on the work.

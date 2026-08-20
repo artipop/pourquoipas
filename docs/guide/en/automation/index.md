@@ -84,6 +84,13 @@ The **"Columns"** tab, select a column — in the panel:
   set of values has something to pick from, a text one has not. A text property
   travels to the stages further on and is read there.
 
+  «Исход» can be set by hand as well, and the way back from a review rests on
+  that. Nothing runs in «На ревью», so it has no "failed" of its own — git can
+  say a branch was merged and cannot say a reviewer refused. So the reviewer
+  sets «Исход» to «не прошло» on the card, and the "card was marked" arrow sends
+  it back to work. The app's own write is silent, so a stage that passed never
+  wakes that arrow.
+
   One property the app writes itself, and it is not declared: **«Исход»** — how
   the stage ended («прошло», «не прошло», «заблокировано»). Every stage writes
   it, which is why it is not in the writes list; an arrow can still branch on

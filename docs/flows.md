@@ -384,10 +384,19 @@ flowchart LR
     D -->|failed| P
     T -->|passed| OK["Готово 🙌"]
     T -->|failed| P
+    R -->|«Исход» = «не прошло»| P
 ```
 
 The loop is the point: what fails goes back to the agent rather than to a
 person, and the next session opens a new branch which the route then follows.
+
+**A review that says no is the one arrow a person draws.** Nothing runs in «На
+ревью», so it has no failure of its own to leave by — git can tell you a branch
+was merged and cannot tell you a reviewer said no. The signal is the reviewer
+marking the card: «Исход» set to «не прошло», which is the same field a stage
+that *does* run writes, with the same three values. The engine's own write of it
+is silent (`SetCardOption` disables the notify), so a stage passing can never
+fire the arrow watching for a rejection.
 
 **What has no arrow is not an oversight.** The agent's own stage failing, and a
 check that could not run at all, both leave the card where it stopped: sending a
@@ -411,6 +420,7 @@ flowchart LR
 flowchart LR
     P["В работе<br/>agent"] -->|done| R["На ревью"]
     R -->|branch merged| C["Готово 🙌"]
+    R -->|«Исход» = «не прошло»| P
 ```
 
 A card takes a route by naming it in its **«Сценарий»** field. A card that names

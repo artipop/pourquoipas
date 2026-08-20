@@ -278,10 +278,21 @@ export function layout(nodes: FlowNode[], edges: FlowEdge[], rowHeight = NODE_HE
 // spareLayout parks the board's unused columns in a row under the route, in the
 // board's own order. They are a shelf, not part of the graph, so they are laid
 // out by counting rather than by following arrows.
-export function spareLayout(placed: Map<string, {x: number, y: number}>, spare: BoardColumn[]): Map<string, {x: number, y: number}> {
+export function spareLayout(
+    placed: Map<string, {x: number, y: number}>,
+    spare: BoardColumn[],
+    lanes = 0,
+): Map<string, {x: number, y: number}> {
     let bottom = 0
     for (const position of placed.values()) {
         bottom = Math.max(bottom, position.y + NODE_HEIGHT)
+    }
+
+    // Below the corridors, not below the boxes: a long arrow runs under the
+    // graph, and the shelf parked at the boxes' feet had those arrows — and
+    // their captions — drawn straight across it.
+    if (lanes > 0) {
+        bottom += LANE_BASE + ((lanes - 1) * LANE)
     }
     const out = new Map<string, {x: number, y: number}>()
     spare.forEach((column, i) => {
@@ -690,11 +701,12 @@ const FlowDiagram = (props: Props) => {
     // by the id it would have as a stage.
     const spareById = createMemo(() => new Map(spare().map((c) => [nodeId(c), c])))
 
+    const lanes = createMemo(() => longHaul(props.nodes, props.edges))
+
     const graph = createMemo(() => {
-        const lanes = () => longHaul(props.nodes, props.edges)
         const tallest = props.nodes.reduce((at, n) => Math.max(at, stageHeight(props.writesOf?.(n))), NODE_HEIGHT)
         const positions = layout(props.nodes, props.edges, tallest)
-        const sparePositions = spareLayout(positions, spare())
+        const sparePositions = spareLayout(positions, spare(), lanes().size)
         const box = (id: string, data: StageData, position: {x: number, y: number}): Node => ({
             id,
             type: 'stage',
@@ -777,10 +789,15 @@ const FlowDiagram = (props: Props) => {
                 // for a wait, the condition for a fork — both where the arrow
                 // is, not three clicks away.
                 const parts: string[] = []
-                if (kind === 'event') {
+                const cond = condLabel(intl, edge.if)
+
+                // For card.changed the condition is not a guard on the event,
+                // it *is* the event — «на карточке выбрано» followed by «Исход =
+                // не прошло» says the same thing twice, in a caption that then
+                // does not fit anywhere.
+                if (kind === 'event' && !(edge.on === CARD_CHANGED && cond)) {
                     parts.push(props.triggers.find((t) => t.kind === edge.on)?.label || edge.on)
                 }
-                const cond = condLabel(intl, edge.if)
                 if (cond) {
                     parts.push(edge.on === CARD_CHANGED ? cond : intl.formatMessage({id: 'FlowDiagram.cond-if', defaultMessage: 'if {cond}'}, {cond}))
                 }

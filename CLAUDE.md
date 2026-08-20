@@ -1423,6 +1423,15 @@ condition may still ask about it, which is the point of it being a closed set.
 So a route no longer needs a column to say "this failed": a stage whose outcome
 has no edge parks the card where it is and says why (`stallCardSoft`).
 
+**A person writes it too, and that is the way back from a review** (`rejected`
+in `flowtemplates.go`). A wait stage runs nothing, so it has no outcome of its
+own — git says a branch was merged and cannot say a reviewer refused — and the
+signal is the reviewer marking the card: `card.changed` with «Исход» = «не
+прошло». One field for "how did this step end" whether a machine or a person
+answers it, and no second «Одобрено» beside it. The engine's own write cannot
+fire that arrow, because `SetCardOption` disables the notify — which is the
+same reason every write of ours is silent, doing double duty here.
+
 **And the dataflow is on the picture, because that is where the fork is drawn**
 (`StageWrite`, `HANDLE_WRITE`, `stageHeight`). A stage's resolved writes are a
 third line of chips on its box, and each one whose property has a closed set is
