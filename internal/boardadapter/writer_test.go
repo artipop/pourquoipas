@@ -160,7 +160,7 @@ func TestCardPropertiesSkipWhatTheBoardDoesNotHave(t *testing.T) {
 }
 
 // Which property is "the columns" is the board's answer, not a constant: the
-// boards this app ships call it «Статус» and the upstream ones "Status", so a
+// boards this app ships call it the status property and the upstream ones "Status", so a
 // source that assumed either name filed nothing on half the boards there are.
 func TestTheColumnPropertyIsWhatTheBoardGroupsBy(t *testing.T) {
 	board := testBoard()
@@ -241,7 +241,7 @@ func TestHidingAColumnFromTheKanban(t *testing.T) {
 }
 
 // The link a source brought is filed by what the property *is*, not by what it
-// is called: the app used to write a property literally named «Ссылка», so an
+// is called: the app used to write a property literally named the link property, so an
 // English board — or one whose owner renamed the field — lost every link
 // without saying so.
 func TestTheLinkPropertyIsFoundByTypeWhateverItIsCalled(t *testing.T) {
@@ -266,7 +266,7 @@ func TestTheLinkPropertyIsFoundByTypeWhateverItIsCalled(t *testing.T) {
 }
 
 // The inbox view is told from the board's other views by what it shows, not by
-// what it is called: a person may rename a view, and matching «Входящие» by
+// what it is called: a person may rename a view, and matching the inbox view by
 // title meant the next arriving card quietly built a second inbox beside it.
 func TestTheInboxViewIsFoundByWhatItFilters(t *testing.T) {
 	filtered := &model.Block{Type: model.TypeView, Title: "Что пришло", Fields: map[string]any{

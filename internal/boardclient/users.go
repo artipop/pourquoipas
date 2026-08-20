@@ -18,7 +18,7 @@ var _ acp.BoardUsers = (*Client)(nil)
 // making, so the route is ours.
 //
 // Idempotent by username, with a consequence worth stating: three desktops with
-// an agent called «клаус» share one account on the board. That is right, and it
+// an agent called an agent named in Russian share one account on the board. That is right, and it
 // is a trap — behind it are three registry entries with three binaries.
 func (c *Client) EnsureAgentAccounts(_ context.Context, agents []acp.AgentUser) ([]acp.AgentUser, error) {
 	out := make([]acp.AgentUser, 0, len(agents))

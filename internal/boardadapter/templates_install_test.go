@@ -201,8 +201,8 @@ func TestAnInstalledTemplateKeepsItsCardsAndAutomation(t *testing.T) {
 	}
 }
 
-// «Сохранить как шаблон…» copies the board, properties and all — and a board
-// made from «Разработка» carries the marker that says it *is* «Разработка». So
+// the save-as-template item copies the board, properties and all — and a board
+// made from the developer template carries the marker that says it *is* the developer template. So
 // a saved copy claimed to be one of ours: three of them stood in the picker
 // under one name, and the importer kept replacing whichever came last while the
 // rest stayed for ever.

@@ -24,7 +24,7 @@ import './cardTerminal.scss'
 // talking over them.
 //
 // The panel is the card's conversations with one of them open. **The card's
-// own** — «Обсуждение» — is where a person thinks about the card, and needs
+// own** — the talk conversation — is where a person thinks about the card, and needs
 // nothing of it to open: no folder, no route, nobody assigned. **The work** is
 // one conversation per column the card has stood on, the current one first, so
 // a person who sits down at a stage and the stage itself are in one place —
@@ -33,7 +33,7 @@ import './cardTerminal.scss'
 // Which kind a row is, is declared rather than inferred from where the card
 // stands (nodeTalk, and a door of its own), and its glyph says which.
 //
-// The rows are the ones «Обсудить с агентом» draws (conversationRow.tsx). What
+// The rows are the ones the planning dialog draws (conversationRow.tsx). What
 // this list adds is the terminal underneath: the panel is read, not just picked
 // from.
 
@@ -71,7 +71,7 @@ const CardTerminal = (props: Props) => {
 
     // The pick, for the conversation Go could not resolve by itself. It lives
     // one conversation: choosing an agent here is «кто планирует со мной
-    // сейчас», not an assignment — the card's «Кто занимается» stays whatever
+    // сейчас», not an assignment — the card's the assignee field stays whatever
     // a person set it to.
     const [choosing, setChoosing] = createSignal(false)
     const [agents, setAgents] = createSignal<Array<{name: string}>>([])
@@ -163,7 +163,7 @@ const CardTerminal = (props: Props) => {
     // Answering the folder question is what starts the conversation: a folder of
     // the board's by name, or '' for the board's own drafts folder, which is what
     // Go resolves an empty name into. The answers themselves are FolderChoices,
-    // shared with «Обсудить с агентом» — one question in one shape.
+    // shared with the planning dialog — one question in one shape.
     const chooseFolder = async (name: string) => {
         setWorkdirName(name)
         await start(false)

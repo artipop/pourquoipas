@@ -10,10 +10,10 @@ import (
 )
 
 // What the install remembers about its own UI — the language and theme a
-// person picked, where they were last, every «больше не показывать». It lives
+// person picked, where they were last, every a do-not-show-again switch. It lives
 // here, in the app's own data, rather than in the browser: the desktop window
 // opens on a loopback origin the browser has no lasting memory for (a random
-// port per launch — docs/deferred.md, «Уйти из localStorage»), and a
+// port per launch — docs/deferred.md, moving off localStorage), and a
 // preference a person set is the install's to keep, the way any desktop app
 // keeps one. The page hydrates its localStorage from this before the first
 // render (userSettings.ts) and writes back through SetUIPreference; in a
@@ -91,7 +91,7 @@ func (a *App) GetUIPreferences() (string, error) {
 	return string(out), nil
 }
 
-// agentNotificationsEnabled is «Уведомлять, когда агент ждёт», read from the
+// agentNotificationsEnabled is the notify-when-an-agent-waits switch, read from the
 // same place the page keeps it — there is one switch for one question, and the
 // OS notification the Go side posts (alerts.go) is the same "tell me" the page's
 // own notification answers. On unless it has been turned off, which is the rule

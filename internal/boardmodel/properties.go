@@ -11,7 +11,7 @@ import (
 
 // Naming a property or an option the way a person does, and turning that into
 // the ids a card stores. Shared because it is the board's vocabulary, not one
-// adapter's: an agent says "Tested", a config says «Ревью», and both adapters
+// adapter's: an agent says "Tested", a config says the review column, and both adapters
 // have to find the same option.
 
 // findPropertyByName resolves a property the way a person names it.

@@ -61,7 +61,7 @@ var (
 )
 
 // BoardOwner is the owner of a conversation that has no card: the board's own,
-// so that «черновики доски» and a planning terminal are one thing rather than a
+// so that the board's drafts folder and a planning terminal are one thing rather than a
 // row per window.
 func BoardOwner(boardID string) string { return boardOwnerPrefix + boardID }
 
@@ -130,7 +130,7 @@ func (m *Manager) workspaceID(path string) string {
 // Unattached on purpose: «не привязана ни к какой доске» is a state the product
 // already has, and it is the honest one here — nobody chose this folder on a
 // board. So it is offered nowhere and picked by nothing; it exists so the work
-// in it can be recorded, and so a person can see in «Папки» what has actually
+// in it can be recorded, and so a person can see in the folders name what has actually
 // been opened.
 //
 // Reaching it at all is a bug somewhere else, hence the warning: since a card
@@ -290,7 +290,7 @@ func (m *Manager) boardBranchProperty(boardID string) string {
 
 // boardProperty is the id of one of the card fields this app makes, as the
 // board records it. Every such field is found this way and never by name: what
-// it is called is the owner's, and «Ветка» on one board is «Branch» on the
+// it is called is the owner's, and the branch field on one board is «Branch» on the
 // next.
 func (m *Manager) boardProperty(boardID, key string) string {
 	if m.meta == nil || boardID == "" {
@@ -379,7 +379,7 @@ func (m *Manager) recordClaim(workdir, owner string, ws Workspace) {
 	}
 	workspaceID := m.workspaceID(workdir)
 	if workspaceID == "" {
-		// A directory nobody registered — «черновики доски» is the one that
+		// A directory nobody registered — the board's drafts folder is the one that
 		// happens — claims nothing, which is also what an ordinary folder does.
 		return
 	}

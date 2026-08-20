@@ -54,7 +54,7 @@ const CaseStamp = (props: Props) => {
         // branch checked out elsewhere — one workspace, not a branch *and* a
         // worktree — and stamping both was what made it read as if the app
         // had created two things. The line is *named after the folder's own
-        // setting* — «отдельная копия» stamps worktree, «в самой папке»
+        // setting* — a copy of its own stamps worktree, «в самой папке»
         // stamps branch — because a person who chose one word and reads the
         // other concludes the setting did not take. The value is the branch
         // either way: it is the one handle git commands accept, and the

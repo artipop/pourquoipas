@@ -209,7 +209,7 @@ const Kanban = (props: Props) => {
     }
 
     // Some columns are not places a card can be put. Grouped by who created it
-    // — which is what «Входящие» is, one column per source — a column is a fact
+    // — which is what the inbox view is, one column per source — a column is a fact
     // about the past: dropping a card in another one would be asking the board
     // to have been written by somebody else. So the cards do not drag, and
     // there is no group to add.

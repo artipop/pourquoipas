@@ -18,7 +18,7 @@ const card = (properties: Record<string, string | string[]>): Card => ({
 
 describe('components/acp/attentionAudience', () => {
     // The same rule the Go side follows: the field is found by its type,
-    // because this app names it «Кто занимается» and a person may call it
+    // because this app names it the assignee field and a person may call it
     // anything.
     it('finds who a card belongs to by the field type, never by its name', () => {
         const found = personProperty(board([

@@ -62,7 +62,7 @@ func NewAPI(
 // It is a desktop's answer and only a desktop's (identity.go). A hosted server
 // holds no such token, so nothing there is synthesized and every id is looked
 // up. The guard matters because the synthesizer would otherwise answer every
-// question about that id with a made-up user called «Вы» and shadow a real row,
+// question about that id with a made-up user called the "you" name and shadow a real row,
 // name, permissions and all.
 func (a *API) synthesizesSingleUser() bool {
 	return len(a.singleUserToken) > 0

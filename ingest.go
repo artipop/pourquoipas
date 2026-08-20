@@ -109,7 +109,7 @@ func (s *sourceRoutes) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // readItems accepts both shapes of the envelope. The batch is tried first: a
 // body carrying "items" would otherwise decode as a single item with an empty
-// title, and a card called «Без заголовка» is a worse answer than an error.
+// title, and a card called the untitled name is a worse answer than an error.
 func readItems(w http.ResponseWriter, r *http.Request) ([]sources.Item, error) {
 	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, maxIngestBody))
 	if err != nil {

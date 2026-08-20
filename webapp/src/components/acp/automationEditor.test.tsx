@@ -265,7 +265,7 @@ describe('components/acp/automationEditor', () => {
         fireEvent.click(stage)
 
         // Scoped to the condition editor: with two select properties the routes
-        // bar has a property picker too, and it also offers «Приоритет».
+        // bar has a property picker too, and it also offers a priority property.
         const propertyPick = container.querySelector('.AutomationEditor__cond .AutomationEditor__condFields .Select') as HTMLElement
         chooseOption(propertyPick, 'Приоритет')
 

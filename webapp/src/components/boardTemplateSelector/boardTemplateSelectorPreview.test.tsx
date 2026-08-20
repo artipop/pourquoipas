@@ -172,7 +172,7 @@ describe('components/boardTemplateSelector/boardTemplateSelectorPreview', () => 
         expect(container).toMatchSnapshot()
     })
 
-    // Every template carries «Входящие» as well as the view it is really
+    // Every template carries the inbox view as well as the view it is really
     // about, and that title sorts first — so a preview that took the first
     // view by title showed an empty inbox for every template and said nothing
     // about what the template is for.

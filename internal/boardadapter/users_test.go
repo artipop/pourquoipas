@@ -12,7 +12,7 @@ import (
 
 // A source's account is named after the source, because the board shows the
 // username wherever it names an author — the inbox's own group headings among
-// them — and a prefixed one would read as machinery rather than as «почта».
+// them — and a prefixed one would read as machinery rather than as a mail source.
 func TestASourceAccountIsNamedAfterTheSource(t *testing.T) {
 	cases := map[string]string{
 		"почта":          "почта",
@@ -32,7 +32,7 @@ func TestASourceAccountIsNamedAfterTheSource(t *testing.T) {
 }
 
 // A stage that names its crew puts the worker into the card's person property
-// — found by its *type*, because «Кто занимается» and "Assignee" are each
+// — found by its *type*, because the assignee field and "Assignee" are each
 // right for half the boards there are. The write must leave every other
 // property exactly as it was: the assignment is the machine keeping one field
 // truthful, not an edit of the card.

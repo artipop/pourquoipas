@@ -96,7 +96,7 @@ describe('components/acp/workdirsPanel', () => {
         await waitFor(() => expect(setBase).toHaveBeenCalledWith('code', 'develop'))
     })
 
-    // The field this app made used to be called «Проекты», and a card that
+    // The field this app made used to be called the old projects name, and a card that
     // names a folder should not be asked about a project. The name is ours, so
     // it is renamed once, in place — the board records the field by id, so
     // nothing that points at it notices.

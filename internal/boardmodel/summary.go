@@ -56,7 +56,7 @@ type CardSummary struct {
 
 	// Link is the way back to whatever brought the card, resolved here from the
 	// board's url property rather than guessed from a property name on the
-	// screen that reads it. A phone that looked for «Ссылка» showed a link on a
+	// screen that reads it. A phone that looked for the link property showed a link on a
 	// Russian board and nothing on any other.
 	Link string `json:"link,omitempty"`
 

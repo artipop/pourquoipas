@@ -125,7 +125,7 @@ const mainWindowName = "main"
 // Two mechanisms, because the platforms disagree about whose question this is.
 // macOS asks whether to terminate once the last window closed; Windows and
 // Linux call Options.ShouldQuit from a teardown that App.Quit() also goes
-// through — so a constant "never" would make «Выйти» do nothing. Hence a flag.
+// through — so a constant "never" would make the quit item do nothing. Hence a flag.
 var quitting atomic.Bool
 
 // requestQuit is a person asking to leave, from the one place left to ask once
@@ -247,7 +247,7 @@ func openTerminalWindow(wapp *application.App, info acp.TerminalInfo, url string
 }
 
 // openShareWindow opens the share dialog: a small window, on top of whatever
-// the person was reading when they pressed «Поделиться», and named so that a
+// the person was reading when they pressed the share dialog, and named so that a
 // second share focuses the one already open rather than stacking dialogs.
 //
 // It is deliberately not the main window: the app may not be running visibly at

@@ -1,7 +1,7 @@
 import {Board, IPropertyTemplate} from '../../blocks/board'
 import {Card} from '../../blocks/card'
 
-// Who an agent's wait is announced to: the card says, through «Кто занимается»
+// Who an agent's wait is announced to: the card says, through the assignee field
 // (docs/teamwork.md).
 
 // personProperty is found by *type*, never by name: the name is the board's.

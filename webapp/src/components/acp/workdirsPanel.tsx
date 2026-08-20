@@ -17,7 +17,7 @@ import './workdirsPanel.scss'
 // The folders this board's agents work in — one card per folder, not one row.
 //
 // A row it was: name, kind, base branch, two mode buttons, the whole path and a
-// «Удалить» button, seven controls on one line with nothing saying which
+// the delete item button, seven controls on one line with nothing saying which
 // question any of them answered — and the path, the least useful of them, took
 // the most width. So a folder is a small card now: what it is called and what
 // it is on the first line, where it is on the second, and — only for a
@@ -73,7 +73,7 @@ const WorkdirsPanel = (props: Props) => {
     const [error, setError] = createSignal('')
 
     // The field a card names its folder in, quoted by the name this board gives
-    // it: a board made before folders were called folders still says «Проекты»,
+    // it: a board made before folders were called folders still says the old projects name,
     // and a hint naming a field the board has not got sends somebody looking for
     // one that is not there.
     const propertyTitle = () => findWorkdirProperty(props.board, props.board.cardProperties)?.name || WORKDIR_PROPERTY_TITLE
@@ -197,7 +197,7 @@ const WorkdirsPanel = (props: Props) => {
     }
 
     // How a repository is worked in — for this board: a folder belongs to one
-    // board anyway, and the one marked «на всех досках» is exactly where two
+    // board anyway, and the one marked shared with every board is exactly where two
     // boards may want different answers.
     const setMode = async (name: string, mode: string) => {
         if (!bindings?.SetAgentWorkdirMode) {

@@ -56,7 +56,7 @@ describe('components/settings/appPanel', () => {
     // The question mark in the corner of the board was a link and nothing else,
     // which is a thing a person looks for in the settings and not on a board.
     // Where it leads is the manual, not a source tree: somebody opening
-    // «Руководство» wants to be told how the board works.
+    // the guide link wants to be told how the board works.
     test('leads to the guide', () => {
         open()
 

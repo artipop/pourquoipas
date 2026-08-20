@@ -327,7 +327,7 @@ describe('components/boardTemplateSelector/boardTemplateSelector', () => {
                 ,
             ), {wrapper: TestRouter})
 
-            // Two boards named «Разработка» — ours and the copy — and so two
+            // Two boards named the developer template — ours and the copy — and so two
             // rows. Three would mean the copy was listed twice, which is what
             // answering both questions used to get it.
             const rows = [...container.querySelectorAll('.templates-list .template-name')].

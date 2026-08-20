@@ -107,7 +107,7 @@ func ids(t *testing.T, raw any) []string {
 
 // A board that has just got its first source has an inbox: what arrives stands
 // in one column and is read in a view of its own, and what the person types
-// there stands in another — so that «Создать» on the inbox does not look like
+// there stands in another — so that the create button on the inbox does not look like
 // something that arrived and nobody has read.
 func TestTheInboxIsTwoColumnsAndAViewShowingBoth(t *testing.T) {
 	a := newTestApp(t)
@@ -131,7 +131,7 @@ func TestTheInboxIsTwoColumnsAndAViewShowingBoth(t *testing.T) {
 	}
 	clause, _ := clauses[0].(map[string]any)
 	values := ids(t, clause["values"])
-	// «Мои задачи» first: the first value of the clause is what a card made in
+	// the my-tasks column first: the first value of the clause is what a card made in
 	// this view becomes, and that is the whole mechanism behind the button.
 	if len(values) != 2 || values[0] != mineID || values[1] != inboxID {
 		t.Fatalf("фильтр пропускает %v, ожидалось [%s %s]", values, mineID, inboxID)
@@ -140,7 +140,7 @@ func TestTheInboxIsTwoColumnsAndAViewShowingBoth(t *testing.T) {
 
 // Both inbox columns are taken off the board's own kanban: what arrived and
 // what the person typed are read on the inbox view, and the board of work
-// stays the board of work. «Мои задачи» stood at the kanban's front for one
+// stays the board of work. the my-tasks column stood at the kanban's front for one
 // version, and that was not what was asked for.
 func TestBothInboxColumnsAreHiddenFromTheKanban(t *testing.T) {
 	a := newTestApp(t)
@@ -177,10 +177,10 @@ func TestBothInboxColumnsAreHiddenFromTheKanban(t *testing.T) {
 	}
 }
 
-// An install that predates «Мои задачи» has an inbox filtered to what arrived,
+// An install that predates the my-tasks column has an inbox filtered to what arrived,
 // and the person's own card would have vanished the moment it was made. The
 // view is brought up to date rather than replaced: it is in the sidebar, and a
-// second «Входящие» beside it is worse than either.
+// second the inbox view beside it is worse than either.
 func TestAnOlderInboxLearnsAboutOwnTasks(t *testing.T) {
 	a := newTestApp(t)
 	board := boardWithAKanban(t, a)

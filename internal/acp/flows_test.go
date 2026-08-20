@@ -154,7 +154,7 @@ func TestAddUpdateRemoveFlowPersists(t *testing.T) {
 	}
 }
 
-// Two boards each name their route «Фича» and mean different things by it, so
+// Two boards each name their route a feature route and mean different things by it, so
 // the registry is keyed by the board as well as the name — otherwise the second
 // board cannot even save its own.
 func TestFlowsAreScopedToTheirBoard(t *testing.T) {

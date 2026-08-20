@@ -33,7 +33,7 @@ const (
 	// SetupStepName is the board's own name, and the one step that asks about
 	// the board rather than about this machine. It is first and it is not
 	// optional: a board arrives called what its template is called, so the
-	// second one made from «Разработка» is a second «Разработка» in the
+	// second one made from the developer template is a second the developer template in the
 	// sidebar, and the moment to say what this one is for is the moment it is
 	// made.
 	SetupStepName    = "name"
@@ -519,7 +519,7 @@ func (m *Manager) setStageCrew(boardID string, names []string, action string, se
 
 	// The browser goes on the stage that tests, not on the agent that works it.
 	// It used to go on the agent, and that made setting up QA on one board an
-	// edit to an agent every other board also runs: «клаус» given a browser
+	// edit to an agent every other board also runs: an agent named in Russian given a browser
 	// here drove one everywhere. A stage is the narrower owner and the honest
 	// one — testing is what needs a browser, not the tester.
 	var placed bool

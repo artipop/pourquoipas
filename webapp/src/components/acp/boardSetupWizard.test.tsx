@@ -79,7 +79,7 @@ describe('components/acp/boardSetupWizard', () => {
 
     // The one question that is not about the machine, and the one nobody may be
     // let past: a board arrives called what its template is called, so the
-    // second «Разработка» is a second «Разработка» in the sidebar.
+    // second the developer template is a second the developer template in the sidebar.
     describe("the board's name", () => {
         test('is the first step, and is not skippable', async () => {
             stubBindings({BoardSetupPlan: vi.fn().mockResolvedValue(plan(['name', 'project', 'agent', 'done']))})
@@ -376,7 +376,7 @@ describe('components/acp/boardSetupWizard', () => {
     })
 
     // The folder is the one question somebody may not be able to answer at the
-    // moment they are asked, and «Дальше» stays disabled until it is answered —
+    // moment they are asked, and the next button stays disabled until it is answered —
     // so without this the only way past the first screen was out of the wizard.
     test('the folder step can be passed over, and the pass is remembered', async () => {
         const bindings = stubBindings({

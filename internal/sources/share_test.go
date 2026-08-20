@@ -140,7 +140,7 @@ func TestASharedSelectionWithNoLinkStillBecomesACard(t *testing.T) {
 }
 
 // A share with no title is a link and nothing else, and the link is what the
-// card is called: «Без названия» would say less than the address does.
+// card is called: the untitled name would say less than the address does.
 func TestASharedLinkWithNoTitleIsCalledByItsLink(t *testing.T) {
 	if got := ShareItem("board1", "", "https://example.com/a", "").Title; got != "https://example.com/a" {
 		t.Fatalf("title: %q", got)

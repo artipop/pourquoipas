@@ -26,7 +26,7 @@ var (
 
 func NewSourceWriter(c *Client) *SourceWriter { return &SourceWriter{c} }
 
-// ColumnProperty is asked rather than assumed: ours say «Статус», upstream
+// ColumnProperty is asked rather than assumed: ours say the status property, upstream
 // boards say "Status", and a constant is wrong for one of them.
 func (w *SourceWriter) ColumnProperty(_ context.Context, boardID string) (string, error) {
 	board, schema, err := w.board(boardID)

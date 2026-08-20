@@ -80,7 +80,7 @@ describe('components/acp/flowStrip', () => {
         await waitFor(() => expect(container).toBeEmptyDOMElement())
     })
 
-    // «Агент не запущен: …» used to be a comment on the card; it is the card's
+    // the "agent did not start" comment used to be a comment on the card; it is the card's
     // current state, so the strip says it — verbatim, since the reason arrives
     // as a whole sentence — and drops it as soon as the machinery moves on.
     test('a card whose stage would not start says why on the strip', async () => {

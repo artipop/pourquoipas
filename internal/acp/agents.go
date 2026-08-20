@@ -11,7 +11,7 @@ import (
 // Agent registry: named coding agents (claude/codex with their own prompt,
 // model and env), edited from the desktop UI and persisted into the config
 // file. A card goes to the agent it is assigned to: an agent is a member of the
-// board under its own name, so «Кто занимается» is the whole of the question.
+// board under its own name, so the assignee field is the whole of the question.
 
 // Agents returns a snapshot of the registry.
 func (m *Manager) Agents() []AgentEntry {
@@ -399,7 +399,7 @@ func (m *Manager) removeAgentEntry(name string) (AgentUser, error) {
 // is why it must stay deterministic.
 //
 // A letter is any letter, not only a Latin one: folded to `a-z0-9`, an agent
-// called «клаус» becomes the empty string and can never be put in «Кто
+// called an agent named in Russian becomes the empty string and can never be put in «Кто
 // занимается» at all. Nothing here needs ASCII — the username is stored in the
 // board's own table and read back by the same fold.
 func AgentUsername(name string) string {

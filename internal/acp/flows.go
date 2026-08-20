@@ -41,7 +41,7 @@ const (
 	TriggerChecksFailed   = "checks.failed"
 
 	// TriggerCardChanged fires when a select option is set on the card while it
-	// stands on the stage — a person marking «Одобрено», say. Which option is
+	// stands on the stage — a person marking an approved option, say. Which option is
 	// the edge's own condition (If), so the trigger kind stays closed and the
 	// board decides only the vocabulary.
 	TriggerCardChanged = "card.changed"
@@ -383,7 +383,7 @@ func (f FlowEntry) WaitsFor(nodeID string) []string {
 }
 
 // WaitDescriptions is what a parked card says it is waiting on, conditions
-// included — «на карточке выбрано «Одобрено» = «Да»», not just the kind.
+// included — a condition on a card property, not just the kind of trigger.
 func (f FlowEntry) WaitDescriptions(nodeID string) []string {
 	var out []string
 	for _, e := range f.Edges {
@@ -591,7 +591,7 @@ func validateEdgeCond(c EdgeCond, trigger FlowTrigger) (EdgeCond, error) {
 // sameFlow reports whether two entries are one route of the registry: the same
 // id, or — for an entry that has none yet — the same name on the same board.
 // This is the predicate every edit is keyed on, which is what lets two boards
-// each have their own «Фича», and what makes renaming one an edit rather than a
+// each have their own a feature route, and what makes renaming one an edit rather than a
 // lookup that fails (contradiction 4).
 func sameFlow(a, b FlowEntry) bool {
 	if a.ID != "" && b.ID != "" {

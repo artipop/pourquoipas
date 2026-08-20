@@ -260,7 +260,7 @@ func TestAgentSpawnEnvProxy(t *testing.T) {
 	}
 }
 
-// Who works a card is what the card says under «Кто занимается», and nothing
+// Who works a card is what the card says under the assignee field, and nothing
 // else on it gets a vote. There used to be two other voters, and both were
 // invisible: a property named `agent`, and any select option anywhere on the
 // board spelled like an agent.
@@ -334,9 +334,9 @@ func TestAgentUsername(t *testing.T) {
 		"":             "",
 
 		// Every label on this board is Russian, and an agent named in it must
-		// get an account like any other. Folding to ASCII gave «клаус» the
+		// get an account like any other. Folding to ASCII gave an agent named in Russian the
 		// empty username, which AgentUsers skips — so the agent existed in the
-		// registry, had no account, and could never be put in «Кто занимается».
+		// registry, had no account, and could never be put in the assignee field.
 		"клаус":       "клаус",
 		"Клаус":       "клаус",
 		"код-ревьюер": "код-ревьюер",

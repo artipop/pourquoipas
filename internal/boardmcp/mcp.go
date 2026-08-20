@@ -432,7 +432,7 @@ func NewServer(board Board) *mcp.Server {
 	// and what a person renames by hand, while the description is a line under it
 	// that changes as the conversation moves on. The app asks for this one — it
 	// types the request into the conversation (AskTerminalName) — because a name
-	// nobody gave reads «клаус · черновики доски», which is true of every row.
+	// nobody gave reads agent · drafts folder, which is true of every row.
 	mcp.AddTool(srv, &mcp.Tool{
 		Name: "name_conversation",
 		Description: "Give this conversation a short name — three to five words, in the language the " +

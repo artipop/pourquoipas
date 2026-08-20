@@ -33,7 +33,7 @@ import (
 //	         "item": {"id": "{{.id}}", "title": "{{.title}}", "url": "{{.url}}"}}}
 //
 // Everything after the mapping is the ordinary pipeline: rules decide, the
-// unclaimed lands in «Входящие», and (source, external id, version) is what
+// unclaimed lands in the inbox view, and (source, external id, version) is what
 // keeps the next poll from making the same card again.
 
 // MCPSpec is how one MCP server is read as a feed.

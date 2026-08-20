@@ -502,7 +502,7 @@ func TestPlanningTerminalCarriesTheEditedInstructions(t *testing.T) {
 
 // A card can be talked over — wording, a plan, the brief — before anybody
 // decides where the work lives, so "the card names no folder" is not a
-// refusal: the conversation opens in «черновики доски» — the board's own
+// refusal: the conversation opens in the board's drafts folder — the board's own
 // directory under the app's data — with no worktree and no branch.
 func TestCardTerminalOpensWithoutAnyProject(t *testing.T) {
 	if _, err := exec.LookPath("sh"); err != nil {
@@ -853,7 +853,7 @@ func TestOnlyARefusedResumeIsRestarted(t *testing.T) {
 }
 
 // Planning without a folder is the board's own conversation: it opens in
-// «черновики доски», exactly as a card's folderless conversation does, and says
+// the board's drafts folder, exactly as a card's folderless conversation does, and says
 // so through the info the window reads.
 func TestPlanningTerminalTalksInTheBoardsFolder(t *testing.T) {
 	if _, err := exec.LookPath("sh"); err != nil {

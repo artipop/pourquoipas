@@ -449,7 +449,7 @@ func TestCardAssignedToAPersonIsLeftAlone(t *testing.T) {
 
 // A stage with its own crew names its worker, and the card's assignee is kept
 // truthful by the machine: entering the crewed column writes the crew member
-// into «Кто занимается». A card that already names its agent is left alone —
+// into the assignee field. A card that already names its agent is left alone —
 // nothing is written twice.
 func TestCrewedColumnWritesItsWorkerIntoTheAssignee(t *testing.T) {
 	m, _, events, _ := testManager(t, fakeClaudeHappy, func(c *Config) {
@@ -481,7 +481,7 @@ func TestCrewedColumnWritesItsWorkerIntoTheAssignee(t *testing.T) {
 }
 
 // Testing is worked by the crew of the test column, so the field says so too:
-// «Кто занимается» answers "who is on this card now" wherever it stands, and a
+// the assignee field answers "who is on this card now" wherever it stands, and a
 // card being tested by an agent the field did not name is the field lying.
 func TestCrewedTestColumnWritesItsTesterIntoTheAssignee(t *testing.T) {
 	m, _, events, _ := testManager(t, fakeClaudeHappy, func(c *Config) {
@@ -564,7 +564,7 @@ func TestAssignedCardIsStillDeployed(t *testing.T) {
 }
 
 // A column can carry MCP servers of its own, and the point is that they are the
-// column's rather than the agent's: the same agent works «В работе» with the
+// column's rather than the agent's: the same agent works the in-progress column with the
 // tools that column needs and «QA» with the browser, without being registered
 // twice under two names.
 func TestColumnCarriesItsOwnMCPServers(t *testing.T) {

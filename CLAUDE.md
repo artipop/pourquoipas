@@ -1778,7 +1778,13 @@ and it made every board of shopping lists look like it was missing one.
   than leaving a no-op behind, so a spy that must not call through says so with
   `mockResolvedValue`, and the hook around it clears rather than resets.
 - Russian in user-facing strings and product docs, English in code, comments and
-  commit messages.
+  commit messages. **A comment carries no Russian at all** — not even a label
+  quoted off the screen: name the thing in English («Входящие» is the inbox
+  view, «Кто занимается» is the assignee field), because a comment is read by
+  whoever works on the code and the screen's own wording is in the catalogue.
+  And no transliteration: `pochini-login` is neither language. What stays
+  Russian is the *value* — a string literal, a name this app gives — and that
+  is data, not prose.
 - **Everything the system says to an agent is English**, and that is a third
   register rather than a corner of either. A prompt, an MCP server's
   instructions, a tool description, a `jsonschema` field, the sentence a tool

@@ -94,7 +94,7 @@ func initAlerts(wapp *application.App, app *App, mgr *acp.Manager) func() {
 	c.tray.SetMenu(c.menu(nil))
 
 	// **No click handler, deliberately.** Both buttons open the menu, and the
-	// way to the board is «Открыть» inside it.
+	// way to the board is the open item inside it.
 	//
 	// Left click opening the app directly is what this looked like it should
 	// do, and it is not reachable here. Everything the framework offers for a
@@ -104,7 +104,7 @@ func initAlerts(wapp *application.App, app *App, mgr *acp.Manager) func() {
 	// only takes the menu away from the left button (`systrayPreClickCallback`
 	// gives it native menu tracking exactly when no handler is set) and puts
 	// nothing in its place: the left button did nothing at all. Two buttons
-	// that both open a menu whose first item is «Открыть» is one click more
+	// that both open a menu whose first item is the open item is one click more
 	// and always works, which is the better trade.
 
 	// The list is re-read rather than taken from the payload: a wait ending and
@@ -263,7 +263,7 @@ func (c *alertController) menu(waiting []acp.Attention) *application.Menu {
 	// The way out, and the only one there is once the board's window is closed:
 	// the app goes on running without it, so ⌘Q has nothing to be pressed in
 	// front of. It also ends every agent CLI, which is why it is the last item
-	// and behind a separator rather than beside «Открыть».
+	// and behind a separator rather than beside the open item.
 	menu.AddSeparator()
 	menu.Add("Выход").OnClick(func(*application.Context) { go requestQuit(c.wapp) })
 	return menu

@@ -8,7 +8,7 @@ import './conversationRow.scss'
 
 // One conversation in a list of them.
 //
-// Two screens list conversations — «Обсудить с агентом», where they have no
+// Two screens list conversations — the planning dialog, where they have no
 // card behind them, and the panel beside a card, where they are the card's own
 // and its route's — and they list the same thing: what the conversation is
 // called, the line the agent wrote about what is going on in it, and who is

@@ -397,7 +397,7 @@ func TestStageServersSurviveWithoutAGrant(t *testing.T) {
 
 // A board says which field carries its columns, and the grant takes that answer
 // rather than the machine's. The config's TriggerProperty is one name for every
-// board this install ever opens, and its default is the Russian «Статус» — so a
+// board this install ever opens, and its default is the Russian the status property — so a
 // board in another language, or one where somebody renamed the field, used to
 // hand the agent a property that does not exist there and every write bounced.
 func TestTheGrantTakesTheColumnPropertyFromTheBoard(t *testing.T) {

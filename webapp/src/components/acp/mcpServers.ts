@@ -2,8 +2,8 @@
 // pasted from a server's README.
 //
 // It lives on its own because three screens now ask the same question of three
-// different owners — the agent («Настройки → Агенты»), the column and the
-// stage of a route («Колонки и маршруты…») — and one shape of the answer is
+// different owners — the agent (the agents panel in the settings), the column and the
+// stage of a route (the automation dialog) — and one shape of the answer is
 // what keeps them from drifting into three.
 
 // The standard MCP client shape: a name mapped to the command that starts it.

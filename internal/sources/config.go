@@ -29,7 +29,7 @@ var Actions = []string{ActionCard, ActionComment, ActionDrop}
 // DefaultInbox is the column an item lands in when no rule sent it anywhere
 // else. There is no matching default for the *property* those columns belong
 // to: that one is asked of the board (BoardWriter.ColumnProperty), because a
-// constant here was "Status" while every board this app ships says «Статус»,
+// constant here was "Status" while every board this app ships says the status property,
 // and the mismatch filed nothing anywhere.
 const DefaultInbox = "Входящие"
 
@@ -480,7 +480,7 @@ func SaveConfig(path string, cfg Config) error {
 //
 // The agent does not write to the board. It is given one tool of ours,
 // `file_item`, which posts to this source's own ingest route, so everything
-// that makes the inbox trustworthy is still in the way: the rules, «Входящие»,
+// that makes the inbox trustworthy is still in the way: the rules, the inbox view,
 // the event log, and the (source, external id, version) key that makes filing
 // the same thing twice a no-op. That last one is why the prompt tells the agent
 // to file everything it sees rather than to work out what is new: deciding that

@@ -11,7 +11,7 @@ import (
 // A board's automation lives on the board. The columns it runs and the routes
 // cards take across it are two of the board's own properties, in the board
 // database, beside everything else that is the board's — which is why a board
-// made from the «Разработка» template works before anything is configured, and
+// made from the the developer template template works before anything is configured, and
 // why a template can carry automation at all.
 //
 // The registry in memory is what the engine reads on every card move — a board
@@ -49,13 +49,13 @@ const (
 	BoardPropPrompt = "prompt"
 	// BoardPropBranch is the id of the text property a card's branch is
 	// written into. An id and not a name, for the reason every other field of
-	// ours is found by one: «Ветка» is what this app calls it when it makes
+	// ours is found by one: the branch field is what this app calls it when it makes
 	// one, and a person may call it anything.
 	//
 	// Written by the page (it owns the board's card properties), read here.
 	BoardPropBranch = "branchProperty"
 	// BoardPropProject is the id of the select property a card names its folder
-	// in — «Папка» when this app makes it. An id for the same reason the branch
+	// in — the folder field when this app makes it. An id for the same reason the branch
 	// field is one, and load-bearing for a second: it is what lets the folder be
 	// read off the card rather than *recognised* among everything the card has
 	// selected (resolveWorkdir).
@@ -67,7 +67,7 @@ const (
 	// that took longest to arrive: which property held the columns was a *name*
 	// in the machine's settings, matched against every board this machine ever
 	// saw. A board in English, or one
-	// where somebody renamed «Статус», matched nothing.
+	// where somebody renamed the status property, matched nothing.
 	//
 	// Written here rather than by the page, unlike the folder and branch
 	// records: the columns already carry the property they were bound to, so

@@ -39,7 +39,7 @@ type WorkdirEntry struct {
 
 	// Modes is how this folder is worked in when it is a repository, per board:
 	// WorkModeWorktree (a copy per card) or WorkModeBranch (a branch in place).
-	// Keyed by board because a folder marked «на всех досках» can want a copy
+	// Keyed by board because a folder marked shared with every board can want a copy
 	// per card where three people work it and a branch where one does.
 	Modes map[string]string `json:"modes,omitempty"`
 
@@ -152,7 +152,7 @@ type AgentEntry struct {
 	// folded into ProxyID (bindrefs.go); never written back.
 	ProxyName string `json:"proxyName,omitempty"`
 
-	// UserID is the agent's board account. It is what «Кто занимается» on a
+	// UserID is the agent's board account. It is what the assignee field on a
 	// card actually stores, so it — and not the username derived from Name — is
 	// how an assigned card finds its agent: renaming an agent must not
 	// unassign every card it was working on.
@@ -527,8 +527,8 @@ type acpAdapter struct {
 	// **It carries its own end-of-options marker**, because the task is a
 	// positional argument and everything before it on that command line is
 	// flags. `--mcp-config <configs...>` is variadic, so `claude --mcp-config
-	// f.json "почини логин"` reads the card's task as a second config file and
-	// dies with "MCP config file not found: почини логин" — the terminal opened
+	// f.json "fix the login"` reads the card's task as a second config file and
+	// dies with "MCP config file not found: fix the login" — the terminal opened
 	// and shut in the same breath, and every card of that board stalled saying
 	// the agent had not reported. Whatever this returns goes last, so the
 	// separator belongs to the kind that knows how its own parser spells one.

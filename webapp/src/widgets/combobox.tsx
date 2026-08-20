@@ -165,7 +165,7 @@ function Combobox<T>(props: Props<T>): JSX.Element {
         if (props.isMulti) {
             // A multi list stays open and marks what is already chosen, so a
             // click on a marked row is somebody unticking it. It used to add
-            // the option a second time, and a card's «Папки» ended up naming
+            // the option a second time, and a card's the folders name ended up naming
             // one folder twice — which the property then drew twice, each with
             // its own cross.
             const chosen = selected().some((each) => each.id === option.id)

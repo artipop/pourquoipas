@@ -68,7 +68,7 @@ async function kaitenRequest(path: string, init: RequestInit = {}): Promise<Tool
 // It is here rather than in the app because MCP has no notion of a feed — the
 // app's side of the bridge names a tool and maps its rows, and something has to
 // be there to name. Kaiten has no single "assigned to me" filter either:
-// «ответственный» and «участник» are different fields, so this asks twice and
+// an owner field and a member are different fields, so this asks twice and
 // merges, which is what a person means by the phrase.
 async function currentUserId(): Promise<number> {
   const me = await kaitenFetch('/users/current')

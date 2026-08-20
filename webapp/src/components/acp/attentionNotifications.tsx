@@ -62,7 +62,7 @@ const stackLimit = 3
 // copy, and a reload brought back everything a person had already dealt with.
 
 // terminalScreen is a window that draws one terminal and nothing else — the
-// desktop app's own, and «Терминалы» on a phone.
+// desktop app's own, and the terminals screen on a phone.
 //
 // The stack is outside the router, so it follows a person wherever they are in
 // the app — and a terminal window is the app too. It belongs to the window with

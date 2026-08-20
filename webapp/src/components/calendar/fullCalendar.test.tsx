@@ -193,7 +193,7 @@ describe('components/calendar/toolbar', () => {
             toHaveBeenCalledWith(board.id, view.id, 'dayGridWeek'))
     })
 
-    // The month in the title, the weekday headings and «ещё N» are FullCalendar's
+    // The month in the title, the weekday headings and an "N more" line are FullCalendar's
     // own words, not message ids, and it ships knowing English alone — which is
     // how a Russian board came to be headed "October 2021".
     test('names the month in the language the app is set to', async () => {

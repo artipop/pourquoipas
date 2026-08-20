@@ -15,14 +15,14 @@ import './boardPromptsDialog.scss'
 // What this board's agents are told before anything else — the system prompt of
 // the board, on its own screen.
 //
-// It was a fold at the bottom of «Колонки и маршруты…», under the route
+// It was a fold at the bottom of the automation dialog, under the route
 // canvas, which is the wrong place twice over: what an agent is told is not a
 // question about columns and arrows, and a fold under a canvas is somewhere
 // nobody scrolls to. The board's ⋯ menu asks each of the board's questions in
-// its own item («Папки…», «Куда деплоить…»), and this is one of them.
+// its own item (the folders dialog, the deploy-target dialog), and this is one of them.
 //
 // There are exactly two prompts and the screen says so. This one is the
-// board's; the other is the agent's own, in «Настройки → Агенты», and it holds
+// board's; the other is the agent's own, in the agents panel in the settings, and it holds
 // on every board this machine has. A third — a text per (board, agent) — was
 // built and taken out again: it is the only one of them that belongs to no
 // single thing a person can point at, and what a folder wants said is already

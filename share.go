@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// The system's «Поделиться», as this side of it works.
+// The system's the share dialog, as this side of it works.
 //
 // The share extension inside the .app knows nothing about boards and never
 // touches the network: it takes what was shared and opens

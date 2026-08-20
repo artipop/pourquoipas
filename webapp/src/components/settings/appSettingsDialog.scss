@@ -10,7 +10,7 @@
     // One width, whatever section is open. A dialog is shrink-to-fit — its box
     // is as wide as the longest line inside it, up to the 975px every dialog
     // stops at — so the width was being decided by whichever panel happened to
-    // be drawn: «Импорт и экспорт», whose longest line is a short sentence and
+    // be drawn: the import-and-export section, whose longest line is a short sentence and
     // three narrow cards, came out 174px narrower than the rest, and the list
     // of sections moved under the pointer as a person went down it.
     // The 48px is what keeps a window narrower than that from giving the dialog

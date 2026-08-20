@@ -82,7 +82,7 @@ const AutomationDialog = (props: Props) => {
     // Whether a crew can work this board's folders in parallel, which is the
     // one thing the editor warns about. It follows the folders themselves — a
     // repository worked on a branch in the folder itself takes one card at a
-    // time — and changing it is done on their own screen, «Папки…».
+    // time — and changing it is done on their own screen, the folders dialog.
     const [workdirs, setWorkdirs] = createSignal<Array<{id?: string, name?: string, git?: boolean, mode?: string}>>([])
     const worktrees = () => !workdirs().some((w) => w.git && w.mode === 'branch')
 

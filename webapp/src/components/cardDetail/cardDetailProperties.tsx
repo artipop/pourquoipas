@@ -47,7 +47,7 @@ const CardDetailProperties = (props: Props) => {
     // property it is (branchProperty); the card's own state says whether
     // its workspace is a copy or a branch in the folder. The stamp under the
     // title already names its line after the mode, and a field under it saying
-    // «Ветка» over the same value read as the setting not having taken.
+    // the branch field over the same value read as the setting not having taken.
     const branchPropertyId = () => boardBranchProperty(props.board)
     const agentState = () => cardAgentState(props.card.id)()
     const isBranchProperty = (t: IPropertyTemplate) => t.id !== '' && t.id === branchPropertyId()

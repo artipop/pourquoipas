@@ -282,7 +282,7 @@ func (m *Manager) runSession(s *Session) {
 		// it, is not a failure of this card's task: it is true until the other
 		// card's branch is merged or the changes are saved, and then it is not.
 		// So it is state — the reason on the card — and never a comment or a
-		// failed stage that carries the card off to «Заблокировано».
+		// failed stage that carries the card off to the blocked column.
 		if errors.Is(err, errWorkdirBusy) || errors.Is(err, errWorkdirDirty) {
 			m.finishSession(s, StatusCancelled, err.Error())
 			m.stallCard(s.CardID, s.FlowNodeID, err.Error())

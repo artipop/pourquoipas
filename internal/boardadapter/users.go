@@ -142,7 +142,7 @@ func (b *EventsBackend) ensureAccount(agent acp.AgentUser) (acp.AgentUser, error
 
 // AssignCardAgent writes the agent into the card's person property — «Кто
 // занимается», or whatever this board calls it: the property is found by its
-// *type*, never by name, because "Assignee" and «Исполнитель» are each right
+// *type*, never by name, because "Assignee" and the assignee field are each right
 // for half the boards there are. A board with no person property has no field
 // to keep truthful, and that is not an error.
 //

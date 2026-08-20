@@ -7,8 +7,8 @@ import {MCPServers, mcpServersPlaceholder, serversToText, textToServers} from '.
 import './mcpField.scss'
 
 // The MCP servers a column or a stage hands its agent, as the block every MCP
-// client takes. The same question «Настройки → Агенты» asks of an agent, asked
-// here of the place the work happens: one agent works «В работе» and «QA», and
+// client takes. The same question the agents panel in the settings asks of an agent, asked
+// here of the place the work happens: one agent works the in-progress column and the QA column, and
 // only the second of them needs a browser.
 //
 // Folded, because it is ten lines of JSON that are right almost always and read

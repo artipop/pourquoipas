@@ -258,7 +258,7 @@ describe('components/acp/attentionNotifications', () => {
     // the terminal's own window covered the question it was announcing.
     // In a team the same box would tell everybody about every agent, including
     // the ones working somebody else's card. What decides is the card's own
-    // «Кто занимается» (attentionAudience.ts, docs/teamwork.md).
+    // the assignee field (attentionAudience.ts, docs/teamwork.md).
     it('says nothing to a teammate about a card assigned to somebody else', async () => {
         anyWindow.go = {main: {App: attentionBindings()}}
 

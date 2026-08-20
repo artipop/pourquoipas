@@ -24,7 +24,7 @@ const board = TestBlockFactory.createBoard()
 const activeView = TestBlockFactory.createBoardView(board)
 const card = TestBlockFactory.createCard(board)
 
-// The board a source already feeds: it has «Входящие», so that is where the
+// The board a source already feeds: it has the inbox view, so that is where the
 // question about sources is asked and the board's own menu says nothing of it.
 const inboxView = TestBlockFactory.createBoardView(board)
 inboxView.id = 'view-inbox'
@@ -145,7 +145,7 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
             }
         })
 
-        // Where cards come from is a question about «Входящие», and that is
+        // Where cards come from is a question about the inbox view, and that is
         // where it is answered now. On the board itself it was one more thing
         // to walk past.
         test('and neither are the sources of a board', () => {
@@ -154,7 +154,7 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
     })
 
     // The setup questions a board asks are its own screens in its own menu.
-    // They used to be folds of «Колонки и маршруты…», where setting up
+    // They used to be folds of the automation dialog, where setting up
     // where an agent works was filed under columns and routes — and a fold
     // under a canvas is a place nobody opens.
     describe('a board offers the setup steps it asks for', () => {
@@ -212,7 +212,7 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
         })
     })
 
-    // «Входящие» is the screen about what arrives, so its menu is about that
+    // the inbox view is the screen about what arrives, so its menu is about that
     // and about nothing else: exporting or saving as a template are questions
     // about the board, asked where the board is.
     describe('on «Входящие» the menu is the sources and nothing else', () => {
@@ -270,7 +270,7 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
         expect(screen.queryByRole('button', {name: 'View header menu'})).toBeNull()
     })
 
-    // A board made empty has no «Входящие» — the view arrives with the first
+    // A board made empty has no the inbox view — the view arrives with the first
     // source — so the door to make one has to stay on the board itself, or
     // there is no way to add a source to such a board at all.
     test('a board with no «Входящие» keeps the sources in its own menu', async () => {

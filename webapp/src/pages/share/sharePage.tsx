@@ -8,7 +8,7 @@ import {BindingBoard, listBoards} from '../../bindings/boards'
 import {closeShare, shareItem} from './shareBindings'
 import './sharePage.scss'
 
-// The dialog the system's «Поделиться» opens.
+// The dialog the system's the share dialog opens.
 //
 // Everything it is given arrives in the URL — the share extension has no way to
 // hand over anything else, and a page that reads its input from the address is

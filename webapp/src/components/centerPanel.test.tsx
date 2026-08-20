@@ -521,9 +521,9 @@ describe('components/centerPanel', () => {
             expect(mockedMutator.performAsUndoGroup).toHaveBeenCalledTimes(1)
         })
 
-        // «Создать» on «Входящие» writes a task of one's own, and it must not
+        // the create button on the inbox view writes a task of one's own, and it must not
         // look like something that arrived: the view admits two columns and
-        // names «Мои задачи» first, and the first value of an "includes" clause
+        // names the my-tasks column first, and the first value of an "includes" clause
         // is what a card made in that view becomes. That is the whole
         // mechanism, and this is the test that would notice it going.
         test('a card made on «Входящие» stands in «Мои задачи», not among what arrived', async () => {

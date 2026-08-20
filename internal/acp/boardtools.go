@@ -59,7 +59,7 @@ func (m *Manager) GrantBoardTools(boardID, cardID, terminalID string) string {
 
 	// Which property the columns live on is the board's answer, not the
 	// machine's: cfg.TriggerProperty is one name for every board this install
-	// ever sees, and its default is the Russian «Статус», so a board in another
+	// ever sees, and its default is the Russian the status property, so a board in another
 	// language — or one where somebody renamed the field — handed the agent a
 	// property that does not exist there. The board records the id itself
 	// (BoardPropColumnProperty), and the name in the settings is the fallback

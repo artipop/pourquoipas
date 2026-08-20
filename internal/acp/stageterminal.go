@@ -185,7 +185,7 @@ func (m *Manager) startStageTerminal(s *Session) (*TerminalSession, error) {
 	//
 	// Only one standing where the stage was told to run, though: a person can
 	// open the card's terminal before the card names a folder, and that
-	// conversation runs in «черновики доски» — same node, different directory.
+	// conversation runs in the board's drafts folder — same node, different directory.
 	// Adopt it and the task goes to a CLI in the drafts folder while the route
 	// believes the stage is on the card's branch. The test is the folder, and
 	// the directory once one is claimed — not "is this the drafts folder", since

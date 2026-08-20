@@ -27,7 +27,7 @@ export enum UserSettingKey {
 // Go side. localStorage is only a boot-time cache for these: the desktop
 // window opens on a loopback origin with a random port, and everything the
 // browser stored under the previous one is unreachable by the next launch —
-// docs/deferred.md, «Уйти из localStorage». The rest of the enum stays
+// docs/deferred.md, moving off localStorage. The rest of the enum stays
 // browser-only on purpose: the emoji-mart keys are the library's own, and
 // welcomePageViewed lives in the user's server-side config.
 const installKept = new Set<string>([

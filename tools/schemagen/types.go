@@ -46,7 +46,7 @@ const (
 	// KindJSON is a JSON document. Rendered as text in all three for now: the
 	// writers still put '' in these columns where they mean "nothing", and ''
 	// is not a JSON document. Retyping them is deferred work — docs/deferred.md,
-	// «Одна база: хвосты плана» — which is also where the writers are made to
+	// "one database: the plan's loose ends" — which is also where the writers are made to
 	// say 'null'.
 	KindJSON
 	// KindMillis is a moment in time as unix milliseconds. A real timestamp is

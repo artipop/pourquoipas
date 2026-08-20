@@ -966,7 +966,7 @@ func (s *Store) BranchForCard(cardID string) (string, error) {
 
 // CheckoutModeForCard is how the card's live checkout is arranged — "worktree"
 // or "branch" — or "" when it holds none. The card's stamp names its line after
-// it: a person who set «отдельная копия» should read worktree off the card, not
+// it: a person who set a copy of its own should read worktree off the card, not
 // a bare branch label that spells the *other* setting.
 func (s *Store) CheckoutModeForCard(cardID string) (mode, branch, base string, err error) {
 	row := s.queryRow(`SELECT mode, COALESCE(branch,''), COALESCE(base,'') FROM checkout

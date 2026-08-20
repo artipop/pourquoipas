@@ -12,7 +12,7 @@ import {agentBindings} from './bindings'
 import './folderChoices.scss'
 
 // «В какой папке будет работать агент?» — asked in one shape wherever it is
-// asked: beside a card (cardTerminal.tsx) and in «Обсудить с агентом»
+// asked: beside a card (cardTerminal.tsx) and in the planning dialog
 // (planningDialog.tsx).
 //
 // Every answer is a chip, and that is the whole design. It used to be a row of
@@ -21,7 +21,7 @@ import './folderChoices.scss'
 // small chip beside two large controls, and which of the three was the same kind
 // of thing as the others was anybody's guess. Now the folders are chips, the
 // board's own drafts folder is a chip among them, and registering a new folder is
-// a quiet «Добавить папку…» link — exactly the shape «Добавить агента…» has in
+// a quiet the add-folder link link — exactly the shape the add-agent link has in
 // the question before this one.
 //
 // The folders offered are the board's own (its registered workdirs and the ones

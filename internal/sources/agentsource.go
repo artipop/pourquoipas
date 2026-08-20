@@ -20,7 +20,7 @@ import (
 // and told what to look for.
 //
 // **It does not write to the board.** `file_item` posts to this source's own
-// ingest route, so the whole pipeline is still in the way: rules, «Входящие»,
+// ingest route, so the whole pipeline is still in the way: rules, the inbox view,
 // the event log, and the (source, external id, version) key. That key is what
 // makes an agent tolerable here at all — filing the same thing twice is a
 // no-op, so the prompt tells it to file everything it sees rather than to work

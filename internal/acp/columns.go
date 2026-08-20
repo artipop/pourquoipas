@@ -42,7 +42,7 @@ type ColumnSpec struct {
 	Agents []string `json:"agents,omitempty"`
 
 	// Prompt is what working in this column means, said to the agent: the
-	// reviewer's brief on «Ревью», the builder's on «В работе». It goes in
+	// reviewer's brief on the review column, the builder's on the in-progress column. It goes in
 	// front of the card's task for a session and into the opening of a
 	// conversation held here, after the board's and the agent's own prompts —
 	// those say where the agent is, this says what the *column* wants. A route
@@ -62,7 +62,7 @@ type ColumnSpec struct {
 	// registered twice to be configured differently in two columns.
 	//
 	// The shape is the one every MCP client uses (MCPServerSet), so an entry
-	// can be pasted from a server's README exactly as in «Настройки → Агенты».
+	// can be pasted from a server's README exactly as in the agents panel in the settings.
 	// A route node may override the whole set for its stage alone
 	// (FlowNode.MCPServers).
 	MCPServers MCPServerSet `json:"mcpServers,omitempty"`

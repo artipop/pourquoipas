@@ -147,7 +147,7 @@ func (a *App) AddAgentWorkdir(name, path, boardID, kind string, global bool) (st
 }
 
 // SetAgentWorkdirBase changes what work in a folder branches from, and what
-// «влито в основную» waits for. Empty falls the folder back to what git says.
+// merged into the main branch waits for. Empty falls the folder back to what git says.
 func (a *App) SetAgentWorkdirBase(name, branch string) (string, error) {
 	if a.mgr == nil {
 		return "", errACPDisabled
@@ -797,7 +797,7 @@ func (a *App) GetBoardFlowOverview(boardID string) (string, error) {
 // SetAgentWorkdirMode records how a folder that is a repository is worked in
 // on one board: "worktree" — a copy of its own per card — or "branch" — a
 // branch in the folder itself. Asked per (board, folder), because a folder
-// belongs to a board anyway and the one that does not — «на всех досках» — is
+// belongs to a board anyway and the one that does not — shared with every board — is
 // exactly the case where two boards may want different answers.
 func (a *App) SetAgentWorkdirMode(name, boardID, mode string) (string, error) {
 	if a.mgr == nil {
@@ -1274,7 +1274,7 @@ func (a *App) AskTerminalName(terminalID string) error {
 // DeleteCardConversation throws away one conversation of a card: the CLI in it
 // ends and the record goes with it, so the next one starts on a blank screen.
 // It is how the card's own conversation is closed for good — everything else
-// about a terminal is kept, which is what makes «продолжить» possible.
+// about a terminal is kept, which is what makes continue possible.
 func (a *App) DeleteCardConversation(cardID, nodeID string) error {
 	if a.mgr == nil {
 		return errACPDisabled
@@ -1537,8 +1537,7 @@ func (a *App) ListInbox() (string, error) {
 }
 
 // MoveCardToBoard carries a card to another board and, when a column is named,
-// puts it there. It is the phone's half of the card menu's «Переместить на
-// доску…», and it is the same move: the card keeps its id.
+// puts it there. It is the phone's half of the card menu's the move-to-board item, and it is the same move: the card keeps its id.
 func (a *App) MoveCardToBoard(cardID, boardID, column string) error {
 	if a.board == nil {
 		return errNoBoard
@@ -1551,7 +1550,7 @@ func (a *App) MoveCardToBoard(cardID, boardID, column string) error {
 
 // The share sheet.
 //
-// What the system hands over when somebody presses «Поделиться» in another app
+// What the system hands over when somebody presses the share dialog in another app
 // is a link and a title, and the only question left is which board. The dialog
 // that asks it is a page of ours (/share), so this is all it needs from Go:
 // the boards to offer are ListBoards above, and this is the send.
@@ -1559,11 +1558,11 @@ func (a *App) MoveCardToBoard(cardID, boardID, column string) error {
 // It goes through the sources pipeline rather than writing a card directly,
 // because everything the inbox does is there already — the column, the view,
 // the author, the record that keeps a repeat from becoming a second card — and
-// because the phone's «Входящие» only lists boards that have a source.
+// because the phone's the inbox view only lists boards that have a source.
 
 // ShareItem files a shared link on the board the person picked, and reports
 // what came of it in the same shape a delivery does, so the dialog can tell
-// «создана» from «уже была».
+// created from already there.
 func (a *App) ShareItem(boardID, title, url, note string) (string, error) {
 	if a.sources == nil {
 		return "", errors.New("источники недоступны")
@@ -1592,7 +1591,7 @@ func (a *App) ShareItem(boardID, title, url, note string) (string, error) {
 	return string(out), nil
 }
 
-// GetUpdateState reports everything the «Обновления» panel draws: which
+// GetUpdateState reports everything the the updates section panel draws: which
 // version is running, whether the automatic check is on, what the last check
 // found and how far along an install is. JSON, the shape of updateState in
 // updates.go.

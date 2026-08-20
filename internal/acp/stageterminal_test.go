@@ -103,7 +103,7 @@ func TestAStageIsTheAgentsOwnCLIWithTheTaskInIt(t *testing.T) {
 // The card's task is a positional argument, and everything before it on that
 // command line is flags — one of which, `--mcp-config`, takes a list. Without an
 // end-of-options marker the CLI reads the task as a second config file, dies
-// with "MCP config file not found: почини логин", and every card of the board
+// with "MCP config file not found: fix the login", and every card of the board
 // stalls saying the agent never reported.
 func TestTheTaskIsNotEatenByTheFlagBeforeIt(t *testing.T) {
 	argv, taken, err := terminalCommand(
@@ -397,7 +397,7 @@ func TestAStageAdoptsTheConversationAPersonOpenedOnItsNode(t *testing.T) {
 }
 
 // A card can be talked over before it names a folder, and that conversation
-// runs in «черновики доски». When the folder arrives and the route reaches the
+// runs in the board's drafts folder. When the folder arrives and the route reaches the
 // same column, the stage must not be typed into it: the route has claimed the
 // card's workspace, made a branch and written it on the card, and an agent
 // working in the drafts folder would report work that landed nowhere.

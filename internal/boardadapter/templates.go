@@ -112,9 +112,9 @@ func importTemplates(a *app.App, log mlog.LoggerIFace, version int) error {
 		}
 
 		// The marker is ours to give. A template somebody saved from a board
-		// («Сохранить как шаблон…») is a copy of that board, properties and
-		// all — and a board made from «Разработка» carries the marker, so the
-		// copy claimed to be «Разработка» too. Three of them stood in the
+		// (the save-as-template item) is a copy of that board, properties and
+		// all — and a board made from the developer template carries the marker, so the
+		// copy claimed to be the developer template too. Three of them stood in the
 		// picker under one name, and the sweep below would have kept replacing
 		// whichever came last while the others stayed for ever.
 		//

@@ -93,7 +93,7 @@ type BoardWriter interface {
 	AddComment(ctx context.Context, cardID, text string) error
 	MoveCardByOptionName(ctx context.Context, cardID, propertyName, optionName string) error
 
-	// ColumnProperty is asked rather than assumed: ours say «Статус», upstream
+	// ColumnProperty is asked rather than assumed: ours say the status property, upstream
 	// boards say "Status", and a constant is wrong for one of them.
 	ColumnProperty(ctx context.Context, boardID string) (string, error)
 	// EnsureInbox makes the inbox column and its view exist, for a board that

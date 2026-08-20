@@ -3,7 +3,7 @@ package acp
 // Why a card is standing still, said where the card already says where it
 // stands — on its route strip — rather than in its comments.
 //
-// Every one of these used to be a comment: «Агент не запущен: …», «Колонка
+// Every one of these used to be a comment: the "agent did not start" comment, «Колонка
 // занята…», «нет перехода по событию…». A comment is the durable record of
 // work, and these are not work — they are the current state of the machinery,
 // true only until somebody fixes the registry or moves the card, and stale the

@@ -8,7 +8,7 @@ import (
 
 // How a repository is worked in is asked of the folder on the board that offers
 // it. A folder belongs to one board anyway, so that reads as the folder's own
-// answer; the folder marked «на всех досках» is the case the board key earns.
+// answer; the folder marked shared with every board is the case the board key earns.
 func TestTheFolderSaysHowItIsWorkedInOnThisBoard(t *testing.T) {
 	repo := initTestWorkdir(t)
 	notes := t.TempDir()

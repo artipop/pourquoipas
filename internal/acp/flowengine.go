@@ -313,7 +313,7 @@ func (m *Manager) advanceFlowWith(cardID, on, detail, agentText string) {
 // on the route's own column — the trigger loop hands those here.
 //
 // Only edges whose condition names the changed property react: setting
-// «Приоритет» must not wake a stage waiting on «Одобрено», and must not leave a
+// a priority property must not wake a stage waiting on an approved option, and must not leave a
 // "nothing matched" comment either — the change was simply not addressed to it.
 func (m *Manager) handleCardChanged(ev CardMoved) bool {
 	if ev.ToColumn.Name == "" {
@@ -398,7 +398,7 @@ func (m *Manager) OnVCSEvent(ev VCSEvent) {
 	// A merged branch is work that is over: the folder it held is somebody
 	// else's turn now. This is the only thing that frees one by itself — a
 	// board working on a branch in the folder itself takes one card at a time,
-	// and «влито в основную» is what says the card is finished with it.
+	// and merged into the main branch is what says the card is finished with it.
 	if ev.Kind == TriggerBranchMerged || ev.Kind == TriggerPRMerged {
 		m.ReleaseMergedBranch(ev.WorkdirPath, ev.Branch)
 	}

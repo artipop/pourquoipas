@@ -22,14 +22,14 @@ const user = (id: string, username: string): IUser => ({
 describe('userDisplay', () => {
     // On an install of one person there is no account and no name: the API
     // synthesizes the session, and the page is the only half that knows which
-    // language to say «Вы» in.
+    // language to say the "you" name in.
     it('calls the person at the machine "You" while they have no account', () => {
         expect(personName(intl, user(SINGLE_USER_ID, 'anything'), 'username')).toBe('You')
         expect(personNameById(intl, SINGLE_USER_ID, {})).toBe('You')
     })
 
     // Turning team mode on registers that person under the same id, so that
-    // their boards stay theirs (docs/teamwork.md) — and from then on «Вы» is
+    // their boards stay theirs (docs/teamwork.md) — and from then on the "you" name is
     // wrong twice: they picked a username, and everybody else would read it as
     // being about themselves.
     it('calls them by the name they picked once the install is a team', () => {

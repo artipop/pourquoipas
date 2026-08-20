@@ -80,7 +80,7 @@ const CenterPanel = (props: Props) => {
     // a board with no deploy target is a board that does not deploy, not a
     // half-configured one. What replaced the badge is a parting note (the
     // wizard says how to come back) and the standing way in: «Как работает эта
-    // доска…» → «Пройти настройку заново…».
+    // доска…» → the setup wizard.
     const [showSetup, setShowSetup] = createSignal(false)
     const [plan, refreshPlan] = createSetupPlan(() => props.board)
     createEffect(() => {
@@ -183,7 +183,7 @@ const CenterPanel = (props: Props) => {
     }
 
     // What a new card is born with: the view's own filter (which is what puts a
-    // card made in «Входящие» into «Мои задачи»), the group it was dropped into,
+    // card made in the inbox view into the my-tasks column), the group it was dropped into,
     // and the board's folder when the board has only one.
     const newCardProperties = (groupByOptionId?: string): Record<string, string> => {
         const {activeView, board, groupByProperty} = props

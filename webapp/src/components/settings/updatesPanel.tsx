@@ -126,7 +126,7 @@ const UpdatesPanel = () => {
     }
 
     // Which build is installed, in words. Two editions are two installers
-    // under one app name, so «какое у меня стоит» has no other answer on
+    // under one app name, so what is installed here has no other answer on
     // screen — and it belongs here, beside the version, because it is the
     // same question. An edition this page does not know is printed as it
     // came: a wrong word is better than a blank line, and both are better

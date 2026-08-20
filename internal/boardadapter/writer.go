@@ -257,7 +257,7 @@ func (w *Writer) boardViews(boardID string) ([]*model.Block, error) {
 // ColumnProperty is the name of the property whose options are this board's
 // columns. It is asked of the board rather than assumed, because a constant
 // default can only ever be right for boards in one language: ours say
-// «Статус», the upstream templates say "Status", and a source pointed at the
+// the status property, the upstream templates say "Status", and a source pointed at the
 // wrong name files nothing anywhere.
 //
 // The answer is the property the board itself groups by — what a person sees as
@@ -335,7 +335,7 @@ func (w *Writer) EnsureColumn(ctx context.Context, boardID, propertyName, option
 const InboxViewTitle = "Входящие"
 
 // MineColumnTitle is the column a person's own card lands in when they press
-// «Создать» on the inbox — everything else there was brought by a source, and a
+// the create button on the inbox — everything else there was brought by a source, and a
 // task somebody typed is not something that arrived and nobody has read.
 //
 // It is a column of the board rather than a group of the view because the view
@@ -372,9 +372,9 @@ func (w *Writer) EnsureInbox(ctx context.Context, boardID, propertyName, optionN
 
 // arrangeKanbans takes the inbox's two columns off the board's own kanbans:
 // both are the inbox screen's business, and neither belongs in the middle of
-// the work. «Мои задачи» stood at the front of the main kanban for one
+// the work. the my-tasks column stood at the front of the main kanban for one
 // version and that was the wrong reading of the ask — a person's unprocessed
-// tasks live on «Входящие» (where the view shows them as their own column),
+// tasks live on the inbox view (where the view shows them as their own column),
 // and the main board stays exactly the board of work.
 //
 // Both in one pass, and one patch per view, because a view's history is keyed
@@ -447,7 +447,7 @@ func withoutOption(raw any, optionID string) ([]any, bool) {
 // clause on the column property, and whether anything changed. The column goes
 // first, because the first value of an "includes" clause is what a card made in
 // that view becomes (CardFilter.propertyThatMeetsFilterClause in the webapp) —
-// which is the whole of how «Создать» on the inbox lands in «Мои задачи».
+// which is the whole of how the create button on the inbox lands in the my-tasks column.
 //
 // A view with no clause on that property is left alone: it was filtered by
 // somebody, and a filter of ours put back would be an edit nobody asked for.
@@ -516,7 +516,7 @@ const inboxViewType = "board"
 // property it had rather than growing a second one saying the same thing.
 const AuthorPropertyTitle = "Автор"
 
-// mineColumnColor is what «Мои задачи» is painted on a board that grew one
+// mineColumnColor is what the my-tasks column is painted on a board that grew one
 // later, and it is the colour the templates ship it in: the same column has to
 // look the same wherever it came from.
 const mineColumnColor = "propColorPurple"
@@ -666,8 +666,8 @@ func (w *Writer) ensureInboxView(boardID, propertyName, optionID, mineID, author
 		if viewType, _ := view.Fields["viewType"].(string); viewType != inboxViewType {
 			fields["viewType"] = inboxViewType
 		}
-		// And an inbox made before «Мои задачи» existed shows only what
-		// arrived, so a card made with the «Создать» button standing right
+		// And an inbox made before the my-tasks column existed shows only what
+		// arrived, so a card made with the the create button button standing right
 		// there would vanish the moment it was made.
 		if filter, changed := filterWithColumn(view.Fields["filter"], propID, mineID); changed {
 			fields["filter"] = filter
@@ -695,9 +695,9 @@ func (w *Writer) ensureInboxView(boardID, propertyName, optionID, mineID, author
 			// into work the same way it is dragged anywhere else.
 			"viewType":  inboxViewType,
 			"groupById": authorID,
-			// Two columns, and «Мои задачи» first: the first value of an
+			// Two columns, and the my-tasks column first: the first value of an
 			// "includes" clause is what a card made in this view becomes, so
-			// pressing «Создать» here writes a task of one's own rather than
+			// pressing the create button here writes a task of one's own rather than
 			// something that arrived and nobody has read.
 			"filter": map[string]any{
 				"operation": "and",
@@ -732,7 +732,7 @@ func (w *Writer) ensureInboxView(boardID, propertyName, optionID, mineID, author
 // isInboxView tells the inbox view from the board's other views by what it
 // shows — a view filtered to the inbox option — rather than by what it is
 // called. The title is the fallback and not the answer: renaming a view is
-// something a person may do, and matching on «Входящие» meant the next card to
+// something a person may do, and matching on the inbox view meant the next card to
 // arrive built a second inbox beside the renamed one.
 func isInboxView(view *model.Block, propID, optionID string) bool {
 	filter, _ := view.Fields["filter"].(map[string]any)

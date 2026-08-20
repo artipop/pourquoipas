@@ -105,7 +105,7 @@ func (m *Manager) ask(ctx context.Context, s *Session, q Question) Answer {
 
 	m.setStatus(s, StatusRunning)
 	// The exchange itself is not commented on the card. A question is live —
-	// it is on the card's face, in the notification and on «Ждут» while it
+	// it is on the card's face, in the notification and on the waiting screen while it
 	// waits, and it is answered in any of them. Once answered it is the
 	// agent's business, and the two comments it used to leave said nothing a
 	// person would come back for.

@@ -475,7 +475,7 @@ func TestAFolderTheRegistryHasNotGotStallsTheCard(t *testing.T) {
 	ev.OptionNames = []string{"такой папки нет"}
 	events.ch <- ev
 
-	// «Агент не запущен: …» was the comment this whole design grew out of: a
+	// the "agent did not start" comment was the comment this whole design grew out of: a
 	// resolution failure is state, and the card shows it while it is true.
 	waitFor(t, 5*time.Second, "the stall record appears", func() bool {
 		_, ok, _ := m.store.Stall("card3")
@@ -674,7 +674,7 @@ func TestASessionAsksTheCardForAToolOutsideThePolicy(t *testing.T) {
 	}
 
 	// The exchange leaves no comments behind. A question is answered where it
-	// is shown — the card's face, the notification, «Ждут» — and once answered
+	// is shown — the card's face, the notification, the waiting screen — and once answered
 	// it is the agent's business; the card keeps what the session did, not how
 	// it was conducted.
 	joined := strings.Join(writer.cardComments("cardAsk"), "\n")

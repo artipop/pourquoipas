@@ -31,7 +31,7 @@ func NewSourceWriter(a *app.App) *SourceWriter { return &SourceWriter{NewWriter(
 
 // CardSpec is a card somebody outside the board asked for: a title, an optional
 // body and properties named rather than identified, since a source knows it
-// wants «Ссылка» filled in and cannot know the id the board gave it.
+// wants the link property filled in and cannot know the id the board gave it.
 //
 // It is an alias of the sources type for the same reason the ACP writes take
 // acp types: the interface being satisfied is declared over there, and one
@@ -96,7 +96,7 @@ func (w *SourceWriter) CreateCard(ctx context.Context, boardID string, spec Card
 		// and Block2Card refuses to read such a field back at all — so a card
 		// created this way could never be touched again. Both cases are the
 		// ordinary one for a notification, which has no body and, on a board
-		// without «Ссылка», no property this card can hold either; and both
+		// without the link property, no property this card can hold either; and both
 		// failures land on the move into the inbox, where nothing about them
 		// explains itself.
 		ContentOrder: []string{},
@@ -147,7 +147,7 @@ func (w *Writer) appendText(cardID, boardID, text string) error {
 // takes the id of the option named, everything else takes the value as it came.
 //
 // A name the board does not have is skipped rather than refused. A source
-// describes what it brought, and boards differ — one carries «Ссылка», the next
+// describes what it brought, and boards differ — one carries the link property, the next
 // does not — so a missing property must cost that property and not the card.
 // Where a card came from lives on the card, under one key of its own — the same
 // bargain as flow (cardstate.go): a card block is what an export carries and

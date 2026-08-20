@@ -7,9 +7,9 @@ import (
 
 // The share sheet, as this package sees it.
 //
-// What the system's «Поделиться» hands over is one link and a title, from an
+// What the system's the share dialog hands over is one link and a title, from an
 // app that knows nothing about boards — so it arrives here exactly as a phone's
-// notification does, and takes the same path: rules, «Входящие», an author of
+// notification does, and takes the same path: rules, the inbox view, an author of
 // its own, the event log, and the same record that keeps a repeat from becoming
 // a second card. That is the whole reason it is a source and not a third way
 // into the board.
@@ -27,7 +27,7 @@ const ShareSourceName = "Поделиться"
 // and nothing more — every item names its own.
 //
 // It carries no rules, so nothing is claimed and everything lands in
-// «Входящие», which is what a link somebody sent to themselves is: something to
+// the inbox view, which is what a link somebody sent to themselves is: something to
 // look at, not something with a place already decided.
 func ShareSource(boardID string) SourceEntry {
 	return SourceEntry{
@@ -61,7 +61,7 @@ func ShareItem(boardID, title, url, note string) Item {
 	url = strings.TrimSpace(url)
 	boardID = strings.TrimSpace(boardID)
 	if title == "" {
-		// A card called «Без названия» says nothing; the link says where it
+		// A card called the untitled name says nothing; the link says where it
 		// goes, which is the whole of what was shared.
 		title = url
 	}

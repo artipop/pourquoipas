@@ -157,7 +157,7 @@ export const getCurrentViewDisplayBy = (state: RootState) => {
 //
 // It is what decides which view a board — or a template's preview — opens on.
 // Sorting by title, which is right for the sidebar, is wrong for that: a view
-// added later and named «Входящие» took the board over from «Дела».
+// added later and named the inbox view took the board over from a chores board.
 export const oldestView = (views: BoardView[]): BoardView =>
     views.reduce((oldest, view) => {
         if (view.createAt !== oldest.createAt) {

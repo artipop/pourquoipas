@@ -40,7 +40,7 @@ func TestRenamingAnAgentKeepsTheCrewsItIsOn(t *testing.T) {
 	}
 }
 
-// A card names its agent through «Кто занимается», which stores the board
+// A card names its agent through the assignee field, which stores the board
 // account's id. Matching on the username derived from the agent's name meant a
 // rename unassigned every card the agent was working on.
 func TestAnAssignedCardFindsItsAgentByAccount(t *testing.T) {

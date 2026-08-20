@@ -14,7 +14,7 @@ type sessionSource interface {
 }
 
 // boardSessionGuard answers the front door. Whose session it is stays the
-// board's business — docs/deferred.md, «Терминал видит любой из команды».
+// board's business — docs/deferred.md, "any teammate can open any terminal".
 func boardSessionGuard(src sessionSource) func(string) bool {
 	return func(token string) bool {
 		if src == nil || token == "" {

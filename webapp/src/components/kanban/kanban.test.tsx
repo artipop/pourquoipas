@@ -175,7 +175,7 @@ describe('src/component/kanban/kanban', () => {
         ), {wrapper: TestRouter})
         expect(container).toMatchSnapshot()
     })
-    // «Входящие» is a kanban grouped by who brought the card, so its columns
+    // the inbox view is a kanban grouped by who brought the card, so its columns
     // are not places a card can be put: dropping one in another column would be
     // asking the board to have been written by somebody else. The cards do not
     // drag there, and there is no group to add.

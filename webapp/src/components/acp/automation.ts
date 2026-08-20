@@ -115,7 +115,7 @@ export type ColumnSpec = {
     maxRunning?: number
 
     // What working in this column means, said to the agent: the reviewer's
-    // brief on «Ревью», the builder's on «В работе». A route node may override
+    // brief on the review column, the builder's on the in-progress column. A route node may override
     // it for its stage alone (FlowNode.prompt).
     prompt?: string
 
@@ -533,7 +533,7 @@ export function routeOptionMissing(board: Board, flow: Flow): boolean {
 
 // unwrittenConditions is the dataflow check: every conditional edge of the
 // route whose property no stage of the route declares as a write. Not an
-// error — «Одобрено» may be a person's own click — but worth a sentence, since
+// error — an approved option may be a person's own click — but worth a sentence, since
 // an edge waiting on a property nothing produces is a route that quietly never
 // moves. The column property itself is exempt: moving between columns is what
 // the route does, not a value somebody writes.
