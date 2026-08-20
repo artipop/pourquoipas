@@ -379,27 +379,30 @@ actually waiting on**. An idle board makes no requests at all.
 ```mermaid
 flowchart LR
     P["В работе<br/>agent"] -->|done| R["На ревью"]
-    P -->|failed| B["Заблокировано"]
     R -->|branch merged| D["Деплой<br/>deploy"]
     D -->|done| T["QA<br/>test"]
-    D -->|failed| F["Не прошло"]
-    T -->|passed| OK["Проверено"]
+    D -->|failed| P
+    T -->|passed| OK["Готово 🙌"]
     T -->|failed| P
-    T -->|could not test| B
 ```
 
-The loop is the point: a failed check sends the card back to the agent rather
-than to a person, and the next session opens a new branch which the route then
-follows.
+The loop is the point: what fails goes back to the agent rather than to a
+person, and the next session opens a new branch which the route then follows.
+
+**What has no arrow is not an oversight.** The agent's own stage failing, and a
+check that could not run at all, both leave the card where it stopped: sending a
+task back to the agent that has just failed it is a loop with nothing new in it,
+and a check with no browser to run in is a person's to fix. The card carries the
+outcome in its «Исход» field and the reason on its route strip — which is what
+the «Не прошло» and «Заблокировано» columns used to be, without the columns.
 
 ### «Хотфикс» — written and published
 
 ```mermaid
 flowchart LR
     P["В работе<br/>agent"] -->|done| D["Деплой<br/>deploy"]
-    P -->|failed| B["Заблокировано"]
-    D -->|done| C["Готово"]
-    D -->|failed| F["Не прошло"]
+    D -->|done| C["Готово 🙌"]
+    D -->|failed| P
 ```
 
 ### «Только ревью» — never deployed from here
@@ -407,8 +410,7 @@ flowchart LR
 ```mermaid
 flowchart LR
     P["В работе<br/>agent"] -->|done| R["На ревью"]
-    P -->|failed| B["Заблокировано"]
-    R -->|branch merged| C["Готово"]
+    R -->|branch merged| C["Готово 🙌"]
 ```
 
 A card takes a route by naming it in its **«Сценарий»** field. A card that names

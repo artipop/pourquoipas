@@ -113,11 +113,18 @@ func featureFlow(cfg Config) FlowEntry {
 	b.edge(deploy, qa, TriggerSuccess)
 	b.edge(qa, done, TriggerSuccess)
 
-	// A failed check goes back to the agent, which is the loop this route is
-	// for. Everything else that fails has no edge on purpose: the card parks
-	// where it stopped, carrying the outcome and the reason, instead of being
-	// carried off to a column that is not a place.
+	// What failed goes back to the agent — that loop is the point of the whole
+	// route, and it is where the work can actually be fixed. It replaced a
+	// «Не прошло» column, which was the same arrow with a parking space bolted
+	// to the end of it.
+	b.edge(deploy, agent, TriggerFailure)
 	b.edge(qa, agent, TriggerFailure)
+
+	// Except the agent's own stage and «проверить не удалось»: sending a task
+	// back to the agent that just failed it is a loop with nothing new in it,
+	// and a check that could not run is a person's to fix — no browser, no
+	// preview to reach. Both park the card where it stopped with the outcome on
+	// it and the reason on the strip.
 	return b.flow
 }
 
@@ -131,6 +138,7 @@ func hotfixFlow(cfg Config) FlowEntry {
 
 	b.edge(agent, deploy, TriggerSuccess)
 	b.edge(deploy, done, TriggerSuccess)
+	b.edge(deploy, agent, TriggerFailure)
 	return b.flow
 }
 

@@ -146,9 +146,15 @@ const LANE = 26
 // box, which is 58 tall and 78 with outputs on it.
 const LANE_BASE = 48
 
-// longHaul says the arrow spans more than one column of the layout, in either
-// direction: a return to an earlier stage, or a jump past several. Those are the
-// ones that cross the picture; a step to the next stage never does.
+// longHaul says the arrow needs a corridor of its own rather than the direct
+// route between two boxes: anything going backwards — a failed check returning
+// the card to the agent — and anything jumping past a stage. A step to the next
+// stage is the one case that never crosses anything.
+//
+// Backwards counts however short it is. An arrow one column back still has to
+// travel the width of both boxes to get there, and the library draws it through
+// them: opaque boxes then cut it into pieces, which reads as two broken stubs
+// rather than as one arrow.
 export function longHaul(nodes: FlowNode[], edges: FlowEdge[]): Map<string, number> {
     const depth = depths(nodes, edges)
     const out = new Map<string, number>()
@@ -159,8 +165,10 @@ export function longHaul(nodes: FlowNode[], edges: FlowEdge[]): Map<string, numb
         if (from === undefined || to === undefined) {
             return
         }
-        if (Math.abs(to - from) <= 1) {
-            return
+        if (to > from + 1) {
+            // forward, past at least one stage
+        } else if (to > from) {
+            return // the next stage along: the direct route crosses nothing
         }
         out.set(edgeId(edge, index), lane)
         lane += 1
@@ -494,7 +502,14 @@ type FlowHandle = {
 
 // How the graph sits in the canvas: the whole picture, with a margin small
 // enough that the boxes are the point and the emptiness around them is not.
-const FIT_VIEW = {padding: 0.08, maxZoom: 1.5}
+//
+// maxZoom is 1, which is "the box at the size it was drawn". It was 1.5, and a
+// route of three stages was magnified half again to fill the canvas — boxes
+// that size read as a mistake rather than as a short route, and the same stage
+// changed size depending on which tab it was on. The margin is the second half
+// of that: a picture pressed against the edges of its frame reads as one that
+// did not fit.
+const FIT_VIEW = {padding: 0.16, maxZoom: 1}
 
 // How many frames a re-fit waits for the canvas to measure the boxes it has
 // just been handed. Generous, because being late costs nothing and being early

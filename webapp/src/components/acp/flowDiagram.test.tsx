@@ -258,6 +258,22 @@ describe('components/acp/flowDiagram builder', () => {
         expect(lanes.get('test-failure-3')).toBe(0)
     })
 
+    // And a return of one column is still a return: it travels the width of two
+    // boxes to get there, and the library draws it through them — which cuts it
+    // into what look like two broken stubs.
+    test('an arrow one column back is laned too', () => {
+        const back = [
+            {id: 'a', column: 'A', action: 'agent'},
+            {id: 'b', column: 'B', action: 'deploy'},
+        ]
+        const lanes = longHaul(back, [
+            {from: 'a', to: 'b', on: SUCCESS},
+            {from: 'b', to: 'a', on: FAILURE},
+        ])
+        expect(lanes.has('a-success-0')).toBe(false)
+        expect(lanes.get('b-failure-1')).toBe(0)
+    })
+
     test('a lane runs under the lower of the two stages, and two lanes do not share a corridor', () => {
         const first = lanePath(100, 50, 400, 50, 0)
         const second = lanePath(100, 50, 500, 50, 1)
