@@ -211,3 +211,60 @@ func TestARequestToAnAttachedServerDoesNotDescribeOurOwnDoor(t *testing.T) {
 		t.Error("stripping one cookie took the others with it")
 	}
 }
+
+// The split attaching makes, and the whole of it: the data goes to the server,
+// the page stays here.
+//
+// The page is not fetched from the server because it is already on this disk —
+// webapp/pack is embedded in this binary — and because it is *ours*: the
+// bootstrap injected into it assumes a page that knows window.go.main.App, so a
+// server on another version would hand back one this desktop does not match.
+func TestAttachedTheDataGoesAcrossAndThePageStaysHere(t *testing.T) {
+	var asked []string
+	far := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		asked = append(asked, r.URL.Path)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"from":"the server"}`)
+	}))
+	t.Cleanup(far.Close)
+
+	near := upstream(t, "text/html; charset=utf-8", "<html><head></head><body>ours</body></html>")
+	h, err := newServerProxy(near, far.URL, func() string { return "session" })
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	get := func(path string) string {
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+		body, _ := io.ReadAll(rec.Result().Body)
+		return string(body)
+	}
+
+	for _, path := range []string{"/api/v2/boards", "/api/v2/files/teams/0/b/f", "/ws"} {
+		if got := get(path); !strings.Contains(got, "the server") {
+			t.Errorf("%s was answered here: %q", path, got)
+		}
+	}
+	if len(asked) != 3 {
+		t.Errorf("the server was asked for %v, want the three data paths", asked)
+	}
+
+	// The page and its assets are this binary's own, and they carry the
+	// bootstrap with the server's session in it.
+	page := get("/")
+	if !strings.Contains(page, "ours") {
+		t.Errorf("the page came from somewhere else: %q", page)
+	}
+	if !strings.Contains(page, "session") {
+		t.Error("the page was served without the attached server's session")
+	}
+	for _, path := range []string{"/static/main.js", "/anything/else"} {
+		if got := get(path); !strings.Contains(got, "ours") {
+			t.Errorf("%s left this machine: %q", path, got)
+		}
+	}
+	if len(asked) != 3 {
+		t.Errorf("the server was asked for the page too: %v", asked)
+	}
+}

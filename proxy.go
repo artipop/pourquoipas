@@ -128,46 +128,65 @@ func bootstrapScript(sessionToken string) string {
 </script>`, sessionToken)
 }
 
-// newServerProxy builds a reverse proxy to the board the page talks to. It sits
-// behind the front door on everything except /wails/, so HTML, /api, /files and
-// the /ws upgrade all reach it — the upgrade included, which is the one thing
-// Wails' own asset server cannot forward. The bootstrap script is injected into
-// HTML responses on the way back.
+// newServerProxy builds what the front door puts behind everything that is not
+// /wails/ or /acp/: the page, and the board the page talks to.
 //
-// Which board that is, is a question the front door never had to ask: it was
-// always the one in this process. A desktop attached to a hosted server points
-// it somewhere else, and that is the whole of what attaching does to the page —
-// the origin the page is served under does not move, so sameOrigin, hostGuard,
-// /wails/, /acp/* and both of our own sockets are untouched.
+// Unattached those are the same thing — this process's own board server serves
+// both the webapp and the API, and one reverse proxy carries the lot.
+//
+// Attached, they come apart, and the split is the point. **The page is not
+// fetched from the server.** It is already here: webapp/pack is go:embed'ed
+// into this binary and served off disk, so proxying somebody's HTML would be
+// asking the network for a file already on this disk — and worse, it would be
+// *their* page rather than ours. The bootstrap script injected into it builds
+// window.go.main.App and assumes a page that knows what to do with it, so a
+// server on a different version would hand back a page this desktop's Go side
+// does not match.
+//
+// What genuinely lives on the server is the data, and the page asks for all of
+// it under two prefixes: /api/v2 (the board API, /files included) and /ws (the
+// board's own socket). Those go across; everything else — index.html, /static
+// — stays local. The page never knows which is which: every path it builds is
+// relative to window.location.origin, and that is the front door either way.
 //
 // port is this process's own board; attached is the origin of a server, empty
 // when there is none. token is asked per response rather than baked in, because
 // the session for a hosted board is not known until somebody logs in.
 func newServerProxy(port int, attached string, token func() string) (http.Handler, error) {
-	target, err := url.Parse(fmt.Sprintf("http://localhost:%d", port))
+	local, err := url.Parse(fmt.Sprintf("http://localhost:%d", port))
 	if err != nil {
 		return nil, err
 	}
-	if attached != "" {
-		target, err = url.Parse(attached)
-		if err != nil {
-			return nil, fmt.Errorf("attached server %q: %w", attached, err)
-		}
+	page := httputil.NewSingleHostReverseProxy(local)
+	pageDirector := page.Director
+	page.Director = func(req *http.Request) {
+		pageDirector(req)
+		req.Host = local.Host
+		// Ask upstream for uncompressed HTML so we can inject the bootstrap script.
+		req.Header.Del("Accept-Encoding")
+	}
+	page.ModifyResponse = injectBootstrap(token)
+
+	if attached == "" {
+		return page, nil
 	}
 
-	proxy := httputil.NewSingleHostReverseProxy(target)
-
-	baseDirector := proxy.Director
-	proxy.Director = func(req *http.Request) {
-		baseDirector(req)
-		// Load-bearing once the target is somebody else's server: its own
+	remote, err := url.Parse(attached)
+	if err != nil {
+		return nil, fmt.Errorf("attached server %q: %w", attached, err)
+	}
+	data := httputil.NewSingleHostReverseProxy(remote)
+	dataDirector := data.Director
+	data.Director = func(req *http.Request) {
+		dataDirector(req)
+		// Load-bearing, unlike the local one above: the far side's own
 		// hostGuard checks the Host it was published under and would refuse a
-		// loopback one. Do not "simplify" this away.
-		req.Host = target.Host
+		// loopback name. Do not "simplify" this away.
+		req.Host = remote.Host
 		// Our loopback origin is not who is calling upstream, and saying so is
 		// a lie a guard added there later would believe. Sec-Fetch-* is the
 		// browser's own account of the fetch and means nothing after a hop.
-		req.Header.Set("Origin", target.Scheme+"://"+target.Host)
+		req.Header.Set("Origin", remote.Scheme+"://"+remote.Host)
 		req.Header.Del("Sec-Fetch-Site")
 		req.Header.Del("Sec-Fetch-Mode")
 		req.Header.Del("Sec-Fetch-Dest")
@@ -175,11 +194,19 @@ func newServerProxy(port int, attached string, token func() string) (http.Handle
 		// The front door's own cookie is the front door's business. The board
 		// authenticates by the Authorization header the page sends.
 		stripCookie(req, sessionCookie)
-		// Ask upstream for uncompressed HTML so we can inject the bootstrap script.
-		req.Header.Del("Accept-Encoding")
 	}
 
-	proxy.ModifyResponse = func(resp *http.Response) error {
+	mux := http.NewServeMux()
+	mux.Handle("/api/v2/", data)
+	mux.Handle("/ws", data)
+	mux.Handle("/", page)
+	return mux, nil
+}
+
+// injectBootstrap puts the shim into the served HTML, right after <head>, so
+// the token is set before app scripts load.
+func injectBootstrap(token func() string) func(*http.Response) error {
+	return func(resp *http.Response) error {
 		if !strings.HasPrefix(resp.Header.Get("Content-Type"), "text/html") {
 			return nil
 		}
@@ -188,7 +215,6 @@ func newServerProxy(port int, attached string, token func() string) (http.Handle
 		if err != nil {
 			return err
 		}
-		// Insert right after <head> so the token is set before app scripts load.
 		if idx := bytes.Index(body, []byte("<head>")); idx != -1 {
 			at := idx + len("<head>")
 			inject := []byte(bootstrapScript(token()))
@@ -199,8 +225,6 @@ func newServerProxy(port int, attached string, token func() string) (http.Handle
 		resp.Header.Set("Content-Length", fmt.Sprintf("%d", len(body)))
 		return nil
 	}
-
-	return proxy, nil
 }
 
 // stripCookie removes one cookie from a request, leaving the others.
