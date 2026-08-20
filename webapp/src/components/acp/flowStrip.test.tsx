@@ -21,7 +21,10 @@ const cardFlow = {
 }
 
 function stubBindings(flow: unknown) {
-    const bindings = {GetCardFlow: vi.fn().mockResolvedValue(JSON.stringify(flow))}
+    const bindings = {
+        GetCardFlow: vi.fn().mockResolvedValue(JSON.stringify(flow)),
+        MarkCardOutcome: vi.fn().mockResolvedValue(undefined),
+    }
     anyWindow.go = {main: {App: bindings}}
     return bindings
 }
@@ -97,5 +100,38 @@ describe('components/acp/flowStrip', () => {
         render(() => wrapIntl(() => <FlowStrip cardId='card1'/>))
         await waitFor(() => expect(screen.getByText(/working now/)).toBeInTheDocument())
         expect(screen.queryByText(/агент не запущен/)).toBeNull()
+    })
+
+    // A stage where nobody works and nothing runs waits for a person to say how
+    // it went, and saying so used to mean opening the card, finding «Исход» and
+    // picking a value out of it. The route knows where each answer leads, so
+    // the card asks it as two buttons named by the stage they lead to.
+    test('a stage that waits for a person offers its two answers', async () => {
+        const bindings = stubBindings({
+            ...cardFlow,
+            marks: [
+                {value: 'не прошло', column: 'In Progress', forward: false},
+                {value: 'прошло', column: 'Deploy', forward: true},
+            ],
+        })
+        render(() => wrapIntl(() => <FlowStrip cardId='card-1'/>))
+
+        const back = await screen.findByRole('button', {name: /In Progress/})
+        expect(await screen.findByRole('button', {name: /Deploy/})).toBeInTheDocument()
+
+        // The arrow says which way, so the value does not have to be on the
+        // button — but it is what gets written.
+        back.click()
+        await waitFor(() => expect(bindings.MarkCardOutcome).toHaveBeenCalledWith('card-1', 'не прошло'))
+    })
+
+    // A stage that decides for itself offers nothing: the agent reports, and
+    // two buttons beside a running session would be a second way to answer.
+    test('a working stage offers no answers', async () => {
+        stubBindings({...cardFlow, running: true, marks: [{value: 'прошло', column: 'Deploy', forward: true}]})
+        const {container} = render(() => wrapIntl(() => <FlowStrip cardId='card-1'/>))
+
+        await waitFor(() => expect(container.querySelector('.FlowStrip')).toBeInTheDocument())
+        expect(container.querySelector('.FlowStrip__mark')).toBeNull()
     })
 })

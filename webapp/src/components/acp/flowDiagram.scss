@@ -34,32 +34,6 @@
         overflow: hidden;
     }
 
-    // The two answers a stage where nothing runs takes. Quieter than the
-    // outputs above them: an output is something to pull an arrow from, and
-    // these are read.
-    .FlowDiagram__answers {
-        display: flex;
-        flex-wrap: nowrap;
-        gap: 4px;
-        margin-top: 3px;
-        overflow: hidden;
-    }
-
-    .FlowDiagram__answer {
-        padding: 1px 5px;
-        border-radius: var(--radius-sm);
-        background: rgba(var(--error-text-rgb), 0.14);
-        color: rgba(var(--error-text-rgb), 0.9);
-        font-size: 10px;
-        line-height: 14px;
-        white-space: nowrap;
-    }
-
-    .FlowDiagram__answer--forward {
-        background: rgba(var(--online-indicator-rgb), 0.14);
-        color: rgba(var(--online-indicator-rgb), 1);
-    }
-
     // What the stage leaves on the card. A branchable one is also the port a
     // fork is pulled from, so it is drawn as something to grab: the ordinary
     // chip is quiet, this one carries the board's own ink.

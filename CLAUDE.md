@@ -1452,14 +1452,12 @@ notify is what wakes `handleCardChanged` and moves the card. Offered only where
 the route has such an edge and nothing is running: a stage that decides for
 itself must not grow a second way to answer for it.
 
-**Those two transitions are not drawn as arrows** (`isOutcomeEdge`,
-`StageAnswer`). They are a row on the stage's own box carrying the same two
-labels the card does — «← В работе», «Деплой →». As arrows they were a faint
-dashed line running the width of the graph in a corridor of its own, and the
-same fact was then on screen twice: once as wiring nobody wires, and once as the
-buttons that actually answer it. The value is the colour and the direction is
-the arrow, because the box is 190px wide and «не прошло → В работе» spelled out
-fitted one chip of the two.
+**Those two transitions are not drawn at all** (`isOutcomeEdge`). Not as arrows
+— they were a faint dashed line running the width of the graph in a corridor of
+its own — and not as a row on the stage's box either, which was the same fact in
+a second place. They are answered on the card and the editor has nothing to add
+to that; the route still holds the edges, because they are what make the buttons
+work.
 
 **Deleting a route is confirmed and then written through** rather than queued
 behind Save (`onDeleteRoute`). Everything else in that editor is a draft

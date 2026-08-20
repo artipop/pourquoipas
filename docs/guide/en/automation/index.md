@@ -90,10 +90,10 @@ The **"Columns"** tab, select a column — in the panel:
   same thing as picking the value, in one press and with the consequence
   visible.
 
-  On the canvas those two transitions are drawn as a row on the stage's own box
-  — the same two labels the card carries — and not as arrows. As arrows they
-  were a faint dashed line across the whole picture, and the same fact was on
-  screen twice.
+  On the canvas those two transitions are not shown at all, and that is
+  deliberate: they are answered on the card, and the editor has nothing to add
+  to that. As arrows they were a faint dashed line across the whole picture; as
+  a row on the box they were the same fact in a second place.
 
   «Исход» can be set by hand as well, and the way back from a review rests on
   that. Nothing runs in «На ревью», so it has no "failed" of its own — git can
