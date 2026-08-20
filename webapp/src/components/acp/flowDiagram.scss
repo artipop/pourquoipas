@@ -177,6 +177,24 @@
         }
     }
 
+    // The grab points at an arrow's ends, shown while it is selected. Bigger
+    // than the sockets they sit on: this is a target for a drag that starts by
+    // hunting for it, where a socket is a target you already know the place of.
+    // The size is the library's, set inline from the `size` prop, so this only
+    // says what the grab point looks like: a ring rather than a disc, because a
+    // filled one blots out the very line it is offering to move.
+    .FlowDiagram__anchor {
+        box-sizing: border-box;
+        border-radius: 50%;
+        background: transparent;
+        box-shadow: 0 0 0 2px rgb(var(--error-text-rgb)) inset, 0 0 0 2px rgba(var(--center-channel-bg-rgb), 0.9);
+        cursor: grab;
+    }
+
+    .FlowDiagram__anchor:active {
+        cursor: grabbing;
+    }
+
     // The arrow's own caption, and — while it is selected — the way to cut it.
     // A wrong arrow is cut where it is: the panel's Remove is three steps away,
     // and somebody looking at the line is looking at the line.

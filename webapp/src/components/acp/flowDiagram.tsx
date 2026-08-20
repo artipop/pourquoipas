@@ -3,6 +3,7 @@ import {
     Background,
     BaseEdge,
     EdgeLabel,
+    EdgeReconnectAnchor,
     Connection,
     Controls,
     Edge,
@@ -493,6 +494,27 @@ const LaneEdge = (props: EdgeProps) => {
                 markerEnd={props.markerEnd}
                 interactionWidth={props.interactionWidth}
             />
+            {/* The library's own way to break or re-point an arrow: grab its
+                end and drag. Dropping it on another stage moves the arrow
+                there; dropping it on nothing at all breaks it (onReconnectEnd).
+                It is per-end rather than per-socket on purpose — a socket holds
+                as many arrows as the stage forks into, so a ✕ on the socket
+                could not say which one it meant. */}
+            <Show when={props.selected && actions}>
+                <EdgeReconnectAnchor
+                    type='source'
+                    class='FlowDiagram__anchor'
+                    size={14}
+                    position={{x: props.sourceX, y: props.sourceY}}
+                />
+                <EdgeReconnectAnchor
+                    type='target'
+                    class='FlowDiagram__anchor'
+                    size={14}
+                    position={{x: props.targetX, y: props.targetY}}
+                />
+            </Show>
+
             <Show when={props.label || props.selected}>
                 <EdgeLabel
                     x={path().labelX}
@@ -783,6 +805,7 @@ const FlowDiagram = (props: Props) => {
                     sourceHandle: kind === 'event' ? HANDLE_EVENT : kind,
                     type: 'lane',
                     class: `FlowDiagram__edge FlowDiagram__edge--${kind}${chosen ? ' FlowDiagram__edge--selected' : ''}`,
+
                     // The canvas' own idea of "selected", set from ours: it is
                     // what reaches the edge component, and the ✕ hangs off it.
                     selected: chosen,
@@ -868,6 +891,26 @@ const FlowDiagram = (props: Props) => {
         }
         props.onChange(props.nodes, props.edges.filter((e, i) => edgeId(e, i) !== id))
         props.onSelect?.(null)
+    }
+
+    // An arrow's end dropped on another stage: the arrow moves there rather
+    // than a second one appearing beside it.
+    const onReconnect = (edge: Edge, connection: Connection) => {
+        if (!props.onChange) {
+            return
+        }
+        joinSpares(connection.source, connection.target)
+        props.onChange(props.nodes, props.edges.map((e, i) => (edgeId(e, i) === edge.id ? {...e, from: connection.source, to: connection.target} : e)))
+    }
+
+    // …and dropped on nothing: the arrow is broken. That is the gesture this
+    // whole anchor exists for — cutting a link where the link is, without
+    // hunting for a control first.
+    const onReconnectEnd = (_e: MouseEvent | TouchEvent, edge: Edge, _type: string, state: {isValid?: boolean} | undefined) => {
+        if (!props.onChange || state?.isValid) {
+            return
+        }
+        removeEdgeById(edge.id)
     }
 
     const onEdgesDelete = (deleted: Edge[]) => {
@@ -980,6 +1023,8 @@ const FlowDiagram = (props: Props) => {
                         onEdgesDelete={onEdgesDelete}
                         onNodeClick={onNodeClick}
                         onEdgeClick={({edge}: {edge: Edge}) => props.onSelect?.({kind: 'edge', id: edge.id})}
+                        onReconnect={onReconnect}
+                        onReconnectEnd={onReconnectEnd}
                         onPaneClick={() => props.onSelect?.(null)}
                         nodeTypes={nodeTypes}
                         edgeTypes={edgeTypes}
