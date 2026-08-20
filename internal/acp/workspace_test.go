@@ -223,7 +223,7 @@ func TestAnOrdinaryFolderIsItsOwnWorkspace(t *testing.T) {
 // A card that already has a workspace keeps it, whatever the folder decides
 // afterwards: its work is in there. And a card working in a copy of its own
 // holds nothing, so it can never keep another card out of the folder — which is
-// what "папка занята другой карточкой" said about a card that had finished.
+// what "the folder is held by another card" said about a card that had finished.
 func TestChangingTheFoldersModeLeavesRunningCardsAlone(t *testing.T) {
 	m, repo := workspaceManager(t)
 	if _, err := m.SetWorkdirMode("code", "board1", WorkModeWorktree); err != nil {

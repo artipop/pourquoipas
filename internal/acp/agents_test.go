@@ -384,8 +384,9 @@ func TestAgentAccountsAreCaughtUpAtStartup(t *testing.T) {
 }
 
 // A registry named in Russian is a registry the board can name back. This is
-// the whole of the bug reported as «агенты есть, но в исполнителе их нет»: the
-// sync asked for accounts and was handed nothing to create.
+// the whole of the bug reported as "the agents are registered but the assignee
+// field does not offer them": the sync asked for accounts and was handed
+// nothing to create.
 func TestAgentUsersKeepsRussianNames(t *testing.T) {
 	m := &Manager{}
 	m.cfg.Agents = []AgentEntry{{ID: newID(), Name: "клаус", Kind: "claude"}, {ID: newID(), Name: "Codex", Kind: "codex"}}

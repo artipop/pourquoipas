@@ -141,7 +141,7 @@ type FlowNode struct {
 
 	// Writes are the properties this stage leaves on the card — its declared
 	// outputs, which is what makes a transition on a property deterministic:
-	// an edge that reads «Вердикт» can point at the stage that must write it.
+	// an edge that reads a verdict property can point at the stage writing it.
 	// An agent stage delivers the values through finish_work and a required
 	// one is refused without them; a deploy stage writes its preview URL into
 	// each named property, a test stage its verdict. Empty inherits the

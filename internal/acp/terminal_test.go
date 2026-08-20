@@ -576,7 +576,7 @@ func TestFolderlessResumeNamesNoWorktree(t *testing.T) {
 
 // A conversation that already exists continues with whoever held it. It used
 // to be re-resolved from scratch, so registering a second agent made every
-// old conversation refuse with «на карточке не указан агент» — and the
+// old conversation refuse for naming no agent on the card — and the
 // transcript `--continue` picks up belongs to the held agent's CLI anyway.
 func TestResumedConversationKeepsItsAgent(t *testing.T) {
 	if _, err := exec.LookPath("sh"); err != nil {
@@ -1111,7 +1111,7 @@ func TestTheCardsOwnConversationIsNotTheWorkOnIt(t *testing.T) {
 
 // Conversations are keyed by node, and two nodes are two rows that have to
 // read as two: the panel once drew a pair both named after the card, in the
-// same folder, with the same agent — «два терминала, но они одинаковые».
+// same folder, with the same agent: two terminals that read as one.
 func TestConversationsOnTwoNodesAreTwoDifferentRows(t *testing.T) {
 	fakeCLIOnPath(t, "claude", "sleep 30")
 	m, _, _, project := testManager(t, "idle", func(cfg *Config) {

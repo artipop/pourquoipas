@@ -188,7 +188,7 @@ export class UserSettings {
     }
 
     // On unless it has been turned off: a board with one folder has one answer
-    // to «где работать», and making a person give it on every card is asking a
+    // to where to work, and making a person give it on every card is asking a
     // question that has no second option. What is written is an ordinary value
     // on the card, so it is visible and can be changed or cleared — which is
     // why it is safe to write it without being asked.

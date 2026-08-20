@@ -64,7 +64,8 @@ export default function KanbanColumnHeader(props: Props): JSX.Element {
     const canEditBoardProperties = useHasCurrentBoardPermissions([Permission.ManageBoardProperties])
 
     // Who a group is, when the board is grouped by a person rather than by an
-    // option: «кто создал» groups by user id, and an id is not a heading.
+    // option: grouping by who created a card groups by user id, and an id is
+    // not a heading.
     const boardUsers = useAppSelector<{[key: string]: IUser}>(getBoardUsers)
     const me = useAppSelector<IUser|null>(getMe)
     const teamMode = useAppSelector<boolean>(getTeamMode)

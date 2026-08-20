@@ -234,8 +234,8 @@ func (m *Manager) startStageTerminal(s *Session) (*TerminalSession, error) {
 // CLI reads a repeated brief as a fresh instruction — but why it is back, in
 // the words of whatever sent it. The latest arrival on this node carries the
 // trigger and, for a stage's own verdict, what that stage reported
-// (FlowEventRecord.Said): «ревьюер вернул с такими-то замечаниями» is exactly
-// the new input the resumed session works from. Empty when the card has not
+// (FlowEventRecord.Said): what the reviewer sent it back with is exactly the
+// new input the resumed session works from. Empty when the card has not
 // been away, and the resume then delivers the ordinary prompt.
 func (m *Manager) returnBrief(cardID, nodeID string) string {
 	events, err := m.store.FlowEvents(cardID)

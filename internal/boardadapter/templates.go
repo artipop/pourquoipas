@@ -160,8 +160,8 @@ func importTemplates(a *app.App, log mlog.LoggerIFace, version int) error {
 	}
 
 	// A template we used to ship and no longer do. It was installed by this app
-	// and belongs to it, so it goes with the build that dropped it — otherwise
-	// «Покупки и меню» stands in the picker for ever, maintained by nobody and
+	// and belongs to it, so it goes with the build that dropped it — otherwise a
+	// retired template stands in the picker for ever, maintained by nobody and
 	// deletable by nobody, since the app's own templates carry no delete
 	// button. Boards made from it are untouched: they are the person's.
 	for slug, board := range installed {

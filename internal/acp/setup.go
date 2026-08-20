@@ -242,7 +242,7 @@ func (m *Manager) SetupPlanFor(boardID string) SetupPlan {
 // Deletable once boards made before the wording changed are gone; each entry
 // says what it was fixing.
 var retiredHints = map[string]string{
-	// Said what the machinery does («в отдельном worktree»), and how a
+	// Said what the machinery does — a worktree of its own — and how a
 	// repository is worked in is now the board's own answer rather than a fact
 	// about the step. What the step needs to know is what to point at.
 	"Репозиторий с кодом: агент работает в отдельном worktree и оставляет ветку.": "Папка с файлами по проекту или git-репозиторий",
@@ -482,7 +482,7 @@ func (m *Manager) SetTestAgent(boardID, agentName string, servers MCPServerSet) 
 // columns.
 //
 // A crew, not one name, because that is what a stage holds and what a person
-// answering «кто работает карточки этой доски» may mean — two agents sharing
+// answering "who works this board's cards" may mean — two agents sharing
 // the column is an ordinary arrangement, and the engine already picks the free
 // one. An empty list is an answer too: it takes the crew off, and a board that
 // names nobody is back to offering every agent on the machine, which is what a

@@ -39,7 +39,7 @@ const Comment: Component<Props> = (props: Props) => {
     const teamMode = useAppSelector<boolean>(getTeamMode)
     const date = () => new Date(props.comment.createAt)
 
-    // «2 часа назад» is moment's phrasing, and moment only knows it once the
+    // A relative time is moment's phrasing, and moment only knows it once the
     // locale definitions have arrived. Read the revision inside the same
     // expression that formats, or the comment keeps the English it was first
     // drawn with.

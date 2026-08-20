@@ -38,7 +38,7 @@ import {isInboxView} from '../acp/inboxView'
 //
 // And what is true of *this view* is the rest of the sorting. the inbox view is the
 // one view about where cards come from, so it is the one that offers
-// «Источники…» — and offers nothing else: exporting the inbox, saving it as a
+// the sources dialog — and offers nothing else: exporting the inbox, saving it as a
 // template or editing the board's routes are questions about the board, asked
 // from the screen the board is on. Everywhere else the menu is the board's, and
 // sources are not in it: hunting for the setting that feeds the inbox anywhere

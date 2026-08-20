@@ -317,7 +317,7 @@ p {
     color: var(--muted);
 }
 
-/* A hyphen is a break opportunity, and «ИИ-агенты» split across lines reads as
+/* A hyphen is a break opportunity, and a hyphenated word split across lines reads as
    two words. */
 .nowrap {
     white-space: nowrap;

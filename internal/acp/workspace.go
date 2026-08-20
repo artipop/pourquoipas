@@ -127,11 +127,11 @@ func (m *Manager) workspaceID(path string) string {
 // registerWorkedFolder adds a folder the app found itself working in, under
 // the directory's own name and attached to no board.
 //
-// Unattached on purpose: «не привязана ни к какой доске» is a state the product
+// Unattached on purpose: belonging to no board is a state the product
 // already has, and it is the honest one here — nobody chose this folder on a
 // board. So it is offered nowhere and picked by nothing; it exists so the work
-// in it can be recorded, and so a person can see in the folders name what has actually
-// been opened.
+// in it can be recorded, and so a person can see in the folder list what has
+// actually been opened.
 //
 // Reaching it at all is a bug somewhere else, hence the warning: since a card
 // can only name a folder the registry offers, there is no longer a path by
@@ -463,7 +463,7 @@ func (m *Manager) WorkspaceModeForCard(cardID string) (mode, branch, base string
 type CardWork struct {
 	// Branch the card works on, wherever that was learned.
 	Branch string `json:"branch,omitempty"`
-	// Base is what the branch was cut from, and what «влито» waits for. Only a
+	// Base is what the branch was cut from, and what a merge waits for. Only a
 	// claim knows it.
 	Base string `json:"base,omitempty"`
 	// Mode is how the folder is worked in — WorkModeWorktree or

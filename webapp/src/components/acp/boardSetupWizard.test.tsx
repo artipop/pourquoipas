@@ -267,7 +267,7 @@ describe('components/acp/boardSetupWizard', () => {
         expect(bindings.AddAgent).not.toHaveBeenCalled()
     })
 
-    // The step that says «Уже добавлены: …» is also the step to add another
+    // The step that lists what is already added is also the step to add another
     // one on: a board is worked by a crew often enough, and the alternative was
     // an errand to the settings for the one thing this screen is about.
     test('another agent can be added on a step that already has one', async () => {
@@ -494,8 +494,8 @@ describe('components/acp/boardSetupWizard', () => {
     })
 
     // Leaving early is offered while there is something left to answer. On the
-    // last screen there is not, and «Готово» beside «Разберусь сам» read as two
-    // ways out of a wizard that had already finished.
+    // last screen there is not, and the finish button beside the leave-early
+    // one read as two ways out of a wizard that had already finished.
     test('the last screen offers only Done, and the ones before it offer to leave', async () => {
         stubBindings({
             BoardSetupPlan: vi.fn().mockResolvedValue(plan([{kind: 'browser', optional: true}, {kind: 'done'}])),

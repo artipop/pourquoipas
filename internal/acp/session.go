@@ -474,7 +474,7 @@ func (m *Manager) commentFirstTurn(s *Session, finalText string, err error) {
 	case s.wasCancelled():
 		// A cancelled turn ends with StopReason "cancelled", not an error.
 		// Nothing is said on the card: somebody pressed the button a second
-		// ago and the card's own status says «отменена».
+		// ago and the card's own status already says it was cancelled.
 		m.finishSession(s, StatusCancelled, "сессия отменена")
 	case err != nil:
 		m.finishSession(s, StatusFailed, err.Error())

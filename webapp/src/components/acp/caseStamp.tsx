@@ -54,8 +54,8 @@ const CaseStamp = (props: Props) => {
         // branch checked out elsewhere — one workspace, not a branch *and* a
         // worktree — and stamping both was what made it read as if the app
         // had created two things. The line is *named after the folder's own
-        // setting* — a copy of its own stamps worktree, «в самой папке»
-        // stamps branch — because a person who chose one word and reads the
+        // setting* — a copy of its own stamps worktree, working in the folder
+        // itself stamps branch — because a person who chose one word and reads the
         // other concludes the setting did not take. The value is the branch
         // either way: it is the one handle git commands accept, and the
         // copy's path rides in the tooltip. Only a folder with no branch
@@ -65,8 +65,8 @@ const CaseStamp = (props: Props) => {
             out.push({key: 'branch', label, value: branch(), title: worktree() || undefined})
 
             // What the branch was cut from — and therefore where it merges. A
-            // copy and a branch are both made from the folder's base, and «от
-            // чего отрезано» is the half of provenance the branch name cannot
+            // copy and a branch are both made from the folder's base, and what
+            // it was cut from is the half of provenance the branch name cannot
             // carry.
             if (workBase()) {
                 out.push({key: 'base', label: 'from', value: workBase()})

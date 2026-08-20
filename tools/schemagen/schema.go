@@ -54,7 +54,7 @@ func appTables() []Table {
 // rename is the point rather than decoration: nothing about the entry has to be
 // a directory except its `path`, and the reason it has an id at all is that
 // tomorrow it may be a repository to clone, a drive or a machine over ssh. The
-// screen calls it «папка» and will go on doing so.
+// screen calls it a folder and will go on doing so.
 //
 // The git *settings* live here — kind, base branch, branch prefix, and the mode
 // per board in workspace_board. The git *state* of one card's work is a

@@ -30,7 +30,8 @@ describe('hotkeys', () => {
         })
 
         // The reason letters are matched on .code: under a Cyrillic layout the
-        // browser reports key 'в' for the same physical key that carries 'd'.
+        // browser reports a Cyrillic letter for the same physical key that
+        // carries 'd'.
         it('matches a letter by its physical key, whatever the layout', () => {
             expect(matchesHotkey(press({code: 'KeyD', key: 'd', ctrlKey: true}), 'ctrl+d')).toBe(true)
             expect(matchesHotkey(press({code: 'KeyD', key: 'в', ctrlKey: true}), 'ctrl+d')).toBe(true)

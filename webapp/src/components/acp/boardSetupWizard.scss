@@ -25,7 +25,7 @@
 
             // The arrow separates the steps, so it belongs to the line rather
             // than to either side of it. Inheriting the current step's weight
-            // and colour made "→ Агент" read as the name of the step.
+            // and colour made the arrow read as part of the step name.
             font-weight: 400;
             color: rgba(var(--center-channel-color-rgb), 0.48);
         }

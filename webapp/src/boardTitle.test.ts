@@ -25,7 +25,7 @@ describe('boardTitle', () => {
     })
 
     // A template is not in the sidebar's list of boards, and every board made
-    // from «Контент» would otherwise have to be called something else.
+    // from one template would otherwise have to be called something else.
     test('templates do not take a name from a board', () => {
         expect(titleTaken(boards, 'Контент', 'board-3')).toBe(false)
     })

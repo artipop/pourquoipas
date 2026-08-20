@@ -79,8 +79,8 @@ func FindSelectOption(schema model.PropSchema, property, optionName string) (pro
 	return "", "", false
 }
 
-// findOptionByName resolves a bare option name — "xciii", "claude", "Быстрый
-// маршрут" — to the property that owns it. Which property that is, is the
+// findOptionByName resolves a bare option name — an agent, a column, a route —
+// to the property that owns it. Which property that is, is the
 // board's business: a card is read back the same way, by the names of the
 // options selected on it and not by where they sit.
 func FindOptionByName(schema model.PropSchema, optionName string) (propID, optionID string, ok bool) {

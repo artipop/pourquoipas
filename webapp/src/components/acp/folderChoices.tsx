@@ -11,7 +11,7 @@ import {agentBindings} from './bindings'
 
 import './folderChoices.scss'
 
-// «В какой папке будет работать агент?» — asked in one shape wherever it is
+// Which folder the agent will work in — asked in one shape wherever it is
 // asked: beside a card (cardTerminal.tsx) and in the planning dialog
 // (planningDialog.tsx).
 //

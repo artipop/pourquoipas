@@ -294,8 +294,8 @@ func TestRemapCardProperties(t *testing.T) {
 			{"id": "to-tags", "name": "Метки", "type": "multiSelect", "options": []any{
 				map[string]any{"id": "to-home", "value": "дом"},
 			}},
-			// «Бюджет» is a date here, which is a different property that
-			// happens to share a name.
+			// The same name is a date here, which is a different property that
+			// happens to share it.
 			{"id": "to-budget", "name": "Бюджет", "type": "date"},
 		},
 	}

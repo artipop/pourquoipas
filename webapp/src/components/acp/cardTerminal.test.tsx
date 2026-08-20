@@ -290,8 +290,8 @@ describe('components/acp/cardTerminal', () => {
         await waitFor(() => expect(open).toHaveBeenLastCalledWith('card-1', 'app', 'клаус', false))
     })
 
-    // the add-folder link is the escape hatch, in the same shape «Добавить
-    // агента…» has: the native picker registers the folder on this board and the
+    // the add-folder link is the escape hatch, in the same shape the add-agent
+    // link has: the native picker registers the folder on this board and the
     // conversation starts in it, in one move.
     it('adds a folder and starts with it', async () => {
         const open = vi.fn().mockResolvedValue(JSON.stringify({id: 'term-6'}))
@@ -324,7 +324,7 @@ describe('components/acp/cardTerminal', () => {
         expect(screen.queryByRole('button', {name: 'Open in a separate window'})).toBeNull()
     })
 
-    // «На весь экран» is a handover, not a copy: two views of one pty fight
+    // Opening the window is a handover, not a copy: two views of one pty fight
     // over its size, so opening the window closes the panel.
     it('hands the conversation to the window and closes the panel', async () => {
         const onClose = vi.fn()

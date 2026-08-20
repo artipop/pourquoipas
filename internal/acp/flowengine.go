@@ -104,8 +104,8 @@ func (m *Manager) enterNode(ev CardMoved, flow FlowEntry, node FlowNode, move bo
 	m.appendFlowEvent(FlowEventRecord{
 		CardID: ev.CardID, FlowID: flow.ID, FromNode: from, ToNode: node.ID, On: on, Detail: detail,
 		// The agent's own words on the transition, kept because the stage the
-		// card returns to is briefed from them (returnBrief): «ревьюер вернул с
-		// такими-то замечаниями» is the input the resumed session works from.
+		// card returns to is briefed from them (returnBrief): what the reviewer
+		// sent back is the input the resumed session works from.
 		Said: said,
 	})
 	m.log.Info("acp: flow node entered", "card", ev.CardID, "flow", flow.Name, "node", node.ID, "on", on)

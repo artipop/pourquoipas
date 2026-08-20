@@ -140,10 +140,9 @@ func (b *EventsBackend) ensureAccount(agent acp.AgentUser) (acp.AgentUser, error
 	return agent, nil
 }
 
-// AssignCardAgent writes the agent into the card's person property — «Кто
-// занимается», or whatever this board calls it: the property is found by its
-// *type*, never by name, because "Assignee" and the assignee field are each right
-// for half the boards there are. A board with no person property has no field
+// AssignCardAgent writes the agent into the card's person property, whatever
+// this board calls it: the property is found by its *type*, never by name,
+// because every board names that field for itself. A board with no person property has no field
 // to keep truthful, and that is not an error.
 //
 // The write is silent (disableNotify): it is the machine recording who a stage
@@ -270,7 +269,7 @@ func (w *Writer) EnsureSourceUser(ctx context.Context, boardID, source string) (
 // sourceUsername is the account name a source gets: its own name, reduced to
 // what a username may hold. Its own name and not a prefixed one, because the
 // board shows the username wherever it names the author — the group headings of
-// the inbox among them — and «source-почта» is not what the source is called.
+// the inbox among them — and a prefixed name is not what the source is called.
 //
 // This is the agents' arrangement again: an agent's account is its own name
 // too. Two of them called the same thing would share an identity, which is why

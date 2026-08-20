@@ -53,7 +53,8 @@ export function waited(since: string | undefined, now: number): {value: number, 
         return null
     }
 
-    // Go's zero time is a valid date — year one — and "739839 дн" is what it
+    // Go's zero time is a valid date — year one — and a count in the hundred
+    // thousands of days is what it
     // reads as after the subtraction. A card whose stage entry was never
     // stamped has no answer to "how long", not a nine-century one.
     if (started <= 0) {

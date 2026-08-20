@@ -23,9 +23,8 @@
     // One height for every section rather than one per section's content. The
     // dialog is a fixed box that scrolls when it does not fit, so a section
     // that fitted and one that did not were drawn at two different widths —
-    // the scrollbar takes its space out of the content, and «Импорт и
-    // экспорт», the shortest panel here, was the one section that never paid
-    // for it.
+    // the scrollbar takes its space out of the content, and the shortest panel
+    // here was the one section that never paid for it.
     .AppSettingsDialog__body {
         display: flex;
         align-items: stretch;

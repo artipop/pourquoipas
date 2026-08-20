@@ -59,8 +59,8 @@ type Rule struct {
 	// standing where nothing happens to it, which is what a source that only
 	// files things away wants.
 	Column string `json:"column,omitempty"`
-	// Props are card properties, as Go templates over the item:
-	// {"Ссылка": "{{.URL}}"}.
+	// Props are card properties, as Go templates over the item: a link property
+	// mapped to {{.URL}}, say.
 	Props map[string]string `json:"props,omitempty"`
 	Agent string            `json:"agent,omitempty"`
 }

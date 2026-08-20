@@ -213,7 +213,7 @@
 // item would turn the view header into a fence.
 //
 // Inside a dialog it is wrong, and badly: an action reads as a sentence.
-// "Выбрать каталог…" in the setup wizard was indistinguishable from the text
+// The folder picker in the setup wizard was indistinguishable from the text
 // above it. There a button has to look pressable before it is hovered.
 .Dialog .Button,
 .Modal .Button {

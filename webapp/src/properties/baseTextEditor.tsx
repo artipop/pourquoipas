@@ -56,7 +56,7 @@ const BaseTextEditor = (props: PropertyProps & {validator: () => boolean, spellC
 
                 // Stretching the input to its container is what a table cell
                 // wants — the column is the width of the answer there. On a
-                // card it made «Оценка, часы» a 440px box tinting on hover
+                // card it made a long-named field a 440px box tinting on hover
                 // across the whole row, beside every other answer's 180. Which
                 // of the two this is is `showEmptyPlaceholder`, set on the card
                 // and nowhere else (the same reading select.tsx makes).

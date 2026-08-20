@@ -37,7 +37,7 @@ describe('the message catalogues', () => {
     })
 
     // A placeholder that survives in one language and not the other formats to
-    // a sentence with a hole in it — «изменить свойство ""» — and nothing
+    // a sentence with a hole in it — a property name that never arrives — and nothing
     // fails loudly enough to notice.
     test('a message asks for the same values in both languages', () => {
         const mismatched = Object.keys(en).
@@ -49,7 +49,7 @@ describe('the message catalogues', () => {
 
     // English inflects on one boundary and Russian on three, so a message that
     // counts has to say so in both — a translation that spells the plural out
-    // by hand is right for "5 карточек" and wrong for every other number.
+    // by hand is right for one count and wrong for every other number.
     test('a message that counts in English counts in Russian too', () => {
         const counting = Object.keys(en).filter((id) => en[id].includes(', plural,'))
         const flat = counting.filter((id) => !ru[id].includes(', plural,'))

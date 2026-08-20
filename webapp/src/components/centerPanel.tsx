@@ -75,12 +75,12 @@ const CenterPanel = (props: Props) => {
 
     // A board that runs something on a machine that cannot run it yet. The
     // wizard opens by itself once per board and never stands anywhere after
-    // that: there used to be a header badge saying «Доска настроена не до
-    // конца», but the app has stopped treating almost anything as mandatory —
+    // that: there used to be a header badge calling the board half-configured,
+    // but the app has stopped treating almost anything as mandatory —
     // a board with no deploy target is a board that does not deploy, not a
     // half-configured one. What replaced the badge is a parting note (the
-    // wizard says how to come back) and the standing way in: «Как работает эта
-    // доска…» → the setup wizard.
+    // wizard says how to come back) and the standing way in: the board menu
+    // opens the setup wizard.
     const [showSetup, setShowSetup] = createSignal(false)
     const [plan, refreshPlan] = createSetupPlan(() => props.board)
     createEffect(() => {

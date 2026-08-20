@@ -199,7 +199,7 @@
         @include label;
 
         display: flex;
-        // Not equal widths: «ВХОДЯЩИЕ» plus its count is wider than a quarter
+        // Not equal widths: the longest tab plus its count is wider than a quarter
         // of a phone, and equal quarters is what put an ellipsis in a
         // four-letter world.
         flex: 1 1 auto;

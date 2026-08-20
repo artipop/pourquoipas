@@ -89,7 +89,7 @@ export type CardConversation = {
     boardFolder?: boolean
 
     // Whether the CLI in it was handed the board tools, which is what makes
-    // «попросить агента назвать» possible.
+    // asking the agent to name the conversation possible.
     tools?: boolean
 }
 

@@ -16,7 +16,7 @@
 
     // Which build it is — quieter than the version and pulled up under it,
     // because it qualifies that line rather than standing beside it: the two
-    // together are one answer to «что у меня стоит».
+    // together are one answer to what is installed here.
     .UpdatesPanel__edition {
         @include label;
 

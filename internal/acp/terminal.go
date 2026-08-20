@@ -49,7 +49,7 @@ type TerminalSession struct {
 	ColumnName string
 	BoardID    string
 	// Title is what this conversation is called. It starts as the card's title
-	// (or «Планирование»), and both a person and the agent may change it: read
+	// (or the planning name), and both a person and the agent may change it: read
 	// it through Info, never off the field, since either can happen while a
 	// window is open.
 	Title       string
@@ -148,7 +148,7 @@ type TerminalInfo struct {
 	// under the app's data — so the UI can name it instead of showing the path.
 	BoardFolder bool `json:"boardFolder,omitempty"`
 	// Tools says this CLI was handed the board tools, which is what makes it
-	// answerable: «попросить агента назвать разговор» is a message typed into a
+	// answerable: asking the agent to name the conversation is a message typed into a
 	// CLI that can only reply through name_conversation, so a kind that took no
 	// tools must not be offered the button (AskTerminalName).
 	Tools bool `json:"tools,omitempty"`
@@ -414,7 +414,7 @@ const nodeNone = "@none"
 const nodeTalk = "@talk"
 
 // StartCardTerminal opens the work conversation of the node the card stands on
-// — «сесть рядом с работой»: person and stage share the node's one
+// — sitting down beside the work: person and stage share the node's one
 // conversation. folderName/agentName override what the card says, for the case
 // where it says nothing.
 //
@@ -426,7 +426,7 @@ func (m *Manager) StartCardTerminal(cardID, folderName, agentName string) (*Term
 	return m.startCardConversation(cardID, folderName, agentName, false)
 }
 
-// StartCardTalk opens the card's own conversation — «обсудить эту карточку»:
+// StartCardTalk opens the card's own conversation — talking the card over:
 // the wording, the plan, the brief. It asks nothing of the card (no folder, no
 // route, no agent assigned) and takes nothing from it: no workspace is claimed,
 // so no branch appears because somebody wanted to think out loud, and no route
@@ -454,7 +454,7 @@ func (m *Manager) startCardConversation(cardID, folderName, agentName string, ta
 	place := m.cardPlace(ev)
 	if talk {
 		// The node's crew is kept and the rest of the node is not: who works
-		// this part of the board is a fair answer to «с кем говорить», while
+		// this part of the board is a fair answer to who to talk to, while
 		// the stage's instructions, its tools and its workspace all belong to
 		// the work, which this is not.
 		place = cardPlace{node: nodeTalk, crew: place.crew}
@@ -1670,8 +1670,8 @@ func (m *Manager) terminalResumePoint(spec terminalSpec) (TerminalRecord, bool) 
 	return rec, true
 }
 
-// ResumableTerminal describes what a card would reopen, so the UI can say
-// "продолжить" rather than "открыть" — and say nothing at all when there is
+// ResumableTerminal describes what a card would reopen, so the UI can offer to
+// continue rather than to open — and say nothing at all when there is
 // nothing to continue.
 type ResumableTerminal struct {
 	Available bool   `json:"available"`
@@ -1841,8 +1841,8 @@ func conversationTitle(title, cardTitle string) string {
 }
 
 // folderLabel is what a conversation's folder is called on screen: the name it
-// was registered under, since that is the name the person answered «в какой
-// папке» with. A path with no entry behind it — a folder somebody has since
+// was registered under, since that is the name the person answered the
+// which-folder question with. A path with no entry behind it — a folder somebody has since
 // removed from the registry — is named by its last element, and an empty path
 // is the board's drafts folder, which the caller says with BoardFolder instead.
 func (m *Manager) folderLabel(workdirPath string) string {

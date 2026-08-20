@@ -88,9 +88,9 @@ const UpdatesPanel = () => {
         default:
             // Idle. What a previous run found is not carried over — only when
             // it looked — so an install that has checked before says nothing
-            // here and lets the date below speak. Saying «ещё не проверяли»
-            // directly above «последняя проверка: вчера» is the app
-            // contradicting itself in two adjacent lines.
+            // here and lets the date below speak. Saying it has never looked
+            // directly above the date it last looked is the app contradicting
+            // itself in two adjacent lines.
             return s.lastCheckedAt ? '' : intl.formatMessage({id: 'Updates.idle', defaultMessage: 'Not checked yet'})
         }
     }

@@ -23,7 +23,7 @@ import '@mattermost/compass-icons/css/compass-icons.css'
 //
 // Cyrillic is what narrowed the field to these two. The interface is Russian,
 // and most condensed grotesques on offer — IBM Plex Sans Condensed among them —
-// ship only `cyrillic-ext`, which does not cover А–Я.
+// ship only `cyrillic-ext`, which does not cover the basic Cyrillic letters.
 import '@fontsource-variable/roboto-condensed'
 import '@fontsource-variable/jetbrains-mono'
 

@@ -133,7 +133,7 @@
     // The pick for a conversation Go could not resolve. A form, not a strip:
     // one row per question, the label column keeping the answers aligned, the
     // one action on a row of its own — a wrapping line of selects and buttons
-    // is how this read as "элементы подряд".
+    // is how this read as controls in a row rather than a form.
     &__picker {
         display: flex;
         flex-direction: column;
@@ -210,8 +210,8 @@
         text-underline-offset: 2px;
     }
 
-    // The folder answers come from FolderChoices, shared with «Обсудить с
-    // агентом»: chips like the agents above them, so the two questions of one
+    // The folder answers come from FolderChoices, shared with the planning
+    // dialog: chips like the agents above them, so the two questions of one
     // pick read as two of the same thing. What stood here — two stacked
     // full-width buttons for the board's folder and the native picker — made the
     // answer a person mostly wanted the smallest thing on the screen.

@@ -419,8 +419,8 @@ func (m *Manager) startSession(ev CardMoved, opts startOptions) (*Session, error
 	if busy {
 		return nil, errStageBusy
 	}
-	// A stage with its own crew names its worker, so the card's «Кто
-	// занимается» is written to match — by the machine, as the card travels.
+	// A stage with its own crew names its worker, so the card's assignee field
+	// is written to match — by the machine, as the card travels.
 	// Before the launch rather than after: the stage gave the card to this
 	// agent whether or not the start then succeeds, and the field should say
 	// so either way. A person in the field never reaches this line

@@ -554,7 +554,7 @@ const AutomationEditor = (props: Props) => {
         (props.allProperties || []).filter((p) => p.id !== props.property?.id).map((p) => p.name)
 
     // writesPicker edits a stage's declared outputs. For an agent stage each row
-    // is a property plus «обязательно» — finish_work is refused without a
+    // is a property plus a required flag — finish_work is refused without a
     // required one; a deploy or test stage writes one machine value (the
     // preview URL, the verdict), so it gets a single picker under the action's
     // own label. `note` names the inherited answer, the crew picker's shape.

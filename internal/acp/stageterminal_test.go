@@ -334,7 +334,7 @@ func TestAReturnedCardBriefsTheResumedConversationWithTheDelta(t *testing.T) {
 		{ID: "opt-review", Column: "Ревью"},
 	}, Edges: []FlowEdge{{From: "opt-work", To: "opt-review", On: TriggerSuccess}}}}
 
-	// The card went В работе → Ревью → В работе, and the reviewer said why.
+	// The card went in-progress → review → in-progress, and the reviewer said why.
 	for _, r := range []FlowEventRecord{
 		{CardID: "card-b", FlowID: "flow-dev", FromNode: "", ToNode: "opt-work", On: "manual"},
 		{CardID: "card-b", FlowID: "flow-dev", FromNode: "opt-work", ToNode: "opt-review", On: TriggerSuccess},

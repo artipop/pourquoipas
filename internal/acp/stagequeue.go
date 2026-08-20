@@ -45,8 +45,8 @@ func (m *Manager) columnByKey(key string) (ColumnSpec, bool) {
 }
 
 // enqueueStage parks a card whose stage could not start because the column is
-// full. Nothing is said on the card: the route strip already reports «ждёт
-// места в колонке» for a queued card, which is this state told live rather
+// full. Nothing is said on the card: the route strip already reports that a
+// queued card is waiting for a free place, which is this state told live rather
 // than as a comment that outlives it.
 func (m *Manager) enqueueStage(ev CardMoved, spec ColumnSpec, flowID, nodeID string) {
 	fresh, err := m.store.EnqueueStage(QueuedStage{

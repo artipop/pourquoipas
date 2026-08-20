@@ -271,8 +271,8 @@ func (m *Manager) ensureAgentAccounts() {
 // UpdateAgent replaces an existing agent and persists.
 //
 // Matched by id where the caller has one, which is what makes renaming an agent
-// possible: matched by name, the lookup used the new name and answered "агент
-// не найден".
+// possible: matched by name, the lookup used the new name and answered that
+// there is no such agent.
 func (m *Manager) UpdateAgent(a AgentEntry) (AgentEntry, error) {
 	a, err := validateAgent(a)
 	if err != nil {
@@ -399,9 +399,9 @@ func (m *Manager) removeAgentEntry(name string) (AgentUser, error) {
 // is why it must stay deterministic.
 //
 // A letter is any letter, not only a Latin one: folded to `a-z0-9`, an agent
-// called an agent named in Russian becomes the empty string and can never be put in «Кто
-// занимается» at all. Nothing here needs ASCII — the username is stored in the
-// board's own table and read back by the same fold.
+// whose name is written in Cyrillic becomes the empty string and can never be
+// put in the assignee field at all. Nothing here needs ASCII — the username is
+// stored in the board's own table and read back by the same fold.
 func AgentUsername(name string) string {
 	var b strings.Builder
 	for _, r := range strings.ToLower(strings.TrimSpace(name)) {

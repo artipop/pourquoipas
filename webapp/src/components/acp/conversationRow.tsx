@@ -13,7 +13,7 @@ import './conversationRow.scss'
 // and its route's — and they list the same thing: what the conversation is
 // called, the line the agent wrote about what is going on in it, and who is
 // talking where. They were two shapes of one list for a while, which is how a
-// list drifts: the card's said «Разработка — клаус» in a chip and the planning
+// list drifts: the card's said column and agent in a chip and the planning
 // screen said everything else.
 //
 // What a row can *do* differs, so that is the caller's: an action is an icon, a

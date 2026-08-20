@@ -50,8 +50,8 @@ const (
 	// say 'null'.
 	KindJSON
 	// KindMillis is a moment in time as unix milliseconds. A real timestamp is
-	// what this should be, and the move is deferred (docs/deferred.md, «Одна
-	// база: хвосты плана») — for the board's thirty columns and ours together,
+	// what this should be, and the move is deferred (docs/deferred.md, the
+	// one-database loose ends) — for the board's thirty columns and ours together,
 	// because the conversion lives on one border or on none.
 	KindMillis
 	// KindInt is a whole number: an exit code, a sort order.

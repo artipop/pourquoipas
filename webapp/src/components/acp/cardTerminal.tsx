@@ -70,9 +70,9 @@ const CardTerminal = (props: Props) => {
     const [busy, setBusy] = createSignal(true)
 
     // The pick, for the conversation Go could not resolve by itself. It lives
-    // one conversation: choosing an agent here is «кто планирует со мной
-    // сейчас», not an assignment — the card's the assignee field stays whatever
-    // a person set it to.
+    // one conversation: choosing an agent here is who is thinking with me now,
+    // not an assignment — the card's assignee field stays whatever a person set
+    // it to.
     const [choosing, setChoosing] = createSignal(false)
     const [agents, setAgents] = createSignal<Array<{name: string}>>([])
     const [workdirName, setWorkdirName] = createSignal('')
@@ -83,7 +83,7 @@ const CardTerminal = (props: Props) => {
     // beside a card cannot be. Go hands back the same terminal either way —
     // and the panel then bows out: two views of one pty fight over its size
     // (each tells the CLI its own columns, the CLI draws for whoever spoke
-    // last), so «на весь экран» is a handover, not a copy.
+    // last), so opening the window is a handover, not a copy.
     // Two doors, because which of the two a person wants is a thing they know
     // and the app kept guessing: work on the card is filed under the column it
     // is happening in, the card's own conversation under nodeTalk, and no route
@@ -180,7 +180,7 @@ const CardTerminal = (props: Props) => {
         // question for the person sitting here, never a silent temp directory:
         // a conversation that exists (live or resumable on the current stage)
         // or a card that resolves a folder opens straight away; anything else
-        // is the ask below, with «— без папки —» as one of its answers.
+        // is the ask below, with the no-folder answer among its choices.
         await refreshCardAgent(props.cardId)
         const known = state()
 

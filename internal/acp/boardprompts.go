@@ -8,8 +8,8 @@ import (
 // What an agent is told before the task itself, and there are two of them
 // because there are two owners:
 //
-//   - **the board's** — every agent working here is told it. «Отвечай
-//     по-русски», «это домашние дела, а не код». It is this file, it is
+//   - **the board's** — every agent working here is told it: answer in
+//     Russian, this is household chores rather than code. It is this file, it is
 //     the board's system prompt dialog in the board's ⋯ menu, and it lives on the
 //     board so it travels with it.
 //   - **the agent's own** — AgentEntry.Prompt, in the registry, edited in

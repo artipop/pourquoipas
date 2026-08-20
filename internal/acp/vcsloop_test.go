@@ -98,7 +98,7 @@ func TestClaimVCSEvent(t *testing.T) {
 	if err != nil || !fresh {
 		t.Fatalf("a changed marker is a new event: %v, %v", fresh, err)
 	}
-	// Другая ветка, другое событие и другой проект учитываются отдельно.
+	// Another branch, another event and another folder are counted apart.
 	for _, args := range [][3]string{
 		{"/project", "feat/y", TriggerBranchMerged},
 		{"/project", "feat/x", TriggerBranchPushed},

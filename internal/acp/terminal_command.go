@@ -92,7 +92,7 @@ func terminalTakesHooks(a AgentEntry) bool {
 }
 
 // canResumeTerminal reports whether the kind can continue a conversation at
-// all, which is what the UI offers "продолжить" for.
+// all, which is what the UI offers to continue for.
 func canResumeTerminal(kind string) bool {
 	return len(acpNative[kind].cliResumeArgs) > 0
 }

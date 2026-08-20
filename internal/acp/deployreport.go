@@ -45,8 +45,8 @@ func (m *Manager) applyDeployOutcome(s *Session) {
 
 // writeStageFields puts one machine-produced value into every property the
 // stage declared it writes. Failures are said on the card rather than swallowed:
-// a route built on this value will stand still, and «свойства нет» is fixable
-// where «карточка не едет» is a mystery.
+// a route built on this value will stand still, and "there is no such
+// property" is fixable where "the card is not moving" is a mystery.
 func (m *Manager) writeStageFields(s *Session, value string) {
 	if len(s.Writes) == 0 || m.writer == nil || s.CardID == "" {
 		return

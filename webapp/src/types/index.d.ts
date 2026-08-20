@@ -19,8 +19,8 @@ export interface IAppWindow extends Window {
                 PickDirectory(title: string): Promise<string>
                 AddAgentWorkdir(name: string, path: string, boardId: string, kind: string, global: boolean): Promise<string>
 
-                // What work in a folder branches from, and what «влито в
-                // основную» waits for. Empty falls back to what git says.
+                // What work in a folder branches from, and what a merge waits
+                // for. Empty falls back to what git says.
                 SetAgentWorkdirBase?(name: string, branch: string): Promise<string>
 
                 // How a repository is worked in on this board: "worktree" — a

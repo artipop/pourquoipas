@@ -19,7 +19,7 @@
     // out was the oldest wait, the one that has gone unanswered longest.
     max-height: calc(100vh - 32px);
 
-    // The list scrolls; the count and the «…и ещё» line do not, or the one
+    // The list scrolls; the count and the "and N more" line do not, or the one
     // thing saying how many there are would be the first thing scrolled away.
     &__list {
         display: flex;
