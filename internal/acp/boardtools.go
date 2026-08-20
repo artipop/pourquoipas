@@ -308,7 +308,7 @@ func (m *Manager) BoardToolCards(ctx context.Context, token, column string) ([]B
 	if m.reader == nil {
 		return nil, fmt.Errorf("доска недоступна")
 	}
-	events, err := m.reader.CardsForBoard(ctx, g.BoardID)
+	events, err := m.forBoard(g.BoardID).Reader.CardsForBoard(ctx, g.BoardID)
 	if err != nil {
 		return nil, err
 	}
@@ -393,7 +393,7 @@ func (m *Manager) UpdateCardFromTools(ctx context.Context, token, cardID string,
 		return fmt.Errorf("не сказано, что менять")
 	}
 	edit.Property = g.Property
-	if err := m.writer.UpdateCard(ctx, ev.CardID, edit); err != nil {
+	if err := m.forCard(ev.CardID).Writer.UpdateCard(ctx, ev.CardID, edit); err != nil {
 		return err
 	}
 	m.log.Info("acp: card changed by an agent", "card", ev.CardID, "board", g.BoardID, "column", edit.Column)
@@ -415,7 +415,7 @@ func (m *Manager) CommentFromTools(ctx context.Context, token, cardID, text stri
 	if m.writer == nil {
 		return fmt.Errorf("доска недоступна")
 	}
-	return m.writer.AddComment(ctx, ev.CardID, text)
+	return m.forCard(ev.CardID).Writer.AddComment(ctx, ev.CardID, text)
 }
 
 // DescribeTerminalFromTools is the agent saying what this conversation is
@@ -484,7 +484,7 @@ func (m *Manager) CreateCardFromTools(ctx context.Context, token string, card Ne
 	card.BoardID = g.BoardID
 	card.Property = g.Property
 
-	id, err := m.writer.CreateCard(ctx, card)
+	id, err := m.forBoard(card.BoardID).Writer.CreateCard(ctx, card)
 	if err != nil {
 		return "", err
 	}
@@ -512,7 +512,7 @@ func (m *Manager) grantedCard(ctx context.Context, token, cardID string) (BoardG
 	if m.reader == nil {
 		return g, CardMoved{}, fmt.Errorf("доска недоступна")
 	}
-	ev, err := m.reader.CardByID(ctx, cardID)
+	ev, err := m.forCard(cardID).Reader.CardByID(ctx, cardID)
 	if err != nil {
 		return g, CardMoved{}, fmt.Errorf("карточка %s не найдена", cardID)
 	}

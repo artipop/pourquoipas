@@ -347,7 +347,7 @@ func (m *Manager) FinishWorkFromTools(token string, ok bool, summary string, fie
 		}
 		ctx, cancel := context.WithTimeout(m.rootCtx, 10*time.Second)
 		defer cancel()
-		if err := m.writer.SetCardFields(ctx, wait.cardID, fields); err != nil {
+		if err := m.forCard(wait.cardID).Writer.SetCardFields(ctx, wait.cardID, fields); err != nil {
 			return err
 		}
 	}

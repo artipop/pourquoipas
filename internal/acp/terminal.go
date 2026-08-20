@@ -447,7 +447,7 @@ func (m *Manager) startCardConversation(cardID, folderName, agentName string, ta
 	}
 	ctx, cancel := context.WithTimeout(m.rootCtx, 10*time.Second)
 	defer cancel()
-	ev, err := m.reader.CardByID(ctx, cardID)
+	ev, err := m.forCard(cardID).Reader.CardByID(ctx, cardID)
 	if err != nil {
 		return nil, fmt.Errorf("не удалось прочитать карточку: %w", err)
 	}
@@ -1738,7 +1738,7 @@ func (m *Manager) CardConversations(cardID string) []CardConversation {
 	var cardTitle string
 	if m.reader != nil {
 		ctx, cancel := context.WithTimeout(m.rootCtx, 5*time.Second)
-		if ev, err := m.reader.CardByID(ctx, cardID); err == nil {
+		if ev, err := m.forCard(cardID).Reader.CardByID(ctx, cardID); err == nil {
 			place = m.cardPlace(ev)
 			cardTitle = ev.Title
 		}

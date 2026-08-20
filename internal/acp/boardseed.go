@@ -176,7 +176,7 @@ func (m *Manager) seedFromBoard(boardID string) {
 		parent = context.Background()
 	}
 	ctx, cancel := context.WithTimeout(parent, 10*time.Second)
-	props, err := m.meta.BoardProperties(ctx, boardID)
+	props, err := m.forBoard(boardID).Meta.BoardProperties(ctx, boardID)
 	cancel()
 	if err != nil {
 		m.log.Warn("acp: cannot read the board's own settings", "board", boardID, "err", err)
@@ -243,7 +243,6 @@ func parseBoardAutomation(props map[string]any) ([]ColumnSpec, []FlowEntry, erro
 	}
 	return columns, flows, nil
 }
-
 
 func reinterpret(from any, into any) error {
 	// A property may also arrive as the JSON text of itself: the board store
@@ -425,7 +424,7 @@ func (m *Manager) indexBoardCardFlows(boardID string) {
 		parent = context.Background()
 	}
 	ctx, cancel := context.WithTimeout(parent, 30*time.Second)
-	states, err := m.cards.BoardCardFlows(ctx, boardID)
+	states, err := m.forBoard(boardID).CardState.BoardCardFlows(ctx, boardID)
 	cancel()
 	if err != nil {
 		m.log.Warn("acp: cannot read where the board's cards stand on their routes", "board", boardID, "err", err)
@@ -529,7 +528,7 @@ func (m *Manager) persistBoardLocked(boardID string) {
 	}
 	ctx, cancel := context.WithTimeout(parent, 10*time.Second)
 	defer cancel()
-	if err := m.meta.SetBoardProperties(ctx, boardID, props, nil); err != nil {
+	if err := m.forBoard(boardID).Meta.SetBoardProperties(ctx, boardID, props, nil); err != nil {
 		m.log.Warn("acp: cannot save the board's automation on the board", "board", boardID, "err", err)
 	}
 }
@@ -616,7 +615,7 @@ func (m *Manager) bindToBoardOptions(boardID string, columns []ColumnSpec, flows
 		parent = context.Background()
 	}
 	ctx, cancel := context.WithTimeout(parent, 10*time.Second)
-	options, err := m.meta.BoardColumnOptions(ctx, boardID)
+	options, err := m.forBoard(boardID).Meta.BoardColumnOptions(ctx, boardID)
 	cancel()
 	if err != nil {
 		m.log.Warn("acp: cannot read the board's columns", "board", boardID, "err", err)

@@ -278,7 +278,7 @@ func (m *Manager) writeCardBranch(spec WorkSpec, branch string) {
 	}
 	ctx, cancel := context.WithTimeout(m.rootCtx, 10*time.Second)
 	defer cancel()
-	if err := m.writer.SetCardText(ctx, spec.Owner, propID, branch); err != nil {
+	if err := m.forCard(spec.Owner).Writer.SetCardText(ctx, spec.Owner, propID, branch); err != nil {
 		m.log.Warn("acp: cannot write the branch on the card", "card", spec.Owner, "err", err)
 	}
 }
@@ -298,7 +298,7 @@ func (m *Manager) boardProperty(boardID, key string) string {
 	}
 	ctx, cancel := context.WithTimeout(m.rootOr(), 10*time.Second)
 	defer cancel()
-	props, err := m.meta.BoardProperties(ctx, boardID)
+	props, err := m.forBoard(boardID).Meta.BoardProperties(ctx, boardID)
 	if err != nil {
 		return ""
 	}
@@ -491,7 +491,7 @@ func (m *Manager) CardWork(cardID string) CardWork {
 	}
 	ctx, cancel := context.WithTimeout(m.rootOr(), 10*time.Second)
 	defer cancel()
-	ev, err := m.reader.CardByID(ctx, cardID)
+	ev, err := m.forCard(cardID).Reader.CardByID(ctx, cardID)
 	if err != nil {
 		return out
 	}

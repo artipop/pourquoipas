@@ -57,7 +57,7 @@ func (m *Manager) writeStageFields(s *Session, value string) {
 	}
 	ctx, cancel := context.WithTimeout(m.rootCtx, 10*time.Second)
 	defer cancel()
-	if err := m.writer.SetCardFields(ctx, s.CardID, fields); err != nil {
+	if err := m.forCard(s.CardID).Writer.SetCardFields(ctx, s.CardID, fields); err != nil {
 		m.log.Warn("acp: cannot write the stage's declared fields", "session", s.ID, "err", err)
 		m.comment(s, fmt.Sprintf("Не удалось записать результат стадии на карточку: %v", err))
 	}

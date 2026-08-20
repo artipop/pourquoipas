@@ -347,7 +347,7 @@ func (m *Manager) CardFolder(cardID string) (string, bool) {
 	}
 	ctx, cancel := context.WithTimeout(m.rootCtx, 5*time.Second)
 	defer cancel()
-	ev, err := m.reader.CardByID(ctx, cardID)
+	ev, err := m.forCard(cardID).Reader.CardByID(ctx, cardID)
 	if err != nil {
 		return "", false
 	}

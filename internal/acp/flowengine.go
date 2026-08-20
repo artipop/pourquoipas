@@ -63,7 +63,7 @@ func (m *Manager) enterNode(ev CardMoved, flow FlowEntry, node FlowNode, move bo
 	if move {
 		property := flow.PropertyOr(m.triggerProperty())
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		err := m.writer.MoveCardByOptionName(ctx, ev.CardID, property, node.Column)
+		err := m.forCard(ev.CardID).Writer.MoveCardByOptionName(ctx, ev.CardID, property, node.Column)
 		cancel()
 		if err != nil {
 			m.log.Warn("acp: flow move failed", "card", ev.CardID, "column", node.Column, "err", err)
@@ -274,7 +274,7 @@ func (m *Manager) advanceFlowWith(cardID, on, detail, agentText string) {
 		return
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	ev, err := m.reader.CardByID(ctx, cardID)
+	ev, err := m.forCard(cardID).Reader.CardByID(ctx, cardID)
 	cancel()
 	if err != nil {
 		m.log.Warn("acp: cannot read card for flow transition", "card", cardID, "err", err)
@@ -495,7 +495,7 @@ func flowStateCtx() (context.Context, context.CancelFunc) {
 func (m *Manager) flowState(cardID string) (FlowState, bool, error) {
 	if m.cards != nil {
 		ctx, cancel := flowStateCtx()
-		st, ok, err := m.cards.CardFlow(ctx, cardID)
+		st, ok, err := m.forCard(cardID).CardState.CardFlow(ctx, cardID)
 		cancel()
 		if err == nil {
 			return m.boundFlowState(st), ok, nil
@@ -538,7 +538,7 @@ func (m *Manager) flowStates() ([]FlowState, error) {
 func (m *Manager) saveFlowState(st FlowState) {
 	if m.cards != nil {
 		ctx, cancel := flowStateCtx()
-		err := m.cards.SetCardFlow(ctx, st.CardID, st)
+		err := m.forCard(st.CardID).CardState.SetCardFlow(ctx, st.CardID, st)
 		cancel()
 		if err != nil {
 			m.log.Error("acp: cannot record the card's place on its route", "card", st.CardID, "err", err)
@@ -555,7 +555,7 @@ func (m *Manager) saveFlowState(st FlowState) {
 func (m *Manager) clearFlowState(cardID string) {
 	if m.cards != nil {
 		ctx, cancel := flowStateCtx()
-		err := m.cards.ClearCardFlow(ctx, cardID)
+		err := m.forCard(cardID).CardState.ClearCardFlow(ctx, cardID)
 		cancel()
 		if err != nil {
 			m.log.Error("acp: cannot clear the card's place on its route", "card", cardID, "err", err)

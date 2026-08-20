@@ -41,9 +41,13 @@ type Manager struct {
 	// travels with it. Optional; without it the position lives in this
 	// machine's store alone and stays behind when the board moves.
 	cards BoardCardState
-	ui    UIEmitter
-	log   *slog.Logger
-	tr    *Tracer
+	// routing is how a board or a card is matched to the source it lives on,
+	// once there is more than one (boardsource.go). Empty and unused on every
+	// install that works its own board.
+	routing boardRouting
+	ui      UIEmitter
+	log     *slog.Logger
+	tr      *Tracer
 
 	mu     sync.Mutex
 	active map[string]*Session // session ID → session
@@ -615,7 +619,7 @@ func (m *Manager) StartDeployForCard(cardID, branch string) (*Session, error) {
 	}
 	ctx, cancel := context.WithTimeout(m.rootCtx, 10*time.Second)
 	defer cancel()
-	ev, err := m.reader.CardByID(ctx, cardID)
+	ev, err := m.forCard(cardID).Reader.CardByID(ctx, cardID)
 	if err != nil {
 		return nil, fmt.Errorf("не удалось прочитать карточку: %w", err)
 	}
@@ -824,7 +828,7 @@ func (m *Manager) commentCard(cardID, text string) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	if err := m.writer.AddComment(ctx, cardID, text); err != nil {
+	if err := m.forCard(cardID).Writer.AddComment(ctx, cardID, text); err != nil {
 		m.log.Error("acp: failed to add card comment", "card", cardID, "err", err)
 	}
 }

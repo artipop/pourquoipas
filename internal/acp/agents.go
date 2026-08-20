@@ -191,7 +191,7 @@ func (m *Manager) ensureAgentAccount(name string) []AgentUser {
 	if m.users == nil || username == "" {
 		return nil
 	}
-	made, err := m.users.EnsureAgentAccounts(context.Background(), []AgentUser{{Name: name, Username: username}})
+	made, err := m.primary().Users.EnsureAgentAccounts(context.Background(), []AgentUser{{Name: name, Username: username}})
 	if err != nil {
 		m.log.Warn("acp: the agent has no board account yet", "agent", name, "err", err)
 		return nil
@@ -250,7 +250,7 @@ func (m *Manager) assignCardAgent(ev CardMoved, agent AgentEntry) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	if err := m.users.AssignCardAgent(ctx, ev.CardID, AgentUser{Name: agent.Name, Username: username}); err != nil {
+	if err := m.forCard(ev.CardID).Users.AssignCardAgent(ctx, ev.CardID, AgentUser{Name: agent.Name, Username: username}); err != nil {
 		m.log.Warn("acp: cannot write the stage's agent into the assignee", "card", ev.CardID, "agent", agent.Name, "err", err)
 	}
 }
@@ -261,7 +261,7 @@ func (m *Manager) ensureAgentAccounts() {
 	if m.users == nil || len(agents) == 0 {
 		return
 	}
-	made, err := m.users.EnsureAgentAccounts(m.rootCtx, agents)
+	made, err := m.primary().Users.EnsureAgentAccounts(m.rootCtx, agents)
 	if err != nil {
 		m.log.Warn("acp: some agents have no board account", "err", err)
 	}
@@ -335,7 +335,7 @@ func (m *Manager) SyncAgentUsers(ctx context.Context, boardID string) ([]AgentUs
 		return nil, nil
 	}
 
-	return m.users.EnsureAgentUsers(ctx, boardID, agents)
+	return m.forBoard(boardID).Users.EnsureAgentUsers(ctx, boardID, agents)
 }
 
 // PlanningPrompt returns the instructions a planning terminal is opened with.
@@ -371,7 +371,7 @@ func (m *Manager) RemoveAgent(name string) error {
 	if m.users == nil {
 		return nil
 	}
-	if _, err := m.users.RetireAgentUser(context.Background(), removed); err != nil {
+	if _, err := m.primary().Users.RetireAgentUser(context.Background(), removed); err != nil {
 		// The entry is already gone; the account is the part left dangling, so
 		// say so rather than pretend the removal failed.
 		return fmt.Errorf("агент %q удалён из реестра, но его учётная запись осталась в участниках доски: %w", removed.Name, err)

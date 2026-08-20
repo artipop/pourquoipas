@@ -308,4 +308,3 @@ func TestAnEditBeforeTheBoardWasEverReadKeepsItsAutomation(t *testing.T) {
 		t.Errorf("the instruction did not land: %v", meta.written["board1"][BoardPropPrompt])
 	}
 }
-

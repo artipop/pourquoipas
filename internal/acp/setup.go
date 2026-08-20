@@ -833,7 +833,7 @@ func (m *Manager) isBoardTemplate(boardID string) bool {
 	}
 	ctx, cancel := context.WithTimeout(parent, 10*time.Second)
 	defer cancel()
-	isTemplate, err := m.meta.IsBoardTemplate(ctx, boardID)
+	isTemplate, err := m.forBoard(boardID).Meta.IsBoardTemplate(ctx, boardID)
 	if err != nil {
 		m.log.Warn("acp: cannot tell whether the board is a template", "board", boardID, "err", err)
 		return false
@@ -855,7 +855,7 @@ func (m *Manager) boardProperties(boardID string) map[string]any {
 	}
 	ctx, cancel := context.WithTimeout(parent, 10*time.Second)
 	defer cancel()
-	props, err := m.meta.BoardProperties(ctx, boardID)
+	props, err := m.forBoard(boardID).Meta.BoardProperties(ctx, boardID)
 	if err != nil {
 		m.log.Warn("acp: cannot read the board's own settings", "board", boardID, "err", err)
 		return nil

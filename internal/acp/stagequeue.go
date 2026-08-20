@@ -94,7 +94,7 @@ func (m *Manager) drainColumn(key string) {
 	}
 
 	ctx, cancel := context.WithTimeout(m.rootCtx, 10*time.Second)
-	ev, err := m.reader.CardByID(ctx, q.CardID)
+	ev, err := m.forCard(q.CardID).Reader.CardByID(ctx, q.CardID)
 	cancel()
 	if err != nil {
 		m.log.Warn("acp: cannot read a queued card", "card", q.CardID, "err", err)
