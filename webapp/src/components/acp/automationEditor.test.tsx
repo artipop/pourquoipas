@@ -224,13 +224,16 @@ describe('components/acp/automationEditor', () => {
         const {container, onChange} = renderEditor()
 
         userEvent.click(screen.getByRole('button', {name: 'Фича'}))
-        const stage = await waitFor(() => {
-            const found = [...container.querySelectorAll('.FlowDiagram__stage')].
-                find((el) => el.textContent?.includes('В работе'))
+        const edge = await waitFor(() => {
+            const found = container.querySelector('.solid-flow__edge')
             expect(found).toBeTruthy()
             return found!
         })
-        fireEvent.click(stage)
+
+        // The panel is about whatever is selected, and a branch is about one
+        // arrow — so the arrow is what is clicked. It used to be a button on
+        // every row of a list of every arrow the stage had.
+        fireEvent.click(edge)
         userEvent.click(await screen.findByRole('button', {name: '+ branch on a condition'}))
 
         await waitFor(() => expect(onChange).toHaveBeenCalled())
@@ -266,13 +269,13 @@ describe('components/acp/automationEditor', () => {
             properties: [property, priority],
         })
         userEvent.click(screen.getByRole('button', {name: 'Фича'}))
-        const stage = await waitFor(() => {
-            const found = [...container.querySelectorAll('.FlowDiagram__stage')].
-                find((el) => el.textContent?.includes('В работе'))
+        const branch = await waitFor(() => {
+            // The second arrow is the conditional one this test is about.
+            const found = container.querySelectorAll('.solid-flow__edge')[1]
             expect(found).toBeTruthy()
             return found!
         })
-        fireEvent.click(stage)
+        fireEvent.click(branch)
 
         // Scoped to the condition editor: with two select properties the routes
         // bar has a property picker too, and it also offers a priority property.

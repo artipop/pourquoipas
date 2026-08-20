@@ -4,7 +4,7 @@ import '@testing-library/jest-dom'
 import {wrapIntl} from '../../testUtils'
 import {setupReactFlowEnvironment} from '../../test/reactFlowEnvironment'
 
-import FlowDiagram, {depths, layout, edgeKind, connectEdge, stageHeight, HANDLE_EVENT, HANDLE_FAILURE, HANDLE_SUCCESS, HANDLE_WRITE, NODE_HEIGHT, NODE_WIDTH, WRITE_ROW} from './flowDiagram'
+import FlowDiagram, {depths, layout, edgeKind, connectEdge, lanePath, longHaul, stageHeight, HANDLE_EVENT, HANDLE_FAILURE, HANDLE_SUCCESS, HANDLE_WRITE, NODE_HEIGHT, NODE_WIDTH, WRITE_ROW} from './flowDiagram'
 import {SUCCESS, FAILURE} from './automation'
 
 setupReactFlowEnvironment()
@@ -243,5 +243,31 @@ describe('components/acp/flowDiagram builder', () => {
         expect(screen.getByText('Вердикт')).toBeInTheDocument()
         expect(screen.getByText('Заметка')).toBeInTheDocument()
         expect(container.querySelectorAll('.FlowDiagram__out--write').length).toBe(1)
+    })
+
+    // Two arrows that cross the picture used to travel it side by side and read
+    // as one thick line — which is what «дубли линий» turned out to be. Each
+    // gets a corridor of its own under the graph.
+    test('an arrow that skips columns gets a lane, a step to the next stage does not', () => {
+        const lanes = longHaul(nodes, edges)
+
+        // agent → review → deploy → test are one step each; the failure back to
+        // the agent skips three.
+        expect(lanes.has('agent-success-0')).toBe(false)
+        expect(lanes.has('deploy-success-2')).toBe(false)
+        expect(lanes.get('test-failure-3')).toBe(0)
+    })
+
+    test('a lane runs under the lower of the two stages, and two lanes do not share a corridor', () => {
+        const first = lanePath(100, 50, 400, 50, 0)
+        const second = lanePath(100, 50, 500, 50, 1)
+        const corridor = (d: string) => Number(d.split('L')[2].split(',')[1])
+
+        // Under both boxes, and each lane lower than the one before it.
+        expect(corridor(first.d)).toBeGreaterThan(50 + (NODE_HEIGHT / 2))
+        expect(corridor(second.d)).toBeGreaterThan(corridor(first.d))
+
+        // The caption rides in the corridor rather than over a box.
+        expect(first.labelY).toBe(corridor(first.d))
     })
 })

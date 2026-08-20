@@ -1,9 +1,11 @@
 import {For, Show, createEffect, createMemo, createSignal, onCleanup} from 'solid-js'
 import {
     Background,
+    BaseEdge,
     Connection,
     Controls,
     Edge,
+    EdgeProps,
     Handle,
     MarkerType,
     Node,
@@ -12,6 +14,7 @@ import {
     SolidFlow,
     createEdgeStore,
     createNodeStore,
+    getSmoothStepPath,
     useSolidFlow,
 } from '@dschz/solid-flow'
 
@@ -130,6 +133,39 @@ type StageData = {
 // box — the arrows are drawn on the first paint.
 export function stageHeight(writes?: StageWrite[]): number {
     return NODE_HEIGHT + ((writes && writes.length > 0) ? WRITE_ROW : 0)
+}
+
+// LANE is how far apart two long-haul arrows are pushed. An arrow that skips
+// columns runs the width of the graph, and several of them at the same height
+// read as one thick line — which is what «дубли линий» turned out to be: a
+// failure arrow from one stage and a return arrow from another, travelling
+// side by side into the same box.
+const LANE = 26
+
+// How far under the lowest of the two stages the first lane runs — clear of a
+// box, which is 58 tall and 78 with outputs on it.
+const LANE_BASE = 48
+
+// longHaul says the arrow spans more than one column of the layout, in either
+// direction: a return to an earlier stage, or a jump past several. Those are the
+// ones that cross the picture; a step to the next stage never does.
+export function longHaul(nodes: FlowNode[], edges: FlowEdge[]): Map<string, number> {
+    const depth = depths(nodes, edges)
+    const out = new Map<string, number>()
+    let lane = 0
+    edges.forEach((edge, index) => {
+        const from = depth.get(edge.from)
+        const to = depth.get(edge.to)
+        if (from === undefined || to === undefined) {
+            return
+        }
+        if (Math.abs(to - from) <= 1) {
+            return
+        }
+        out.set(edgeId(edge, index), lane)
+        lane += 1
+    })
+    return out
 }
 
 // forward drops the transitions that lead back the way the card came — a failed
@@ -389,6 +425,59 @@ const StageNode = (props: NodeProps) => {
 
 const nodeTypes = {stage: StageNode}
 
+// lanePath is a long arrow's own way round: out of the handle, down into a
+// corridor of its own under the graph, across, and up into the target. Written
+// by hand because the corridor is the point — getSmoothStepPath puts every
+// arrow between the same two rows at the same height, whatever `offset` says
+// (measured: offset widens the stubs and never moves the crossing), so two long
+// arrows travelled the picture side by side and read as one thick line.
+export function lanePath(sx: number, sy: number, tx: number, ty: number, lane: number): {d: string, labelX: number, labelY: number} {
+    const out = 18
+    const y = Math.max(sy, ty) + LANE_BASE + (lane * LANE)
+    const x1 = sx + out
+    const x2 = tx - out
+    return {
+        d: `M ${sx},${sy} L ${x1},${sy} L ${x1},${y} L ${x2},${y} L ${x2},${ty} L ${tx},${ty}`,
+        labelX: (x1 + x2) / 2,
+        labelY: y,
+    }
+}
+
+// LaneEdge draws a short arrow the way the library would and a long one through
+// a lane of its own. It exists at all because the library's edge wrapper
+// forwards a fixed list of props, and nothing that shapes the path is on it.
+const LaneEdge = (props: EdgeProps) => {
+    const path = createMemo(() => {
+        const lane = (props.data as {lane?: number} | undefined)?.lane
+        if (lane !== undefined) {
+            return lanePath(props.sourceX, props.sourceY, props.targetX, props.targetY, lane)
+        }
+        const [d, labelX, labelY] = getSmoothStepPath({
+            sourceX: props.sourceX,
+            sourceY: props.sourceY,
+            targetX: props.targetX,
+            targetY: props.targetY,
+            sourcePosition: props.sourcePosition,
+            targetPosition: props.targetPosition,
+        })
+        return {d, labelX, labelY}
+    })
+    return (
+        <BaseEdge
+            path={path().d}
+            labelX={path().labelX}
+            labelY={path().labelY}
+            label={props.label}
+            labelStyle={props.labelStyle}
+            style={props.style}
+            markerEnd={props.markerEnd}
+            interactionWidth={props.interactionWidth}
+        />
+    )
+}
+
+const edgeTypes = {lane: LaneEdge}
+
 // The palette's drags travel as this content type, so a file dragged from the
 // desktop is not mistaken for a block.
 export const BLOCK_DRAG_TYPE = 'application/x-xciii-block'
@@ -521,6 +610,7 @@ const FlowDiagram = (props: Props) => {
     const spareById = createMemo(() => new Map(spare().map((c) => [nodeId(c), c])))
 
     const graph = createMemo(() => {
+        const lanes = () => longHaul(props.nodes, props.edges)
         const tallest = props.nodes.reduce((at, n) => Math.max(at, stageHeight(props.writesOf?.(n))), NODE_HEIGHT)
         const positions = layout(props.nodes, props.edges, tallest)
         const sparePositions = spareLayout(positions, spare())
@@ -622,17 +712,23 @@ const FlowDiagram = (props: Props) => {
                 // class, because the label is rendered into a portal of the
                 // library's own and nothing of the edge's class reaches it.
                 const unanswered = Boolean(edge.if && !edge.if.value && !edge.if.commentContains)
+
+                // A long arrow gets a corridor of its own: `offset` is how far
+                // a smoothstep path runs from the handle before it turns, so a
+                // different one per arrow is a different lane to travel in.
+                const lane = lanes().get(edgeId(edge, index))
                 return {
                     id: edgeId(edge, index),
                     source: edge.from,
                     target: edge.to,
                     sourceHandle: kind === 'event' ? HANDLE_EVENT : kind,
-                    type: 'smoothstep',
+                    type: 'lane',
                     class: `FlowDiagram__edge FlowDiagram__edge--${kind}${chosen ? ' FlowDiagram__edge--selected' : ''}`,
                     label: parts.join(' · '),
                     labelStyle: unanswered ? {color: 'rgb(var(--away-indicator-rgb))', 'font-weight': '600'} : undefined,
                     style: {stroke: color, 'stroke-width': chosen ? '3' : '1.5', 'stroke-dasharray': kind === 'event' ? '4 3' : undefined},
                     markerEnd: {type: MarkerType.ArrowClosed, width: 16, height: 16, color},
+                    data: {lane},
                 }
             })
         return {rfNodes, rfEdges}
@@ -810,6 +906,7 @@ const FlowDiagram = (props: Props) => {
                     onEdgeClick={({edge}: {edge: Edge}) => props.onSelect?.({kind: 'edge', id: edge.id})}
                     onPaneClick={() => props.onSelect?.(null)}
                     nodeTypes={nodeTypes}
+                    edgeTypes={edgeTypes}
                     nodesConnectable={editable()}
                     elementsSelectable={editable()}
                     edgesFocusable={editable()}

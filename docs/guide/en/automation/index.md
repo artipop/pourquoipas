@@ -131,6 +131,10 @@ A property with no set of values (text, a link) is drawn faint and cannot be
 pulled from: an arrow asks "is the value this one", and text has no set. Such a
 property travels on down the route and is read by the stages further on.
 
+A long arrow — one that skips several stages or sends the card back — runs in a
+corridor of its own under the graph, so that two of them do not travel side by
+side and read as one.
+
 An arrow you have already drawn asks about properties in the same order: first
 what the stage it leaves writes, then what the stages before it write — with the
 writing stage named beside each — and only then the rest of the board's
@@ -164,9 +168,11 @@ A route tab, select a box — in the panel:
 - **"Worked here by"** — this stage's agents. While none is ticked, the line
   under the boxes says who works it instead — the column's crew. This is how
   one route runs "In progress" with one agent and another with a different one;
-- **"The stage works"** — on the card's own branch, or in the folder itself. It
-  matters for a repository: checking before the branch is merged happens on the
-  card's branch, checking what is already published happens in the folder;
+- **"The stage works"** — on the card's own branch, or in the folder itself.
+  Asked of a deploy and a test, where it decides something: checking before the
+  branch is merged happens on the card's branch, checking what is already
+  published happens in the folder. An agent stage works on the card's branch,
+  and the control only stands there once an answer has been given;
 - **deploy target** — on a deploy stage;
 - **"What the agent is told at this stage"** — instructions for this route
   alone. While the field is empty the column's apply, and the placeholder names
@@ -176,7 +182,9 @@ A route tab, select a box — in the panel:
 - **"MCP servers at this stage"** — the tools for this route alone. While the
   field is empty the column's servers apply and the heading names them; filling
   it in replaces the column's whole set;
-- **"From here the card goes"** — this stage's arrows;
+- **"From here the card goes"** — how many transitions the stage has, and the
+  button to add one; an arrow itself is edited by clicking it on the canvas,
+  which makes the panel about that arrow;
 - **"Settings of the column itself…"** — over to the "Columns" tab, to what is
   true of the column on any route.
 

@@ -540,6 +540,11 @@ const AutomationEditor = (props: Props) => {
             return
         }
         updateFlow(current.name, (f) => ({...f, edges: [...f.edges, {from: node.id, to: target.id, on: kind}]}))
+
+        // …and the new arrow is what the panel is about now. Without this the
+        // button made something the person then had to find on the canvas,
+        // which is the step the list used to save them.
+        setSelected({kind: 'edge', id: edgeId({from: node.id, to: target.id, on: kind}, current.edges.length)})
         setSelected({kind: 'edge', id: edgeId({from: node.id, to: target.id, on: kind}, current.edges.length)})
     }
 
@@ -611,8 +616,6 @@ const AutomationEditor = (props: Props) => {
             })),
         })
     }
-
-    const stageTargets = () => nodes().filter((n) => n.id !== selectedNode()?.id)
 
     // The select properties a condition may ask about. The route's own column
     // property is excluded: a change of that is a move, not a mark.
@@ -1352,27 +1355,33 @@ const AutomationEditor = (props: Props) => {
                                             () => (node().agentIds?.length ? '' : columnCrewNote(node())),
                                         )}
 
-                                        {/* Where the stage works. It matters for
-                                            a repository and nowhere else: a QA
-                                            stage in the card's own workspace
-                                            checks the work before anything is
-                                            merged, one in the folder checks
-                                            what is already published. */}
-                                        <div class='AutomationEditor__field'>
-                                            <span class='AutomationEditor__label'>
-                                                {intl.formatMessage({id: 'Automation.run-in', defaultMessage: 'The stage works'})}
-                                            </span>
-                                            <Select
-                                                value={node().runIn || ''}
-                                                options={[
-                                                    {value: '', label: intl.formatMessage({id: 'Automation.run-in-default', defaultMessage: '— as this kind of stage usually does —'})},
-                                                    {value: 'owner', label: intl.formatMessage({id: 'Automation.run-in-owner', defaultMessage: 'on the card’s own branch'})},
-                                                    {value: 'workdir', label: intl.formatMessage({id: 'Automation.run-in-workdir', defaultMessage: 'in the folder itself'})},
-                                                ]}
-                                                onChange={(runIn) => updateFlow(flow()!.name, (f) => withNode(f, node().id, {runIn: runIn || undefined}))}
-                                                label={intl.formatMessage({id: 'Automation.run-in', defaultMessage: 'The stage works'})}
-                                            />
-                                        </div>
+                                        {/* Where the stage works, and only where
+                                            that decides something. For a deploy
+                                            and a test it is the whole of "QA
+                                            before the merge" — one checks the
+                                            card's own branch, the other what is
+                                            already published. An agent stage
+                                            works on the card's branch and there
+                                            is no second sensible answer, so the
+                                            control only stands there when
+                                            somebody has already given one. */}
+                                        <Show when={actionOf(node()) === 'deploy' || actionOf(node()) === 'test' || node().runIn}>
+                                            <div class='AutomationEditor__field'>
+                                                <span class='AutomationEditor__label'>
+                                                    {intl.formatMessage({id: 'Automation.run-in', defaultMessage: 'The stage works'})}
+                                                </span>
+                                                <Select
+                                                    value={node().runIn || ''}
+                                                    options={[
+                                                        {value: '', label: intl.formatMessage({id: 'Automation.run-in-default', defaultMessage: '— as this kind of stage usually does —'})},
+                                                        {value: 'owner', label: intl.formatMessage({id: 'Automation.run-in-owner', defaultMessage: 'on the card’s own branch'})},
+                                                        {value: 'workdir', label: intl.formatMessage({id: 'Automation.run-in-workdir', defaultMessage: 'in the folder itself'})},
+                                                    ]}
+                                                    onChange={(runIn) => updateFlow(flow()!.name, (f) => withNode(f, node().id, {runIn: runIn || undefined}))}
+                                                    label={intl.formatMessage({id: 'Automation.run-in', defaultMessage: 'The stage works'})}
+                                                />
+                                            </div>
+                                        </Show>
                                     </Show>
 
                                     <Show when={actionOf(node()) === 'deploy'}>
@@ -1442,52 +1451,29 @@ const AutomationEditor = (props: Props) => {
                                         {intl.formatMessage({id: 'Automation.open-column', defaultMessage: 'Settings of the column itself…'})}
                                     </button>
 
+                                    {/* The arrows are on the canvas, and this
+                                        used to be all of them again: two or
+                                        three selects each, in a 300px column,
+                                        saying what the picture beside it says.
+                                        One arrow is edited by clicking it —
+                                        the edge panel is the same panel — so
+                                        what is left here is the way to make a
+                                        new one. */}
                                     <div class='AutomationEditor__transitions'>
                                         <span class='AutomationEditor__label'>
                                             {intl.formatMessage({id: 'Automation.transitions', defaultMessage: 'From here the card goes'})}
                                         </span>
-                                        <For each={outgoing(edges(), node().id)}>
-                                            {({edge, index}) => (
-                                                <div class='AutomationEditor__transition'>
-                                                    <div class='AutomationEditor__transitionRow'>
-                                                        <Select
-                                                            value={edge.on}
-                                                            options={props.triggers.map((t) => ({value: t.kind, label: t.label}))}
-                                                            onChange={(on) => patchEdge(index, {on})}
-                                                            label={intl.formatMessage({id: 'Automation.transition-on', defaultMessage: 'When'})}
-                                                        />
-                                                        <span class='AutomationEditor__arrow'><CompassIcon icon='arrow-right'/></span>
-                                                        <Select
-                                                            value={edge.to}
-                                                            options={stageTargets().map((n) => ({value: n.id, label: n.column}))}
-                                                            onChange={(to) => patchEdge(index, {to})}
-                                                            label={intl.formatMessage({id: 'Automation.transition-to', defaultMessage: 'The card moves to'})}
-                                                        />
-                                                        <button
-                                                            type='button'
-                                                            class='AutomationEditor__remove'
-                                                            title={intl.formatMessage({id: 'Automation.remove-transition', defaultMessage: 'Remove'})}
-                                                            onClick={() => dropEdge(index)}
-                                                        ><CompassIcon icon='close'/></button>
-                                                    </div>
-
-                                                    {/* The rule, right under its arrow: the fork is
-                                                        drawn by conditions, so this is where a route
-                                                        stops being a straight line. */}
-                                                    {condEditor(index, edge)}
-
-                                                    <Show when={OUTCOMES.includes(edge.on) && !edge.if}>
-                                                        <button
-                                                            type='button'
-                                                            class='AutomationEditor__branch'
-                                                            onClick={() => addBranch(index)}
-                                                        >
-                                                            {intl.formatMessage({id: 'Automation.add-branch', defaultMessage: '+ branch on a condition'})}
-                                                        </button>
-                                                    </Show>
-                                                </div>
-                                            )}
-                                        </For>
+                                        <span class='AutomationEditor__hint'>
+                                            <Show
+                                                when={outgoing(edges(), node().id).length > 0}
+                                                fallback={intl.formatMessage({id: 'Automation.transitions-none', defaultMessage: 'Nowhere yet. Pull from the stage’s edge on the canvas, or add one below.'})}
+                                            >
+                                                {intl.formatMessage(
+                                                    {id: 'Automation.transitions-count', defaultMessage: '{count, plural, one {# transition} few {# transitions} other {# transitions}} — click an arrow on the canvas to edit it.'},
+                                                    {count: outgoing(edges(), node().id).length},
+                                                )}
+                                            </Show>
+                                        </span>
                                         <Button onClick={() => addTransition(node())}>
                                             {intl.formatMessage({id: 'Automation.add-transition', defaultMessage: 'Add a transition'})}
                                         </Button>
@@ -1521,6 +1507,23 @@ const AutomationEditor = (props: Props) => {
                                     />
                                 </div>
                                 {condEditor(selectedEdgeIndex(), edge())}
+
+                                {/* A fork is two arrows on the same event, and
+                                    the ordinary way to draw one is to pull
+                                    twice from the stage's output. This is the
+                                    way for an arrow with no output to pull
+                                    from — a condition on what the agent wrote.
+                                    It lived on every row of a list of every
+                                    arrow; it belongs to the one selected. */}
+                                <Show when={OUTCOMES.includes(edge().on) && !edge().if}>
+                                    <button
+                                        type='button'
+                                        class='AutomationEditor__branch'
+                                        onClick={() => addBranch(selectedEdgeIndex())}
+                                    >
+                                        {intl.formatMessage({id: 'Automation.add-branch', defaultMessage: '+ branch on a condition'})}
+                                    </button>
+                                </Show>
                                 <div class='AutomationEditor__field'>
                                     <span class='AutomationEditor__label'>
                                         {intl.formatMessage({id: 'Automation.transition-to', defaultMessage: 'The card moves to'})}
@@ -1580,17 +1583,20 @@ const AutomationEditor = (props: Props) => {
                                 </For>
                                 <div class='AutomationEditor__field'>
                                     <span class='AutomationEditor__label'>
-                                        {intl.formatMessage({id: 'Automation.route-project', defaultMessage: 'Folder (optional)'})}
+                                        {intl.formatMessage({id: 'Automation.route-project', defaultMessage: 'Cards from this folder take this route'})}
                                     </span>
                                     <Select
                                         value={current().workspaceId || ''}
                                         options={[
-                                            {value: '', label: intl.formatMessage({id: 'Automation.route-project-any', defaultMessage: '— any folder —'})},
+                                            {value: '', label: intl.formatMessage({id: 'Automation.route-project-any', defaultMessage: '— no, the card names the route itself —'})},
                                             ...(props.workspaces || []).map((w) => ({value: w.id || '', label: w.name})),
                                         ]}
                                         onChange={(workspaceId) => updateFlow(current().name, (f) => ({...f, workspaceId}))}
-                                        label={intl.formatMessage({id: 'Automation.route-project', defaultMessage: 'Folder (optional)'})}
+                                        label={intl.formatMessage({id: 'Automation.route-project', defaultMessage: 'Cards from this folder take this route'})}
                                     />
+                                </div>
+                                <div class='AutomationEditor__hint'>
+                                    {intl.formatMessage({id: 'Automation.route-project-hint', defaultMessage: 'A folder here is a rule about which route a card takes, not about where the agent works: a card that names no route and resolves to this folder goes this way. Where the work happens is the card’s own field.'})}
                                 </div>
                                 <div class='AutomationEditor__hint'>
                                     {intl.formatMessage(
