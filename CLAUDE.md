@@ -89,11 +89,19 @@ in a browser.
   `vite-plugin-solid` with the build through `vitest.config.ts`. Coverage is on by
   default (v8); `--coverage.enabled=false` while iterating, `npm run updatesnapshot`
   to rewrite snapshots.
-- `go test ./...` — the whole suite. `go vet -tags "server json1 sqlite3" .` checks
+- `go test -tags "json1 sqlite3" ./...` — the whole suite, and the tags are not
+  optional: the cgo SQLite driver is registered in a file behind `//go:build
+  sqlite3`, so without them five packages — `server/integrationtests`,
+  `sqlstore`, `server/app`, `internal/boardclient` and anything else raising the
+  server fixture — panic with `sql: unknown driver "sqlite3"`, which reads in
+  the summary exactly like a failing test and has been mistaken for one. The
+  packages that do pass bare get a driver another way, through
+  `internal/appschema`. `go vet -tags "server json1 sqlite3" .` checks
   the headless build, which has its own files. `./...` also walks
   `webapp/node_modules`, where an npm package happens to ship Go sources; that is
   cosmetic, and a nested `go.mod` would not fix it — `go:embed` cannot cross a
-  module boundary, and `webapp/pack` is what it embeds. The suite is green. It
+  module boundary, and `webapp/pack` is what it embeds. The suite is green with
+  those tags — 31 packages, measured 2026-08-20. It
   was not for a long time — `TestPermissionsGetTeamTemplates` failed on every
   run against a hard-coded count of the shipped templates that the archive had
   outgrown — on all three vendors alike — and it now asks the store instead.

@@ -110,7 +110,7 @@ ERR Binding call failed: Bound method returned an error:
 ниже по тому же правилу. Заодно проверить, что остаётся вместо спрятанного:
 у папки — поле ввода пути, у терминала — панель рядом с карточкой.
 
-## Префикс `xciii` в ключах и именах
+## Префикс `xciii` в ключах и именах — наполовину сделано
 
 Имя продукта записано внутрь данных. `BoardPropColumnProperty =
 "columnProperty"` — образец, но таких мест десятки: ключи автоматики на
@@ -122,6 +122,26 @@ ERR Binding call failed: Bound method returned an error:
 `xciii.board.machines`), id узлов на странице (`xciii-app`,
 `root-portal`), имя базы (`xciii.db`), временный файл конфига MCP,
 имя экземпляра миграций.
+
+**Сделано 2026-08-20** (`5fb0a99`): ключи автоматики на доске и поля карточки
+потеряли префикс совсем — `columns`, `flows`, `setup`, `prompt`, `template`,
+`source`, `flow`, `columnProperty`, `branchProperty`, `projectProperty`.
+Проверено, что столкнуться не с чем: в `boards.properties` сервер доски пишет
+один свой ключ (`trackingTemplateId`), в `blocks.fields` — `properties`,
+`contentOrder`, `icon`, `isTemplate`. Сессия переехала на `boardSession` /
+`boardSessionId` — там namespace нужен, потому что куки общие на хост. Узлы
+страницы стали `app-root` и `root-portal`, временный файл конфига MCP —
+`mcp-config-*`.
+
+**Осталось** — то, что является договорённостью с ОС или с уже установленными
+копиями: URL-схема `xciii://` (зарегистрирована в `Info.plist` ради расширения
+«Поделиться»), bundle id `io.deffun.xciii`, служба в связке ключей
+(`xciii.probe`, `xciii.board.machines`, `xciii.board.address`), имя файла базы
+`xciii.db` и git-ref `refs/xciii/seen/`. Их трогать стоит только вместе с
+переименованием приложения. Плюс мелочь: `server/assets/templates-boardarchive/
+buz8dcekwdibq3eqjq74w613rxy/board.jsonl` всё ещё носит ключи `acpColumns` —
+файл устарел, собранный `templates.boardarchive` их не содержит, так что на
+работу это не влияет.
 
 Разделять их надо по тому, зачем префикс стоит.
 
