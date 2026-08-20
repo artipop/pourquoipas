@@ -92,12 +92,7 @@ func (m *Manager) handleEnter(ev CardMoved, spec ColumnSpec) {
 // flow paths cannot suppress each other's events.
 func (m *Manager) claimIdempotent(ev CardMoved, kind string) bool {
 	key := fmt.Sprintf("%s|%s|%s|%s", kind, ev.CardID, ev.FromColumn.OptionID, ev.ToColumn.OptionID)
-	fresh, err := m.store.ClaimIdempotency(key, "", m.cfg.IdempotencyWindow())
-	if err != nil {
-		m.log.Error("acp: idempotency check failed", "err", err)
-		return false
-	}
-	if !fresh {
+	if !m.claimStage(ev.CardID, key) {
 		m.log.Debug("acp: duplicate move suppressed", "card", ev.CardID, "kind", kind)
 		return false
 	}

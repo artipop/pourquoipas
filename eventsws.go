@@ -44,12 +44,16 @@ func newEventRoutes() *eventRoutes {
 // boardTools is not a socket but belongs to the same subtree: it is the other
 // end of the MCP server an agent runs, and it is authenticated by a grant token
 // rather than by the origin the request came from (boardapi.go).
-func newACPSockets(terminals, events, boardTools, hook http.Handler) http.Handler {
+func newACPSockets(terminals, events, boardTools, hook, lease http.Handler) http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle("/acp/terminal/{id}/ws", terminals)
 	mux.Handle("/acp/events/ws", events)
 	mux.Handle("/acp/board/", boardTools)
 	mux.Handle(acp.HookPath, hook)
+	// Not a socket and not a tool: the claim a desktop attached to this board
+	// makes on a route event (lease.go). Here because everything under /acp/ is
+	// this application's own rather than the board's.
+	mux.Handle(LeasePath, lease)
 	return mux
 }
 

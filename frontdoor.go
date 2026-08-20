@@ -58,6 +58,11 @@ func newFrontDoor(wails, acpRoutes, ingest, board http.Handler, allowedHost stri
 	// bargain as the tools above: a grant token is the authentication, and the
 	// origin guard is free because the caller is a local process with no Origin.
 	mux.Handle(acp.HookPath, sameOrigin(acpRoutes, allowedHost))
+	// The claim a desktop attached to this board makes on a route event
+	// (lease.go). Not same-origin, and it cannot be: the caller is another
+	// machine. What stands in for the check is a live board session, which the
+	// handler asks for — taking work on a board is something a member does.
+	mux.Handle(LeasePath, acpRoutes)
 	// The one route here that is *not* same-origin, and it cannot be: what
 	// posts to it is a script, a webhook or a phone, so its Origin is somebody
 	// else's or absent. Its own token is what stands in for the check — see

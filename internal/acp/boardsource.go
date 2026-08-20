@@ -3,6 +3,7 @@ package acp
 import (
 	"context"
 	"sync"
+	"time"
 )
 
 // Where a board lives.
@@ -32,6 +33,25 @@ type BoardSource struct {
 	Meta      BoardMeta
 	CardState BoardCardState
 	Events    BoardEvents
+	// Lease is where a claim on a route event is made. Nil for the board this
+	// process serves, where the claim is this machine's own store: there is one
+	// candidate, and it is this process.
+	Lease BoardLease
+}
+
+// BoardLease is the one question that cannot be answered locally once a board
+// is shared: may this install take this route event.
+//
+// Every desktop attached to a hosted board hears the same card move, and each
+// has its own database — so the latch that made one drag one stage is a latch
+// per machine, and three desktops would run three stages. The claim has to be
+// made where all the candidates can see it, which is the board's own side.
+//
+// The window is what it always was: an event claimed and never released stops
+// being claimed once it is old enough to be swept, so a machine that dies
+// mid-stage costs that one stage rather than the card for ever.
+type BoardLease interface {
+	ClaimStage(ctx context.Context, token string, window time.Duration) (bool, error)
 }
 
 // boardRouting is what a manager remembers so it does not ask twice.
@@ -198,4 +218,29 @@ func (m *Manager) forgetCardRoute(cardID string) {
 	m.routing.mu.Lock()
 	defer m.routing.mu.Unlock()
 	delete(m.routing.ofCard, cardID)
+}
+
+// claimStage takes a route event for this install, and reports whether it got
+// it. The claim is made wherever the card's board keeps its own — this
+// machine's store for a board this process serves, and the server's for a board
+// on one, so that of several desktops hearing the same move exactly one acts.
+func (m *Manager) claimStage(cardID, token string) bool {
+	window := m.cfg.IdempotencyWindow()
+	if lease := m.forCard(cardID).Lease; lease != nil {
+		fresh, err := lease.ClaimStage(context.Background(), token, window)
+		if err != nil {
+			// A claim that could not be made is not a claim: acting anyway is
+			// how two machines run one stage, which is the thing this exists to
+			// prevent.
+			m.log.Error("acp: cannot claim a stage on the board", "card", cardID, "err", err)
+			return false
+		}
+		return fresh
+	}
+	fresh, err := m.store.ClaimIdempotency(token, "", window)
+	if err != nil {
+		m.log.Error("acp: idempotency check failed", "err", err)
+		return false
+	}
+	return fresh
 }

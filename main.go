@@ -226,7 +226,11 @@ func main() {
 	uiEvents := newEventRoutes()
 	// The board tools an agent calls back through, on the same subtree.
 	boardTools := newBoardToolRoutes()
-	acpSockets := newACPSockets(terminals, uiEvents, boardTools.Handler(), boardTools.HookHandler())
+	// The claim a desktop attached to this board makes on one of its route
+	// events. Its store arrives with the rest of the agent integration below;
+	// until then it answers that agents are off, which is true.
+	leases := newLeaseRoutes(boardSessionGuard(srv.App()))
+	acpSockets := newACPSockets(terminals, uiEvents, boardTools.Handler(), boardTools.HookHandler(), leases)
 	// The ingest endpoint, on the same terms: it is a route on the front door,
 	// and it is handed its manager once the board exists.
 	ingest := newSourceRoutes()
@@ -359,6 +363,7 @@ func main() {
 		if err != nil {
 			log.Printf("acp: disabled, store error: %v", err)
 		} else {
+			leases.SetStore(store)
 			mgr = acp.NewManager(acpCfg, filepath.Join(dir, "config.json"), store, seam.writer, emitter, nil)
 			// Lets the UI open a console on a card without moving it.
 			mgr.SetBoardReader(seam.reader)
@@ -387,7 +392,7 @@ func main() {
 					mgr.AddBoardSource(acp.BoardSource{
 						ID: attach.target(), Writer: attached.writer, Reader: attached.reader,
 						Users: attached.users, Meta: attached.meta, CardState: attached.cardState,
-						Events: attached.events,
+						Events: attached.events, Lease: attached.lease,
 					})
 				}
 				app.mgr = mgr

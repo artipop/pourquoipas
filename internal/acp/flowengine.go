@@ -295,10 +295,7 @@ func (m *Manager) advanceFlowWith(cardID, on, detail, agentText string) {
 
 	// One event moves a card once.
 	key := fmt.Sprintf("flow|%s|%s|%s", cardID, node.ID, on)
-	if fresh, err := m.store.ClaimIdempotency(key, "", m.cfg.IdempotencyWindow()); err != nil {
-		m.log.Error("acp: flow idempotency check failed", "err", err)
-		return
-	} else if !fresh {
+	if !m.claimStage(cardID, key) {
 		return
 	}
 

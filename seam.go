@@ -36,6 +36,9 @@ type boardSeam struct {
 	meta      acp.BoardMeta
 	users     acp.BoardUsers
 	events    acp.BoardEvents
+	// lease is where a claim on a route event is made. Nil for the board this
+	// process serves: there is one candidate there and it is this process.
+	lease acp.BoardLease
 
 	// lists is the board as the phone at /m and the share dialog read it.
 	lists boardLists
@@ -78,6 +81,7 @@ func remoteSeam(serverURL, token string, log mlog.LoggerIFace) (boardSeam, *boar
 	client := boardclient.New(serverURL, token, model.GlobalTeamID, log)
 	return boardSeam{
 		sourceWriter: boardclient.NewSourceWriter(client),
+		lease:        client,
 		writer:       client,
 		cardState:    client,
 		reader:       client,
