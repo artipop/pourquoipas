@@ -156,6 +156,33 @@ export const CARD_CHANGED = 'card.changed'
 
 export const ACTIONS = ['none', 'agent', 'deploy', 'test']
 
+// The board property types a stage can actually write. SetCardFields resolves a
+// select by one of its option names and stores everything else as text, so a
+// date, a person or a file would be handed a string the board cannot read back,
+// and createdBy/createdTime and their kin are the board's own bookkeeping.
+export const WRITABLE_TYPES = ['text', 'url', 'email', 'phone', 'number', 'select']
+
+// NewProperty is a board property a stage's outputs need and the board has not
+// got. The editor asks for it rather than making it, the way it asks for a
+// column: a property is the board's, visible on every card, and belongs to
+// whoever owns the board rather than to the automation over it.
+export type NewProperty = {
+    name: string
+
+    // 'select' is the one that makes the property branchable — a transition can
+    // only ask "is it this value" of a closed set. 'text' and 'url' are carried
+    // to later stages and read there.
+    type: 'text' | 'url' | 'select'
+
+    // The option names, for a select. Empty for the rest.
+    options?: string[]
+}
+
+// The names this app gives the two machine outputs, and their shape. A deploy
+// stage produces one address and a test one verdict, so neither is a question:
+// the form asks for the name and says what kind it will be.
+export const VERDICT_VALUES = ['pass', 'fail', 'blocked']
+
 // OUTCOMES are the triggers produced by the stage's own action — the only ones
 // where the agent spoke, and therefore the only ones a comment condition makes
 // sense on.

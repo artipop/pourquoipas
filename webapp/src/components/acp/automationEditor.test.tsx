@@ -1,8 +1,8 @@
-import {fireEvent, render, screen, waitFor} from '@solidjs/testing-library'
+import {fireEvent, render, screen, waitFor, within} from '@solidjs/testing-library'
 import userEvent from '@testing-library/user-event'
 import '@testing-library/jest-dom'
 
-import {chooseOption, wrapIntl} from '../../testUtils'
+import {chooseOption, optionsOf, wrapIntl} from '../../testUtils'
 import {setupReactFlowEnvironment} from '../../test/reactFlowEnvironment'
 import {IPropertyTemplate} from '../../blocks/board'
 
@@ -48,6 +48,15 @@ const automation: Automation = {
     }],
 }
 
+// Every board property, as a stage's writes and reads see them: the column
+// property, the ones a stage can put a value in, and the ones it cannot.
+const allProperties = [
+    property,
+    {id: 'prop-branch', name: 'Ветка', type: 'text', options: []},
+    {id: 'prop-due', name: 'Срок', type: 'date', options: []},
+    {id: 'prop-author', name: 'Автор', type: 'createdBy', options: []},
+] as IPropertyTemplate[]
+
 function renderEditor(overrides: Partial<Parameters<typeof AutomationEditor>[0]> = {}) {
     const onChange = vi.fn()
     const result = render(() => wrapIntl(() => (
@@ -60,6 +69,7 @@ function renderEditor(overrides: Partial<Parameters<typeof AutomationEditor>[0]>
             triggers={triggers}
             agents={[{id: 'ag-claude', name: 'claude'}, {id: 'ag-codex', name: 'codex'}]}
             deploys={[]}
+            allProperties={allProperties}
             onChange={onChange}
             {...overrides}
         />
@@ -323,6 +333,73 @@ describe('components/acp/automationEditor', () => {
         })
 
         expect(screen.getByText(/No deploy targets yet/)).toBeInTheDocument()
+    })
+
+    // A stage's outputs land through SetCardFields, which resolves a select by
+    // one of its option names and stores everything else as text. A date takes
+    // that string and cannot read it back; createdBy is the board's own
+    // bookkeeping and is not writable at all. Offering either is offering an
+    // answer that fails at the moment the stage reports.
+    test('only the properties a stage can write are offered as outputs', () => {
+        const {container} = renderEditor({
+            automation: {
+                ...automation,
+                columns: [{boardId: 'board-1', optionId: 'opt-work', property: 'Статус', column: 'В работе', action: 'deploy'}],
+            },
+            deploys: [{id: 'dep-1', name: 'dokku-1'}],
+            focusColumnId: 'opt-work',
+        })
+
+        const picker = container.querySelector('.AutomationEditor__writes .Select') as HTMLElement
+        const offered = optionsOf(picker)
+        expect(offered).toContain('Ветка')
+        expect(offered).not.toContain('Срок')
+        expect(offered).not.toContain('Автор')
+
+        // Never the column property: moving between columns is the route's own
+        // business, not a value a stage writes.
+        expect(offered).not.toContain('Статус')
+    })
+
+    // On most boards there is no field a preview address or a verdict could go
+    // into, and leaving the dialog to make one on the board is how a stage ends
+    // up declaring nothing at all. So the field is made here, and declared in
+    // the same breath.
+    test('a new property is made from the picker and declared at once', async () => {
+        const onCreateProperty = vi.fn().mockResolvedValue({id: 'prop-new', name: 'Заметка', type: 'text', options: []})
+        const {container, onChange} = renderEditor({onCreateProperty, focusColumnId: 'opt-work'})
+
+        const picker = container.querySelector('.AutomationEditor__writes .Select') as HTMLElement
+        chooseOption(picker, '+ a new property…')
+
+        const form = container.querySelector('.AutomationEditor__newProperty') as HTMLElement
+        fireEvent.input(form.querySelector('input')!, {target: {value: 'Заметка'}})
+        fireEvent.click(screen.getByRole('button', {name: 'Add the property'}))
+
+        await waitFor(() => expect(onCreateProperty).toHaveBeenCalledWith({name: 'Заметка', type: 'text', options: undefined}))
+        await waitFor(() => expect(onChange).toHaveBeenCalled())
+        const next: Automation = onChange.mock.calls.at(-1)![0]
+        expect(next.columns.find((c) => c.optionId === 'opt-work')?.writes).toEqual([{property: 'Заметка'}])
+    })
+
+    // A deploy stage produces one address and a test one verdict, so the kind
+    // is not a question there — only what to call the field.
+    test('a deploy stage’s new property is a link, and is not asked about', () => {
+        const {container} = renderEditor({
+            automation: {
+                ...automation,
+                columns: [{boardId: 'board-1', optionId: 'opt-work', property: 'Статус', column: 'В работе', action: 'deploy'}],
+            },
+            deploys: [{id: 'dep-1', name: 'dokku-1'}],
+            onCreateProperty: vi.fn(),
+            focusColumnId: 'opt-work',
+        })
+
+        chooseOption(container.querySelector('.AutomationEditor__writes .Select') as HTMLElement, '+ a new property…')
+        const form = container.querySelector('.AutomationEditor__newProperty') as HTMLElement
+        expect((form.querySelector('input') as HTMLInputElement).value).toBe('Preview')
+        expect(within(form).queryByRole('button', {name: 'What it holds'})).toBeNull()
+        expect(within(form).getByText(/It will hold a link/)).toBeInTheDocument()
     })
 
     // A caption is not a control. The Select's trigger is a <button>, which a

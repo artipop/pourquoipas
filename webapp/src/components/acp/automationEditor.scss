@@ -170,6 +170,25 @@
             gap: 6px;
         }
 
+        // The form that makes a board property, opened from the writes picker
+        // and inset so it reads as belonging to the field above it rather than
+        // as the next question in the panel.
+        .AutomationEditor__newProperty {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 4px;
+            padding: 8px;
+            border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+            border-radius: var(--radius-sm);
+            background: rgba(var(--center-channel-color-rgb), 0.04);
+        }
+
+        .AutomationEditor__newPropertyActions {
+            display: flex;
+            gap: 8px;
+        }
+
         .AutomationEditor__writeRow {
             display: flex;
             align-items: center;

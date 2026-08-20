@@ -20,9 +20,12 @@ import {
     FlowEdge,
     FlowNode,
     FlowTrigger,
+    NewProperty,
     OUTCOMES,
     PropertyWrite,
     SUCCESS,
+    VERDICT_VALUES,
+    WRITABLE_TYPES,
     blankSpec,
     columnsOf,
     nodeFor,
@@ -106,6 +109,13 @@ type Props = {
     onCreateColumn?: (name: string) => Promise<BoardColumn | undefined>
     onRenameColumn?: (column: BoardColumn, name: string) => Promise<void>
 
+    // onCreateProperty makes a board property for a stage's output — the same
+    // bargain onCreateColumn takes, and for the same reason: a property is the
+    // board's, shows on every card, and belongs to whoever owns the board. It
+    // returns the created template so the write can be declared without waiting
+    // for the board to come back. Absent where there is no board to patch.
+    onCreateProperty?: (spec: NewProperty) => Promise<IPropertyTemplate | undefined>
+
     // onAddRouteOption puts the route's name among the options a card can name
     // it with. Without one, the route is drawn and never taken.
     onAddRouteOption?: (flow: Flow) => void
@@ -118,6 +128,162 @@ type Props = {
 }
 
 type Selection = {kind: 'node' | 'edge', id: string} | null
+
+// NEW_PROPERTY is the writes picker's last option. A sentinel rather than the
+// empty string, which already means "nowhere" in that same list.
+const NEW_PROPERTY = '\u0000new'
+
+type NewPropertyProps = {
+    action: string
+    taken: () => string[]
+
+    // Answers whether the property was made: a refusal from the board leaves
+    // the form standing with what was typed in it.
+    onCreate: (spec: NewProperty) => Promise<boolean>
+    onCancel: () => void
+}
+
+// The form that makes a board property for a stage's output.
+//
+// It knows the two machine outputs by their shape — a deploy stage produces one
+// address, a test one verdict out of a closed set — so there it asks only what
+// to call the field. For an agent stage the kind is the question that decides
+// something: a transition can only ask "is it this value" of a property with a
+// set of values, and a free-text one is carried to later stages instead. That
+// is said here, where the choice is made, rather than in a document.
+const NewPropertyForm = (props: NewPropertyProps) => {
+    const intl = useIntl()
+    const machine = () => props.action === 'deploy' || props.action === 'test'
+    const suggested = () => {
+        if (props.action === 'deploy') {
+            return intl.formatMessage({id: 'Automation.new-property-preview', defaultMessage: 'Preview'})
+        }
+        if (props.action === 'test') {
+            return intl.formatMessage({id: 'Automation.new-property-verdict', defaultMessage: 'Verdict'})
+        }
+        return ''
+    }
+    const firstKind = (): NewProperty['type'] => {
+        switch (props.action) {
+        case 'deploy':
+            return 'url'
+        case 'test':
+            return 'select'
+        default:
+            return 'text'
+        }
+    }
+    const [name, setName] = createSignal(suggested())
+    const [kind, setKind] = createSignal<NewProperty['type']>(firstKind())
+    const [values, setValues] = createSignal(props.action === 'test' ? VERDICT_VALUES.join(', ') : '')
+    const [error, setError] = createSignal('')
+    const [busy, setBusy] = createSignal(false)
+
+    const options = () => values().split(',').map((v) => v.trim()).filter(Boolean)
+
+    const submit = async () => {
+        const wanted = name().trim()
+        if (!wanted) {
+            setError(intl.formatMessage({id: 'Automation.new-property-no-name', defaultMessage: 'Give the property a name.'}))
+            return
+        }
+        if (props.taken().some((n) => n.trim().toLowerCase() === wanted.toLowerCase())) {
+            setError(intl.formatMessage({id: 'Automation.new-property-taken', defaultMessage: 'The board already has a property with this name.'}))
+            return
+        }
+        if (kind() === 'select' && options().length === 0) {
+            setError(intl.formatMessage({id: 'Automation.new-property-no-values', defaultMessage: 'List the values, separated by commas.'}))
+            return
+        }
+        setError('')
+        setBusy(true)
+        try {
+            await props.onCreate({name: wanted, type: kind(), options: kind() === 'select' ? options() : undefined})
+        } finally {
+            setBusy(false)
+        }
+    }
+
+    return (
+        <div class='AutomationEditor__newProperty'>
+            <div class='AutomationEditor__field'>
+                <span class='AutomationEditor__label'>
+                    {intl.formatMessage({id: 'Automation.new-property-name', defaultMessage: 'Name of the property'})}
+                </span>
+                <input
+                    value={name()}
+                    onInput={(e) => setName(e.currentTarget.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && submit()}
+                />
+            </div>
+
+            <Show
+                when={!machine()}
+                fallback={
+                    <span class='AutomationEditor__hint'>
+                        <Show
+                            when={props.action === 'deploy'}
+                            fallback={intl.formatMessage(
+                                {id: 'Automation.new-property-as-verdict', defaultMessage: 'It will hold one of: {values}.'},
+                                {values: VERDICT_VALUES.join(', ')},
+                            )}
+                        >
+                            {intl.formatMessage({id: 'Automation.new-property-as-link', defaultMessage: 'It will hold a link.'})}
+                        </Show>
+                    </span>
+                }
+            >
+                <div class='AutomationEditor__field'>
+                    <span class='AutomationEditor__label'>
+                        {intl.formatMessage({id: 'Automation.new-property-kind', defaultMessage: 'What it holds'})}
+                    </span>
+                    <Select
+                        value={kind()}
+                        options={[
+                            {value: 'text', label: intl.formatMessage({id: 'Automation.new-property-text', defaultMessage: 'text'})},
+                            {value: 'url', label: intl.formatMessage({id: 'Automation.new-property-url', defaultMessage: 'a link'})},
+                            {value: 'select', label: intl.formatMessage({id: 'Automation.new-property-select', defaultMessage: 'one of a set of values'})},
+                        ]}
+                        onChange={(next) => setKind(next as NewProperty['type'])}
+                        label={intl.formatMessage({id: 'Automation.new-property-kind', defaultMessage: 'What it holds'})}
+                    />
+                </div>
+                <Show when={kind() === 'select'}>
+                    <div class='AutomationEditor__field'>
+                        <span class='AutomationEditor__label'>
+                            {intl.formatMessage({id: 'Automation.new-property-values', defaultMessage: 'The values, separated by commas'})}
+                        </span>
+                        <input
+                            value={values()}
+                            onInput={(e) => setValues(e.currentTarget.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && submit()}
+                        />
+                    </div>
+                </Show>
+                <span class='AutomationEditor__hint'>
+                    {intl.formatMessage({id: 'Automation.new-property-branching', defaultMessage: 'A transition can branch on a property with a set of values. A text one is carried to the stages further on and read there.'})}
+                </span>
+            </Show>
+
+            <Show when={error()}>
+                <div class='AutomationEditor__warning'>{error()}</div>
+            </Show>
+
+            <div class='AutomationEditor__newPropertyActions'>
+                <Button
+                    emphasis='primary'
+                    onClick={submit}
+                    disabled={busy()}
+                >
+                    {intl.formatMessage({id: 'Automation.new-property-add', defaultMessage: 'Add the property'})}
+                </Button>
+                <Button onClick={props.onCancel}>
+                    {intl.formatMessage({id: 'Automation.new-property-cancel', defaultMessage: 'Cancel'})}
+                </Button>
+            </div>
+        </div>
+    )
+}
 
 // COLUMNS_VIEW is the canvas with no route on it: what each column does, which
 // is the half of the answer that holds for every card.
@@ -151,6 +317,18 @@ const AutomationEditor = (props: Props) => {
     const [selected, setSelected] = createSignal<Selection>(
         props.focusColumnId ? {kind: 'node', id: props.focusColumnId} : null,
     )
+
+    // Which writes picker has its "a new property" form open, by the action it
+    // belongs to. One signal because one panel is drawn at a time — the column
+    // half and the stage half are exclusive — and it is dropped when the panel
+    // stops being about the same thing, or the form would follow the eye onto
+    // the next stage half-typed.
+    const [creating, setCreating] = createSignal<string | null>(null)
+    createEffect(() => {
+        selected()
+        route()
+        setCreating(null)
+    })
 
     const flows = () => props.automation.flows
     const specs = () => props.automation.columns
@@ -548,10 +726,40 @@ const AutomationEditor = (props: Props) => {
         )
     }
 
-    // The properties a stage may write or read: every board property except the
-    // column one — moving between columns is the route's own business.
+    // The properties a stage may read: every board property except the column
+    // one — moving between columns is the route's own business.
     const dataProperties = () =>
         (props.allProperties || []).filter((p) => p.id !== props.property?.id).map((p) => p.name)
+
+    // And the ones it may write, which is a narrower question: SetCardFields
+    // resolves a select by one of its option names and puts everything else on
+    // the card as text, so a date, a person or a file would take a string the
+    // board cannot read back — and createdBy/createdTime and their kin are the
+    // board's own bookkeeping and are not writable at all. Offering them was
+    // offering an answer that fails at the moment the stage reports.
+    const writableProperties = () =>
+        (props.allProperties || []).
+            filter((p) => p.id !== props.property?.id && WRITABLE_TYPES.includes(p.type)).
+            map((p) => p.name)
+
+    // createProperty makes the board property and declares it in the same
+    // breath: a field created for an output and left undeclared is the state
+    // this whole control exists to prevent. A board that refuses the property
+    // leaves the form standing with what was typed in it.
+    const createProperty = async (
+        spec: NewProperty,
+        machine: boolean,
+        value: () => PropertyWrite[],
+        write: (next: PropertyWrite[] | undefined) => void,
+    ): Promise<boolean> => {
+        const made = await props.onCreateProperty?.(spec)
+        if (!made) {
+            return false
+        }
+        setCreating(null)
+        write(machine ? [{property: made.name}] : [...value(), {property: made.name}])
+        return true
+    }
 
     // writesPicker edits a stage's declared outputs. For an agent stage each row
     // is a property plus a required flag — finish_work is refused without a
@@ -612,9 +820,20 @@ const AutomationEditor = (props: Props) => {
                     value={machine ? (value()[0]?.property || '') : ''}
                     options={[
                         {value: '', label: machine ? intl.formatMessage({id: 'Automation.writes-nowhere', defaultMessage: '— nowhere —'}) : intl.formatMessage({id: 'Automation.writes-add', defaultMessage: '+ property…'})},
-                        ...(machine ? dataProperties() : free()).map((name) => ({value: name, label: name})),
+                        ...(machine ? writableProperties() : free()).map((name) => ({value: name, label: name})),
+
+                        // The last resort, and on most boards the only right
+                        // answer: nothing here holds a preview address or a
+                        // verdict until somebody makes a field for it, and
+                        // leaving the dialog to make one on the board is how a
+                        // stage ends up declaring nothing.
+                        ...(props.onCreateProperty ? [{value: NEW_PROPERTY, label: intl.formatMessage({id: 'Automation.writes-new', defaultMessage: '+ a new property…'})}] : []),
                     ]}
                     onChange={(name) => {
+                        if (name === NEW_PROPERTY) {
+                            setCreating(action)
+                            return
+                        }
                         if (machine) {
                             write(name ? [{property: name}] : undefined)
                             return
@@ -625,6 +844,14 @@ const AutomationEditor = (props: Props) => {
                     }}
                     label={label}
                 />
+                <Show when={creating() === action}>
+                    <NewPropertyForm
+                        action={action}
+                        taken={() => (props.allProperties || []).map((p) => p.name)}
+                        onCancel={() => setCreating(null)}
+                        onCreate={(spec) => createProperty(spec, machine, value, write)}
+                    />
+                </Show>
                 <Show when={note && note()}>
                     <span class='AutomationEditor__hint'>{note!()}</span>
                 </Show>

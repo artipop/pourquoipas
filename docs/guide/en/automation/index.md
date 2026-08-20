@@ -64,7 +64,24 @@ The **"Columns"** tab, select a column — in the panel:
   the property is written. A deploy column picks one property for its preview
   address; a test column one for its verdict (`pass`/`fail`/`blocked`). Values
   land on the card **before** it travels on, so a conditional arrow can rely on
-  them;
+  them.
+
+  The list offers not every board property but the ones a stage can actually
+  write to: text, a link, a number, an email, a phone and one of a set. A date,
+  a person and «Автор»/«Создана» are left out — there is nothing to write there.
+
+  When the board has no property for the value, the last item in the list is
+  **"+ a new property…"**. The form asks for a name and for what the property
+  holds: text, a link, or one of a set of values. The property appears on the
+  board at once — it shows on every card — and is declared as this stage's
+  output in the same breath. A deploy column and a test column are not asked
+  what it holds: there it is a link and the set `pass`/`fail`/`blocked`, and the
+  form asks only for the name.
+
+  What it holds decides whether an arrow can branch on it. An arrow asks "only
+  if the card has this value", which is a question to a set: a property with a
+  set of values has something to pick from, a text one has not. A text property
+  travels to the stages further on and is read there;
 - **"Gets from the card"** — the properties the stage reads: their values open
   its brief ("From the card: Превью: …"), so the agent does not have to think
   of asking `get_card`;
