@@ -53,6 +53,40 @@
         text-decoration: none;
     }
 
+    // The two answers a wait stage takes, named by where each leads. Back is
+    // the board's quiet ink and forward is the accent, because one of them is
+    // the ordinary way on and the other is the exception.
+    .FlowStrip__marks {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .FlowStrip__mark {
+        padding: 3px 10px;
+        border-radius: var(--radius-sm);
+        border: 1px solid rgba(var(--center-channel-color-rgb), 0.24);
+        background: transparent;
+        color: rgba(var(--center-channel-color-rgb), 0.8);
+        cursor: pointer;
+        font-size: 12px;
+        white-space: nowrap;
+    }
+
+    .FlowStrip__mark:hover:not(:disabled) {
+        background: rgba(var(--center-channel-color-rgb), 0.08);
+    }
+
+    .FlowStrip__mark:disabled {
+        cursor: default;
+        opacity: 0.5;
+    }
+
+    .FlowStrip__mark--forward {
+        border-color: rgba(var(--button-bg-rgb), 0.64);
+        color: rgb(var(--button-bg-rgb));
+    }
+
     .FlowStrip__status {
         font-size: 12px;
         color: rgba(var(--center-channel-color-rgb), 0.56);

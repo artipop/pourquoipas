@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 
@@ -763,6 +764,17 @@ func (a *App) GetCardFlow(cardID string) (string, error) {
 		return "", err
 	}
 	return string(out), nil
+}
+
+// MarkCardOutcome is the card's own «прошло»/«не прошло» — the two buttons on a
+// stage where nobody works and nothing runs, and the way a review says no.
+func (a *App) MarkCardOutcome(cardID, value string) error {
+	if a.mgr == nil {
+		return nil
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	return a.mgr.MarkCardOutcome(ctx, cardID, value)
 }
 
 // SeedBoardAutomation takes the columns and routes a board carries of its own

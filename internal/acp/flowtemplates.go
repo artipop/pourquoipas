@@ -82,6 +82,22 @@ func (b *flowBuilder) edge(from, to, on string) {
 	b.flow.Edges = append(b.flow.Edges, FlowEdge{From: from, To: to, On: on})
 }
 
+// passed is the other half of the pair: the same field, the other value, and
+// the way on. A wait stage's forward move usually has an automatic trigger too
+// — «На ревью» goes on when the branch is merged — but the automatic one is the
+// world telling us, and this is a person telling us. Both are needed: the
+// branch is not always merged from here, and somebody watching a review does
+// not want to wait for a poll to notice.
+func (b *flowBuilder) passed(from, to string) {
+	if from == "" || to == "" || from == to {
+		return
+	}
+	b.flow.Edges = append(b.flow.Edges, FlowEdge{
+		From: from, To: to, On: TriggerCardChanged,
+		If: &EdgeCond{Property: OutcomePropertyTitle, Value: OutcomePassed},
+	})
+}
+
 // rejected is the way back from a stage where nobody works and nothing runs.
 // A wait stage produces no outcome — «На ревью» has no "failed" of its own to
 // leave by — so the signal is a person saying so on the card: «Исход» set to
@@ -139,10 +155,12 @@ func featureFlow(cfg Config) FlowEntry {
 	b.edge(deploy, agent, TriggerFailure)
 	b.edge(qa, agent, TriggerFailure)
 
-	// A review that says no. Nothing runs in «На ревью», so this is the one
-	// arrow out of it a person draws by hand — and until it existed the card
-	// simply stood there, which is what the route looked like it was missing.
+	// A review, answered by a person: nothing runs in «На ревью», so both ways
+	// out of it are somebody saying how it went. Until the first of these
+	// existed the card simply stood there, which is what the route looked like
+	// it was missing.
 	b.rejected(review, agent)
+	b.passed(review, deploy)
 
 	// Except the agent's own stage and «проверить не удалось»: sending a task
 	// back to the agent that just failed it is a loop with nothing new in it,
@@ -177,6 +195,7 @@ func reviewFlow(cfg Config) FlowEntry {
 	b.edge(agent, review, TriggerSuccess)
 	b.edge(review, done, TriggerBranchMerged)
 	b.rejected(review, agent)
+	b.passed(review, done)
 	return b.flow
 }
 

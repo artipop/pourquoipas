@@ -336,6 +336,63 @@ func TestAReviewThatSaysNoSendsTheCardBack(t *testing.T) {
 	})
 }
 
+// A stage where nobody works and nothing runs waits for a person, and the card
+// offers what they can say: two answers, each named by the stage it leads to.
+// Picking one out of a field on the card is what this replaces.
+func TestAWaitStageOffersTheCardTwoAnswers(t *testing.T) {
+	flow := sampleFlow()
+	flow.Edges = append(flow.Edges,
+		FlowEdge{From: "review", To: "work", On: TriggerCardChanged,
+			If: &EdgeCond{Property: OutcomePropertyTitle, Value: OutcomeFailed}},
+		FlowEdge{From: "review", To: "blocked", On: TriggerCardChanged,
+			If: &EdgeCond{Property: OutcomePropertyTitle, Value: OutcomePassed}},
+	)
+	m, _, events, project := flowManager(t, fakeClaudeHappy, flow)
+
+	events.ch <- flowEvent("card-marks", project, "Backlog", "To Agent")
+	waitFor(t, 20*time.Second, "the card reaches review", func() bool {
+		st, ok, _ := m.store.FlowStateForCard("card-marks")
+		return ok && st.NodeID == "review"
+	})
+
+	cf, err := m.CardFlowFor("card-marks")
+	if err != nil || cf == nil {
+		t.Fatalf("no card flow: %v", err)
+	}
+	if len(cf.Marks) != 2 {
+		t.Fatalf("the card offers %d answers: %+v", len(cf.Marks), cf.Marks)
+	}
+	by := map[string]CardFlowMark{}
+	for _, mk := range cf.Marks {
+		by[mk.Value] = mk
+	}
+	if got := by[OutcomePassed]; got.Column != "Blocked" || !got.Forward {
+		t.Errorf("«%s» reads as %+v", OutcomePassed, got)
+	}
+	if got := by[OutcomeFailed]; got.Column != "To Agent" || got.Forward {
+		t.Errorf("«%s» reads as %+v", OutcomeFailed, got)
+	}
+}
+
+// A stage that decides for itself offers nothing: the agent reports, and two
+// buttons beside a running session would be a second way to answer for it.
+func TestAWorkingStageOffersNoAnswers(t *testing.T) {
+	m, _, events, project := flowManager(t, fakeClaudeHappy, sampleFlow())
+
+	events.ch <- flowEvent("card-none-marks", project, "Backlog", "To Agent")
+	waitFor(t, 20*time.Second, "the card is on the route", func() bool {
+		_, ok, _ := m.store.FlowStateForCard("card-none-marks")
+		return ok
+	})
+	cf, err := m.CardFlowFor("card-none-marks")
+	if err != nil || cf == nil {
+		t.Fatalf("no card flow: %v", err)
+	}
+	if len(cf.Marks) != 0 {
+		t.Errorf("a stage nobody has to answer for offers %+v", cf.Marks)
+	}
+}
+
 // And the engine's own write of that same field must never fire it: a stage
 // that passed would otherwise mark the card and wake the arrow watching for a
 // rejection. SetCardOption disables the notify, which is what keeps them apart.

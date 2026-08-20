@@ -84,6 +84,12 @@ The **"Columns"** tab, select a column — in the panel:
   set of values has something to pick from, a text one has not. A text property
   travels to the stages further on and is read there.
 
+  Setting it by hand does not mean going into the field. On a column where
+  nothing runs, the card grows two buttons — «← В работе» and «Деплой →» — named
+  by the stage each leads to. Pressing one sets «Исход» and moves the card: the
+  same thing as picking the value, in one press and with the consequence
+  visible.
+
   «Исход» can be set by hand as well, and the way back from a review rests on
   that. Nothing runs in «На ревью», so it has no "failed" of its own — git can
   say a branch was merged and cannot say a reviewer refused. So the reviewer

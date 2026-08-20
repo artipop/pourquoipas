@@ -1441,6 +1441,17 @@ answers it, and no second «Одобрено» beside it. The engine's own write
 fire that arrow, because `SetCardOption` disables the notify — which is the
 same reason every write of ours is silent, doing double duty here.
 
+**And the card offers that answer as two buttons** (`CardFlowMark`,
+`MarkCardOutcome`). A stage where nobody works and nothing runs is one the card
+sits on until a person says how it went, and saying so was finding a field and
+picking a value out of it. The route already knows where each of the two
+answers leads, so the strip draws them named by the stage they lead to — «← В
+работе», «Деплой →» — and pressing one writes the outcome **through
+`UpdateCard`**, which is the one board write of ours that notifies, because the
+notify is what wakes `handleCardChanged` and moves the card. Offered only where
+the route has such an edge and nothing is running: a stage that decides for
+itself must not grow a second way to answer for it.
+
 **And the dataflow is on the picture, because that is where the fork is drawn**
 (`StageWrite`, `HANDLE_WRITE`, `stageHeight`). A stage's resolved writes are a
 third line of chips on its box, and each one whose property has a closed set is

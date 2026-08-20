@@ -467,6 +467,7 @@
   "FlowStrip.days": "{value} дн",
   "FlowStrip.hours": "{value} ч",
   "FlowStrip.idle": "здесь нечего ждать — дальше карточку двигают руками",
+  "FlowStrip.mark-title": "Отметить «{value}» — карточка поедет в «{column}»",
   "FlowStrip.minutes": "{value} мин",
   "FlowStrip.queued": "ждёт свободного места в колонке",
   "FlowStrip.running": "сейчас в работе",

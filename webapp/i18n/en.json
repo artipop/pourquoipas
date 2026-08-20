@@ -467,6 +467,7 @@
   "FlowStrip.days": "{value} d",
   "FlowStrip.hours": "{value} h",
   "FlowStrip.idle": "nothing to wait for here — the card moves on by hand",
+  "FlowStrip.mark-title": "Mark “{value}” — the card goes to “{column}”",
   "FlowStrip.minutes": "{value} min",
   "FlowStrip.queued": "waiting for a free place in the column",
   "FlowStrip.running": "working now",

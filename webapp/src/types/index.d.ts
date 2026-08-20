@@ -70,6 +70,7 @@ export interface IAppWindow extends Window {
                 RemoveBoardColumn(boardId: string, optionId: string, column: string): Promise<void>
 
                 GetCardFlow(cardId: string): Promise<string>
+                MarkCardOutcome(cardId: string, value: string): Promise<void>
                 GetBoardFlowOverview(boardId: string): Promise<string>
                 SeedBoardAutomation(boardId: string): Promise<void>
                 BoardSetupPlan(boardId: string): Promise<string>
