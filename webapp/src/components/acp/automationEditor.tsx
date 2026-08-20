@@ -126,6 +126,11 @@ type Props = {
     // for the board to come back. Absent where there is no board to patch.
     onCreateProperty?: (spec: NewProperty) => Promise<IPropertyTemplate | undefined>
 
+    // onDeleteRoute writes a confirmed deletion through at once instead of
+    // leaving it in the draft: see removeRoute. Absent where there is no
+    // registry behind the editor, and then the draft is the whole of it.
+    onDeleteRoute?: (flow: Flow) => void
+
     // onAddRouteOption puts the route's name among the options a card can name
     // it with. Without one, the route is drawn and never taken.
     onAddRouteOption?: (flow: Flow) => void
@@ -334,10 +339,15 @@ const AutomationEditor = (props: Props) => {
     // stops being about the same thing, or the form would follow the eye onto
     // the next stage half-typed.
     const [creating, setCreating] = createSignal<string | null>(null)
+
+    // Which route has been asked about, if any. One at a time, and dropped
+    // whenever the panel stops being about it.
+    const [confirmingRoute, setConfirmingRoute] = createSignal<string | null>(null)
     createEffect(() => {
         selected()
         route()
         setCreating(null)
+        setConfirmingRoute(null)
     })
 
     const flows = () => props.automation.flows
@@ -599,8 +609,19 @@ const AutomationEditor = (props: Props) => {
     }
 
     const removeRoute = (name: string) => {
+        const gone = flows().find((f) => f.name === name)
         const left = flows().filter((f) => f.name !== name)
+        setConfirmingRoute(null)
         props.onChange({...props.automation, flows: left})
+
+        // …and written through now rather than waiting for Save. Everything
+        // else in this editor is a draft somebody may still be arranging; a
+        // route somebody has just confirmed deleting is not, and leaving it on
+        // screen until a second button reads as the first one not having
+        // worked.
+        if (gone) {
+            props.onDeleteRoute?.(gone)
+        }
 
         // The next route, or the columns when that was the last one — landing
         // on the columns while three routes are still there reads as having
@@ -1221,6 +1242,7 @@ const AutomationEditor = (props: Props) => {
                         actionOf={actionOf}
                         crewOf={(node) => agentNamesOf(crewOf(node))}
                         writesOf={writesOf}
+                        outcomeProperty={(props.allProperties || []).find((p) => p.id === props.outcomePropertyId)?.name}
                         selected={selected()}
                         onSelect={setSelected}
                         onChange={flow() ? onCanvasChange : undefined}
@@ -1658,9 +1680,39 @@ const AutomationEditor = (props: Props) => {
                                         {columns: columnsOf(current(), props.columns).map((c) => c.name).join(' → ') || '—'},
                                     )}
                                 </div>
-                                <Button onClick={() => removeRoute(current().name)}>
-                                    {intl.formatMessage({id: 'Automation.remove-route', defaultMessage: 'Delete this route'})}
-                                </Button>
+                                {/* Asked about, and then done — not queued behind
+                                    Save. Deleting a route is the one edit here
+                                    that cannot be undone by editing it back:
+                                    what goes with it is where every card
+                                    standing on it was. So it takes a second
+                                    press, and the second press is the whole
+                                    act. */}
+                                <Show
+                                    when={confirmingRoute() === current().name}
+                                    fallback={
+                                        <Button onClick={() => setConfirmingRoute(current().name)}>
+                                            {intl.formatMessage({id: 'Automation.remove-route', defaultMessage: 'Delete this route'})}
+                                        </Button>
+                                    }
+                                >
+                                    <div class='AutomationEditor__warning'>
+                                        {intl.formatMessage(
+                                            {id: 'Automation.remove-route-ask', defaultMessage: 'Delete “{name}”? The cards standing on it lose their place.'},
+                                            {name: current().name},
+                                        )}
+                                        <div class='AutomationEditor__newPropertyActions'>
+                                            <Button
+                                                emphasis='primary'
+                                                onClick={() => removeRoute(current().name)}
+                                            >
+                                                {intl.formatMessage({id: 'Automation.remove-route-yes', defaultMessage: 'Delete'})}
+                                            </Button>
+                                            <Button onClick={() => setConfirmingRoute(null)}>
+                                                {intl.formatMessage({id: 'Automation.remove-route-no', defaultMessage: 'Keep it'})}
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </Show>
                             </div>
                         )}
                     </Show>

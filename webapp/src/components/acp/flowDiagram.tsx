@@ -24,7 +24,7 @@ import {useIntl, IntlShape} from '../../intl'
 
 import CompassIcon from '../../widgets/icons/compassIcon'
 
-import {BoardColumn, CARD_CHANGED, EdgeCond, FlowEdge, FlowNode, FlowTrigger, SUCCESS, FAILURE, nodeId} from './automation'
+import {BoardColumn, CARD_CHANGED, EdgeCond, FlowEdge, FlowNode, FlowTrigger, OUTCOME_PASSED, SUCCESS, FAILURE, nodeId} from './automation'
 
 import '@dschz/solid-flow/dist/style.css'
 import './flowDiagram.scss'
@@ -90,6 +90,10 @@ type Props = {
     // which board properties have a closed set.
     writesOf?: (node: FlowNode) => StageWrite[]
 
+    // The name of the field a person answers a stage in. Transitions that ask
+    // about it are drawn on the box rather than as arrows — see isOutcomeEdge.
+    outcomeProperty?: string
+
     // onChange makes it a builder rather than a picture: stages are dragged,
     // joined by pulling from an output, and removed with the keyboard. Absent
     // means the route is only being looked at.
@@ -118,6 +122,24 @@ export type StageWrite = {
     branchable: boolean
 }
 
+// StageAnswer is one of the two things a person can say on a stage where
+// nothing runs, as the box draws it: the value, and where it takes the card.
+export type StageAnswer = {
+    value: string
+    column: string
+    forward: boolean
+}
+
+// isOutcomeEdge says this transition is a person answering on the card rather
+// than wiring between stages. It is drawn on the box it belongs to instead of
+// as an arrow: as an arrow it was a faint dashed line running the width of the
+// graph in a corridor of its own, which reads as noise — and the same fact was
+// then on screen twice, since the card offers the two answers as buttons.
+export function isOutcomeEdge(edge: FlowEdge, outcomeProperty: string | undefined): boolean {
+    return Boolean(outcomeProperty && edge.on === CARD_CHANGED && edge.if?.property &&
+        edge.if.property.toLowerCase() === outcomeProperty.toLowerCase())
+}
+
 type StageData = {
     column: string
     action: string
@@ -125,6 +147,7 @@ type StageData = {
     crew?: string[]
     count?: StageCount
     writes?: StageWrite[]
+    answers?: StageAnswer[]
     editable?: boolean
     spare?: boolean
     selected?: boolean
@@ -133,8 +156,10 @@ type StageData = {
 // stageHeight is how tall this stage stands: the base, plus the row of outputs
 // when it has any. Stated rather than measured, like everything else about the
 // box — the arrows are drawn on the first paint.
-export function stageHeight(writes?: StageWrite[]): number {
-    return NODE_HEIGHT + ((writes && writes.length > 0) ? WRITE_ROW : 0)
+export function stageHeight(writes?: StageWrite[], answers?: StageAnswer[]): number {
+    return NODE_HEIGHT +
+        ((writes && writes.length > 0) ? WRITE_ROW : 0) +
+        ((answers && answers.length > 0) ? WRITE_ROW : 0)
 }
 
 // LANE is how far apart two long-haul arrows are pushed. An arrow that skips
@@ -417,6 +442,31 @@ const StageNode = (props: NodeProps) => {
 
                 A text output is drawn and not connectable, because an arrow
                 asks "is it this value" and only a set has values to offer. */}
+            {/* The two things a person can say here, drawn where the stage is
+                rather than as arrows leaving it: the card offers the same pair
+                as buttons, and as arrows they were faint dashed lines crossing
+                the picture to say what this row says in six words. */}
+            <Show when={data().answers && data().answers!.length > 0}>
+                <div class='FlowDiagram__answers'>
+                    <For each={data().answers}>
+                        {(a) => (
+                            <span
+                                class={`FlowDiagram__answer${a.forward ? ' FlowDiagram__answer--forward' : ''}`}
+                                title={`${a.value} → ${a.column}`}
+                            >
+                                {/* The same two words the card's own buttons
+                                    carry, and for the same reason: which way it
+                                    goes is the arrow, which value it is is the
+                                    colour, and the box is 190px wide. Spelling
+                                    «не прошло → В работе» in full fitted one
+                                    chip of the two. */}
+                                {a.forward ? `${a.column} →` : `← ${a.column}`}
+                            </span>
+                        )}
+                    </For>
+                </div>
+            </Show>
+
             <Show when={data().writes && data().writes!.length > 0}>
                 <div class='FlowDiagram__writes'>
                     <For each={data().writes}>
@@ -701,10 +751,30 @@ const FlowDiagram = (props: Props) => {
     // by the id it would have as a stage.
     const spareById = createMemo(() => new Map(spare().map((c) => [nodeId(c), c])))
 
-    const lanes = createMemo(() => longHaul(props.nodes, props.edges))
+    // The transitions that are answers rather than wiring, kept off the canvas
+    // and put on the box they belong to.
+    const wiring = createMemo(() => props.edges.filter((e) => !isOutcomeEdge(e, props.outcomeProperty)))
+    const answersOf = (stage: string): StageAnswer[] => {
+        const columns = new Map(props.nodes.map((n) => [n.id, n.column]))
+        return props.edges.
+            filter((e) => e.from === stage && isOutcomeEdge(e, props.outcomeProperty) && columns.has(e.to)).
+            map((e) => ({
+                value: e.if?.value || '',
+                column: columns.get(e.to) as string,
+
+                // Which way the arrow on the chip points, and nothing else. The
+                // engine decides the same way (CardFlowMark.Forward).
+                forward: (e.if?.value || '').toLowerCase() === OUTCOME_PASSED.toLowerCase(),
+            }))
+    }
+
+    const lanes = createMemo(() => longHaul(props.nodes, wiring()))
 
     const graph = createMemo(() => {
-        const tallest = props.nodes.reduce((at, n) => Math.max(at, stageHeight(props.writesOf?.(n))), NODE_HEIGHT)
+        const tallest = props.nodes.reduce(
+            (at, n) => Math.max(at, stageHeight(props.writesOf?.(n), answersOf(n.id))),
+            NODE_HEIGHT,
+        )
         const positions = layout(props.nodes, props.edges, tallest)
         const sparePositions = spareLayout(positions, spare(), lanes().size)
         const box = (id: string, data: StageData, position: {x: number, y: number}): Node => ({
@@ -723,7 +793,7 @@ const FlowDiagram = (props: Props) => {
             // is then NaN and the path is drawn as `MNaN NaN…`, which renders
             // as nothing.
             width: NODE_WIDTH,
-            height: stageHeight(data.writes),
+            height: stageHeight(data.writes, data.answers),
             handles: [
                 {type: 'target', position: Position.Left, x: 0, y: NODE_HEIGHT / 2, width: 1, height: 1},
                 {type: 'source', id: HANDLE_SUCCESS, position: Position.Right, x: NODE_WIDTH, y: NODE_HEIGHT * 0.3, width: 1, height: 1},
@@ -742,7 +812,7 @@ const FlowDiagram = (props: Props) => {
                         id: HANDLE_WRITE + w.name,
                         position: Position.Bottom,
                         x: (NODE_WIDTH * (i + 1)) / (all.length + 1),
-                        y: stageHeight(data.writes),
+                        y: stageHeight(data.writes, data.answers),
                         width: 1,
                         height: 1,
                     })),
@@ -760,6 +830,7 @@ const FlowDiagram = (props: Props) => {
                 actionLabel: stageLabel(intl, action),
                 crew: props.crewOf?.(node),
                 writes: props.writesOf?.(node),
+                answers: answersOf(node.id),
                 count: props.counts?.find((c) => c.nodeId === node.id),
                 editable: editable(),
                 selected: props.selected?.kind === 'node' && props.selected.id === node.id,
@@ -780,7 +851,8 @@ const FlowDiagram = (props: Props) => {
         const known = new Set(props.nodes.map((n) => n.id))
         const rfEdges: Edge[] = props.edges.
             map((edge, index) => ({edge, index})).
-            filter(({edge}) => known.has(edge.from) && known.has(edge.to)).
+            filter(({edge}) => known.has(edge.from) && known.has(edge.to) &&
+                !isOutcomeEdge(edge, props.outcomeProperty)).
             map(({edge, index}) => {
                 const kind = edgeKind(edge.on)
                 const color = EDGE_COLOR[kind]

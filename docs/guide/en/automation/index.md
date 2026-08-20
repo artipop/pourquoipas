@@ -90,6 +90,11 @@ The **"Columns"** tab, select a column — in the panel:
   same thing as picking the value, in one press and with the consequence
   visible.
 
+  On the canvas those two transitions are drawn as a row on the stage's own box
+  — the same two labels the card carries — and not as arrows. As arrows they
+  were a faint dashed line across the whole picture, and the same fact was on
+  screen twice.
+
   «Исход» can be set by hand as well, and the way back from a review rests on
   that. Nothing runs in «На ревью», so it has no "failed" of its own — git can
   say a branch was merged and cannot say a reviewer refused. So the reviewer

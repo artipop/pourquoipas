@@ -130,10 +130,14 @@ describe('components/acp/automationDialog', () => {
 
         userEvent.click(await screen.findByRole('button', {name: 'Фича'}))
         userEvent.click(await screen.findByRole('button', {name: 'Delete this route'}))
-        userEvent.click(screen.getByRole('button', {name: 'Save'}))
 
-        // By id: a route being deleted is the one on screen, and its name is not
-        // what identifies it.
+        // Asked about first: what goes with a route is where every card
+        // standing on it was, and that cannot be edited back.
+        expect(bindings.RemoveFlow).not.toHaveBeenCalled()
+        userEvent.click(await screen.findByRole('button', {name: 'Delete'}))
+
+        // And then done, without waiting for Save — by id, since a route being
+        // deleted is the one on screen and its name is not what identifies it.
         await waitFor(() => expect(bindings.RemoveFlow).toHaveBeenCalledWith('board-1', 'flow-1'))
     })
 

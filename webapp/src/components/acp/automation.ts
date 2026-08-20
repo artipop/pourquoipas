@@ -441,7 +441,9 @@ export const BOARD_PROP_OUTCOME_PROPERTY = 'outcomeProperty'
 // question anybody asks of it is that question. A check that could not run
 // answers «не прошло» like anything else that did not pass; why is the stall's
 // business, where it can be a sentence.
-export const OUTCOME_VALUES = ['прошло', 'не прошло']
+export const OUTCOME_PASSED = 'прошло'
+export const OUTCOME_FAILED = 'не прошло'
+export const OUTCOME_VALUES = [OUTCOME_PASSED, OUTCOME_FAILED]
 
 // boardOutcomeProperty is the id of that field, or '' for a board without one.
 export function boardOutcomeProperty(board: {properties?: Record<string, unknown>}): string {

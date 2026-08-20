@@ -247,6 +247,21 @@ const AutomationDialog = (props: Props) => {
         }
     }
 
+    // A confirmed deletion is not a draft. It is written through and the
+    // registry re-read, so what is on screen is what the machine now has.
+    const deleteRoute = async (flow: Flow) => {
+        if (!bindings?.RemoveFlow || !flow.id) {
+            return
+        }
+        setError('')
+        try {
+            await bindings.RemoveFlow(props.board.id, flow.id)
+        } catch (e) {
+            setError(String(e))
+        }
+        await refresh()
+    }
+
     const renameColumn = async (column: BoardColumn, name: string) => {
         const target = property()
         const option = target?.options.find((o) => o.id === column.optionId)
@@ -381,6 +396,7 @@ const AutomationDialog = (props: Props) => {
                     onChange={change}
                     onCreateColumn={createColumn}
                     onCreateProperty={createProperty}
+                    onDeleteRoute={deleteRoute}
                     onRenameColumn={renameColumn}
                     onAddRouteOption={addRouteOption}
                     routeOptionMissing={(flow) => routeOptionMissing(props.board, flow)}
