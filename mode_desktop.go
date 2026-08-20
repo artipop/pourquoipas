@@ -64,6 +64,7 @@ func newOrigin(board, acp, ingest http.Handler, tailnet *tailnetController, sess
 // ServeAssets is called by Wails once the asset server exists. Everything but
 // /wails/ goes to the board.
 func (o *origin) ServeAssets(assetHandler http.Handler) error {
+	assetHandler = quietOptionalCustomJS(assetHandler)
 	o.server = &http.Server{Handler: newFrontDoor(assetHandler, o.acp, o.ingest, o.board, o.host(), o.session)}
 	go func() {
 		if err := o.server.Serve(o.listener); err != nil && err != http.ErrServerClosed {
@@ -77,6 +78,31 @@ func (o *origin) ServeAssets(assetHandler http.Handler) error {
 		return newFrontDoor(assetHandler, o.acp, o.ingest, o.board, allowedHost, o.session)
 	})
 	return nil
+}
+
+// customJSPath is the optional script the Wails runtime probes for on every
+// page load.
+const customJSPath = "/wails/custom.js"
+
+// quietOptionalCustomJS answers that probe with "nothing here" instead of an
+// error. Wails serves custom.js in a server build (it carries the runtime's
+// WebSocket connection) and deliberately 404s it in a desktop one, because the
+// runtime reads the refusal as "there is no custom script". The browser reads
+// it as a failed resource and writes it into the console on every launch, where
+// it looks like a broken app.
+//
+// 204 says the same thing to the runtime — it checks response.ok and then the
+// content type, and takes anything that is not JavaScript as nothing to load —
+// without the console entry, and without the second request an empty script
+// would cost. Desktop only, since a server build has a real one to serve.
+func quietOptionalCustomJS(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == customJSPath {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 // frontDoorDrain bounds the wait for requests in flight, because Shutdown runs
