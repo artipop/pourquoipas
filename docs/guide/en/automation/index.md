@@ -83,6 +83,10 @@ The **"Columns"** tab, select a column — in the panel:
   set of values has something to pick from, a text one has not. A text property
   travels to the stages further on and is read there.
 
+  A board made from the «Разработка» template has this set up already: the
+  «Деплой» column writes «Превью» (a link) and «QA» writes «Вердикт»
+  (`pass`/`fail`/`blocked`), and both show on their boxes on the canvas.
+
   The declared writes reach the agent in its brief: what it has to pass in
   `finish_work`, and what each value may be — for a property with a set, the
   values themselves. To check while working, the agent has the

@@ -104,6 +104,17 @@ func readTemplateBoard(t *testing.T) templateBoard {
 	return templateBoard{}
 }
 
+// property is one of the board's card fields, by name — for the checks that are
+// about the field itself rather than about its options.
+func (b templateBoard) property(name string) (templateProperty, bool) {
+	for _, p := range b.Fields.CardProperties {
+		if strings.EqualFold(p.Name, name) {
+			return p, true
+		}
+	}
+	return templateProperty{}, false
+}
+
 func (b templateBoard) options(t *testing.T, property string) map[string]bool {
 	t.Helper()
 	for _, p := range b.Fields.CardProperties {
@@ -353,5 +364,59 @@ func TestEveryTemplateAsksForStepsThatExist(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// A machine stage's value has to have somewhere to land, and «Разработка» is
+// where somebody meets that arrangement first. Without a property to write to,
+// the preview address and the verdict die in a comment: the whole dataflow —
+// the card's own fields, the arrow that branches on one, the brief the next
+// stage opens with — starts from a stage declaring an output, and a board that
+// declares none teaches that there is nothing to declare.
+func TestTheDeveloperTemplateDeclaresWhatItsMachineStagesProduce(t *testing.T) {
+	board := readTemplateBoard(t)
+
+	wantWrites := map[string]string{
+		strings.ToLower(TemplateDeployColumn): "Превью",
+		strings.ToLower(TemplateTestColumn):   "Вердикт",
+	}
+	for _, c := range board.Fields.Properties.Columns {
+		want, machine := wantWrites[strings.ToLower(c.Column)]
+		if !machine {
+			continue
+		}
+		if len(c.Writes) != 1 || c.Writes[0].Property != want {
+			t.Errorf("column %q writes %+v, want just %q", c.Column, c.Writes, want)
+			continue
+		}
+
+		// Not "required": that is the contract an agent's finish_work is
+		// checked against, and these two values are written by the app itself.
+		// The editor's picker for a machine stage cannot show the flag, so a
+		// template carrying one would set something nobody can see or clear.
+		if c.Writes[0].Required {
+			t.Errorf("column %q marks its machine output required, which nothing reads", c.Column)
+		}
+	}
+
+	// And the properties themselves, since a write naming a field the board has
+	// not got is refused at the moment the stage reports — after the work.
+	if _, ok := board.property("Превью"); !ok {
+		t.Error("the template writes a preview address to a property it does not carry")
+	}
+	verdict, ok := board.property("Вердикт")
+	if !ok {
+		t.Fatal("the template writes a verdict to a property it does not carry")
+	}
+
+	// A closed set, because that is what an arrow can branch on — and the
+	// values are the ones NormalizeVerdict produces.
+	if verdict.Type != "select" {
+		t.Errorf("the verdict is a %q, so no transition can ask what it is", verdict.Type)
+	}
+	for _, want := range []string{"pass", "fail", "blocked"} {
+		if !board.options(t, "Вердикт")[want] {
+			t.Errorf("the verdict cannot be %q", want)
+		}
 	}
 }
