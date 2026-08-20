@@ -460,6 +460,7 @@
   "FlowDiagram.cond-comment": "agent said \"{text}\"",
   "FlowDiagram.cond-if": "if {cond}",
   "FlowDiagram.cond-no-value": "{property} = ?",
+  "FlowDiagram.cut-edge": "Break this transition",
   "FlowDiagram.not-on-route": "not on this route",
   "FlowDiagram.write-not-branchable": "{property} travels to the stages further on. To branch on it, give the property a set of values.",
   "FlowStrip.days": "{value} d",

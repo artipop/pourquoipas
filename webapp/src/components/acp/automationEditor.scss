@@ -3,6 +3,15 @@
 // The canvas is the wide half on purpose: the picture is the point, the panel
 // is a caption.
 .AutomationEditor {
+    // Dragging an arrow out of a socket selected everything the pointer crossed
+    // — the panel's captions, the stage names, whatever the drag passed over —
+    // because a pointerdown on a handle is not a text gesture and the browser
+    // has no way to know that. The canvas already says so for itself; this is
+    // for the half of the editor a drag ends up over.
+    //
+    // Anything a person actually types in says otherwise, below.
+    user-select: none;
+
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -298,6 +307,11 @@
     // checkbox — where forwarding the caption's click is what a person expects.
     // A Select is not one of those: it is a <button>, which is labelable too, so
     // a caption click opened the menu.
+    input,
+    textarea {
+        user-select: text;
+    }
+
     .AutomationEditor__field,
     label {
         display: flex;

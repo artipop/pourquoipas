@@ -1,7 +1,8 @@
-import {For, Show, createEffect, createMemo, createSignal, onCleanup} from 'solid-js'
+import {For, Show, createContext, createEffect, createMemo, createSignal, onCleanup, useContext} from 'solid-js'
 import {
     Background,
     BaseEdge,
+    EdgeLabel,
     Connection,
     Controls,
     Edge,
@@ -433,6 +434,12 @@ const StageNode = (props: NodeProps) => {
 
 const nodeTypes = {stage: StageNode}
 
+// What an arrow can do to itself, handed down rather than put in the edge's
+// data: `data` is a store the canvas owns and copies, and a callback in one is a
+// function surviving a proxy by luck. An edge is rendered inside the canvas,
+// which is inside this provider, so a context reaches it.
+const EdgeActions = createContext<{remove: (id: string) => void} | undefined>()
+
 // lanePath is a long arrow's own way round: out of the handle, down into a
 // corridor of its own under the graph, across, and up into the target. Written
 // by hand because the corridor is the point — getSmoothStepPath puts every
@@ -470,17 +477,48 @@ const LaneEdge = (props: EdgeProps) => {
         })
         return {d, labelX, labelY}
     })
+
+    // The label is ours rather than BaseEdge's because it carries a control: an
+    // arrow has to be breakable where it is, and the panel's own Remove is
+    // three steps away — select the line, find the panel, scroll to the button.
+    // A person looking at a wrong arrow wants to cut it there.
+    const actions = useContext(EdgeActions)
+    const intl = useIntl()
+    const cutLabel = () => intl.formatMessage({id: 'FlowDiagram.cut-edge', defaultMessage: 'Break this transition'})
     return (
-        <BaseEdge
-            path={path().d}
-            labelX={path().labelX}
-            labelY={path().labelY}
-            label={props.label}
-            labelStyle={props.labelStyle}
-            style={props.style}
-            markerEnd={props.markerEnd}
-            interactionWidth={props.interactionWidth}
-        />
+        <>
+            <BaseEdge
+                path={path().d}
+                style={props.style}
+                markerEnd={props.markerEnd}
+                interactionWidth={props.interactionWidth}
+            />
+            <Show when={props.label || props.selected}>
+                <EdgeLabel
+                    x={path().labelX}
+                    y={path().labelY}
+                    style={props.labelStyle}
+                >
+                    <span class='FlowDiagram__edgeLabel'>
+                        {props.label}
+                        <Show when={props.selected && actions}>
+                            <button
+                                type='button'
+                                class='FlowDiagram__edgeCut'
+                                title={cutLabel()}
+                                aria-label={cutLabel()}
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                    actions!.remove(props.id)
+                                }}
+                            >
+                                <CompassIcon icon='close'/>
+                            </button>
+                        </Show>
+                    </span>
+                </EdgeLabel>
+            </Show>
+        </>
     )
 }
 
@@ -745,6 +783,9 @@ const FlowDiagram = (props: Props) => {
                     sourceHandle: kind === 'event' ? HANDLE_EVENT : kind,
                     type: 'lane',
                     class: `FlowDiagram__edge FlowDiagram__edge--${kind}${chosen ? ' FlowDiagram__edge--selected' : ''}`,
+                    // The canvas' own idea of "selected", set from ours: it is
+                    // what reaches the edge component, and the ✕ hangs off it.
+                    selected: chosen,
                     label: parts.join(' · '),
                     labelStyle: unanswered ? {color: 'rgb(var(--away-indicator-rgb))', 'font-weight': '600'} : undefined,
                     style: {stroke: color, 'stroke-width': chosen ? '3' : '1.5', 'stroke-dasharray': kind === 'event' ? '4 3' : undefined},
@@ -817,6 +858,16 @@ const FlowDiagram = (props: Props) => {
             // the engine refuses to save.
             props.edges.filter((e) => !gone.has(e.from) && !gone.has(e.to)),
         )
+    }
+
+    // Breaking one arrow, by the id the canvas knows it as — which is the id
+    // edgeId minted, so it carries the index the route stores it at.
+    const removeEdgeById = (id: string) => {
+        if (!props.onChange) {
+            return
+        }
+        props.onChange(props.nodes, props.edges.filter((e, i) => edgeId(e, i) !== id))
+        props.onSelect?.(null)
     }
 
     const onEdgesDelete = (deleted: Edge[]) => {
@@ -919,42 +970,44 @@ const FlowDiagram = (props: Props) => {
                 onDragOver={onDragOver}
                 onDrop={onDrop}
             >
-                <SolidFlow
-                    nodes={drawnNodes}
-                    edges={drawnEdges}
-                    onConnect={onConnect}
-                    onNodeDragStop={onNodeDragStop}
-                    onNodesDelete={onNodesDelete}
-                    onEdgesDelete={onEdgesDelete}
-                    onNodeClick={onNodeClick}
-                    onEdgeClick={({edge}: {edge: Edge}) => props.onSelect?.({kind: 'edge', id: edge.id})}
-                    onPaneClick={() => props.onSelect?.(null)}
-                    nodeTypes={nodeTypes}
-                    edgeTypes={edgeTypes}
-                    nodesConnectable={editable()}
-                    elementsSelectable={editable()}
-                    edgesFocusable={editable()}
-                    deleteKey={editable() ? ['Backspace', 'Delete'] : null}
-                    fitView={true}
+                <EdgeActions.Provider value={{remove: removeEdgeById}}>
+                    <SolidFlow
+                        nodes={drawnNodes}
+                        edges={drawnEdges}
+                        onConnect={onConnect}
+                        onNodeDragStop={onNodeDragStop}
+                        onNodesDelete={onNodesDelete}
+                        onEdgesDelete={onEdgesDelete}
+                        onNodeClick={onNodeClick}
+                        onEdgeClick={({edge}: {edge: Edge}) => props.onSelect?.({kind: 'edge', id: edge.id})}
+                        onPaneClick={() => props.onSelect?.(null)}
+                        nodeTypes={nodeTypes}
+                        edgeTypes={edgeTypes}
+                        nodesConnectable={editable()}
+                        elementsSelectable={editable()}
+                        edgesFocusable={editable()}
+                        deleteKey={editable() ? ['Backspace', 'Delete'] : null}
+                        fitView={true}
 
-                    // Fill the canvas rather than sit 1:1 in the middle of it.
-                    // The dialog is nearly the whole window now, and a route of
-                    // five boxes drawn at 100% left two thirds of it as dots —
-                    // the point of the width was the picture, not the margin.
-                    // Capped so a two-box route is not blown up into a poster.
-                    // The same options the re-fit above uses, or the picture
-                    // would jump the first time the tab changed.
-                    fitViewOptions={FIT_VIEW}
-                    minZoom={0.3}
+                        // Fill the canvas rather than sit 1:1 in the middle of it.
+                        // The dialog is nearly the whole window now, and a route of
+                        // five boxes drawn at 100% left two thirds of it as dots —
+                        // the point of the width was the picture, not the margin.
+                        // Capped so a two-box route is not blown up into a poster.
+                        // The same options the re-fit above uses, or the picture
+                        // would jump the first time the tab changed.
+                        fitViewOptions={FIT_VIEW}
+                        minZoom={0.3}
 
-                    // Solid Flow is MIT and its own attribution says to feel free to
-                    // remove it; the canvas is small and the plate sits over the cards.
-                    proOptions={{hideAttribution: true}}
-                >
-                    <Background/>
-                    <Controls showLock={false}/>
-                    <CanvasHook onReady={setFlowHandle}/>
-                </SolidFlow>
+                        // Solid Flow is MIT and its own attribution says to feel free to
+                        // remove it; the canvas is small and the plate sits over the cards.
+                        proOptions={{hideAttribution: true}}
+                    >
+                        <Background/>
+                        <Controls showLock={false}/>
+                        <CanvasHook onReady={setFlowHandle}/>
+                    </SolidFlow>
+                </EdgeActions.Provider>
             </div>
         </Show>
     )

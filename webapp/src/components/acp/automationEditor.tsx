@@ -835,6 +835,16 @@ const AutomationEditor = (props: Props) => {
     // required one; a deploy or test stage writes one machine value (the
     // preview URL, the verdict), so it gets a single picker under the action's
     // own label. `note` names the inherited answer, the crew picker's shape.
+    // A test stage has nothing left to declare. Its verdict *is* how the stage
+    // ended, and how a stage ended is «Исход» — written by the engine for every
+    // stage, with no declaration and no column. Offering a second field for the
+    // same fact is the duplication «Исход» was made to remove.
+    //
+    // Go still writes a verdict into whatever a board declared before this
+    // (writeStageFields), so nobody's board loses a value; there is just no way
+    // to ask for a new one.
+    const writesApply = (action: string) => action !== 'test'
+
     const writesPicker = (
         action: string,
         value: () => PropertyWrite[],
@@ -1289,11 +1299,13 @@ const AutomationEditor = (props: Props) => {
                                             a stage here writes is what an edge
                                             can branch on and a later stage can
                                             read off the card. */}
-                                        {writesPicker(
-                                            specOf(node())?.action || 'none',
-                                            () => specOf(node())?.writes || [],
-                                            (writes) => updateNodeSpec(node(), {writes}),
-                                        )}
+                                        <Show when={writesApply(specOf(node())?.action || 'none')}>
+                                            {writesPicker(
+                                                specOf(node())?.action || 'none',
+                                                () => specOf(node())?.writes || [],
+                                                (writes) => updateNodeSpec(node(), {writes}),
+                                            )}
+                                        </Show>
                                         {readsPicker(
                                             () => specOf(node())?.reads || [],
                                             (reads) => updateNodeSpec(node(), {reads}),
@@ -1421,11 +1433,13 @@ const AutomationEditor = (props: Props) => {
                                         {/* The stage's own outputs and inputs,
                                             overriding the column's — shown
                                             resolved, written to the node. */}
-                                        {writesPicker(
-                                            actionOf(node()),
-                                            () => node().writes || specOf(node())?.writes || [],
-                                            (writes) => updateFlow(flow()!.name, (f) => withNode(f, node().id, {writes})),
-                                        )}
+                                        <Show when={writesApply(actionOf(node()))}>
+                                            {writesPicker(
+                                                actionOf(node()),
+                                                () => node().writes || specOf(node())?.writes || [],
+                                                (writes) => updateFlow(flow()!.name, (f) => withNode(f, node().id, {writes})),
+                                            )}
+                                        </Show>
                                         {readsPicker(
                                             () => node().reads || specOf(node())?.reads || [],
                                             (reads) => updateFlow(flow()!.name, (f) => withNode(f, node().id, {reads})),

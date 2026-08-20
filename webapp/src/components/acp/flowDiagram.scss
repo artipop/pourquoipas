@@ -177,6 +177,35 @@
         }
     }
 
+    // The arrow's own caption, and — while it is selected — the way to cut it.
+    // A wrong arrow is cut where it is: the panel's Remove is three steps away,
+    // and somebody looking at the line is looking at the line.
+    .FlowDiagram__edgeLabel {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .FlowDiagram__edgeCut {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 16px;
+        height: 16px;
+        padding: 0;
+        border: 0;
+        border-radius: 50%;
+        background: rgb(var(--error-text-rgb));
+        color: rgb(var(--sidebar-text-rgb));
+        cursor: pointer;
+        font-size: 12px;
+        line-height: 1;
+    }
+
+    .FlowDiagram__edgeCut:hover {
+        filter: brightness(1.15);
+    }
+
     // The label of an awaited event. It is an HTML box over the canvas rather
     // than SVG text, so it is painted, not filled.
     .solid-flow__edge-label {

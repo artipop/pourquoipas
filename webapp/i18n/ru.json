@@ -461,6 +461,7 @@
   "FlowDiagram.cond-comment": "агент написал «{text}»",
   "FlowDiagram.cond-if": "если {cond}",
   "FlowDiagram.cond-no-value": "{property} = ?",
+  "FlowDiagram.cut-edge": "Разорвать этот переход",
   "FlowDiagram.not-on-route": "не в этом маршруте",
   "FlowDiagram.write-not-branchable": "«{property}» едет дальше по маршруту. Чтобы по нему ветвиться, дайте свойству набор значений.",
   "FlowStrip.days": "{value} дн",

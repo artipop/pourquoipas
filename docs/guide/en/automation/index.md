@@ -74,9 +74,10 @@ The **"Columns"** tab, select a column — in the panel:
   **"+ a new property…"**. The form asks for a name and for what the property
   holds: text, a link, or one of a set of values. The property appears on the
   board at once — it shows on every card — and is declared as this stage's
-  output in the same breath. A deploy column and a test column are not asked
-  what it holds: there it is a link and the set `pass`/`fail`/`blocked`, and the
-  form asks only for the name.
+  output in the same breath. A deploy column is not asked what it holds: there
+  it is a link, and the form asks only for the name. A test column has no such
+  field at all — a test's verdict *is* the stage's outcome, and that goes into
+  «Исход» by itself.
 
   What it holds decides whether an arrow can branch on it. An arrow asks "only
   if the card has this value", which is a question to a set: a property with a
