@@ -24,7 +24,7 @@ import {useIntl, IntlShape} from '../../intl'
 
 import CompassIcon from '../../widgets/icons/compassIcon'
 
-import {BoardColumn, CARD_CHANGED, EdgeCond, FlowEdge, FlowNode, FlowTrigger, SUCCESS, FAILURE, nodeId} from './automation'
+import {BoardColumn, CARD_CHANGED, EdgeCond, FlowEdge, FlowNode, FlowTrigger, OUTCOME_PASSED, SUCCESS, FAILURE, nodeId} from './automation'
 
 import '@dschz/solid-flow/dist/style.css'
 import './flowDiagram.scss'
@@ -123,12 +123,20 @@ export type StageWrite = {
 }
 
 // isOutcomeEdge says this transition is a person answering on the card rather
-// than wiring between stages. It is not drawn at all: the two answers live on
-// the card, as two buttons naming where each leads, and the editor has nothing
-// to add to that. Drawn as an arrow it was a faint dashed line running the
-// width of the graph in a corridor of its own; drawn on the stage's box it was
-// the same fact in a second place. The route still holds the edge — it is what
-// makes the buttons work.
+// than the stage reporting for itself. It is drawn like any other outcome —
+// green on, red back, out of the same sockets — because that is what it is: on
+// a stage where nothing runs, these two *are* the success and the failure, and
+// they were the only two arrows a person ever looked for on «На ревью».
+//
+// What it is not is a wait. It rides card.changed, and colouring by the trigger
+// drew it grey and dashed among «ветка влита в основную», which is how the way
+// back from a review managed to be on the canvas and invisible.
+// sameFold is two names being the same name — trimmed and case-insensitive,
+// the way every match on a person's word in this editor is.
+function sameFold(a: string | undefined, b: string): boolean {
+    return (a || '').trim().toLowerCase() === b.trim().toLowerCase()
+}
+
 export function isOutcomeEdge(edge: FlowEdge, outcomeProperty: string | undefined): boolean {
     return Boolean(outcomeProperty && edge.on === CARD_CHANGED && edge.if?.property &&
         edge.if.property.toLowerCase() === outcomeProperty.toLowerCase())
@@ -799,17 +807,26 @@ const FlowDiagram = (props: Props) => {
         const known = new Set(props.nodes.map((n) => n.id))
         const rfEdges: Edge[] = props.edges.
             map((edge, index) => ({edge, index})).
-            filter(({edge}) => known.has(edge.from) && known.has(edge.to) &&
-                !isOutcomeEdge(edge, props.outcomeProperty)).
+            filter(({edge}) => known.has(edge.from) && known.has(edge.to)).
             map(({edge, index}) => {
-                const kind = edgeKind(edge.on)
+                // An outcome answered on the card is a success or a failure
+                // like any other, and is drawn as one: green on, red back, out
+                // of the same two sockets. It rides card.changed because that
+                // is how a person's answer reaches the engine, and colouring by
+                // the trigger made the one arrow anybody looks for — the way
+                // back from a review — a grey dashed line among the waits.
+                const answered = isOutcomeEdge(edge, props.outcomeProperty)
+                let kind = edgeKind(edge.on)
+                if (answered) {
+                    kind = sameFold(edge.if?.value, OUTCOME_PASSED) ? SUCCESS : FAILURE
+                }
                 const color = EDGE_COLOR[kind]
 
                 // The caption is what decides where the card goes: the event
                 // for a wait, the condition for a fork — both where the arrow
                 // is, not three clicks away.
                 const parts: string[] = []
-                const cond = condLabel(intl, edge.if)
+                const cond = answered ? '' : condLabel(intl, edge.if)
 
                 // For card.changed the condition is not a guard on the event,
                 // it *is* the event — «на карточке выбрано» followed by «Исход =

@@ -92,10 +92,10 @@ The **"Columns"** tab, select a column — in the panel:
   There are no buttons where the stage answers for itself: while an agent is
   working, the card has no question for a person.
 
-  On the canvas those two transitions are not shown at all, and that is
-  deliberate: they are answered on the card, and the editor has nothing to add
-  to that. As arrows they were a faint dashed line across the whole picture; as
-  a row on the box they were the same fact in a second place.
+  On the canvas they are ordinary outcome arrows: green on, red back, out of the
+  same two points every other stage uses. They travel on the "card was marked"
+  event, but colouring them by the event drew the one arrow anybody looks for on
+  «На ревью» as a grey dashed line among the waits.
 
   «Исход» can be set by hand as well, and the way back from a review rests on
   that. Nothing runs in «На ревью», so it has no "failed" of its own — git can

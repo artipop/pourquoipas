@@ -1455,12 +1455,13 @@ per card** (`CardMarksForBoard` → `ListCardMarks`), the bargain `ListTerminals
 already takes for the console button: a board has as many cards as it likes and
 a call each would be a round trip for every card drawn.
 
-**Those two transitions are not drawn at all** (`isOutcomeEdge`). Not as arrows
-— they were a faint dashed line running the width of the graph in a corridor of
-its own — and not as a row on the stage's box either, which was the same fact in
-a second place. They are answered on the card and the editor has nothing to add
-to that; the route still holds the edges, because they are what make the buttons
-work.
+**Those two transitions are drawn as the outcomes they are** (`isOutcomeEdge`):
+green on, red back, out of the same two sockets every stage uses. They ride
+`card.changed`, and colouring by the trigger drew them grey and dashed among the
+waits — which is how the way back from a review managed to be on the canvas and
+invisible for five separate askings. On a stage where nothing runs these two
+*are* the success and the failure, so the caption is dropped: the colour says
+which is which.
 
 **Deleting a route is confirmed and then written through** rather than queued
 behind Save (`onDeleteRoute`). Everything else in that editor is a draft
