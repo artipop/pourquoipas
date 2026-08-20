@@ -24,56 +24,14 @@ import (
 // are: a column is what a person typed, and an id is what the board's own REST
 // API would have made the page learn.
 
-// BoardSummary is a board as a list shows it, with the columns a card can be
-// moved into. The columns come with it because the two questions are always
-// asked together — which board, then which column of it — and a phone on a
-// slow connection should ask once.
-type BoardSummary struct {
-	ID    string `json:"id"`
-	Title string `json:"title"`
-	Icon  string `json:"icon,omitempty"`
-
-	// Property is what this board calls the property its columns live in, and
-	// Columns are the options of it, in the board's own order.
-	Property string   `json:"property,omitempty"`
-	Columns  []Column `json:"columns,omitempty"`
-}
-
-// Column is one column of a board: the name a person reads and the colour the
-// board draws it in. The colour travels so that a phone can draw a column the
-// way the board does rather than as plain text — the same chip, in the same
-// colour, is what makes a list of columns recognisable as columns.
-type Column struct {
-	Value string `json:"value"`
-	Color string `json:"color,omitempty"`
-}
-
-// CardSummary is a card as a list shows it: enough to recognise it and to
-// decide where it belongs.
-type CardSummary struct {
-	ID      string `json:"id"`
-	BoardID string `json:"boardId"`
-	Title   string `json:"title"`
-	Icon    string `json:"icon,omitempty"`
-	Column  string `json:"column,omitempty"`
-
-	// Author is who made the card — for what arrived, the source that brought
-	// it. It is the board's own answer, so a phone says where a thing came from
-	// without a property of ours beside it.
-	Author string `json:"author,omitempty"`
-
-	// Properties are the card's own, by the names a person reads — which is what
-	// they are for: showing. Nothing keys off them.
-	Properties map[string]string `json:"properties,omitempty"`
-
-	// Link is the way back to whatever brought the card, resolved here from the
-	// board's url property rather than guessed from a property name on the
-	// screen that reads it. A phone that looked for «Ссылка» showed a link on a
-	// Russian board and nothing on any other.
-	Link string `json:"link,omitempty"`
-
-	UpdateAt int64 `json:"updateAt,omitempty"`
-}
+// The types a list is read as live in internal/boardmodel, so a board read over
+// HTTP is read into the same shapes. Aliased rather than moved wholesale
+// because this package's callers name them.
+type (
+	BoardSummary = boardmodel.BoardSummary
+	CardSummary  = boardmodel.CardSummary
+	Column       = boardmodel.ColumnOption
+)
 
 // Boards lists the boards of the single user this app runs as, newest first —
 // the same order and the same set the sidebar shows.
@@ -113,7 +71,7 @@ func (w *Writer) columnsOf(board *model.Board) (string, []Column, error) {
 	if !ok {
 		return "", nil, fmt.Errorf("на доске %s нет свойства-колонок", board.ID)
 	}
-	prop, ok := findCardProperty(board.CardProperties, name)
+	prop, ok := boardmodel.FindCardProperty(board.CardProperties, name)
 	if !ok {
 		return name, nil, nil
 	}
@@ -154,7 +112,7 @@ func (w *Writer) BoardCards(ctx context.Context, boardID string) ([]CardSummary,
 		return nil, fmt.Errorf("get views of board %s: %w", boardID, err)
 	}
 	property, _ := boardmodel.ColumnPropertyName(board, schema, views)
-	linkID, _ := propertyOfType(board, schema, "url")
+	linkID, _ := boardmodel.PropertyOfType(board, schema, "url")
 	authors := w.boardAuthors(boardID)
 	blocks, err := w.app.GetBlocks(boardID, "", model.TypeCard)
 	if err != nil {
@@ -172,7 +130,7 @@ func (w *Writer) BoardCards(ctx context.Context, boardID string) ([]CardSummary,
 			BoardID:    boardID,
 			Title:      block.Title,
 			Icon:       icon,
-			Properties: displayProperties(schema, block),
+			Properties: boardmodel.DisplayProperties(schema, block),
 			Author:     authors[block.CreatedBy],
 			UpdateAt:   block.UpdateAt,
 		}
@@ -207,57 +165,6 @@ func (w *Writer) boardAuthors(boardID string) map[string]string {
 		out[user.ID] = user.Username
 	}
 	return out
-}
-
-// displayProperties turns a card's stored properties into the names and values a
-// person reads. A select becomes the option's own text; anything else is taken
-// as it is, and what the board has no definition for is left out — it is a
-// leftover of a property somebody deleted.
-func displayProperties(schema model.PropSchema, block *model.Block) map[string]string {
-	stored, ok := block.Fields["properties"].(map[string]any)
-	if !ok || len(stored) == 0 {
-		return nil
-	}
-	out := make(map[string]string, len(stored))
-	for id, value := range stored {
-		def, ok := schema[id]
-		if !ok {
-			continue
-		}
-		if text := propertyText(def, value); text != "" {
-			out[def.Name] = text
-		}
-	}
-	if len(out) == 0 {
-		return nil
-	}
-	return out
-}
-
-func propertyText(def model.PropDef, value any) string {
-	switch typed := value.(type) {
-	case string:
-		if option, ok := def.Options[typed]; ok {
-			return option.Value
-		}
-		return typed
-	case []any:
-		parts := make([]string, 0, len(typed))
-		for _, item := range typed {
-			id, ok := item.(string)
-			if !ok {
-				continue
-			}
-			if option, ok := def.Options[id]; ok {
-				parts = append(parts, option.Value)
-			} else {
-				parts = append(parts, id)
-			}
-		}
-		return strings.Join(parts, ", ")
-	default:
-		return ""
-	}
 }
 
 // MoveCardToBoard carries a card to another board and, if a column is named,

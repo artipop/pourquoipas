@@ -306,7 +306,7 @@ func (w *Writer) EnsureColumn(ctx context.Context, boardID, propertyName, option
 	if _, optionID, ok := boardmodel.FindSelectOption(schema, propertyName, optionName); ok {
 		return optionID, nil
 	}
-	prop, ok := findCardProperty(board.CardProperties, propertyName)
+	prop, ok := boardmodel.FindCardProperty(board.CardProperties, propertyName)
 	if !ok {
 		// The property itself is not invented: a board with no column property
 		// has no columns to file anything into, and guessing one would put the
@@ -544,7 +544,7 @@ func (w *Writer) ensureInboxSchema(boardID, propertyName, inboxName string) (inb
 	_, inboxID, hasInbox := boardmodel.FindSelectOption(schema, propertyName, inboxName)
 	_, mineID, hasMine := boardmodel.FindSelectOption(schema, propertyName, MineColumnTitle)
 	if !hasInbox || !hasMine {
-		prop, ok := findCardProperty(board.CardProperties, propertyName)
+		prop, ok := boardmodel.FindCardProperty(board.CardProperties, propertyName)
 		if !ok {
 			// The property itself is not invented: a board with no column
 			// property has no columns to file anything into, and guessing one
@@ -591,7 +591,7 @@ func (w *Writer) ensureInboxSchema(boardID, propertyName, inboxName string) (inb
 // arrivedAuthor finds the board's own createdBy property, in the board's order
 // so the answer is the same on every call.
 func arrivedAuthor(board *model.Board, schema model.PropSchema) (string, bool) {
-	return propertyOfType(board, schema, "createdBy")
+	return boardmodel.PropertyOfType(board, schema, "createdBy")
 }
 
 // LinkPropertyTitle is what the board calls the way back to what a source
@@ -613,7 +613,7 @@ func (w *Writer) ensureLinkProperty(boardID string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if id, ok := propertyOfType(board, schema, "url"); ok {
+	if id, ok := boardmodel.PropertyOfType(board, schema, "url"); ok {
 		return id, nil
 	}
 	propID := utils.NewID(utils.IDTypeBlock)
@@ -628,23 +628,6 @@ func (w *Writer) ensureLinkProperty(boardID string) (string, error) {
 		return "", fmt.Errorf("add the link property to board %s: %w", boardID, err)
 	}
 	return propID, nil
-}
-
-// propertyOfType finds the board's first property of a given type, walking
-// CardProperties rather than the parsed schema: the schema is a map, and a
-// board with two properties of one type would otherwise answer differently on
-// different runs.
-func propertyOfType(board *model.Board, schema model.PropSchema, propType string) (string, bool) {
-	for _, prop := range board.CardProperties {
-		id, ok := prop["id"].(string)
-		if !ok {
-			continue
-		}
-		if def, ok := schema[id]; ok && def.Type == propType {
-			return id, true
-		}
-	}
-	return "", false
 }
 
 // ensureInboxView adds the view if the board has not got one already, and
@@ -776,22 +759,6 @@ func isInboxView(view *model.Block, propID, optionID string) bool {
 		}
 	}
 	return strings.EqualFold(view.Title, InboxViewTitle)
-}
-
-// findCardProperty returns the board's raw definition of a property, which is
-// what a patch replaces. The parsed schema cannot be used for this: it drops
-// everything the board wrote that we do not read, and patching with it would
-// silently delete those fields.
-func findCardProperty(props []map[string]any, name string) (map[string]any, bool) {
-	for _, prop := range props {
-		if propType, _ := prop["type"].(string); propType != "select" {
-			continue
-		}
-		if propName, _ := prop["name"].(string); strings.EqualFold(propName, name) {
-			return prop, true
-		}
-	}
-	return nil, false
 }
 
 // AttachFile puts a file into the card's content: an image is rendered inline,

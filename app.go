@@ -11,7 +11,7 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 
 	"github.com/artipop/xciii/internal/acp"
-	"github.com/artipop/xciii/internal/boardadapter"
+	"github.com/artipop/xciii/internal/boardmodel"
 	"github.com/artipop/xciii/internal/sources"
 )
 
@@ -40,7 +40,7 @@ type App struct {
 	sources *sources.Manager
 	// board is how the page at /m reads the board, since it is served the
 	// bindings and the event socket and no board API of its own.
-	board *boardadapter.Writer
+	board boardLists
 	// updates is how this app replaces itself; nil in a headless build and
 	// whenever the release feed could not be configured. Its methods are safe
 	// on a nil receiver, as the tailnet controller's are.
@@ -1482,7 +1482,7 @@ func (a *App) ListInbox() (string, error) {
 		return "[]", nil
 	}
 
-	waiting := make([]boardadapter.CardSummary, 0, 8)
+	waiting := make([]boardmodel.CardSummary, 0, 8)
 	for boardID, columns := range inboxes {
 		cards, err := a.board.BoardCards(context.Background(), boardID)
 		if err != nil {

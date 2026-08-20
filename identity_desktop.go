@@ -13,3 +13,7 @@ func localSessionToken() string { return "su-" + uuid.New().String() }
 // makes the loopback origin and the Host the whole of the protection
 // (frontdoor.go). A nil guard is the guard standing aside.
 func newSessionGuard(sessionSource) func(string) bool { return nil }
+
+// attachableBuild: a desktop is what attaches. Its front door authenticates
+// nobody, so the page carrying the attached board's session costs it nothing.
+const attachableBuild = true

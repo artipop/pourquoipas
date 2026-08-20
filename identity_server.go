@@ -10,3 +10,8 @@ func localSessionToken() string { return "" }
 // about a board — the bindings and both sockets — to anybody who has not
 // logged in.
 func newSessionGuard(src sessionSource) func(string) bool { return boardSessionGuard(src) }
+
+// attachableBuild: a hosted server does not attach to another one. Its own
+// front door guards on its own sessions, and the page would be carrying
+// somebody else's — see attach.go.
+const attachableBuild = false

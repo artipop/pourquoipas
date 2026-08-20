@@ -198,14 +198,14 @@ func TestTheColumnPropertyIsWhatTheBoardGroupsBy(t *testing.T) {
 func TestFindCardProperty(t *testing.T) {
 	board := testBoard()
 
-	prop, ok := findCardProperty(board.CardProperties, "status")
+	prop, ok := boardmodel.FindCardProperty(board.CardProperties, "status")
 	if !ok || prop["id"] != "prop-status" {
 		t.Fatalf("got %+v, ok=%v", prop, ok)
 	}
-	if _, ok := findCardProperty(board.CardProperties, "repo_path"); ok {
+	if _, ok := boardmodel.FindCardProperty(board.CardProperties, "repo_path"); ok {
 		t.Fatal("only a select property can hold columns")
 	}
-	if _, ok := findCardProperty(board.CardProperties, "Этап"); ok {
+	if _, ok := boardmodel.FindCardProperty(board.CardProperties, "Этап"); ok {
 		t.Fatal("a property the board does not have must not resolve")
 	}
 }
@@ -254,13 +254,13 @@ func TestTheLinkPropertyIsFoundByTypeWhateverItIsCalled(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if id, ok := propertyOfType(board, schema, "url"); !ok || id != "prop-link" {
+	if id, ok := boardmodel.PropertyOfType(board, schema, "url"); !ok || id != "prop-link" {
 		t.Fatalf("got %q, ok=%v", id, ok)
 	}
 
 	// A board that has none says so, which is what makes the caller add one
 	// rather than quietly drop what it was given.
-	if _, ok := propertyOfType(testBoard(), schema, "url"); ok {
+	if _, ok := boardmodel.PropertyOfType(testBoard(), schema, "url"); ok {
 		t.Fatal("a board without a url property must not answer with one")
 	}
 }

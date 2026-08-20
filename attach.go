@@ -77,6 +77,18 @@ func saveAttachSettings(path string, cfg attachSettings) error {
 	return os.WriteFile(path, append(data, '\n'), 0o600)
 }
 
+// attachableBuild says this build can work somebody else's board.
+//
+// A desktop can; a hosted server cannot, and refusing is better than the
+// half-working thing it would otherwise be. Its own front door guards
+// /wails/ and both sockets against *its* session table, while the page it
+// serves carries the attached board's sessions — so every bound call, every
+// terminal and every event socket would be refused, and the screen would say
+// nothing about why.
+//
+// It is also not a configuration anybody wants: a server that is a client of
+// another server is two installs where one was asked for.
+
 // attachController owns the settings file and the token behind it. Safe on a
 // nil receiver, like the tailnet controller: no data dir costs the feature, not
 // the app.
@@ -102,7 +114,7 @@ func newAttachController(path string, vault secrets.Store) (*attachController, e
 // target is the board this launch talks to: the attached server, or nothing,
 // meaning the board in this process.
 func (c *attachController) target() string {
-	if c == nil {
+	if c == nil || !attachableBuild {
 		return ""
 	}
 	c.mu.Lock()

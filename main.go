@@ -159,7 +159,10 @@ func main() {
 	}
 
 	logger := newServerLogger()
-	if acpEnabled {
+	// Only for a board this process serves: attached, card moves arrive over
+	// the server's own websocket, and the local board has nobody moving cards
+	// on it.
+	if acpEnabled && attach.target() == "" {
 		events = boardadapter.NewEventsBackend(logger)
 		backends = append(backends, events)
 	}
@@ -174,14 +177,22 @@ func main() {
 	// templates); the server module's are the upstream's examples and carry no
 	// automation. Failing to install them costs the selector its contents, not
 	// the app, so it is logged rather than fatal.
-	if err := boardadapter.ImportTemplates(srv.App(), logger); err != nil {
-		log.Printf("templates: %v", err)
+	// Not against a server: the templates on a hosted install are its own, and
+	// this would delete the ones this build does not ship — every attached
+	// desktop fighting over them at every launch.
+	if attach.target() == "" {
+		if err := boardadapter.ImportTemplates(srv.App(), logger); err != nil {
+			log.Printf("templates: %v", err)
+		}
 	}
 
 	// Which board the page is served is the attachment's answer: this
 	// process's own, or a hosted server this desktop logged in to (attach.go).
 	// The token follows it — the single-user one for our own board, the
 	// session for somebody else's.
+	if !attachableBuild && attach != nil && attach.state().URL != "" {
+		log.Printf("attach: ignoring %s — a hosted server works its own board", attach.state().URL)
+	}
 	pageToken := func() string { return sessionToken }
 	if attach.target() != "" {
 		pageToken = attach.token
@@ -213,7 +224,13 @@ func main() {
 	// The board as the page at /m reads it. Set here rather than beside the
 	// sources registry because a phone lists boards and cards whether or not
 	// this machine has a source or an agent.
-	app.board = boardadapter.NewWriter(srv.App())
+	// Which board everything below works. The page was pointed at the same one
+	// (proxy.go); this is the other half of that answer.
+	seam := localSeam(events, srv.App())
+	if target := attach.target(); target != "" {
+		seam, _ = remoteSeam(target, attach.token(), logger)
+	}
+	app.board = seam.lists
 
 	// The tailnet door publishes the same front door to the user's own tailnet,
 	// so a phone can reach the board. Off unless its settings file says
@@ -264,7 +281,14 @@ func main() {
 	// its step set is closed and lives in internal/acp, which cannot import
 	// this registry, so the answer is handed over as a function below.
 	sourcesReady := func() bool { return false }
-	if dir, err := sourcesDataDir(); err != nil {
+	// Not against a server, and not silently either: a source writes cards onto
+	// a board, and the only writer this has is the local one — so an attached
+	// desktop would be filling in a board nobody is looking at. Whose sources
+	// feed a shared board is a question with an owner, and it has not been
+	// asked yet (docs/todo.md).
+	if attach.target() != "" {
+		log.Printf("sources: off while attached to %s — they would write to this machine's own board", attach.target())
+	} else if dir, err := sourcesDataDir(); err != nil {
 		log.Printf("sources: disabled, no data dir: %v", err)
 	} else if cfg, err := sources.LoadConfig(filepath.Join(dir, "sources.json")); err != nil {
 		log.Printf("sources: disabled, config error: %v", err)
@@ -311,31 +335,32 @@ func main() {
 	// before it (agents may still post comments during the grace period).
 	var mgr *acp.Manager
 	if acpEnabled {
-		events.SetApp(srv.App())
+		if events != nil {
+			events.SetApp(srv.App())
+		}
 		dir, _ := acpDataDir()
 		store, err := openAgentStore(brd, dir)
 		if err != nil {
 			log.Printf("acp: disabled, store error: %v", err)
 		} else {
-			writer := boardadapter.NewWriter(srv.App())
-			mgr = acp.NewManager(acpCfg, filepath.Join(dir, "config.json"), store, writer, emitter, nil)
+			mgr = acp.NewManager(acpCfg, filepath.Join(dir, "config.json"), store, seam.writer, emitter, nil)
 			// Lets the UI open a console on a card without moving it.
-			mgr.SetBoardReader(events)
+			mgr.SetBoardReader(seam.reader)
 			// Where the GitHub token for pull-request polling comes from. It
 			// was `githubToken` in config.json, which is a credential in a
 			// settings file people edit by hand and paste into issues.
 			mgr.SetSecrets(vault)
-			mgr.SetBoardMeta(events)
+			mgr.SetBoardMeta(seam.meta)
 			// Keeps a card's place on its route on the card, so it travels
 			// with the board rather than staying on this machine.
-			mgr.SetBoardCardState(writer)
+			mgr.SetBoardCardState(seam.cardState)
 			// Lets the UI give agents board accounts, so cards can be
 			// assigned to them in a person property.
-			mgr.SetBoardUsers(events)
+			mgr.SetBoardUsers(seam.users)
 			// Lets a board that asks to be asked about sources see the
 			// question as already answered when this machine has one.
 			mgr.SetRegistryProbe("sources", sourcesReady)
-			if err := mgr.Start(context.Background(), events); err != nil {
+			if err := mgr.Start(context.Background(), seam.events); err != nil {
 				log.Printf("acp: disabled, start error: %v", err)
 				mgr = nil
 			} else {
