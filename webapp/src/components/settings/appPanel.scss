@@ -43,6 +43,28 @@
         overflow-x: auto;
     }
 
+    // The one place in this panel that is a form field rather than a value you
+    // type over: a name has to look like something you can put a name in.
+    .AppPanel__field {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .AppPanel__fieldName {
+        font-size: var(--text-small);
+        color: rgba(var(--center-channel-color-rgb), 0.64);
+    }
+
+    .AppPanel__name {
+        padding: 8px 12px;
+        border: 1px solid rgba(var(--center-channel-color-rgb), 0.12);
+        border-radius: var(--radius-md);
+        background: rgba(var(--center-channel-color-rgb), 0.04);
+        color: rgb(var(--center-channel-color-rgb));
+        font: inherit;
+    }
+
     .AppPanel__customActions {
         display: flex;
         flex-direction: row;
@@ -158,6 +180,29 @@
 
         &:hover {
             background: rgba(var(--button-bg-rgb), 0.16);
+        }
+
+        &:disabled {
+            opacity: 0.4;
+            cursor: default;
+
+            &:hover {
+                background: rgba(var(--button-bg-rgb), 0.08);
+            }
+        }
+    }
+
+    // The second of a pair, and the one that undoes rather than does.
+    .AppPanel__actionLink--quiet {
+        background: transparent;
+        color: rgba(var(--center-channel-color-rgb), 0.64);
+
+        &:hover {
+            background: rgba(var(--center-channel-color-rgb), 0.08);
+        }
+
+        &:disabled:hover {
+            background: transparent;
         }
     }
 }

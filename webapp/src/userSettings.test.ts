@@ -4,7 +4,13 @@
 // boot-time cache, hydrated before the first render and written through on
 // every change.
 
-import {UserSettingKey, UserSettings, hydrateUserSettings} from './userSettings'
+import {
+    UserSettingKey,
+    UserSettings,
+    exportUserSettingsBlob,
+    hydrateUserSettings,
+    importUserSettingsBlob,
+} from './userSettings'
 
 const anyWindow = window as any
 
@@ -78,5 +84,20 @@ describe('userSettings and the install’s own memory', () => {
         UserSettings.language = 'sv'
 
         expect(UserSettings.language).toBe('sv')
+    })
+
+    // The blob is base64 of the settings, and it is built on every write —
+    // before `notifySettingsChanged` even checks whether a native host is
+    // listening. `btoa` takes one byte per character, so until a theme could
+    // be given a name nothing here had ever held text above U+00FF, and the
+    // first one that did threw on each keystroke.
+    test('carries a setting written in a language btoa cannot spell', () => {
+        UserSettings.set(UserSettingKey.CustomThemeName, 'Ночная смена')
+
+        const blob = exportUserSettingsBlob()
+        localStorage.clear()
+        importUserSettingsBlob(blob)
+
+        expect(UserSettings.get(UserSettingKey.CustomThemeName)).toBe('Ночная смена')
     })
 })

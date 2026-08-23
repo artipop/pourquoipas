@@ -11,8 +11,19 @@ export enum UserSettingKey {
     // the product's own.
     ThemeMode = 'themeMode',
 
-    // The config pasted into the theme field, kept whether or not it is the
-    // theme in use: switching to a shipped theme and back must not lose it.
+    // The two halves pasted into the theme field, kept whether or not the
+    // custom slot is the theme in use: switching to a shipped theme and back
+    // must not lose them. A theme is a pair, and so is the one you bring.
+    CustomThemeLight = 'customThemeLight',
+    CustomThemeDark = 'customThemeDark',
+
+    // What the list calls that slot. It is the slot's own name and not the
+    // configs' — each half may carry a `name` of its own, and two of them
+    // cannot both be what one row says.
+    CustomThemeName = 'customThemeName',
+
+    // The single config the slot held before it was a pair. Read once at
+    // startup, into whichever half it declares, and never written again.
     CustomTheme = 'customTheme',
     LastTeamId = 'lastTeamId',
     LastBoardId = 'lastBoardId',
@@ -44,6 +55,9 @@ const installKept = new Set<string>([
     UserSettingKey.Language,
     UserSettingKey.Theme,
     UserSettingKey.ThemeMode,
+    UserSettingKey.CustomThemeLight,
+    UserSettingKey.CustomThemeDark,
+    UserSettingKey.CustomThemeName,
     UserSettingKey.CustomTheme,
     UserSettingKey.NameFormat,
     UserSettingKey.LastTeamId,
@@ -136,6 +150,30 @@ export class UserSettings {
 
     static set customTheme(newValue: string | null) {
         UserSettings.set(UserSettingKey.CustomTheme, newValue)
+    }
+
+    static get customThemeLight(): string | null {
+        return UserSettings.get(UserSettingKey.CustomThemeLight)
+    }
+
+    static set customThemeLight(newValue: string | null) {
+        UserSettings.set(UserSettingKey.CustomThemeLight, newValue)
+    }
+
+    static get customThemeDark(): string | null {
+        return UserSettings.get(UserSettingKey.CustomThemeDark)
+    }
+
+    static set customThemeDark(newValue: string | null) {
+        UserSettings.set(UserSettingKey.CustomThemeDark, newValue)
+    }
+
+    static get customThemeName(): string | null {
+        return UserSettings.get(UserSettingKey.CustomThemeName)
+    }
+
+    static set customThemeName(newValue: string | null) {
+        UserSettings.set(UserSettingKey.CustomThemeName, newValue)
     }
 
     static get lastTeamId(): string | null {
@@ -267,8 +305,20 @@ export class UserSettings {
     }
 }
 
+// base64 of the settings as UTF-8 bytes, and not of the string itself: `btoa`
+// takes one byte per character and throws `InvalidCharacterError` on anything
+// above U+00FF. Nothing kept here had held free text until a theme could be
+// given a name, and `notifySettingsChanged` builds this blob on *every* write,
+// before it checks whether there is a native host to send it to — so naming a
+// theme «Ночная смена» threw on each keystroke. ASCII encodes identically
+// either way, so a host that was reading these before reads the same bytes.
 export function exportUserSettingsBlob(): string {
-    return window.btoa(exportUserSettings())
+    const bytes = new TextEncoder().encode(exportUserSettings())
+    let binary = ''
+    for (const byte of bytes) {
+        binary += String.fromCharCode(byte)
+    }
+    return window.btoa(binary)
 }
 
 function exportUserSettings(): string {
@@ -279,7 +329,10 @@ function exportUserSettings(): string {
 }
 
 export function importUserSettingsBlob(blob: string): string[] {
-    return importUserSettings(window.atob(blob))
+    const binary = window.atob(blob)
+    const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0))
+
+    return importUserSettings(new TextDecoder().decode(bytes))
 }
 
 function importUserSettings(json: string): string[] {

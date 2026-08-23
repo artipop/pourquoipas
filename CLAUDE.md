@@ -822,8 +822,11 @@ following the system meant giving up every design but ours. A family with one
 half is refused by a test, because that is a switch that looks like it works and
 moves nothing; the eight themes borrowed from Mattermost's list are published
 there in one polarity and exist in both at home, so the missing halves are the
-real ones. The pasted config is the exception and stays one half — it brings its
-own polarity, so the switch is not drawn while it is on. The themes are the one
+real ones. **The slot for a config you paste is a pair too**, named by a field
+of its own, and the switch there also decides which half the field is editing —
+asking that twice would be two controls saying one word; a half nobody wrote
+falls back to the one they did, and opening the slot forks both halves of the
+theme on screen. The themes are the one
 place the "lay the choices out rather than fold them into a menu" rule turned
 over — twelve rows in `widgets/select` and not a `<select>`, whose own comment
 says why — and the polarity, being three answers, is chips like everything

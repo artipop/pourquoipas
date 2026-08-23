@@ -35,10 +35,22 @@ list and a field appears under it. It opens on a copy of the theme that was on
 screen, so the easiest way to write a new one is to edit an old one. Paste your
 config and press **"Apply"**.
 
-A pasted config is one half rather than a pair: it says for itself whether it is
-light or dark (through the `type` key, and without it by how light the
-background is). So "Light or dark" is not drawn while it is on — there is
-nothing for it to switch.
+A theme of your own has two halves, like every other one. Which of them the
+field is editing is said by the same "Light or dark" switch: stand on "Dark" and
+the field holds the dark half. A half you have not written is taken from the one
+you have, so a single config is enough.
+
+The first time you pick "Custom config", both halves are filled with a copy of
+the theme that was on screen: what you get is a fork of it to edit rather than
+an empty field.
+
+**"Name"** — what this theme is called in the list. While it is empty the list
+says "Custom config".
+
+**"Apply"** writes what is in the field and repaints the board. **"Cancel"**
+puts back into the field whatever is applied right now — the only thing an edit
+here can undo; to leave for another theme, pick it in the list. Both buttons are
+pale until something in the field has changed.
 
 Ready-made themes for this format are in Mattermost's own documentation, under
 [Customize your theme](https://docs.mattermost.com/end-user-guide/preferences/customize-your-theme.html)

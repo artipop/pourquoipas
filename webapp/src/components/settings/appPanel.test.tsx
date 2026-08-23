@@ -6,7 +6,9 @@ import {TestRouter, mockAppStore, wrapIntl} from '../../testUtils'
 import {AppStoreProvider} from '../../store'
 import {Constants} from '../../constants'
 import {
+    customThemeName,
     defaultFamilyId,
+    setCustomThemeName,
     setCustomThemeSource,
     setTheme,
     setThemeMode,
@@ -21,12 +23,14 @@ describe('components/settings/appPanel', () => {
     beforeEach(() => {
         vi.clearAllMocks()
         store = mockAppStore({})
-        setCustomThemeSource('')
 
-        // The polarity first: `setTheme` applies with whatever mode is
-        // current, and `system` asks `matchMedia`, which jsdom has not got.
-        setThemeMode('light')
+        // The theme first: emptying the custom slot while it is the one on
+        // screen leaves the mode switch with nothing to draw.
         setTheme(defaultFamilyId)
+        setThemeMode('light')
+        setCustomThemeSource('light', '')
+        setCustomThemeSource('dark', '')
+        setCustomThemeName('')
     })
 
     const open = () => render(() => wrapIntl(() =>
@@ -43,10 +47,14 @@ describe('components/settings/appPanel', () => {
     // eleven chips is a wall.
     // The trigger says the current theme's name and so does the option for it,
     // so everything the list is asked about is asked of the list.
-    const openThemes = () => {
-        open()
+    const dropTheList = () => {
         userEvent.click(screen.getByRole('button', {name: 'Theme'}))
         return () => within(document.querySelector('.Menu .menu-options') as HTMLElement)
+    }
+
+    const openThemes = () => {
+        open()
+        return dropTheList()
     }
 
     const pick = async (name: string) => {
@@ -96,6 +104,7 @@ describe('components/settings/appPanel', () => {
 
         expect(list.querySelectorAll('.LabelOption')).toHaveLength(0)
         expect(list.querySelectorAll('.MenuSeparator')).toHaveLength(1)
+        expect(customThemeName).toBe('custom-theme')
         expect([...list.querySelectorAll('.menu-name')].map((n) => n.textContent)).toEqual([
             ...THEME_FAMILIES.map((family) => family.name),
             'Custom config',
@@ -121,10 +130,66 @@ describe('components/settings/appPanel', () => {
 
         await waitFor(() => expect(document.documentElement.style.getPropertyValue('--canvas-rgb')).toBe('16, 32, 48'))
         expect(document.documentElement.dataset.theme).toBe('dark')
+    })
 
-        // A pasted config is one half, not a pair, so it brings its own
-        // polarity and the switch has nothing to say about it.
-        expect(screen.queryByRole('button', {name: /^Dark/})).not.toBeInTheDocument()
+    // The slot is a pair like every other theme, so the switch beside the list
+    // works there too — and it is also what says which half the field is
+    // editing, because answering that twice would be two controls saying one
+    // word.
+    test('gives the custom slot two halves and edits the one on screen', async () => {
+        await pick('Custom config')
+
+        const light = await screen.findByLabelText('Theme config') as HTMLTextAreaElement
+        expect(JSON.parse(light.value).centerChannelBg).toBe('#f0ede5')
+
+        userEvent.click(screen.getByRole('button', {name: /^Dark/}))
+
+        await waitFor(() => {
+            const dark = screen.getByLabelText('Theme config') as HTMLTextAreaElement
+            expect(JSON.parse(dark.value).centerChannelBg).toBe('#0c0c0e')
+        })
+        expect(document.documentElement.style.getPropertyValue('--canvas-rgb')).toBe('12, 12, 14')
+    })
+
+    // Not "go back to the theme I had" — the list does that. This is the only
+    // thing an edit in the field can undo.
+    test('puts the field back where it was', async () => {
+        await pick('Custom config')
+        const field = await screen.findByLabelText('Theme config') as HTMLTextAreaElement
+        const applied = field.value
+
+        fireEvent.input(field, {target: {value: '{oh no'}})
+        userEvent.click(screen.getByRole('button', {name: 'Cancel'}))
+
+        await waitFor(() => expect(screen.getByLabelText('Theme config')).toHaveValue(applied))
+    })
+
+    // Neither button has anything to do until something is typed, and a
+    // control that can do nothing says so rather than doing nothing quietly.
+    test('offers nothing to apply or undo until the field is edited', async () => {
+        await pick('Custom config')
+        await screen.findByLabelText('Theme config')
+
+        expect(screen.getByRole('button', {name: 'Apply'})).toBeDisabled()
+        expect(screen.getByRole('button', {name: 'Cancel'})).toBeDisabled()
+
+        fireEvent.input(screen.getByLabelText('Theme config'), {target: {value: '{}'}})
+
+        await waitFor(() => expect(screen.getByRole('button', {name: 'Apply'})).toBeEnabled())
+        expect(screen.getByRole('button', {name: 'Cancel'})).toBeEnabled()
+    })
+
+    // A slot called «Свой конфиг» is "the other one"; a name is what makes it
+    // somebody's own theme, so the list says it.
+    test('calls the slot what it was named', async () => {
+        await pick('Custom config')
+
+        fireEvent.input(await screen.findByLabelText('Name'), {target: {value: 'Ночная смена'}})
+
+        const menu = dropTheList()
+        await waitFor(() => expect(document.querySelector('.Menu .menu-options')).toBeInTheDocument())
+        expect(menu().getByRole('button', {name: 'Ночная смена'})).toBeInTheDocument()
+        expect(menu().queryByRole('button', {name: 'Custom config'})).not.toBeInTheDocument()
     })
 
     // A config nobody can read has to say which way it is wrong, because this
@@ -142,7 +207,7 @@ describe('components/settings/appPanel', () => {
     // screen: hanging it off "the theme applied" made a broken one impossible
     // to select and therefore impossible to fix.
     test('opens the field on a stored config that no longer parses', async () => {
-        setCustomThemeSource('{"centerChannelBg": "#fff"}')
+        setCustomThemeSource('light', '{"centerChannelBg": "#fff"}')
         await pick('Custom config')
 
         expect(await screen.findByLabelText('Theme config')).toHaveValue('{"centerChannelBg": "#fff"}')

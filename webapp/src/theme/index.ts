@@ -30,10 +30,13 @@ import {themeTokens} from './tokens'
 export const defaultFamilyId = 'xciii'
 
 // A pasted config has no family and there is one slot for it: pasting a second
-// replaces the first, the way the field it is pasted into does. It is one
-// config rather than a pair, so it brings its own polarity and the switch does
-// not apply to it.
+// replaces the first, the way the field it is pasted into does. The slot is a
+// pair like every other theme — a light half and a dark one — so the switch
+// beside the list means the same thing there as everywhere else, and it also
+// decides which half the field is editing.
 export const customThemeName = 'custom-theme'
+
+export type ThemeHalf = 'light' | 'dark'
 
 export type ThemeMode = 'light' | 'dark' | 'system'
 
@@ -51,15 +54,30 @@ function prefersDark(): boolean {
     return window.matchMedia('(prefers-color-scheme: dark)').matches
 }
 
-// The custom slot's own config, as text, because that is what a person edits.
-// It is kept whether or not it is the theme in use, so switching to a shipped
-// theme and back does not lose what was pasted.
-export function getCustomThemeSource(): string {
-    return UserSettings.customTheme ?? ''
+// The custom slot's two configs, as text, because that is what a person edits.
+// They are kept whether or not the slot is the theme in use, so switching to a
+// shipped theme and back does not lose what was pasted.
+export function getCustomThemeSource(half: ThemeHalf): string {
+    return (half === 'dark' ? UserSettings.customThemeDark : UserSettings.customThemeLight) ?? ''
 }
 
-export function setCustomThemeSource(source: string): void {
-    UserSettings.customTheme = source || null
+export function setCustomThemeSource(half: ThemeHalf, source: string): void {
+    if (half === 'dark') {
+        UserSettings.customThemeDark = source || null
+    } else {
+        UserSettings.customThemeLight = source || null
+    }
+}
+
+// What the list calls the slot. Empty is the ordinary case and the list says
+// «Свой конфиг» for it; a name is what makes a theme somebody wrote their own
+// rather than "the other one".
+export function getCustomThemeName(): string {
+    return UserSettings.customThemeName ?? ''
+}
+
+export function setCustomThemeName(name: string): void {
+    UserSettings.customThemeName = name.trim() || null
 }
 
 function wantsDark(mode: ThemeMode): boolean {
@@ -69,15 +87,35 @@ function wantsDark(mode: ThemeMode): boolean {
     return mode === 'dark' || (mode === 'system' && prefersDark())
 }
 
+// Which half is on screen. The field edits that one, so the answer is the
+// panel's as much as the painting's.
+export function activeThemeHalf(): ThemeHalf {
+    return wantsDark(activeMode) ? 'dark' : 'light'
+}
+
 // resolveTheme answers with the config that is actually going to be drawn.
 function resolveTheme(familyId: ThemeName, mode: ThemeMode): ParsedTheme {
+    const half: ThemeHalf = wantsDark(mode) ? 'dark' : 'light'
     if (familyId === customThemeName) {
-        return parseTheme(getCustomThemeSource(), customThemeName)
+        // A half nobody has written falls back to the one they have: a slot
+        // with a single config in it worked before the pair existed, and it
+        // still does.
+        const source = getCustomThemeSource(half) || getCustomThemeSource(other(half))
+
+        return parseTheme(source, customThemeName)
     }
     const family = themeFamily(familyId) ?? themeFamily(defaultFamilyId)!
-    const config = wantsDark(mode) ? family.dark : family.light
+    const config = half === 'dark' ? family.dark : family.light
 
     return parseTheme(config, config.id ?? family.id)
+}
+
+function other(half: ThemeHalf): ThemeHalf {
+    return half === 'dark' ? 'light' : 'dark'
+}
+
+function hasCustomTheme(): boolean {
+    return Boolean(getCustomThemeSource('light') || getCustomThemeSource('dark'))
 }
 
 function apply(familyId: ThemeName, mode: ThemeMode): void {
@@ -108,13 +146,7 @@ export function setTheme(familyId: ThemeName): ThemeName {
 export function setThemeMode(mode: ThemeMode): ThemeMode {
     activeMode = mode
     UserSettings.themeMode = mode
-
-    // The custom slot is one config carrying its own polarity, so there is
-    // nothing to redraw — and redrawing it would mean parsing a config that
-    // may not parse, over a question that was not about it.
-    if (activeFamilyId !== customThemeName) {
-        apply(activeFamilyId, activeMode)
-    }
+    apply(activeFamilyId, activeMode)
     return mode
 }
 
@@ -126,11 +158,20 @@ export function getActiveThemeMode(): ThemeMode {
     return activeMode
 }
 
-// The config the product is drawing right now, formatted the way the field
-// wants it back. This is what the custom slot opens on, and it is the reason a
-// new theme is written by editing an old one rather than from nothing.
-export function activeThemeConfig(): ThemeConfig {
-    return resolveTheme(activeFamilyId, activeMode).config
+// Both halves of the theme on screen, formatted the way the field wants them
+// back. This is what the custom slot opens on — a fork of the theme you were
+// looking at, in both polarities — and it is the reason a new theme is written
+// by editing an old one rather than from nothing.
+export function activeThemeConfigs(): {light: ThemeConfig, dark: ThemeConfig} {
+    if (activeFamilyId === customThemeName) {
+        return {
+            light: resolveTheme(customThemeName, 'light').config,
+            dark: resolveTheme(customThemeName, 'dark').config,
+        }
+    }
+    const family = themeFamily(activeFamilyId) ?? themeFamily(defaultFamilyId)!
+
+    return {light: family.light, dark: family.dark}
 }
 
 export function themeConfigText(config: ThemeConfig): string {
@@ -153,9 +194,21 @@ export function loadTheme(): ThemeName {
     activeMode = themeModes.includes(storedMode as ThemeMode) ? storedMode as ThemeMode : 'system'
     activeFamilyId = defaultFamilyId
 
+    // The slot held one config before it held a pair. Read it into the half it
+    // declares, once, and leave the old key alone: an install that rolls back
+    // to a build before this still finds its theme where it left it.
+    const legacy = UserSettings.customTheme ?? ''
+    if (legacy && !hasCustomTheme()) {
+        try {
+            setCustomThemeSource(parseTheme(legacy).dark ? 'dark' : 'light', legacy)
+        } catch {
+            // A config that no longer parses has no half to be filed under.
+        }
+    }
+
     if (themeFamily(stored)) {
         activeFamilyId = stored
-    } else if (stored === customThemeName && getCustomThemeSource()) {
+    } else if (stored === customThemeName && hasCustomTheme()) {
         activeFamilyId = customThemeName
     } else {
         const variant = familyOfVariant(stored)

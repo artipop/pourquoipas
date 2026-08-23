@@ -7,16 +7,20 @@ import {useAppStore} from '../../store/hooks'
 import CheckIcon from '../../widgets/icons/check'
 import Select, {SelectOption} from '../../widgets/select'
 import {
-    activeThemeConfig,
+    activeThemeConfigs,
+    activeThemeHalf,
     customThemeName,
     getActiveThemeMode,
     getActiveThemeName,
+    getCustomThemeName,
     getCustomThemeSource,
+    setCustomThemeName,
     setCustomThemeSource,
     setTheme,
     setThemeMode,
     themeConfigText,
     ThemeConfigError,
+    ThemeHalf,
     ThemeMode,
     themeModes,
     ThemeName,
@@ -64,8 +68,20 @@ const AppPanel = () => {
     // loaded.
     const [themeName, setThemeName] = createSignal(getActiveThemeName())
     const [mode, setMode] = createSignal(getActiveThemeMode())
-    const [source, setSource] = createSignal(getCustomThemeSource())
     const [error, setError] = createSignal('')
+
+    // Which half the field is editing: the one on screen. The switch above it
+    // already answers that question for the board, and answering it twice —
+    // once for what is drawn and once for what is typed — would be two
+    // controls saying the same word.
+    const [half, setHalf] = createSignal<ThemeHalf>(activeThemeHalf())
+    const [source, setSource] = createSignal(getCustomThemeSource(activeThemeHalf()))
+    const [customName, setCustomName] = createSignal(getCustomThemeName())
+
+    // What «Отмена» puts back, and what tells the two buttons whether there is
+    // anything to do: the text as it was last applied.
+    const stored = () => getCustomThemeSource(half())
+    const dirty = () => source() !== stored()
 
     // Spelled out rather than built as `Settings.theme-mode-${value}`: a
     // computed id is invisible to `npm run i18n-extract`, so it would reach no
@@ -111,8 +127,11 @@ const AppPanel = () => {
     }
 
     // Choosing the custom slot with nothing in it hands over a copy of the
-    // theme on screen: a person writing one starts from what they are looking
-    // at, and a config field that opens empty is a format to go and look up.
+    // theme on screen — **both halves of it** — so what a person starts from is
+    // a fork of the theme they were looking at rather than a format to go and
+    // look up. Both, because the switch beside the list still works there: a
+    // slot with only the light half written would go on drawing the light one
+    // when somebody asked for dark.
     //
     // The selection is recorded before the theme is applied, and stays put when
     // applying fails. A config that stopped parsing is exactly the case where
@@ -121,10 +140,12 @@ const AppPanel = () => {
     const pickTheme = (name: ThemeName) => {
         setError('')
         setThemeName(name)
-        if (name === customThemeName && !source().trim()) {
-            const seeded = themeConfigText({...activeThemeConfig(), id: customThemeName, name: undefined})
-            setSource(seeded)
-            setCustomThemeSource(seeded)
+        if (name === customThemeName && !getCustomThemeSource('light') && !getCustomThemeSource('dark')) {
+            const configs = activeThemeConfigs()
+            for (const side of ['light', 'dark'] as ThemeHalf[]) {
+                setCustomThemeSource(side, themeConfigText({...configs[side], id: customThemeName, name: undefined}))
+            }
+            setSource(getCustomThemeSource(half()))
         }
         try {
             setTheme(name)
@@ -139,7 +160,7 @@ const AppPanel = () => {
         ...THEME_FAMILIES.map((family) => ({value: family.id, label: family.name})),
         {
             value: customThemeName,
-            label: intl.formatMessage({id: 'Settings.theme-custom', defaultMessage: 'Custom config'}),
+            label: customName() || intl.formatMessage({id: 'Settings.theme-custom', defaultMessage: 'Custom config'}),
 
             // The one line in the list, and it is not a heading: everything
             // above it is a theme this build ships, and this is the slot for
@@ -149,13 +170,29 @@ const AppPanel = () => {
     ]
 
     const applyCustom = () => {
-        setCustomThemeSource(source())
+        setCustomThemeSource(half(), source())
         setThemeName(customThemeName)
         try {
             setTheme(customThemeName)
             setError('')
         } catch (e) {
             setError(reasonFor(e))
+        }
+    }
+
+    const cancelCustom = () => {
+        setSource(stored())
+        setError('')
+    }
+
+    // The field follows the switch, because the switch is what says which half
+    // is on screen. Reading the stored text back rather than keeping two
+    // signals: what was typed and not applied is not a version of anything.
+    const showHalf = () => {
+        const current = activeThemeHalf()
+        if (current !== half()) {
+            setHalf(current)
+            setSource(getCustomThemeSource(current))
         }
     }
 
@@ -182,33 +219,37 @@ const AppPanel = () => {
                     />
                 </section>
 
-                {/* A pasted config is one half rather than a pair, so it brings
-                    its own polarity and this control has nothing to say about
-                    it — the hint under the field says so. */}
-                <Show when={themeName() !== customThemeName}>
-                    <section class='AppPanel__group'>
-                        <h4 class='AppPanel__groupTitle'>
-                            {intl.formatMessage({id: 'Settings.theme-mode', defaultMessage: 'Light or dark'})}
-                        </h4>
-                        <div class='AppPanel__choices'>
-                            <For each={themeModes}>
-                                {(value) => (
-                                    <button
-                                        type='button'
-                                        class={choiceClass(mode() === value)}
-                                        aria-pressed={mode() === value}
-                                        onClick={() => setMode(setThemeMode(value))}
-                                    >
-                                        <span class='AppPanel__choiceName'>{modeTitle(value)}</span>
-                                        <Show when={mode() === value}>
-                                            <span class='AppPanel__choiceTick'><CheckIcon/></span>
-                                        </Show>
-                                    </button>
-                                )}
-                            </For>
-                        </div>
-                    </section>
-                </Show>
+                <section class='AppPanel__group'>
+                    <h4 class='AppPanel__groupTitle'>
+                        {intl.formatMessage({id: 'Settings.theme-mode', defaultMessage: 'Light or dark'})}
+                    </h4>
+                    <div class='AppPanel__choices'>
+                        <For each={themeModes}>
+                            {(value) => (
+                                <button
+                                    type='button'
+                                    class={choiceClass(mode() === value)}
+                                    aria-pressed={mode() === value}
+                                    onClick={() => {
+                                        setError('')
+                                        try {
+                                            setMode(setThemeMode(value))
+                                        } catch (e) {
+                                            setMode(value)
+                                            setError(reasonFor(e))
+                                        }
+                                        showHalf()
+                                    }}
+                                >
+                                    <span class='AppPanel__choiceName'>{modeTitle(value)}</span>
+                                    <Show when={mode() === value}>
+                                        <span class='AppPanel__choiceTick'><CheckIcon/></span>
+                                    </Show>
+                                </button>
+                            )}
+                        </For>
+                    </div>
+                </section>
 
                 <Show when={themeName() === customThemeName}>
                     <section class='AppPanel__group'>
@@ -216,11 +257,37 @@ const AppPanel = () => {
                             {intl.formatMessage({id: 'Settings.theme-custom', defaultMessage: 'Custom config'})}
                         </h4>
                         <div class='AppPanel__custom'>
+                            <label class='AppPanel__field'>
+                                <span class='AppPanel__fieldName'>
+                                    {intl.formatMessage({id: 'Settings.theme-custom-name', defaultMessage: 'Name'})}
+                                </span>
+                                <input
+                                    class='AppPanel__name'
+                                    type='text'
+                                    value={customName()}
+                                    placeholder={intl.formatMessage({id: 'Settings.theme-custom', defaultMessage: 'Custom config'})}
+                                    onInput={(event) => {
+                                        setCustomName(event.currentTarget.value)
+                                        setCustomThemeName(event.currentTarget.value)
+                                    }}
+                                />
+                            </label>
+
                             <div class='AppPanel__actionHint'>
                                 {intl.formatMessage({
                                     id: 'Settings.theme-custom-hint',
                                     defaultMessage: 'A theme is a config in Mattermost\'s format. Paste one here, or edit the copy of the theme you were looking at.',
                                 })}
+                                {' '}
+                                {half() === 'dark' ?
+                                    intl.formatMessage({
+                                        id: 'Settings.theme-custom-editing-dark',
+                                        defaultMessage: 'The dark half is the one being edited: the switch above picks it.',
+                                    }) :
+                                    intl.formatMessage({
+                                        id: 'Settings.theme-custom-editing-light',
+                                        defaultMessage: 'The light half is the one being edited: the switch above picks it.',
+                                    })}
                                 {' '}
                                 <a
                                     href={Constants.themeHelpPage}
@@ -250,9 +317,23 @@ const AppPanel = () => {
                                 <button
                                     type='button'
                                     class='AppPanel__actionLink'
+                                    disabled={!dirty()}
                                     onClick={applyCustom}
                                 >
                                     {intl.formatMessage({id: 'Settings.theme-custom-apply', defaultMessage: 'Apply'})}
+                                </button>
+
+                                {/* Not "go back to the theme I had": the list
+                                    above does that. This puts the field back
+                                    to the text that is actually applied, which
+                                    is the only thing an edit here can undo. */}
+                                <button
+                                    type='button'
+                                    class='AppPanel__actionLink AppPanel__actionLink--quiet'
+                                    disabled={!dirty()}
+                                    onClick={cancelCustom}
+                                >
+                                    {intl.formatMessage({id: 'Settings.theme-custom-cancel', defaultMessage: 'Cancel'})}
                                 </button>
                                 <Show when={error()}>
                                     <span class='AppPanel__customError'>{error()}</span>
