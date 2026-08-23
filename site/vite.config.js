@@ -12,9 +12,14 @@ export default defineConfig({
     // here too — `npm run dev` in docs/guide (pinned to 5174) answers it.
     server: {
         proxy: {
-            // `ws` because the guide's own hot reload talks over a socket on
-            // this path too, and a proxy that forwards only HTTP leaves it
+            // Two guides, two dev servers, and the more specific path first:
+            // the rules are tried in order, so '/docs' listed above would take
+            // /docs/xxvi/ to the XCIII guide.
+            //
+            // `ws` because a guide's own hot reload talks over a socket on
+            // these paths too, and a proxy that forwards only HTTP leaves it
             // reconnecting for ever.
+            '/docs/xxvi': {target: 'http://localhost:5175', ws: true},
             '/docs': {target: 'http://localhost:5174', ws: true},
         },
     },

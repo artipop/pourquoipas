@@ -13,10 +13,11 @@ bin
 /schemagen
 # The webapp is its own npm project. So are the landing and the guide site.
 node_modules
-# VitePress' own working directory. The guide builds into site/dist instead, so
-# a `dist` here only appears if somebody overrides outDir.
-docs/guide/.vitepress/cache
-docs/guide/.vitepress/dist
+# VitePress' own working directory, for both guides (docs/guide, the XCIII one,
+# and docs/guide-xxvi). They build into site/dist instead, so a `dist` here only
+# appears if somebody overrides outDir.
+docs/guide*/.vitepress/cache
+docs/guide*/.vitepress/dist
 coverage
 .eslintcache
 webapp/cypress/videos

@@ -377,7 +377,8 @@ p {
     flex-wrap: wrap;
 }
 
-.hero-actions .note {
+.hero-actions .note,
+.product-actions .note {
     font-size: 13px;
     color: var(--muted);
 }
@@ -448,6 +449,9 @@ p {
 .product-actions {
     display: flex;
     gap: 12px;
+    /* A product without a page of its own puts a line of text beside the one
+       button; centred, it sits on the button's line instead of its top edge. */
+    align-items: center;
     flex-wrap: wrap;
     margin: 0;
 }
