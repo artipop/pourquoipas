@@ -1,7 +1,7 @@
 import {For, Show} from 'solid-js'
 import type {JSX} from 'solid-js'
 
-import {FormattedMessage} from '../../intl'
+import {FormattedMessage, useIntl} from '../../intl'
 
 import {IPropertyTemplate} from '../../blocks/board'
 import {BoardView, ISortOption} from '../../blocks/boardView'
@@ -20,10 +20,18 @@ type Props = {
     orderedCards: Card[]
 }
 const ViewHeaderSortMenu = (props: Props) => {
+    const intl = useIntl()
     const hasSort = () => props.activeView.fields.sortOptions?.length > 0
     const sortDisplayOptions = () => {
         const options = props.properties?.map((o) => ({id: o.id, name: o.name}))
-        options?.unshift({id: Constants.titleColumnId, name: 'Name'})
+
+        // The card's own title, named as the table names it rather than in
+        // English: every other row here is a board property, whose name is
+        // whatever a person typed, and this one was the only literal.
+        options?.unshift({
+            id: Constants.titleColumnId,
+            name: intl.formatMessage({id: 'TableComponent.name', defaultMessage: 'Name'}),
+        })
         return options
     }
 
