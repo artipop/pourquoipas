@@ -10,19 +10,24 @@
     align-items: center;
 
     // The bar carries as many controls as the board needs and the window is
-    // whatever width somebody made it: without a scroll its right-hand end —
-    // the search, the ⋯ menu, «Создать» — was simply cut off, with no way to
-    // reach it and nothing on screen saying so. Measured in the app at a
-    // 1280px window: 1268px of controls in a 976px bar. It used to scroll only
-    // under 768px, which is the one width at which the bar is *not* the
-    // problem, because a phone gets its own screens.
-    overflow-x: auto;
-    overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
+    // whatever width somebody made it: it used to cut its right-hand end off —
+    // the search, the ⋯ menu, «Создать» — with no way to reach it and nothing
+    // on screen saying so. Measured at a 1280px window: 1268px of controls in
+    // a 976px bar.
+    //
+    // It wraps rather than scrolls, and that is not a matter of taste. Both
+    // «Фильтр» and the view menu hang a panel off a control here, drawn inside
+    // this element and positioned against it; a bar that scrolls is a bar with
+    // `overflow` on it, and CSS has no way to clip one axis and leave the
+    // other alone — so scrolling made the filter panel invisible the moment it
+    // opened. Wrapping keeps every control reachable without asking the bar to
+    // clip anything, and needs nothing discovered: a second row is on screen.
+    flex-wrap: wrap;
+    row-gap: 8px;
 
-    // Nothing squashes to make room; the bar scrolls instead. The spacer is
-    // the exception — it is what pushes the right-hand group to the edge while
-    // there is room, and it is the first thing to give when there is not.
+    // Nothing squashes to make room; it moves to the next row instead. The
+    // spacer is the exception — it is what pushes the right-hand group to the
+    // edge while there is room, and it gives way first when there is not.
     > *:not(.octo-spacer) {
         flex: 0 0 auto;
     }
