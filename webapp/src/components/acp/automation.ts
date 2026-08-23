@@ -57,9 +57,20 @@ export type FlowNode = {
     y?: number
 }
 
+// ENTRY_NODE is the stage a card comes from when it comes from off the route —
+// the backlog, a source, a hand from anywhere the route does not pass through.
+// Every route has this way in, transition 0, and it is where a question asked
+// once on the way in is declared. Go's acp.EntryNode.
+export const ENTRY_NODE = '@entry'
+
 export type FlowEdge = {
+
+    // A stage id, or ENTRY_NODE for the way onto the route.
     from: string
     to: string
+
+    // Empty on the way onto the route, which waits for no event: what fires it
+    // is the card arriving, which is the move itself.
     on: string
 
     // A condition makes the transition ask about the card: several conditional

@@ -186,7 +186,7 @@ func selectValues(props []CardProperty, name string) []string {
 // holdForAsk parks the card at a transition whose arrow asks something. It
 // reports whether the card was held; false means nothing was asked and the
 // caller carries on exactly as it did before this existed.
-func (m *Manager) holdForAsk(ev CardMoved, edge *FlowEdge, to FlowNode, move bool, on, detail, said string) bool {
+func (m *Manager) holdForAsk(ev CardMoved, edge *FlowEdge, flowID string, to FlowNode, move bool, on, detail, said string) bool {
 	questions := m.askQuestions(ev, edge)
 	if len(questions) == 0 {
 		return false
@@ -199,12 +199,23 @@ func (m *Manager) holdForAsk(ev CardMoved, edge *FlowEdge, to FlowNode, move boo
 	// The card stays on the stage it is leaving: it has not entered anything,
 	// and the flow state is what says where it stands.
 	st, ok, err := m.flowState(ev.CardID)
-	if err != nil || !ok {
-		// Nothing to hold: a card with no recorded place is a card the route
-		// is not tracking, and refusing to move it would strand it.
-		m.log.Warn("acp: a transition asks a question but the card has no place on the route",
-			"card", ev.CardID, "node", to.ID)
+	if err != nil {
+		m.log.Warn("acp: cannot read where the card stands on its route",
+			"card", ev.CardID, "node", to.ID, "err", err)
 		return false
+	}
+	if !ok {
+		// The way onto the route is the one transition crossed before the card
+		// has a place on the route at all, so there is no record to write the
+		// question onto and one is made here. It stands on no stage, which is
+		// the truth: the card is being held before the first one.
+		st = FlowState{CardID: ev.CardID, BoardID: ev.BoardID, FlowID: flowID}
+	}
+	if st.Ask != nil && st.Ask.ToNode == to.ID && st.Ask.Pending() {
+		// Already held at this very transition. A second board event about the
+		// same card — a property touched while it waits — must not reset the
+		// answers or announce the question again.
+		return true
 	}
 	st.Ask = ask
 	m.saveFlowState(st)

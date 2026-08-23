@@ -161,6 +161,32 @@ in more than one way and the answers differ: «Не начата» → «В ра
 somebody decides how the work will be arranged, and the same card coming back
 from a review has that decided already.
 
+### Transition 0: the way onto the route
+
+That first example needs an arrow that does not obviously exist. A route's
+first stage has nothing pointing at it — the card arrives from the backlog,
+from a source, from a hand dragging it in from anywhere the route does not pass
+through — so the one crossing where nothing about the work has been decided yet
+was the one crossing with nowhere to write a question on.
+
+So every route has a way in: an edge whose `from` is `@entry` (`acp.EntryNode`).
+It is an ordinary transition in every other respect — it carries questions, and
+the card is held on it exactly as it is held anywhere else — with three things
+that follow from having no stage behind it. It waits for no event, because what
+fires it is the card arriving. There is at most one per stage, because arriving
+from off the route is one situation. And it is skipped when the graph is walked
+backwards for what earlier stages write, because there is no earlier stage.
+
+A card that stood on no stage is read as coming from there, which is what makes
+a question on transition 0 asked exactly once: coming back to the first stage
+later arrives from a real stage of the route and asks nothing again.
+
+Every route gets one when it is built, and the shipped «Разработка» carries it
+on all three of its routes, asking how the agent is to work with the folder.
+The canvas does not draw it yet, so it cannot be edited there — but it survives
+every edit, because the diagram leaves out any arrow whose ends are not stages
+rather than dropping it from the route.
+
 - **«Как агенту работать с папкой»** — «своя копия папки» or «ветка в самой
   папке». The answer is not a card property: it is what the workspace is made
   of. It goes onto the card's flow state, from there into the checkout

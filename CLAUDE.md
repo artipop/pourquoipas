@@ -1536,7 +1536,27 @@ decisions are neither the agent's nor the board's — how the work is going to b
 arranged for *this* card. It hangs off the arrow rather than off the stage
 because one stage is entered in more than one way and the answers differ:
 «Не начата» → «В работе» is where somebody decides how the work is arranged, and
-the same card coming back from a review has that decided already. Two kinds,
+the same card coming back from a review has that decided already.
+
+**The way onto the route is transition 0** (`EntryNode`, `@entry`), and it had
+to exist before that first example was true of anything. A route's first stage
+has no arrow into it — the card arrives from the backlog, from a source, from a
+hand anywhere the route does not pass through — so the crossing where nothing
+about the work has been decided yet was the one crossing with nowhere to write a
+question. It is an ordinary edge whose `From` is `EntryNode`: at most one per
+stage, carrying no trigger (what fires it is the card arriving, which is the
+move itself) and no condition, skipped by `UpstreamWrites`, and invisible to
+`Next` because no stage has that id. `handleFlowMove` reads a card with no
+recorded place as coming from there, which is what makes the question asked once
+— coming back to the first stage later arrives from a real stage. It is also the
+one hold that has no flow state to write itself onto, so `holdForAsk` makes the
+record, standing on no stage.
+
+Every route gets one: `flowBuilder.node` adds it with the first stage, and the
+shipped «Разработка» carries it on all three routes asking `AskWorkMode`. The
+canvas does not draw it yet — an entry edge has no source box, and `FlowDiagram`
+already filters out edges whose ends are not stages, so it survives every edit
+round trip without being editable there. Two kinds,
 and the split is where the answer goes. `AskProperty` writes a board select
 onto the card, which is the dataflow above and nothing new. `AskWorkMode` is
 the machine's own — «своя копия папки» or «ветка в самой папке» — and it has no

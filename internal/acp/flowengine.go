@@ -54,12 +54,21 @@ func (m *Manager) handleFlowMove(ev CardMoved) bool {
 		defer m.wg.Done()
 		// A hand crossing the arrow crosses it whole: the card is already in
 		// the column the person dropped it in, so what is held back is the
-		// stage rather than the move. Only an arrow actually drawn between the
-		// two stages asks — a card dragged in from off the route has crossed
-		// nothing anybody described.
-		if st, ok, err := m.flowState(ev.CardID); err == nil && ok && st.NodeID != "" && st.NodeID != n.ID {
-			if edge := f.EdgeBetween(st.NodeID, n.ID); edge != nil &&
-				m.holdForAsk(ev, edge, n, false, "", "перенос вручную", "") {
+		// stage rather than the move.
+		//
+		// A card that stood on no stage came from off the route — the backlog,
+		// a source, a hand from anywhere the route does not pass through — and
+		// that is the way in rather than no arrow at all, so it crosses the
+		// route's entry transition. It is the one place a question can be asked
+		// once and hold for the whole route: coming back to this stage later
+		// arrives from a real stage and asks nothing again.
+		from := EntryNode
+		if st, ok, err := m.flowState(ev.CardID); err == nil && ok && st.NodeID != "" {
+			from = st.NodeID
+		}
+		if from != n.ID {
+			if edge := f.EdgeBetween(from, n.ID); edge != nil &&
+				m.holdForAsk(ev, edge, f.ID, n, false, "", "перенос вручную", "") {
 				return
 			}
 		}
@@ -387,7 +396,7 @@ func (m *Manager) advanceFlowWith(cardID, on, detail, agentText string) {
 	}
 	// An arrow that asks something holds the card on this side of it: nothing
 	// is started and the card keeps its place until somebody answers.
-	if m.holdForAsk(ev, edge, next, true, on, detail, agentText) {
+	if m.holdForAsk(ev, edge, flow.ID, next, true, on, detail, agentText) {
 		return
 	}
 	m.enterNode(ev, flow, next, true, on, detail, agentText)

@@ -72,6 +72,18 @@ func (b *flowBuilder) node(id, column, action string) string {
 		}
 	}
 	b.flow.Nodes = append(b.flow.Nodes, FlowNode{ID: id, Column: column, Action: action})
+
+	// Transition 0: the way onto the route, which every route has and none has
+	// to declare. It is where a card arrives from the backlog or from a source,
+	// and therefore the one crossing that happens exactly once — which is what
+	// makes it the place to ask how this card's work is to be arranged. Coming
+	// back to the first stage later arrives from a real stage and asks nothing.
+	if len(b.flow.Nodes) == 1 {
+		b.flow.Edges = append(b.flow.Edges, FlowEdge{
+			From: EntryNode, To: id,
+			Ask: []EdgeAsk{{ID: "workmode", Kind: AskWorkMode}},
+		})
+	}
 	return id
 }
 

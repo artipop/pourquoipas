@@ -219,7 +219,18 @@ func (n FlowNode) asColumn(property string) Column {
 
 // FlowEdge is one transition. On is a FlowTrigger kind; success/failure are the
 // node's own outcomes, which the editor shows as the node's two outputs.
+// EntryNode is the stage a card comes from when it comes from off the route:
+// the backlog, a source, a hand dragging it in from anywhere the route does not
+// pass through. Every route has this way in — it is the transition before the
+// first one — and an arrow out of it is where the questions asked once, on the
+// way in, are declared.
+//
+// Spelled with `@` for the reason nodeNone and nodeTalk are: a node id is a
+// board option id, and those are not made of it.
+const EntryNode = "@entry"
+
 type FlowEdge struct {
+	// From is a stage id, or EntryNode for the way onto the route.
 	From string `json:"from"`
 	To   string `json:"to"`
 	On   string `json:"on"`
@@ -384,7 +395,7 @@ func (f FlowEntry) UpstreamWrites(nodeID string, resolve func(FlowNode) []Proper
 		at := queue[0]
 		queue = queue[1:]
 		for _, e := range f.Edges {
-			if e.To != at || seen[e.From] {
+			if e.To != at || e.From == EntryNode || seen[e.From] {
 				continue
 			}
 			seen[e.From] = true
@@ -615,15 +626,37 @@ func validateFlow(f FlowEntry, workdirs []WorkdirEntry, agents []AgentEntry, dep
 	// them apart. What stays ambiguous, and refused, is two edges with nothing
 	// to tell them apart: two unconditional ones.
 	seenFallback := make(map[string]bool, len(f.Edges))
+	seenEntry := make(map[string]bool, len(f.Edges))
 	for i, e := range f.Edges {
 		e.From = strings.TrimSpace(e.From)
 		e.To = strings.TrimSpace(e.To)
 		e.On = strings.TrimSpace(e.On)
-		if !seenID[e.From] {
+		if e.From != EntryNode && !seenID[e.From] {
 			return FlowEntry{}, fmt.Errorf("переход ведёт из несуществующей стадии %q", e.From)
 		}
 		if !seenID[e.To] {
 			return FlowEntry{}, fmt.Errorf("переход из %q ведёт в несуществующую стадию %q", e.From, e.To)
+		}
+		// The way onto the route waits for no event: what fires it is the card
+		// arriving on the stage, which is the move itself. So it carries no
+		// trigger and none of the checks that are about one, and two of them
+		// into one stage is the ambiguity worth refusing — a card arrives from
+		// off the route in exactly one way.
+		if e.From == EntryNode {
+			if e.On != "" || e.If != nil {
+				return FlowEntry{}, fmt.Errorf("въезд на маршрут в стадию %q не ждёт события", e.To)
+			}
+			if seenEntry[e.To] {
+				return FlowEntry{}, fmt.Errorf("в стадию %q ведут два въезда на маршрут", e.To)
+			}
+			seenEntry[e.To] = true
+			ask, err := validateEdgeAsks(e.Ask)
+			if err != nil {
+				return FlowEntry{}, fmt.Errorf("въезд на маршрут: %w", err)
+			}
+			e.Ask = ask
+			f.Edges[i] = e
+			continue
 		}
 		trigger, ok := Trigger(e.On)
 		if !ok {

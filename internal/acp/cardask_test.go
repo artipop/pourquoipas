@@ -121,6 +121,69 @@ func TestDraggingACardAcrossAnArrowThatAsksHoldsTheStage(t *testing.T) {
 	}
 }
 
+// entryAskingFlow is sampleFlow with the question on transition 0 — the way onto
+// the route — rather than on an arrow between two of its stages.
+func entryAskingFlow(ask ...EdgeAsk) FlowEntry {
+	f := sampleFlow()
+	f.Edges = append(f.Edges, FlowEdge{From: EntryNode, To: "work", Ask: ask})
+	return f
+}
+
+// The way onto the route is a transition like any other, and it is the one a
+// card crosses when it arrives from the backlog: nothing about the route has
+// been decided yet, so this is where the machine may ask how the work is to be
+// arranged.
+func TestArrivingOnTheRouteCrossesTheEntryTransition(t *testing.T) {
+	m, _, events, project := flowManager(t, fakeClaudeHappy,
+		entryAskingFlow(EdgeAsk{ID: "q1", Kind: AskWorkMode}))
+	m.SetBoardCardState(&fakeCardState{})
+
+	events.ch <- flowEvent("card1", project, "Backlog", "To Agent")
+
+	waitFor(t, 20*time.Second, "the card is held on the way in", func() bool {
+		st, ok, err := m.flowState("card1")
+		return err == nil && ok && st.Ask != nil
+	})
+	m.mu.Lock()
+	_, running := m.byCard["card1"]
+	m.mu.Unlock()
+	if running {
+		t.Fatal("the first stage started under an unanswered question")
+	}
+
+	if err := m.AnswerCardAsk(context.Background(), "card1", "q1", WorkModeWorktree); err != nil {
+		t.Fatalf("answering: %v", err)
+	}
+	waitFor(t, 20*time.Second, "the card entered the first stage once it was answered", func() bool {
+		st, ok, err := m.flowState("card1")
+		return err == nil && ok && st.NodeID == "work" && st.Ask == nil
+	})
+	if st, _, _ := m.flowState("card1"); st.WorkMode != WorkModeWorktree {
+		t.Fatalf("the answer about the workspace was not kept: %q", st.WorkMode)
+	}
+}
+
+// Asked once, on the way in. A card sent back to the first stage from a real
+// stage of the route has crossed a different arrow, and how its work is
+// arranged was settled the first time — asking again would offer to rebuild a
+// workspace that already has the work in it.
+func TestComingBackToTheFirstStageDoesNotAskAgain(t *testing.T) {
+	m, _, events, project := flowManager(t, fakeClaudeHappy,
+		entryAskingFlow(EdgeAsk{ID: "q1", Kind: AskWorkMode}))
+	m.SetBoardCardState(&fakeCardState{})
+	m.saveFlowState(FlowState{CardID: "card1", BoardID: "board1", FlowID: m.Flows()[0].ID, NodeID: "review"})
+
+	events.ch <- flowEvent("card1", project, "Review", "To Agent")
+
+	waitFor(t, 20*time.Second, "the card entered the stage", func() bool {
+		st, ok, err := m.flowState("card1")
+		return err == nil && ok && st.NodeID == "work"
+	})
+	if st, _, _ := m.flowState("card1"); st.Ask != nil {
+		t.Fatalf("the way in asked a card that was already on the route: %+v", st.Ask)
+	}
+}
+
 // A question the board cannot answer is not a card parked for ever. The route
 // carried cards across this arrow before anybody wrote a question on it, and an
 // unanswerable one must not be the thing that stops it.

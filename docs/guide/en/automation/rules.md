@@ -73,6 +73,23 @@ The question is about this arrow, not about the stage. The arrow "Не нача�
 работе" asks; the way back, "На ревью → В работе", does not — there it is all
 settled already.
 
+### The way onto the route
+
+A route's first stage has no incoming arrow you can see: the card arrives there
+from "Не начата", from a source, or simply by hand — from somewhere the route
+does not pass through. That way in exists all the same, and it is a transition
+too: it can ask.
+
+In the «Разработка» template the way onto each route already asks how the agent
+is to work with the folder. So a card you drag from "Не начата" into "В работе"
+asks first and starts work afterwards, in the workspace you chose.
+
+It is asked once. A card coming back into "В работе" from a review arrived along
+an ordinary arrow of the route, and is asked nothing.
+
+The canvas does not draw the way in yet, so the question on it cannot be changed
+in the editor. Editing the route does not erase it either.
+
 If there is nothing to answer — the property was deleted from the board, or the
 card's folder is not a repository — the card moves on without the question. The
 route carried cards before anybody wrote a question on the arrow, and a
