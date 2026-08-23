@@ -20,6 +20,10 @@ import AppPanel from './appPanel'
 describe('components/settings/appPanel', () => {
     let store = mockAppStore({})
 
+    // Whether the panel is already on screen: `pick` renders it the first time
+    // and reopens the list after that.
+    let shown = false
+
     beforeEach(() => {
         vi.clearAllMocks()
         store = mockAppStore({})
@@ -31,6 +35,7 @@ describe('components/settings/appPanel', () => {
         setCustomThemeSource('light', '')
         setCustomThemeSource('dark', '')
         setCustomThemeName('')
+        shown = false
     })
 
     const open = () => render(() => wrapIntl(() =>
@@ -54,11 +59,15 @@ describe('components/settings/appPanel', () => {
 
     const openThemes = () => {
         open()
+        shown = true
         return dropTheList()
     }
 
+    // Renders the panel the first time and reopens the list after that: a test
+    // that picks twice was rendering a second panel over the first, and every
+    // query then found two of everything.
     const pick = async (name: string) => {
-        const menu = openThemes()
+        const menu = shown ? dropTheList() : openThemes()
         await waitFor(() => expect(document.querySelector('.Menu .menu-options')).toBeInTheDocument())
         userEvent.click(menu().getByRole('button', {name}))
     }
@@ -149,6 +158,29 @@ describe('components/settings/appPanel', () => {
             expect(JSON.parse(dark.value).centerChannelBg).toBe('#0c0c0e')
         })
         expect(document.documentElement.style.getPropertyValue('--canvas-rgb')).toBe('12, 12, 14')
+    })
+
+    // The switch on the custom slot is also what says which half the field
+    // holds, so a third answer would mean the text under the cursor changing
+    // when the machine goes dark at sunset. Picking the slot resolves the
+    // machine's answer rather than defaulting past it, so nothing on screen
+    // moves at the moment it is picked.
+    test('asks the custom slot for a half and not for the machine', async () => {
+        setThemeMode('system')
+        const before = document.documentElement.style.getPropertyValue('--canvas-rgb')
+
+        await pick('Custom config')
+        await screen.findByLabelText('Theme config')
+
+        expect(screen.queryByRole('button', {name: /^As the system is/})).not.toBeInTheDocument()
+        expect(screen.getByRole('button', {name: /^Light/})).toBeInTheDocument()
+        expect(screen.getByRole('button', {name: /^Dark/})).toBeInTheDocument()
+        expect(document.documentElement.style.getPropertyValue('--canvas-rgb')).toBe(before)
+
+        // And it is on offer again the moment the theme is one this build keeps
+        // both halves of.
+        await pick('Gruvbox')
+        expect(screen.getByRole('button', {name: /^As the system is/})).toBeInTheDocument()
     })
 
     // Not "go back to the theme I had" — the list does that. This is the only

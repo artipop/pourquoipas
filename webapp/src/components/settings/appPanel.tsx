@@ -22,7 +22,7 @@ import {
     ThemeConfigError,
     ThemeHalf,
     ThemeMode,
-    themeModes,
+    modesFor,
     ThemeName,
     THEME_FAMILIES,
 } from '../../theme'
@@ -58,6 +58,9 @@ import './appPanel.scss'
 // column, so picking a design meant also deciding a polarity, and following the
 // system meant giving up every design but ours. Three answers, so they are laid
 // out — the rule the themes are the exception to.
+//
+// Two answers on the custom slot, where the same switch also says which half
+// the field holds: `modesFor`.
 
 const AppPanel = () => {
     const intl = useIntl()
@@ -224,7 +227,7 @@ const AppPanel = () => {
                         {intl.formatMessage({id: 'Settings.theme-mode', defaultMessage: 'Light or dark'})}
                     </h4>
                     <div class='AppPanel__choices'>
-                        <For each={themeModes}>
+                        <For each={modesFor(themeName())}>
                             {(value) => (
                                 <button
                                     type='button'
@@ -282,11 +285,11 @@ const AppPanel = () => {
                                 {half() === 'dark' ?
                                     intl.formatMessage({
                                         id: 'Settings.theme-custom-editing-dark',
-                                        defaultMessage: 'The dark half is the one being edited: the switch above picks it.',
+                                        defaultMessage: 'The switch above picks the half: the dark one is the one being edited.',
                                     }) :
                                     intl.formatMessage({
                                         id: 'Settings.theme-custom-editing-light',
-                                        defaultMessage: 'The light half is the one being edited: the switch above picks it.',
+                                        defaultMessage: 'The switch above picks the half: the light one is the one being edited.',
                                     })}
                                 {' '}
                                 <a

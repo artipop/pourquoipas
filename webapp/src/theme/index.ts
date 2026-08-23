@@ -42,6 +42,28 @@ export type ThemeMode = 'light' | 'dark' | 'system'
 
 export const themeModes: ThemeMode[] = ['light', 'dark', 'system']
 
+// Which answers the switch offers, which is not the same list everywhere.
+//
+// A shipped theme is a pair somebody else keeps in step, so «как в системе» is
+// a real answer there: the board follows the machine and both halves are
+// already written. The slot you paste into is a pair *you* are writing, and
+// there the switch is also what says which half the field holds — so a third
+// answer would mean the text under the cursor changes when the machine goes
+// dark at sunset. Two halves, and you say which.
+export function modesFor(familyId: ThemeName): ThemeMode[] {
+    return familyId === customThemeName ? ['light', 'dark'] : themeModes
+}
+
+// The mode a theme can actually be worn in, with `system` resolved where it is
+// not on offer. Resolved rather than defaulted, so picking the custom slot does
+// not change what is on screen at the moment it is picked.
+function modeFor(familyId: ThemeName, mode: ThemeMode): ThemeMode {
+    if (modesFor(familyId).includes(mode)) {
+        return mode
+    }
+    return wantsDark(mode) ? 'dark' : 'light'
+}
+
 export type ThemeName = string
 
 export {THEME_FAMILIES, SHIPPED_VARIANTS, ThemeConfigError}
@@ -139,6 +161,12 @@ function apply(familyId: ThemeName, mode: ThemeMode): void {
 export function setTheme(familyId: ThemeName): ThemeName {
     activeFamilyId = familyId
     UserSettings.theme = familyId
+
+    const mode = modeFor(familyId, activeMode)
+    if (mode !== activeMode) {
+        activeMode = mode
+        UserSettings.themeMode = mode
+    }
     apply(activeFamilyId, activeMode)
     return familyId
 }
@@ -224,6 +252,8 @@ export function loadTheme(): ThemeName {
             }
         }
     }
+
+    activeMode = modeFor(activeFamilyId, activeMode)
 
     try {
         apply(activeFamilyId, activeMode)

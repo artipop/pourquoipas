@@ -40,6 +40,13 @@ field is editing is said by the same "Light or dark" switch: stand on "Dark" and
 the field holds the dark half. A half you have not written is taken from the one
 you have, so a single config is enough.
 
+On a theme of your own the switch offers two answers rather than three: there is
+no "As the system is". That same switch says which half is in the field, and a
+third answer would mean the text under the cursor changing by itself when the
+system goes dark in the evening. You pick the half. If "As the system is" was
+on, moving to the custom config turns it into whichever half is on screen at
+that moment, so nothing jumps.
+
 The first time you pick "Custom config", both halves are filled with a copy of
 the theme that was on screen: what you get is a fork of it to edit rather than
 an empty field.
