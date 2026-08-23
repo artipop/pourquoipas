@@ -19,7 +19,12 @@
 
     .FlowDiagram__stage {
         width: 190px;
-        height: 58px;
+
+        // The base of stageHeight(), which the canvas is told before it paints:
+        // a stage with outputs stands WRITE_ROW taller and says so here rather
+        // than measuring, or the arrows would be drawn from the wrong corner on
+        // the first frame. Keep the two in step.
+        min-height: 58px;
         box-sizing: border-box;
         padding: 8px 10px;
         border: 1px solid rgba(var(--center-channel-color-rgb), 0.32);
@@ -27,6 +32,33 @@
         border-radius: var(--radius-md);
         background: rgb(var(--surface-bg-rgb));
         overflow: hidden;
+    }
+
+    // What the stage leaves on the card. A branchable one is also the port a
+    // fork is pulled from, so it is drawn as something to grab: the ordinary
+    // chip is quiet, this one carries the board's own ink.
+    .FlowDiagram__writes {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 4px;
+        margin-top: 3px;
+        overflow: hidden;
+    }
+
+    .FlowDiagram__write {
+        position: relative;
+        padding: 1px 5px;
+        border-radius: var(--radius-sm);
+        background: rgba(var(--center-channel-color-rgb), 0.08);
+        color: rgba(var(--center-channel-color-rgb), 0.56);
+        font-size: 10px;
+        line-height: 14px;
+        white-space: nowrap;
+    }
+
+    .FlowDiagram__write--branchable {
+        background: rgba(var(--link-color-rgb), 0.12);
+        color: rgba(var(--link-color-rgb), 1);
     }
 
     // The left edge says what happens in the stage, so a route can be read
@@ -134,17 +166,58 @@
             background: rgba(var(--center-channel-color-rgb), 0.4);
         }
 
+        // A data port sits under its own chip, and is the colour of the chip:
+        // what it produces is what the arrow will ask about.
+        .FlowDiagram__out--write {
+            background: rgba(var(--link-color-rgb), 1);
+        }
+
         .solid-flow__handle-left {
             background: rgba(var(--center-channel-color-rgb), 0.32);
         }
     }
 
-    // The label of an awaited event. It is an HTML box over the canvas rather
-    // than SVG text, so it is painted, not filled.
+    // The end of an arrow, shown while it is selected: the box is what the
+    // pointer has to land in and draws nothing, the mark inside it is what a
+    // person sees — a ring rather than a disc, because a filled one blots out
+    // the very line it is offering to move. Both sizes are stated in
+    // flowDiagram.tsx, since the canvas draws in flow units and a size has to
+    // answer the zoom.
+    .FlowDiagram__anchor {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .FlowDiagram__anchorMark {
+        // Overwritten inline with the same thickness divided by the zoom; this
+        // is what the outline is if that never lands.
+        --mark-ring: 2px;
+
+        box-sizing: border-box;
+        flex: none;
+
+        // The mark is what a person sees, the box around it is the control —
+        // so the pointer goes past it to the box.
+        pointer-events: none;
+        border-radius: 50%;
+        background: transparent;
+        box-shadow: 0 0 0 var(--mark-ring) rgb(var(--error-text-rgb)) inset, 0 0 0 var(--mark-ring) rgba(var(--center-channel-bg-rgb), 0.9);
+    }
+
+    // The caption of an awaited event. It is an HTML box over the canvas rather
+    // than SVG text, so it is painted, not filled — and the paint is on our own
+    // span rather than on the library's wrapper, because an arrow's ends are
+    // wrapped in that same class: a background there put a white square over
+    // the stage the end sits on.
     .solid-flow__edge-label {
+        background: transparent;
+        font-size: 10px;
+    }
+
+    .FlowDiagram__edgeLabel {
         color: rgba(var(--center-channel-color-rgb), 0.72);
         background: rgb(var(--surface-bg-rgb));
-        font-size: 10px;
     }
 
     .solid-flow__controls-button {

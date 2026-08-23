@@ -116,6 +116,25 @@ type Flow struct {
 
 // CardInfo is a card read back. Body and the route fields are filled in for one
 // card asked about by itself; a listing carries neither.
+// FieldInfo is one property of the board's cards, as an agent needs it: what it
+// is called, what a value may be, and whether the stage this run is must report
+// it. Named and never identified, like everything else here.
+type FieldInfo struct {
+	Name string
+	// Kind is the property's type as the board has it, which decides how a
+	// value is read: "select" takes one of Values, everything else takes text.
+	Kind string
+	// Values is the closed set, for a select. Empty for the rest.
+	Values []string
+	// Writable says a stage can put a value here at all. The board's own
+	// bookkeeping — who made the card, when — cannot be written to.
+	Writable bool
+	// Declared says this stage names the property among its outputs, and
+	// Required that it cannot end without a value for it.
+	Declared bool
+	Required bool
+}
+
 type CardInfo struct {
 	ID      string
 	Title   string
@@ -153,6 +172,12 @@ type Board interface {
 	// Cards lists the board's cards, optionally only those in one column.
 	Cards(ctx context.Context, column string) ([]CardInfo, error)
 	Card(ctx context.Context, cardID string) (CardInfo, error)
+	// Fields is the board's card properties: what may be written where, and
+	// which of them this stage has to deliver. It exists because the properties
+	// a stage writes are named in its brief and nothing else describes them —
+	// an agent that wants to check what «Вердикт» accepts before reporting has
+	// no other way to find out but to be refused.
+	Fields(ctx context.Context) ([]FieldInfo, error)
 	// CreateCards attempts every card and reports on each: a plan is a list,
 	// and one bad column in it must not cost the other four.
 	CreateCards(ctx context.Context, cards []Card) ([]CardResult, error)
@@ -227,6 +252,48 @@ type finishInput struct {
 
 type noInput struct{}
 
+// fieldLine is one property as the model reads it: what it is called, what a
+// value may be, and what this stage owes on it. The contract comes first among
+// the suffixes — a required write is the one thing here that can stop a stage
+// from ending, so it must not be buried under "read-only".
+func fieldLine(f FieldInfo) string {
+	line := fmt.Sprintf("- %s — %s", f.Name, fieldShape(f))
+	switch {
+	case f.Required:
+		line += "; this stage must report it"
+	case f.Declared:
+		line += "; this stage reports it"
+	case !f.Writable:
+		line += "; read-only"
+	}
+	return line
+}
+
+// fieldShape is what a value for a property may be, in the words a model needs.
+func fieldShape(f FieldInfo) string {
+	if len(f.Values) > 0 {
+		return "one of " + strings.Join(f.Values, ", ")
+	}
+	switch f.Kind {
+	case "url":
+		return "a link"
+	case "number":
+		return "a number"
+	case "email":
+		return "an email address"
+	case "phone":
+		return "a phone number"
+	case "date":
+		return "a date"
+	case "person", "multiPerson":
+		return "a person"
+	case "checkbox":
+		return "yes or no"
+	default:
+		return "text"
+	}
+}
+
 // NewServer exposes one board's operations as tools.
 func NewServer(board Board) *mcp.Server {
 	srv := mcp.NewServer(
@@ -286,6 +353,28 @@ func NewServer(board Board) *mcp.Server {
 				}
 				b.WriteString("\n")
 			}
+		}
+		return textResult(strings.TrimSpace(b.String())), nil, nil
+	})
+
+	mcp.AddTool(srv, &mcp.Tool{
+		Name: "list_card_fields",
+		Description: "The board's card properties: what each one is called, what a value for it may be, " +
+			"and which of them this stage has to report through finish_work. Read it before reporting " +
+			"if you are unsure what a property accepts — a property with a set of values takes one of " +
+			"those names and nothing else.",
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, _ noInput) (*mcp.CallToolResult, any, error) {
+		fields, err := board.Fields(ctx)
+		if err != nil {
+			return errorResult("%v", err), nil, nil
+		}
+		if len(fields) == 0 {
+			return textResult("This board's cards have no properties besides their title."), nil, nil
+		}
+		var b strings.Builder
+		for _, f := range fields {
+			b.WriteString(fieldLine(f))
+			b.WriteString("\n")
 		}
 		return textResult(strings.TrimSpace(b.String())), nil, nil
 	})

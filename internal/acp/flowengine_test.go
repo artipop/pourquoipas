@@ -113,6 +113,57 @@ func TestFlowTakesTheFailureBranch(t *testing.T) {
 	})
 }
 
+// How a stage ended is a fact about the card, and it used to be expressible
+// only as *where the card went* — a board grew «Проверено», «Не прошло» and
+// «Заблокировано» columns whose whole content was one fact about the stage
+// before them. The engine writes it, for every stage and without anybody
+// declaring it, which is what makes those columns unnecessary.
+func TestEveryStageWritesItsOutcomeOntoTheCard(t *testing.T) {
+	m, writer, events, project := flowManager(t, fakeClaudeHappy, sampleFlow())
+	m.SetBoardMeta(&fakeBoardMeta{props: map[string]any{BoardPropOutcome: "prop-outcome"}})
+
+	events.ch <- flowEvent("card-out", project, "Backlog", "To Agent")
+
+	waitFor(t, 20*time.Second, "the outcome lands on the card", func() bool {
+		return writer.cardText("card-out", "prop-outcome") == OutcomePassed
+	})
+}
+
+// And a stage that stops the route still says why it stopped: the card parks
+// where it is, and the outcome is on it — which is the whole of what a column
+// called «Не прошло» used to carry.
+func TestAStageThatStopsTheRouteStillWritesItsOutcome(t *testing.T) {
+	flow := sampleFlow()
+	flow.Edges = nil
+	m, writer, events, project := flowManager(t, fakeClaudeCrash, flow)
+	m.SetBoardMeta(&fakeBoardMeta{props: map[string]any{BoardPropOutcome: "prop-outcome"}})
+
+	events.ch <- flowEvent("card-stop", project, "Backlog", "To Agent")
+
+	waitFor(t, 20*time.Second, "the failure is on the card", func() bool {
+		return writer.cardText("card-stop", "prop-outcome") == OutcomeFailed
+	})
+	if moves := writer.cardMoves(); len(moves) != 0 {
+		t.Fatalf("the card should have stayed put: %+v", moves)
+	}
+}
+
+// A board with no such field gets nothing rather than an error — every board
+// made before this existed, and one whose owner deleted the field.
+func TestABoardWithoutTheOutcomeFieldIsLeftAlone(t *testing.T) {
+	m, writer, events, project := flowManager(t, fakeClaudeHappy, sampleFlow())
+	m.SetBoardMeta(&fakeBoardMeta{})
+
+	events.ch <- flowEvent("card-none", project, "Backlog", "To Agent")
+
+	waitFor(t, 20*time.Second, "the card still travels", func() bool {
+		return len(writer.cardMoves()) == 1
+	})
+	if got := writer.cardText("card-none", "prop-outcome"); got != "" {
+		t.Errorf("something was written to a board that has no outcome field: %q", got)
+	}
+}
+
 func TestFlowWithoutAnEdgeLeavesTheCardPut(t *testing.T) {
 	flow := sampleFlow()
 	flow.Edges = nil // the stage runs, but nothing follows it
@@ -241,6 +292,126 @@ func TestFlowDraggedOffTheRouteForgetsTheCard(t *testing.T) {
 		_, ok, _ := m.store.FlowStateForCard("card5")
 		return !ok
 	})
+}
+
+// Nothing runs in a review column, so it has no failure of its own to leave by
+// — and until this the card just stood there, which is what a route missing an
+// arrow looks like. The way back is a person saying so on the card: «Исход» set
+// to «не прошло», which is the same field a stage that *does* run writes.
+func TestAReviewThatSaysNoSendsTheCardBack(t *testing.T) {
+	flow := sampleFlow()
+	flow.Edges = append(flow.Edges, FlowEdge{
+		From: "review", To: "work", On: TriggerCardChanged,
+		If: &EdgeCond{Property: OutcomePropertyTitle, Value: OutcomeFailed},
+	})
+	m, writer, events, project := flowManager(t, fakeClaudeHappy, flow)
+
+	// The condition asks the *card*, re-read at the moment the event arrives —
+	// not the event — so the reviewer's mark has to be on it.
+	m.SetBoardReader(&fakeReader{ev: CardMoved{
+		BoardID:     "board1",
+		Title:       "Test task",
+		Props:       map[string]string{"branch": flowTestBranch, "исход": OutcomeFailed},
+		OptionNames: []string{testWorkdirName},
+	}})
+
+	events.ch <- flowEvent("card-rev", project, "Backlog", "To Agent")
+	waitFor(t, 20*time.Second, "the card reaches review", func() bool {
+		st, ok, _ := m.store.FlowStateForCard("card-rev")
+		return ok && st.NodeID == "review"
+	})
+
+	// The reviewer marks it. That is an ordinary select change on the card, and
+	// the only edge watching this property is the one out of «review».
+	rejected := flowEvent("card-rev", project, "", OutcomeFailed)
+	rejected.FromColumn.PropertyName = OutcomePropertyTitle
+	rejected.ToColumn.PropertyName = OutcomePropertyTitle
+	rejected.ToColumn.Name = OutcomeFailed
+	rejected.Props = map[string]string{"branch": flowTestBranch, "исход": OutcomeFailed}
+	events.ch <- rejected
+
+	waitFor(t, 20*time.Second, "the card goes back to the agent", func() bool {
+		moves := writer.cardMoves()
+		return len(moves) > 0 && moves[len(moves)-1].option == "To Agent"
+	})
+}
+
+// A stage where nobody works and nothing runs waits for a person, and the card
+// offers what they can say: two answers, each named by the stage it leads to.
+// Picking one out of a field on the card is what this replaces.
+func TestAWaitStageOffersTheCardTwoAnswers(t *testing.T) {
+	flow := sampleFlow()
+	flow.Edges = append(flow.Edges,
+		FlowEdge{From: "review", To: "work", On: TriggerCardChanged,
+			If: &EdgeCond{Property: OutcomePropertyTitle, Value: OutcomeFailed}},
+		FlowEdge{From: "review", To: "blocked", On: TriggerCardChanged,
+			If: &EdgeCond{Property: OutcomePropertyTitle, Value: OutcomePassed}},
+	)
+	m, _, events, project := flowManager(t, fakeClaudeHappy, flow)
+
+	events.ch <- flowEvent("card-marks", project, "Backlog", "To Agent")
+	waitFor(t, 20*time.Second, "the card reaches review", func() bool {
+		st, ok, _ := m.store.FlowStateForCard("card-marks")
+		return ok && st.NodeID == "review"
+	})
+
+	cf, err := m.CardFlowFor("card-marks")
+	if err != nil || cf == nil {
+		t.Fatalf("no card flow: %v", err)
+	}
+	if len(cf.Marks) != 2 {
+		t.Fatalf("the card offers %d answers: %+v", len(cf.Marks), cf.Marks)
+	}
+	by := map[string]CardFlowMark{}
+	for _, mk := range cf.Marks {
+		by[mk.Value] = mk
+	}
+	if got := by[OutcomePassed]; got.Column != "Blocked" || !got.Forward {
+		t.Errorf("«%s» reads as %+v", OutcomePassed, got)
+	}
+	if got := by[OutcomeFailed]; got.Column != "To Agent" || got.Forward {
+		t.Errorf("«%s» reads as %+v", OutcomeFailed, got)
+	}
+}
+
+// A stage that decides for itself offers nothing: the agent reports, and two
+// buttons beside a running session would be a second way to answer for it.
+func TestAWorkingStageOffersNoAnswers(t *testing.T) {
+	m, _, events, project := flowManager(t, fakeClaudeHappy, sampleFlow())
+
+	events.ch <- flowEvent("card-none-marks", project, "Backlog", "To Agent")
+	waitFor(t, 20*time.Second, "the card is on the route", func() bool {
+		_, ok, _ := m.store.FlowStateForCard("card-none-marks")
+		return ok
+	})
+	cf, err := m.CardFlowFor("card-none-marks")
+	if err != nil || cf == nil {
+		t.Fatalf("no card flow: %v", err)
+	}
+	if len(cf.Marks) != 0 {
+		t.Errorf("a stage nobody has to answer for offers %+v", cf.Marks)
+	}
+}
+
+// And the engine's own write of that same field must never fire it: a stage
+// that passed would otherwise mark the card and wake the arrow watching for a
+// rejection. SetCardOption disables the notify, which is what keeps them apart.
+func TestTheEnginesOwnOutcomeWriteDoesNotWakeARoute(t *testing.T) {
+	m, writer, _, _ := testManager(t, "idle", nil)
+	m.SetBoardMeta(&fakeBoardMeta{props: map[string]any{BoardPropOutcome: "prop-outcome"}})
+	m.rootCtx = context.Background()
+
+	m.writeCardOutcome("card-silent", "board1", TriggerFailure)
+
+	if got := writer.cardText("card-silent", "prop-outcome"); got != OutcomeFailed {
+		t.Fatalf("the outcome did not land: %q", got)
+	}
+	// The fake writer records the call; what matters is that the real one is
+	// asked to keep it silent, which SetCardOption does and SetCardFields does
+	// for the same reason.
+	if moves := writer.cardMoves(); len(moves) != 0 {
+		t.Errorf("writing an outcome moved the card: %+v", moves)
+	}
 }
 
 func TestFlowIgnoresOtherProperties(t *testing.T) {

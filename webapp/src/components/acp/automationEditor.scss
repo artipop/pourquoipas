@@ -3,6 +3,15 @@
 // The canvas is the wide half on purpose: the picture is the point, the panel
 // is a caption.
 .AutomationEditor {
+    // Dragging an arrow out of a socket selected everything the pointer crossed
+    // — the panel's captions, the stage names, whatever the drag passed over —
+    // because a pointerdown on a handle is not a text gesture and the browser
+    // has no way to know that. The canvas already says so for itself; this is
+    // for the half of the editor a drag ends up over.
+    //
+    // Anything a person actually types in says otherwise, below.
+    user-select: none;
+
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -47,6 +56,15 @@
         // shrinks below its content (automationDialog.scss), so this only ever
         // distributes growth.
         flex: 1 1 auto;
+
+        // **The row's height is the canvas's, never the panel's.** The panel is
+        // taken out of the flow and stretched to the row instead, because a
+        // panel that is as tall as its own fields made selecting a stage resize
+        // the canvas — a deploy column's settings took the row from 713 to 1077
+        // — and a canvas that changes size re-fits its camera. So every click on
+        // a stage threw the picture across the screen, and a click that began a
+        // drag threw it mid-gesture.
+        position: relative;
     }
 
     // The buttons carry the colour of the stage they become and nothing else:
@@ -92,6 +110,10 @@
     .AutomationEditor__canvas {
         flex: 1 1 auto;
 
+        // The panel floats over the row's right edge, so the canvas keeps clear
+        // of it by hand: 300 of panel and the row's own 12 of gap.
+        margin-right: 312px;
+
         // Never below this: the panel is a fixed column, and on a narrow
         // window `min-width: 0` let it squeeze the canvas — the point of the
         // screen — into a sliver.
@@ -113,7 +135,13 @@
     }
 
     .AutomationEditor__panel {
-        flex: 0 0 300px;
+        // Out of the row's height calculation — see __body. Width is stated
+        // rather than flexed for the same reason: it is not a flex item now.
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: 300px;
 
         // Without this the panel is only as narrow as its widest select, and a
         // long column name in one of them pushed its content half again past
@@ -170,11 +198,37 @@
             gap: 6px;
         }
 
+        // The form that makes a board property, opened from the writes picker
+        // and inset so it reads as belonging to the field above it rather than
+        // as the next question in the panel.
+        .AutomationEditor__newProperty {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 4px;
+            padding: 8px;
+            border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+            border-radius: var(--radius-sm);
+            background: rgba(var(--center-channel-color-rgb), 0.04);
+        }
+
+        .AutomationEditor__newPropertyActions {
+            display: flex;
+            gap: 8px;
+        }
+
         .AutomationEditor__writeRow {
             display: flex;
             align-items: center;
             gap: 8px;
             min-width: 0;
+        }
+
+        // What the route hands over by itself: shown, not edited — the same
+        // voice the crew's and the prompt's inherited answers are named in.
+        .AutomationEditor__writeRow--inherited .AutomationEditor__writeName {
+            color: rgba(var(--center-channel-color-rgb), 0.56);
+            font-style: italic;
         }
 
         .AutomationEditor__writeName {
@@ -248,6 +302,17 @@
         color: rgba(var(--center-channel-color-rgb), 0.64);
     }
 
+    // A caption and the control under it. `label` is the same shape and is kept
+    // for the controls a label may legitimately own — an input, a textarea, a
+    // checkbox — where forwarding the caption's click is what a person expects.
+    // A Select is not one of those: it is a <button>, which is labelable too, so
+    // a caption click opened the menu.
+    input,
+    textarea {
+        user-select: text;
+    }
+
+    .AutomationEditor__field,
     label {
         display: flex;
         flex-direction: column;
@@ -400,7 +465,16 @@
             flex-direction: column;
         }
 
+        .AutomationEditor__canvas {
+            // The panel is under the canvas here, not beside it.
+            margin-right: 0;
+        }
+
         .AutomationEditor__panel {
+            // Back into the flow: stacked, its height is the point rather than
+            // something to keep out of the canvas's way.
+            position: static;
+            width: auto;
             flex: 0 0 auto;
 
             // It is no longer a column of its own height, so it scrolls with

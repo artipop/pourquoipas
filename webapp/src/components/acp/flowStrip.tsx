@@ -22,6 +22,15 @@ export type CardFlowStage = {
     done: boolean
 }
 
+// CardFlowMark is a move a person can make from where the card stands: the
+// value they put in the outcome field, and the stage it leads to. Two at most,
+// and they are the whole of what a wait stage asks.
+export type CardFlowMark = {
+    value: string
+    column: string
+    forward: boolean
+}
+
 export type CardFlow = {
     flow: string
     stages: CardFlowStage[]
@@ -35,6 +44,10 @@ export type CardFlow = {
     // Why nothing is happening, when the machinery knows — a stage that would
     // not start, an event with no edge. This used to be a comment on the card.
     stalled?: string
+
+    // What a person can say from here — see CardFlowMark. Absent wherever the
+    // route decides for itself.
+    marks?: CardFlowMark[]
 }
 
 export function isFlowStripAvailable(): boolean {
@@ -99,6 +112,24 @@ const FlowStrip = (props: Props) => {
         onCleanup(() => off?.())
     })
 
+    // Marking is a write to the board, and the board tells the route, and the
+    // route moves the card — so what comes back is a card standing somewhere
+    // else. Refreshed rather than assumed: the mark may lead nowhere if
+    // somebody edited the route while this card sat here.
+    const [marking, setMarking] = createSignal(false)
+    const answer = async (choice: CardFlowMark) => {
+        if (!bindings?.MarkCardOutcome || marking()) {
+            return
+        }
+        setMarking(true)
+        try {
+            await bindings.MarkCardOutcome(props.cardId, choice.value)
+        } finally {
+            setMarking(false)
+        }
+        await refresh()
+    }
+
     const since = () => {
         const age = waited(flow()?.since, Date.now())
         return age === null ? '' : sinceLabel(intl as Parameters<typeof sinceLabel>[0], age)
@@ -142,6 +173,32 @@ const FlowStrip = (props: Props) => {
                         )}
                     </For>
                 </div>
+                {/* A stage where nobody works and nothing runs waits for a
+                    person to say how it went, and saying so used to mean
+                    finding a field on the card and picking a value out of it.
+                    There are two answers and the route knows where each leads,
+                    so they are two buttons naming the stage they lead to. */}
+                <Show when={(flow()!.marks || []).length > 0 && !flow()!.running}>
+                    <div class='FlowStrip__marks'>
+                        <For each={flow()!.marks}>
+                            {(mark) => (
+                                <button
+                                    type='button'
+                                    class={`FlowStrip__mark${mark.forward ? ' FlowStrip__mark--forward' : ' FlowStrip__mark--back'}`}
+                                    disabled={marking()}
+                                    title={intl.formatMessage(
+                                        {id: 'FlowStrip.mark-title', defaultMessage: 'Mark “{value}” — the card goes to “{column}”'},
+                                        {value: mark.value, column: mark.column},
+                                    )}
+                                    onClick={() => answer(mark)}
+                                >
+                                    {mark.forward ? `${mark.column} →` : `← ${mark.column}`}
+                                </button>
+                            )}
+                        </For>
+                    </div>
+                </Show>
+
                 <div
                     class='FlowStrip__status'
                     classList={{'FlowStrip__status--stalled': Boolean(flow()?.stalled) && !flow()?.running && !flow()?.queued}}

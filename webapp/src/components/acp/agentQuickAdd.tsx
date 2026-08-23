@@ -105,15 +105,18 @@ const AgentQuickAdd = (props: Props) => {
                     onInput={(e) => setName(e.currentTarget.value)}
                 />
             </label>
-            <label class='AgentQuickAdd__field'>
-                {intl.formatMessage({id: 'AgentQuickAdd.kind', defaultMessage: 'Kind'})}
+            {/* Not a <label>: the Select's trigger is a <button>, which a label
+                counts as its control, so a click on the caption opened the
+                menu. The field is named through the Select's own label prop. */}
+            <div class='AgentQuickAdd__field'>
+                <span>{intl.formatMessage({id: 'AgentQuickAdd.kind', defaultMessage: 'Kind'})}</span>
                 <Select
                     value={kind()}
                     options={AGENT_KINDS}
                     onChange={setKind}
                     label={intl.formatMessage({id: 'AgentQuickAdd.kind', defaultMessage: 'Kind'})}
                 />
-            </label>
+            </div>
 
             <Show when={adapter() && !adapter()!.ready}>
                 <div class='AgentQuickAdd__warning'>

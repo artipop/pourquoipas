@@ -1,6 +1,11 @@
 package acp
 
-import "time"
+import (
+	"context"
+	"fmt"
+	"strings"
+	"time"
+)
 
 // What a card can say about itself: which route it is on, where along it it
 // stands, and what it is waiting for. The card shows this instead of making
@@ -14,6 +19,22 @@ type CardFlowStage struct {
 	Crew    []string `json:"crew,omitempty"` // who works it
 	Current bool     `json:"current"`
 	Done    bool     `json:"done"` // the card has already been through it
+}
+
+// CardFlowMark is a way a person can move the card from where it stands: the
+// value they would put in the outcome field, and the stage that value leads to.
+//
+// It exists because a wait stage is one where nobody works and nothing runs —
+// the card sits until a person says how it went — and saying so was picking a
+// value out of a field on the card, three clicks from the card's face. There
+// are two answers and the route already knows where each of them leads, so the
+// card can offer them as what they are: forward, and back.
+type CardFlowMark struct {
+	Value  string `json:"value"`
+	Column string `json:"column"`
+	// Forward is the answer that carries the work on, as against the one that
+	// sends it back. It decides which way the arrow points and nothing else.
+	Forward bool `json:"forward"`
 }
 
 // CardFlow is the whole answer for one card.
@@ -31,6 +52,10 @@ type CardFlow struct {
 	// to be a comment on the card; it is state, so it lives here and goes away
 	// with the next progress.
 	Stalled string `json:"stalled,omitempty"`
+	// Marks are the moves a person can make from here — see CardFlowMark. Empty
+	// wherever the route does not offer one, which is every stage that decides
+	// for itself.
+	Marks []CardFlowMark `json:"marks,omitempty"`
 }
 
 // CardFlowFor describes where a card stands on its route. It returns nothing —
@@ -91,6 +116,7 @@ func (m *Manager) CardFlowFor(cardID string) (*CardFlow, error) {
 	// Conditions included: a condition on a card property is the
 	// answer to "what is this card waiting for", the kind alone is not.
 	out.WaitingFor = append(out.WaitingFor, flow.WaitDescriptions(st.NodeID)...)
+	out.Marks = m.marksFrom(flow, st.NodeID)
 
 	m.mu.Lock()
 	_, out.Running = m.byCard[cardID]
@@ -217,4 +243,92 @@ func (m *Manager) BoardFlowOverview(boardID string) ([]FlowOverview, error) {
 		out = append(out, view)
 	}
 	return out, nil
+}
+
+// marksFrom is what a person can say from this stage: the route's own
+// card.changed edges that ask about the outcome field, named by where they
+// lead. Only those — an edge waiting on a merged branch is the world's answer
+// and not a person's, and an edge on a stage's own outcome belongs to whatever
+// runs there.
+func (m *Manager) marksFrom(flow FlowEntry, nodeID string) []CardFlowMark {
+	var out []CardFlowMark
+	for _, e := range flow.Edges {
+		if e.From != nodeID || e.On != TriggerCardChanged || e.If == nil {
+			continue
+		}
+		if !strings.EqualFold(e.If.Property, OutcomePropertyTitle) {
+			continue
+		}
+		node, ok := flow.Node(e.To)
+		if !ok {
+			continue
+		}
+		out = append(out, CardFlowMark{
+			Value:   e.If.Value,
+			Column:  node.Column,
+			Forward: strings.EqualFold(e.If.Value, OutcomePassed),
+		})
+	}
+	return out
+}
+
+// CardMarksForBoard is the same two answers, for every card of one board that
+// stands somewhere offering them — keyed by card id.
+//
+// Asked this way round because the board needs it per card and has as many
+// cards as it likes: a call each would be a round trip to Go for every card
+// drawn. The same bargain ListTerminals takes for the console button.
+func (m *Manager) CardMarksForBoard(boardID string) map[string][]CardFlowMark {
+	out := map[string][]CardFlowMark{}
+	if strings.TrimSpace(boardID) == "" || m.store == nil {
+		return out
+	}
+	states, err := m.flowStates()
+	if err != nil {
+		m.log.Warn("acp: cannot read where the cards stand", "board", boardID, "err", err)
+		return out
+	}
+	for _, st := range states {
+		if st.BoardID != boardID {
+			continue
+		}
+		flow, ok := m.FlowByID(st.FlowID)
+		if !ok {
+			continue
+		}
+
+		// A stage that is working answers for itself; two buttons beside a
+		// running session would be a second way to answer for it.
+		m.mu.Lock()
+		_, running := m.byCard[st.CardID]
+		m.mu.Unlock()
+		if running {
+			continue
+		}
+		if marks := m.marksFrom(flow, st.NodeID); len(marks) > 0 {
+			out[st.CardID] = marks
+		}
+	}
+	return out
+}
+
+// MarkCardOutcome is a person answering for a stage that runs nothing: «прошло»
+// or «не прошло», put on the card so the route sees it and moves.
+//
+// Through UpdateCard rather than SetCardOption, and that is the whole point:
+// SetCardOption is silent, because everything the machine records about a card
+// must not set the card's own automation off. This one has to — the board's
+// notify is what wakes handleCardChanged, which is what moves the card. It is a
+// person editing the card, and it goes the way a person's edit goes.
+func (m *Manager) MarkCardOutcome(ctx context.Context, cardID, value string) error {
+	if strings.TrimSpace(cardID) == "" {
+		return fmt.Errorf("не сказано, какая карточка")
+	}
+	if value != OutcomePassed && value != OutcomeFailed {
+		return fmt.Errorf("исход бывает «%s» или «%s»", OutcomePassed, OutcomeFailed)
+	}
+	if m.writer == nil {
+		return fmt.Errorf("доска недоступна")
+	}
+	return m.forCard(cardID).Writer.UpdateCard(ctx, cardID, CardEdit{Options: []string{value}})
 }

@@ -96,6 +96,22 @@ func (w *fakeWriter) UpdateCard(ctx context.Context, cardID string, edit CardEdi
 	return nil
 }
 
+// SetCardOption records the same way SetCardText does: the two write different
+// kinds of property and a test asks the same question of both — what did the
+// machine put on this card, by id.
+func (w *fakeWriter) SetCardOption(_ context.Context, cardID, propertyID, optionName string) error {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	if w.texts == nil {
+		w.texts = map[string]map[string]string{}
+	}
+	if w.texts[cardID] == nil {
+		w.texts[cardID] = map[string]string{}
+	}
+	w.texts[cardID][propertyID] = optionName
+	return nil
+}
+
 func (w *fakeWriter) SetCardText(ctx context.Context, cardID, propertyID, value string) error {
 	w.mu.Lock()
 	defer w.mu.Unlock()

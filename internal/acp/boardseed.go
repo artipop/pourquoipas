@@ -73,7 +73,60 @@ const (
 	// records: the columns already carry the property they were bound to, so
 	// the board can be told what it is the first time its automation is saved.
 	BoardPropColumnProperty = "columnProperty"
+	// BoardPropOutcome is the id of the select property this app writes the
+	// outcome of a stage into — every stage, without anybody declaring it.
+	//
+	// It exists because how a stage ended used to be expressible only as *where
+	// the card went*: a board grew a «Проверено», a «Не прошло» and a
+	// «Заблокировано» column whose whole content was one fact about the stage
+	// before them, and that fact then read as a place where work happens — on
+	// the board and on the canvas alike. An outcome belongs to the card, like
+	// the branch and the folder, and a column is for work.
+	//
+	// Written by the engine and never declared, which is what makes it
+	// "служебное": every node produces one, so no node should have to say so.
+	BoardPropOutcome = "outcomeProperty"
 )
+
+// The values that property takes, and there are two. A third was tried —
+// «заблокировано», for a check that could not run — and taken out: what a card
+// carries here is whether the step worked, and every question anybody asks of
+// it is that question. «Заблокировано» is not a third answer to it, it is a
+// reason, and the reason is on the card's route strip already (stallCardSoft),
+// where it can be a sentence instead of a word.
+//
+// Binary is also what makes it cheap to answer by hand: a reviewer marking a
+// card picks between two things and not out of a list.
+const (
+	OutcomePassed = "прошло"
+	OutcomeFailed = "не прошло"
+)
+
+// OutcomePropertyTitle is what this app calls that field when it makes one. A
+// name and not an id, unlike everything else that finds a field of ours — but
+// this one is never *found* by it: it is what a shipped route's condition asks
+// about, and a condition names a property the way a person reading the canvas
+// does. A board whose owner renamed the field renames the condition with it,
+// which is the same bargain every condition on the canvas takes.
+const OutcomePropertyTitle = "Исход"
+
+// OutcomeValue is what a stage's outcome is called on the card. Empty for
+// anything that is not a stage's own outcome — a merged branch is news about
+// the world, not a verdict on the work.
+//
+// A check that could not run answers «не прошло» like anything else that did
+// not pass: the card is asked whether the step worked, and it did not. Why is
+// the stall's business.
+func OutcomeValue(trigger string) string {
+	switch trigger {
+	case TriggerSuccess:
+		return OutcomePassed
+	case TriggerFailure, TriggerBlocked:
+		return OutcomeFailed
+	default:
+		return ""
+	}
+}
 
 // The names these keys had before, still read because every board made until
 // now carries them. They are never written: reading a board carries what it
@@ -112,10 +165,26 @@ type BoardMeta interface {
 	// recorded an option id to the option it always meant, once, so nothing has
 	// to go on matching a column by its name (contradiction 5).
 	BoardColumnOptions(ctx context.Context, boardID string) ([]Column, error)
+	// CardProperties is the board's card fields, for the one thing a stage's
+	// declared outputs cannot say by themselves: what a value may be. A select
+	// takes one of its option names and nothing else, and until this the agent
+	// found that out by being refused.
+	CardProperties(ctx context.Context, boardID string) ([]CardProperty, error)
 	// IsBoardTemplate says this board is one to copy rather than to work in.
 	// Nothing runs in a template — no card moves in it, no session starts from
 	// it — so nothing about this machine is asked for on its behalf.
 	IsBoardTemplate(ctx context.Context, boardID string) (bool, error)
+}
+
+// CardProperty is one field of a board's cards: what it is called, what kind of
+// value it takes, and — for a closed set — which values those are. Named rather
+// than identified, because that is how a stage declares a write and how
+// finish_work delivers one.
+type CardProperty struct {
+	Name string `json:"name"`
+	Type string `json:"type"`
+	// Values is the closed set, for a select. Empty for everything else.
+	Values []string `json:"values,omitempty"`
 }
 
 // SetBoardMeta supplies the board's own property store.

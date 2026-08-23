@@ -19,6 +19,7 @@ import {
     readBoardAutomation,
     readBoardSetup,
     routeOptionMissing,
+    upstreamWrites,
     withColumn,
     withEdge,
     withoutColumn,
@@ -235,4 +236,48 @@ describe('components/acp/automation', () => {
         expect(condIsComplete({property: 'Приоритет', value: 'Высокий', commentContains: 'x'})).toBe(false)
     })
 
+    // A value an earlier stage put on the card is on the card, so a stage that
+    // declares no reads is handed what the route wrote ahead of it — and the
+    // chip says which stage, which is the half that makes it readable.
+    describe('upstreamWrites', () => {
+        const specs = [{boardId: 'b',
+            property: 'Статус',
+            column: 'В работе',
+            action: 'agent',
+            optionId: 'opt-work',
+            writes: [{property: 'Заметка'}]}]
+        const flow: Flow = {
+            name: 'Фича',
+            nodes: [
+                {id: 'work', column: 'В работе', optionId: 'opt-work', action: ''},
+                {id: 'deploy', column: 'Деплой', action: 'deploy', writes: [{property: 'Превью'}]},
+                {id: 'qa', column: 'QA', action: 'test', writes: [{property: 'Вердикт'}]},
+            ],
+            edges: [
+                {from: 'work', to: 'deploy', on: SUCCESS},
+                {from: 'deploy', to: 'qa', on: SUCCESS},
+
+                // A failed check returns the card to the agent: the graph has a
+                // cycle on purpose and the walk has to survive it.
+                {from: 'qa', to: 'work', on: 'failure'},
+            ],
+        }
+
+        test('a stage is handed what the stages before it write, named by their stage', () => {
+            expect(upstreamWrites(flow, 'qa', specs)).toEqual([
+                {property: 'Превью', from: 'Деплой'},
+
+                // The stage that declares nothing still produces what its
+                // column produces.
+                {property: 'Заметка', from: 'В работе'},
+            ])
+        })
+
+        test('a stage never reads its own output back, and the cycle terminates', () => {
+            expect(upstreamWrites(flow, 'work', specs)).toEqual([
+                {property: 'Вердикт', from: 'QA'},
+                {property: 'Превью', from: 'Деплой'},
+            ])
+        })
+    })
 })

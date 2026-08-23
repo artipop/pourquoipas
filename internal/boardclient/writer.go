@@ -98,6 +98,28 @@ func (c *Client) SetCardText(_ context.Context, cardID, propertyID, value string
 	return c.patchCard(cardID, &model.CardPatch{UpdatedProperties: map[string]any{propertyID: value}}, true)
 }
 
+// SetCardOption writes one select property by id, choosing the option of this
+// name — see the adapter's own for why by id and why silent.
+func (c *Client) SetCardOption(_ context.Context, cardID, propertyID, optionName string) error {
+	if strings.TrimSpace(propertyID) == "" || strings.TrimSpace(optionName) == "" {
+		return nil
+	}
+	_, schema, err := c.cardSchema(cardID)
+	if err != nil {
+		return err
+	}
+	def, ok := schema[propertyID]
+	if !ok {
+		return fmt.Errorf("на доске нет свойства с id %q", propertyID)
+	}
+	for oid, opt := range def.Options {
+		if strings.EqualFold(opt.Value, optionName) {
+			return c.patchCard(cardID, &model.CardPatch{UpdatedProperties: map[string]any{propertyID: oid}}, true)
+		}
+	}
+	return fmt.Errorf("у свойства %q нет значения %q", def.Name, optionName)
+}
+
 // SetCardFields writes named properties: a select gets the option whose name
 // the value is, anything else keeps the value as text.
 func (c *Client) SetCardFields(_ context.Context, cardID string, fields map[string]string) error {
@@ -112,7 +134,7 @@ func (c *Client) SetCardFields(_ context.Context, cardID string, fields map[stri
 	for name, value := range fields {
 		propID, def, ok := boardmodel.FindPropertyByName(schema, name)
 		if !ok {
-			return fmt.Errorf("на доске нет свойства %q", name)
+			return fmt.Errorf("на доске нет свойства %q — посмотрите list_card_fields", name)
 		}
 		if def.Type == "select" {
 			optionID := ""
@@ -123,7 +145,7 @@ func (c *Client) SetCardFields(_ context.Context, cardID string, fields map[stri
 				}
 			}
 			if optionID == "" {
-				return fmt.Errorf("у свойства %q нет значения %q", name, value)
+				return fmt.Errorf("у свойства %q нет значения %q — допустимые перечислены в list_card_fields", name, value)
 			}
 			properties[propID] = optionID
 			continue

@@ -33,9 +33,10 @@ type templateBoard struct {
 	Fields struct {
 		CardProperties []templateProperty `json:"cardProperties"`
 		Properties     struct {
-			Columns []ColumnSpec `json:"columns"`
-			Flows   []FlowEntry  `json:"flows"`
-			Setup   BoardSetup   `json:"setup"`
+			Columns         []ColumnSpec `json:"columns"`
+			Flows           []FlowEntry  `json:"flows"`
+			Setup           BoardSetup   `json:"setup"`
+			OutcomeProperty string       `json:"outcomeProperty"`
 		} `json:"properties"`
 	} `json:"fields"`
 }
@@ -102,6 +103,17 @@ func readTemplateBoard(t *testing.T) templateBoard {
 	}
 	t.Fatalf("the %q template is gone from the archive", templateBoardTitle)
 	return templateBoard{}
+}
+
+// property is one of the board's card fields, by name — for the checks that are
+// about the field itself rather than about its options.
+func (b templateBoard) property(name string) (templateProperty, bool) {
+	for _, p := range b.Fields.CardProperties {
+		if strings.EqualFold(p.Name, name) {
+			return p, true
+		}
+	}
+	return templateProperty{}, false
 }
 
 func (b templateBoard) options(t *testing.T, property string) map[string]bool {
@@ -353,5 +365,88 @@ func TestEveryTemplateAsksForStepsThatExist(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// A machine stage's value has to have somewhere to land, and «Разработка» is
+// where somebody meets that arrangement first. Without a property to write to,
+// the preview address and the verdict die in a comment: the whole dataflow —
+// the card's own fields, the arrow that branches on one, the brief the next
+// stage opens with — starts from a stage declaring an output, and a board that
+// declares none teaches that there is nothing to declare.
+func TestTheDeveloperTemplateDeclaresWhatItsMachineStagesProduce(t *testing.T) {
+	board := readTemplateBoard(t)
+
+	wantWrites := map[string]string{
+		strings.ToLower(TemplateDeployColumn): "Превью",
+	}
+	for _, c := range board.Fields.Properties.Columns {
+		want, machine := wantWrites[strings.ToLower(c.Column)]
+		if !machine {
+			continue
+		}
+		if len(c.Writes) != 1 || c.Writes[0].Property != want {
+			t.Errorf("column %q writes %+v, want just %q", c.Column, c.Writes, want)
+			continue
+		}
+
+		// Not "required": that is the contract an agent's finish_work is
+		// checked against, and these two values are written by the app itself.
+		// The editor's picker for a machine stage cannot show the flag, so a
+		// template carrying one would set something nobody can see or clear.
+		if c.Writes[0].Required {
+			t.Errorf("column %q marks its machine output required, which nothing reads", c.Column)
+		}
+	}
+
+	// And the property itself, since a write naming a field the board has not
+	// got is refused at the moment the stage reports — after the work.
+	if _, ok := board.property("Превью"); !ok {
+		t.Error("the template writes a preview address to a property it does not carry")
+	}
+}
+
+// How a stage ended is a fact about the card. The template used to say it by
+// having the card land in «Проверено», «Не прошло» or «Заблокировано» — three
+// columns whose whole content was one fact about the stage before them, and
+// which then read as places where work happens, on the board and on the canvas
+// alike. The outcome is a field the engine writes for every stage, and those
+// columns are gone.
+func TestTheDeveloperTemplateKeepsOutcomesOffTheBoard(t *testing.T) {
+	board := readTemplateBoard(t)
+
+	for _, gone := range []string{"Проверено", "Не прошло", "Заблокировано"} {
+		if board.options(t, "Статус")[strings.ToLower(gone)] {
+			t.Errorf("«%s» is still a column: an outcome is not a place work happens", gone)
+		}
+	}
+
+	outcome, ok := board.property("Исход")
+	if !ok {
+		t.Fatal("the template has no field for a stage's outcome")
+	}
+
+	// A closed set, because an arrow asks "is it this value" and that is the
+	// point of writing it — and the values are the engine's own (OutcomeValue).
+	if outcome.Type != "select" {
+		t.Errorf("the outcome is a %q, so no transition can ask what it is", outcome.Type)
+	}
+	// Two values, and only two: what the card carries here is whether the step
+	// worked, and «заблокировано» is a reason rather than a third answer to
+	// that. A reviewer marking a card by hand picks between two things.
+	values := board.options(t, "Исход")
+	for _, want := range []string{OutcomePassed, OutcomeFailed} {
+		if !values[want] {
+			t.Errorf("the outcome cannot be %q", want)
+		}
+	}
+	if len(values) != 2 {
+		t.Errorf("the outcome has %d values: %v", len(values), values)
+	}
+
+	// And the board says which field it is, or the engine writes nowhere.
+	if board.Fields.Properties.OutcomeProperty != outcome.ID {
+		t.Errorf("the board records %q as its outcome field, want %q",
+			board.Fields.Properties.OutcomeProperty, outcome.ID)
 	}
 }

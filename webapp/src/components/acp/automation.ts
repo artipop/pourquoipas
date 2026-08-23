@@ -156,6 +156,33 @@ export const CARD_CHANGED = 'card.changed'
 
 export const ACTIONS = ['none', 'agent', 'deploy', 'test']
 
+// The board property types a stage can actually write. SetCardFields resolves a
+// select by one of its option names and stores everything else as text, so a
+// date, a person or a file would be handed a string the board cannot read back,
+// and createdBy/createdTime and their kin are the board's own bookkeeping.
+export const WRITABLE_TYPES = ['text', 'url', 'email', 'phone', 'number', 'select']
+
+// NewProperty is a board property a stage's outputs need and the board has not
+// got. The editor asks for it rather than making it, the way it asks for a
+// column: a property is the board's, visible on every card, and belongs to
+// whoever owns the board rather than to the automation over it.
+export type NewProperty = {
+    name: string
+
+    // 'select' is the one that makes the property branchable — a transition can
+    // only ask "is it this value" of a closed set. 'text' and 'url' are carried
+    // to later stages and read there.
+    type: 'text' | 'url' | 'select'
+
+    // The option names, for a select. Empty for the rest.
+    options?: string[]
+}
+
+// The names this app gives the two machine outputs, and their shape. A deploy
+// stage produces one address and a test one verdict, so neither is a question:
+// the form asks for the name and says what kind it will be.
+export const VERDICT_VALUES = ['pass', 'fail', 'blocked']
+
 // OUTCOMES are the triggers produced by the stage's own action — the only ones
 // where the agent spoke, and therefore the only ones a comment condition makes
 // sense on.
@@ -402,6 +429,28 @@ export const BOARD_PROP_PROMPT = 'prompt'
 // ever have been matched by luck.
 export const BOARD_PROP_PROJECT_PROPERTY = 'projectProperty'
 
+// And which one this app writes a stage's outcome into — «прошло», «не прошло»,
+// «заблокировано» — for every stage, without anybody declaring it. Written by
+// the engine (acp.BoardPropOutcome); named here because the editor must not
+// offer it as something a stage declares, the way it does not offer the column
+// property: both are the app's own answer about the card.
+export const BOARD_PROP_OUTCOME_PROPERTY = 'outcomeProperty'
+
+// The values it takes, in the engine's own spelling (acp.OutcomeValue). Two,
+// because what the card carries here is whether the step worked — and every
+// question anybody asks of it is that question. A check that could not run
+// answers «не прошло» like anything else that did not pass; why is the stall's
+// business, where it can be a sentence.
+export const OUTCOME_PASSED = 'прошло'
+export const OUTCOME_FAILED = 'не прошло'
+export const OUTCOME_VALUES = [OUTCOME_PASSED, OUTCOME_FAILED]
+
+// boardOutcomeProperty is the id of that field, or '' for a board without one.
+export function boardOutcomeProperty(board: {properties?: Record<string, unknown>}): string {
+    const recorded = board.properties?.[BOARD_PROP_OUTCOME_PROPERTY]
+    return typeof recorded === 'string' ? recorded : ''
+}
+
 // And which one holds the branch a card's work is on, by id for the same
 // reason. Go writes into it (workspace.go); the page is what creates it,
 // because the board's card properties are the page's to patch.
@@ -531,6 +580,73 @@ export function routeOptionMissing(board: Board, flow: Flow): boolean {
         (p.options || []).some((o) => o.value.trim().toLowerCase() === name))
 }
 
+// resolvedWrites is what a stage actually leaves on the card: its own list, or
+// the column's — the inheritance the route itself knows nothing about, spelled
+// once so the canvas, the reads and the condition pickers cannot disagree.
+export function resolvedWrites(node: FlowNode, specs: ColumnSpec[]): PropertyWrite[] {
+    if (node.writes?.length) {
+        return node.writes
+    }
+    return specForNode(node, specs)?.writes || []
+}
+
+// specForNode is the column a stage stands on — the option first, across the
+// whole list, and only then the name. The two passes must not be merged into
+// one `find`: a board that has both a spec bound to the option and an older one
+// carrying only the column's name would then be answered by whichever came
+// first, which is the order somebody edited things in. That is specFor's rule,
+// said again for a node — specFor takes a BoardColumn, which a route has not.
+export function specForNode(node: FlowNode, specs: ColumnSpec[]): ColumnSpec | undefined {
+    return (node.optionId ? specs.find((c) => c.optionId === node.optionId) : undefined) ||
+        specs.find((c) => c.column.toLowerCase() === node.column.toLowerCase())
+}
+
+// UpstreamWrite is one property a stage will find on the card when it starts,
+// and the stage that put it there — which is the half that makes the answer
+// readable: «Превью · пишет «Деплой»».
+export type UpstreamWrite = {
+    property: string
+    from: string
+}
+
+// upstreamWrites is every property the stages ahead of this one declare. It is
+// what a stage's reads fall back to (Go's FlowEntry.UpstreamWrites, kept in step
+// with it), so declaring a write once carries the value on by itself.
+//
+// Walked backwards over the incoming edges with a visited set, because a route
+// has cycles on purpose: a failed check sends the card back to the agent. A
+// stage never reads its own output back.
+export function upstreamWrites(flow: Flow, from: string, specs: ColumnSpec[]): UpstreamWrite[] {
+    const nodes = new Map(flow.nodes.map((n) => [n.id, n]))
+    const seen = new Set([from])
+    const taken = new Set<string>()
+    const out: UpstreamWrite[] = []
+    const queue = [from]
+    while (queue.length > 0) {
+        const at = queue.shift() as string
+        for (const edge of flow.edges) {
+            if (edge.to !== at || seen.has(edge.from)) {
+                continue
+            }
+            seen.add(edge.from)
+            queue.push(edge.from)
+            const node = nodes.get(edge.from)
+            if (!node) {
+                continue
+            }
+            for (const w of resolvedWrites(node, specs)) {
+                const key = w.property.trim().toLowerCase()
+                if (!key || taken.has(key)) {
+                    continue
+                }
+                taken.add(key)
+                out.push({property: w.property, from: node.column})
+            }
+        }
+    }
+    return out
+}
+
 // unwrittenConditions is the dataflow check: every conditional edge of the
 // route whose property no stage of the route declares as a write. Not an
 // error — an approved option may be a person's own click — but worth a sentence, since
@@ -540,9 +656,7 @@ export function routeOptionMissing(board: Board, flow: Flow): boolean {
 export function unwrittenConditions(flow: Flow, specs: ColumnSpec[], columnPropertyName?: string): string[] {
     const written = new Set<string>()
     for (const node of flow.nodes) {
-        const spec = specs.find((c) => (node.optionId && c.optionId === node.optionId) ||
-            c.column.toLowerCase() === node.column.toLowerCase())
-        for (const w of (node.writes?.length ? node.writes : spec?.writes) || []) {
+        for (const w of resolvedWrites(node, specs)) {
             written.add(w.property.toLowerCase())
         }
     }

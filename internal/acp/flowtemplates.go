@@ -21,16 +21,25 @@ const (
 	// that creates boards, rather than in the machine's settings — where they
 	// used to be five keys naming the columns of anybody's board and matching
 	// them by name.
-	TemplateWorkColumn     = "В работе"
-	TemplateDeployColumn   = "Деплой"
-	TemplateTestColumn     = "QA"
-	TemplateTestPassColumn = "Проверено"
-	TemplateTestFailColumn = "Не прошло"
+	TemplateWorkColumn   = "В работе"
+	TemplateDeployColumn = "Деплой"
+	TemplateTestColumn   = "QA"
 
-	TemplateReviewColumn  = "На ревью"
-	TemplateBlockedColumn = "Заблокировано"
-	TemplateDoneColumn    = "Готово 🙌"
+	TemplateReviewColumn = "На ревью"
+	TemplateDoneColumn   = "Готово 🙌"
 )
+
+// There were three more: «Проверено», «Не прошло» and «Заблокировано». Each was
+// a column whose whole content was one fact about the stage before it — how
+// that stage ended — and a fact is not a place where work happens. It reads as
+// one on the board, where it is a column nobody works in, and on the canvas,
+// where it is a stage that «ждёт» for ever.
+//
+// The engine writes the outcome onto the card instead (BoardPropOutcome), for
+// every stage and without anybody declaring it, so a route no longer needs a
+// column to say "this failed". A stage whose outcome has no edge parks the card
+// where it is and says why (stallCardSoft) — which is what those columns were
+// standing in for, and it does it without adding a place to the board.
 
 // Flow names, which are also the options of the board template's "Workflow"
 // property — the two lists are kept in step by TestTemplateFlowsMatchTheBoardTemplate.
@@ -73,6 +82,41 @@ func (b *flowBuilder) edge(from, to, on string) {
 	b.flow.Edges = append(b.flow.Edges, FlowEdge{From: from, To: to, On: on})
 }
 
+// passed is the other half of the pair: the same field, the other value, and
+// the way on. A wait stage's forward move usually has an automatic trigger too
+// — «На ревью» goes on when the branch is merged — but the automatic one is the
+// world telling us, and this is a person telling us. Both are needed: the
+// branch is not always merged from here, and somebody watching a review does
+// not want to wait for a poll to notice.
+func (b *flowBuilder) passed(from, to string) {
+	if from == "" || to == "" || from == to {
+		return
+	}
+	b.flow.Edges = append(b.flow.Edges, FlowEdge{
+		From: from, To: to, On: TriggerCardChanged,
+		If: &EdgeCond{Property: OutcomePropertyTitle, Value: OutcomePassed},
+	})
+}
+
+// rejected is the way back from a stage where nobody works and nothing runs.
+// A wait stage produces no outcome — «На ревью» has no "failed" of its own to
+// leave by — so the signal is a person saying so on the card: «Исход» set to
+// «не прошло». The same field the engine writes for a stage that does run, and
+// the same three values, because "how did this step end" is one question
+// whether a machine or a reviewer answers it.
+//
+// The engine's own write is silent (SetCardOption disables notify), so it can
+// never fire this edge itself.
+func (b *flowBuilder) rejected(from, to string) {
+	if from == "" || to == "" || from == to {
+		return
+	}
+	b.flow.Edges = append(b.flow.Edges, FlowEdge{
+		From: from, To: to, On: TriggerCardChanged,
+		If: &EdgeCond{Property: OutcomePropertyTitle, Value: OutcomeFailed},
+	})
+}
+
 // TemplateFlows builds the routes the editor offers a board that has none. The
 // column names are the templates' own; the property is the machine's default,
 // which is the last thing here that is still a name rather than an id.
@@ -95,20 +139,34 @@ func featureFlow(cfg Config) FlowEntry {
 	review := b.node("review", TemplateReviewColumn, FlowActionNone)
 	deploy := b.node("deploy", TemplateDeployColumn, FlowActionDeploy)
 	qa := b.node("qa", TemplateTestColumn, FlowActionTest)
-	qaPassed := b.node("qa-passed", TemplateTestPassColumn, FlowActionNone)
-	failed := b.node("failed", TemplateTestFailColumn, FlowActionNone)
-	blocked := b.node("blocked", TemplateBlockedColumn, FlowActionNone)
+	done := b.node("done", TemplateDoneColumn, FlowActionNone)
 
 	b.edge(agent, review, TriggerSuccess)
-	b.edge(agent, blocked, TriggerFailure)
 	// Merged rather than opened: the local git watcher sees it without a token,
 	// so the route works on any hosting and with no credentials at all.
 	b.edge(review, deploy, TriggerBranchMerged)
 	b.edge(deploy, qa, TriggerSuccess)
-	b.edge(deploy, failed, TriggerFailure)
-	b.edge(qa, qaPassed, TriggerSuccess)
+	b.edge(qa, done, TriggerSuccess)
+
+	// What failed goes back to the agent — that loop is the point of the whole
+	// route, and it is where the work can actually be fixed. It replaced a
+	// «Не прошло» column, which was the same arrow with a parking space bolted
+	// to the end of it.
+	b.edge(deploy, agent, TriggerFailure)
 	b.edge(qa, agent, TriggerFailure)
-	b.edge(qa, blocked, TriggerBlocked)
+
+	// A review, answered by a person: nothing runs in «На ревью», so both ways
+	// out of it are somebody saying how it went. Until the first of these
+	// existed the card simply stood there, which is what the route looked like
+	// it was missing.
+	b.rejected(review, agent)
+	b.passed(review, deploy)
+
+	// Except the agent's own stage and «проверить не удалось»: sending a task
+	// back to the agent that just failed it is a loop with nothing new in it,
+	// and a check that could not run is a person's to fix — no browser, no
+	// preview to reach. Both park the card where it stopped with the outcome on
+	// it and the reason on the strip.
 	return b.flow
 }
 
@@ -119,13 +177,10 @@ func hotfixFlow(cfg Config) FlowEntry {
 	agent := b.node("agent", TemplateWorkColumn, FlowActionAgent)
 	deploy := b.node("deploy", TemplateDeployColumn, FlowActionDeploy)
 	done := b.node("done", TemplateDoneColumn, FlowActionNone)
-	failed := b.node("failed", TemplateTestFailColumn, FlowActionNone)
-	blocked := b.node("blocked", TemplateBlockedColumn, FlowActionNone)
 
 	b.edge(agent, deploy, TriggerSuccess)
-	b.edge(agent, blocked, TriggerFailure)
 	b.edge(deploy, done, TriggerSuccess)
-	b.edge(deploy, failed, TriggerFailure)
+	b.edge(deploy, agent, TriggerFailure)
 	return b.flow
 }
 
@@ -136,11 +191,11 @@ func reviewFlow(cfg Config) FlowEntry {
 	agent := b.node("agent", TemplateWorkColumn, FlowActionAgent)
 	review := b.node("review", TemplateReviewColumn, FlowActionNone)
 	done := b.node("done", TemplateDoneColumn, FlowActionNone)
-	blocked := b.node("blocked", TemplateBlockedColumn, FlowActionNone)
 
 	b.edge(agent, review, TriggerSuccess)
-	b.edge(agent, blocked, TriggerFailure)
 	b.edge(review, done, TriggerBranchMerged)
+	b.rejected(review, agent)
+	b.passed(review, done)
 	return b.flow
 }
 

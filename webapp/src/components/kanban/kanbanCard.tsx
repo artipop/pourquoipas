@@ -18,6 +18,7 @@ import CardActionsMenu from '../cardActionsMenu/cardActionsMenu'
 import CardActionsMenuIcon from '../cardActionsMenu/cardActionsMenuIcon'
 import {attentionHeading, useCardAttention} from '../acp/attention'
 import {isCardTerminalAvailable, openCardTerminalWindow, useCardCutOff, useCardTerminal} from '../acp/liveTerminals'
+import {CardMark, markCard, useCardMarks} from '../acp/cardMarks'
 import {findWorkdirProperty} from '../acp/workdirSync'
 
 export const OnboardingCardClassName = 'onboardingCard'
@@ -107,6 +108,22 @@ const KanbanCard = (props: Props) => {
     // drops it.
     const paused = () => Boolean(cutOff()) && !attention() && !liveTerminal()
     const showsAgent = () => Boolean(attention() || liveTerminal() || cutOff())
+
+    // What this card can be answered with from where it stands, and the answer
+    // itself. Both come from one call for the whole board (cardMarks.ts).
+    const marks = useCardMarks(() => props.board.id, () => props.card.id)
+    const [marking, setMarking] = createSignal(false)
+    const answer = async (mark: CardMark) => {
+        if (marking()) {
+            return
+        }
+        setMarking(true)
+        try {
+            await markCard(props.card.id, mark.value)
+        } finally {
+            setMarking(false)
+        }
+    }
     const canOpenTerminal = () => !props.readonly && isCardTerminalAvailable()
     const agentTitle = () => {
         if (attention()) {
@@ -290,6 +307,39 @@ const KanbanCard = (props: Props) => {
                 </Show>
                 <Show when={props.visibleBadges}>
                     <CardBadges card={props.card}/>
+                </Show>
+
+                {/* Where the card goes from here, when that is a person's to
+                    say — a stage on its route where nothing runs and nobody
+                    works. Two answers at most, named by the stage each leads
+                    to, on the card because the card is what somebody is
+                    looking at when they decide. A stage that decides for
+                    itself sends none (CardMarksForBoard). */}
+                <Show when={!props.readonly && marks().length > 0}>
+                    <div class='KanbanCard__marks'>
+                        <For each={marks()}>
+                            {(mark) => (
+                                <button
+                                    type='button'
+                                    class='KanbanCard__mark'
+                                    classList={{'KanbanCard__mark--forward': mark.forward}}
+                                    disabled={marking()}
+                                    title={intl.formatMessage(
+                                        {id: 'KanbanCard.mark', defaultMessage: 'Mark “{value}” — the card goes to “{column}”'},
+                                        {value: mark.value, column: mark.column},
+                                    )}
+                                    onClick={(e) => {
+                                        // The card opens on a click; this one is
+                                        // about the card and not a way into it.
+                                        e.stopPropagation()
+                                        answer(mark)
+                                    }}
+                                >
+                                    {mark.forward ? `${mark.column} →` : `← ${mark.column}`}
+                                </button>
+                            )}
+                        </For>
+                    </div>
                 </Show>
             </div>
 

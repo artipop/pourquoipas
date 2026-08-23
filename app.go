@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 
@@ -763,6 +764,31 @@ func (a *App) GetCardFlow(cardID string) (string, error) {
 		return "", err
 	}
 	return string(out), nil
+}
+
+// ListCardMarks is what every card of a board can be answered with, in one
+// call: the board draws the pair on each card's face, and a call per card would
+// be a round trip for every card on screen.
+func (a *App) ListCardMarks(boardID string) (string, error) {
+	if a.mgr == nil {
+		return "{}", nil
+	}
+	out, err := json.Marshal(a.mgr.CardMarksForBoard(boardID))
+	if err != nil {
+		return "", err
+	}
+	return string(out), nil
+}
+
+// MarkCardOutcome is the card's own «прошло»/«не прошло» — the two buttons on a
+// stage where nobody works and nothing runs, and the way a review says no.
+func (a *App) MarkCardOutcome(cardID, value string) error {
+	if a.mgr == nil {
+		return nil
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	return a.mgr.MarkCardOutcome(ctx, cardID, value)
 }
 
 // SeedBoardAutomation takes the columns and routes a board carries of its own

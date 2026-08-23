@@ -85,6 +85,16 @@ in a browser.
   `terminalEnv` writes `TERM`/`COLORTERM` rather than inheriting them —
   the other end of that pty is xterm.js whatever launched the app, and an
   inherited value describes the wrong terminal even when there is one.
+**The desktop app is a WKWebView, and CSS prefixes are the build's job**
+(`vite.config.ts`, `css.postcss`, autoprefixer). Measured in the engine itself:
+`CSS.supports('user-select', 'none')` is **false** there — it answers only to
+`-webkit-user-select`. Without the prefix step every "this does not select" in
+the product worked in a browser and did nothing in the app, and a drag out of a
+socket on the route canvas painted half the dialog blue. `browserslist` in
+`webapp/package.json` names the targets, and Safari is on that list for the
+webview rather than for the browser; stylelint's `property-no-vendor-prefix`
+forbids writing them by hand, which is right exactly because the build does it.
+
 - `npm test` in `webapp/` — the page's suite, **vitest** under jsdom, sharing
   `vite-plugin-solid` with the build through `vitest.config.ts`. Coverage is on by
   default (v8); `--coverage.enabled=false` while iterating, `npm run updatesnapshot`
@@ -1347,6 +1357,135 @@ conversation on the node alike. The editor edits both lists
 machine value) and warns per route about a conditional edge whose property no
 stage writes (`unwrittenConditions`) — named, not refused, since the value may
 be a person's own click.
+
+**The property a stage needs is made where the stage is declared**
+(`onCreateProperty`, `NewPropertyForm`). Not one shipped template declared a
+single write, and the reason was the picker: it offered the board's existing
+fields, which on every board here are Приоритет, Папка, Срок, Ветка, Автор and
+Создана — none of them a preview address. The list was never closed, it was
+empty of the right answers, and the way to one led out of the dialog and onto
+the board. So the last item makes the field, the dialog is what patches the
+board (the editor knows nothing about it, the same bargain `onCreateColumn`
+takes), and the form asks what the property *holds* — because that is the
+question that decides something: an edge asks "is it this value", which only a
+closed set can answer, and a text write is carried to the stages further on
+instead. A deploy and a test stage are not asked, one producing an address and
+the other a verdict. The same picker offers only what `SetCardFields` can
+actually write (`WRITABLE_TYPES`, `writableProperty` in Go): a date or a person
+would take a string the board cannot read back, and `createdBy` and its kin are
+not writable at all.
+
+**And the contract is said to the agent, twice.** In the brief — `stageOutputs`
+beside `cardInputs`, naming every declared write and what its value may be, with
+a select's own options read off the board (`BoardMeta.CardProperties` →
+`boardmodel.ReadCardProperties`) rather than copied into the declaration, where
+a renamed option would leave a stale list standing. And as a tool —
+`list_card_fields`, which answers about *this* run: the grant names the
+conversation, the conversation names the stage waiting on it, so the declared
+and required ones are marked (`BoardToolFields`). Neither is decoration. An
+agent asked for a verdict used to find out what «Вердикт» accepts by being
+refused, and a required write nobody had mentioned failed the stage on the first
+attempt to end it — the deploy/test half is excluded from the brief on purpose,
+since this side writes those values and the agent has no way to produce them.
+
+**Reads have a third answer, and it is the graph** (`FlowEntry.UpstreamWrites`,
+`upstreamWrites` on the page, kept in step). Node's own list, else the column's,
+else what every stage ahead of this one on the route declares that it writes. A
+value an earlier stage put on the card is *on the card*, and ticking «Превью»
+again on each stage after the deploy was asking for the same fact twice — the
+commonest reason a route's dataflow was declared on one stage and nowhere else.
+The walk is backwards over the incoming edges with a visited set, because a
+route has cycles on purpose (a failed check returns the card to the agent), and
+a stage never reads its own output back. The editor draws them as ghost rows
+naming the writer and **does not let them be removed**: with one row left, a ✕
+would write an empty list, and an empty list is exactly what asks the route
+again — so an override is written by *saying* something, which is the shape the
+crew and the prompt already have. A person's conversation on the node gets the
+same fallback (`cardPlace`), since it is about the same work.
+
+**How a stage ended is a field, not a column** (`BoardPropOutcome`,
+`writeCardOutcome`, `OutcomeValue`). It used to be expressible only as *where
+the card went*: the shipped board grew «Проверено», «Не прошло» and
+«Заблокировано», three columns whose whole content was one fact about the stage
+before them — and a fact read as a place where work happens, on the board where
+nobody works in them and on the canvas where they are stages that «ждёт» for
+ever. The engine writes «прошло»/«не прошло» onto the card for
+**every** stage and without anybody declaring it, which is what makes it
+служебное: every node produces one, so no node should have to say so. Written
+before the edges are read, so a condition may branch on it, and written on the
+dead-end path too, because that card is the one somebody will come and look at.
+Silently and by id, like the branch — a notify would set the column's own
+automation off — and by the *card's* board rather than the route's, since a
+route with an empty `BoardID` runs on all of them. A board with no such field
+gets nothing, which is every board made before it existed; the editor keeps it
+out of the writes picker exactly as it keeps the column property out, and a
+condition may still ask about it, which is the point of it being a closed set —
+though the editor no longer *offers* it: it is out of the condition picker as
+well as the writes one, and an arrow that already asks about it is shown as a
+sentence rather than as two dropdowns whose answer is the only one there is.
+
+**Two values and not three.** «Заблокировано» was tried and taken out: the card
+is asked whether the step worked, every question anybody asks of the field is
+that question, and «could not run» is a *reason* — which the stall record
+already carries, where it can be a sentence instead of a word. Binary is also
+what makes the field answerable in one click by a person.
+So a route no longer needs a column to say "this failed": a stage whose outcome
+has no edge parks the card where it is and says why (`stallCardSoft`).
+
+**A person writes it too, and that is the way back from a review** (`rejected`
+in `flowtemplates.go`). A wait stage runs nothing, so it has no outcome of its
+own — git says a branch was merged and cannot say a reviewer refused — and the
+signal is the reviewer marking the card: `card.changed` with «Исход» = «не
+прошло». One field for "how did this step end" whether a machine or a person
+answers it, and no second «Одобрено» beside it. The engine's own write cannot
+fire that arrow, because `SetCardOption` disables the notify — which is the
+same reason every write of ours is silent, doing double duty here.
+
+**And the card offers that answer as two buttons** (`CardFlowMark`,
+`MarkCardOutcome`). A stage where nobody works and nothing runs is one the card
+sits on until a person says how it went, and saying so was finding a field and
+picking a value out of it. The route already knows where each of the two
+answers leads, so the strip draws them named by the stage they lead to — «← В
+работе», «Деплой →» — and pressing one writes the outcome **through
+`UpdateCard`**, which is the one board write of ours that notifies, because the
+notify is what wakes `handleCardChanged` and moves the card. Offered only where
+the route has such an edge and nothing is running: a stage that decides for
+itself must not grow a second way to answer for it. Asked **per board and not
+per card** (`CardMarksForBoard` → `ListCardMarks`), the bargain `ListTerminals`
+already takes for the console button: a board has as many cards as it likes and
+a call each would be a round trip for every card drawn.
+
+**Those two transitions are drawn as the outcomes they are** (`isOutcomeEdge`):
+green on, red back, out of the same two sockets every stage uses. They ride
+`card.changed`, and colouring by the trigger drew them grey and dashed among the
+waits — which is how the way back from a review managed to be on the canvas and
+invisible for five separate askings. On a stage where nothing runs these two
+*are* the success and the failure, so the caption is dropped: the colour says
+which is which.
+
+**Deleting a route is confirmed and then written through** rather than queued
+behind Save (`onDeleteRoute`). Everything else in that editor is a draft
+somebody may still be arranging; a route somebody has just confirmed deleting is
+not, and what goes with it — where every card standing on it was — cannot be
+edited back.
+
+**And the dataflow is on the picture, because that is where the fork is drawn**
+(`StageWrite`, `HANDLE_WRITE`, `stageHeight`). A stage's resolved writes are a
+third line of chips on its box, and each one whose property has a closed set is
+also a `Handle`: pulling from it makes `{on: SUCCESS, if: {property, value: ''}}`
+— "the card goes here depending on this" — with the value left for the panel,
+since that is the one thing the gesture cannot carry. The caption says
+«Вердикт = ?» in amber until it is answered, written as `labelStyle` rather than
+a class because the library renders the label into a portal of its own that no
+edge class reaches. **Only a closed set is connectable**: an arrow asks "is it
+this value", so a text output is drawn faint and carries no port — which is why
+the new-property form asks what the property holds. The box grows by
+`WRITE_ROW`, stated in both the geometry and the stylesheet (the canvas is told
+the size before it paints; a measured box draws its arrows from the wrong corner
+on the first frame), and the row pitch takes the tallest stage on the route. The
+condition picker is ordered by the same graph: what this stage writes, then what
+the stages before it write with their names, then the board — an alphabetical
+list of every select buried the three that a route actually produces.
 
 **Tools are the column's answer too, and inherited exactly as the crew is**
 (`MCPServers` on `ColumnSpec` and `FlowNode`, resolved by `startOptions.
