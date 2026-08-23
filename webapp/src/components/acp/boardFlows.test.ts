@@ -75,10 +75,18 @@ describe('a board drawn by one of its routes', () => {
         expect(groups[0].cards.map((c) => c.id)).toEqual(['fresh', 'hotfix'])
     })
 
-    test('draws the whole board when no route is picked', () => {
+    // The rule is not about a route: it divides the column cards arrive in from
+    // what the board does with them, which is true of the whole board too.
+    test('draws the whole board when no route is picked, and still divides off the intake column', () => {
         const {groups, dividerAfter} = flowView(board(), undefined, {}, status)
         expect(groups.length).toEqual(5)
-        expect(dividerAfter).toEqual('')
+        expect(dividerAfter).toEqual('todo')
+    })
+
+    // One column has nothing on the other side of the rule.
+    test('draws no rule on a board of one column', () => {
+        const one = board().slice(0, 1)
+        expect(flowView(one, undefined, {}, status).dividerAfter).toEqual('')
     })
 
     // The inbox is grouped by who brought the card, and its columns are people.

@@ -681,8 +681,17 @@ dropped it would hide the only column work comes from; it is kept whatever the
 route, drawn first, and separated by a rule in the header and the body alike
 (`dividerAfter`, `.octo-board-divider`). Which column that is, is the view's
 own first option group and never a name: the shipped «Разработка» calls it «Не
-начата», and nothing here may know that. What the line divides is what arrives
-from what the route does with it.
+начата», and nothing here may know that.
+
+**The rule is not about the route, though**, and for a while it was drawn only
+while one was picked — which is the board nobody has on screen most of the
+time. What it divides is what arrives from what the board does with it, and
+that is as true of the whole board as of one route through it, so
+`intakeColumn` answers before the narrowing and the narrowing only takes
+columns away from the right of it. Two boards have nothing to divide and get no
+rule: one grouped by a person, where the groups are authors rather than places
+— «Входящие» is that board — and one with a single column, where a rule after
+the only group is furniture.
 
 Both halves are edited over **the board's own columns**: `components/acp/
 automationEditor.tsx` draws every option of the board's column property as a box,

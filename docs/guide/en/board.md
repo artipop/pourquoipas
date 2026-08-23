@@ -67,9 +67,11 @@ The button is there on any board with a route at all, even a single one:
 narrowing a board of nine columns to the three its route goes through is worth
 it too.
 
-The board's first column stays whatever the route, separated from the rest by a
-vertical line. A card arrives there before anything has decided which route it
-takes, so that column belongs to every route at once. A card already travelling
+The board's first column is separated from the rest by a vertical line —
+always, not only when a route is picked. What arrives is to the left of it,
+what the board does with it is to the right. A card arrives in that first
+column before anything has decided which route it takes, so it stays there
+whatever the route is: that column belongs to every route at once. A card already travelling
 another route disappears from it; a card that has chosen no route is shown
 under every one.
 

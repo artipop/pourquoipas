@@ -118,8 +118,9 @@ export function flowById(list: Flow[], id: string): Flow | undefined {
 export type FlowView = {
     groups: BoardGroup[]
 
-    // The column every route shares, by option id. Empty when no route is
-    // picked — the whole board is one picture then, with nothing to separate.
+    // The column cards arrive in, by option id, with a rule drawn after it.
+    // Empty where the division means nothing: a board grouped by a person, or
+    // one with a single column.
     dividerAfter: string
 }
 
@@ -142,6 +143,24 @@ export function routeRunsOn(flow: Flow, property?: IPropertyTemplate): boolean {
         (n.optionId && n.optionId === o.id) || o.value.toLowerCase() === n.column.toLowerCase()))
 }
 
+// intakeColumn is the column cards arrive in, which is the view's own first
+// column group and never a name: each shipped board names that column its own
+// way and nothing here may know which.
+//
+// The rule after it divides what arrives from what the board does with it, so
+// it is drawn whether or not a route is picked — narrowing to one route only
+// takes columns away from the right of it. Two boards have nothing to divide:
+// one grouped by a person, where the groups are authors rather than places (the
+// inbox is that board), and one with a single column, where a rule after the
+// only group is furniture.
+function intakeColumn(groups: BoardGroup[], property?: IPropertyTemplate): string {
+    if (property?.type === 'createdBy' || property?.type === 'updatedBy' || property?.type === 'person') {
+        return ''
+    }
+    const columns = groups.filter((g) => g.option.id)
+    return columns.length > 1 ? columns[0].option.id : ''
+}
+
 // flowView narrows the board's columns and cards to one route.
 //
 // Columns keep the board's own order rather than the route's: the order is the
@@ -149,14 +168,14 @@ export function routeRunsOn(flow: Flow, property?: IPropertyTemplate): boolean {
 // is the group of cards standing in no column at all — a card with no column is
 // on no stage, so no route passes through it.
 export function flowView(groups: BoardGroup[], flow: Flow | undefined, onFlow: Record<string, string>, property?: IPropertyTemplate): FlowView {
+    const dividerAfter = intakeColumn(groups, property)
     if (!flow || !routeRunsOn(flow, property)) {
-        return {groups, dividerAfter: ''}
+        return {groups, dividerAfter}
     }
     const columns = groups.filter((g) => g.option.id)
     if (columns.length === 0) {
         return {groups: columns, dividerAfter: ''}
     }
-    const first = columns[0]
     const kept = columns.filter((g, i) => i === 0 || Boolean(nodeFor(flow, {
         optionId: g.option.id,
         name: g.option.value,
@@ -164,6 +183,10 @@ export function flowView(groups: BoardGroup[], flow: Flow | undefined, onFlow: R
     })))
     return {
         groups: kept.map((g) => ({...g, cards: g.cards.filter((c) => !onFlow[c.id] || onFlow[c.id] === flow.id)})),
-        dividerAfter: first.option.id,
+
+        // Narrowing can leave the intake column alone on screen — a route whose
+        // stages are all hidden from this view — and a rule after the only
+        // column divides nothing.
+        dividerAfter: kept.length > 1 ? dividerAfter : '',
     }
 }
