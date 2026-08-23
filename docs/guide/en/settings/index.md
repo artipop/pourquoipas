@@ -24,10 +24,10 @@ agents, "The app itself", "Updates", "Import and export" and "Other" remain.
 
 ## The app itself: theme, language, help
 
-- **Theme** — a dropdown: "System theme", the two XCIII themes, the ported
-  ones, the acid ones, and "Custom config" — a field to paste a theme in
-  Mattermost's format into. Applies immediately; in full,
-  [Themes](./themes.md).
+- **Theme** — a dropdown: XCIII, the ported ones, the acid ones, and "Custom
+  config" — a field to paste a theme in Mattermost's format into.
+- **Light or dark** — "Light", "Dark", "As the system is"; every theme has both
+  halves. All of it applies immediately; in full, [Themes](./themes.md).
 - **Language** — the list of app languages. When none was ever picked, the
   system language applies.
 - **Help** — "The guide", with an "Open" button: it opens this guide. Below

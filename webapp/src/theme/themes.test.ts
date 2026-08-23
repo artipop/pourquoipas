@@ -2,20 +2,23 @@ import {rawThemeVars} from '../styles/tokensSource'
 
 import {AA, AA_MARK, contrast, over, parseColor, RGB} from './color'
 import {parseTheme, ThemeConfigError} from './config'
-import {SHIPPED_THEMES, shippedTheme, THEME_GROUPS} from './themes'
+import {familyOfVariant, SHIPPED_VARIANTS, themeFamily, THEME_FAMILIES} from './themes'
 import {themeTokens} from './tokens'
 
-import {darkThemeName, lightThemeName} from './index'
-
-// A theme is a config, and these are the two things that has to be true of one.
+// A theme is a config, and these are the things that have to be true of one.
 //
-// It has to *say the same as the stylesheet* for the two themes the product
-// was designed in — `_tokens.scss` still paints the first frame, so a config
-// that disagreed with it would be a flash of one palette followed by another.
+// It has to *say the same as the stylesheet* for the two halves of the theme
+// the product was designed in — `_tokens.scss` still paints the first frame, so
+// a config that disagreed with it would be a flash of one palette followed by
+// another.
 //
-// And every theme has to be *readable*, including the ones borrowed from
-// another product and the ones written as a joke. The derivation adjusts what
-// a config says where it has to; this is the check that it adjusted enough.
+// Every variant has to be *readable*, including the ones borrowed from another
+// product and the ones written as a joke. The derivation adjusts what a config
+// says where it has to; this is the check that it adjusted enough.
+//
+// And every theme has to be a *pair*, because the picker now asks which design
+// and which polarity as two questions: a family with one half would leave the
+// second control pointing at nothing.
 
 const triple = (value: string): RGB => value.split(',').map((n) => Number(n.trim())) as RGB
 
@@ -38,28 +41,48 @@ const LABEL_TOKENS = [
 const LABEL_TEXT_ALPHA = 0.8
 
 describe('theme/themes', () => {
-    it('gives every theme an id of its own', () => {
-        const ids = SHIPPED_THEMES.map((theme) => theme.id)
-        expect(ids.filter((id) => !id)).toEqual([])
-        expect(new Set(ids).size).toBe(ids.length)
+    it('gives every theme and every variant an id of its own', () => {
+        const families = THEME_FAMILIES.map((family) => family.id)
+        expect(families.filter((id) => !id)).toEqual([])
+        expect(new Set(families).size).toBe(families.length)
+
+        const variants = SHIPPED_VARIANTS.map((variant) => variant.id)
+        expect(variants.filter((id) => !id)).toEqual([])
+        expect(new Set(variants).size).toBe(variants.length)
     })
 
-    it('names every theme, so the dropdown has something to draw', () => {
-        expect(SHIPPED_THEMES.filter((theme) => !theme.name)).toEqual([])
+    it('names every theme, so the list has something to draw', () => {
+        expect(THEME_FAMILIES.filter((family) => !family.name)).toEqual([])
     })
 
-    it('puts every theme in exactly one group', () => {
-        const grouped = THEME_GROUPS.flatMap((group) => group.themes)
-        expect(grouped.length).toBe(SHIPPED_THEMES.length)
-        expect(new Set(grouped).size).toBe(grouped.length)
+    // The load-bearing half of the split. A family whose two halves are the
+    // same polarity — or the same file — is one the light/dark control cannot
+    // move, and the control would say nothing while looking like it does.
+    it('gives every theme a light half and a dark half', () => {
+        for (const family of THEME_FAMILIES) {
+            expect([family.id, family.light.type]).toEqual([family.id, 'light'])
+            expect([family.id, family.dark.type]).toEqual([family.id, 'dark'])
+        }
+    })
+
+    // How a setting written when a variant *was* a theme is read back:
+    // `windows-dark` still names a real half of a real theme.
+    it('finds the theme a variant belongs to', () => {
+        expect(familyOfVariant('windows-dark')?.family.id).toBe('windows')
+        expect(familyOfVariant('windows-dark')?.dark).toBe(true)
+        expect(familyOfVariant('light-theme')?.family.id).toBe('xciii')
+        expect(familyOfVariant('light-theme')?.dark).toBe(false)
+        expect(familyOfVariant('no-such-theme')).toBeUndefined()
     })
 
     // The load-bearing one. `_tokens.scss` is the first paint and the config is
     // every frame after it; the two disagreeing is a palette that changes as
     // the page finishes loading.
-    describe.each([[lightThemeName, false], [darkThemeName, true]] as const)('%s', (id, dark) => {
+    describe.each([['light', false], ['dark', true]] as const)('the XCIII %s half', (half, dark) => {
+        const config = () => (dark ? themeFamily('xciii')!.dark : themeFamily('xciii')!.light)
+
         it('says exactly what _tokens.scss says', () => {
-            const tokens = themeTokens(parseTheme(shippedTheme(id)!, id))
+            const tokens = themeTokens(parseTheme(config(), half))
             const scss = rawThemeVars(dark)
             const raw = Object.fromEntries(
                 Object.entries(scss).
@@ -74,13 +97,13 @@ describe('theme/themes', () => {
         // And the other direction: a raw token added to the stylesheet that no
         // config can produce is a colour the theme field cannot reach.
         it('produces every raw token the stylesheet declares', () => {
-            const tokens = themeTokens(parseTheme(shippedTheme(id)!, id))
+            const tokens = themeTokens(parseTheme(config(), half))
             const missing = Object.keys(rawThemeVars(dark)).filter((name) => !(name in tokens))
             expect(missing).toEqual([])
         })
     })
 
-    describe.each(SHIPPED_THEMES.map((theme) => [theme.name!, theme] as const))('%s', (_name, config) => {
+    describe.each(SHIPPED_VARIANTS.map((variant) => [variant.name!, variant] as const))('%s', (_name, config) => {
         const tokens = () => themeTokens(parseTheme(config, config.id!))
         const token = (name: string) => colour(tokens()[name])
 
@@ -145,6 +168,12 @@ describe('theme/themes', () => {
         it('is read as light or dark without being told', () => {
             expect(parseTheme(mattermost).dark).toBe(false)
             expect(parseTheme({...mattermost, centerChannelBg: '#1f1f1f'}).dark).toBe(true)
+        })
+
+        // What the TypeScript literal would have caught, caught out loud: the
+        // configs arrive as imported JSON, where `type` can only be `string`.
+        it('refuses a polarity that is neither', () => {
+            expect(() => parseTheme({...mattermost, type: 'drak'})).toThrow('type')
         })
 
         it('gets a surface, ten labels and a shadow it never named', () => {

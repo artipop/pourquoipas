@@ -1,9 +1,15 @@
-// Every theme this build ships, in the order the dropdown draws them.
+// Every theme this build ships, in the order the list draws them.
 //
-// They are JSON files rather than objects in this module because a theme is a
-// config: the same text a person pastes into the settings is the text that is
-// committed here, so "our theme" and "a theme somebody found" are the same
-// kind of thing and one can be made from the other by copying.
+// A theme is a **pair**: the same design in light and in dark. That is what
+// splits the one question the picker used to ask into the two it was really
+// asking — which palette, and which side of the line — and it is why there is
+// no «Windows Dark» in the list any more, only «Windows», with the dark half
+// chosen by the switch beside it.
+//
+// The halves are JSON files rather than objects in this module because a
+// variant is a config: the same text a person pastes into the settings is the
+// text committed here, so "our theme" and "a theme somebody found" are the
+// same kind of thing and one can be made from the other by copying.
 //
 // The three groups are what a person is choosing between — the product's own
 // look, a look borrowed from somewhere else, and a joke — and the titles they
@@ -15,63 +21,93 @@ import acidTechnoGreenDark from './themes/acid-techno-green-dark.json'
 import acidTechnoGreenLight from './themes/acid-techno-green-light.json'
 import darkTheme from './themes/dark-theme.json'
 import discordDark from './themes/discord-dark.json'
+import discordLight from './themes/discord-light.json'
+import githubDark from './themes/github-dark.json'
 import githubLight from './themes/github-light.json'
 import gruvboxDark from './themes/gruvbox-dark.json'
+import gruvboxLight from './themes/gruvbox-light.json'
 import lightTheme from './themes/light-theme.json'
+import monokaiDark from './themes/monokai-dark.json'
 import monokaiLight from './themes/monokai-light.json'
 import nightOwlDark from './themes/night-owl-dark.json'
+import nightOwlLight from './themes/night-owl-light.json'
 import oneDark from './themes/one-dark.json'
+import oneLight from './themes/one-light.json'
 import solarizedDark from './themes/solarized-dark.json'
+import solarizedLight from './themes/solarized-light.json'
 import windowsDark from './themes/windows-dark.json'
+import windowsLight from './themes/windows-light.json'
 
 import {ThemeConfig} from './config'
 
 export type ThemeGroupId = 'xciii' | 'ported' | 'acid'
 
-export type ThemeGroup = {
-    id: ThemeGroupId
-    themes: ThemeConfig[]
+export type ThemeFamily = {
+    id: string
+    name: string
+    group: ThemeGroupId
+    light: ThemeConfig
+    dark: ThemeConfig
 }
 
-// The two the product was designed in. Their ids are the names the setting has
-// stored since before themes were configs, so an install that picked one keeps
-// it without a migration.
-export const THEME_GROUPS: ThemeGroup[] = [
-    {
-        id: 'xciii',
-        themes: [lightTheme, darkTheme],
-    },
-    {
+// The name in the list is the family's, not the file's: a variant keeps its own
+// («Gruvbox Light», «XCIII — бумага») because that is what it is, and because a
+// config exported from here should say which half it is.
+export const THEME_FAMILIES: ThemeFamily[] = [
 
-        // Mattermost's own community list, run through the derivation and kept
-        // where it came out looking like this product rather than like a
-        // recolouring of another one. What each of them had to be told is in
-        // `docs/themes.md`.
-        id: 'ported',
-        themes: [
-            windowsDark,
-            oneDark,
-            gruvboxDark,
-            nightOwlDark,
-            discordDark,
-            solarizedDark,
-            githubLight,
-            monokaiLight,
-        ],
+    // The one the product was designed in. Its id is `xciii`, and the two
+    // halves keep the names the setting stored before themes were configs, so
+    // an install that picked one is read without a migration table.
+    {id: 'xciii', name: 'XCIII', group: 'xciii', light: lightTheme, dark: darkTheme},
+
+    // Mattermost's own community list. Each of those themes exists in one
+    // polarity there and in both upstream, so the missing half is the real one
+    // — One Light, Gruvbox Light, Light Owl, Solarized Light and the rest —
+    // rather than an inversion of the half that was published for a chat
+    // client. `docs/themes.md` says what each of them had to be told.
+    {id: 'windows', name: 'Windows', group: 'ported', light: windowsLight, dark: windowsDark},
+    {id: 'one', name: 'One', group: 'ported', light: oneLight, dark: oneDark},
+    {id: 'gruvbox', name: 'Gruvbox', group: 'ported', light: gruvboxLight, dark: gruvboxDark},
+    {id: 'night-owl', name: 'Night Owl', group: 'ported', light: nightOwlLight, dark: nightOwlDark},
+    {id: 'discord', name: 'Discord', group: 'ported', light: discordLight, dark: discordDark},
+    {id: 'solarized', name: 'Solarized', group: 'ported', light: solarizedLight, dark: solarizedDark},
+    {id: 'github', name: 'GitHub', group: 'ported', light: githubLight, dark: githubDark},
+    {id: 'monokai', name: 'Monokai', group: 'ported', light: monokaiLight, dark: monokaiDark},
+
+    {
+        id: 'acid-blue-yellow',
+        name: 'Кислота: синий и жёлтый',
+        group: 'acid',
+        light: acidBlueYellowLight,
+        dark: acidBlueYellowDark,
     },
     {
-        id: 'acid',
-        themes: [
-            acidBlueYellowLight,
-            acidBlueYellowDark,
-            acidTechnoGreenLight,
-            acidTechnoGreenDark,
-        ],
+        id: 'acid-techno-green',
+        name: 'Эйсид-техно',
+        group: 'acid',
+        light: acidTechnoGreenLight,
+        dark: acidTechnoGreenDark,
     },
 ]
 
-export const SHIPPED_THEMES: ThemeConfig[] = THEME_GROUPS.flatMap((group) => group.themes)
+export const SHIPPED_VARIANTS: ThemeConfig[] = THEME_FAMILIES.flatMap((f) => [f.light, f.dark])
 
-export function shippedTheme(id: string): ThemeConfig | undefined {
-    return SHIPPED_THEMES.find((theme) => theme.id === id)
+export function themeFamily(id: string): ThemeFamily | undefined {
+    return THEME_FAMILIES.find((family) => family.id === id)
+}
+
+// Which family a *variant* belongs to, and which half it is. This is the whole
+// of the migration: a setting written when the list held one entry per variant
+// named that variant, and it still names a real theme — `windows-dark` is
+// «Windows», dark.
+export function familyOfVariant(variantId: string): {family: ThemeFamily, dark: boolean} | undefined {
+    for (const family of THEME_FAMILIES) {
+        if (family.light.id === variantId) {
+            return {family, dark: false}
+        }
+        if (family.dark.id === variantId) {
+            return {family, dark: true}
+        }
+    }
+    return undefined
 }

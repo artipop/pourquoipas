@@ -5,19 +5,23 @@ import {useIntl} from '../../intl'
 import {Constants} from '../../constants'
 import {useAppStore} from '../../store/hooks'
 import CheckIcon from '../../widgets/icons/check'
+import Select, {SelectOption} from '../../widgets/select'
 import {
     activeThemeConfig,
     customThemeName,
+    getActiveThemeMode,
     getActiveThemeName,
     getCustomThemeSource,
     setCustomThemeSource,
     setTheme,
-    systemThemeName,
+    setThemeMode,
     themeConfigText,
     ThemeConfigError,
     ThemeGroupId,
+    ThemeMode,
+    themeModes,
     ThemeName,
-    THEME_GROUPS,
+    THEME_FAMILIES,
 } from '../../theme'
 
 import './appPanel.scss'
@@ -32,33 +36,53 @@ import './appPanel.scss'
 // The languages are laid out rather than folded into a menu: there are a dozen
 // of them, and a person picking one wants to see what there is.
 //
-// The themes are a dropdown, and they are the one place that rule turned over.
-// There were three of them and there are fourteen — the two the product was
-// designed in, eight borrowed from Mattermost's own community list, four
-// written as a joke — and a row of fourteen chips is a wall, not a choice. It
-// is the platform's own `select` rather than this app's menu: a native list
-// takes `color-scheme` from the theme being previewed, and it is drawn by the
-// window rather than by the page, so the clipping a dialog's own menu has to
-// be placed around does not arise.
+// The themes are a dropdown, and they are the one place that rule turned over:
+// there were three of them and there are eleven, and a row of eleven chips is a
+// wall rather than a choice. It is `widgets/select` — the app's own field over
+// the app's own menu — and not the platform's `<select>`, which keeps the
+// system's white on a dark board and drops a list no stylesheet can reach.
+//
+// **Light or dark is a second question and gets a second control.** A theme is
+// a design and it comes in both; whether this machine wears the light half, the
+// dark one or whichever the system is set to has nothing to do with which
+// design it is. One list said «Gruvbox Dark» and «Как в системе» in the same
+// column, so picking a design meant also deciding a polarity, and following the
+// system meant giving up every design but ours. Three answers, so they are laid
+// out — the rule the themes are the exception to.
 
 const AppPanel = () => {
     const intl = useIntl()
     const {actions} = useAppStore()
 
     // The theme module writes the tokens onto the document element and is not
-    // reactive, so which one is current is kept here, seeded with what startup
+    // reactive, so what is current is kept here, seeded with what startup
     // loaded.
     const [themeName, setThemeName] = createSignal(getActiveThemeName())
+    const [mode, setMode] = createSignal(getActiveThemeMode())
     const [source, setSource] = createSignal(getCustomThemeSource())
     const [error, setError] = createSignal('')
 
     // Spelled out rather than built as `Settings.theme-group-${id}`: a computed
     // id is invisible to `npm run i18n-extract`, so it would reach no catalogue
     // and read as a dead entry in every other one.
-    const groupTitle = (id: ThemeGroupId): string => {
+    const modeTitle = (value: ThemeMode): string => {
+        switch (value) {
+        case 'light':
+            return intl.formatMessage({id: 'Settings.theme-mode-light', defaultMessage: 'Light'})
+        case 'dark':
+            return intl.formatMessage({id: 'Settings.theme-mode-dark', defaultMessage: 'Dark'})
+        default:
+            return intl.formatMessage({id: 'Settings.theme-mode-system', defaultMessage: 'As the system is'})
+        }
+    }
+
+    // The product's own theme has no heading over it: it is one entry, it is
+    // first, and the heading would have said «XCIII» directly above an entry
+    // called «XCIII».
+    const groupTitle = (id: ThemeGroupId): string | undefined => {
         switch (id) {
         case 'xciii':
-            return intl.formatMessage({id: 'Settings.theme-group-xciii', defaultMessage: 'XCIII'})
+            return undefined
         case 'ported':
             return intl.formatMessage({id: 'Settings.theme-group-ported', defaultMessage: 'Ported'})
         default:
@@ -120,6 +144,19 @@ const AppPanel = () => {
 
     const choiceClass = (current: boolean) => `AppPanel__choice${current ? ' AppPanel__choice--current' : ''}`
 
+    const themeOptions = (): SelectOption[] => [
+        ...THEME_FAMILIES.map((family) => ({
+            value: family.id,
+            label: family.name,
+            group: groupTitle(family.group),
+        })),
+        {
+            value: customThemeName,
+            label: intl.formatMessage({id: 'Settings.theme-custom', defaultMessage: 'Custom config'}),
+            group: intl.formatMessage({id: 'Settings.theme-group-custom', defaultMessage: 'Your own'}),
+        },
+    ]
+
     const applyCustom = () => {
         setCustomThemeSource(source())
         setThemeName(customThemeName)
@@ -143,34 +180,50 @@ const AppPanel = () => {
             <div class='AppPanel__content'>
                 <section class='AppPanel__group'>
                     <h4 class='AppPanel__groupTitle'>
-                        <label for='xciii-theme'>
-                            {intl.formatMessage({id: 'Settings.theme', defaultMessage: 'Theme'})}
-                        </label>
+                        {intl.formatMessage({id: 'Settings.theme', defaultMessage: 'Theme'})}
                     </h4>
-                    <select
-                        id='xciii-theme'
+                    <Select
                         class='AppPanel__select'
+                        label={intl.formatMessage({id: 'Settings.theme', defaultMessage: 'Theme'})}
                         value={themeName()}
-                        onChange={(event) => pickTheme(event.currentTarget.value)}
-                    >
-                        <option value={systemThemeName}>
-                            {intl.formatMessage({id: 'Sidebar.system-theme', defaultMessage: 'System theme'})}
-                        </option>
-                        <For each={THEME_GROUPS}>
-                            {(group) => (
-                                <optgroup label={groupTitle(group.id)}>
-                                    <For each={group.themes}>
-                                        {(theme) => <option value={theme.id}>{theme.name}</option>}
-                                    </For>
-                                </optgroup>
-                            )}
-                        </For>
-                        <option value={customThemeName}>
-                            {intl.formatMessage({id: 'Settings.theme-custom', defaultMessage: 'Custom config'})}
-                        </option>
-                    </select>
+                        options={themeOptions()}
+                        onChange={pickTheme}
+                    />
+                </section>
 
-                    <Show when={themeName() === customThemeName}>
+                {/* A pasted config is one half rather than a pair, so it brings
+                    its own polarity and this control has nothing to say about
+                    it — the hint under the field says so. */}
+                <Show when={themeName() !== customThemeName}>
+                    <section class='AppPanel__group'>
+                        <h4 class='AppPanel__groupTitle'>
+                            {intl.formatMessage({id: 'Settings.theme-mode', defaultMessage: 'Light or dark'})}
+                        </h4>
+                        <div class='AppPanel__choices'>
+                            <For each={themeModes}>
+                                {(value) => (
+                                    <button
+                                        type='button'
+                                        class={choiceClass(mode() === value)}
+                                        aria-pressed={mode() === value}
+                                        onClick={() => setMode(setThemeMode(value))}
+                                    >
+                                        <span class='AppPanel__choiceName'>{modeTitle(value)}</span>
+                                        <Show when={mode() === value}>
+                                            <span class='AppPanel__choiceTick'><CheckIcon/></span>
+                                        </Show>
+                                    </button>
+                                )}
+                            </For>
+                        </div>
+                    </section>
+                </Show>
+
+                <Show when={themeName() === customThemeName}>
+                    <section class='AppPanel__group'>
+                        <h4 class='AppPanel__groupTitle'>
+                            {intl.formatMessage({id: 'Settings.theme-custom', defaultMessage: 'Custom config'})}
+                        </h4>
                         <div class='AppPanel__custom'>
                             <div class='AppPanel__actionHint'>
                                 {intl.formatMessage({
@@ -186,9 +239,14 @@ const AppPanel = () => {
                                     {intl.formatMessage({id: 'Settings.theme-custom-help', defaultMessage: 'What the keys mean'})}
                                 </a>
                             </div>
+                            {/* The field is named apart from the theme list
+                                beside it: that list's trigger is named by the
+                                value it shows, which is «Свой конфиг» exactly
+                                when this field is on screen — two controls
+                                answering to one name. */}
                             <textarea
                                 class='AppPanel__code'
-                                aria-label={intl.formatMessage({id: 'Settings.theme-custom', defaultMessage: 'Custom config'})}
+                                aria-label={intl.formatMessage({id: 'Settings.theme-custom-field', defaultMessage: 'Theme config'})}
                                 spellcheck={false}
                                 rows={12}
                                 value={source()}
@@ -210,8 +268,8 @@ const AppPanel = () => {
                                 </Show>
                             </div>
                         </div>
-                    </Show>
-                </section>
+                    </section>
+                </Show>
 
                 <section class='AppPanel__group'>
                     <h4 class='AppPanel__groupTitle'>

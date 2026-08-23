@@ -1,22 +1,28 @@
 # Themes
 
-The theme is picked in "Settings → The app → Theme". It is a dropdown, and the
-choice applies at once — the board repaints under it.
+The theme is picked in "Settings → The app". There are two fields there, because
+there are two questions.
+
+**"Theme"** — which design. A dropdown; the choice applies at once.
+
+**"Light or dark"** — which side it is on: "Light", "Dark" or "As the system
+is". Every theme has both halves, so you can take Gruvbox and leave "As the
+system is": the board will lighten and darken with the system without ceasing
+to be Gruvbox.
 
 ## What is in the list
 
-- **"System theme"** — the light or the dark XCIII theme, whichever the system
-  is set to. It follows the system, with no restart.
-- **XCIII** — «XCIII — бумага» and «XCIII — экран», the two themes the
-  product itself is drawn in.
-- **Ported** — themes from Mattermost's community list: Windows Dark, One Dark,
-  Gruvbox Dark, Night Owl, Discord Dark, Solarized Dark, GitHub, Monokai.
-- **Acid** — «Кислота: синий по жёлтому», «Кислота: жёлтый по синему»,
-  «Эйсид-техно: лайм», «Эйсид-техно: фосфор».
+- **XCIII** — the theme the product itself is drawn in: warm paper and a black
+  screen.
+- **Ported** — themes from Mattermost's community list: Windows, One, Gruvbox,
+  Night Owl, Discord, Solarized, GitHub, Monokai. The half that list does not
+  carry is the real one the theme has at home — One Light, Gruvbox Light, Light
+  Owl and so on.
+- **Acid** — «Кислота: синий и жёлтый» and «Эйсид-техно».
 - **"Custom config"** — a theme you pasted in yourself, below.
 
-The picked theme is kept by the install itself: it survives a restart and
-applies on a phone through
+The picked theme and polarity are kept by the install itself: they survive a
+restart and apply on a phone through
 ["Access from a phone"](./index.md#access-from-a-phone).
 
 ## A config of your own
@@ -25,6 +31,11 @@ A theme is a JSON object in Mattermost's format. Pick "Custom config" in the
 list and a field appears under it. It opens on a copy of the theme that was on
 screen, so the easiest way to write a new one is to edit an old one. Paste your
 config and press **"Apply"**.
+
+A pasted config is one half rather than a pair: it says for itself whether it is
+light or dark (through the `type` key, and without it by how light the
+background is). So "Light or dark" is not drawn while it is on — there is
+nothing for it to switch.
 
 Ready-made themes for this format are in Mattermost's own documentation, under
 [Customize your theme](https://docs.mattermost.com/end-user-guide/preferences/customize-your-theme.html)

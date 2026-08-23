@@ -5,6 +5,12 @@ export enum UserSettingKey {
     Language = 'language',
     Theme = 'theme',
 
+    // Light, dark or whichever the system is set to. Beside `Theme` rather
+    // than folded into it, because which design and which polarity are two
+    // questions: following the system used to mean giving up every design but
+    // the product's own.
+    ThemeMode = 'themeMode',
+
     // The config pasted into the theme field, kept whether or not it is the
     // theme in use: switching to a shipped theme and back must not lose it.
     CustomTheme = 'customTheme',
@@ -37,6 +43,7 @@ export enum UserSettingKey {
 const installKept = new Set<string>([
     UserSettingKey.Language,
     UserSettingKey.Theme,
+    UserSettingKey.ThemeMode,
     UserSettingKey.CustomTheme,
     UserSettingKey.NameFormat,
     UserSettingKey.LastTeamId,
@@ -113,6 +120,14 @@ export class UserSettings {
 
     static set theme(newValue: string | null) {
         UserSettings.set(UserSettingKey.Theme, newValue)
+    }
+
+    static get themeMode(): string | null {
+        return UserSettings.get(UserSettingKey.ThemeMode)
+    }
+
+    static set themeMode(newValue: string | null) {
+        UserSettings.set(UserSettingKey.ThemeMode, newValue)
     }
 
     static get customTheme(): string | null {

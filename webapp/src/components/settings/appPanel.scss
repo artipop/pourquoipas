@@ -11,19 +11,11 @@
         font-weight: 600;
     }
 
-    // The platform's own list. It is styled only as far as making it the width
-    // of the panel and giving it this product's own border: the popup itself
-    // is drawn by the window and takes its colours from `color-scheme`, which
-    // the theme being applied has just set.
+    // `widgets/select` draws its own field; all this settles is that it is as
+    // wide as the panel, the way the code field under it is. It began life as
+    // a native `<select>`, which is the thing that widget exists instead of.
     .AppPanel__select {
         width: 100%;
-        padding: 8px 12px;
-        border: 1px solid rgba(var(--center-channel-color-rgb), 0.12);
-        border-radius: var(--radius-md);
-        background: rgba(var(--center-channel-color-rgb), 0.04);
-        color: rgb(var(--center-channel-color-rgb));
-        font: inherit;
-        cursor: pointer;
     }
 
     .AppPanel__custom {

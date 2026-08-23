@@ -24,6 +24,13 @@ export type SelectOption = {
     value: string
     label: string
     disabled?: boolean
+
+    // A heading drawn above this option, when it is the first of its group.
+    // The options carry it rather than the list being a list of groups,
+    // because every caller has a flat list and the current value is looked up
+    // in it; a nested shape would have made both of those two lines longer to
+    // spare the one place that groups anything.
+    group?: string
 }
 
 type Props = {
@@ -67,19 +74,24 @@ const Select = (props: Props): JSX.Element => {
                     matchAnchorWidth={true}
                 >
                     <For each={props.options}>
-                        {(option) => (
-                            <Menu.Text
-                                id={option.value}
-                                name={option.label}
-                                disabled={option.disabled}
-                                check={true}
-                                icon={option.value === props.value ? <CheckIcon/> : <div class='empty-icon'/>}
-                                onClick={() => {
-                                    if (!option.disabled) {
-                                        props.onChange(option.value)
-                                    }
-                                }}
-                            />
+                        {(option, index) => (
+                            <>
+                                <Show when={option.group && option.group !== props.options[index() - 1]?.group}>
+                                    <Menu.Label>{option.group}</Menu.Label>
+                                </Show>
+                                <Menu.Text
+                                    id={option.value}
+                                    name={option.label}
+                                    disabled={option.disabled}
+                                    check={true}
+                                    icon={option.value === props.value ? <CheckIcon/> : <div class='empty-icon'/>}
+                                    onClick={() => {
+                                        if (!option.disabled) {
+                                            props.onChange(option.value)
+                                        }
+                                    }}
+                                />
+                            </>
                         )}
                     </For>
                 </Menu>

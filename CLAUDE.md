@@ -812,9 +812,22 @@ raised surface, the ten label tints, the shadows — and what it says unreadably
 is adjusted, since `awayIndicator` is an eight-pixel dot there and the word
 «ждёт» on a card here. Every shipped theme is held to the same contrast bar,
 ours included; that bar is what moved the paper theme's amber and its stamp a
-few levels. The dropdown is the one place the "lay the choices out rather than
-fold them into a menu" rule turned over: there were three themes and there are
-fourteen.
+few levels.
+**A theme is a pair, and which half is a second setting.** «XCIII», «Gruvbox»,
+«Эйсид-техно» each come light and dark, and `themeMode` — light, dark, or
+whichever the system is set to — says which is worn. One list asked both
+questions at once and could answer neither: it said «Gruvbox Dark» and «Как в
+системе» in the same column, so choosing a design also fixed a polarity, and
+following the system meant giving up every design but ours. A family with one
+half is refused by a test, because that is a switch that looks like it works and
+moves nothing; the eight themes borrowed from Mattermost's list are published
+there in one polarity and exist in both at home, so the missing halves are the
+real ones. The pasted config is the exception and stays one half — it brings its
+own polarity, so the switch is not drawn while it is on. The themes are the one
+place the "lay the choices out rather than fold them into a menu" rule turned
+over — eleven of them, in `widgets/select` and not a `<select>`, whose own
+comment says why — and the polarity, being three answers, is chips like
+everything else.
 **Neither of those two addresses is the repository.** The panel points at the
 guide (`Constants.guideUrl`, the doc site `docs/guide/` publishes) and at an
 email address (`Constants.feedbackEmail`), because the repository was standing

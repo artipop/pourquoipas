@@ -105,7 +105,12 @@ export type ThemeConfig = {
     // Which side of the line the theme is on, which decides `color-scheme`,
     // the shadows, and which way the derivations move. Inferred from
     // `centerChannelBg` when absent, since a config from elsewhere never says.
-    type?: 'light' | 'dark'
+    //
+    // Typed `string` rather than the two literals because these arrive as
+    // imported JSON, where TypeScript can only see `string`. What the literals
+    // would have caught is caught at parse instead, and better: a `type` that
+    // is neither is refused out loud rather than read as light.
+    type?: string
 
     codeTheme?: string
 } & Partial<Record<MattermostKey | XciiiKey, string>>
@@ -165,6 +170,10 @@ export function parseTheme(input: unknown, fallbackId = 'custom'): ParsedTheme {
 
     if (bad.length > 0) {
         throw new ThemeConfigError(`color:${bad.join(', ')}`)
+    }
+
+    if (config.type !== undefined && config.type !== 'light' && config.type !== 'dark') {
+        throw new ThemeConfigError('type')
     }
 
     const missing = REQUIRED_KEYS.filter((key) => !colors[key])

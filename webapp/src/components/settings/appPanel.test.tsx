@@ -1,4 +1,4 @@
-import {fireEvent, render, screen} from '@solidjs/testing-library'
+import {fireEvent, render, screen, waitFor, within} from '@solidjs/testing-library'
 import userEvent from '@testing-library/user-event'
 import '@testing-library/jest-dom'
 
@@ -6,11 +6,11 @@ import {TestRouter, mockAppStore, wrapIntl} from '../../testUtils'
 import {AppStoreProvider} from '../../store'
 import {Constants} from '../../constants'
 import {
-    customThemeName,
-    lightThemeName,
+    defaultFamilyId,
     setCustomThemeSource,
     setTheme,
-    SHIPPED_THEMES,
+    setThemeMode,
+    THEME_FAMILIES,
 } from '../../theme'
 
 import AppPanel from './appPanel'
@@ -22,7 +22,11 @@ describe('components/settings/appPanel', () => {
         vi.clearAllMocks()
         store = mockAppStore({})
         setCustomThemeSource('')
-        setTheme(lightThemeName)
+
+        // The polarity first: `setTheme` applies with whatever mode is
+        // current, and `system` asks `matchMedia`, which jsdom has not got.
+        setThemeMode('light')
+        setTheme(defaultFamilyId)
     })
 
     const open = () => render(() => wrapIntl(() =>
@@ -33,34 +37,62 @@ describe('components/settings/appPanel', () => {
         </AppStoreProvider>,
     ))
 
-    // How the app looks used to be an icon menu in the corner of the board.
-    // It is a setting of the install like every other one here — and a
-    // dropdown rather than a row of chips, because there are fourteen themes
-    // and there were three.
-    test('switches the theme', () => {
+    // How the app looks used to be an icon menu in the corner of the board. It
+    // is a setting of the install like every other one here — and the themes
+    // are the app's own dropdown, because there are eleven of them and a row of
+    // eleven chips is a wall.
+    // The trigger says the current theme's name and so does the option for it,
+    // and the group headings repeat a name too — so everything the list is
+    // asked about is asked of the list.
+    const openThemes = () => {
         open()
+        userEvent.click(screen.getByRole('button', {name: 'Theme'}))
+        return () => within(document.querySelector('.Menu .menu-options') as HTMLElement)
+    }
 
-        fireEvent.change(screen.getByLabelText('Theme'), {target: {value: 'windows-dark'}})
+    const pick = async (name: string) => {
+        const menu = openThemes()
+        await waitFor(() => expect(document.querySelector('.Menu .menu-options')).toBeInTheDocument())
+        userEvent.click(menu().getByRole('button', {name}))
+    }
 
-        expect(document.documentElement.dataset.theme).toBe('dark')
-        expect(document.documentElement.style.getPropertyValue('--canvas-rgb')).toBe('31, 31, 31')
+    test('switches the theme', async () => {
+        await pick('Windows')
+
+        // The light half, because the polarity is the other control's answer
+        // and this test set it to light.
+        await waitFor(() => expect(document.documentElement.style.getPropertyValue('--canvas-rgb')).toBe('243, 243, 243'))
+        expect(document.documentElement.dataset.theme).toBe('light')
     })
 
-    test('offers every theme this build ships', () => {
-        open()
+    // The split the two controls exist for: the design stays put while the
+    // polarity moves. One list could not do this — following the system meant
+    // giving up every design but the product's own.
+    test('turns the theme it is on from light to dark', async () => {
+        await pick('Gruvbox')
+        await waitFor(() => expect(document.documentElement.style.getPropertyValue('--canvas-rgb')).toBe('251, 241, 199'))
 
-        for (const theme of SHIPPED_THEMES) {
-            expect(screen.getByRole('option', {name: theme.name!})).toBeInTheDocument()
+        userEvent.click(screen.getByRole('button', {name: /^Dark/}))
+
+        await waitFor(() => expect(document.documentElement.style.getPropertyValue('--canvas-rgb')).toBe('60, 56, 54'))
+        expect(document.documentElement.dataset.theme).toBe('dark')
+    })
+
+    test('offers every theme this build ships', async () => {
+        const menu = openThemes()
+        await waitFor(() => expect(document.querySelector('.Menu .menu-options')).toBeInTheDocument())
+
+        for (const family of THEME_FAMILIES) {
+            expect(menu().getByRole('button', {name: family.name})).toBeInTheDocument()
         }
     })
 
     // The field is the whole point of borrowing Mattermost's format: a theme
     // written for another product is pasted in and worn.
-    test('wears a config that was pasted into it', () => {
-        open()
+    test('wears a config that was pasted into it', async () => {
+        await pick('Custom config')
 
-        fireEvent.change(screen.getByLabelText('Theme'), {target: {value: customThemeName}})
-        fireEvent.input(screen.getByLabelText('Custom config'), {
+        fireEvent.input(await screen.findByLabelText('Theme config'), {
             target: {
                 value: JSON.stringify({
                     centerChannelBg: '#102030',
@@ -72,43 +104,42 @@ describe('components/settings/appPanel', () => {
         })
         userEvent.click(screen.getByRole('button', {name: 'Apply'}))
 
-        expect(document.documentElement.style.getPropertyValue('--canvas-rgb')).toBe('16, 32, 48')
+        await waitFor(() => expect(document.documentElement.style.getPropertyValue('--canvas-rgb')).toBe('16, 32, 48'))
         expect(document.documentElement.dataset.theme).toBe('dark')
+
+        // A pasted config is one half, not a pair, so it brings its own
+        // polarity and the switch has nothing to say about it.
+        expect(screen.queryByRole('button', {name: /^Dark/})).not.toBeInTheDocument()
     })
 
     // A config nobody can read has to say which way it is wrong, because this
     // field is the only place a person finds out.
-    test('says why a config was refused', () => {
-        open()
+    test('says why a config was refused', async () => {
+        await pick('Custom config')
 
-        fireEvent.change(screen.getByLabelText('Theme'), {target: {value: customThemeName}})
-        fireEvent.input(screen.getByLabelText('Custom config'), {target: {value: '{oh no'}})
+        fireEvent.input(await screen.findByLabelText('Theme config'), {target: {value: '{oh no'}})
         userEvent.click(screen.getByRole('button', {name: 'Apply'}))
 
-        expect(screen.getByText('This is not JSON.')).toBeInTheDocument()
+        expect(await screen.findByText('This is not JSON.')).toBeInTheDocument()
     })
 
     // A config that stopped parsing is exactly when the field has to be on
     // screen: hanging it off "the theme applied" made a broken one impossible
     // to select and therefore impossible to fix.
-    test('opens the field on a stored config that no longer parses', () => {
+    test('opens the field on a stored config that no longer parses', async () => {
         setCustomThemeSource('{"centerChannelBg": "#fff"}')
-        open()
+        await pick('Custom config')
 
-        fireEvent.change(screen.getByLabelText('Theme'), {target: {value: customThemeName}})
-
-        expect(screen.getByLabelText('Custom config')).toHaveValue('{"centerChannelBg": "#fff"}')
+        expect(await screen.findByLabelText('Theme config')).toHaveValue('{"centerChannelBg": "#fff"}')
         expect(screen.getByText(/These keys are missing/)).toBeInTheDocument()
     })
 
     // Choosing the custom slot with nothing in it opens on a copy of the theme
     // on screen: a config field that opens empty is a format to go and look up.
-    test('opens the custom slot on a copy of the theme on screen', () => {
-        open()
+    test('opens the custom slot on a copy of the theme on screen', async () => {
+        await pick('Custom config')
 
-        fireEvent.change(screen.getByLabelText('Theme'), {target: {value: customThemeName}})
-
-        const field = screen.getByLabelText('Custom config') as HTMLTextAreaElement
+        const field = await screen.findByLabelText('Theme config') as HTMLTextAreaElement
         expect(JSON.parse(field.value).centerChannelBg).toBe('#f0ede5')
     })
 
