@@ -450,3 +450,50 @@ func TestTheDeveloperTemplateKeepsOutcomesOffTheBoard(t *testing.T) {
 			board.Fields.Properties.OutcomeProperty, outcome.ID)
 	}
 }
+
+// A board keeps the routes it was made with, so a route written before the way
+// onto a route existed has no arrow into its first stage — and the question
+// asked on the way in is exactly the one such a board would never ask. It is
+// repaired where the board is read.
+func TestARouteWrittenWithoutAWayInGetsOne(t *testing.T) {
+	flows := []FlowEntry{{
+		Name:  "old",
+		Nodes: []FlowNode{{ID: "agent"}, {ID: "review"}},
+		Edges: []FlowEdge{{From: "agent", To: "review", On: TriggerSuccess}},
+	}}
+	if added := addEntryTransitions(flows); added != 1 {
+		t.Fatalf("added %d ways in, expected 1", added)
+	}
+	edge := flows[0].EdgeBetween(EntryNode, "agent")
+	if edge == nil {
+		t.Fatalf("no way into the route's first stage: %+v", flows[0].Edges)
+	}
+	if len(edge.Ask) != 1 || edge.Ask[0].Kind != AskWorkMode {
+		t.Fatalf("the way in asks something else: %+v", edge.Ask)
+	}
+}
+
+// And one somebody has since edited is left as it is: this fills in what is
+// missing rather than restating what the shipped route says.
+func TestARouteThatAlreadyHasAWayInIsLeftAlone(t *testing.T) {
+	flows := []FlowEntry{{
+		Name:  "edited",
+		Nodes: []FlowNode{{ID: "agent"}},
+		Edges: []FlowEdge{{From: EntryNode, To: "agent", Ask: []EdgeAsk{{ID: "mine", Kind: AskProperty, Property: "Приоритет"}}}},
+	}}
+	if added := addEntryTransitions(flows); added != 0 {
+		t.Fatalf("added %d ways in to a route that had one", added)
+	}
+	if q := flows[0].Edges[0].Ask; len(q) != 1 || q[0].ID != "mine" {
+		t.Fatalf("somebody's own question was overwritten: %+v", q)
+	}
+}
+
+// A route with no stages has no first stage to lead into, and must not grow an
+// edge pointing at nothing — which is what the engine refuses to save.
+func TestARouteWithNoStagesGetsNoWayIn(t *testing.T) {
+	flows := []FlowEntry{{Name: "empty"}}
+	if added := addEntryTransitions(flows); added != 0 || len(flows[0].Edges) != 0 {
+		t.Fatalf("a route with no stages was given a way in: %+v", flows[0])
+	}
+}

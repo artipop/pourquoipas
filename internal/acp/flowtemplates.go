@@ -79,10 +79,7 @@ func (b *flowBuilder) node(id, column, action string) string {
 	// makes it the place to ask how this card's work is to be arranged. Coming
 	// back to the first stage later arrives from a real stage and asks nothing.
 	if len(b.flow.Nodes) == 1 {
-		b.flow.Edges = append(b.flow.Edges, FlowEdge{
-			From: EntryNode, To: id,
-			Ask: []EdgeAsk{{ID: "workmode", Kind: AskWorkMode}},
-		})
+		b.flow.Edges = append(b.flow.Edges, entryTransition(id))
 	}
 	return id
 }
@@ -127,6 +124,51 @@ func (b *flowBuilder) rejected(from, to string) {
 		From: from, To: to, On: TriggerCardChanged,
 		If: &EdgeCond{Property: OutcomePropertyTitle, Value: OutcomeFailed},
 	})
+}
+
+// entryTransition is the way onto a route: transition 0, which every route has.
+// It is a function rather than a literal at each call site because the shipped
+// routes and the ones being brought up to date have to agree about what it
+// carries, and disagreeing would make a board behave by its age.
+func entryTransition(to string) FlowEdge {
+	return FlowEdge{From: EntryNode, To: to, Ask: []EdgeAsk{{ID: "workmode", Kind: AskWorkMode}}}
+}
+
+// addEntryTransitions gives a way in to every route that has none, and reports
+// how many it had to add.
+//
+// Routes written before transition 0 existed have no arrow into their first
+// stage, and a board made from a template keeps the routes it was made with —
+// importTemplates replaces the template board and never a board made from it.
+// So the shipped template gaining a way in reaches new boards only, and every
+// board anybody already has would ask nothing on the one crossing the question
+// is for. Brought up to date where the board is read (seedFromBoard), which
+// writes the board back, so it happens once and is recorded.
+//
+// Which stage it leads to is the route's first, because that is what "the way
+// in" means for a route drawn as a line of stages. A route whose first stage
+// already has a way in is left alone, questions and all: this repairs what is
+// missing and does not restate what somebody has since edited.
+func addEntryTransitions(flows []FlowEntry) int {
+	added := 0
+	for i := range flows {
+		if len(flows[i].Nodes) == 0 || flows[i].Nodes[0].ID == "" {
+			continue
+		}
+		first := flows[i].Nodes[0].ID
+		has := false
+		for _, e := range flows[i].Edges {
+			if e.From == EntryNode && e.To == first {
+				has = true
+				break
+			}
+		}
+		if !has {
+			flows[i].Edges = append(flows[i].Edges, entryTransition(first))
+			added++
+		}
+	}
+	return added
 }
 
 // TemplateFlows builds the routes the editor offers a board that has none. The

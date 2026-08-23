@@ -260,6 +260,13 @@ func (m *Manager) seedFromBoard(boardID string) {
 		m.log.Warn("acp: the board's own settings are unreadable", "board", boardID, "err", err)
 		return
 	}
+	// A route written before transition 0 existed has no way in, and the board
+	// is where routes live — so this is where such a route is brought up to
+	// date, before anything reads it and in time for the write-back below.
+	if added := addEntryTransitions(flows); added > 0 {
+		m.log.Info("acp: routes given a way in", "board", boardID, "count", added)
+	}
+
 	// Bind whatever still knows only a column's name to the option it means,
 	// before anything reads it. Asked of the board rather than inferred, and
 	// only where something needs binding: a board whose automation already
