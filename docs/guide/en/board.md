@@ -47,15 +47,19 @@ The **Входящие** view is created by the board itself once something star
 arriving from outside — see [the Inbox section](./inbox/index.md). (The app
 names that view in Russian, and the name is not translated.)
 
-The view header has **"Properties"** (which fields to show on a card), **"Group
-by"**, **"Filter"**, **"Sort"** and search. These are settings of the view, not
-of the board: each view has its own. The ⋯ menu belongs to the view too: on
-Входящие it holds **"Sources"** and nothing else, while exporting and the
-board's settings are in the menus of the other views.
+The view header has the view's name, **"Route"**, **"Filter"**, **"Sort"** and
+search. These are settings of the view, not of the board: each view has its own.
+When they do not fit the window the bar scrolls sideways. The ⋯ menu belongs to
+the view too: on Входящие it holds **"Sources"** and nothing else, while
+exporting and the board's settings are in the menus of the other views.
+
+Clicking the view's name opens a menu: the board's views, **"Rename view"**,
+**"Duplicate view"**, **"Delete view"** and **"Add view"**. Renaming opens a
+field in the header itself — Enter saves it, Esc cancels.
 
 ## Showing one route
 
-Next to **"Group by"** on the kanban there is **"Route"**. It starts on "All
+The kanban's view header has **"Route"**. It starts on "All
 routes": the board shows every column and every card. Pick a route and the
 board keeps only that route's stages and only the cards travelling it.
 

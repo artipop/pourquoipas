@@ -9,9 +9,22 @@
     color: rgba(var(--center-channel-color-rgb), 0.64);
     align-items: center;
 
-    @media (max-width: 768px) {
-        overflow: auto;
-        -webkit-overflow-scrolling: touch;
+    // The bar carries as many controls as the board needs and the window is
+    // whatever width somebody made it: without a scroll its right-hand end —
+    // the search, the ⋯ menu, «Создать» — was simply cut off, with no way to
+    // reach it and nothing on screen saying so. Measured in the app at a
+    // 1280px window: 1268px of controls in a 976px bar. It used to scroll only
+    // under 768px, which is the one width at which the bar is *not* the
+    // problem, because a phone gets its own screens.
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+
+    // Nothing squashes to make room; the bar scrolls instead. The spacer is
+    // the exception — it is what pushes the right-hand group to the edge while
+    // there is room, and it is the first thing to give when there is not.
+    > *:not(.octo-spacer) {
+        flex: 0 0 auto;
     }
 
     > div {
@@ -50,6 +63,23 @@
         .MenuWrapper {
             display: flex;
             align-items: center;
+
+            // The whole thing is one control: the name and the chevron open
+            // the same menu, so it has to look like one target rather than a
+            // word with a button parked at the far end of it.
+            cursor: pointer;
+        }
+
+        // The name is as wide as the name. It used to be an input at all times,
+        // and an input is as wide as its `size` whatever the CSS asks for — so
+        // the chevron sat 131px away from the word it belongs to and the two
+        // did not read as one control.
+        .viewTitle {
+            max-width: 240px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: rgb(var(--center-channel-color-rgb));
         }
     }
 }

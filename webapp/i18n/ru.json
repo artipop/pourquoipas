@@ -860,6 +860,7 @@
   "View.NewTableTitle": "Вид таблицы",
   "View.NewTemplateDefaultTitle": "Шаблон без названия",
   "View.NewTemplateTitle": "Шаблон",
+  "View.RenameView": "Переименовать вид",
   "View.Table": "Таблица",
   "ViewHeader.add-template": "Новый шаблон",
   "ViewHeader.all-routes": "Все маршруты",

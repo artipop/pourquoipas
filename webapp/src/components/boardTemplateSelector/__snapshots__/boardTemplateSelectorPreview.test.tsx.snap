@@ -50,18 +50,19 @@ exports[`components/boardTemplateSelector/boardTemplateSelectorPreview > should 
         <div
           class="viewSelector"
         >
-          <input
-            class="Editable "
-            placeholder="Untitled View"
-            spellcheck="true"
-            title="View"
-          />
           <div>
             <div
               aria-label="View menu"
               class="MenuWrapper"
               role="button"
             >
+              <div>
+                <span
+                  class="viewTitle"
+                >
+                  View
+                </span>
+              </div>
               <button
                 type="button"
               >
@@ -77,44 +78,6 @@ exports[`components/boardTemplateSelector/boardTemplateSelectorPreview > should 
         <div
           class="octo-spacer"
         />
-        <div
-          aria-label="Properties menu"
-          class="MenuWrapper"
-          role="button"
-        >
-          <button
-            type="button"
-          >
-            
-            <span>
-              Properties
-            </span>
-            
-          </button>
-          
-        </div>
-        <div
-          aria-label="menuwrapper"
-          class="MenuWrapper"
-          role="button"
-        >
-          <button
-            type="button"
-          >
-            
-            <span>
-              Group by: 
-              <span
-                id="groupByLabel"
-                style="color:rgb(var(--center-channel-color-rgb))"
-              >
-                name
-              </span>
-            </span>
-            
-          </button>
-          
-        </div>
         <div
           class="ModalWrapper"
         >

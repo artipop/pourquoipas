@@ -252,18 +252,19 @@ exports[`src/components/workspace > return workspace and showcard 1`] = `
             <div
               class="viewSelector"
             >
-              <input
-                class="Editable "
-                placeholder="Untitled View"
-                spellcheck="true"
-                title="view title"
-              />
               <div>
                 <div
                   aria-label="View menu"
                   class="MenuWrapper"
                   role="button"
                 >
+                  <div>
+                    <span
+                      class="viewTitle"
+                    >
+                      view title
+                    </span>
+                  </div>
                   <button
                     type="button"
                   >
@@ -279,44 +280,6 @@ exports[`src/components/workspace > return workspace and showcard 1`] = `
             <div
               class="octo-spacer"
             />
-            <div
-              aria-label="Properties menu"
-              class="MenuWrapper"
-              role="button"
-            >
-              <button
-                type="button"
-              >
-                
-                <span>
-                  Properties
-                </span>
-                
-              </button>
-              
-            </div>
-            <div
-              aria-label="menuwrapper"
-              class="MenuWrapper"
-              role="button"
-            >
-              <button
-                type="button"
-              >
-                
-                <span>
-                  Group by: 
-                  <span
-                    id="groupByLabel"
-                    style="color:rgb(var(--center-channel-color-rgb))"
-                  >
-                    Property 2
-                  </span>
-                </span>
-                
-              </button>
-              
-            </div>
             <div
               class="ModalWrapper"
             >
@@ -808,14 +771,23 @@ exports[`src/components/workspace > return workspace readonly and showcard 1`] =
             <div
               class="viewSelector"
             >
-              <input
-                class="Editable readonly "
-                placeholder="Untitled View"
-                readonly=""
-                spellcheck="true"
-                title="view title"
-              />
-              
+              <div>
+                <div
+                  aria-label="View menu"
+                  class="MenuWrapper"
+                  role="button"
+                >
+                  <div>
+                    <span
+                      class="viewTitle"
+                    >
+                      view title
+                    </span>
+                  </div>
+                  
+                </div>
+                
+              </div>
             </div>
             <div
               class="octo-spacer"
@@ -1363,18 +1335,19 @@ exports[`src/components/workspace > should match snapshot 1`] = `
             <div
               class="viewSelector"
             >
-              <input
-                class="Editable "
-                placeholder="Untitled View"
-                spellcheck="true"
-                title="view title"
-              />
               <div>
                 <div
                   aria-label="View menu"
                   class="MenuWrapper"
                   role="button"
                 >
+                  <div>
+                    <span
+                      class="viewTitle"
+                    >
+                      view title
+                    </span>
+                  </div>
                   <button
                     type="button"
                   >
@@ -1390,44 +1363,6 @@ exports[`src/components/workspace > should match snapshot 1`] = `
             <div
               class="octo-spacer"
             />
-            <div
-              aria-label="Properties menu"
-              class="MenuWrapper"
-              role="button"
-            >
-              <button
-                type="button"
-              >
-                
-                <span>
-                  Properties
-                </span>
-                
-              </button>
-              
-            </div>
-            <div
-              aria-label="menuwrapper"
-              class="MenuWrapper"
-              role="button"
-            >
-              <button
-                type="button"
-              >
-                
-                <span>
-                  Group by: 
-                  <span
-                    id="groupByLabel"
-                    style="color:rgb(var(--center-channel-color-rgb))"
-                  >
-                    Property 2
-                  </span>
-                </span>
-                
-              </button>
-              
-            </div>
             <div
               class="ModalWrapper"
             >
@@ -1919,14 +1854,23 @@ exports[`src/components/workspace > should match snapshot with readonly 1`] = `
             <div
               class="viewSelector"
             >
-              <input
-                class="Editable readonly "
-                placeholder="Untitled View"
-                readonly=""
-                spellcheck="true"
-                title="view title"
-              />
-              
+              <div>
+                <div
+                  aria-label="View menu"
+                  class="MenuWrapper"
+                  role="button"
+                >
+                  <div>
+                    <span
+                      class="viewTitle"
+                    >
+                      view title
+                    </span>
+                  </div>
+                  
+                </div>
+                
+              </div>
             </div>
             <div
               class="octo-spacer"
