@@ -1295,6 +1295,53 @@ func (a *App) ShowTerminal(terminalID string) (string, error) {
 	return a.terminalWindow(t)
 }
 
+// GetCardDiff is the card's work read off the disk: the branch, what it was cut
+// from, and the changed files with their patches (internal/acp/carddiff.go).
+// JSON, and never an error for "nothing to show" — a card nobody has worked on
+// answers with a reason a person can act on.
+func (a *App) GetCardDiff(cardID string) (string, error) {
+	if a.mgr == nil {
+		return "", errACPDisabled
+	}
+	d, err := a.mgr.CardDiff(cardID)
+	if err != nil {
+		return "", err
+	}
+	out, err := json.Marshal(d)
+	if err != nil {
+		return "", err
+	}
+	return string(out), nil
+}
+
+// OpenCardDiff gives the diff a window of its own, the way a terminal gets one:
+// reading a review is the thing a panel beside the card is least able to be,
+// and the card is open behind it anyway. Answers with the address, so a build
+// with no windows — a browser, a phone — can still go there itself.
+func (a *App) OpenCardDiff(cardID string) (string, error) {
+	if a.mgr == nil {
+		return "", errACPDisabled
+	}
+	url := a.originURL() + "acp/diff/" + cardID
+	if wapp := a.app(); wapp != nil {
+		openDiffWindow(wapp, cardID, a.cardDiffTitle(cardID), url)
+	}
+	return url, nil
+}
+
+// cardDiffTitle names the window after the card, falling back to the card id:
+// a window in the dock is picked out by its title, and "Изменения" three times
+// over is three windows nobody can tell apart.
+func (a *App) cardDiffTitle(cardID string) string {
+	if a.mgr == nil {
+		return cardID
+	}
+	if title := a.mgr.CardTitle(cardID); title != "" {
+		return title
+	}
+	return cardID
+}
+
 // CloseTerminal ends a terminal session and everything its CLI started.
 func (a *App) CloseTerminal(terminalID string) error {
 	if a.mgr == nil {

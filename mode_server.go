@@ -149,6 +149,10 @@ func newMainWindow(_ *application.App, url string) {
 // the page that asked opens a browser tab at the same address instead.
 func openTerminalWindow(_ *application.App, _ acp.TerminalInfo, _ string) bool { return false }
 
+// openDiffWindow, likewise: the page is a route the board already serves, and a
+// browser opens it itself.
+func openDiffWindow(_ *application.App, _, _, _ string) {}
+
 // openShareWindow has no window to open. A server build is reached with a
 // browser, and the share dialog is a URL like any other page of it.
 func openShareWindow(_ *application.App, url string) {

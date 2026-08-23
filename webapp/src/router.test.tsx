@@ -12,6 +12,7 @@ import FocalboardRouter from './router'
 vi.mock('./pages/boardPage/boardPage', () => ({default: () => <div>{'the board'}</div>}))
 vi.mock('./pages/mobile/mobilePage', () => ({default: () => <div>{'the phone page'}</div>}))
 vi.mock('./components/acp/terminalPage', () => ({default: () => <div>{'the terminal'}</div>}))
+vi.mock('./components/acp/diffPage', () => ({default: () => <div>{'the diff'}</div>}))
 vi.mock('./pages/share/sharePage', () => ({default: () => <div>{'the share dialog'}</div>}))
 
 const renderAt = (path: string) => {
@@ -33,6 +34,14 @@ describe('router', () => {
         renderAt('/m/terminal/term-1')
 
         expect(await screen.findByText('the terminal')).toBeInTheDocument()
+    })
+
+    // A diff window is opened by the app itself, on an address nobody types.
+    // The board's catch-all would swallow it exactly as it would swallow /m.
+    it('gives /acp/diff/:cardId the changes, not the board', async () => {
+        renderAt('/acp/diff/card-1')
+
+        expect(await screen.findByText('the diff')).toBeInTheDocument()
     })
 
     // /share falls into the same catch-all, and it is opened by the system's

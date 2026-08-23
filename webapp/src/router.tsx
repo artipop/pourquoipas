@@ -17,6 +17,7 @@ import FBRoute from './route'
 // xterm.js. Its own route so the window is just a URL — and lazily loaded so a
 // browser build, which cannot open one, never pays for the emulator.
 const TerminalPage = lazy(() => import('./components/acp/terminalPage'))
+const DiffPage = lazy(() => import('./components/acp/diffPage'))
 
 // The board on a phone: what is waiting for a person, and the terminals it is
 // waiting in. Lazy for the same reason — a desktop window never opens these,
@@ -109,6 +110,15 @@ const AppRouter: Component = () => {
                 component={() => (
                     <Suspense fallback={null}>
                         <TerminalPage/>
+                    </Suspense>
+                )}
+            />
+
+            <FBRoute
+                path='/acp/diff/:cardId'
+                component={() => (
+                    <Suspense fallback={null}>
+                        <DiffPage/>
                     </Suspense>
                 )}
             />

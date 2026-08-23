@@ -110,7 +110,7 @@ func (m *Manager) enterNode(ev CardMoved, flow FlowEntry, node FlowNode, move bo
 	})
 	m.log.Info("acp: flow node entered", "card", ev.CardID, "flow", flow.Name, "node", node.ID, "on", on)
 
-	m.runNodeAction(ev, flow, node)
+	m.runNodeAction(ev, flow, node, move)
 }
 
 // flowBranch is the branch a card's route follows — what the VCS watcher polls
@@ -212,7 +212,12 @@ func (m *Manager) writeCardOutcome(cardID, boardID, trigger string) {
 // runNodeAction starts whatever the stage does. A stage that cannot even start
 // counts as a failed one, so the route can carry the card to its failure branch
 // instead of silently stalling.
-func (m *Manager) runNodeAction(ev CardMoved, flow FlowEntry, node FlowNode) {
+//
+// arrived says the route moved the card here rather than a person dragging it,
+// and it decides one thing: whether the two "this is somebody's now" endings
+// below announce themselves (cardwait.go). Somebody who dragged a card into a
+// review column is looking at it already.
+func (m *Manager) runNodeAction(ev CardMoved, flow FlowEntry, node FlowNode, arrived bool) {
 	// The stage stands on a column, and the column says who works it and how
 	// many at once. The stage overrides only what it names itself.
 	spec, _ := m.columnFor(ev.BoardID, node.asColumn(flow.PropertyOr(m.triggerProperty())))
@@ -227,6 +232,12 @@ func (m *Manager) runNodeAction(ev CardMoved, flow FlowEntry, node FlowNode) {
 	}
 	switch action {
 	case FlowActionNone, "":
+		// Nothing runs here, so the card is waiting for a person — the whole
+		// content of a review stage, and the one place on a route where the
+		// machine has to say so out loud.
+		if arrived {
+			m.handOverToPerson(ev, handoverText(node.Column, false))
+		}
 		return
 	case FlowActionAgent:
 	case FlowActionDeploy:
@@ -255,6 +266,9 @@ func (m *Manager) runNodeAction(ev CardMoved, flow FlowEntry, node FlowNode) {
 	var mine AssignedToHumanError
 	if errors.As(err, &mine) {
 		m.sayCardIsTaken(ev.CardID, node.ID, mine)
+		if arrived {
+			m.handOverToPerson(ev, handoverText(node.Column, true))
+		}
 		return
 	}
 	if err != nil {

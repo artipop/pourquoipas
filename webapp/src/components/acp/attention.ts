@@ -15,15 +15,22 @@ import {openCardTerminalWindow} from './liveTerminals'
 // side says in one place, so every card on the board shares one subscription
 // and one initial load rather than asking for itself.
 
-// The two ways an agent asks for a person. 'question' is ACP itself — a deploy
-// or a test asked for a tool it was not given, or sent an elicitation, and its
-// turn is open until somebody answers. 'terminal' is a stage of a route whose
-// CLI has stopped drawing: it is asking something inside its own interface, and
-// only it knows what.
+// The ways a card can want a person.
 //
-// Neither is answered here any more. The agent draws its question where it is
-// working, and what this side offers is the way to it.
-export type AttentionReason = 'question' | 'terminal'
+// Two of them are an agent that stopped mid-work. 'question' is ACP itself — a
+// deploy or a test asked for a tool it was not given, or sent an elicitation,
+// and its turn is open until somebody answers. 'terminal' is a stage of a route
+// whose CLI has stopped drawing: it is asking something inside its own
+// interface, and only it knows what. Neither is answered here any more — the
+// agent draws its question where it is working, and what this side offers is
+// the way to it.
+//
+// 'card' is the opposite case: the route moved the card onto a stage where
+// nothing runs, or onto one whose work belongs to whoever the card is assigned
+// to, and the next step is a person's (internal/acp/cardwait.go). Nothing is
+// asking anything — the card is the question — so there is no terminal to open
+// and being told is the whole of it.
+export type AttentionReason = 'question' | 'terminal' | 'card'
 
 export type QuestionOption = {
     id: string
@@ -137,7 +144,12 @@ export function useAttention(): Accessor<Attention[]> {
 // board shows an indicator for.
 export function useCardAttention(cardId: Accessor<string>): Accessor<Attention | undefined> {
     onMount(() => onCleanup(subscribe()))
-    return createMemo(() => waiting().find((a) => a.cardId === cardId()))
+
+    // An agent's wait only. The card's own button is a console — amber means an
+    // agent stopped in it, and clicking opens it — and a card the route handed
+    // to a person has no CLI running at all, so drawing it there would be a
+    // button that lies twice over.
+    return createMemo(() => waiting().find((a) => a.cardId === cardId() && a.reason !== 'card'))
 }
 
 // openWait goes to where the agent is asking, which is the only thing to do
@@ -177,6 +189,9 @@ type Formatter = {
 // attentionHeading is the one sentence a wait is worth, wherever it is shown —
 // the dot's tooltip, the notification, the card.
 export function attentionHeading(intl: Formatter, target: Attention): string {
+    if (target.reason === 'card') {
+        return intl.formatMessage({id: 'Attention.card-waiting', defaultMessage: 'The card is waiting for you'})
+    }
     const agent = target.agent || ''
     return agent ? intl.formatMessage({id: 'Attention.asking-agent', defaultMessage: '{agent} is asking'}, {agent}) : intl.formatMessage({id: 'Attention.asking', defaultMessage: 'The agent is asking'})
 }

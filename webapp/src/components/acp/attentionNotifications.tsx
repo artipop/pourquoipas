@@ -171,14 +171,22 @@ const AttentionNotifications = () => {
                                         time, so this is a second place to answer
                                         rather than the only one (attentionAnswers). */}
                                     <AttentionAnswers target={target}/>
-                                    <button
-                                        type='button'
-                                        class='AttentionNotifications__action'
-                                        disabled={busy() === keyOf(target)}
-                                        onClick={() => open(target)}
-                                    >
-                                        {intl.formatMessage({id: 'Attention.open', defaultMessage: 'Open the terminal'})}
-                                    </button>
+
+                                    {/* A card the route handed to a person has
+                                        nothing to open: nothing is running on
+                                        it, and the card is on the board where
+                                        this is being read. Its ✕ is the whole
+                                        of the answer (internal/acp/cardwait.go). */}
+                                    <Show when={target.reason !== 'card'}>
+                                        <button
+                                            type='button'
+                                            class='AttentionNotifications__action'
+                                            disabled={busy() === keyOf(target)}
+                                            onClick={() => open(target)}
+                                        >
+                                            {intl.formatMessage({id: 'Attention.open', defaultMessage: 'Open the terminal'})}
+                                        </button>
+                                    </Show>
                                 </div>
                                 <button
                                     type='button'

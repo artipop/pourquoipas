@@ -272,6 +272,26 @@ func openTerminalWindow(wapp *application.App, info acp.TerminalInfo, url string
 	return true
 }
 
+// openDiffWindow gives a card's changes a window, named after the card so a
+// second ask focuses the one already open. Deliberately not the terminal's
+// black: a diff is read like a document, and the page paints it on the theme's
+// own ground.
+func openDiffWindow(wapp *application.App, cardID, title, url string) {
+	name := "acp-diff-" + cardID
+	if existing, ok := wapp.Window.GetByName(name); ok {
+		existing.Show()
+		existing.Focus()
+		return
+	}
+	wapp.Window.NewWithOptions(application.WebviewWindowOptions{
+		Name:   name,
+		Title:  "Изменения · " + title,
+		Width:  1040,
+		Height: 760,
+		URL:    url,
+	})
+}
+
 // openShareWindow opens the share dialog: a small window, on top of whatever
 // the person was reading when they pressed the share dialog, and named so that a
 // second share focuses the one already open rather than stacking dialogs.

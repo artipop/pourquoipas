@@ -964,6 +964,16 @@ func (s *Store) BranchForCard(cardID string) (string, error) {
 	return branch, nil
 }
 
+// CheckoutForCard is the whole live checkout of a card — the directory
+// included, which is what CheckoutModeForCard deliberately leaves out and what
+// anything reading the work itself needs (carddiff.go).
+func (s *Store) CheckoutForCard(cardID string) (Checkout, bool, error) {
+	row := s.queryRow(`SELECT `+checkoutColumns+` FROM checkout
+		WHERE card_id=? AND released_at IS NULL
+		ORDER BY created_at DESC LIMIT 1`, cardID)
+	return scanCheckout(row)
+}
+
 // CheckoutModeForCard is how the card's live checkout is arranged — "worktree"
 // or "branch" — or "" when it holds none. The card's stamp names its line after
 // it: a person who set a copy of its own should read worktree off the card, not

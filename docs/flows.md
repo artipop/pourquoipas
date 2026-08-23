@@ -312,6 +312,30 @@ It is not handed its task again: it is told why it is back, with what the stage
 it returned from reported — the reviewer's own words are the new input the
 resumed session works from.
 
+**What the stage is told includes what is already there.** Besides the board's
+prompt, the stage's own instructions and the card's task, the brief names the
+branch, what it was cut from, the commits standing on it, the files they touched
+and the command that reads the whole diff — assembled from git itself and
+present only when the working copy has something in it. That is what a second
+stage of a route needs and never had: a review that runs an agent used to get
+exactly the brief the stage before it got, in a copy full of somebody else's
+commits, and did the task again instead of checking it.
+
+**A stage where nothing runs announces itself.** «На ревью» and its kind are
+stages for a person, and when the route moves a card onto one — or onto a stage
+whose card is assigned to a person, which an agent will not take — the card says
+so through the same surfaces an agent's question uses: the notification, the
+system notification and the dot beside the clock. Only a move the route made:
+somebody who dragged the card there is looking at it already. And being told
+ends it — the ✕ takes the wait away rather than silencing it, because nothing is
+running that could go on waiting.
+
+**And there is somewhere to read the work.** The card's toolbar has «Изменения»
+beside «Терминал»: the branch's commits, the files they changed and the patches
+themselves, plus whatever is uncommitted in the working copy — read from git
+every time, never cached, with a window of its own for the reading a panel is
+too narrow for.
+
 Two things are still done the old way, without a terminal: a **deploy** and a
 **test**. Nobody is watching those, and their result is read by the machine
 rather than by a person. So is any agent whose CLI cannot be started here — an

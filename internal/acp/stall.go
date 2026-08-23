@@ -54,6 +54,13 @@ func (m *Manager) stallCardSoft(cardID, nodeID, reason string) {
 // session starts, a stage is entered, the card leaves the column — so a
 // recorded reason is always the current one.
 func (m *Manager) clearStall(cardID string) {
+	// A card that makes progress is a card nobody is being kept waiting on
+	// either: the moments that end a stall are exactly the moments that end
+	// «эта карточка за вами» (cardwait.go).
+	if a, ok := m.forgetCardWait(cardID); ok {
+		a.Awaiting = false
+		m.emitAttentionRecord(a)
+	}
 	changed, err := m.store.ClearStall(cardID)
 	if err != nil {
 		m.log.Warn("acp: cannot clear the stall record", "card", cardID, "err", err)

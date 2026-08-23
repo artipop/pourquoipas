@@ -120,6 +120,17 @@ export interface IAppWindow extends Window {
                 OpenPlanningTerminal?(workdirName: string, agentName: string, boardId: string): Promise<string>
                 GetTerminalInfo?(terminalId: string): Promise<string>
                 GetCardAgent?(cardId: string): Promise<string>
+
+                // What the card's work looks like on disk: the branch, what it
+                // was cut from, and the changed files with their patches. Never
+                // an error for "nothing to show" — a card nobody has worked on
+                // answers with a reason a person can act on.
+                GetCardDiff?(cardId: string): Promise<string>
+
+                // The same reading in a window of its own, the way a terminal
+                // gets one. Answers with the address, so a build with no
+                // windows can go there itself.
+                OpenCardDiff?(cardId: string): Promise<string>
                 CancelSession(cardId: string): Promise<boolean>
                 ListTerminals?(): Promise<string>
 

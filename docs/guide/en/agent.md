@@ -257,6 +257,52 @@ Notifications can be turned off in the
 card and the dot on the icon next to the clock stay either way — the
 notification is about the question, they are about the agent still waiting.
 
+## The changes, read by eye
+
+The card's toolbar has a **“Changes”** button beside “Terminal”. It opens a diff
+in the panel on the right — what is in the card's working copy right now:
+
+- **“On the branch”** — what is already committed on top of the main branch;
+- **“Not committed”** — what has been changed and not saved into a commit, plus
+  the new files git is not tracking yet.
+
+Above them: the branch, what it was cut from, and how many files and lines
+there are in all. A file folds away when its row is clicked. The arrows button
+(“Read the folder again”) rereads the folder; the diff also refreshes itself
+whenever an agent finishes something.
+
+The panel beside a card is narrow, so its head carries **“Open in a separate
+window”** — the same reading full size, in a window of its own, the way a
+terminal gets one.
+
+Any card can be looked at, but there is nothing to show until somebody has
+worked on it. The panel says which it is: work never started, or it started on
+another machine — a working copy lives on the machine the agent worked on and
+does not travel with the card.
+
+The diff is read-only. How a stage ended is the card's “Исход” field, answered
+by the two buttons on the route strip; there is no second way to say the same
+thing here.
+
+## The card has arrived for you
+
+A stage where nothing runs is a stage for a person: «На ревью», «Прочитать»,
+«На проверке». When the route brings a card there **by itself**, the app says
+so: a notification in the app, a system notification, and the dot on the icon
+beside the clock. Clicking the system notification opens the board the card is
+standing on.
+
+The same happens to a card assigned to a person: the agent does not take it, the
+route leaves it where it is and says you are needed next.
+
+A card you dragged into such a column yourself is not announced — you are
+looking at it already.
+
+This notification lives until the first “I know”: the “Dismiss” cross takes it
+away for good, not merely off the screen — unlike an agent's question, which
+goes on waiting for an answer after you have read it. It comes back if the card
+arrives at such a stage again.
+
 ## When a stage ends
 
 A stage of a route is a conversation in a terminal, and a terminal does not end

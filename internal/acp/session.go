@@ -293,6 +293,13 @@ func (m *Manager) runSession(s *Session) {
 		return
 	}
 
+	// What the stage is standing in front of. It can only be known now: the
+	// workspace is claimed above, and the brief was composed before there was
+	// one to describe (branchstate.go).
+	if state := branchState(m.rootCtx, s.Worktree); state != "" {
+		s.PromptText = joinPrompts(s.PromptText, state)
+	}
+
 	// 2. An agent stage is the agent's own CLI in the card's terminal, not a
 	// connection of ours: what it does, what it asks and what it asks permission
 	// for are all drawn by the CLI, in the window a person is looking at

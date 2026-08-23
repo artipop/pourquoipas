@@ -62,6 +62,12 @@ func alertPlan(told map[string]bool, waiting []acp.Attention) (fresh []acp.Atten
 // notification use (attentionHeading in attention.ts), so one wait reads the
 // same wherever a person meets it.
 func alertTitle(a acp.Attention) string {
+	// A card the route handed over is not an agent asking anything: nothing is
+	// running there, and what the person is being told is that the work is now
+	// theirs (internal/acp/cardwait.go).
+	if a.Reason == acp.AttentionCard {
+		return "Карточка ждёт вас"
+	}
 	if a.Agent != "" {
 		return a.Agent + " спрашивает"
 	}
@@ -81,6 +87,9 @@ func alertBody(a acp.Attention) string {
 		parts = append(parts, text)
 	}
 	if len(parts) == 0 {
+		if a.Reason == acp.AttentionCard {
+			return "Откройте доску, чтобы посмотреть."
+		}
 		return "Откройте терминал, чтобы ответить."
 	}
 	return strings.Join(parts, " — ")

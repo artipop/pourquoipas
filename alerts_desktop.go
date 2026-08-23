@@ -298,6 +298,11 @@ func (c *alertController) notificationClicked(res notifications.NotificationResu
 func (c *alertController) openWait(a acp.Attention) {
 	var err error
 	switch {
+	// Nothing is running on a handed-over card, so there is no terminal to
+	// open: what the person came for is the card, and the board is where it is
+	// (internal/acp/cardwait.go).
+	case a.Reason == acp.AttentionCard:
+		showMainWindow(c.wapp, c.app.originURL()+a.BoardID)
 	case a.TerminalID != "":
 		_, err = c.app.ShowTerminal(a.TerminalID)
 	case a.CardID != "":

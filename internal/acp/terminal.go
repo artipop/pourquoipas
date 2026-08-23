@@ -1557,6 +1557,10 @@ func (m *Manager) Attention() []Attention {
 	for _, a := range m.stageAttention() {
 		out = append(out, a.withKey())
 	}
+	// And the cards the route has handed to a person, which is the same
+	// sentence — somebody is needed here — arrived at from the other end
+	// (cardwait.go).
+	out = append(out, m.cardAttention()...)
 	// Stamped here rather than stored on the record: an ack is dropped by the
 	// terminal drawing something, and a copy taken when the wait was raised
 	// would say the opposite of what is true now (attentionack.go).

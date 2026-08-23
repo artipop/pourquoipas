@@ -1,0 +1,15 @@
+// The window a diff is read in. It paints its own ground: a window opens on
+// whatever the theme says, and a page that leaves the background to the host
+// shows the webview's white behind a dark theme for the first frame.
+.DiffPage {
+    background: rgb(var(--center-channel-bg-rgb));
+    color: rgb(var(--center-channel-color-rgb));
+    height: 100vh;
+    overflow: auto;
+    padding: 16px 20px 40px;
+
+    .DiffPage__empty {
+        color: rgba(var(--center-channel-color-rgb), 0.64);
+        padding: 24px 0;
+    }
+}

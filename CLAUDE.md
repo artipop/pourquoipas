@@ -411,6 +411,22 @@ thing to do about it, «Открыть терминал», because the answer be
 interface the agent drew it in. `components/acp/attention.ts` is the one
 subscription behind all of it.
 
+**A third reason arrives from the other end** (`AttentionCard`,
+`internal/acp/cardwait.go`): not an agent that stopped mid-work, but the route
+handing the card over — it moved the card onto a stage where nothing runs, or
+onto one whose card is assigned to a person, and an agent will not take that.
+«На ревью» is the whole of the first case, and until this existed such a card
+simply appeared in a column and waited for somebody to happen to look. Only when
+*we* moved it (`enterNode`'s `move`): a person dragging a card into a review
+column is looking at it. Two things follow from nothing running there. The
+card's own button ignores it — `useCardAttention` filters the reason out,
+because that button is a console and there is no CLI to open — and the ack
+**ends** the wait rather than silencing it: an agent goes on waiting after
+somebody has looked and this does not, so keeping it standing would hold the
+tray icon amber for every card parked at a review and the icon would stop
+meaning anything. What ends it otherwise is progress, wherever `clearStall`
+already means that.
+
 **A wait has an addressee once there is more than one person**
 (`attentionAudience.ts`, `docs/teamwork.md`). The card answers it: «Кто
 занимается» is the field the whole board says who a card belongs to in, and it
@@ -585,6 +601,22 @@ from the Go side, the same one the board server was started with — and an
 install of one person writes comments it never draws. What that costs there is
 what it always cost: the `finish_work` summary is readable in the terminal the
 agent said it in and in the edge conditions that match on it, and nowhere else.
+
+**The changes are the third thing that panel holds** (`cardDiff.tsx`,
+`internal/acp/carddiff.go`). A route can park a card on a stage where nothing
+runs and a person decides, and there was nothing on screen to decide *from*: the
+branch was a label on the card and the changes lived in a directory somebody had
+to go and find. It is git and nothing else — the claim says where the work is,
+`git diff <base>...HEAD` and `git diff HEAD` say what it holds, and nothing is
+cached, because a stored answer is wrong the moment the agent commits again. A
+card working in a plain folder records no claim at all (`ClaimWorkspace` writes
+none for `WorkModePlain`), so the folder the card names is the fallback — and
+that is exactly the card whose changes are deliberately left uncommitted for
+somebody to read. It is a reader: how a stage ended is «Исход», answered by the
+two buttons the route strip already draws, and a second way to say it would be a
+second answer to one question. `/acp/diff/:cardId` is the window, opened the way
+a terminal's is, because a column beside a card is the narrowest place in the app
+to read code in.
 
 **They are in the panel, not in the card.** The body of a card is what a person
 wrote, and the machinery has already been carried out of it; a comment is about
@@ -1358,6 +1390,16 @@ person's terminal is never killed. Resume metadata is per conversation; the
 transcript `claude --continue` picks up is directory-scoped, so two
 conversations sharing a directory share a transcript — the same trade every
 non-git folder already makes.
+
+**And it is told what is already in the copy** (`branchstate.go`): the branch,
+what it was cut from, the commits standing on it, the files they touched, and
+the command that reads the diff — assembled from git after the workspace is
+claimed, which is why it is appended in `runSession` rather than composed with
+the rest. The diff itself is deliberately not in it: the agent is standing in
+the directory it describes. Present only when there is something to describe, so
+a route's first stage gets nothing. What it fixes is the second stage: a review
+running an agent got exactly the brief the stage before it got — the card's task
+in a copy full of somebody else's commits — and did the task again.
 
 **A stage has a prompt of its own, inherited like its crew**: what working in
 this column *means* — the reviewer's brief on «Ревью» — lives on the column

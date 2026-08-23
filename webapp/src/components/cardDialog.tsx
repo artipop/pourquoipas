@@ -31,6 +31,7 @@ import {useHasCurrentBoardPermissions} from '../hooks/permissions'
 import BoardPermissionGate from './permissions/boardPermissionGate'
 
 import CardTerminal, {isCardTerminalAvailable} from './acp/cardTerminal'
+import CardDiffPanel, {isCardDiffAvailable} from './acp/cardDiff'
 import CardComments from './cardDetail/cardComments'
 import {cardAgentState, refreshCardAgent} from './acp/cardAgentState'
 import {refreshRegisteredAgents, registeredAgents} from './acp/agentRegistry'
@@ -70,9 +71,14 @@ const CardDialog = (props: Props): JSX.Element => {
     // comments are the same question asked of two readers — what to tell the
     // agent about this card, and what to tell the person who comes to it later
     // (docs/teamwork.md).
-    const [side, setSide] = createSignal<'' | 'terminal' | 'comments'>('')
+    //
+    // The changes are the third thing in it, and they belong here for the same
+    // reason: reading what an agent did is about the card and is not part of
+    // it. A route can park a card on a stage where nothing runs and a person
+    // decides, and until this existed there was nowhere to decide from.
+    const [side, setSide] = createSignal<'' | 'terminal' | 'comments' | 'diff'>('')
     const showTerminal = () => side() === 'terminal'
-    const toggleSide = (which: 'terminal' | 'comments') => setSide(side() === which ? '' : which)
+    const toggleSide = (which: 'terminal' | 'comments' | 'diff') => setSide(side() === which ? '' : which)
     const makeTemplateClicked = async () => {
         const currentCard = card()
         if (!currentCard) {
@@ -279,6 +285,26 @@ const CardDialog = (props: Props): JSX.Element => {
         </Show>
     )
 
+    // Offered wherever the app can read a folder at all, and not only on a card
+    // that has work: what there is to show is git's answer, and the panel says
+    // in words which of the "nothing here" cases this card is — work not
+    // started, work on another machine, folder gone. A button that appeared
+    // only once there was a diff would be a button nobody could learn.
+    const diffBtn = (): JSX.Element => (
+        <Show when={isCardDiffAvailable() && Boolean(card()) && !isTemplate()}>
+            <Button
+                icon={<CompassIcon icon='file-document-outline'/>}
+                class='cardFollowBtn cardFollowBtn--attach'
+                emphasis='gray'
+                size='medium'
+                active={side() === 'diff'}
+                onClick={() => toggleSide('diff')}
+            >
+                {intl.formatMessage({id: 'CardDiff.title', defaultMessage: 'Changes'})}
+            </Button>
+        </Show>
+    )
+
     const terminalBtn = (): JSX.Element => (
         <Show when={offersTerminal()}>
             <Button
@@ -300,7 +326,7 @@ const CardDialog = (props: Props): JSX.Element => {
                 class='cardDialog'
                 onClose={props.onClose}
                 toolsMenu={!props.readonly && menu()}
-                toolbar={<>{terminalBtn()}{commentsBtn()}{attachBtn()}</>}
+                toolbar={<>{terminalBtn()}{diffBtn()}{commentsBtn()}{attachBtn()}</>}
             >
                 <Show when={isTemplate()}>
                     <div class='banner'>
@@ -344,23 +370,27 @@ const CardDialog = (props: Props): JSX.Element => {
                         </Show>
                     </div>
 
-                    <Show when={(showTerminal() && offersTerminal()) || side() === 'comments'}>
+                    <Show when={(showTerminal() && offersTerminal()) || side() === 'comments' || side() === 'diff'}>
                         <div class='cardDialog__side'>
-                            <Show
-                                when={side() === 'comments'}
-                                fallback={
-                                    <CardTerminal
-                                        cardId={props.cardId}
-                                        board={props.board}
-                                        onClose={() => setSide('')}
-                                    />
-                                }
-                            >
+                            <Show when={side() === 'comments'}>
                                 <CardComments
                                     cardId={props.cardId}
                                     boardId={props.board.id}
                                     comments={comments()}
                                     readonly={props.readonly || !canCommentBoardCards()}
+                                    onClose={() => setSide('')}
+                                />
+                            </Show>
+                            <Show when={side() === 'diff'}>
+                                <CardDiffPanel
+                                    cardId={props.cardId}
+                                    onClose={() => setSide('')}
+                                />
+                            </Show>
+                            <Show when={showTerminal()}>
+                                <CardTerminal
+                                    cardId={props.cardId}
+                                    board={props.board}
                                     onClose={() => setSide('')}
                                 />
                             </Show>

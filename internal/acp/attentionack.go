@@ -35,6 +35,17 @@ func (m *Manager) AckAttention(key string) {
 	if m == nil || key == "" {
 		return
 	}
+	// A card the route handed to a person is the one wait that *ends* on being
+	// seen: nothing is running, so there is nothing to go on waiting for. An
+	// agent's wait is the opposite and keeps standing (cardwait.go).
+	if cardID := m.cardWaitKey(key); cardID != "" {
+		if a, ok := m.forgetCardWait(cardID); ok {
+			a.Awaiting = false
+			m.emitAttentionRecord(a)
+		}
+		return
+	}
+
 	m.acked.mu.Lock()
 	if m.acked.at == nil {
 		m.acked.at = map[string]time.Time{}
