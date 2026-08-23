@@ -17,7 +17,6 @@ import {
     setThemeMode,
     themeConfigText,
     ThemeConfigError,
-    ThemeGroupId,
     ThemeMode,
     themeModes,
     ThemeName,
@@ -37,10 +36,16 @@ import './appPanel.scss'
 // of them, and a person picking one wants to see what there is.
 //
 // The themes are a dropdown, and they are the one place that rule turned over:
-// there were three of them and there are eleven, and a row of eleven chips is a
+// there were three of them and there are twelve, and a row of twelve chips is a
 // wall rather than a choice. It is `widgets/select` — the app's own field over
 // the app's own menu — and not the platform's `<select>`, which keeps the
 // system's white on a dark board and drops a list no stylesheet can reach.
+//
+// The list is flat. It carried a heading over each of the three kinds — ours,
+// borrowed, joke — and that was three lines of furniture over twelve entries a
+// person picks by name; the order says the same thing and says it silently.
+// One line survives, above «Свой конфиг», because that row is not another
+// theme: it is the slot for one you bring.
 //
 // **Light or dark is a second question and gets a second control.** A theme is
 // a design and it comes in both; whether this machine wears the light half, the
@@ -62,9 +67,9 @@ const AppPanel = () => {
     const [source, setSource] = createSignal(getCustomThemeSource())
     const [error, setError] = createSignal('')
 
-    // Spelled out rather than built as `Settings.theme-group-${id}`: a computed
-    // id is invisible to `npm run i18n-extract`, so it would reach no catalogue
-    // and read as a dead entry in every other one.
+    // Spelled out rather than built as `Settings.theme-mode-${value}`: a
+    // computed id is invisible to `npm run i18n-extract`, so it would reach no
+    // catalogue and read as a dead entry in every other one.
     const modeTitle = (value: ThemeMode): string => {
         switch (value) {
         case 'light':
@@ -73,20 +78,6 @@ const AppPanel = () => {
             return intl.formatMessage({id: 'Settings.theme-mode-dark', defaultMessage: 'Dark'})
         default:
             return intl.formatMessage({id: 'Settings.theme-mode-system', defaultMessage: 'As the system is'})
-        }
-    }
-
-    // The product's own theme has no heading over it: it is one entry, it is
-    // first, and the heading would have said «XCIII» directly above an entry
-    // called «XCIII».
-    const groupTitle = (id: ThemeGroupId): string | undefined => {
-        switch (id) {
-        case 'xciii':
-            return undefined
-        case 'ported':
-            return intl.formatMessage({id: 'Settings.theme-group-ported', defaultMessage: 'Ported'})
-        default:
-            return intl.formatMessage({id: 'Settings.theme-group-acid', defaultMessage: 'Acid'})
         }
     }
 
@@ -145,15 +136,15 @@ const AppPanel = () => {
     const choiceClass = (current: boolean) => `AppPanel__choice${current ? ' AppPanel__choice--current' : ''}`
 
     const themeOptions = (): SelectOption[] => [
-        ...THEME_FAMILIES.map((family) => ({
-            value: family.id,
-            label: family.name,
-            group: groupTitle(family.group),
-        })),
+        ...THEME_FAMILIES.map((family) => ({value: family.id, label: family.name})),
         {
             value: customThemeName,
             label: intl.formatMessage({id: 'Settings.theme-custom', defaultMessage: 'Custom config'}),
-            group: intl.formatMessage({id: 'Settings.theme-group-custom', defaultMessage: 'Your own'}),
+
+            // The one line in the list, and it is not a heading: everything
+            // above it is a theme this build ships, and this is the slot for
+            // one you bring.
+            separator: true,
         },
     ]
 

@@ -42,8 +42,7 @@ describe('components/settings/appPanel', () => {
     // are the app's own dropdown, because there are eleven of them and a row of
     // eleven chips is a wall.
     // The trigger says the current theme's name and so does the option for it,
-    // and the group headings repeat a name too — so everything the list is
-    // asked about is asked of the list.
+    // so everything the list is asked about is asked of the list.
     const openThemes = () => {
         open()
         userEvent.click(screen.getByRole('button', {name: 'Theme'}))
@@ -85,6 +84,22 @@ describe('components/settings/appPanel', () => {
         for (const family of THEME_FAMILIES) {
             expect(menu().getByRole('button', {name: family.name})).toBeInTheDocument()
         }
+    })
+
+    // Flat, with one line in it. The kinds carried a heading each and that was
+    // three lines of furniture over twelve entries; what is left separates the
+    // themes this build ships from the slot for one you bring.
+    test('draws the themes as one list with the custom slot set apart', async () => {
+        openThemes()
+        await waitFor(() => expect(document.querySelector('.Menu .menu-options')).toBeInTheDocument())
+        const list = document.querySelector('.Menu .menu-options') as HTMLElement
+
+        expect(list.querySelectorAll('.LabelOption')).toHaveLength(0)
+        expect(list.querySelectorAll('.MenuSeparator')).toHaveLength(1)
+        expect([...list.querySelectorAll('.menu-name')].map((n) => n.textContent)).toEqual([
+            ...THEME_FAMILIES.map((family) => family.name),
+            'Custom config',
+        ])
     })
 
     // The field is the whole point of borrowing Mattermost's format: a theme

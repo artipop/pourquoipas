@@ -11,9 +11,10 @@
 // text committed here, so "our theme" and "a theme somebody found" are the
 // same kind of thing and one can be made from the other by copying.
 //
-// The three groups are what a person is choosing between — the product's own
-// look, a look borrowed from somewhere else, and a joke — and the titles they
-// are drawn under live in the panel, where the rest of the catalogue is.
+// The list is flat and the order is all the grouping there is: the product's
+// own theme, then the ones borrowed from somewhere else, then the jokes. It
+// carried headings for those three for a while, and they were three lines of
+// furniture over eleven entries a person reads by name anyway.
 
 import acidBlueYellowDark from './themes/acid-blue-yellow-dark.json'
 import acidBlueYellowLight from './themes/acid-blue-yellow-light.json'
@@ -40,12 +41,9 @@ import windowsLight from './themes/windows-light.json'
 
 import {ThemeConfig} from './config'
 
-export type ThemeGroupId = 'xciii' | 'ported' | 'acid'
-
 export type ThemeFamily = {
     id: string
     name: string
-    group: ThemeGroupId
     light: ThemeConfig
     dark: ThemeConfig
 }
@@ -58,33 +56,31 @@ export const THEME_FAMILIES: ThemeFamily[] = [
     // The one the product was designed in. Its id is `xciii`, and the two
     // halves keep the names the setting stored before themes were configs, so
     // an install that picked one is read without a migration table.
-    {id: 'xciii', name: 'XCIII', group: 'xciii', light: lightTheme, dark: darkTheme},
+    {id: 'xciii', name: 'XCIII', light: lightTheme, dark: darkTheme},
 
     // Mattermost's own community list. Each of those themes exists in one
     // polarity there and in both upstream, so the missing half is the real one
     // — One Light, Gruvbox Light, Light Owl, Solarized Light and the rest —
     // rather than an inversion of the half that was published for a chat
     // client. `docs/themes.md` says what each of them had to be told.
-    {id: 'windows', name: 'Windows', group: 'ported', light: windowsLight, dark: windowsDark},
-    {id: 'one', name: 'One', group: 'ported', light: oneLight, dark: oneDark},
-    {id: 'gruvbox', name: 'Gruvbox', group: 'ported', light: gruvboxLight, dark: gruvboxDark},
-    {id: 'night-owl', name: 'Night Owl', group: 'ported', light: nightOwlLight, dark: nightOwlDark},
-    {id: 'discord', name: 'Discord', group: 'ported', light: discordLight, dark: discordDark},
-    {id: 'solarized', name: 'Solarized', group: 'ported', light: solarizedLight, dark: solarizedDark},
-    {id: 'github', name: 'GitHub', group: 'ported', light: githubLight, dark: githubDark},
-    {id: 'monokai', name: 'Monokai', group: 'ported', light: monokaiLight, dark: monokaiDark},
+    {id: 'windows', name: 'Windows', light: windowsLight, dark: windowsDark},
+    {id: 'one', name: 'One', light: oneLight, dark: oneDark},
+    {id: 'gruvbox', name: 'Gruvbox', light: gruvboxLight, dark: gruvboxDark},
+    {id: 'night-owl', name: 'Night Owl', light: nightOwlLight, dark: nightOwlDark},
+    {id: 'discord', name: 'Discord', light: discordLight, dark: discordDark},
+    {id: 'solarized', name: 'Solarized', light: solarizedLight, dark: solarizedDark},
+    {id: 'github', name: 'GitHub', light: githubLight, dark: githubDark},
+    {id: 'monokai', name: 'Monokai', light: monokaiLight, dark: monokaiDark},
 
     {
         id: 'acid-blue-yellow',
         name: 'Кислота: синий и жёлтый',
-        group: 'acid',
         light: acidBlueYellowLight,
         dark: acidBlueYellowDark,
     },
     {
         id: 'acid-techno-green',
         name: 'Эйсид-техно',
-        group: 'acid',
         light: acidTechnoGreenLight,
         dark: acidTechnoGreenDark,
     },

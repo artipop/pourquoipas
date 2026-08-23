@@ -12,13 +12,16 @@ to be Gruvbox.
 
 ## What is in the list
 
+Twelve rows, in this order:
+
 - **XCIII** — the theme the product itself is drawn in: warm paper and a black
   screen.
-- **Ported** — themes from Mattermost's community list: Windows, One, Gruvbox,
-  Night Owl, Discord, Solarized, GitHub, Monokai. The half that list does not
-  carry is the real one the theme has at home — One Light, Gruvbox Light, Light
-  Owl and so on.
-- **Acid** — «Кислота: синий и жёлтый» and «Эйсид-техно».
+- **Windows**, **One**, **Gruvbox**, **Night Owl**, **Discord**, **Solarized**,
+  **GitHub**, **Monokai** — themes from Mattermost's community list. The half
+  that list does not carry is the real one the theme has at home — One Light,
+  Gruvbox Light, Light Owl and so on.
+- **«Кислота: синий и жёлтый»** and **«Эйсид-техно»** — the acid ones, and they
+  are meant to hurt.
 - **"Custom config"** — a theme you pasted in yourself, below.
 
 The picked theme and polarity are kept by the install itself: they survive a

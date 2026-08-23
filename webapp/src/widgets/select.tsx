@@ -25,12 +25,11 @@ export type SelectOption = {
     label: string
     disabled?: boolean
 
-    // A heading drawn above this option, when it is the first of its group.
-    // The options carry it rather than the list being a list of groups,
-    // because every caller has a flat list and the current value is looked up
-    // in it; a nested shape would have made both of those two lines longer to
-    // spare the one place that groups anything.
-    group?: string
+    // A line drawn above this option. What it separates is a caller's own
+    // business — the theme list uses it to set the slot for a config you paste
+    // apart from the themes that came with the app — so it is a flag on the
+    // option and not a shape the list has to be built in.
+    separator?: boolean
 }
 
 type Props = {
@@ -74,10 +73,10 @@ const Select = (props: Props): JSX.Element => {
                     matchAnchorWidth={true}
                 >
                     <For each={props.options}>
-                        {(option, index) => (
+                        {(option) => (
                             <>
-                                <Show when={option.group && option.group !== props.options[index() - 1]?.group}>
-                                    <Menu.Label>{option.group}</Menu.Label>
+                                <Show when={option.separator}>
+                                    <Menu.Separator/>
                                 </Show>
                                 <Menu.Text
                                     id={option.value}

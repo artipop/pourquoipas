@@ -7,7 +7,6 @@ import {
     ThemeFamily,
     themeFamily,
     THEME_FAMILIES,
-    ThemeGroupId,
 } from './themes'
 import {themeTokens} from './tokens'
 
@@ -43,7 +42,7 @@ export const themeModes: ThemeMode[] = ['light', 'dark', 'system']
 export type ThemeName = string
 
 export {THEME_FAMILIES, SHIPPED_VARIANTS, ThemeConfigError}
-export type {ThemeConfig, ThemeFamily, ThemeGroupId}
+export type {ThemeConfig, ThemeFamily}
 
 let activeFamilyId: ThemeName = defaultFamilyId
 let activeMode: ThemeMode = 'system'

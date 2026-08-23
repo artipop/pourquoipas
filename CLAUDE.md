@@ -825,9 +825,11 @@ there in one polarity and exist in both at home, so the missing halves are the
 real ones. The pasted config is the exception and stays one half — it brings its
 own polarity, so the switch is not drawn while it is on. The themes are the one
 place the "lay the choices out rather than fold them into a menu" rule turned
-over — eleven of them, in `widgets/select` and not a `<select>`, whose own
-comment says why — and the polarity, being three answers, is chips like
-everything else.
+over — twelve rows in `widgets/select` and not a `<select>`, whose own comment
+says why — and the polarity, being three answers, is chips like everything
+else. That list is flat: it carried a heading over each of the three kinds and
+they were three lines of furniture over twelve entries a person picks by name,
+so the order says it instead.
 **Neither of those two addresses is the repository.** The panel points at the
 guide (`Constants.guideUrl`, the doc site `docs/guide/` publishes) and at an
 email address (`Constants.feedbackEmail`), because the repository was standing
