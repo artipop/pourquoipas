@@ -239,9 +239,9 @@ type FlowEdge struct {
 // arrow.
 //
 // On the arrow and not on the stage because one stage is entered in more than
-// one way, and the answers differ: «Входящие» → «В работе» is where somebody
-// decides how the work will be arranged, and the same card coming back from a
-// review has that decided already.
+// one way, and the answers differ: the way into work from the backlog is where
+// somebody decides how the work will be arranged, and the same card coming back
+// from a review has that decided already.
 type EdgeAsk struct {
 	// ID is the question's own, so an answer can name it. Minted on save.
 	ID string `json:"id"`

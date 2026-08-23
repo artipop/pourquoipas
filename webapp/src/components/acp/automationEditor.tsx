@@ -1082,7 +1082,7 @@ const AutomationEditor = (props: Props) => {
     // one select for the kind of question, then the question's own fields.
     // What the arrow asks before it lets the card across. It is edited here and
     // not on the stage because one stage is entered in more than one way: the
-    // way into work from the inbox is where somebody decides how the work will
+    // way into work from the backlog is where somebody decides how the work will
     // be arranged, and the same card coming back from a review has that
     // decided already.
     //

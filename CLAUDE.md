@@ -1482,7 +1482,7 @@ person; this is the one place the machine stops and asks, because some
 decisions are neither the agent's nor the board's — how the work is going to be
 arranged for *this* card. It hangs off the arrow rather than off the stage
 because one stage is entered in more than one way and the answers differ:
-«Входящие» → «В работе» is where somebody decides how the work is arranged, and
+«Не начата» → «В работе» is where somebody decides how the work is arranged, and
 the same card coming back from a review has that decided already. Two kinds,
 and the split is where the answer goes. `AskProperty` writes a board select
 onto the card, which is the dataflow above and nothing new. `AskWorkMode` is

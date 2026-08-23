@@ -157,7 +157,7 @@ this card. Those used to be settled once for a folder or once for a board,
 which is the wrong grain for a decision made per card.
 
 It hangs off the arrow rather than off the stage, because one stage is entered
-in more than one way and the answers differ: «Входящие» → «В работе» is where
+in more than one way and the answers differ: «Не начата» → «В работе» is where
 somebody decides how the work will be arranged, and the same card coming back
 from a review has that decided already.
 

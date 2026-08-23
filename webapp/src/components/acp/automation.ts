@@ -75,7 +75,7 @@ export type FlowEdge = {
 
 // EdgeAsk is one question the arrow asks. It is on the arrow and not on the
 // stage because one stage is entered in more than one way and the answers
-// differ: the way into work from the inbox is where somebody decides how the
+// differ: the way into work from the backlog is where somebody decides how the
 // work will be arranged, and the same card coming back from a review has that
 // decided already.
 export type EdgeAsk = {

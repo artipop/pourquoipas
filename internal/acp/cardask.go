@@ -17,9 +17,9 @@ import (
 // or once for a board, which is the wrong grain for a decision made per card.
 //
 // It hangs off the arrow rather than off the stage, because one stage is
-// entered in more than one way and the answers differ: «Входящие» → «В работе»
-// is where somebody decides how the work will be arranged, and the same card
-// coming back from a review has that decided already.
+// entered in more than one way and the answers differ: the way into work from
+// the backlog is where somebody decides how the work will be arranged, and the
+// same card coming back from a review has that decided already.
 //
 // The card waits where it is. Nothing is started, the outcome is already
 // written, and the card shows the question on its own route strip — the same

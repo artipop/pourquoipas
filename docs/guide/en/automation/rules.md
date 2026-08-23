@@ -69,7 +69,7 @@ question is on its route strip — with the name of the stage the card is going
 to, and the answers as buttons; "Ждут" and the notification say so too. An
 answer is one click; several questions are asked one at a time.
 
-The question is about this arrow, not about the stage. The arrow "Входящие → В
+The question is about this arrow, not about the stage. The arrow "Не начата → В
 работе" asks; the way back, "На ревью → В работе", does not — there it is all
 settled already.
 
