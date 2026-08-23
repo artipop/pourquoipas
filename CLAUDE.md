@@ -621,6 +621,37 @@ carries one conversation per node (the terminal, above). Everything per-node
 hangs off the node id, which is why it is the board option id and never
 regenerated.
 
+**And the board can be drawn one route at a time** (`components/acp/
+boardFlows.ts`, `viewHeaderFlowMenu.tsx`). A board carries several routes — not
+every task is deployed — and its kanban is the union of them: eight columns for
+a route of three, and cards travelling somebody else's. «Маршрут» beside
+«Сгруппировать по» narrows the view to the route's own stages and to the cards
+on it. Three things make it honest. Which route a card is on is **Go's answer,
+not a second copy of the rule** (`CardFlowsForBoard`): the flow state where the
+card has entered a stage, `resolveFlow` — the very call `handleFlowMove` makes —
+where it has only declared one, and one call for the whole board, the bargain
+`ListCardMarks` already takes — and both bindings **read the board before
+answering** (`SeedBoard`), because the registry is filled lazily, by a card
+moving or an edit, and this is the screen opened before any of that: a board
+carrying three routes answered "none" until somebody touched it, so the picker
+drew nothing on exactly the boards it is for. The pick is **a field of the view**
+(`fields.flowId`, by the route's id), for the reason `calendarSpan` is one: it
+is a thing about this view, so it survives a reload and is the same on the next
+screen — and a view per route is then just another view. And it is **narrowed
+only where a route could run**: `routeRunsOn` refuses a view grouped by
+something the route's stages are not options of, or «Входящие» — grouped by who
+brought the card — would keep one column and hide the rest for no reason
+anybody could see.
+
+**The first column is every route's, and the line says so.** A card arrives
+there before anything has decided which route it takes, so a route view that
+dropped it would hide the only column work comes from; it is kept whatever the
+route, drawn first, and separated by a rule in the header and the body alike
+(`dividerAfter`, `.octo-board-divider`). Which column that is, is the view's
+own first option group and never a name: the shipped «Разработка» calls it «Не
+начата», and nothing here may know that. What the line divides is what arrives
+from what the route does with it.
+
 Both halves are edited over **the board's own columns**: `components/acp/
 automationEditor.tsx` draws every option of the board's column property as a box,
 and a route is that same set of boxes with arrows over it — a stage that is not a

@@ -86,6 +86,10 @@ const BoardTemplateSelectorPreview = (props: Props) => {
                             cards={activeTemplateCards()}
                             views={[activeView()!]}
                             groupByProperty={groupByProperty()}
+
+                            // A preview is a picture of a template, and routes
+                            // belong to a live board: there is none to draw by.
+                            flows={[]}
                             addCard={() => null}
                             addCardFromTemplate={() => null}
                             addCardTemplate={() => null}

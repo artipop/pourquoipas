@@ -500,10 +500,18 @@ func (a *App) RemoveDeployTarget(name string) error {
 // ListFlows returns the routes a board may use as JSON — its own, plus any tied
 // to no board in particular — each a graph of nodes (a column) and edges (an
 // event and where it leads).
+//
+// It reads the board first (SeedBoard), because the registry is filled lazily —
+// by a card being moved, by an edit, by the automation editor opening — and the
+// question this answers is asked by a screen that is opened before any of that
+// happens. A board carrying three routes of its own answered "none" until
+// somebody touched it, and the route picker above the kanban then drew nothing
+// on exactly the boards it is for. Idempotent and once per board per run.
 func (a *App) ListFlows(boardID string) (string, error) {
 	if a.mgr == nil {
 		return "[]", nil
 	}
+	a.mgr.SeedBoard(boardID)
 	out, err := json.Marshal(a.mgr.BoardFlows(boardID))
 	if err != nil {
 		return "", err
@@ -774,6 +782,25 @@ func (a *App) ListCardMarks(boardID string) (string, error) {
 		return "{}", nil
 	}
 	out, err := json.Marshal(a.mgr.CardMarksForBoard(boardID))
+	if err != nil {
+		return "", err
+	}
+	return string(out), nil
+}
+
+// ListCardFlows is which route each card of a board is on, in one call: a view
+// filtered by route asks it of every card it draws.
+func (a *App) ListCardFlows(boardID string) (string, error) {
+	if a.mgr == nil {
+		return "{}", nil
+	}
+	// The board is read first for the reason ListFlows reads it: which route a
+	// card is on is answered against the registry, and the registry is filled
+	// lazily.
+	a.mgr.SeedBoard(boardID)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	out, err := json.Marshal(a.mgr.CardFlowsForBoard(ctx, boardID))
 	if err != nil {
 		return "", err
 	}

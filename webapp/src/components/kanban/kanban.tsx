@@ -35,6 +35,12 @@ type Props = {
     cards: Card[]
     groupByProperty?: IPropertyTemplate
     visibleGroups: BoardGroup[]
+
+    // The column after which the route's own stages begin, by option id. A card
+    // arrives in the first column before anything has decided which route it
+    // takes, so that column belongs to every route and is not a stage of any:
+    // the line says which side of it the picture is about. Empty draws none.
+    dividerAfter?: string
     hiddenGroups: BoardGroup[]
     selectedCardIds: string[]
     readonly: boolean
@@ -213,6 +219,11 @@ const Kanban = (props: Props) => {
     // about the past: dropping a card in another one would be asking the board
     // to have been written by somebody else. So the cards do not drag, and
     // there is no group to add.
+    // The line after the column every route shares. Drawn between the columns
+    // rather than around one, so the board reads as "everything arrives here,
+    // and this route is what happens next".
+    const dividesAfter = (group: BoardGroup) => Boolean(props.dividerAfter) && group.option.id === props.dividerAfter
+
     const columnsAreFacts = () => {
         const type = props.groupByProperty?.type
         return type === 'createdBy' || type === 'updatedBy'
@@ -228,21 +239,26 @@ const Kanban = (props: Props) => {
 
                 <For each={props.visibleGroups}>
                     {(group) => (
-                        <KanbanColumnHeader
-                            group={group}
-                            board={props.board}
-                            activeView={props.activeView}
-                            intl={intl}
-                            groupByProperty={props.groupByProperty}
-                            addCard={props.addCard}
-                            readonly={props.readonly}
-                            propertyNameChanged={propertyNameChanged}
-                            onDropToColumn={onDropToColumn}
-                            calculationMenuOpen={showCalculationsMenu().get(group.option.id) || false}
-                            onCalculationMenuOpen={() => toggleOptions(group.option.id, true)}
-                            onCalculationMenuClose={() => toggleOptions(group.option.id, false)}
-                            onOpenSettings={setSettingsColumn}
-                        />
+                        <>
+                            <KanbanColumnHeader
+                                group={group}
+                                board={props.board}
+                                activeView={props.activeView}
+                                intl={intl}
+                                groupByProperty={props.groupByProperty}
+                                addCard={props.addCard}
+                                readonly={props.readonly}
+                                propertyNameChanged={propertyNameChanged}
+                                onDropToColumn={onDropToColumn}
+                                calculationMenuOpen={showCalculationsMenu().get(group.option.id) || false}
+                                onCalculationMenuOpen={() => toggleOptions(group.option.id, true)}
+                                onCalculationMenuClose={() => toggleOptions(group.option.id, false)}
+                                onOpenSettings={setSettingsColumn}
+                            />
+                            <Show when={dividesAfter(group)}>
+                                <div class='octo-board-divider'/>
+                            </Show>
+                        </>
                     )}
                 </For>
 
@@ -283,48 +299,53 @@ const Kanban = (props: Props) => {
 
                 <For each={props.visibleGroups}>
                     {(group) => (
-                        <KanbanColumn
-                            accepts={!columnsAreFacts()}
-                            onDrop={(card: Card) => onDropToColumn(group.option, card)}
-                        >
-                            <For each={group.cards}>
-                                {(card, cardIndex) => (
-                                    <KanbanCard
-                                        card={card}
-                                        index={cardIndex()}
-                                        groupId={group.option.id || 'empty'}
-                                        board={props.board}
-                                        visiblePropertyTemplates={visiblePropertyTemplates()}
-                                        visibleBadges={visibleBadges()}
-                                        readonly={props.readonly}
-                                        dragDisabled={columnsAreFacts()}
-                                        isSelected={props.selectedCardIds.includes(card.id)}
-                                        onClick={props.onCardClicked}
-                                        onDrop={onDropToCard}
-                                        showCard={props.showCard}
-                                        isManualSort={isManualSort()}
-                                    />
-                                )}
-                            </For>
-                            <Show when={!props.readonly}>
-                                <BoardPermissionGate permissions={[Permission.ManageBoardCards]}>
-                                    <Button
-                                        onClick={() => {
-                                            if (defaultTemplateID()) {
-                                                props.addCardFromTemplate(defaultTemplateID()!, group.option.id)
-                                            } else {
-                                                props.addCard(group.option.id, true)
-                                            }
-                                        }}
-                                    >
-                                        <FormattedMessage
-                                            id='BoardComponent.new'
-                                            defaultMessage='+ New'
+                        <>
+                            <KanbanColumn
+                                accepts={!columnsAreFacts()}
+                                onDrop={(card: Card) => onDropToColumn(group.option, card)}
+                            >
+                                <For each={group.cards}>
+                                    {(card, cardIndex) => (
+                                        <KanbanCard
+                                            card={card}
+                                            index={cardIndex()}
+                                            groupId={group.option.id || 'empty'}
+                                            board={props.board}
+                                            visiblePropertyTemplates={visiblePropertyTemplates()}
+                                            visibleBadges={visibleBadges()}
+                                            readonly={props.readonly}
+                                            dragDisabled={columnsAreFacts()}
+                                            isSelected={props.selectedCardIds.includes(card.id)}
+                                            onClick={props.onCardClicked}
+                                            onDrop={onDropToCard}
+                                            showCard={props.showCard}
+                                            isManualSort={isManualSort()}
                                         />
-                                    </Button>
-                                </BoardPermissionGate>
+                                    )}
+                                </For>
+                                <Show when={!props.readonly}>
+                                    <BoardPermissionGate permissions={[Permission.ManageBoardCards]}>
+                                        <Button
+                                            onClick={() => {
+                                                if (defaultTemplateID()) {
+                                                    props.addCardFromTemplate(defaultTemplateID()!, group.option.id)
+                                                } else {
+                                                    props.addCard(group.option.id, true)
+                                                }
+                                            }}
+                                        >
+                                            <FormattedMessage
+                                                id='BoardComponent.new'
+                                                defaultMessage='+ New'
+                                            />
+                                        </Button>
+                                    </BoardPermissionGate>
+                                </Show>
+                            </KanbanColumn>
+                            <Show when={dividesAfter(group)}>
+                                <div class='octo-board-divider'/>
                             </Show>
-                        </KanbanColumn>
+                        </>
                     )}
                 </For>
 

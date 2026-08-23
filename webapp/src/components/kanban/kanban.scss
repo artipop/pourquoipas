@@ -91,6 +91,17 @@
         }
     }
 
+    // The route's intake column stands apart: the line is a column of its own in
+    // both rows, so the header and the body draw one continuous rule.
+    .octo-board-divider {
+        flex: 0 0 auto;
+        align-self: stretch;
+        width: 1px;
+        min-height: 24px;
+        margin: 0 15px 0 0;
+        background: rgba(var(--center-channel-color-rgb), 0.16);
+    }
+
     .octo-board-hidden-item {
         display: flex;
         flex-direction: row;

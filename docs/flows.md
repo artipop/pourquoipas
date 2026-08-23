@@ -100,6 +100,24 @@ with no route chosen, which is where you say what each column does.
   doing what it says, drag it onto the canvas to say where it stands. Rename it
   in the panel; the routes and specs follow the option, not the name.
 
+## Reading the board one route at a time
+
+A board carries several routes, and its kanban draws all of them at once: eight
+columns for a route of three, and cards travelling somebody else's. **«Маршрут»**,
+beside «Сгруппировать по» in the view header, narrows the board to one — its
+own stages, and the cards on it. It is there on any board with a route at all.
+
+- a card is on a route when it **stands on one of its stages**, or when it
+  **names the route** with an option of that name — the same two answers the
+  engine itself works from, so the picture cannot disagree with what runs;
+- a card that has chosen no route is drawn under every one, because it is
+  nobody else's;
+- **the first column stays whatever the route**, separated from the rest by a
+  vertical line. A card arrives there before anything has decided which route
+  it takes, so that column belongs to all of them;
+- the pick belongs to the view, not to the browser: it survives a reload, and
+  a view per route is made by adding a view and picking a route in it.
+
 ## Properties are the dataflow
 
 A stage can **declare what it writes onto the card and what it reads off it**,

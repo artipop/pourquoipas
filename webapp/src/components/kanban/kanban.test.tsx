@@ -674,4 +674,40 @@ describe('src/component/kanban/kanban', () => {
         userEvent.click(allButtonsNew[0])
         expect(mockedAddCard).toHaveBeenCalledTimes(1)
     })
+
+    // The column every route shares is marked off from the route's own stages,
+    // and in both rows: the header and the body are one picture, so a line in
+    // one of them alone would read as a stray rule.
+    test('draws the line after the column every route shares', () => {
+        const {container} = render(() => wrapDNDIntl(() =>
+            <AppStoreProvider store={store}>
+                <Kanban
+                    board={board}
+                    activeView={activeView}
+                    cards={[card1, card2, card3]}
+                    groupByProperty={groupProperty}
+                    visibleGroups={[
+                        {
+                            option: optionQ1,
+                            cards: [card1, card2],
+                        }, {
+                            option: optionQ2,
+                            cards: [card3],
+                        },
+                    ]}
+                    hiddenGroups={[]}
+                    dividerAfter={optionQ1.id}
+                    selectedCardIds={[]}
+                    readonly={false}
+                    onCardClicked={vi.fn()}
+                    addCard={vi.fn()}
+                    addCardFromTemplate={vi.fn()}
+                    showCard={vi.fn()}
+                />
+            </AppStoreProvider>,
+        ), {wrapper: TestRouter})
+        expect(container.querySelectorAll('.octo-board-divider').length).toEqual(2)
+        expect(container.querySelector('#mainBoardHeader .octo-board-divider')).not.toBeNull()
+        expect(container.querySelector('#mainBoardBody .octo-board-divider')).not.toBeNull()
+    })
 })

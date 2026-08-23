@@ -332,3 +332,66 @@ func (m *Manager) MarkCardOutcome(ctx context.Context, cardID, value string) err
 	}
 	return m.forCard(cardID).Writer.UpdateCard(ctx, cardID, CardEdit{Options: []string{value}})
 }
+
+// CardFlowsForBoard is which route each card of a board is on, in one call —
+// the answer a view filtered by route needs for every card it draws, and the
+// bargain CardMarksForBoard already takes: a board has as many cards as it
+// likes and GetCardFlow per card would be a round trip each.
+//
+// Two ways a card belongs to a route, and both are the engine's own rule rather
+// than a second copy of it on the page. Where the card *stands* is the flow
+// state, which exists once the card has entered a stage. Before that the card
+// may already say which route it takes — an option named after one — and that
+// is resolveFlow, the same call handleFlowMove makes. A card the two rules say
+// nothing about is on no route and belongs to every view of the board.
+func (m *Manager) CardFlowsForBoard(ctx context.Context, boardID string) map[string]string {
+	out := map[string]string{}
+	if strings.TrimSpace(boardID) == "" {
+		return out
+	}
+	states, err := m.flowStates()
+	if err != nil {
+		m.log.Warn("acp: cannot read where the cards stand", "board", boardID, "err", err)
+	}
+	for _, st := range states {
+		if st.BoardID != "" && st.BoardID != boardID {
+			continue
+		}
+		if st.FlowID != "" {
+			out[st.CardID] = st.FlowID
+		}
+	}
+	if m.reader == nil {
+		return out
+	}
+	cards, err := m.forBoard(boardID).Reader.CardsForBoard(ctx, boardID)
+	if err != nil {
+		m.log.Warn("acp: cannot read the board's cards", "board", boardID, "err", err)
+		return out
+	}
+
+	// The folder is only ever asked for by the rule that ties a route to one,
+	// and resolving it stats a directory per card. So the cheap rules answer
+	// first, and the folder is resolved only for a board that has such a route.
+	tied := false
+	for _, f := range m.BoardFlows(boardID) {
+		if f.WorkspaceID != "" {
+			tied = true
+			break
+		}
+	}
+	for _, ev := range cards {
+		if _, ok := out[ev.CardID]; ok {
+			continue
+		}
+		flow := m.resolveFlow(ev, "")
+		if flow == nil && tied {
+			path, _ := m.resolveWorkdir(ev)
+			flow = m.resolveFlow(ev, path)
+		}
+		if flow != nil {
+			out[ev.CardID] = flow.ID
+		}
+	}
+	return out
+}
