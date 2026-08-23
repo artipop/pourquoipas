@@ -126,6 +126,24 @@ const Menu: Component<Props> & {
                         if (props.matchAnchorWidth) {
                             elements.floating.style.minWidth = `${rects.reference.width}px`
                         }
+
+                        // The stylesheet's `overflow-y: auto` is what lets a
+                        // long menu scroll — and CSS has no way to leave the
+                        // other axis alone, so a menu that carries it is a
+                        // scroll container in both directions and clips a
+                        // submenu, which is drawn flush against its option and
+                        // therefore sticks out sideways. «Добавить вид» opened
+                        // in the DOM, reported itself visible, and was painted
+                        // nowhere.
+                        //
+                        // So the menu clips only while it has something to
+                        // scroll. `.menu-contents` is measured rather than the
+                        // menu's own scrollHeight, because an open submenu is
+                        // out of flow: it inflates the scroll height and would
+                        // switch the clipping back on the moment it appeared.
+                        const contents = elements.floating.querySelector('.menu-contents')
+                        const height = contents?.getBoundingClientRect().height || 0
+                        elements.floating.style.overflowY = height > availableHeight ? 'auto' : 'visible'
                     },
                 }),
             ]
