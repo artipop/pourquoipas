@@ -106,13 +106,13 @@ The **"Columns"** tab, select a column — in the panel:
 
   One property the app writes itself, and it is not declared: **«Исход»** — how
   the stage ended: «прошло» or «не прошло», and there is no third value — the
-card is asked whether the step worked, and *why not* is written as the reason on
-its route strip, where it can be a sentence rather than a word. Every stage writes
-  it, which is why it is not in the writes list; an arrow can still branch on
-  it, like any property with a set of values. Because of it a board no longer
-  needs columns like «Проверено» or «Не прошло»: when a stage has no transition
-  for its outcome the card stays where it is, the outcome is on it, and the
-  route strip carries the reason in amber.
+  card is asked whether the step worked, and *why not* is written as the reason
+  on its route strip, where it can be a sentence rather than a word. Every stage
+  writes it, which is why it is not in the writes list; an arrow can still
+  branch on it, like any property with a set of values. Because of it a board no
+  longer needs columns like «Проверено» or «Не прошло»: when a stage has no
+  transition for its outcome the card stays where it is, the outcome is on it,
+  and the route strip carries the reason in amber.
 
   A board made from the «Разработка» template has this set up already: the
   «Деплой» column writes «Превью» (a link), and it shows on that box on the
@@ -242,6 +242,11 @@ Clicking an arrow opens it in the panel: the event, the destination, the
 Click an empty spot on a route tab — the panel shows the route itself: name,
 project (optional) and the list of columns.
 
+The same panel has **"Delete this route"**. It asks first — "Delete “name”? The
+cards standing on it lose their place." — and "Delete" is written through at
+once, while "Keep it" dismisses the question. It is the one edit in this window
+that "Close" does not undo.
+
 A card joins a route by picking the option with the route's name — usually in
 the "Route" field. If the board has no such option, the editor warns you and
 offers a button to add it.
@@ -275,14 +280,15 @@ from:
 
 ## Saving
 
-- changes to the board itself — a new column, a rename — apply
+- changes to the board itself — a new column, a new property, a rename — apply
   immediately;
+- deleting a route applies as soon as you confirm it;
 - column actions and routes are written with the **"Save"** button. Everything
   is checked before writing: a transition to nowhere, two stages on one column,
   an empty condition or an unknown agent is rejected with an explanation.
 
-"Close" without saving discards unsaved changes (except changes to the board
-itself — those already applied).
+"Close" without saving discards unsaved changes. What has already been applied —
+changes to the board itself, and a deleted route — it does not bring back.
 
 ## Templates
 
