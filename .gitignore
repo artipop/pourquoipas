@@ -65,3 +65,8 @@ go.work.sum
 .DS_Store
 
 .idea/
+
+# Claude Code: local permissions and the worktrees agents run in. A shared
+# .claude/settings.json is deliberately still committable.
+.claude/settings.local.json
+.claude/worktrees/
