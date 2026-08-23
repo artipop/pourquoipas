@@ -2142,3 +2142,13 @@ and it made every board of shopping lists look like it was missing one.
   the reasoning, the alternative that was rejected, what was verified. No emoji.
 - Verify before claiming. A feature is done when it has been run, not when it
   compiles.
+- **Run the tests around what changed, not the whole suite.** The webapp's
+  suite is 200 files and the Go one 31 packages, and running either end to end
+  costs minutes that buy nothing when three lines of indentation moved. The
+  package or the component that changed, plus whatever imports it, is the
+  answer for an ordinary change; the whole suite is for a change that reaches
+  across the tree, and for the last check before a release. **A merge that
+  resolved cleanly and changed no source needs no run at all** — both sides
+  were tested where they were written. Snapshots are the one thing worth a
+  wider pass, because a component's markup travels into every snapshot that
+  draws it, and `-u` reports which those are.
