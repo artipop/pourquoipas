@@ -338,7 +338,7 @@ export function withColumn(flow: Flow, column: BoardColumn, at?: {x: number, y: 
         column: column.name,
         optionId: column.optionId,
         action: '',
-...(at || {}),
+        ...(at || {}),
     }
     return {...flow, nodes: [...flow.nodes, node]}
 }
@@ -347,7 +347,7 @@ export function withColumn(flow: Flow, column: BoardColumn, at?: {x: number, y: 
 // edge to nowhere is exactly what the engine refuses to save.
 export function withoutColumn(flow: Flow, id: string): Flow {
     return {
-...flow,
+        ...flow,
         nodes: flow.nodes.filter((n) => n.id !== id),
         edges: flow.edges.filter((e) => e.from !== id && e.to !== id),
     }
@@ -494,6 +494,7 @@ export function boardBranchProperty(board: {properties?: Record<string, unknown>
     const recorded = board.properties?.[BOARD_PROP_BRANCH_PROPERTY]
     return typeof recorded === 'string' ? recorded : ''
 }
+
 // BoardSetupStep is one question the template asks the machine when a board is
 // made from it. Only the kind and the order are the template's to choose: what
 // each step does is the app's, so a template can never ask for something no
