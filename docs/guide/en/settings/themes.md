@@ -22,18 +22,27 @@ Twelve rows, in this order:
   Gruvbox Light, Light Owl and so on.
 - **«Кислота: синий и жёлтый»** and **«Эйсид-техно»** — the acid ones, and they
   are meant to hurt.
-- **"Custom config"** — a theme you pasted in yourself, below.
+- **Your own themes** — the ones you wrote, as many as you like; below.
+- **"+ New theme"** — the last row of the list; it is not a theme, it makes one.
 
 The picked theme and polarity are kept by the install itself: they survive a
 restart and apply on a phone through
 ["Access from a phone"](./index.md#access-from-a-phone).
 
-## A config of your own
+## Themes of your own
 
-A theme is a JSON object in Mattermost's format. Pick "Custom config" in the
-list and a field appears under it. It opens on a copy of the theme that was on
-screen, so the easiest way to write a new one is to edit an old one. Paste your
-config and press **"Apply"**.
+A theme is a JSON object in Mattermost's format. Pick **"+ New theme"** in the
+list and an editor opens below it, in a frame of its own. It opens on a copy of
+the theme that was on screen, so the easiest way to write a new one is to edit
+an old one. Paste your config and press **"Apply"**.
+
+You can have as many as you like: each takes a row of its own in the list,
+below the line, under the ones that ship with the app. To come back to one,
+pick it in the list and the editor opens on it.
+
+**"Delete theme"** removes the one you are on and puts the XCIII theme back:
+the one you were wearing has just stopped existing. It cannot be undone, and a
+config is ordinary text, so copy it first if it is still worth anything.
 
 A theme of your own has two halves, like every other one, and "Light or dark"
 works there as it does everywhere, "As the system is" included.

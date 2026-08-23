@@ -7,9 +7,11 @@ import {useAppStore} from '../../store/hooks'
 import CheckIcon from '../../widgets/icons/check'
 import Select, {SelectOption} from '../../widgets/select'
 import {
-    activeThemeConfigs,
     activeThemeHalf,
-    customThemeName,
+    customThemes,
+    isCustomThemeId,
+    newCustomTheme,
+    removeCustomTheme,
     getActiveThemeMode,
     getActiveThemeName,
     getCustomThemeName,
@@ -18,13 +20,13 @@ import {
     setCustomThemeSource,
     setTheme,
     setThemeMode,
-    themeConfigText,
     ThemeConfigError,
     ThemeHalf,
     ThemeMode,
     themeModes,
     ThemeName,
     THEME_FAMILIES,
+    defaultFamilyId,
 } from '../../theme'
 
 import './appPanel.scss'
@@ -66,6 +68,10 @@ import './appPanel.scss'
 // its own light/dark, opening on whatever is on screen and moving only when it
 // is clicked.
 
+// The last row of the theme list, which is not a theme: it makes one. A value
+// no id can be, since a theme somebody brought is `custom-theme` or `custom:N`.
+const NEW_THEME = '+new'
+
 const AppPanel = () => {
     const intl = useIntl()
     const {actions} = useAppStore()
@@ -77,16 +83,23 @@ const AppPanel = () => {
     const [mode, setMode] = createSignal(getActiveThemeMode())
     const [error, setError] = createSignal('')
 
+    // The list of themes a person brought is not reactive either — it lives in
+    // the install — so a revision counter is what tells the options to be read
+    // again after one is added, renamed or deleted.
+    const [revision, setRevision] = createSignal(0)
+    const reread = () => setRevision((n) => n + 1)
+
     // Which half the field is editing. Its own answer, because the switch above
     // it can say «как в системе» and a config cannot: it opens on whatever is
     // drawn and then stays where it is put.
     const [half, setHalf] = createSignal<ThemeHalf>(activeThemeHalf())
-    const [source, setSource] = createSignal(getCustomThemeSource(activeThemeHalf()))
-    const [customName, setCustomName] = createSignal(getCustomThemeName())
+    const [source, setSource] = createSignal(getCustomThemeSource(getActiveThemeName(), activeThemeHalf()))
+    const [customName, setCustomName] = createSignal(getCustomThemeName(getActiveThemeName()))
 
     // What «Отмена» puts back, and what tells the two buttons whether there is
     // anything to do: the text as it was last applied.
-    const stored = () => getCustomThemeSource(half())
+    const editing = () => isCustomThemeId(themeName())
+    const stored = () => getCustomThemeSource(themeName(), half())
     const dirty = () => source() !== stored()
 
     // Spelled out rather than built as `Settings.theme-mode-${value}`: a
@@ -132,31 +145,36 @@ const AppPanel = () => {
         }
     }
 
-    // Choosing the custom slot with nothing in it hands over a copy of the
-    // theme on screen — **both halves of it** — so what a person starts from is
-    // a fork of the theme they were looking at rather than a format to go and
-    // look up. Both, because the switch beside the list still works there: a
-    // slot with only the light half written would go on drawing the light one
-    // when somebody asked for dark.
-    //
+    // Reading the stored text back rather than keeping a signal per half: what
+    // was typed and not applied is not a version of anything.
+    const editHalf = (side: ThemeHalf) => {
+        setHalf(side)
+        setSource(getCustomThemeSource(themeName(), side))
+        setError('')
+    }
+
+    const showTheme = (name: ThemeName) => {
+        setThemeName(name)
+        setCustomName(getCustomThemeName(name))
+        setHalf(activeThemeHalf())
+        setSource(getCustomThemeSource(name, activeThemeHalf()))
+    }
+
     // The selection is recorded before the theme is applied, and stays put when
     // applying fails. A config that stopped parsing is exactly the case where
-    // the field has to be on screen, and hanging it off "the theme applied"
+    // the editor has to be on screen, and hanging it off "the theme applied"
     // made a broken one impossible to select and therefore impossible to fix.
     const pickTheme = (name: ThemeName) => {
         setError('')
-        setThemeName(name)
-        if (name === customThemeName && !getCustomThemeSource('light') && !getCustomThemeSource('dark')) {
-            const configs = activeThemeConfigs()
-            for (const side of ['light', 'dark'] as ThemeHalf[]) {
-                setCustomThemeSource(side, themeConfigText({...configs[side], id: customThemeName, name: undefined}))
-            }
-        }
-        if (name === customThemeName) {
-            editHalf(activeThemeHalf())
+        if (name === NEW_THEME) {
+            const made = newCustomTheme()
+            reread()
+            showTheme(made.id)
+        } else {
+            showTheme(name)
         }
         try {
-            setTheme(name)
+            setTheme(themeName())
         } catch (e) {
             setError(reasonFor(e))
         }
@@ -164,40 +182,51 @@ const AppPanel = () => {
 
     const choiceClass = (current: boolean) => `AppPanel__choice${current ? ' AppPanel__choice--current' : ''}`
 
-    const themeOptions = (): SelectOption[] => [
-        ...THEME_FAMILIES.map((family) => ({value: family.id, label: family.name})),
-        {
-            value: customThemeName,
-            label: customName() || intl.formatMessage({id: 'Settings.theme-custom', defaultMessage: 'Custom config'}),
+    const themeOptions = (): SelectOption[] => {
+        revision()
+        const mine = customThemes()
 
-            // The one line in the list, and it is not a heading: everything
-            // above it is a theme this build ships, and this is the slot for
-            // one you bring.
-            separator: true,
-        },
-    ]
+        return [
+            ...THEME_FAMILIES.map((family) => ({value: family.id, label: family.name})),
+
+            // One line in the list, and it is not a heading: everything above
+            // it is a theme this build ships, everything below it is one you
+            // brought.
+            ...mine.map((theme, index) => ({
+                value: theme.id,
+                label: theme.name || intl.formatMessage({id: 'Settings.theme-custom', defaultMessage: 'Custom config'}),
+                separator: index === 0,
+            })),
+            {
+                value: NEW_THEME,
+                label: intl.formatMessage({id: 'Settings.theme-new', defaultMessage: '+ New theme'}),
+                separator: mine.length === 0,
+            },
+        ]
+    }
 
     const applyCustom = () => {
-        setCustomThemeSource(half(), source())
-        setThemeName(customThemeName)
+        setCustomThemeSource(themeName(), half(), source())
         try {
-            setTheme(customThemeName)
+            setTheme(themeName())
             setError('')
         } catch (e) {
             setError(reasonFor(e))
         }
     }
 
-    const cancelCustom = () => {
-        setSource(stored())
+    // Deleting takes the person back to the theme the product ships, because
+    // the one they were wearing has just stopped existing.
+    const deleteCustom = () => {
+        removeCustomTheme(themeName())
+        reread()
         setError('')
+        showTheme(defaultFamilyId)
+        setTheme(defaultFamilyId)
     }
 
-    // Reading the stored text back rather than keeping a signal per half: what
-    // was typed and not applied is not a version of anything.
-    const editHalf = (side: ThemeHalf) => {
-        setHalf(side)
-        setSource(getCustomThemeSource(side))
+    const cancelCustom = () => {
+        setSource(stored())
         setError('')
     }
 
@@ -255,10 +284,16 @@ const AppPanel = () => {
                     </div>
                 </section>
 
-                <Show when={themeName() === customThemeName}>
-                    <section class='AppPanel__group'>
+                {/* A frame, because this is a thing being made rather than
+                    a setting being read: the panel around it is a column of
+                    one-line answers, and an editor loose among them read as
+                    more of the same. Not a modal — the settings are already
+                    one, and a dialog over a dialog in this app has to be
+                    argued with the sidebar's stacking context. */}
+                <Show when={editing()}>
+                    <section class='AppPanel__group AppPanel__editor'>
                         <h4 class='AppPanel__groupTitle'>
-                            {intl.formatMessage({id: 'Settings.theme-custom', defaultMessage: 'Custom config'})}
+                            {customName() || intl.formatMessage({id: 'Settings.theme-custom', defaultMessage: 'Custom config'})}
                         </h4>
                         <div class='AppPanel__custom'>
                             <label class='AppPanel__field'>
@@ -272,7 +307,8 @@ const AppPanel = () => {
                                     placeholder={intl.formatMessage({id: 'Settings.theme-custom', defaultMessage: 'Custom config'})}
                                     onInput={(event) => {
                                         setCustomName(event.currentTarget.value)
-                                        setCustomThemeName(event.currentTarget.value)
+                                        setCustomThemeName(themeName(), event.currentTarget.value)
+                                        reread()
                                     }}
                                 />
                             </label>
@@ -314,11 +350,12 @@ const AppPanel = () => {
                                     {intl.formatMessage({id: 'Settings.theme-custom-help', defaultMessage: 'What the keys mean'})}
                                 </a>
                             </div>
+
                             {/* The field is named apart from the theme list
                                 beside it: that list's trigger is named by the
-                                value it shows, which is «Свой конфиг» exactly
-                                when this field is on screen — two controls
-                                answering to one name. */}
+                                value it shows, which is this theme's name
+                                exactly when this field is on screen — two
+                                controls answering to one name. */}
                             <textarea
                                 class='AppPanel__code'
                                 aria-label={intl.formatMessage({id: 'Settings.theme-custom-field', defaultMessage: 'Theme config'})}
@@ -355,6 +392,13 @@ const AppPanel = () => {
                                 <Show when={error()}>
                                     <span class='AppPanel__customError'>{error()}</span>
                                 </Show>
+                                <button
+                                    type='button'
+                                    class='AppPanel__actionLink AppPanel__actionLink--danger'
+                                    onClick={deleteCustom}
+                                >
+                                    {intl.formatMessage({id: 'Settings.theme-delete', defaultMessage: 'Delete theme'})}
+                                </button>
                             </div>
                         </div>
                     </section>

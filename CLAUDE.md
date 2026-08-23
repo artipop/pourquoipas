@@ -822,8 +822,12 @@ following the system meant giving up every design but ours. A family with one
 half is refused by a test, because that is a switch that looks like it works and
 moves nothing; the eight themes borrowed from Mattermost's list are published
 there in one polarity and exist in both at home, so the missing halves are the
-real ones. **The slot for a config you paste is a pair too**, named by a field
-of its own, and the switch there also decides which half the field is editing —
+real ones. **The themes you paste are pairs too, and there may be many of them**
+(`theme/custom.ts`, one `customThemes` key holding the text of both halves of
+each): they stand in the same list, below a line, under a «+ Новая тема» row
+that forks the theme on screen. Each is named by a field of its own, and the
+editor is in a frame because it is a thing being made rather than a setting
+being read. Which half the field is editing is asked there —
 asking that twice would be two controls saying one word; a half nobody wrote
 falls back to the one they did, and opening the slot forks both halves of the
 theme on screen. Which half the *field* is editing is a

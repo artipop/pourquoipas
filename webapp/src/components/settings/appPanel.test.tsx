@@ -6,9 +6,9 @@ import {TestRouter, mockAppStore, wrapIntl} from '../../testUtils'
 import {AppStoreProvider} from '../../store'
 import {Constants} from '../../constants'
 import {
-    customThemeName,
+    customThemes,
     defaultFamilyId,
-    setCustomThemeName,
+    removeCustomTheme,
     setCustomThemeSource,
     setTheme,
     setThemeMode,
@@ -32,9 +32,9 @@ describe('components/settings/appPanel', () => {
         // screen leaves the mode switch with nothing to draw.
         setTheme(defaultFamilyId)
         setThemeMode('light')
-        setCustomThemeSource('light', '')
-        setCustomThemeSource('dark', '')
-        setCustomThemeName('')
+        for (const theme of customThemes()) {
+            removeCustomTheme(theme.id)
+        }
         shown = false
     })
 
@@ -113,17 +113,16 @@ describe('components/settings/appPanel', () => {
 
         expect(list.querySelectorAll('.LabelOption')).toHaveLength(0)
         expect(list.querySelectorAll('.MenuSeparator')).toHaveLength(1)
-        expect(customThemeName).toBe('custom-theme')
         expect([...list.querySelectorAll('.menu-name')].map((n) => n.textContent)).toEqual([
             ...THEME_FAMILIES.map((family) => family.name),
-            'Custom config',
+            '+ New theme',
         ])
     })
 
     // The field is the whole point of borrowing Mattermost's format: a theme
     // written for another product is pasted in and worn.
     test('wears a config that was pasted into it', async () => {
-        await pick('Custom config')
+        await pick('+ New theme')
 
         fireEvent.input(await screen.findByLabelText('Theme config'), {
             target: {
@@ -146,7 +145,7 @@ describe('components/settings/appPanel', () => {
     // editing, because answering that twice would be two controls saying one
     // word.
     test('gives the custom slot two halves and edits the one it is asked for', async () => {
-        await pick('Custom config')
+        await pick('+ New theme')
 
         const light = await screen.findByLabelText('Theme config') as HTMLTextAreaElement
         expect(JSON.parse(light.value).centerChannelBg).toBe('#f0ede5')
@@ -169,7 +168,7 @@ describe('components/settings/appPanel', () => {
     // three and the field has a light/dark of its own.
     test('keeps the machine on offer for the board and asks the field apart', async () => {
         setThemeMode('system')
-        await pick('Custom config')
+        await pick('+ New theme')
         await screen.findByLabelText('Theme config')
 
         expect(screen.getByRole('button', {name: /^As the system is/})).toBeInTheDocument()
@@ -179,7 +178,7 @@ describe('components/settings/appPanel', () => {
     // Not "go back to the theme I had" — the list does that. This is the only
     // thing an edit in the field can undo.
     test('puts the field back where it was', async () => {
-        await pick('Custom config')
+        await pick('+ New theme')
         const field = await screen.findByLabelText('Theme config') as HTMLTextAreaElement
         const applied = field.value
 
@@ -192,7 +191,7 @@ describe('components/settings/appPanel', () => {
     // Neither button has anything to do until something is typed, and a
     // control that can do nothing says so rather than doing nothing quietly.
     test('offers nothing to apply or undo until the field is edited', async () => {
-        await pick('Custom config')
+        await pick('+ New theme')
         await screen.findByLabelText('Theme config')
 
         expect(screen.getByRole('button', {name: 'Apply'})).toBeDisabled()
@@ -204,10 +203,40 @@ describe('components/settings/appPanel', () => {
         expect(screen.getByRole('button', {name: 'Cancel'})).toBeEnabled()
     })
 
-    // A slot called «Свой конфиг» is "the other one"; a name is what makes it
-    // somebody's own theme, so the list says it.
+    // The list holds themes, and one somebody wrote is a theme. It was a
+    // single slot where pasting a second replaced the first, which stopped
+    // being a simplification the moment anybody wanted two.
+    test('holds more than one theme of its own', async () => {
+        await pick('+ New theme')
+        fireEvent.input(await screen.findByLabelText('Name'), {target: {value: 'Первая'}})
+
+        await pick('+ New theme')
+        fireEvent.input(await screen.findByLabelText('Name'), {target: {value: 'Вторая'}})
+
+        const menu = dropTheList()
+        await waitFor(() => expect(document.querySelector('.Menu .menu-options')).toBeInTheDocument())
+        expect(menu().getByRole('button', {name: 'Первая'})).toBeInTheDocument()
+        expect(menu().getByRole('button', {name: 'Вторая'})).toBeInTheDocument()
+        expect(customThemes()).toHaveLength(2)
+    })
+
+    // Deleting takes the person back to the theme the product ships, because
+    // the one they were wearing has just stopped existing.
+    test('deletes one and puts the shipped theme back on', async () => {
+        await pick('+ New theme')
+        await screen.findByLabelText('Theme config')
+
+        userEvent.click(screen.getByRole('button', {name: 'Delete theme'}))
+
+        await waitFor(() => expect(screen.queryByLabelText('Theme config')).not.toBeInTheDocument())
+        expect(customThemes()).toEqual([])
+        expect(document.documentElement.style.getPropertyValue('--canvas-rgb')).toBe('240, 237, 229')
+    })
+
+    // A theme called «Свой конфиг» is "the other one"; a name is what makes it
+    // somebody's own, so the list says it.
     test('calls the slot what it was named', async () => {
-        await pick('Custom config')
+        await pick('+ New theme')
 
         fireEvent.input(await screen.findByLabelText('Name'), {target: {value: 'Ночная смена'}})
 
@@ -220,7 +249,7 @@ describe('components/settings/appPanel', () => {
     // A config nobody can read has to say which way it is wrong, because this
     // field is the only place a person finds out.
     test('says why a config was refused', async () => {
-        await pick('Custom config')
+        await pick('+ New theme')
 
         fireEvent.input(await screen.findByLabelText('Theme config'), {target: {value: '{oh no'}})
         userEvent.click(screen.getByRole('button', {name: 'Apply'}))
@@ -232,7 +261,8 @@ describe('components/settings/appPanel', () => {
     // screen: hanging it off "the theme applied" made a broken one impossible
     // to select and therefore impossible to fix.
     test('opens the field on a stored config that no longer parses', async () => {
-        setCustomThemeSource('light', '{"centerChannelBg": "#fff"}')
+        await pick('+ New theme')
+        setCustomThemeSource(customThemes()[0].id, 'light', '{"centerChannelBg": "#fff"}')
         await pick('Custom config')
 
         expect(await screen.findByLabelText('Theme config')).toHaveValue('{"centerChannelBg": "#fff"}')
@@ -242,7 +272,7 @@ describe('components/settings/appPanel', () => {
     // Choosing the custom slot with nothing in it opens on a copy of the theme
     // on screen: a config field that opens empty is a format to go and look up.
     test('opens the custom slot on a copy of the theme on screen', async () => {
-        await pick('Custom config')
+        await pick('+ New theme')
 
         const field = await screen.findByLabelText('Theme config') as HTMLTextAreaElement
         expect(JSON.parse(field.value).centerChannelBg).toBe('#f0ede5')

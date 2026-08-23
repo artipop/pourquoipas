@@ -11,19 +11,17 @@ export enum UserSettingKey {
     // the product's own.
     ThemeMode = 'themeMode',
 
-    // The two halves pasted into the theme field, kept whether or not the
-    // custom slot is the theme in use: switching to a shipped theme and back
-    // must not lose them. A theme is a pair, and so is the one you bring.
+    // The themes a person brought, as a JSON array: id, name and the text of
+    // both halves. One key rather than three per theme, because the install
+    // reads its settings as a flat map and a list is one value.
+    CustomThemes = 'customThemes',
+
+    // What one slot held before the list did. All three are read once at
+    // startup and never written again: an install that rolls back to a build
+    // before the list still finds its theme where it left it.
     CustomThemeLight = 'customThemeLight',
     CustomThemeDark = 'customThemeDark',
-
-    // What the list calls that slot. It is the slot's own name and not the
-    // configs' — each half may carry a `name` of its own, and two of them
-    // cannot both be what one row says.
     CustomThemeName = 'customThemeName',
-
-    // The single config the slot held before it was a pair. Read once at
-    // startup, into whichever half it declares, and never written again.
     CustomTheme = 'customTheme',
     LastTeamId = 'lastTeamId',
     LastBoardId = 'lastBoardId',
@@ -55,6 +53,7 @@ const installKept = new Set<string>([
     UserSettingKey.Language,
     UserSettingKey.Theme,
     UserSettingKey.ThemeMode,
+    UserSettingKey.CustomThemes,
     UserSettingKey.CustomThemeLight,
     UserSettingKey.CustomThemeDark,
     UserSettingKey.CustomThemeName,
@@ -155,6 +154,14 @@ export class UserSettings {
 
     static set customTheme(newValue: string | null) {
         UserSettings.set(UserSettingKey.CustomTheme, newValue)
+    }
+
+    static get customThemes(): string | null {
+        return UserSettings.get(UserSettingKey.CustomThemes)
+    }
+
+    static set customThemes(newValue: string | null) {
+        UserSettings.set(UserSettingKey.CustomThemes, newValue)
     }
 
     static get customThemeLight(): string | null {

@@ -115,7 +115,12 @@ func (a *App) SetUIPreference(key, value string) error {
 	if key == "" || len(key) > 64 {
 		return fmt.Errorf("некорректный ключ настройки")
 	}
-	if len(value) > 16*1024 {
+	// A preference used to be a word — a language, a theme's name, a
+	// do-not-show-again. One of them is now a list: the themes a person wrote,
+	// each of them two configs of text, and eight of those alone pass 16KB.
+	// This is still a runaway backstop rather than a schema; it is just set
+	// where a real answer can fit under it.
+	if len(value) > 512*1024 {
 		return fmt.Errorf("значение настройки слишком велико")
 	}
 	uiSettingsMu.Lock()

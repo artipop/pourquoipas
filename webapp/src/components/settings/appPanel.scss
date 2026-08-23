@@ -18,6 +18,16 @@
         width: 100%;
     }
 
+    // The editor is a thing being made, not a setting being read: the panel
+    // around it is a column of one-line answers, and it read as one more of
+    // them until it was given an edge of its own.
+    .AppPanel__editor {
+        padding: 16px;
+        border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+        border-radius: var(--radius-lg);
+        background: rgba(var(--center-channel-color-rgb), 0.03);
+    }
+
     .AppPanel__custom {
         display: flex;
         flex-direction: column;
@@ -196,6 +206,19 @@
             &:hover {
                 background: rgba(var(--button-bg-rgb), 0.08);
             }
+        }
+    }
+
+    // Deleting is the one thing in this panel that cannot be taken back, so it
+    // stands away from the pair it shares a row with and carries the colour
+    // the product marks a failure in.
+    .AppPanel__actionLink--danger {
+        margin-left: auto;
+        background: transparent;
+        color: rgb(var(--error-text-rgb));
+
+        &:hover {
+            background: rgba(var(--error-text-rgb), 0.12);
         }
     }
 
