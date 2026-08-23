@@ -20,10 +20,6 @@
             min-width: 100px;
         }
 
-        &::placeholder {
-            color: rgba(var(--body-color), 0.4);
-            opacity: 1;
-        }
 
         &.error {
             border: 1px solid var(--error-text);
