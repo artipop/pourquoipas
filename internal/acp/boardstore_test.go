@@ -6,6 +6,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 )
 
@@ -219,16 +220,23 @@ func TestTheBoardsInstructionsAreTakenFromTheBoard(t *testing.T) {
 
 // fakeCardState is the board seen as a place to keep one key per card.
 type fakeCardState struct {
+	// The engine reads and writes a card's place from several goroutines at
+	// once — the same board block does, under a lock of its own.
+	mu    sync.Mutex
 	state map[string]FlowState
 	board map[string]string // card id → board id
 }
 
 func (f *fakeCardState) CardFlow(_ context.Context, cardID string) (FlowState, bool, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	st, ok := f.state[cardID]
 	return st, ok, nil
 }
 
 func (f *fakeCardState) SetCardFlow(_ context.Context, cardID string, st FlowState) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	if f.state == nil {
 		f.state = map[string]FlowState{}
 	}
@@ -238,11 +246,15 @@ func (f *fakeCardState) SetCardFlow(_ context.Context, cardID string, st FlowSta
 }
 
 func (f *fakeCardState) ClearCardFlow(_ context.Context, cardID string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	delete(f.state, cardID)
 	return nil
 }
 
 func (f *fakeCardState) BoardCardFlows(_ context.Context, boardID string) ([]FlowState, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	out := []FlowState{}
 	for cardID, st := range f.state {
 		if f.board[cardID] == boardID {

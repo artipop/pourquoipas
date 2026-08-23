@@ -818,6 +818,17 @@ func (a *App) MarkCardOutcome(cardID, value string) error {
 	return a.mgr.MarkCardOutcome(ctx, cardID, value)
 }
 
+// AnswerCardAsk is a person answering the question a transition is holding the
+// card at. The last answer lets the card across.
+func (a *App) AnswerCardAsk(cardID, questionID, value string) error {
+	if a.mgr == nil {
+		return errACPDisabled
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	return a.mgr.AnswerCardAsk(ctx, cardID, questionID, value)
+}
+
 // SeedBoardAutomation takes the columns and routes a board carries of its own
 // into the registry now, rather than waiting for the first card to be moved.
 // The setup wizard calls it, so what the board can do is visible as soon as it

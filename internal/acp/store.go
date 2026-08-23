@@ -175,6 +175,19 @@ type FlowState struct {
 	// travels with the card; flow_event stays as this machine's journal and is
 	// still what answers for a card that predates this.
 	Visited []string `json:"visited,omitempty"`
+
+	// Ask is the transition this card is held at: where it was going and on
+	// what, with the question nobody has answered yet. The card has not
+	// entered the next stage, so NodeID above is still the stage it is
+	// leaving. See cardask.go.
+	Ask *FlowAsk `json:"ask,omitempty"`
+
+	// WorkMode is how a person said this card's work should be arranged, when
+	// a transition asked. Kept on the card because the answer outlives the
+	// working copy: a folded worktree remade for a later stage is made the
+	// same way. The checkout, once it exists, is the fact — this is the
+	// intent, and ClaimWorkspace states the precedence between them.
+	WorkMode string `json:"workMode,omitempty"`
 }
 
 // FlowEventRecord is one transition, kept as the card's route history.

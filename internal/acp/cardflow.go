@@ -56,6 +56,28 @@ type CardFlow struct {
 	// wherever the route does not offer one, which is every stage that decides
 	// for itself.
 	Marks []CardFlowMark `json:"marks,omitempty"`
+
+	// Ask is the question holding the card at a transition, when one is. See
+	// cardask.go: nothing runs and the card does not move until it is
+	// answered.
+	Ask *CardFlowAsk `json:"ask,omitempty"`
+}
+
+// CardFlowAsk is that question as the card draws it: one at a time, which is
+// the shape every other pick in this app has — the folder, the agent, the two
+// outcome buttons.
+type CardFlowAsk struct {
+	QuestionID string      `json:"questionId"`
+	Text       string      `json:"text"`
+	Options    []AskOption `json:"options"`
+
+	// Column is where the card goes once every question is answered, so the
+	// person can see what they are letting it do.
+	Column string `json:"column"`
+
+	// Left counts the questions still unanswered, this one included: a person
+	// answering the first of three should know there are three.
+	Left int `json:"left,omitempty"`
 }
 
 // CardFlowFor describes where a card stands on its route. It returns nothing —
@@ -117,6 +139,14 @@ func (m *Manager) CardFlowFor(cardID string) (*CardFlow, error) {
 	// answer to "what is this card waiting for", the kind alone is not.
 	out.WaitingFor = append(out.WaitingFor, flow.WaitDescriptions(st.NodeID)...)
 	out.Marks = m.marksFrom(flow, st.NodeID)
+	out.Ask = askForCard(flow, st)
+
+	// A card being asked something is a card going nowhere until it is
+	// answered, and the two outcome buttons would be a second way to move it
+	// from under the question.
+	if out.Ask != nil {
+		out.Marks = nil
+	}
 
 	m.mu.Lock()
 	_, out.Running = m.byCard[cardID]
@@ -331,6 +361,28 @@ func (m *Manager) MarkCardOutcome(ctx context.Context, cardID, value string) err
 		return fmt.Errorf("доска недоступна")
 	}
 	return m.forCard(cardID).Writer.UpdateCard(ctx, cardID, CardEdit{Options: []string{value}})
+}
+
+// askForCard is the pending question, named by the stage it leads to. A route
+// somebody edited while the card stood here may no longer have that stage; the
+// question is still drawn, because the card is still held and the answer is
+// still what releases it.
+func askForCard(flow FlowEntry, st FlowState) *CardFlowAsk {
+	q := st.Ask.Next()
+	if q == nil {
+		return nil
+	}
+	left := 0
+	for _, each := range st.Ask.Questions {
+		if each.Answer == "" {
+			left++
+		}
+	}
+	column := st.Ask.ToNode
+	if node, ok := flow.Node(st.Ask.ToNode); ok {
+		column = node.Column
+	}
+	return &CardFlowAsk{QuestionID: q.ID, Text: q.Text, Options: q.Options, Column: column, Left: left}
 }
 
 // CardFlowsForBoard is which route each card of a board is on, in one call —

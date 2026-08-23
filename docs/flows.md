@@ -147,6 +147,48 @@ produce it.
   value may be a person's own click (the `card.changed` wait); but a route
   built on a property nothing produces is a route that quietly never moves.
 
+## A transition can ask before it lets the card through
+
+Everything else on a route is decided without a person: the stage runs, the
+outcome is written, the edge is chosen. A **question on the arrow** is the one
+place where the route stops and asks, and it exists because some decisions are
+neither the agent's nor the board's — how the work is going to be arranged for
+this card. Those used to be settled once for a folder or once for a board,
+which is the wrong grain for a decision made per card.
+
+It hangs off the arrow rather than off the stage, because one stage is entered
+in more than one way and the answers differ: «Входящие» → «В работе» is where
+somebody decides how the work will be arranged, and the same card coming back
+from a review has that decided already.
+
+- **«Как агенту работать с папкой»** — «своя копия папки» or «ветка в самой
+  папке». The answer is not a card property: it is what the workspace is made
+  of. It goes onto the card's flow state, from there into the checkout
+  `ClaimWorkspace` makes, and from the checkout into everything downstream —
+  the review's diff and the deploy both read the card's checkout and nothing
+  else. It is carried across every later transition, so a folded worktree
+  remade for a later stage is remade the same way, and the checkout, once it
+  exists, is the fact that wins.
+- **a board select** — the answer is written onto the card, which puts it in
+  the dataflow above like any other write: a later stage reads it, an edge
+  branches on it. Only a closed set can be asked about, for the reason a
+  condition can only ask about one: the answer is a click, and a click needs
+  its answers named.
+
+While a question stands the card **keeps its place**: nothing is started, and
+the card draws the question on its own route strip, named by the stage it leads
+to, with the answers as buttons — the same place and the same shape the two
+outcome buttons have, and for the same reason. It is announced as a wait, so it
+reaches «Ждут», the tray and the notification. Several questions are asked one
+at a time. The card's outcome buttons are withheld while it is asked something,
+or they would be a second way to move it out from under the question.
+
+A question that **cannot be answered** is dropped rather than parked on: a
+select that has left the board, a work mode asked about a folder that is not a
+repository. The route carried cards across that arrow before anybody wrote a
+question on it, and an unanswerable question must not be what stops it — it is
+said in the log instead, where whoever wrote it can find it.
+
 ## Tools a column brings
 
 A column can hand its agent **MCP servers of its own** («MCP-серверы этой

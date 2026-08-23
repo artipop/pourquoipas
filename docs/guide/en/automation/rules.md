@@ -43,3 +43,37 @@ moment, it is cancelled — the person takes priority.
 
 A card on such a stage shows in its route strip what it is waiting for,
 condition included.
+
+## A question before the card moves on
+
+Some decisions are neither the board's nor the agent's but yours, and they are
+made once, on one card: how the agent is to work with the folder here. An arrow
+can ask about that before it lets the card through.
+
+The question is written on the arrow — the transition panel has **"Ask before
+the card moves on"**. Pick what to ask about:
+
+- **how the agent works with the folder** — a copy of the folder per card, or a
+  branch in the folder itself. The answer goes into the card's workspace: it is
+  what the copy or the branch is made from, and every later stage — the review,
+  the deploy — takes its changes from there.
+- **any board property with a set of values** — the answer is written into that
+  property of the card. From there it is read by later stages and can be
+  branched on like any other value.
+
+The wording can be your own: the field under the question shows what will be
+written on the card if you type nothing.
+
+Until somebody answers, the card stays where it was and nothing starts. The
+question is on its route strip — with the name of the stage the card is going
+to, and the answers as buttons; "Ждут" and the notification say so too. An
+answer is one click; several questions are asked one at a time.
+
+The question is about this arrow, not about the stage. The arrow "Входящие → В
+работе" asks; the way back, "На ревью → В работе", does not — there it is all
+settled already.
+
+If there is nothing to answer — the property was deleted from the board, or the
+card's folder is not a repository — the card moves on without the question. The
+route carried cards before anybody wrote a question on the arrow, and a
+question nobody can answer must not be what stops it.

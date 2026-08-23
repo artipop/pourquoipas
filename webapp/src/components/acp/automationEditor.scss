@@ -224,6 +224,47 @@
             min-width: 0;
         }
 
+        // One question the arrow asks. Boxed because it is two controls about
+        // one thing — which question, and how it is worded — and the picker
+        // that adds the next one sits right under it.
+        .AutomationEditor__ask {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 6px 8px;
+            border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+            border-radius: var(--radius-sm);
+        }
+
+        .AutomationEditor__askHead {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+        }
+
+        .AutomationEditor__askName {
+            flex: 1 1 auto;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: 12px;
+        }
+
+        .AutomationEditor__askDrop {
+            border: 0;
+            background: transparent;
+            color: rgba(var(--center-channel-color-rgb), 0.56);
+            cursor: pointer;
+            padding: 2px;
+            line-height: 1;
+
+            &:hover {
+                color: rgb(var(--center-channel-color-rgb));
+            }
+        }
+
         // What the route hands over by itself: shown, not edited — the same
         // voice the crew's and the prompt's inherited answers are named in.
         .AutomationEditor__writeRow--inherited .AutomationEditor__writeName {

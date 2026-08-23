@@ -12,10 +12,13 @@ import MCPField from './mcpField'
 import {MCPServers} from './mcpServers'
 import {
     ACTIONS,
+    ASK_PROPERTY,
+    ASK_WORKMODE,
     Automation,
     BoardColumn,
     CARD_CHANGED,
     ColumnSpec,
+    EdgeAsk,
     EdgeCond,
     Flow,
     FlowEdge,
@@ -1077,6 +1080,105 @@ const AutomationEditor = (props: Props) => {
 
     // The condition editor, shared by the node panel's rows and the edge panel:
     // one select for the kind of question, then the question's own fields.
+    // What the arrow asks before it lets the card across. It is edited here and
+    // not on the stage because one stage is entered in more than one way: the
+    // way into work from the inbox is where somebody decides how the work will
+    // be arranged, and the same card coming back from a review has that
+    // decided already.
+    //
+    // Only a closed set can be asked about, for the reason a condition can only
+    // ask about one: the answer is a click, and a click needs the answers named.
+    const askChoices = (edge: FlowEdge) => {
+        const taken = new Set((edge.ask || []).map((a) => (a.kind === ASK_WORKMODE ? ASK_WORKMODE : (a.property || '').toLowerCase())))
+        const out = []
+        if (!taken.has(ASK_WORKMODE)) {
+            out.push({
+                value: ASK_WORKMODE,
+                label: intl.formatMessage({id: 'Automation.ask-workmode', defaultMessage: 'how the agent works with the folder'}),
+            })
+        }
+        for (const p of condProperties()) {
+            if (!taken.has(p.name.toLowerCase())) {
+                out.push({value: `${ASK_PROPERTY}:${p.name}`, label: p.name})
+            }
+        }
+        return out
+    }
+
+    const askLabel = (ask: EdgeAsk) => (ask.kind === ASK_WORKMODE ? intl.formatMessage({id: 'Automation.ask-workmode', defaultMessage: 'how the agent works with the folder'}) : ask.property || '')
+
+    const addAsk = (index: number, choice: string) => {
+        const edge = edges()[index]
+        if (!edge || !choice) {
+            return
+        }
+        const added: EdgeAsk = choice === ASK_WORKMODE ? {kind: ASK_WORKMODE} : {kind: ASK_PROPERTY, property: choice.slice(ASK_PROPERTY.length + 1)}
+        patchEdge(index, {ask: [...(edge.ask || []), added]})
+    }
+
+    const patchAsk = (index: number, at: number, patch: Partial<EdgeAsk>) => {
+        const edge = edges()[index]
+        if (!edge) {
+            return
+        }
+        patchEdge(index, {ask: (edge.ask || []).map((a, i) => (i === at ? {...a, ...patch} : a))})
+    }
+
+    const dropAsk = (index: number, at: number) => {
+        const edge = edges()[index]
+        if (!edge) {
+            return
+        }
+        patchEdge(index, {ask: (edge.ask || []).filter((_, i) => i !== at)})
+    }
+
+    const askEditor = (index: number, edge: FlowEdge) => (
+        <div class='AutomationEditor__field'>
+            <span class='AutomationEditor__label'>
+                {intl.formatMessage({id: 'Automation.ask-label', defaultMessage: 'Ask before the card moves on'})}
+            </span>
+            <For each={edge.ask || []}>
+                {(ask, at) => (
+                    <div class='AutomationEditor__ask'>
+                        <div class='AutomationEditor__askHead'>
+                            <span class='AutomationEditor__askName'>{askLabel(ask)}</span>
+                            <button
+                                type='button'
+                                class='AutomationEditor__askDrop'
+                                aria-label={intl.formatMessage({id: 'Automation.ask-remove', defaultMessage: 'Remove the question'})}
+                                onClick={() => dropAsk(index, at())}
+                            >
+                                <CompassIcon icon='close'/>
+                            </button>
+                        </div>
+                        <input
+                            class='AutomationEditor__input'
+                            value={ask.text || ''}
+                            placeholder={ask.kind === ASK_WORKMODE ? intl.formatMessage({id: 'Automation.ask-workmode-default', defaultMessage: 'How should the agent work with the folder for this card?'}) : intl.formatMessage({id: 'Automation.ask-property-default', defaultMessage: 'What should “{property}” be for this card?'}, {property: ask.property})}
+                            onInput={(e) => patchAsk(index, at(), {text: e.currentTarget.value})}
+                        />
+                    </div>
+                )}
+            </For>
+            <Show when={askChoices(edge).length > 0}>
+                <Select
+                    value=''
+                    options={[
+                        {value: '', label: intl.formatMessage({id: 'Automation.ask-add', defaultMessage: '+ ask something here'})},
+                        ...askChoices(edge),
+                    ]}
+                    onChange={(choice) => addAsk(index, choice)}
+                    label={intl.formatMessage({id: 'Automation.ask-pick', defaultMessage: 'Add a question to this transition'})}
+                />
+            </Show>
+            <Show when={(edge.ask || []).length > 0}>
+                <span class='AutomationEditor__hint'>
+                    {intl.formatMessage({id: 'Automation.ask-hint', defaultMessage: 'The card waits where it is until somebody answers on it. Nothing starts before that.'})}
+                </span>
+            </Show>
+        </div>
+    )
+
     const condEditor = (index: number, edge: FlowEdge) => {
         const cond = edge.if
         const isOutcome = OUTCOMES.includes(edge.on)
@@ -1583,6 +1685,7 @@ const AutomationEditor = (props: Props) => {
                                     />
                                 </div>
                                 {condEditor(selectedEdgeIndex(), edge())}
+                                {askEditor(selectedEdgeIndex(), edge())}
 
                                 {/* A fork is two arrows on the same event, and
                                     the ordinary way to draw one is to pull

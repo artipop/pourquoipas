@@ -52,6 +52,17 @@ func (m *Manager) handleFlowMove(ev CardMoved) bool {
 	m.wg.Add(1)
 	go func() {
 		defer m.wg.Done()
+		// A hand crossing the arrow crosses it whole: the card is already in
+		// the column the person dropped it in, so what is held back is the
+		// stage rather than the move. Only an arrow actually drawn between the
+		// two stages asks — a card dragged in from off the route has crossed
+		// nothing anybody described.
+		if st, ok, err := m.flowState(ev.CardID); err == nil && ok && st.NodeID != "" && st.NodeID != n.ID {
+			if edge := f.EdgeBetween(st.NodeID, n.ID); edge != nil &&
+				m.holdForAsk(ev, edge, n, false, "", "перенос вручную", "") {
+				return
+			}
+		}
 		m.enterNode(ev, f, n, false, "", "перенос вручную", "")
 	}()
 	return true
@@ -82,10 +93,16 @@ func (m *Manager) enterNode(ev CardMoved, flow FlowEntry, node FlowNode, move bo
 	m.clearStall(ev.CardID)
 
 	workdirPath, _ := m.resolveWorkdir(ev)
-	from, previousBranch := "", ""
+	from, previousBranch, workMode := "", "", ""
 	var visited []string
 	if st, ok, _ := m.flowState(ev.CardID); ok {
 		from, previousBranch, visited = st.NodeID, st.Branch, st.Visited
+		// How this card's work is arranged was answered once and holds for the
+		// whole route: it is what the workspace was made of, and a later stage
+		// remaking a folded copy has to make the same one. The record is
+		// rebuilt from scratch here, so anything not carried is dropped —
+		// which is what happened to it before this line existed.
+		workMode = st.WorkMode
 	}
 	// The stage being left is a stage the card has been through. A route may
 	// loop, so this is a set and not a trail.
@@ -100,6 +117,7 @@ func (m *Manager) enterNode(ev CardMoved, flow FlowEntry, node FlowNode, move bo
 		Branch:      m.flowBranch(ev, workdirPath, previousBranch),
 		WorkdirPath: workdirPath,
 		Visited:     visited,
+		WorkMode:    workMode,
 	})
 	m.appendFlowEvent(FlowEventRecord{
 		CardID: ev.CardID, FlowID: flow.ID, FromNode: from, ToNode: node.ID, On: on, Detail: detail,
@@ -343,7 +361,7 @@ func (m *Manager) advanceFlowWith(cardID, on, detail, agentText string) {
 		return
 	}
 
-	next, cond, ok := flow.Next(node.ID, on, ev.Props, agentText)
+	next, edge, ok := flow.Next(node.ID, on, ev.Props, agentText)
 	if !ok {
 		// Edges exist for this event, but no condition held and there is no
 		// fallback. That is a decision the route made, and worth recording —
@@ -364,8 +382,13 @@ func (m *Manager) advanceFlowWith(cardID, on, detail, agentText string) {
 	if detail == "" {
 		detail = TriggerLabel(on)
 	}
-	if desc := cond.Describe(); desc != "" {
+	if desc := edge.If.Describe(); desc != "" {
 		detail += ", " + desc
+	}
+	// An arrow that asks something holds the card on this side of it: nothing
+	// is started and the card keeps its place until somebody answers.
+	if m.holdForAsk(ev, edge, next, true, on, detail, agentText) {
+		return
 	}
 	m.enterNode(ev, flow, next, true, on, detail, agentText)
 }

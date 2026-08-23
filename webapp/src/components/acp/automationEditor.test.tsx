@@ -242,6 +242,27 @@ describe('components/acp/automationEditor', () => {
         expect(next.flows[0].edges[1]).toMatchObject({from: 'opt-work', on: SUCCESS, if: {property: '', value: ''}})
     })
 
+    // A transition can also stop and ask, and it is written where the arrow is
+    // edited for the same reason its condition is: the question is about this
+    // way into the stage and not about the stage.
+    test('a question is written on the arrow it holds the card at', async () => {
+        const {container, onChange} = renderEditor()
+
+        userEvent.click(screen.getByRole('button', {name: 'Фича'}))
+        const edge = await waitFor(() => {
+            const found = container.querySelector('.solid-flow__edge')
+            expect(found).toBeTruthy()
+            return found!
+        })
+        fireEvent.click(edge)
+
+        await chooseOption(screen.getByLabelText('Add a question to this transition'), 'how the agent works with the folder')
+
+        await waitFor(() => expect(onChange).toHaveBeenCalled())
+        const next: Automation = onChange.mock.calls.at(-1)![0]
+        expect(next.flows[0].edges[0].ask).toEqual([{kind: 'workmode'}])
+    })
+
     // The condition is written where the arrow is edited: property and value
     // from the board's own vocabulary, nothing typed by hand.
     test('a property condition is picked from the board’s own options', async () => {

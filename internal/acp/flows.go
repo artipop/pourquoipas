@@ -229,6 +229,34 @@ type FlowEdge struct {
 	// no condition is the fallback. For TriggerCardChanged the condition is not
 	// a guard but the event itself: which option firing it means.
 	If *EdgeCond `json:"if,omitempty"`
+
+	// Ask holds the card here until a person answers. See cardask.go for what
+	// a question may be and where its answer goes.
+	Ask []EdgeAsk `json:"ask,omitempty"`
+}
+
+// EdgeAsk is one question a person answers before the card is let across this
+// arrow.
+//
+// On the arrow and not on the stage because one stage is entered in more than
+// one way, and the answers differ: «Входящие» → «В работе» is where somebody
+// decides how the work will be arranged, and the same card coming back from a
+// review has that decided already.
+type EdgeAsk struct {
+	// ID is the question's own, so an answer can name it. Minted on save.
+	ID string `json:"id"`
+
+	// Kind is AskWorkMode or AskProperty — what the answer is about, and
+	// therefore where it is put.
+	Kind string `json:"kind"`
+
+	// Property is the board's select the answer is written to, by name, for
+	// AskProperty. Empty for the machine's own questions.
+	Property string `json:"property,omitempty"`
+
+	// Text is what is asked, in the board's own words. Empty takes the
+	// built-in wording of the kind.
+	Text string `json:"text,omitempty"`
 }
 
 // EdgeCond is what a conditional transition asks about, in exactly one of two
@@ -378,7 +406,7 @@ func (f FlowEntry) UpstreamWrites(nodeID string, resolve func(FlowNode) []Proper
 // event, the first whose condition holds against the card — and an edge with no
 // condition holds always, which makes it the fallback however the editor
 // ordered it.
-func (f FlowEntry) Next(nodeID, on string, props map[string]string, agentText string) (FlowNode, *EdgeCond, bool) {
+func (f FlowEntry) Next(nodeID, on string, props map[string]string, agentText string) (FlowNode, *FlowEdge, bool) {
 	var fallback *FlowEdge
 	for i, e := range f.Edges {
 		if e.From != nodeID || e.On != on {
@@ -392,14 +420,29 @@ func (f FlowEntry) Next(nodeID, on string, props map[string]string, agentText st
 		}
 		if e.If.holds(props, agentText) {
 			node, ok := f.Node(e.To)
-			return node, e.If, ok
+			return node, &f.Edges[i], ok
 		}
 	}
 	if fallback != nil {
 		node, ok := f.Node(fallback.To)
-		return node, nil, ok
+		return node, fallback, ok
 	}
 	return FlowNode{}, nil, false
+}
+
+// EdgeBetween is the arrow a person draws between two stages, for the one case
+// that has no trigger to look one up by: somebody dragging the card from one
+// column into the next. The first arrow carrying a question wins, because what
+// is being asked is about the move rather than about the event — two arrows
+// between the same pair differ in what they wait for, and a person's hand
+// waits for nothing.
+func (f FlowEntry) EdgeBetween(from, to string) *FlowEdge {
+	for i, e := range f.Edges {
+		if e.From == from && e.To == to && len(e.Ask) > 0 {
+			return &f.Edges[i]
+		}
+	}
+	return nil
 }
 
 // HasEdge reports whether the node has any transition for an event at all —
@@ -603,9 +646,49 @@ func validateFlow(f FlowEntry, workdirs []WorkdirEntry, agents []AgentEntry, dep
 			}
 			seenFallback[key] = true
 		}
+		ask, err := validateEdgeAsks(e.Ask)
+		if err != nil {
+			return FlowEntry{}, fmt.Errorf("переход из %q: %w", e.From, err)
+		}
+		e.Ask = ask
 		f.Edges[i] = e
 	}
 	return f, nil
+}
+
+// validateEdgeAsks normalizes the questions one arrow asks. A question with no
+// id gets one here, which is the moment an answer has something to name.
+func validateEdgeAsks(asks []EdgeAsk) ([]EdgeAsk, error) {
+	if len(asks) == 0 {
+		return nil, nil
+	}
+	out := make([]EdgeAsk, 0, len(asks))
+	seen := make(map[string]bool, len(asks))
+	for _, a := range asks {
+		a.ID = strings.TrimSpace(a.ID)
+		a.Kind = strings.ToLower(strings.TrimSpace(a.Kind))
+		a.Property = strings.TrimSpace(a.Property)
+		a.Text = strings.TrimSpace(a.Text)
+		switch a.Kind {
+		case AskWorkMode:
+			a.Property = ""
+		case AskProperty:
+			if a.Property == "" {
+				return nil, fmt.Errorf("вопрос про свойство карточки не говорит, про какое")
+			}
+		default:
+			return nil, fmt.Errorf("неизвестный вопрос перехода %q", a.Kind)
+		}
+		if a.ID == "" {
+			a.ID = newID()
+		}
+		if seen[a.ID] {
+			return nil, fmt.Errorf("два вопроса перехода под одним идентификатором %q", a.ID)
+		}
+		seen[a.ID] = true
+		out = append(out, a)
+	}
+	return out, nil
 }
 
 // validateEdgeCond normalizes one condition and checks it makes sense on its

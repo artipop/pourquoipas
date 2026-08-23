@@ -31,6 +31,21 @@ export type CardFlowMark = {
     forward: boolean
 }
 
+// CardFlowAsk is the question a transition is holding the card at: one at a
+// time, which is the shape every other pick in this app has — the folder, the
+// agent, the two outcome buttons. The card goes nowhere until it is answered.
+export type CardFlowAsk = {
+    questionId: string
+    text: string
+    options: Array<{value: string, label: string}>
+
+    // Where the card goes once every question is answered.
+    column: string
+
+    // How many questions are still unanswered, this one included.
+    left?: number
+}
+
 export type CardFlow = {
     flow: string
     stages: CardFlowStage[]
@@ -48,6 +63,9 @@ export type CardFlow = {
     // What a person can say from here — see CardFlowMark. Absent wherever the
     // route decides for itself.
     marks?: CardFlowMark[]
+
+    // The question holding the card at a transition, when there is one.
+    ask?: CardFlowAsk
 }
 
 export function isFlowStripAvailable(): boolean {
@@ -109,7 +127,14 @@ const FlowStrip = (props: Props) => {
 
         // A session starting, finishing or moving the card changes the answer.
         const off = onAgentEvent('acp:session', () => refresh())
-        onCleanup(() => off?.())
+
+        // So does a transition stopping to ask, which is announced as the wait
+        // it is rather than as a session — nothing is running.
+        const offWait = onAgentEvent('acp:attention', () => refresh())
+        onCleanup(() => {
+            off?.()
+            offWait?.()
+        })
     })
 
     // Marking is a write to the board, and the board tells the route, and the
@@ -130,11 +155,36 @@ const FlowStrip = (props: Props) => {
         await refresh()
     }
 
+    // Answering releases the card: the last answer finishes the move that was
+    // interrupted, so what comes back is a card standing somewhere else. The
+    // same "ask, then look again" the marks take, for the same reason.
+    const [answering, setAnswering] = createSignal(false)
+    const answerAsk = async (option: {value: string}) => {
+        const ask = flow()?.ask
+        if (!bindings?.AnswerCardAsk || !ask || answering()) {
+            return
+        }
+        setAnswering(true)
+        try {
+            await bindings.AnswerCardAsk(props.cardId, ask.questionId, option.value)
+        } finally {
+            setAnswering(false)
+        }
+        await refresh()
+    }
+
     const since = () => {
         const age = waited(flow()?.since, Date.now())
         return age === null ? '' : sinceLabel(intl as Parameters<typeof sinceLabel>[0], age)
     }
     const status = () => {
+        const ask = flow()?.ask
+        if (ask) {
+            return intl.formatMessage(
+                {id: 'FlowStrip.asking', defaultMessage: 'waiting for an answer before “{column}”'},
+                {column: ask.column},
+            )
+        }
         if (flow()?.running) {
             return intl.formatMessage({id: 'FlowStrip.running', defaultMessage: 'working now'})
         }
@@ -178,6 +228,40 @@ const FlowStrip = (props: Props) => {
                     finding a field on the card and picking a value out of it.
                     There are two answers and the route knows where each leads,
                     so they are two buttons naming the stage they lead to. */}
+                {/* A transition that asks holds the card on this side of it.
+                    The question is drawn where the two outcome buttons are,
+                    and for the same reason: the answer belongs on the card's
+                    face rather than three clicks inside a field. */}
+                <Show when={flow()!.ask}>
+                    {(ask) => (
+                        <div class='FlowStrip__ask'>
+                            <div class='FlowStrip__askText'>{ask().text}</div>
+                            <div class='FlowStrip__marks'>
+                                <For each={ask().options}>
+                                    {(option) => (
+                                        <button
+                                            type='button'
+                                            class='FlowStrip__mark FlowStrip__mark--forward'
+                                            disabled={answering()}
+                                            onClick={() => answerAsk(option)}
+                                        >
+                                            {option.label}
+                                        </button>
+                                    )}
+                                </For>
+                            </div>
+                            <Show when={(ask().left || 0) > 1}>
+                                <div class='FlowStrip__askLeft'>
+                                    {intl.formatMessage(
+                                        {id: 'FlowStrip.ask-left', defaultMessage: '{count, plural, one {# question} few {# questions} other {# questions}} left'},
+                                        {count: ask().left},
+                                    )}
+                                </div>
+                            </Show>
+                        </div>
+                    )}
+                </Show>
+
                 <Show when={(flow()!.marks || []).length > 0 && !flow()!.running}>
                     <div class='FlowStrip__marks'>
                         <For each={flow()!.marks}>

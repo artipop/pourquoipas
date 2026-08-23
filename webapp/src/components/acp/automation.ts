@@ -67,6 +67,31 @@ export type FlowEdge = {
     // without one is the fallback. For the card.changed trigger the condition
     // is the event itself: which option firing it means.
     if?: EdgeCond
+
+    // What a person is asked before the card is let across. The card waits
+    // where it is until every question has an answer — see EdgeAsk.
+    ask?: EdgeAsk[]
+}
+
+// EdgeAsk is one question the arrow asks. It is on the arrow and not on the
+// stage because one stage is entered in more than one way and the answers
+// differ: the way into work from the inbox is where somebody decides how the
+// work will be arranged, and the same card coming back from a review has that
+// decided already.
+export type EdgeAsk = {
+
+    // The question's own id, minted by Go on save. Empty on one just added.
+    id?: string
+
+    // ASK_WORKMODE or ASK_PROPERTY.
+    kind: string
+
+    // The board select the answer is written to, by name, for ASK_PROPERTY.
+    property?: string
+
+    // What is asked, in the board's own words. Empty takes the built-in
+    // wording, which the editor shows as the placeholder.
+    text?: string
 }
 
 // EdgeCond is exactly one of two questions: does the card's select property
@@ -149,6 +174,14 @@ export type Automation = {
 export const SUCCESS = 'success'
 export const FAILURE = 'failure'
 export const BLOCKED = 'blocked'
+
+// The two kinds of question an arrow can ask. ASK_WORKMODE is the machine's
+// own — how this card's work is arranged in the folder — and its answer goes
+// into the card's workspace rather than onto the card. ASK_PROPERTY writes the
+// answer into one of the board's own selects, which puts it in the route's
+// dataflow like any other write.
+export const ASK_WORKMODE = 'workmode'
+export const ASK_PROPERTY = 'property'
 
 // CARD_CHANGED is the board-side trigger: an option set on the card itself.
 // Its edge must say which option through its condition.

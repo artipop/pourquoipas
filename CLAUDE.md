@@ -1476,6 +1476,32 @@ again — so an override is written by *saying* something, which is the shape th
 crew and the prompt already have. A person's conversation on the node gets the
 same fallback (`cardPlace`), since it is about the same work.
 
+**A transition can ask, and the card waits where it is** (`internal/acp/
+cardask.go`, `FlowEdge.Ask`). Everything else on a route is decided without a
+person; this is the one place the machine stops and asks, because some
+decisions are neither the agent's nor the board's — how the work is going to be
+arranged for *this* card. It hangs off the arrow rather than off the stage
+because one stage is entered in more than one way and the answers differ:
+«Входящие» → «В работе» is where somebody decides how the work is arranged, and
+the same card coming back from a review has that decided already. Two kinds,
+and the split is where the answer goes. `AskProperty` writes a board select
+onto the card, which is the dataflow above and nothing new. `AskWorkMode` is
+the machine's own — «своя копия папки» or «ветка в самой папке» — and it has no
+card property because it is not a fact about the work but what the workspace is
+made of: it lands on `FlowState.WorkMode`, which `ClaimWorkspace` prefers over
+the folder's setting, and from there into the `checkout` row that the review's
+diff and the deploy already read. Three answers to one question with the
+precedence stated once, in the only place that asks it — the checkout is the
+fact, the card's answer is the intent, the folder is the default — and
+`enterNode` carries the answer across every later transition, because it
+rebuilds the record from scratch and anything not carried is dropped. The
+question is drawn on the card's own route strip beside where the outcome
+buttons are, one at a time, and it takes those buttons away while it stands, or
+there would be a second way to move the card out from under it. An unanswerable
+question — a select that left the board, a work mode asked of a folder that is
+not a repository — is **dropped rather than parked on**: the arrow carried
+cards before anybody wrote a question on it.
+
 **How a stage ended is a field, not a column** (`BoardPropOutcome`,
 `writeCardOutcome`, `OutcomeValue`). It used to be expressible only as *where
 the card went*: the shipped board grew «Проверено», «Не прошло» and
