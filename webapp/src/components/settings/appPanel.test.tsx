@@ -145,42 +145,35 @@ describe('components/settings/appPanel', () => {
     // works there too — and it is also what says which half the field is
     // editing, because answering that twice would be two controls saying one
     // word.
-    test('gives the custom slot two halves and edits the one on screen', async () => {
+    test('gives the custom slot two halves and edits the one it is asked for', async () => {
         await pick('Custom config')
 
         const light = await screen.findByLabelText('Theme config') as HTMLTextAreaElement
         expect(JSON.parse(light.value).centerChannelBg).toBe('#f0ede5')
 
-        userEvent.click(screen.getByRole('button', {name: /^Dark/}))
+        const halves = within(screen.getByText('Which half to edit').parentElement as HTMLElement)
+        userEvent.click(halves.getByRole('button', {name: /^Dark/}))
 
         await waitFor(() => {
             const dark = screen.getByLabelText('Theme config') as HTMLTextAreaElement
             expect(JSON.parse(dark.value).centerChannelBg).toBe('#0c0c0e')
         })
-        expect(document.documentElement.style.getPropertyValue('--canvas-rgb')).toBe('12, 12, 14')
+
+        // The board is untouched: which half is being typed and which is being
+        // worn are two questions, and this one was about the typing.
+        expect(document.documentElement.style.getPropertyValue('--canvas-rgb')).toBe('240, 237, 229')
     })
 
-    // The switch on the custom slot is also what says which half the field
-    // holds, so a third answer would mean the text under the cursor changing
-    // when the machine goes dark at sunset. Picking the slot resolves the
-    // machine's answer rather than defaulting past it, so nothing on screen
-    // moves at the moment it is picked.
-    test('asks the custom slot for a half and not for the machine', async () => {
+    // «Как в системе» is a real answer for a board and no answer at all for a
+    // config being typed: there is no third config. So the board keeps all
+    // three and the field has a light/dark of its own.
+    test('keeps the machine on offer for the board and asks the field apart', async () => {
         setThemeMode('system')
-        const before = document.documentElement.style.getPropertyValue('--canvas-rgb')
-
         await pick('Custom config')
         await screen.findByLabelText('Theme config')
 
-        expect(screen.queryByRole('button', {name: /^As the system is/})).not.toBeInTheDocument()
-        expect(screen.getByRole('button', {name: /^Light/})).toBeInTheDocument()
-        expect(screen.getByRole('button', {name: /^Dark/})).toBeInTheDocument()
-        expect(document.documentElement.style.getPropertyValue('--canvas-rgb')).toBe(before)
-
-        // And it is on offer again the moment the theme is one this build keeps
-        // both halves of.
-        await pick('Gruvbox')
         expect(screen.getByRole('button', {name: /^As the system is/})).toBeInTheDocument()
+        expect(screen.getByText('Which half to edit')).toBeInTheDocument()
     })
 
     // Not "go back to the theme I had" — the list does that. This is the only

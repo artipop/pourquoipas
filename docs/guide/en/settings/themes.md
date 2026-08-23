@@ -35,17 +35,17 @@ list and a field appears under it. It opens on a copy of the theme that was on
 screen, so the easiest way to write a new one is to edit an old one. Paste your
 config and press **"Apply"**.
 
-A theme of your own has two halves, like every other one. Which of them the
-field is editing is said by the same "Light or dark" switch: stand on "Dark" and
-the field holds the dark half. A half you have not written is taken from the one
-you have, so a single config is enough.
+A theme of your own has two halves, like every other one, and "Light or dark"
+works there as it does everywhere, "As the system is" included.
 
-On a theme of your own the switch offers two answers rather than three: there is
-no "As the system is". That same switch says which half is in the field, and a
-third answer would mean the text under the cursor changing by itself when the
-system goes dark in the evening. You pick the half. If "As the system is" was
-on, moving to the custom config turns it into whichever half is on screen at
-that moment, so nothing jumps.
+**"Which half to edit"** is a separate choice inside "Custom config", with two
+answers: there is no such thing as an "as the system is" config, so the field
+asks about the half itself. It opens on whichever half is on screen and then
+stays where you put it: what you are editing and what the board is wearing are
+two different questions.
+
+A half you have not written is taken from the one you have, so a single config
+is enough.
 
 The first time you pick "Custom config", both halves are filled with a copy of
 the theme that was on screen: what you get is a fork of it to edit rather than

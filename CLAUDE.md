@@ -826,10 +826,11 @@ real ones. **The slot for a config you paste is a pair too**, named by a field
 of its own, and the switch there also decides which half the field is editing —
 asking that twice would be two controls saying one word; a half nobody wrote
 falls back to the one they did, and opening the slot forks both halves of the
-theme on screen. There the switch offers two answers and not three
-(`modesFor`), because a third would mean the text under the cursor changing
-when the machine goes dark at sunset — and `system` is *resolved* into the half
-on screen rather than defaulted past, so nothing jumps as the slot is picked. The themes are the one
+theme on screen. Which half the *field* is editing is a
+third question and is asked only there, by a light/dark of its own: «как в
+системе» is a real answer for a board and none at all for a config, there being
+no third config to edit. It opens on the half on screen and then stays put —
+what is being typed and what is being worn are two questions. The themes are the one
 place the "lay the choices out rather than fold them into a menu" rule turned
 over — twelve rows in `widgets/select` and not a `<select>`, whose own comment
 says why — and the polarity, being three answers, is chips like everything

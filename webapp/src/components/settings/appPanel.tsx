@@ -22,7 +22,7 @@ import {
     ThemeConfigError,
     ThemeHalf,
     ThemeMode,
-    modesFor,
+    themeModes,
     ThemeName,
     THEME_FAMILIES,
 } from '../../theme'
@@ -59,8 +59,12 @@ import './appPanel.scss'
 // system meant giving up every design but ours. Three answers, so they are laid
 // out — the rule the themes are the exception to.
 //
-// Two answers on the custom slot, where the same switch also says which half
-// the field holds: `modesFor`.
+// **Which half the field is editing is a third question, and it is only asked
+// on the custom slot.** It cannot be the switch above: that one has «как в
+// системе» in it, which is a real answer for a board and no answer at all for
+// a config being typed — there is no third config to edit. So the slot carries
+// its own light/dark, opening on whatever is on screen and moving only when it
+// is clicked.
 
 const AppPanel = () => {
     const intl = useIntl()
@@ -73,10 +77,9 @@ const AppPanel = () => {
     const [mode, setMode] = createSignal(getActiveThemeMode())
     const [error, setError] = createSignal('')
 
-    // Which half the field is editing: the one on screen. The switch above it
-    // already answers that question for the board, and answering it twice —
-    // once for what is drawn and once for what is typed — would be two
-    // controls saying the same word.
+    // Which half the field is editing. Its own answer, because the switch above
+    // it can say «как в системе» and a config cannot: it opens on whatever is
+    // drawn and then stays where it is put.
     const [half, setHalf] = createSignal<ThemeHalf>(activeThemeHalf())
     const [source, setSource] = createSignal(getCustomThemeSource(activeThemeHalf()))
     const [customName, setCustomName] = createSignal(getCustomThemeName())
@@ -148,7 +151,9 @@ const AppPanel = () => {
             for (const side of ['light', 'dark'] as ThemeHalf[]) {
                 setCustomThemeSource(side, themeConfigText({...configs[side], id: customThemeName, name: undefined}))
             }
-            setSource(getCustomThemeSource(half()))
+        }
+        if (name === customThemeName) {
+            editHalf(activeThemeHalf())
         }
         try {
             setTheme(name)
@@ -188,15 +193,12 @@ const AppPanel = () => {
         setError('')
     }
 
-    // The field follows the switch, because the switch is what says which half
-    // is on screen. Reading the stored text back rather than keeping two
-    // signals: what was typed and not applied is not a version of anything.
-    const showHalf = () => {
-        const current = activeThemeHalf()
-        if (current !== half()) {
-            setHalf(current)
-            setSource(getCustomThemeSource(current))
-        }
+    // Reading the stored text back rather than keeping a signal per half: what
+    // was typed and not applied is not a version of anything.
+    const editHalf = (side: ThemeHalf) => {
+        setHalf(side)
+        setSource(getCustomThemeSource(side))
+        setError('')
     }
 
     return (
@@ -227,7 +229,7 @@ const AppPanel = () => {
                         {intl.formatMessage({id: 'Settings.theme-mode', defaultMessage: 'Light or dark'})}
                     </h4>
                     <div class='AppPanel__choices'>
-                        <For each={modesFor(themeName())}>
+                        <For each={themeModes}>
                             {(value) => (
                                 <button
                                     type='button'
@@ -241,7 +243,6 @@ const AppPanel = () => {
                                             setMode(value)
                                             setError(reasonFor(e))
                                         }
-                                        showHalf()
                                     }}
                                 >
                                     <span class='AppPanel__choiceName'>{modeTitle(value)}</span>
@@ -276,21 +277,34 @@ const AppPanel = () => {
                                 />
                             </label>
 
+                            <div class='AppPanel__field'>
+                                <span class='AppPanel__fieldName'>
+                                    {intl.formatMessage({id: 'Settings.theme-custom-half', defaultMessage: 'Which half to edit'})}
+                                </span>
+                                <div class='AppPanel__choices AppPanel__halves'>
+                                    <For each={['light', 'dark'] as ThemeHalf[]}>
+                                        {(side) => (
+                                            <button
+                                                type='button'
+                                                class={choiceClass(half() === side)}
+                                                aria-pressed={half() === side}
+                                                onClick={() => editHalf(side)}
+                                            >
+                                                <span class='AppPanel__choiceName'>{modeTitle(side)}</span>
+                                                <Show when={half() === side}>
+                                                    <span class='AppPanel__choiceTick'><CheckIcon/></span>
+                                                </Show>
+                                            </button>
+                                        )}
+                                    </For>
+                                </div>
+                            </div>
+
                             <div class='AppPanel__actionHint'>
                                 {intl.formatMessage({
                                     id: 'Settings.theme-custom-hint',
                                     defaultMessage: 'A theme is a config in Mattermost\'s format. Paste one here, or edit the copy of the theme you were looking at.',
                                 })}
-                                {' '}
-                                {half() === 'dark' ?
-                                    intl.formatMessage({
-                                        id: 'Settings.theme-custom-editing-dark',
-                                        defaultMessage: 'The switch above picks the half: the dark one is the one being edited.',
-                                    }) :
-                                    intl.formatMessage({
-                                        id: 'Settings.theme-custom-editing-light',
-                                        defaultMessage: 'The switch above picks the half: the light one is the one being edited.',
-                                    })}
                                 {' '}
                                 <a
                                     href={Constants.themeHelpPage}

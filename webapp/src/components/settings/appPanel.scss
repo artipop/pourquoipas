@@ -56,6 +56,13 @@
         color: rgba(var(--center-channel-color-rgb), 0.64);
     }
 
+    // The half being edited is a choice inside a choice, so its chips are
+    // quieter than the ones that decide what the whole board wears.
+    .AppPanel__halves .AppPanel__choice {
+        padding: 6px 10px;
+        font-size: var(--text-small);
+    }
+
     .AppPanel__name {
         padding: 8px 12px;
         border: 1px solid rgba(var(--center-channel-color-rgb), 0.12);
