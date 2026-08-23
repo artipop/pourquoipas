@@ -116,7 +116,7 @@ describe('components/settings/appSettingsDialog', () => {
     test('opens on what every install can answer', async () => {
         open()
 
-        await waitFor(() => expect(screen.getByRole('button', {name: 'Light theme'})).toBeInTheDocument())
+        await waitFor(() => expect(screen.getByLabelText('Theme')).toBeInTheDocument())
         expect(screen.getByRole('button', {name: 'Deutsch'})).toBeInTheDocument()
     })
 

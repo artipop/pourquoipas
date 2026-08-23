@@ -4,6 +4,10 @@ import {Utils} from './utils'
 export enum UserSettingKey {
     Language = 'language',
     Theme = 'theme',
+
+    // The config pasted into the theme field, kept whether or not it is the
+    // theme in use: switching to a shipped theme and back must not lose it.
+    CustomTheme = 'customTheme',
     LastTeamId = 'lastTeamId',
     LastBoardId = 'lastBoardId',
     LastViewId = 'lastViewId',
@@ -33,6 +37,7 @@ export enum UserSettingKey {
 const installKept = new Set<string>([
     UserSettingKey.Language,
     UserSettingKey.Theme,
+    UserSettingKey.CustomTheme,
     UserSettingKey.NameFormat,
     UserSettingKey.LastTeamId,
     UserSettingKey.LastBoardId,
@@ -108,6 +113,14 @@ export class UserSettings {
 
     static set theme(newValue: string | null) {
         UserSettings.set(UserSettingKey.Theme, newValue)
+    }
+
+    static get customTheme(): string | null {
+        return UserSettings.get(UserSettingKey.CustomTheme)
+    }
+
+    static set customTheme(newValue: string | null) {
+        UserSettings.set(UserSettingKey.CustomTheme, newValue)
     }
 
     static get lastTeamId(): string | null {

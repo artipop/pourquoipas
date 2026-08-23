@@ -6,12 +6,18 @@ import {Constants} from '../../constants'
 import {useAppStore} from '../../store/hooks'
 import CheckIcon from '../../widgets/icons/check'
 import {
-    darkThemeName,
+    activeThemeConfig,
+    customThemeName,
     getActiveThemeName,
-    lightThemeName,
+    getCustomThemeSource,
+    setCustomThemeSource,
     setTheme,
     systemThemeName,
+    themeConfigText,
+    ThemeConfigError,
+    ThemeGroupId,
     ThemeName,
+    THEME_GROUPS,
 } from '../../theme'
 
 import './appPanel.scss'
@@ -23,29 +29,107 @@ import './appPanel.scss'
 // per answer. They are read once and set once, which is what the rest of this
 // dialog is for; the corner is gone with the last of them.
 //
-// The choices are laid out rather than folded into a menu: there are three
-// themes and a dozen languages, and a person picking one wants to see what
-// there is. A menu in a dialog would also have been a menu inside a scrolling
-// panel, which is where a dropdown gets clipped.
+// The languages are laid out rather than folded into a menu: there are a dozen
+// of them, and a person picking one wants to see what there is.
+//
+// The themes are a dropdown, and they are the one place that rule turned over.
+// There were three of them and there are fourteen — the two the product was
+// designed in, eight borrowed from Mattermost's own community list, four
+// written as a joke — and a row of fourteen chips is a wall, not a choice. It
+// is the platform's own `select` rather than this app's menu: a native list
+// takes `color-scheme` from the theme being previewed, and it is drawn by the
+// window rather than by the page, so the clipping a dialog's own menu has to
+// be placed around does not arise.
 
 const AppPanel = () => {
     const intl = useIntl()
     const {actions} = useAppStore()
 
-    // The theme module writes an attribute on the document and is not reactive,
-    // so which one is current is kept here, seeded with what startup loaded.
+    // The theme module writes the tokens onto the document element and is not
+    // reactive, so which one is current is kept here, seeded with what startup
+    // loaded.
     const [themeName, setThemeName] = createSignal(getActiveThemeName())
+    const [source, setSource] = createSignal(getCustomThemeSource())
+    const [error, setError] = createSignal('')
 
-    // Spelled out rather than built as `Sidebar.${theme.id}`: a computed id is
-    // invisible to `npm run i18n-extract`, so these three never reached en.json
-    // and read as dead entries in every other catalogue.
-    const themes = (): Array<{id: ThemeName, displayName: string}> => [
-        {id: lightThemeName, displayName: intl.formatMessage({id: 'Sidebar.light-theme', defaultMessage: 'Light theme'})},
-        {id: darkThemeName, displayName: intl.formatMessage({id: 'Sidebar.dark-theme', defaultMessage: 'Dark theme'})},
-        {id: systemThemeName, displayName: intl.formatMessage({id: 'Sidebar.system-theme', defaultMessage: 'System theme'})},
-    ]
+    // Spelled out rather than built as `Settings.theme-group-${id}`: a computed
+    // id is invisible to `npm run i18n-extract`, so it would reach no catalogue
+    // and read as a dead entry in every other one.
+    const groupTitle = (id: ThemeGroupId): string => {
+        switch (id) {
+        case 'xciii':
+            return intl.formatMessage({id: 'Settings.theme-group-xciii', defaultMessage: 'XCIII'})
+        case 'ported':
+            return intl.formatMessage({id: 'Settings.theme-group-ported', defaultMessage: 'Ported'})
+        default:
+            return intl.formatMessage({id: 'Settings.theme-group-acid', defaultMessage: 'Acid'})
+        }
+    }
+
+    // Every way a config can be refused, in the words of the one place a person
+    // finds out. The reasons are separate messages rather than one because
+    // "this is not JSON" and "this has no sidebar colour" are answered by
+    // different things.
+    const reasonFor = (e: unknown): string => {
+        const raw = e instanceof ThemeConfigError ? e.message : ''
+        const [kind, detail] = raw.split(/:(.*)/s)
+        switch (kind) {
+        case 'empty':
+            return intl.formatMessage({id: 'Settings.theme-error-empty', defaultMessage: 'The field is empty.'})
+        case 'json':
+            return intl.formatMessage({id: 'Settings.theme-error-json', defaultMessage: 'This is not JSON.'})
+        case 'object':
+            return intl.formatMessage({id: 'Settings.theme-error-object', defaultMessage: 'A theme is one JSON object of colours.'})
+        case 'missing':
+            return intl.formatMessage({
+                id: 'Settings.theme-error-missing',
+                defaultMessage: 'These keys are missing, and a theme cannot be built without them: {keys}.',
+            }, {keys: detail})
+        case 'color':
+            return intl.formatMessage({
+                id: 'Settings.theme-error-color',
+                defaultMessage: 'These are not colours like #1c1a16: {keys}.',
+            }, {keys: detail})
+        default:
+            return intl.formatMessage({id: 'Settings.theme-error-other', defaultMessage: 'This config cannot be read.'})
+        }
+    }
+
+    // Choosing the custom slot with nothing in it hands over a copy of the
+    // theme on screen: a person writing one starts from what they are looking
+    // at, and a config field that opens empty is a format to go and look up.
+    //
+    // The selection is recorded before the theme is applied, and stays put when
+    // applying fails. A config that stopped parsing is exactly the case where
+    // the field has to be on screen, and hanging it off "the theme applied"
+    // made a broken one impossible to select and therefore impossible to fix.
+    const pickTheme = (name: ThemeName) => {
+        setError('')
+        setThemeName(name)
+        if (name === customThemeName && !source().trim()) {
+            const seeded = themeConfigText({...activeThemeConfig(), id: customThemeName, name: undefined})
+            setSource(seeded)
+            setCustomThemeSource(seeded)
+        }
+        try {
+            setTheme(name)
+        } catch (e) {
+            setError(reasonFor(e))
+        }
+    }
 
     const choiceClass = (current: boolean) => `AppPanel__choice${current ? ' AppPanel__choice--current' : ''}`
+
+    const applyCustom = () => {
+        setCustomThemeSource(source())
+        setThemeName(customThemeName)
+        try {
+            setTheme(customThemeName)
+            setError('')
+        } catch (e) {
+            setError(reasonFor(e))
+        }
+    }
 
     return (
         <div class='AppPanel'>
@@ -59,28 +143,74 @@ const AppPanel = () => {
             <div class='AppPanel__content'>
                 <section class='AppPanel__group'>
                     <h4 class='AppPanel__groupTitle'>
-                        {intl.formatMessage({id: 'Settings.theme', defaultMessage: 'Theme'})}
+                        <label for='xciii-theme'>
+                            {intl.formatMessage({id: 'Settings.theme', defaultMessage: 'Theme'})}
+                        </label>
                     </h4>
-                    <div class='AppPanel__choices'>
-                        <For each={themes()}>
-                            {(theme) => (
-                                <button
-                                    type='button'
-                                    class={choiceClass(themeName() === theme.id)}
-                                    aria-pressed={themeName() === theme.id}
-                                    onClick={() => {
-                                        setTheme(theme.id)
-                                        setThemeName(theme.id)
-                                    }}
-                                >
-                                    <span class='AppPanel__choiceName'>{theme.displayName}</span>
-                                    <Show when={themeName() === theme.id}>
-                                        <span class='AppPanel__choiceTick'><CheckIcon/></span>
-                                    </Show>
-                                </button>
+                    <select
+                        id='xciii-theme'
+                        class='AppPanel__select'
+                        value={themeName()}
+                        onChange={(event) => pickTheme(event.currentTarget.value)}
+                    >
+                        <option value={systemThemeName}>
+                            {intl.formatMessage({id: 'Sidebar.system-theme', defaultMessage: 'System theme'})}
+                        </option>
+                        <For each={THEME_GROUPS}>
+                            {(group) => (
+                                <optgroup label={groupTitle(group.id)}>
+                                    <For each={group.themes}>
+                                        {(theme) => <option value={theme.id}>{theme.name}</option>}
+                                    </For>
+                                </optgroup>
                             )}
                         </For>
-                    </div>
+                        <option value={customThemeName}>
+                            {intl.formatMessage({id: 'Settings.theme-custom', defaultMessage: 'Custom config'})}
+                        </option>
+                    </select>
+
+                    <Show when={themeName() === customThemeName}>
+                        <div class='AppPanel__custom'>
+                            <div class='AppPanel__actionHint'>
+                                {intl.formatMessage({
+                                    id: 'Settings.theme-custom-hint',
+                                    defaultMessage: 'A theme is a config in Mattermost\'s format. Paste one here, or edit the copy of the theme you were looking at.',
+                                })}
+                                {' '}
+                                <a
+                                    href={Constants.themeHelpPage}
+                                    target='_blank'
+                                    rel='noreferrer'
+                                >
+                                    {intl.formatMessage({id: 'Settings.theme-custom-help', defaultMessage: 'What the keys mean'})}
+                                </a>
+                            </div>
+                            <textarea
+                                class='AppPanel__code'
+                                aria-label={intl.formatMessage({id: 'Settings.theme-custom', defaultMessage: 'Custom config'})}
+                                spellcheck={false}
+                                rows={12}
+                                value={source()}
+                                onInput={(event) => {
+                                    setSource(event.currentTarget.value)
+                                    setError('')
+                                }}
+                            />
+                            <div class='AppPanel__customActions'>
+                                <button
+                                    type='button'
+                                    class='AppPanel__actionLink'
+                                    onClick={applyCustom}
+                                >
+                                    {intl.formatMessage({id: 'Settings.theme-custom-apply', defaultMessage: 'Apply'})}
+                                </button>
+                                <Show when={error()}>
+                                    <span class='AppPanel__customError'>{error()}</span>
+                                </Show>
+                            </div>
+                        </div>
+                    </Show>
                 </section>
 
                 <section class='AppPanel__group'>

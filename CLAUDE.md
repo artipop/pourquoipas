@@ -797,6 +797,24 @@ three words, plus a corner that had to be published over the no-board screen to
 stay reachable. The way to say something is broken went the same way and for the
 same reason — where to say it is looked for once, and it is looked for where the
 manual is — so the corner is gone rather than reduced, and `topBar.tsx` with it.
+**A theme is a config, and the config is Mattermost's** (`webapp/src/theme/`,
+`docs/themes.md`). The keys are the ones its documentation names, so a theme
+written for another product is pasted into the field and worn, and one written
+here goes back. That is the whole reason for borrowing a format rather than
+inventing one: themes for it already exist, and nobody hand-writes twenty-six
+colours for a board. `_tokens.scss` keeps its shape and its two theme blocks —
+it is the **first paint**, before the module has run — and applying a theme
+writes the same raw tokens onto the document element; the two shipped themes
+ship *also* as configs, and a test compares them with that file token for
+token, because a stylesheet and a config disagreeing is a palette that changes
+as the page finishes loading. What a config does not say is derived — the
+raised surface, the ten label tints, the shadows — and what it says unreadably
+is adjusted, since `awayIndicator` is an eight-pixel dot there and the word
+«ждёт» on a card here. Every shipped theme is held to the same contrast bar,
+ours included; that bar is what moved the paper theme's amber and its stamp a
+few levels. The dropdown is the one place the "lay the choices out rather than
+fold them into a menu" rule turned over: there were three themes and there are
+fourteen.
 **Neither of those two addresses is the repository.** The panel points at the
 guide (`Constants.guideUrl`, the doc site `docs/guide/` publishes) and at an
 email address (`Constants.feedbackEmail`), because the repository was standing

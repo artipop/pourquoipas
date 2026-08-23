@@ -55,7 +55,7 @@ describe('components/sidebar/SidebarSettingsButton', () => {
         open()
 
         await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument())
-        expect(screen.getByRole('button', {name: 'Dark theme'})).toBeInTheDocument()
+        expect(screen.getByLabelText('Theme')).toBeInTheDocument()
         expect(screen.getByRole('button', {name: 'Deutsch'})).toBeInTheDocument()
     })
 })
