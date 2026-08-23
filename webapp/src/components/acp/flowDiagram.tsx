@@ -1,4 +1,4 @@
-import {For, Show, createContext, createEffect, createMemo, createSignal, onCleanup, useContext} from 'solid-js'
+import {For, Show, createEffect, createMemo, createSignal, onCleanup} from 'solid-js'
 import {
     Background,
     BaseEdge,
@@ -18,6 +18,7 @@ import {
     createNodeStore,
     getSmoothStepPath,
     useSolidFlow,
+    useViewport,
 } from '@dschz/solid-flow'
 
 import {useIntl, IntlShape} from '../../intl'
@@ -470,11 +471,21 @@ const StageNode = (props: NodeProps) => {
 
 const nodeTypes = {stage: StageNode}
 
-// What an arrow can do to itself, handed down rather than put in the edge's
-// data: `data` is a store the canvas owns and copies, and a callback in one is a
-// function surviving a proxy by luck. An edge is rendered inside the canvas,
-// which is inside this provider, so a context reaches it.
-const EdgeActions = createContext<{remove: (id: string) => void} | undefined>()
+// The ring on an arrow's end, in screen pixels: GRAB is what the pointer has to
+// land in, MARK is what a person sees. Two numbers because one is a target and
+// the other is a mark on a picture — a ring drawn as big as it needs to be
+// grabbed sat on the arrow like a bead.
+//
+// Both are divided by the zoom, because the canvas draws in flow units and a
+// stated size shrinks with the picture: measured, 14 units came out 11px on a
+// route fitted at 0.78 and 4px at minZoom, which is a thing to grab that a hand
+// cannot land on.
+const GRAB = 20
+const MARK = 9
+
+// How thick the mark's own ring is drawn, in screen pixels — divided like the
+// rest of it, or the outline thins away as the picture is zoomed out.
+const MARK_RING = 2
 
 // lanePath is a long arrow's own way round: out of the handle, down into a
 // corridor of its own under the graph, across, and up into the target. Written
@@ -514,13 +525,20 @@ const LaneEdge = (props: EdgeProps) => {
         return {d, labelX, labelY}
     })
 
-    // The label is ours rather than BaseEdge's because it carries a control: an
-    // arrow has to be breakable where it is, and the panel's own Remove is
-    // three steps away — select the line, find the panel, scroll to the button.
-    // A person looking at a wrong arrow wants to cut it there.
-    const actions = useContext(EdgeActions)
-    const intl = useIntl()
-    const cutLabel = () => intl.formatMessage({id: 'FlowDiagram.cut-edge', defaultMessage: 'Break this transition'})
+    // A route being read has no way to redraw itself, so the anchors are the
+    // canvas' own answer to whether this is a builder: `editable` rides in the
+    // edge's data, the way a stage's does. Nothing but data is put there — the
+    // canvas owns that store and copies it, and a callback in one is a function
+    // surviving a proxy by luck.
+    const editable = () => Boolean((props.data as {editable?: boolean} | undefined)?.editable)
+
+    const viewport = useViewport()
+    const zoom = () => viewport().zoom || 1
+    const mark = () => ({
+        width: `${MARK / zoom()}px`,
+        height: `${MARK / zoom()}px`,
+        '--mark-ring': `${MARK_RING / zoom()}px`,
+    })
     return (
         <>
             <BaseEdge
@@ -529,50 +547,44 @@ const LaneEdge = (props: EdgeProps) => {
                 markerEnd={props.markerEnd}
                 interactionWidth={props.interactionWidth}
             />
-            {/* The library's own way to break or re-point an arrow: grab its
-                end and drag. Dropping it on another stage moves the arrow
-                there; dropping it on nothing at all breaks it (onReconnectEnd).
-                It is per-end rather than per-socket on purpose — a socket holds
-                as many arrows as the stage forks into, so a ✕ on the socket
-                could not say which one it meant. */}
-            <Show when={props.selected && actions}>
+            {/* How an arrow is broken or re-pointed: grab its end and drag.
+                Dropping it on another stage moves the arrow there; dropping it
+                on nothing at all breaks it (onReconnectEnd). It is per-end
+                rather than per-socket on purpose — a socket holds as many
+                arrows as the stage forks into, so a control on the socket could
+                not say which one it meant. */}
+            <Show when={props.selected && editable()}>
                 <EdgeReconnectAnchor
                     type='source'
                     class='FlowDiagram__anchor'
-                    size={14}
+                    size={GRAB / zoom()}
                     position={{x: props.sourceX, y: props.sourceY}}
-                />
+                >
+                    <span
+                        class='FlowDiagram__anchorMark'
+                        style={mark()}
+                    />
+                </EdgeReconnectAnchor>
                 <EdgeReconnectAnchor
                     type='target'
                     class='FlowDiagram__anchor'
-                    size={14}
+                    size={GRAB / zoom()}
                     position={{x: props.targetX, y: props.targetY}}
-                />
+                >
+                    <span
+                        class='FlowDiagram__anchorMark'
+                        style={mark()}
+                    />
+                </EdgeReconnectAnchor>
             </Show>
 
-            <Show when={props.label || props.selected}>
+            <Show when={props.label}>
                 <EdgeLabel
                     x={path().labelX}
                     y={path().labelY}
                     style={props.labelStyle}
                 >
-                    <span class='FlowDiagram__edgeLabel'>
-                        {props.label}
-                        <Show when={props.selected && actions}>
-                            <button
-                                type='button'
-                                class='FlowDiagram__edgeCut'
-                                title={cutLabel()}
-                                aria-label={cutLabel()}
-                                onClick={(e) => {
-                                    e.stopPropagation()
-                                    actions!.remove(props.id)
-                                }}
-                            >
-                                <CompassIcon icon='close'/>
-                            </button>
-                        </Show>
-                    </span>
+                    <span class='FlowDiagram__edgeLabel'>{props.label}</span>
                 </EdgeLabel>
             </Show>
         </>
@@ -867,7 +879,7 @@ const FlowDiagram = (props: Props) => {
                     labelStyle: unanswered ? {color: 'rgb(var(--away-indicator-rgb))', 'font-weight': '600'} : undefined,
                     style: {stroke: color, 'stroke-width': chosen ? '3' : '1.5', 'stroke-dasharray': kind === 'event' ? '4 3' : undefined},
                     markerEnd: {type: MarkerType.ArrowClosed, width: 16, height: 16, color},
-                    data: {lane},
+                    data: {lane, editable: editable()},
                 }
             })
         return {rfNodes, rfEdges}
@@ -960,7 +972,7 @@ const FlowDiagram = (props: Props) => {
     // …and dropped on nothing: the arrow is broken. That is the gesture this
     // whole anchor exists for — cutting a link where the link is, without
     // hunting for a control first.
-    const onReconnectEnd = (_e: MouseEvent | TouchEvent, edge: Edge, _type: string, state: {isValid?: boolean} | undefined) => {
+    const onReconnectEnd = (_e: MouseEvent | TouchEvent, edge: Edge, _type: string, state: {isValid?: boolean | null}) => {
         if (!props.onChange || state?.isValid) {
             return
         }
@@ -1067,46 +1079,44 @@ const FlowDiagram = (props: Props) => {
                 onDragOver={onDragOver}
                 onDrop={onDrop}
             >
-                <EdgeActions.Provider value={{remove: removeEdgeById}}>
-                    <SolidFlow
-                        nodes={drawnNodes}
-                        edges={drawnEdges}
-                        onConnect={onConnect}
-                        onNodeDragStop={onNodeDragStop}
-                        onNodesDelete={onNodesDelete}
-                        onEdgesDelete={onEdgesDelete}
-                        onNodeClick={onNodeClick}
-                        onEdgeClick={({edge}: {edge: Edge}) => props.onSelect?.({kind: 'edge', id: edge.id})}
-                        onReconnect={onReconnect}
-                        onReconnectEnd={onReconnectEnd}
-                        onPaneClick={() => props.onSelect?.(null)}
-                        nodeTypes={nodeTypes}
-                        edgeTypes={edgeTypes}
-                        nodesConnectable={editable()}
-                        elementsSelectable={editable()}
-                        edgesFocusable={editable()}
-                        deleteKey={editable() ? ['Backspace', 'Delete'] : null}
-                        fitView={true}
+                <SolidFlow
+                    nodes={drawnNodes}
+                    edges={drawnEdges}
+                    onConnect={onConnect}
+                    onNodeDragStop={onNodeDragStop}
+                    onNodesDelete={onNodesDelete}
+                    onEdgesDelete={onEdgesDelete}
+                    onNodeClick={onNodeClick}
+                    onEdgeClick={({edge}: {edge: Edge}) => props.onSelect?.({kind: 'edge', id: edge.id})}
+                    onReconnect={onReconnect}
+                    onReconnectEnd={onReconnectEnd}
+                    onPaneClick={() => props.onSelect?.(null)}
+                    nodeTypes={nodeTypes}
+                    edgeTypes={edgeTypes}
+                    nodesConnectable={editable()}
+                    elementsSelectable={editable()}
+                    edgesFocusable={editable()}
+                    deleteKey={editable() ? ['Backspace', 'Delete'] : null}
+                    fitView={true}
 
-                        // Fill the canvas rather than sit 1:1 in the middle of it.
-                        // The dialog is nearly the whole window now, and a route of
-                        // five boxes drawn at 100% left two thirds of it as dots —
-                        // the point of the width was the picture, not the margin.
-                        // Capped so a two-box route is not blown up into a poster.
-                        // The same options the re-fit above uses, or the picture
-                        // would jump the first time the tab changed.
-                        fitViewOptions={FIT_VIEW}
-                        minZoom={0.3}
+                    // Fill the canvas rather than sit 1:1 in the middle of it.
+                    // The dialog is nearly the whole window now, and a route of
+                    // five boxes drawn at 100% left two thirds of it as dots —
+                    // the point of the width was the picture, not the margin.
+                    // Capped so a two-box route is not blown up into a poster.
+                    // The same options the re-fit above uses, or the picture
+                    // would jump the first time the tab changed.
+                    fitViewOptions={FIT_VIEW}
+                    minZoom={0.3}
 
-                        // Solid Flow is MIT and its own attribution says to feel free to
-                        // remove it; the canvas is small and the plate sits over the cards.
-                        proOptions={{hideAttribution: true}}
-                    >
-                        <Background/>
-                        <Controls showLock={false}/>
-                        <CanvasHook onReady={setFlowHandle}/>
-                    </SolidFlow>
-                </EdgeActions.Provider>
+                    // Solid Flow is MIT and its own attribution says to feel free to
+                    // remove it; the canvas is small and the plate sits over the cards.
+                    proOptions={{hideAttribution: true}}
+                >
+                    <Background/>
+                    <Controls showLock={false}/>
+                    <CanvasHook onReady={setFlowHandle}/>
+                </SolidFlow>
             </div>
         </Show>
     )

@@ -177,59 +177,47 @@
         }
     }
 
-    // The grab points at an arrow's ends, shown while it is selected. Bigger
-    // than the sockets they sit on: this is a target for a drag that starts by
-    // hunting for it, where a socket is a target you already know the place of.
-    // The size is the library's, set inline from the `size` prop, so this only
-    // says what the grab point looks like: a ring rather than a disc, because a
-    // filled one blots out the very line it is offering to move.
+    // The end of an arrow, shown while it is selected: the box is what the
+    // pointer has to land in and draws nothing, the mark inside it is what a
+    // person sees — a ring rather than a disc, because a filled one blots out
+    // the very line it is offering to move. Both sizes are stated in
+    // flowDiagram.tsx, since the canvas draws in flow units and a size has to
+    // answer the zoom.
     .FlowDiagram__anchor {
-        box-sizing: border-box;
-        border-radius: 50%;
-        background: transparent;
-        box-shadow: 0 0 0 2px rgb(var(--error-text-rgb)) inset, 0 0 0 2px rgba(var(--center-channel-bg-rgb), 0.9);
-        cursor: grab;
-    }
-
-    .FlowDiagram__anchor:active {
-        cursor: grabbing;
-    }
-
-    // The arrow's own caption, and — while it is selected — the way to cut it.
-    // A wrong arrow is cut where it is: the panel's Remove is three steps away,
-    // and somebody looking at the line is looking at the line.
-    .FlowDiagram__edgeLabel {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-    }
-
-    .FlowDiagram__edgeCut {
-        display: inline-flex;
+        display: flex;
         align-items: center;
         justify-content: center;
-        width: 16px;
-        height: 16px;
-        padding: 0;
-        border: 0;
+    }
+
+    .FlowDiagram__anchorMark {
+        // Overwritten inline with the same thickness divided by the zoom; this
+        // is what the outline is if that never lands.
+        --mark-ring: 2px;
+
+        box-sizing: border-box;
+        flex: none;
+
+        // The mark is what a person sees, the box around it is the control —
+        // so the pointer goes past it to the box.
+        pointer-events: none;
         border-radius: 50%;
-        background: rgb(var(--error-text-rgb));
-        color: rgb(var(--sidebar-text-rgb));
-        cursor: pointer;
-        font-size: 12px;
-        line-height: 1;
+        background: transparent;
+        box-shadow: 0 0 0 var(--mark-ring) rgb(var(--error-text-rgb)) inset, 0 0 0 var(--mark-ring) rgba(var(--center-channel-bg-rgb), 0.9);
     }
 
-    .FlowDiagram__edgeCut:hover {
-        filter: brightness(1.15);
-    }
-
-    // The label of an awaited event. It is an HTML box over the canvas rather
-    // than SVG text, so it is painted, not filled.
+    // The caption of an awaited event. It is an HTML box over the canvas rather
+    // than SVG text, so it is painted, not filled — and the paint is on our own
+    // span rather than on the library's wrapper, because an arrow's ends are
+    // wrapped in that same class: a background there put a white square over
+    // the stage the end sits on.
     .solid-flow__edge-label {
+        background: transparent;
+        font-size: 10px;
+    }
+
+    .FlowDiagram__edgeLabel {
         color: rgba(var(--center-channel-color-rgb), 0.72);
         background: rgb(var(--surface-bg-rgb));
-        font-size: 10px;
     }
 
     .solid-flow__controls-button {

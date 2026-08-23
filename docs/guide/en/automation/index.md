@@ -166,10 +166,10 @@ A long arrow — one that skips several stages or sends the card back — runs i
 corridor of its own under the graph, so that two of them do not travel side by
 side and read as one.
 
-Click an arrow and it is selected, and three things become possible: the ✕ on
-its caption breaks the transition; the rings at its ends can be dragged — drop
-one on another stage and the arrow moves there, drop it on nothing and it
-breaks; everything else about it is edited in the panel on the right.
+Click an arrow and it is selected, and rings appear at its ends. Drag an end
+onto another stage and the arrow moves there. Drop an end clear of every stage
+and the arrow breaks. Everything else about it is edited in the panel on the
+right.
 
 An arrow you have already drawn asks about properties in the same order: first
 what the stage it leaves writes, then what the stages before it write — with the

@@ -190,6 +190,34 @@ describe('components/acp/flowDiagram builder', () => {
         expect(editable.container.querySelectorAll('.FlowDiagram__out--success').length).toBe(nodes.length)
     })
 
+    // The rings on an arrow's ends are the only way to re-point one or to break
+    // it where it is, and they went in as a 14-unit target that the zoom then
+    // shrank — so what is asserted is that they are there to be grabbed at all,
+    // and only where the route can be redrawn.
+    test('a selected arrow offers a ring at each end, and only on a canvas being built', () => {
+        const readonly = render(() => wrapIntl(() =>
+            <FlowDiagram
+                nodes={nodes}
+                edges={edges}
+                triggers={triggers}
+                selected={{kind: 'edge', id: 'agent-success-0'}}
+            />,
+        ))
+        expect(readonly.container.querySelectorAll('.FlowDiagram__anchor').length).toBe(0)
+        readonly.unmount()
+
+        const editable = render(() => wrapIntl(() =>
+            <FlowDiagram
+                nodes={nodes}
+                edges={edges}
+                triggers={triggers}
+                selected={{kind: 'edge', id: 'agent-success-0'}}
+                onChange={vi.fn()}
+            />,
+        ))
+        expect(editable.container.querySelectorAll('.FlowDiagram__anchor').length).toBe(2)
+    })
+
     test('the map says how many cards stand on a stage', async () => {
         render(() => wrapIntl(() =>
             <FlowDiagram
