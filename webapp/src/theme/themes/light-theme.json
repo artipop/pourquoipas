@@ -1,0 +1,51 @@
+{
+  "id": "light-theme",
+  "name": "XCIII — бумага",
+  "type": "light",
+
+  "centerChannelBg": "#f0ede5",
+  "centerChannelColor": "#161410",
+  "surfaceBg": "#faf8f4",
+
+  "sidebarBg": "#1c1a16",
+  "sidebarText": "#f0ede5",
+  "sidebarUnreadText": "#ffffff",
+  "sidebarTextHoverBg": "#2a2723",
+  "sidebarTextActiveBorder": "#b9362e",
+  "sidebarTextActiveColor": "#ffffff",
+  "sidebarHeaderBg": "#1c1a16",
+  "sidebarTeamBarBg": "#141210",
+  "sidebarHeaderTextColor": "#f0ede5",
+
+  "buttonBg": "#1c1a16",
+  "buttonColor": "#f0ede5",
+  "linkColor": "#1c1a16",
+  "visitedLinkColor": "#6d4ac7",
+
+  "errorTextColor": "#b3261e",
+  "dndIndicator": "#b3261e",
+  "awayIndicator": "#926211",
+  "onlineIndicator": "#1b6e4e",
+
+  "mentionBg": "#b3261e",
+  "mentionBj": "#b3261e",
+  "mentionColor": "#f0ede5",
+  "mentionHighlightBg": "#efe6bd",
+  "mentionHighlightLink": "#6d4ac7",
+  "newMessageSeparator": "#b9362e",
+
+  "shadowColor": "#1c1a16",
+
+  "labelDefault": "#ffffff",
+  "labelGray": "#e4e0d6",
+  "labelBrown": "#e6d6c2",
+  "labelOrange": "#f2d9c0",
+  "labelYellow": "#efe6bd",
+  "labelGreen": "#d5e6d0",
+  "labelBlue": "#d4e0ee",
+  "labelPurple": "#ded6ee",
+  "labelPink": "#eed6e0",
+  "labelRed": "#eed3cf",
+
+  "codeTheme": "github"
+}

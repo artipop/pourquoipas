@@ -1,50 +1,15 @@
 import {readdirSync, readFileSync} from 'fs'
 import {join} from 'path'
 
+import {themeVars, Vars} from './tokensSource'
+
 // The palette is one file, and this is what keeps it honest. Every pair below
 // is text the product actually puts on that background; if a colour experiment
 // makes one of them unreadable, this fails instead of shipping.
 //
 // It reads `_tokens.scss` rather than a copy of the values, so there is nothing
-// to keep in sync.
-
-const source = readFileSync(join(__dirname, '_tokens.scss'), 'utf8')
-
-type Vars = Record<string, string>
-
-// The file is three `:root` blocks: light, dark, and the derived layer both
-// share. Parsed in order, later declarations winning, which is what the
-// cascade does with them too.
-function blocks(): Array<{selector: string, vars: Vars}> {
-    const withoutComments = source.replace(/\/\/.*$/gm, '')
-    const out: Array<{selector: string, vars: Vars}> = []
-    const re = (/([^{}]+)\{([^{}]*)\}/g)
-    let match = re.exec(withoutComments)
-    while (match) {
-        const vars: Vars = {}
-        for (const line of match[2].split(';')) {
-            const decl = (/^\s*(--[\w-]+)\s*:\s*(.+?)\s*$/).exec(line)
-            if (decl) {
-                vars[decl[1]] = decl[2]
-            }
-        }
-        out.push({selector: match[1].trim(), vars})
-        match = re.exec(withoutComments)
-    }
-    return out
-}
-
-function themeVars(dark: boolean): Vars {
-    const vars: Vars = {}
-    for (const block of blocks()) {
-        const isDarkBlock = block.selector.includes('data-theme')
-        if (isDarkBlock && !dark) {
-            continue
-        }
-        Object.assign(vars, block.vars)
-    }
-    return vars
-}
+// to keep in sync. `theme/themes.test.ts` is the other half: it checks that the
+// two shipped configs say the same as this file does.
 
 function resolve(vars: Vars, value: string, depth = 0): string {
     if (depth > 10) {

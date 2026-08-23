@@ -52,6 +52,7 @@ class Constants {
     // docs.mattermost.com's "migrate to Boards" page, which is a different
     // product's documentation with anchors this app's menu invented.
     static readonly archiveHelpPage = `${Constants.guideUrl}transfer`
+    static readonly themeHelpPage = `${Constants.guideUrl}settings/themes`
     static readonly imports = [
         {
             id: 'trello',

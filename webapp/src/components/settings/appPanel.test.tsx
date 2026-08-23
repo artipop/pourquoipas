@@ -1,11 +1,17 @@
-import {render, screen} from '@solidjs/testing-library'
+import {fireEvent, render, screen} from '@solidjs/testing-library'
 import userEvent from '@testing-library/user-event'
 import '@testing-library/jest-dom'
 
 import {TestRouter, mockAppStore, wrapIntl} from '../../testUtils'
 import {AppStoreProvider} from '../../store'
 import {Constants} from '../../constants'
-import {lightThemeName, setTheme} from '../../theme'
+import {
+    customThemeName,
+    lightThemeName,
+    setCustomThemeSource,
+    setTheme,
+    SHIPPED_THEMES,
+} from '../../theme'
 
 import AppPanel from './appPanel'
 
@@ -15,6 +21,7 @@ describe('components/settings/appPanel', () => {
     beforeEach(() => {
         vi.clearAllMocks()
         store = mockAppStore({})
+        setCustomThemeSource('')
         setTheme(lightThemeName)
     })
 
@@ -27,14 +34,82 @@ describe('components/settings/appPanel', () => {
     ))
 
     // How the app looks used to be an icon menu in the corner of the board.
-    // It is a setting of the install like every other one here, and the three
-    // themes are on the panel rather than behind a menu.
+    // It is a setting of the install like every other one here — and a
+    // dropdown rather than a row of chips, because there are fourteen themes
+    // and there were three.
     test('switches the theme', () => {
         open()
 
-        userEvent.click(screen.getByRole('button', {name: 'Dark theme'}))
+        fireEvent.change(screen.getByLabelText('Theme'), {target: {value: 'windows-dark'}})
 
         expect(document.documentElement.dataset.theme).toBe('dark')
+        expect(document.documentElement.style.getPropertyValue('--canvas-rgb')).toBe('31, 31, 31')
+    })
+
+    test('offers every theme this build ships', () => {
+        open()
+
+        for (const theme of SHIPPED_THEMES) {
+            expect(screen.getByRole('option', {name: theme.name!})).toBeInTheDocument()
+        }
+    })
+
+    // The field is the whole point of borrowing Mattermost's format: a theme
+    // written for another product is pasted in and worn.
+    test('wears a config that was pasted into it', () => {
+        open()
+
+        fireEvent.change(screen.getByLabelText('Theme'), {target: {value: customThemeName}})
+        fireEvent.input(screen.getByLabelText('Custom config'), {
+            target: {
+                value: JSON.stringify({
+                    centerChannelBg: '#102030',
+                    centerChannelColor: '#eeeeee',
+                    sidebarBg: '#000000',
+                    buttonBg: '#4488ff',
+                }),
+            },
+        })
+        userEvent.click(screen.getByRole('button', {name: 'Apply'}))
+
+        expect(document.documentElement.style.getPropertyValue('--canvas-rgb')).toBe('16, 32, 48')
+        expect(document.documentElement.dataset.theme).toBe('dark')
+    })
+
+    // A config nobody can read has to say which way it is wrong, because this
+    // field is the only place a person finds out.
+    test('says why a config was refused', () => {
+        open()
+
+        fireEvent.change(screen.getByLabelText('Theme'), {target: {value: customThemeName}})
+        fireEvent.input(screen.getByLabelText('Custom config'), {target: {value: '{oh no'}})
+        userEvent.click(screen.getByRole('button', {name: 'Apply'}))
+
+        expect(screen.getByText('This is not JSON.')).toBeInTheDocument()
+    })
+
+    // A config that stopped parsing is exactly when the field has to be on
+    // screen: hanging it off "the theme applied" made a broken one impossible
+    // to select and therefore impossible to fix.
+    test('opens the field on a stored config that no longer parses', () => {
+        setCustomThemeSource('{"centerChannelBg": "#fff"}')
+        open()
+
+        fireEvent.change(screen.getByLabelText('Theme'), {target: {value: customThemeName}})
+
+        expect(screen.getByLabelText('Custom config')).toHaveValue('{"centerChannelBg": "#fff"}')
+        expect(screen.getByText(/These keys are missing/)).toBeInTheDocument()
+    })
+
+    // Choosing the custom slot with nothing in it opens on a copy of the theme
+    // on screen: a config field that opens empty is a format to go and look up.
+    test('opens the custom slot on a copy of the theme on screen', () => {
+        open()
+
+        fireEvent.change(screen.getByLabelText('Theme'), {target: {value: customThemeName}})
+
+        const field = screen.getByLabelText('Custom config') as HTMLTextAreaElement
+        expect(JSON.parse(field.value).centerChannelBg).toBe('#f0ede5')
     })
 
     test('switches the language', () => {
