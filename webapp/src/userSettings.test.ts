@@ -100,4 +100,16 @@ describe('userSettings and the install’s own memory', () => {
 
         expect(UserSettings.get(UserSettingKey.CustomThemeName)).toBe('Ночная смена')
     })
+
+    // A write runs inside whatever the person is doing — typing a name, ticking
+    // a switch. A host that refuses, or a blob that will not build, must not
+    // take that down with it.
+    test('keeps the setting when the install refuses it', () => {
+        anyWindow.go = {main: {App: {SetUIPreference: () => {
+            throw new Error('no host')
+        }}}}
+
+        expect(() => UserSettings.set(UserSettingKey.CustomThemeName, 'Тёмная ночь')).not.toThrow()
+        expect(UserSettings.get(UserSettingKey.CustomThemeName)).toBe('Тёмная ночь')
+    })
 })

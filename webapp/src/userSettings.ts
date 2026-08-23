@@ -114,8 +114,13 @@ export class UserSettings {
         // the install remembers for the next one. Fire and forget — a
         // refused write must not block the switch being made.
         if (installKept.has(key)) {
-            // eslint-disable-next-line new-cap
-            preferenceBindings()?.SetUIPreference?.(key, value ?? '')?.catch?.(() => undefined)
+            try {
+                // eslint-disable-next-line new-cap
+                preferenceBindings()?.SetUIPreference?.(key, value ?? '')?.catch?.(() => undefined)
+            } catch (e) {
+                // A binding that throws on the way out rather than in its
+                // promise: the install goes without, this session keeps it.
+            }
         }
         notifySettingsChanged(key)
     }
