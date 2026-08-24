@@ -167,8 +167,8 @@ func (m *Manager) askQuestions(ev CardMoved, edge *FlowEdge) []AskQuestion {
 // the two decides a rule instead of a fact.
 func workModeOptions() []AskOption {
 	return []AskOption{
-		{Value: WorkModeWorktree, Label: "своя копия папки"},
-		{Value: WorkModeBranch, Label: "ветка в самой папке"},
+		{Value: WorkModeWorktree, Label: "отдельное рабочее дерево"},
+		{Value: WorkModeBranch, Label: "ветка в этой же папке"},
 	}
 }
 

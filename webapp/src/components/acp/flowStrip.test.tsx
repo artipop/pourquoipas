@@ -137,15 +137,15 @@ describe('components/acp/flowStrip', () => {
                 text: 'Как агенту работать с папкой для этой карточки?',
                 column: 'In Progress',
                 options: [
-                    {value: 'worktree', label: 'своя копия папки'},
-                    {value: 'branch', label: 'ветка в самой папке'},
+                    {value: 'worktree', label: 'отдельное рабочее дерево'},
+                    {value: 'branch', label: 'ветка в этой же папке'},
                 ],
             },
         })
         render(() => wrapIntl(() => <FlowStrip cardId='card-1'/>))
 
         expect(await screen.findByText('Как агенту работать с папкой для этой карточки?')).toBeInTheDocument();
-        (await screen.findByRole('button', {name: 'ветка в самой папке'})).click()
+        (await screen.findByRole('button', {name: 'ветка в этой же папке'})).click()
         await waitFor(() => expect(bindings.AnswerCardAsk).toHaveBeenCalledWith('card-1', 'q1', 'branch'))
     })
 

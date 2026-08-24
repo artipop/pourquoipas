@@ -37,7 +37,7 @@ const (
 
 var errNoBoard = errors.New("не указана доска")
 
-var errBadWorkMode = errors.New("способ работы в репозитории — «worktree» (своя копия на карточку) или «branch» (ветка в самой папке)")
+var errBadWorkMode = errors.New("способ работы в репозитории — «worktree» (отдельное рабочее дерево на карточку) или «branch» (ветка в этой же папке)")
 
 // DefaultBranchPrefix is what a card's branch is named with when the folder does
 // not say: nothing. It was `acp/` while the branch was the agent integration's

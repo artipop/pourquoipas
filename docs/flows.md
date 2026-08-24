@@ -187,8 +187,8 @@ The canvas does not draw it yet, so it cannot be edited there — but it survive
 every edit, because the diagram leaves out any arrow whose ends are not stages
 rather than dropping it from the route.
 
-- **«Как агенту работать с папкой»** — «своя копия папки» or «ветка в самой
-  папке». The answer is not a card property: it is what the workspace is made
+- **«Как агенту работать с папкой»** — «отдельное рабочее дерево» or «ветка в
+  этой же папке». The answer is not a card property: it is what the workspace is made
   of. It goes onto the card's flow state, from there into the checkout
   `ClaimWorkspace` makes, and from the checkout into everything downstream —
   the review's diff and the deploy both read the card's checkout and nothing
@@ -427,8 +427,8 @@ the answer given for it on this board, in «Папки…» in the board's menu:
 | The folder | The board says | The card gets |
 |---|---|---|
 | an ordinary folder | — | the folder itself, no branch, one card at a time |
-| a repository | «отдельная копия» (default) | a copy under `~/Library/Application Support/XCIII/acp/worktrees`, on `<card title>-<card id>` |
-| a repository | «в самой папке» | that branch in the folder itself; the next card waits |
+| a repository | «в отдельном рабочем дереве» (default) | a copy under `~/Library/Application Support/XCIII/acp/worktrees`, on `<card title>-<card id>` |
+| a repository | «веткой в этой же папке» | that branch in the folder itself; the next card waits |
 
 The branch is **cut from** the folder's own base branch — a setting, filled in
 from the repository when the folder was added and editable beside it — and it is
@@ -445,7 +445,7 @@ What becomes of the copy:
   nothing was written: no uncommitted changes, no commits ahead of the base.
   `keepFailedWorktrees` keeps those too.
 
-In «в самой папке» the folder is **held** by one card until its branch is merged.
+In «веткой в этой же папке» the folder is **held** by one card until its branch is merged.
 A second card does not fail — its route strip says the folder is held and what
 will free it — and a folder with somebody's uncommitted work in it is never
 switched under them. Uncommitted *tracked* work, that is: untracked files

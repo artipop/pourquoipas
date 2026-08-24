@@ -1649,7 +1649,7 @@ already filters out edges whose ends are not stages, so it survives every edit
 round trip without being editable there. Two kinds,
 and the split is where the answer goes. `AskProperty` writes a board select
 onto the card, which is the dataflow above and nothing new. `AskWorkMode` is
-the machine's own — «своя копия папки» or «ветка в самой папке» — and it has no
+the machine's own — «отдельное рабочее дерево» or «ветка в этой же папке» — and it has no
 card property because it is not a fact about the work but what the workspace is
 made of: it lands on `FlowState.WorkMode`, which `ClaimWorkspace` prefers over
 the folder's setting, and from there into the `checkout` row that the review's

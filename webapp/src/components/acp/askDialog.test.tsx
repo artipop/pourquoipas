@@ -24,7 +24,7 @@ const held = (over: Partial<Attention> = {}): Attention => ({
     title: 'Почини логин',
     reason: 'card',
     text: 'Как агенту работать с папкой для этой карточки?',
-    options: [{id: 'worktree', label: 'своя копия папки'}, {id: 'branch', label: 'ветка в самой папке'}],
+    options: [{id: 'worktree', label: 'отдельное рабочее дерево'}, {id: 'branch', label: 'ветка в этой же папке'}],
     awaiting: true,
     ...over,
 })
@@ -44,7 +44,7 @@ it('asks the person who moved the card, right there', async () => {
     render(() => wrapIntl(() => <AskDialog/>))
 
     await waitFor(() => expect(screen.getByText('Как агенту работать с папкой для этой карточки?')).toBeInTheDocument())
-    await userEvent.click(screen.getByText('своя копия папки'))
+    await userEvent.click(screen.getByText('отдельное рабочее дерево'))
 
     // No question is named: the wait is keyed by the card, and one question is
     // asked at a time.
