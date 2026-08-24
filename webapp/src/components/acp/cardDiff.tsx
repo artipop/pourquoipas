@@ -1,6 +1,6 @@
 // The Wails-generated Go bindings are PascalCase methods, not constructors.
 /* eslint-disable new-cap */
-import {For, Show, createMemo, createSignal, onCleanup, onMount} from 'solid-js'
+import {For, Show, createEffect, createMemo, createSignal, onCleanup, onMount} from 'solid-js'
 
 import {useIntl} from '../../intl'
 
@@ -92,10 +92,35 @@ export const patchLines = (patch: string): PatchLine[] => {
     return out
 }
 
-const FileBlock = (props: {file: DiffFile}) => {
+// How many lines make a file one nobody opened the panel to read. A lock file,
+// a generated bundle, a vendored blob: it is a real change and belongs in the
+// list, but expanded it buries the four lines somebody came for. Folded, it is
+// one row with its own counts and a chevron.
+//
+// A number rather than a guess at the path, because "generated" has no spelling
+// anybody can agree on — package-lock.json, go.sum, a migration, a snapshot —
+// and the thing that actually makes a file unreadable here is its size.
+const foldedFromLines = 200
+
+const FileBlock = (props: {file: DiffFile, foldAll?: number, unfoldAll?: number}) => {
     const intl = useIntl()
-    const [open, setOpen] = createSignal(true)
     const lines = createMemo(() => patchLines(props.file.patch || ''))
+    const [open, setOpen] = createSignal(lines().length <= foldedFromLines)
+
+    // The two buttons in the summary say "all of them", so they have to reach a
+    // file whose own chevron somebody has already clicked. They are counters
+    // rather than a shared open/closed state, because a person folding one file
+    // afterwards must not be undone by a signal that still says "all open".
+    createEffect(() => {
+        if (props.foldAll) {
+            setOpen(false)
+        }
+    })
+    createEffect(() => {
+        if (props.unfoldAll) {
+            setOpen(true)
+        }
+    })
 
     // A file with nothing to unfold — a new file git is not tracking yet, a
     // binary one — is a row and not a control: a chevron that opens nothing is
@@ -206,6 +231,12 @@ export const CardDiffView = (props: {cardId: string}) => {
         }
     })
 
+    // Counters rather than one open/closed flag: see FileBlock. Bumping one is
+    // "do this to all of them now", and what somebody does to a single file
+    // afterwards stands.
+    const [foldAll, setFoldAll] = createSignal(0)
+    const [unfoldAll, setUnfoldAll] = createSignal(0)
+
     return (
         <div class='CardDiff'>
             <div class='CardDiff__summary'>
@@ -229,6 +260,26 @@ export const CardDiffView = (props: {cardId: string}) => {
                         <span class='CardDiff__added'>{'+' + total().added}</span>
                         <span class='CardDiff__removed'>{'−' + total().removed}</span>
                     </span>
+                </Show>
+                <Show when={total().files > 1}>
+                    <button
+                        type='button'
+                        class='CardDiff__button'
+                        title={intl.formatMessage({id: 'CardDiff.fold-all', defaultMessage: 'Collapse every file'})}
+                        aria-label={intl.formatMessage({id: 'CardDiff.fold-all', defaultMessage: 'Collapse every file'})}
+                        onClick={() => setFoldAll(foldAll() + 1)}
+                    >
+                        <CompassIcon icon='unfold-less-horizontal'/>
+                    </button>
+                    <button
+                        type='button'
+                        class='CardDiff__button'
+                        title={intl.formatMessage({id: 'CardDiff.unfold-all', defaultMessage: 'Expand every file'})}
+                        aria-label={intl.formatMessage({id: 'CardDiff.unfold-all', defaultMessage: 'Expand every file'})}
+                        onClick={() => setUnfoldAll(unfoldAll() + 1)}
+                    >
+                        <CompassIcon icon='unfold-more-horizontal'/>
+                    </button>
                 </Show>
                 <button
                     type='button'
@@ -263,7 +314,13 @@ export const CardDiffView = (props: {cardId: string}) => {
                     {intl.formatMessage({id: 'CardDiff.committed', defaultMessage: 'On the branch'})}
                 </div>
                 <For each={diff()!.committed}>
-                    {(file) => <FileBlock file={file}/>}
+                    {(file) => (
+                        <FileBlock
+                            file={file}
+                            foldAll={foldAll()}
+                            unfoldAll={unfoldAll()}
+                        />
+                    )}
                 </For>
             </Show>
 
@@ -276,7 +333,13 @@ export const CardDiffView = (props: {cardId: string}) => {
                     {intl.formatMessage({id: 'CardDiff.uncommitted', defaultMessage: 'Not committed'})}
                 </div>
                 <For each={diff()!.uncommitted}>
-                    {(file) => <FileBlock file={file}/>}
+                    {(file) => (
+                        <FileBlock
+                            file={file}
+                            foldAll={foldAll()}
+                            unfoldAll={unfoldAll()}
+                        />
+                    )}
                 </For>
             </Show>
         </div>
@@ -305,6 +368,11 @@ const CardDiffPanel = (props: Props) => {
     return (
         <div class='CardDiffPanel'>
             <div class='CardDiffPanel__head'>
+                {/* The same glyph the toolbar button is drawn with, so the
+                    panel and the button that opened it are one thing. A word on
+                    its own says «Изменения» about a card that has three other
+                    panels; the icon says which. */}
+                <CompassIcon icon='file-document-outline'/>
                 <span class='CardDiffPanel__name'>
                     {intl.formatMessage({id: 'CardDiff.title', defaultMessage: 'Changes'})}
                 </span>

@@ -174,6 +174,15 @@
         padding: 8px 12px;
         border-bottom: 1px solid var(--border-subtle);
         flex: 0 0 auto;
+
+        // The heading's own glyph reads as part of the word rather than as a
+        // control beside it, so it is quieter than the text and takes the gap
+        // the head already sets. A direct child, which the buttons' icons are
+        // not: theirs are inside the button.
+        >.CompassIcon {
+            color: rgba(var(--center-channel-color-rgb), 0.56);
+            font-size: 16px;
+        }
     }
 
     &__name {

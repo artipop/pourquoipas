@@ -40,6 +40,52 @@ describe('components/acp/cardDiff', () => {
         vi.clearAllMocks()
     })
 
+    // A generated file is a real change and belongs in the list, but expanded it
+    // buries the few lines somebody opened the panel to read. Folded by its own
+    // size rather than by its name: "generated" has no spelling anybody agrees
+    // on, and what makes a file unreadable here is how long it is.
+    it('starts a very long file folded and a short one open', async () => {
+        const long = ['diff --git a/package-lock.json b/package-lock.json', '@@ -1,400 +1,400 @@']
+        for (let i = 0; i < 400; i++) {
+            long.push('+  "line": ' + i)
+        }
+        stubBindings({
+            GetCardDiff: vi.fn().mockResolvedValue(JSON.stringify({
+                cardId: 'card-1',
+                committed: [
+                    {path: 'package-lock.json', added: 400, removed: 0, patch: long.join('\n')},
+                    {path: 'auth.go', added: 1, removed: 1, patch},
+                ],
+                uncommitted: [],
+            })),
+        })
+        render(() => wrapIntl(() => <CardDiffView cardId='card-1'/>))
+
+        await screen.findByText('auth.go')
+        expect(screen.getByText('func Login(token string) {}')).toBeInTheDocument()
+        expect(screen.queryByText('  "line": 0')).toBeNull()
+    })
+
+    // "All of them" has to reach a file whose own chevron somebody has already
+    // clicked, so the two buttons are events rather than a shared open flag.
+    it('folds and unfolds every file at once', async () => {
+        stubBindings({
+            GetCardDiff: vi.fn().mockResolvedValue(JSON.stringify({
+                cardId: 'card-1',
+                committed: [{path: 'auth.go', added: 1, removed: 1, patch}],
+                uncommitted: [{path: 'other.go', added: 1, removed: 0, patch}],
+            })),
+        })
+        render(() => wrapIntl(() => <CardDiffView cardId='card-1'/>))
+
+        await screen.findByText('auth.go')
+        await userEvent.click(screen.getByLabelText('Collapse every file'))
+        expect(screen.queryByText('func Login(token string) {}')).toBeNull()
+
+        await userEvent.click(screen.getByLabelText('Expand every file'))
+        expect(screen.getAllByText('func Login(token string) {}').length).toBeGreaterThan(0)
+    })
+
     // The name of the file is the row above the patch, so repeating the header
     // git puts in front of every hunk is noise the reader has to skip past.
     it('drops git’s own file header and keeps the changed lines', () => {
