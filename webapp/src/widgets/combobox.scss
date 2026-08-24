@@ -40,6 +40,7 @@
     }
 
     [class$='__value-container'] {
+        position: relative;
         display: flex;
         min-width: 0;
         flex: 1 1 auto;
@@ -48,11 +49,23 @@
         gap: 2px;
     }
 
+    // Under the input, not before it. The two are siblings in the value
+    // container, and in flow the placeholder took the first slot of the row
+    // and the input the rest — so on a card's assignee field the caret stood
+    // after the word «Пусто», where every other field in the product starts
+    // it at the left edge. react-select overlaid the two in one grid cell;
+    // this is the same picture without a wrapper: out of flow with no offsets
+    // named, it keeps its static position — the start of the row, centred as
+    // the row's items are — and the input stretches over it from the same
+    // edge. Inert to the pointer so a click on the word lands on the input.
     [class$='__placeholder'] {
+        position: absolute;
+        max-width: 100%;
         overflow: hidden;
         color: rgba(var(--center-channel-color-rgb), 0.4);
         text-overflow: ellipsis;
         white-space: nowrap;
+        pointer-events: none;
     }
 
     [class$='__multi-value__remove'] {
