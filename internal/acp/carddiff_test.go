@@ -117,3 +117,124 @@ func TestTheDiffOfACardWithAWorkspaceIsWhatItsBranchAdds(t *testing.T) {
 		t.Errorf("a card with work to read said there was none: %q", d.Reason)
 	}
 }
+
+// The case this exists for. A stage ending folds the card's working copy away
+// (FoldWorktree) and leaves the branch behind — and «На ревью», the stage that
+// wants to read the work, is the one after that. Reading the copy would answer
+// "the folder is gone" exactly where the answer matters.
+func TestTheWorkIsStillReadableAfterTheCopyIsFoldedAway(t *testing.T) {
+	m, _, _, project := testManager(t, fakeClaudeHappy, nil)
+	git(t, project, "checkout", "-b", "fix-login")
+	write(t, filepath.Join(project, "auth.go"), "package auth\n")
+	git(t, project, "add", ".")
+	git(t, project, "commit", "-m", "add auth")
+	git(t, project, "checkout", "main")
+
+	// A claim whose copy is not on disk any more, which is what a folded
+	// worktree leaves behind.
+	if err := m.store.SaveCheckout(Checkout{
+		WorkspaceID: m.workspaceID(project),
+		CardID:      "card1",
+		Mode:        WorkModeWorktree,
+		Branch:      "fix-login",
+		Path:        filepath.Join(t.TempDir(), "gone"),
+		Base:        "main",
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	d, err := m.CardDiff("card1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if d.Reason != "" {
+		t.Fatalf("a folded copy read as nothing to show: %q", d.Reason)
+	}
+	if len(d.Committed) != 1 || d.Committed[0].Path != "auth.go" {
+		t.Fatalf("what the branch holds is missing: %+v", d.Committed)
+	}
+	// Unsaved work exists only in a copy, and this card has none — what is in
+	// the folder belongs to whoever is sitting in it.
+	if len(d.Uncommitted) != 0 {
+		t.Errorf("the folder's own state was read as this card's: %+v", d.Uncommitted)
+	}
+}
+
+// The button that opens the diff is drawn on a count, not on a look: it is
+// asked on a stage where the copy is already folded, and a board would ask it
+// once per card. So the count is written when the work moves.
+func TestWhatTheWorkAmountsToIsCountedWhenItMoves(t *testing.T) {
+	m, _, _, project := testManager(t, fakeClaudeHappy, nil)
+	git(t, project, "checkout", "-b", "fix-login")
+	write(t, filepath.Join(project, "auth.go"), "package auth\nvar x = 1\n")
+	git(t, project, "add", ".")
+	git(t, project, "commit", "-m", "add auth")
+
+	if _, ok := m.CardChanges("card1"); ok {
+		t.Fatal("a card nobody has worked on claims to have changes")
+	}
+	if err := m.store.SaveCheckout(Checkout{
+		WorkspaceID: m.workspaceID(project),
+		CardID:      "card1",
+		Mode:        WorkModeBranch,
+		Branch:      "fix-login",
+		Path:        project,
+		Base:        "main",
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	m.refreshCardChanges("card1", "board1")
+	rec, ok := m.CardChanges("card1")
+	if !ok {
+		t.Fatal("the work was not counted")
+	}
+	if rec.Files != 1 || rec.Added != 2 || rec.Branch != "fix-login" {
+		t.Errorf("counted %+v, want one file and two added lines on fix-login", rec)
+	}
+}
+
+// The count is worked out when it is asked for, not read off the row: a stale
+// answer is wrong in both directions — a button that opens «ничего не
+// изменено», and no button on a card an agent has just committed to. The row is
+// what a board would read, and this look keeps it current.
+func TestACardWorkedBeforeAnythingCountedIsCountedOnTheSpot(t *testing.T) {
+	m, _, _, project := testManager(t, fakeClaudeHappy, nil)
+	if err := m.store.SaveCheckout(Checkout{
+		WorkspaceID: m.workspaceID(project),
+		CardID:      "card1",
+		Mode:        WorkModeBranch,
+		Branch:      "main",
+		Path:        project,
+		Base:        "main",
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, ok := m.CardChanges("card1"); ok {
+		t.Error("an untouched branch claims to have changes")
+	}
+	if _, found, err := m.store.CardChanges("card1"); err != nil || !found {
+		t.Errorf("the look left no record for a board to read (found=%v, err=%v)", found, err)
+	}
+
+	// And a commit made since is seen without anything having recorded it.
+	git(t, project, "checkout", "-b", "later")
+	write(t, filepath.Join(project, "late.go"), "package late\n")
+	git(t, project, "add", ".")
+	git(t, project, "commit", "-m", "later")
+	git(t, project, "checkout", "main")
+	if err := m.store.SaveCheckout(Checkout{
+		WorkspaceID: m.workspaceID(project),
+		CardID:      "card1",
+		Mode:        WorkModeBranch,
+		Branch:      "later",
+		Path:        project,
+		Base:        "main",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if rec, ok := m.CardChanges("card1"); !ok || rec.Files != 1 {
+		t.Errorf("the look answered from a stale row: %+v (ok=%v)", rec, ok)
+	}
+}

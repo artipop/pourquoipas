@@ -229,7 +229,6 @@ exports[`src/components/kanban/kanbanCard > return kanbanCard and click on copy 
     </div>
     
     
-    
   </div>
 </div>
 `;
@@ -461,7 +460,6 @@ exports[`src/components/kanban/kanbanCard > return kanbanCard and click on delet
       />
       
     </div>
-    
     
     
   </div>
@@ -697,7 +695,6 @@ exports[`src/components/kanban/kanbanCard > return kanbanCard and click on dupli
     </div>
     
     
-    
   </div>
 </div>
 `;
@@ -747,7 +744,6 @@ exports[`src/components/kanban/kanbanCard > should match snapshot 1`] = `
     </div>
     
     
-    
   </div>
 </div>
 `;
@@ -782,7 +778,6 @@ exports[`src/components/kanban/kanbanCard > should match snapshot with readonly 
       />
       
     </div>
-    
     
     
   </div>

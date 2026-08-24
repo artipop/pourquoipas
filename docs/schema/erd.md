@@ -453,10 +453,14 @@ erDiagram
 `checkout` — git-состояние: где копия, какая ветка, от чего
 отрезана. Владелец — карточка либо доска («черновики доски»), ровно
 одна из двух колонок заполнена; обычная папка не пишет строки вовсе.
+`card_changes` — размер сделанного, числами: диф всегда читается из
+git заново, а эта строка нужна, чтобы знать, есть ли что читать, не
+запуская git на каждую карточку.
 
 ```mermaid
 erDiagram
     board_ref ||--o{ checkout : "board_id CASCADE"
+    card_ref ||--o{ card_changes : "card_id CASCADE"
     card_ref ||--o{ checkout : "card_id CASCADE"
     workspace ||--o{ checkout : "workspace_id RESTRICT"
     workspace ||--o{ vcs_seen : "workspace_id CASCADE"
@@ -479,6 +483,16 @@ erDiagram
         name_32 kind PK
         name_64 marker "The commit the event refers to: the same state seen twice fires once."
         millis created_at
+    }
+    card_changes {
+        id card_id PK, FK
+        name_255 branch "nullable"
+        name_255 base "What the branch was cut from, so a stale row can be told from one about a different base."
+        int files
+        int added
+        int removed
+        int dirty "Files changed and not committed. Counted apart because they exist only while a working copy does, and the…"
+        millis computed_at
     }
 ```
 

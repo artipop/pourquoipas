@@ -1357,6 +1357,48 @@ table "card_stall" {
     on_delete   = CASCADE
   }
 }
+table "card_changes" {
+  column "card_id" {
+    null = false
+    type = varchar(36)
+  }
+  column "branch" {
+    null = true
+    type = varchar(255)
+  }
+  column "base" {
+    null = true
+    type = varchar(255)
+  }
+  column "files" {
+    null = false
+    type = bigint
+  }
+  column "added" {
+    null = false
+    type = bigint
+  }
+  column "removed" {
+    null = false
+    type = bigint
+  }
+  column "dirty" {
+    null = false
+    type = bigint
+  }
+  column "computed_at" {
+    null = false
+    type = bigint
+  }
+  primary_key {
+    columns = [column.card_id]
+  }
+  foreign_key "card_changes_card" {
+    columns     = [column.card_id]
+    ref_columns = [table.card_ref.column.card_id]
+    on_delete   = CASCADE
+  }
+}
 table "stage_queue" {
   column "card_id" {
     null = false

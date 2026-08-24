@@ -136,45 +136,6 @@
     // it is context for everything else on the card, not one of the card's
     // values competing with them — and on a board of one folder it repeats on
     // every card, so it has to be cheap to look past.
-    // Where the card goes next, when that is a person's to say. Two buttons at
-    // most, and they sit under everything else on the card: what the card *is*
-    // comes first, what to do with it after.
-    .KanbanCard__marks {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 4px;
-        margin-top: 6px;
-    }
-
-    .KanbanCard__mark {
-        padding: 2px 8px;
-        border-radius: var(--radius-sm);
-        border: 1px solid rgba(var(--center-channel-color-rgb), 0.2);
-        background: transparent;
-        color: rgba(var(--center-channel-color-rgb), 0.72);
-        cursor: pointer;
-        font-size: 11px;
-        line-height: 16px;
-        white-space: nowrap;
-    }
-
-    .KanbanCard__mark:hover:not(:disabled) {
-        background: rgba(var(--center-channel-color-rgb), 0.08);
-        color: rgba(var(--center-channel-color-rgb), 1);
-    }
-
-    .KanbanCard__mark:disabled {
-        cursor: default;
-        opacity: 0.5;
-    }
-
-    // The ordinary way on carries the accent; the way back is quiet, because
-    // most cards go forward and a card going back is the exception.
-    .KanbanCard__mark--forward {
-        border-color: rgba(var(--button-bg-rgb), 0.56);
-        color: rgb(var(--button-bg-rgb));
-    }
-
     .KanbanCard__folder {
         display: flex;
         align-items: center;

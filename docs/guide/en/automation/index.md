@@ -85,9 +85,10 @@ The **"Columns"** tab, select a column — in the panel:
   travels to the stages further on and is read there.
 
   Setting it by hand does not mean going into the field. While the card stands
-  on a stage where nothing runs, two buttons appear **on the card itself, on the
-  board** — named by the stage each leads to: «← В работе» and «Деплой →».
-  Pressing one sets «Исход» and moves the card. Nothing to open, nothing to find.
+  on a stage where nothing runs, two buttons appear on its **route strip**,
+  inside the card and beside the stage they are about — named by the stage each
+  leads to: «‹ In progress» and «Deploy ›». Pressing one sets «Исход» and
+  moves the card; there is no field to find and no value to pick.
 
   There are no buttons where the stage answers for itself: while an agent is
   working, the card has no question for a person.

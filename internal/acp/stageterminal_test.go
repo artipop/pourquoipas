@@ -301,7 +301,7 @@ func TestTheStagePromptLandsInTheBrief(t *testing.T) {
 	prompt := composePrompt(
 		CardMoved{Title: "Починить логин", Body: "Падает на пустом пароле."},
 		AgentEntry{Prompt: "агентский промпт"},
-		"системный промпт", "Ты ревьюер: ищи дефекты, ничего не чини.", true,
+		"системный промпт", "Ты ревьюер: ищи дефекты, ничего не чини.", true, true,
 	)
 	for _, want := range []string{"системный промпт", "агентский промпт", "Ты ревьюер", "Task: Починить логин"} {
 		if !strings.Contains(prompt, want) {
@@ -532,13 +532,22 @@ func TestWriteStageFieldsPutsTheValueWhereDeclared(t *testing.T) {
 func TestDeclaredReadsOpenTheBrief(t *testing.T) {
 	inputs := cardInputs(CardMoved{Props: map[string]string{"превью": "https://demo.example.com"}},
 		[]string{"Превью", "Одобрено"})
-	for _, want := range []string{"From the card:", "Превью: https://demo.example.com", "Одобрено: "} {
+	for _, want := range []string{"From the card:", "Превью: https://demo.example.com", "Одобрено: (nobody"} {
 		if !strings.Contains(inputs, want) {
 			t.Errorf("the inputs block is missing %q:\n%s", want, inputs)
 		}
 	}
 	if cardInputs(CardMoved{}, nil) != "" {
 		t.Error("a stage with no reads got an inputs block")
+	}
+
+	// And a block where nothing at all has been written is dropped whole. It is
+	// the ordinary state of a route's first stage — and of every stage of a
+	// route that loops, where a later stage's output is "upstream" of an
+	// earlier one — so it stood at the head of the brief, before the
+	// instructions and the task, saying nothing: «From the card:\nПревью:».
+	if got := cardInputs(CardMoved{}, []string{"Превью", "Одобрено"}); got != "" {
+		t.Errorf("a brief opened with reads nobody has written:\n%s", got)
 	}
 }
 
@@ -684,5 +693,58 @@ func TestAStageRunsWithTheColumnsOwnTools(t *testing.T) {
 	}
 	if got := config.MCPServers["playwright"]; got.Command != "npx" || len(got.Args) != 2 {
 		t.Errorf("the column's server did not reach the stage: %s", raw)
+	}
+}
+
+// What working in this column means is the column's own instruction, and it has
+// to reach the agent: a review stage handed the worker's brief reads the card's
+// task and does the task again.
+func TestAStageIsToldWhatWorkingInItsColumnMeans(t *testing.T) {
+	m, _, events, _, _ := stageManager(t, "sleep 30", func(cfg *Config) {
+		column := workColumn(cfg.TriggerProperty, FlowActionAgent)
+		column.Prompt = "REVIEW: read the diff and say whether it should land."
+		cfg.Columns = []ColumnSpec{column}
+	})
+
+	events.ch <- moveEvent("cardReview", "opt-backlog", "opt-agent")
+	term := liveStageTerminal(t, m, "cardReview")
+
+	brief := strings.Join(term.Argv, " ")
+	if !strings.Contains(brief, "REVIEW: read the diff") {
+		t.Errorf("the column's instruction never reached the agent:\n%s", brief)
+	}
+	// And before the card's own task, which is what makes it an instruction
+	// about the stage rather than a note appended to the work.
+	if strings.Index(brief, "REVIEW: read the diff") > strings.Index(brief, "Task:") {
+		t.Errorf("the column's instruction came after the task:\n%s", brief)
+	}
+}
+
+// A stage ends when the agent says so, and the only thing that can say it is a
+// board tool. Whether that tool arrives loaded is the CLI's business — Claude
+// Code deferred the whole board server once, and the agent finished the work,
+// wrote a summary in the terminal and stopped, leaving the card on the stage.
+// So the task says it too.
+func TestAStageIsToldHowItEnds(t *testing.T) {
+	m, _, events, _, _ := stageManager(t, "sleep 30", nil)
+
+	events.ch <- moveEvent("cardEnds", "opt-backlog", "opt-agent")
+	term := liveStageTerminal(t, m, "cardEnds")
+
+	brief := strings.Join(term.Argv, " ")
+	for _, want := range []string{"finish_work", "not by the CLI exiting", "look it up before you finish"} {
+		if !strings.Contains(brief, want) {
+			t.Errorf("the brief does not say %q:\n%s", want, brief)
+		}
+	}
+}
+
+// And a run that is handed no board tools is not told to call one: a deploy and
+// a test are ACP sessions, and a turn spent looking for a tool that was never
+// wired in is a turn wasted.
+func TestARunWithNoBoardToolsIsNotToldToCallOne(t *testing.T) {
+	deploy := composePrompt(CardMoved{Title: "Publish"}, AgentEntry{Name: "a"}, "", "", true, false)
+	if strings.Contains(deploy, "finish_work") {
+		t.Errorf("a run with no board tools was told to end with one:\n%s", deploy)
 	}
 }

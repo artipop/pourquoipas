@@ -302,46 +302,6 @@ func (m *Manager) marksFrom(flow FlowEntry, nodeID string) []CardFlowMark {
 	return out
 }
 
-// CardMarksForBoard is the same two answers, for every card of one board that
-// stands somewhere offering them — keyed by card id.
-//
-// Asked this way round because the board needs it per card and has as many
-// cards as it likes: a call each would be a round trip to Go for every card
-// drawn. The same bargain ListTerminals takes for the console button.
-func (m *Manager) CardMarksForBoard(boardID string) map[string][]CardFlowMark {
-	out := map[string][]CardFlowMark{}
-	if strings.TrimSpace(boardID) == "" || m.store == nil {
-		return out
-	}
-	states, err := m.flowStates()
-	if err != nil {
-		m.log.Warn("acp: cannot read where the cards stand", "board", boardID, "err", err)
-		return out
-	}
-	for _, st := range states {
-		if st.BoardID != boardID {
-			continue
-		}
-		flow, ok := m.FlowByID(st.FlowID)
-		if !ok {
-			continue
-		}
-
-		// A stage that is working answers for itself; two buttons beside a
-		// running session would be a second way to answer for it.
-		m.mu.Lock()
-		_, running := m.byCard[st.CardID]
-		m.mu.Unlock()
-		if running {
-			continue
-		}
-		if marks := m.marksFrom(flow, st.NodeID); len(marks) > 0 {
-			out[st.CardID] = marks
-		}
-	}
-	return out
-}
-
 // MarkCardOutcome is a person answering for a stage that runs nothing: «прошло»
 // or «не прошло», put on the card so the route sees it and moves.
 //
@@ -387,8 +347,8 @@ func askForCard(flow FlowEntry, st FlowState) *CardFlowAsk {
 
 // CardFlowsForBoard is which route each card of a board is on, in one call —
 // the answer a view filtered by route needs for every card it draws, and the
-// bargain CardMarksForBoard already takes: a board has as many cards as it
-// likes and GetCardFlow per card would be a round trip each.
+// bargain ListTerminals already takes: a board has as many cards as it likes,
+// and GetCardFlow per card would be a round trip each.
 //
 // Two ways a card belongs to a route, and both are the engine's own rule rather
 // than a second copy of it on the page. Where the card *stands* is the flow

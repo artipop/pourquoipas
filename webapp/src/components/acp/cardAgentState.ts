@@ -51,6 +51,25 @@ export type CardAgentState = {
     // folder. Absent means «no folder», which the panel turns into an explicit
     // choice before anything starts.
     folder?: string
+
+    // How much this card's work amounts to, and absent when it amounts to
+    // nothing. It is what the «Изменения» button is drawn on: a button that
+    // opened «ничего не изменено» is a button nobody can learn.
+    //
+    // Counted by the Go side when the work moves rather than when this is
+    // asked, because a stage ending folds the working copy away and the stage
+    // that wants to read the work is the next one (internal/acp/carddiff.go).
+    changes?: {
+        branch?: string
+        base?: string
+        files: number
+        added: number
+        removed: number
+
+        // Files changed and not committed. Apart from the rest because they
+        // exist only while a working copy does.
+        dirty: number
+    }
 }
 
 export type CardConversation = {

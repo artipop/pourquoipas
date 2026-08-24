@@ -1224,6 +1224,10 @@ func (m *Manager) terminalEnded(t *TerminalSession) {
 		m.commentCard(t.CardID, terminalReport(m.rootCtx, t))
 	}
 	m.closeBoardTools(t.boardToken, t.mcpConfig)
+	// Counted before the copy is let go of below, for the same reason the
+	// report above is written here: this is the last moment anything knows what
+	// the conversation left behind (carddiff.go).
+	m.refreshCardChanges(t.CardID, t.BoardID)
 	// A worktree with nothing in it is a branch nobody asked for; one with
 	// commits stays, exactly as a session's does.
 	m.releaseTerminalWorktree(t)

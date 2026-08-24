@@ -366,7 +366,11 @@ where you answer: open the terminal from the card, the notification or «Жду�
 a phone. Nothing of ours is drawn over that screen.
 
 A terminal does not end by itself, so the agent declares the work over with
-**finish_work**: done or not done, and one line about what it did. That line is
+**finish_work**: done or not done, and one line about what it did. The task the
+stage hands over says this in words as well as offering the tool — whether a CLI
+loads the board's tools up front is its own affair, and an agent that never
+looked finishes the work, writes a summary in the terminal and stops, leaving
+the card where it was. That line is
 the event the route acts on, and it stays readable in the terminal it was said
 in. If the terminal is closed
 without it, the card stays where it is and says so — no verdict was given, so
@@ -402,7 +406,10 @@ running that could go on waiting.
 beside «Терминал»: the branch's commits, the files they changed and the patches
 themselves, plus whatever is uncommitted in the working copy — read from git
 every time, never cached, with a window of its own for the reading a panel is
-too narrow for.
+too narrow for. It is read off the *branch* rather than off the copy, because a
+stage ending folds the copy away and «На ревью» is the stage after that. And the
+button is there only when there is something to read: what a card's work amounts
+to is counted as the work moves and kept per card (`card_changes`).
 
 Two things are still done the old way, without a terminal: a **deploy** and a
 **test**. Nobody is watching those, and their result is read by the machine

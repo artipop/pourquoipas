@@ -259,8 +259,11 @@ notification is about the question, they are about the agent still waiting.
 
 ## The changes, read by eye
 
-The card's toolbar has a **“Changes”** button beside “Terminal”. It opens a diff
-in the panel on the right — what is in the card's working copy right now:
+The card's toolbar has a **“Changes”** button beside “Terminal”. It is there on
+a card that has something to read: no work started, or nothing changed, and
+there is no button.
+
+It opens a diff in the panel on the right — what has been done on the card:
 
 - **“On the branch”** — what is already committed on top of the main branch;
 - **“Not committed”** — what has been changed and not saved into a commit, plus
@@ -268,8 +271,15 @@ in the panel on the right — what is in the card's working copy right now:
 
 Above them: the branch, what it was cut from, and how many files and lines
 there are in all. A file folds away when its row is clicked. The arrows button
-(“Read the folder again”) rereads the folder; the diff also refreshes itself
+(“Read the folder again”) reads it all again; the diff also refreshes itself
 whenever an agent finishes something.
+
+It can be read after a stage is over, too. When an agent finishes, the card's
+working copy is folded away and the branch stays — so the committed half is read
+from the branch, and it is there on «In review», where the copy is already gone.
+Uncommitted work lives only in a copy: while there is one it is shown, and after
+the fold there is none to show — a folder with unsaved work in it is never
+folded.
 
 The panel beside a card is narrow, so its head carries **“Open in a separate
 window”** — the same reading full size, in a window of its own, the way a
@@ -310,6 +320,11 @@ by itself: the CLI keeps running until it is closed. So the agent is the one
 that declares the work over — through the board tool `finish_work`, which the
 app hands it along with the rest. It says whether the work is done or could not
 be done, and briefly what was done.
+
+The task says so as well. A CLI does not always load the board's tools up
+front, and an agent that never went looking for them finishes the work, writes
+its summary in the terminal and stops — leaving the card where it was. So the
+task itself states that the stage ends with a call to `finish_work`.
 
 After that the card travels on along the route and the conversation is closed.
 What exactly was done is in the agent's closing words in the terminal — the

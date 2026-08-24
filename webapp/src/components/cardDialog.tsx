@@ -1,4 +1,4 @@
-import {Show, createSignal, onMount} from 'solid-js'
+import {Show, createSignal, onCleanup, onMount} from 'solid-js'
 import type {JSX} from 'solid-js'
 
 import {FormattedMessage, useIntl} from '../intl'
@@ -34,6 +34,7 @@ import CardTerminal, {isCardTerminalAvailable} from './acp/cardTerminal'
 import CardDiffPanel, {isCardDiffAvailable} from './acp/cardDiff'
 import CardComments from './cardDetail/cardComments'
 import {cardAgentState, refreshCardAgent} from './acp/cardAgentState'
+import {onAgentEvent} from './acp/agentEvents'
 import {refreshRegisteredAgents, registeredAgents} from './acp/agentRegistry'
 
 import CardDetail from './cardDetail/cardDetail'
@@ -256,7 +257,16 @@ const CardDialog = (props: Props): JSX.Element => {
     onMount(() => {
         if (isCardTerminalAvailable()) {
             refreshRegisteredAgents()
+        }
+        if (isCardTerminalAvailable() || isCardDiffAvailable()) {
             refreshCardAgent(props.cardId)
+
+            // The work moves while the dialog is open — an agent commits, a
+            // stage ends — and both the terminal rows and the changes count
+            // come from the one call above. A session event is the cheapest
+            // thing that means "look again".
+            onCleanup(onAgentEvent('acp:session', () => refreshCardAgent(props.cardId)))
+            onCleanup(onAgentEvent('acp:terminal', () => refreshCardAgent(props.cardId)))
         }
     })
 
@@ -285,13 +295,18 @@ const CardDialog = (props: Props): JSX.Element => {
         </Show>
     )
 
-    // Offered wherever the app can read a folder at all, and not only on a card
-    // that has work: what there is to show is git's answer, and the panel says
-    // in words which of the "nothing here" cases this card is — work not
-    // started, work on another machine, folder gone. A button that appeared
-    // only once there was a diff would be a button nobody could learn.
+    // Drawn only where there is something to read. What decides is the count
+    // the Go side keeps as the work moves (GetCardAgent's `changes`), not a
+    // live look: on «На ревью» — the stage this is for — the card's working
+    // copy has already been folded away, and asking git per card is a process
+    // per card. A card nobody has worked on gets no button rather than a button
+    // that opens «ничего не изменено».
+    const hasChanges = () => {
+        const changes = agentState().changes
+        return Boolean(changes && (changes.files > 0 || changes.dirty > 0))
+    }
     const diffBtn = (): JSX.Element => (
-        <Show when={isCardDiffAvailable() && Boolean(card()) && !isTemplate()}>
+        <Show when={isCardDiffAvailable() && Boolean(card()) && !isTemplate() && hasChanges()}>
             <Button
                 icon={<CompassIcon icon='file-document-outline'/>}
                 class='cardFollowBtn cardFollowBtn--attach'

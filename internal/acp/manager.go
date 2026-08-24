@@ -75,6 +75,9 @@ type Manager struct {
 	stageWaits   map[string]stageWait // terminal ID → the running stage finish_work answers to
 	stageWaiting map[string]Attention // terminal ID → the wait it is showing
 	cardWaits    map[string]Attention // card ID → the route handing it to a person (cardwait.go)
+	// changesWriteFailed keeps the "no card_changes table" warning to one line
+	// a run — see saveCardChanges.
+	changesWriteFailed sync.Once
 
 	// acked is which waits a person has already been told about, so that being
 	// told is a thing that happens once (attentionack.go). Its own lock: it is
@@ -519,7 +522,13 @@ func (m *Manager) startSession(ev CardMoved, opts startOptions) (*Session, error
 		outputs = stageOutputs(opts.declaredWrites(), m.boardCardProperties(ev.BoardID))
 	}
 	stage := joinPrompts(opts.prompt(), inputs, outputs)
-	prompt := composePrompt(ev, agent, systemPrompt, stage, worktreeAvailable)
+	// Whether the agent will be handed the board's tools at all, which is what
+	// decides whether the task may tell it to end the stage with finish_work:
+	// a stage that runs as an ACP session takes no board server, and telling it
+	// to call a tool it does not have is a turn spent looking for one. The same
+	// test runSession makes before it opens a terminal at all.
+	prompt := composePrompt(ev, agent, systemPrompt, stage, worktreeAvailable,
+		deploy == nil && test == nil && stageRunsInTerminal(agent))
 	switch {
 	case deploy != nil:
 		prompt = composeDeployPrompt(ev, agent, systemPrompt, deployPrompt, stage, *deploy, deployBranch)
@@ -801,6 +810,12 @@ func (m *Manager) finishSession(s *Session, status SessionStatus, errText string
 }
 
 func (m *Manager) releaseSession(s *Session) {
+	// What the work amounts to now (carddiff.go). Here rather than in
+	// finishSession, which is the status transition and stands in front of the
+	// card's own comment: a git run there delayed the comment by as long as git
+	// took, and the first thing that noticed was a test reading the card the
+	// moment the session went to done.
+	m.refreshCardChanges(s.CardID, s.BoardID)
 	m.mu.Lock()
 	delete(m.active, s.ID)
 	if m.byCard[s.CardID] == s {
@@ -940,19 +955,35 @@ func planningPrompt(systemPrompt, planning string, agent AgentEntry, workdir Wor
 
 // cardInputs is the stage's declared reads, valued: what an earlier stage
 // wrote onto the card — the preview URL, the reviewer's verdict — handed to
-// the agent in its brief instead of hoping it asks get_card. A read with no
-// value is named as empty rather than dropped, so the agent knows the field
-// exists and nobody filled it.
+// the agent in its brief instead of hoping it asks get_card.
+//
+// A read that nobody has filled in is still named, so the agent knows the field
+// exists and is empty rather than wondering whether it was told — but only
+// beside one that has a value. A block where *every* read is empty is dropped
+// whole: it is the ordinary state of a route's first stage (and of every stage
+// on a route that loops, where a later stage's output is "upstream" of an
+// earlier one), it tells the agent nothing it can act on, and it stands at the
+// head of the brief where the task should be. Measured on a real run: the task
+// opened «From the card:\nПревью:» and the instructions came after.
 func cardInputs(ev CardMoved, reads []string) string {
 	if len(reads) == 0 {
 		return ""
 	}
 	var b strings.Builder
-	b.WriteString("From the card:")
+	valued := false
 	for _, name := range reads {
-		fmt.Fprintf(&b, "\n%s: %s", name, ev.Props[strings.ToLower(name)])
+		value := strings.TrimSpace(ev.Props[strings.ToLower(name)])
+		if value == "" {
+			fmt.Fprintf(&b, "\n%s: (nobody has filled this in)", name)
+			continue
+		}
+		valued = true
+		fmt.Fprintf(&b, "\n%s: %s", name, value)
 	}
-	return b.String()
+	if !valued {
+		return ""
+	}
+	return "From the card:" + b.String()
 }
 
 // boardCardProperties is the board's fields, or nothing. A brief that cannot
@@ -1028,7 +1059,7 @@ func propertyShape(name string, fields []CardProperty) string {
 // and what the agent carries (promptLead), what the stage wants said
 // (stagePrompt — the column's instructions, or its route node's), then the
 // card task.
-func composePrompt(ev CardMoved, agent AgentEntry, systemPrompt, stagePrompt string, useWorktree bool) string {
+func composePrompt(ev CardMoved, agent AgentEntry, systemPrompt, stagePrompt string, useWorktree, endsWithFinishWork bool) string {
 	b := []byte(promptLead(systemPrompt, agent))
 	if p := strings.TrimSpace(stagePrompt); p != "" {
 		b = fmt.Appendf(b, "%s\n\n", p)
@@ -1042,8 +1073,30 @@ func composePrompt(ev CardMoved, agent AgentEntry, systemPrompt, stagePrompt str
 	} else {
 		b = fmt.Appendf(b, "\nWork in the current directory — it is the person's own working folder. Do not switch branches, do not commit and do not push: leave the changes uncommitted for review.")
 	}
+	if endsWithFinishWork {
+		b = fmt.Appendf(b, "\n\n%s", finishWorkBrief)
+	}
 	return string(b)
 }
+
+// finishWorkBrief is how the stage ends, said in the task itself.
+//
+// It was said only by the board's MCP server, in the instructions that come
+// with its tools — and a CLI is free not to load them. Measured: Claude Code
+// deferred the whole board server, so `finish_work` reached the agent as a name
+// in a list and nothing else; the agent did the work, wrote a summary in the
+// terminal and stopped, and the card stood on the stage with nobody able to say
+// it was over. The same route had run to the end the day before, which is what
+// makes this worth saying twice: whether the tools arrive loaded is not ours to
+// decide, and the task text is the one thing that always arrives.
+//
+// Deliberately not naming how to load a tool: that is each CLI's own business,
+// and a sentence about ToolSearch would be wrong everywhere else.
+const finishWorkBrief = `How this stage ends: by you saying so, not by the CLI exiting. ` +
+	`Call the board tool ` + "`finish_work`" + ` — done or not done, and one line about what you did — ` +
+	`the moment the work is finished, or when you find you cannot finish it. ` +
+	`It is on the board's MCP server; if it is not among the tools you have loaded, look it up before you finish. ` +
+	`Nothing else can end this stage: until you call it the card stands where it is and nobody is told.`
 
 // composeDeployPrompt builds the task text of a deploy session: the same brief
 // an ordinary task gets, then the deploy instructions, then the concrete

@@ -41,6 +41,7 @@ func appTables() []Table {
 		flowState(),
 		flowEvent(),
 		cardStall(),
+		cardChanges(),
 		stageQueue(),
 		boardSetup(),
 		vcsSeen(),
@@ -528,6 +529,36 @@ func cardStall() Table {
 		},
 		PK:  []string{"card_id"},
 		FKs: []FK{cardFK("card_stall")},
+	}
+}
+
+// card_changes is the size of what a card's work amounts to.
+func cardChanges() Table {
+	return Table{
+		Name: "card_changes",
+		Why: "How much a card's branch holds, in numbers. The diff itself is read\n" +
+			"from git every time and never from here — this is what the button\n" +
+			"that opens it is drawn on, and what a board could show per card.\n" +
+			"Recorded rather than counted when asked, for two reasons: a stage\n" +
+			"ending folds the working copy away (FoldWorktree) while the question\n" +
+			"is asked on the stage after that one, and a board asking it per card\n" +
+			"is a git process per card.",
+		Columns: []Column{
+			{Name: "card_id", Type: ID()},
+			{Name: "branch", Type: Name(255), Null: true},
+			{Name: "base", Type: Name(255), Null: true,
+				Why: "What the branch was cut from, so a stale row can be told from one\n" +
+					"about a different base."},
+			{Name: "files", Type: Int()},
+			{Name: "added", Type: Int()},
+			{Name: "removed", Type: Int()},
+			{Name: "dirty", Type: Int(),
+				Why: "Files changed and not committed. Counted apart because they exist\n" +
+					"only while a working copy does, and the committed half survives it."},
+			{Name: "computed_at", Type: Millis()},
+		},
+		PK:  []string{"card_id"},
+		FKs: []FK{cardFK("card_changes")},
 	}
 }
 

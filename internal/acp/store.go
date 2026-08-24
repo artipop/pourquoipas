@@ -429,6 +429,90 @@ func (s *Store) Stall(cardID string) (StallRecord, bool, error) {
 	return r, true, nil
 }
 
+// CardChangesRecord is how much a card's work amounts to, in numbers. What it
+// is for is the button that opens the diff: the diff itself is read from git
+// every time and never from here.
+//
+// Recorded rather than counted when asked, for two reasons. A stage ending
+// folds the card's working copy away (FoldWorktree) while the question — is
+// there anything to read — is asked on the stage *after* that one. And a board
+// asks it per card, which would be a git process per card.
+type CardChangesRecord struct {
+	CardID string
+	// BoardID is carried so the card's ref row knows its board — which is what
+	// CardChangesForBoard reads, and what an empty one would hide the card from.
+	BoardID string
+	Branch  string
+	Base    string
+	Files   int
+	Added   int
+	Removed int
+	// Dirty is files changed and not committed. Counted apart because they
+	// exist only while a working copy does, and the committed half outlives it.
+	Dirty      int
+	ComputedAt time.Time
+}
+
+// Any reports whether there is anything to read at all.
+func (c CardChangesRecord) Any() bool { return c.Files > 0 || c.Dirty > 0 }
+
+// SetCardChanges records the count, replacing whatever was there.
+func (s *Store) SetCardChanges(r CardChangesRecord) error {
+	if err := s.ensureCardRef(r.CardID, r.BoardID); err != nil {
+		return err
+	}
+	_, err := s.exec(`INSERT INTO card_changes (card_id, branch, base, files, added, removed, dirty, computed_at)
+		VALUES (?,?,?,?,?,?,?,?)
+		ON CONFLICT(card_id) DO UPDATE SET
+			branch=excluded.branch, base=excluded.base, files=excluded.files,
+			added=excluded.added, removed=excluded.removed, dirty=excluded.dirty,
+			computed_at=excluded.computed_at`,
+		r.CardID, nullable(r.Branch), nullable(r.Base), r.Files, r.Added, r.Removed, r.Dirty,
+		time.Now().UnixMilli())
+	return err
+}
+
+// CardChanges is what was last counted for this card.
+func (s *Store) CardChanges(cardID string) (CardChangesRecord, bool, error) {
+	row := s.queryRow(`SELECT card_id, COALESCE(branch,''), COALESCE(base,''), files, added, removed, dirty, computed_at
+		FROM card_changes WHERE card_id=?`, cardID)
+	var r CardChangesRecord
+	var computed int64
+	switch err := row.Scan(&r.CardID, &r.Branch, &r.Base, &r.Files, &r.Added, &r.Removed, &r.Dirty, &computed); {
+	case err == sql.ErrNoRows:
+		return CardChangesRecord{}, false, nil
+	case err != nil:
+		return CardChangesRecord{}, false, err
+	}
+	r.ComputedAt = time.UnixMilli(computed)
+	return r, true, nil
+}
+
+// CardChangesForBoard is every counted card of one board, as card id → record.
+// One query rather than one per card, the bargain ListTerminals and
+// StallsOfKind already take: a board draws this on every card it has.
+func (s *Store) CardChangesForBoard(boardID string) (map[string]CardChangesRecord, error) {
+	rows, err := s.query(`SELECT c.card_id, COALESCE(c.branch,''), COALESCE(c.base,''),
+			c.files, c.added, c.removed, c.dirty, c.computed_at
+		FROM card_changes c JOIN card_ref r ON r.card_id = c.card_id
+		WHERE r.board_id = ?`, boardID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := map[string]CardChangesRecord{}
+	for rows.Next() {
+		var r CardChangesRecord
+		var computed int64
+		if err := rows.Scan(&r.CardID, &r.Branch, &r.Base, &r.Files, &r.Added, &r.Removed, &r.Dirty, &computed); err != nil {
+			return nil, err
+		}
+		r.ComputedAt = time.UnixMilli(computed)
+		out[r.CardID] = r
+	}
+	return out, rows.Err()
+}
+
 // scanner is satisfied by both *sql.Row and *sql.Rows.
 type scanner interface{ Scan(dest ...any) error }
 

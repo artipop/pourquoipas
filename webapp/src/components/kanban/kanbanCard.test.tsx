@@ -277,20 +277,14 @@ describe('src/components/kanban/kanbanCard', () => {
         delete anyWindow.go
     })
 
-    // Where the card goes next, when that is a person's to say. It is on the
-    // card because the card is what somebody is looking at when they decide —
-    // the alternative was opening it, finding «Исход» among its fields, and
-    // picking a value out of a dropdown.
-    test('offers where the card goes next, and writes the answer', async () => {
+    // Where the card goes next is answered in the card, on its route strip —
+    // never on the face. Two buttons stood here for a while, and what that cost
+    // was a face saying two things at once: what the work is, and a decision
+    // about it. The strip draws them beside the stage they are about.
+    test('does not offer where the card goes next on its face', async () => {
         const anyWindow = window as any
         const bindings = {
             ListAttention: vi.fn().mockResolvedValue('[]'),
-            ListCardMarks: vi.fn().mockResolvedValue(JSON.stringify({
-                [card.id]: [
-                    {value: 'не прошло', column: 'В работе', forward: false},
-                    {value: 'прошло', column: 'Деплой', forward: true},
-                ],
-            })),
             MarkCardOutcome: vi.fn().mockResolvedValue(undefined),
         }
         anyWindow.go = {main: {App: bindings}}
@@ -313,14 +307,9 @@ describe('src/components/kanban/kanbanCard', () => {
             </AppStoreProvider>,
         ), {wrapper: TestRouter})
 
-        const forward = await screen.findByRole('button', {name: /Деплой/})
-        expect(await screen.findByRole('button', {name: /В работе/})).toBeInTheDocument()
-
-        // The board asks once for every card, not once per card.
-        expect(bindings.ListCardMarks).toHaveBeenCalledWith(board.id)
-
-        forward.click()
-        await waitFor(() => expect(bindings.MarkCardOutcome).toHaveBeenCalledWith(card.id, 'прошло'))
+        await waitFor(() => expect(bindings.ListAttention).toHaveBeenCalled())
+        expect(screen.queryByRole('button', {name: /Деплой/})).toBeNull()
+        expect(screen.queryByRole('button', {name: /В работе/})).toBeNull()
         delete anyWindow.go
     })
 

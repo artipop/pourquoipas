@@ -774,20 +774,6 @@ func (a *App) GetCardFlow(cardID string) (string, error) {
 	return string(out), nil
 }
 
-// ListCardMarks is what every card of a board can be answered with, in one
-// call: the board draws the pair on each card's face, and a call per card would
-// be a round trip for every card on screen.
-func (a *App) ListCardMarks(boardID string) (string, error) {
-	if a.mgr == nil {
-		return "{}", nil
-	}
-	out, err := json.Marshal(a.mgr.CardMarksForBoard(boardID))
-	if err != nil {
-		return "", err
-	}
-	return string(out), nil
-}
-
 // ListCardFlows is which route each card of a board is on, in one call: a view
 // filtered by route asks it of every card it draws.
 func (a *App) ListCardFlows(boardID string) (string, error) {
@@ -1212,6 +1198,20 @@ func (a *App) GetCardAgent(cardID string) (string, error) {
 	// which is true of a card that was worked on another machine too.
 	if work := a.mgr.CardWork(cardID); work.Started {
 		payload["work"] = work
+	}
+	// How much that work amounts to. Present only when there is something to
+	// read, which is what the «Изменения» button is drawn on — a button that
+	// opened «ничего не изменено» was a button nobody could learn
+	// (internal/acp/carddiff.go).
+	if changes, ok := a.mgr.CardChanges(cardID); ok {
+		payload["changes"] = map[string]any{
+			"branch":  changes.Branch,
+			"base":    changes.Base,
+			"files":   changes.Files,
+			"added":   changes.Added,
+			"removed": changes.Removed,
+			"dirty":   changes.Dirty,
+		}
 	}
 	out, err := json.Marshal(payload)
 	if err != nil {

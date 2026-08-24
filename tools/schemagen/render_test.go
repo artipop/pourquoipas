@@ -234,8 +234,9 @@ func TestTheCollapsedMigrationBuildsTheSchemaTheLadderBuilt(t *testing.T) {
 	// intendedTables is: the snapshot is the "before" and stays frozen, so a
 	// table appearing has to be somebody saying it should.
 	intendedAdditions := map[string]string{
-		"table board_ref": refsForARemoteBoard,
-		"table card_ref":  refsForARemoteBoard,
+		"table board_ref":    refsForARemoteBoard,
+		"table card_ref":     refsForARemoteBoard,
+		"table card_changes": "how much a card's branch holds, so the button that opens the diff can be drawn without running git per card",
 	}
 	for name := range gotShape {
 		if _, ok := wantShape[name]; ok {

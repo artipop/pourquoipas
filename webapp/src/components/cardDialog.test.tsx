@@ -362,6 +362,55 @@ describe('components/cardDialog', () => {
         expect(screen.queryByRole('button', {name: 'Terminal'})).toBeNull()
     })
 
+    // The changes are worth a button only when there are some. On «На ревью»
+    // the card's working copy has already been folded away, so the count comes
+    // from what the Go side recorded as the work moved — never from a look.
+    it('offers the changes only when the card has some', async () => {
+        const bindings = {
+            GetCardAgent: vi.fn().mockResolvedValue('{}'),
+            GetCardDiff: vi.fn(),
+            ListAgentAccounts: vi.fn().mockResolvedValue('[]'),
+        };
+        (window as any).go = {main: {App: bindings}}
+
+        const {unmount} = render(() => wrapDNDIntl(() =>
+            <AppStoreProvider store={store}>
+                <CardDialog
+                    board={board}
+                    activeView={boardView}
+                    views={[boardView]}
+                    cards={[card]}
+                    cardId={card.id}
+                    onClose={vi.fn()}
+                    showCard={vi.fn()}
+                    readonly={false}
+                />
+            </AppStoreProvider>,
+        ))
+        await waitFor(() => expect(bindings.GetCardAgent).toHaveBeenCalled())
+        expect(screen.queryByRole('button', {name: 'Changes'})).toBeNull()
+        unmount()
+
+        bindings.GetCardAgent = vi.fn().mockResolvedValue(JSON.stringify({
+            changes: {branch: 'fix-login', files: 2, added: 9, removed: 1, dirty: 0},
+        }))
+        render(() => wrapDNDIntl(() =>
+            <AppStoreProvider store={store}>
+                <CardDialog
+                    board={board}
+                    activeView={boardView}
+                    views={[boardView]}
+                    cards={[card]}
+                    cardId={card.id}
+                    onClose={vi.fn()}
+                    showCard={vi.fn()}
+                    readonly={false}
+                />
+            </AppStoreProvider>,
+        ))
+        expect(await screen.findByRole('button', {name: 'Changes'})).toBeInTheDocument()
+    })
+
     // The terminal is beside the card rather than in it: the card is what a
     // person wrote, and the dialog's toolbar is where the machinery lives.
     it('opens the terminal in a panel beside the card', async () => {

@@ -306,6 +306,16 @@ had been that way since the move. A field's list is as wide as its field
 because it *asks* to be: `matchAnchorWidth` on `Menu`, floating-ui's `size`
 middleware, in the one place that already knows the anchor's box.
 
+**A box sized in pixels has to be measured again when its width changes**
+(`editableArea.tsx`). The card's title is a textarea grown to its text by a
+hidden twin's `scrollHeight`, and that was recomputed on the value alone — so
+opening a panel beside the card rewrapped «Поднять зависимости» onto two lines
+while the box kept the height of one, and the title read as «Поднять» with the
+rest clipped. A `ResizeObserver` on the twin is the fix, and it covers the
+window being resized too. The panel also made the card's own side padding worth
+looking at: a fixed 126px each side left 275px of a 527px column, so it is a
+share of the column with that 126px as the cap.
+
 **A dialog is not above the sidebar the way it looks.** `.mainFrame` carries a
 z-index, so it is a stacking context, and everything a dialog inside it says
 about its own z-index is said *within* the frame — while the collapsed
@@ -355,7 +365,14 @@ Three things follow, and each had to be answered before the swap was possible.
 
 **How the route learns the stage is over**: the agent says so, through the board
 tools — `finish_work` (below), which reports done-or-not and one line about what
-it did. Nothing else can: an interactive CLI does not exit when a turn ends, and
+it did. **And the task text says so too** (`finishWorkBrief`), because whether
+those tools arrive *loaded* is the CLI's business and not ours: measured, Claude
+Code deferred the whole board server, so `finish_work` reached the agent as a
+name in a list and nothing else — it did the work, wrote a summary in the
+terminal and stopped, and the card stood on the stage with nobody able to say it
+was over. The same route had run to the end the day before. The brief is the one
+thing that always arrives, so it carries the instruction as well; it names no
+way to load a tool, that being each CLI's own. Nothing else can: an interactive CLI does not exit when a turn ends, and
 a person typing in that terminal afterwards is the ordinary case rather than a
 signal. A CLI that exits without having said it is *not* a failed stage — the
 card keeps its place and stalls with a reason, since a window somebody closed is
@@ -607,8 +624,15 @@ agent said it in and in the edge conditions that match on it, and nowhere else.
 runs and a person decides, and there was nothing on screen to decide *from*: the
 branch was a label on the card and the changes lived in a directory somebody had
 to go and find. It is git and nothing else — the claim says where the work is,
-`git diff <base>...HEAD` and `git diff HEAD` say what it holds, and nothing is
-cached, because a stored answer is wrong the moment the agent commits again. A
+`git diff <base>...<branch>` and `git diff HEAD` say what it holds, and the
+patches are never cached, because a stored answer is wrong the moment the agent
+commits again. **The copy is not where the work is kept**: a stage ending folds
+it away (`FoldWorktree`) and leaves the branch in the folder's object store —
+and «На ревью», the stage this is for, is the one *after* that. So the
+committed half is read from the folder by branch name, which works whether or
+not the copy is still there, and the uncommitted half only while it is, since
+what is unsaved in the folder itself belongs to whoever is sitting in it
+(`gitPlace`). A
 card working in a plain folder records no claim at all (`ClaimWorkspace` writes
 none for `WorkModePlain`), so the folder the card names is the fallback — and
 that is exactly the card whose changes are deliberately left uncommitted for
@@ -617,6 +641,18 @@ two buttons the route strip already draws, and a second way to say it would be a
 second answer to one question. `/acp/diff/:cardId` is the window, opened the way
 a terminal's is, because a column beside a card is the narrowest place in the app
 to read code in.
+
+**And the button is drawn on a count, not on hope** (`card_changes`,
+`CardChanges`). It appears only where there is something to read: a button that
+opened «ничего не изменено» is a button nobody can learn. The dialog's answer is
+counted on the spot — one card, one git run, and a stale answer would be wrong
+in both directions — while the row it writes is what a *board* would read, one
+row per card instead of a git process per card. The row is also written where
+this side already knows the work moved (`releaseSession`, `terminalEnded`),
+which is the only moment that can still count the unsaved work: the copy goes
+with the stage. Counting is deliberately not in `finishSession` — that is the
+status transition, and it stands in front of the card's own comment, so a git
+run there delays the comment by as long as git takes.
 
 **They are in the panel, not in the card.** The body of a card is what a person
 wrote, and the machinery has already been carried out of it; a comment is about
@@ -1478,7 +1514,12 @@ column property is refused — the card moves by the outcome or `move_card`. A
 deploy stage writes its preview URL and a test its verdict by itself
 (`writeStageFields`), so those facts stop dying in comments. Reads open the
 brief valued (`cardInputs`, «From the card: …») — sessions and the person's
-conversation on the node alike. The editor edits both lists
+conversation on the node alike. A read nobody has written is named as empty
+beside one that has a value; a block where *every* read is empty is dropped
+whole. That block is the ordinary state of a route's first stage — and of every
+stage of a route that loops, where a later stage's output is «upstream» of an
+earlier one — so on a real run the task opened «From the card: Превью:» and the
+instructions came after it. The editor edits both lists
 (`writesPicker`/`readsPicker`; deploy/test get a single picker for their one
 machine value) and warns per route about a conditional edge whose property no
 stage writes (`unwrittenConditions`) — named, not refused, since the value may
@@ -1622,10 +1663,16 @@ answers leads, so the strip draws them named by the stage they lead to — «←
 `UpdateCard`**, which is the one board write of ours that notifies, because the
 notify is what wakes `handleCardChanged` and moves the card. Offered only where
 the route has such an edge and nothing is running: a stage that decides for
-itself must not grow a second way to answer for it. Asked **per board and not
-per card** (`CardMarksForBoard` → `ListCardMarks`), the bargain `ListTerminals`
-already takes for the console button: a board has as many cards as it likes and
-a call each would be a round trip for every card drawn.
+itself must not grow a second way to answer for it.
+
+**They are on the route strip and not on the card's face.** They stood on the
+face for a while, on the argument that the card is what somebody is looking at
+when they decide — and what that cost was a face saying two things at once,
+what the work is and a decision about it, on every card of a review column. The
+strip is inside the card, beside the stage the answer is about, which is where
+the rest of a card's machinery already lives. The per-board call that fed the
+face went with them (`CardMarksForBoard`, `ListCardMarks`): the strip asks
+`GetCardFlow` about the one card it draws.
 
 **Those two transitions are drawn as the outcomes they are** (`isOutcomeEdge`):
 green on, red back, out of the same two sockets every stage uses. They ride

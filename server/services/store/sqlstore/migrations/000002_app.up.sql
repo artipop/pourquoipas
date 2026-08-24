@@ -158,6 +158,19 @@ CREATE INDEX `idx_flow_event_card` ON `flow_event` (`card_id`, `id`);
 --     never a reading of the reason's own Russian.
 CREATE TABLE `card_stall` (`card_id` varchar NOT NULL, `node_id` varchar NULL, `kind` varchar NULL, `reason` text NOT NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`card_id`), CONSTRAINT `card_stall_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE CASCADE);
 
+-- How much a card's branch holds, in numbers. The diff itself is read
+-- from git every time and never from here — this is what the button
+-- that opens it is drawn on, and what a board could show per card.
+-- Recorded rather than counted when asked, for two reasons: a stage
+-- ending folds the working copy away (FoldWorktree) while the question
+-- is asked on the stage after that one, and a board asking it per card
+-- is a git process per card.
+--   base: What the branch was cut from, so a stale row can be told from one
+--     about a different base.
+--   dirty: Files changed and not committed. Counted apart because they exist
+--     only while a working copy does, and the committed half survives it.
+CREATE TABLE `card_changes` (`card_id` varchar NOT NULL, `branch` varchar NULL, `base` varchar NULL, `files` bigint NOT NULL, `added` bigint NOT NULL, `removed` bigint NOT NULL, `dirty` bigint NOT NULL, `computed_at` bigint NOT NULL, PRIMARY KEY (`card_id`), CONSTRAINT `card_changes_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE CASCADE);
+
 -- A card waiting for its column to free up a place.
 --   column_key: board|option — the queue belongs to one column of one board.
 CREATE TABLE `stage_queue` (`card_id` varchar NOT NULL, `board_id` varchar NULL, `column_key` varchar NOT NULL, `flow_id` varchar NULL, `node_id` varchar NULL, `queued_at` bigint NOT NULL, PRIMARY KEY (`card_id`), CONSTRAINT `stage_queue_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE CASCADE, CONSTRAINT `stage_queue_board` FOREIGN KEY (`board_id`) REFERENCES `board_ref` (`board_id`) ON DELETE CASCADE);
@@ -282,6 +295,19 @@ CREATE TABLE `agent_session` (`id` varchar(36) NOT NULL, `card_id` varchar(36) N
 -- browser's storage, which the desktop window forgets on every launch.
 --   changed_at: Was `at`. AT is a keyword in Postgres and a name not worth having.
 CREATE TABLE `board_setup` (`board_id` varchar(36) NOT NULL, `step` varchar(32) NOT NULL, `status` varchar(16) NOT NULL, `changed_at` bigint NOT NULL, PRIMARY KEY (`board_id`, `step`), CONSTRAINT `board_setup_board` FOREIGN KEY (`board_id`) REFERENCES `board_ref` (`board_id`) ON DELETE CASCADE, CONSTRAINT `board_setup_status` CHECK (`status` IN ('pending', 'done', 'skipped', 'offered'))) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
+
+-- How much a card's branch holds, in numbers. The diff itself is read
+-- from git every time and never from here — this is what the button
+-- that opens it is drawn on, and what a board could show per card.
+-- Recorded rather than counted when asked, for two reasons: a stage
+-- ending folds the working copy away (FoldWorktree) while the question
+-- is asked on the stage after that one, and a board asking it per card
+-- is a git process per card.
+--   base: What the branch was cut from, so a stale row can be told from one
+--     about a different base.
+--   dirty: Files changed and not committed. Counted apart because they exist
+--     only while a working copy does, and the committed half survives it.
+CREATE TABLE `card_changes` (`card_id` varchar(36) NOT NULL, `branch` varchar(255) NULL, `base` varchar(255) NULL, `files` bigint NOT NULL, `added` bigint NOT NULL, `removed` bigint NOT NULL, `dirty` bigint NOT NULL, `computed_at` bigint NOT NULL, PRIMARY KEY (`card_id`), CONSTRAINT `card_changes_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE CASCADE) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
 
 -- One current reason a card is not moving — not a journal. The reason is
 -- true only until somebody fixes what it is about, and a comment would
@@ -496,6 +522,19 @@ CREATE INDEX "idx_agent_session_card" ON "agent_session" ("card_id", "started_at
 -- browser's storage, which the desktop window forgets on every launch.
 --   changed_at: Was `at`. AT is a keyword in Postgres and a name not worth having.
 CREATE TABLE "board_setup" ("board_id" character varying(36) NOT NULL, "step" character varying(32) NOT NULL, "status" character varying(16) NOT NULL, "changed_at" bigint NOT NULL, PRIMARY KEY ("board_id", "step"), CONSTRAINT "board_setup_board" FOREIGN KEY ("board_id") REFERENCES "board_ref" ("board_id") ON DELETE CASCADE, CONSTRAINT "board_setup_status" CHECK ("status" IN ('pending', 'done', 'skipped', 'offered')));
+
+-- How much a card's branch holds, in numbers. The diff itself is read
+-- from git every time and never from here — this is what the button
+-- that opens it is drawn on, and what a board could show per card.
+-- Recorded rather than counted when asked, for two reasons: a stage
+-- ending folds the working copy away (FoldWorktree) while the question
+-- is asked on the stage after that one, and a board asking it per card
+-- is a git process per card.
+--   base: What the branch was cut from, so a stale row can be told from one
+--     about a different base.
+--   dirty: Files changed and not committed. Counted apart because they exist
+--     only while a working copy does, and the committed half survives it.
+CREATE TABLE "card_changes" ("card_id" character varying(36) NOT NULL, "branch" character varying(255) NULL, "base" character varying(255) NULL, "files" bigint NOT NULL, "added" bigint NOT NULL, "removed" bigint NOT NULL, "dirty" bigint NOT NULL, "computed_at" bigint NOT NULL, PRIMARY KEY ("card_id"), CONSTRAINT "card_changes_card" FOREIGN KEY ("card_id") REFERENCES "card_ref" ("card_id") ON DELETE CASCADE);
 
 -- One current reason a card is not moving — not a journal. The reason is
 -- true only until somebody fixes what it is about, and a comment would

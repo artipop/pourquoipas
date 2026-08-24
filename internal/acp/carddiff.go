@@ -77,46 +77,123 @@ func (m *Manager) CardDiff(cardID string) (CardDiff, error) {
 		return CardDiff{}, fmt.Errorf("не указана карточка")
 	}
 	out := CardDiff{CardID: cardID, Committed: []DiffFile{}, Uncommitted: []DiffFile{}}
-	place, err := m.cardWorkPlace(cardID)
+	where, err := m.cardGitPlace(cardID)
 	if err != nil {
 		return out, err
 	}
-	out.Branch, out.Base, out.Dir, out.Mode = place.Branch, place.Base, place.Path, place.Mode
-	if out.Dir == "" {
-		// The two cases a person can tell apart from the card itself: work that
-		// has not started, and work that started somewhere else. CardWork knows
-		// which (Started without Here is a card that travelled).
-		if m.CardWork(cardID).Started {
-			out.Reason = "работа над этой карточкой начата на другой машине — здесь её рабочей копии нет"
-		} else {
-			out.Reason = "по этой карточке ещё никто не работал: ни ветки, ни рабочей копии"
-		}
-		return out, nil
-	}
-	if info, err := os.Stat(out.Dir); err != nil || !info.IsDir() {
-		out.Reason = fmt.Sprintf("папки %s больше нет на диске", out.Dir)
+	out.Branch, out.Base, out.Dir, out.Mode = where.branch, where.base, where.dir, where.mode
+	if where.reason != "" {
+		out.Reason = where.reason
 		return out, nil
 	}
 
 	ctx, cancel := context.WithTimeout(m.rootOr(), cardDiffTimeout)
 	defer cancel()
-	if !IsGitWorkdir(ctx, out.Dir) {
-		out.Reason = fmt.Sprintf("папка %s — не git-репозиторий, смотреть изменения не по чему", out.Dir)
+	budget := cardDiffTotalLimit
+	if span := where.span(); span != "" {
+		out.Committed = readDiff(ctx, where.dir, &budget, span)
+	}
+	// Only where the card's own copy is standing. In the folder itself the
+	// unsaved work belongs to whoever is sitting in it, not to this card.
+	if where.live {
+		out.Uncommitted = readDiff(ctx, where.dir, &budget, "HEAD")
+		out.Uncommitted = append(out.Uncommitted, untrackedFiles(ctx, where.dir)...)
+	}
+	if len(out.Committed) == 0 && len(out.Uncommitted) == 0 {
+		out.Reason = "по этой карточке пока ничего не изменено"
+	}
+	m.recordCardChanges(cardID, "", out)
+	return out, nil
+}
+
+// gitPlace is where a card's work can be read from, and how. It exists because
+// the copy is not where the work is kept: a stage ending folds the working copy
+// away (FoldWorktree) and the branch stays behind in the folder's object store —
+// and the stage that asks to see the work is the one *after* that, «На ревью».
+// So the committed half is read from the folder by branch name, which works
+// whether or not the copy is still there, and the uncommitted half is read only
+// while it is.
+type gitPlace struct {
+	// dir is where git is run: the card's own copy while it exists, else the
+	// folder the branch lives in.
+	dir string
+	// live says dir is the card's own copy rather than the folder it was cut
+	// from — which is what decides whether the unsaved work in it is this
+	// card's business.
+	live   bool
+	branch string
+	base   string
+	mode   string
+	reason string
+}
+
+// span is what to diff, in git's own words: three dots, so the answer is what
+// this branch added and not what the base moved on to meanwhile — the question
+// a reviewer is asking. Empty when there is no branch to compare, which is
+// every card working in an ordinary folder.
+func (p gitPlace) span() string {
+	if p.branch == "" || p.base == "" || p.base == p.branch {
+		return ""
+	}
+	return p.base + "..." + p.branch
+}
+
+func (m *Manager) cardGitPlace(cardID string) (gitPlace, error) {
+	place, err := m.cardWorkPlace(cardID)
+	if err != nil {
+		return gitPlace{}, err
+	}
+	out := gitPlace{dir: place.Path, branch: place.Branch, base: place.Base, mode: place.Mode, live: true}
+	if !isDir(out.dir) {
+		// The copy is folded away, or never existed. The folder it was cut from
+		// still holds the branch, which is the whole of what a review reads.
+		out.dir, out.live = m.workspacePath(place.WorkspaceID), false
+	}
+	if out.dir == "" {
+		// The two cases a person can tell apart from the card itself: work that
+		// has not started, and work that started somewhere else. CardWork knows
+		// which (Started without Here is a card that travelled).
+		if m.CardWork(cardID).Started {
+			out.reason = "работа над этой карточкой начата на другой машине — здесь её рабочей копии нет"
+		} else {
+			out.reason = "по этой карточке ещё никто не работал: ни ветки, ни рабочей копии"
+		}
 		return out, nil
 	}
-
-	budget := cardDiffTotalLimit
-	// Three dots: what this branch added, and not what the base moved on to
-	// while it was being worked — the same question a reviewer asks.
-	if out.Base != "" && out.Base != "HEAD" {
-		out.Committed = readDiff(ctx, out.Dir, &budget, out.Base+"...HEAD")
+	if !isDir(out.dir) {
+		out.reason = fmt.Sprintf("папки %s больше нет на диске", out.dir)
+		return out, nil
 	}
-	out.Uncommitted = readDiff(ctx, out.Dir, &budget, "HEAD")
-	out.Uncommitted = append(out.Uncommitted, untrackedFiles(ctx, out.Dir)...)
-	if len(out.Committed) == 0 && len(out.Uncommitted) == 0 {
-		out.Reason = "в рабочей копии ничего не изменилось"
+	ctx, cancel := context.WithTimeout(m.rootOr(), cardDiffTimeout)
+	defer cancel()
+	if !IsGitWorkdir(ctx, out.dir) {
+		out.reason = fmt.Sprintf("папка %s — не git-репозиторий, смотреть изменения не по чему", out.dir)
 	}
 	return out, nil
+}
+
+// workspacePath is the folder a workspace id names, or "" for one the registry
+// does not offer. The reverse of workspaceID, and it goes away with it.
+func (m *Manager) workspacePath(workspaceID string) string {
+	if workspaceID == "" {
+		return ""
+	}
+	m.cfgMu.RLock()
+	defer m.cfgMu.RUnlock()
+	for _, e := range m.cfg.Workdirs {
+		if e.ID == workspaceID {
+			return e.Path
+		}
+	}
+	return ""
+}
+
+func isDir(path string) bool {
+	if path == "" {
+		return false
+	}
+	info, err := os.Stat(path)
+	return err == nil && info.IsDir()
 }
 
 // cardWorkPlace is where this card's work is on this machine. The claim knows
@@ -288,4 +365,102 @@ func (m *Manager) CardTitle(cardID string) string {
 		return ""
 	}
 	return ev.Title
+}
+
+// recordCardChanges keeps the count the diff button is drawn on. Free where it
+// is called from CardDiff — the answer has just been worked out — and the
+// reason the panel opening is one of the moments that refreshes it.
+//
+// boardID may be empty: the card's ref row keeps whatever board it already
+// knew (ensureCardRef coalesces), and by the time a card has work it has
+// almost always been through something that named its board.
+func (m *Manager) recordCardChanges(cardID, boardID string, d CardDiff) {
+	if m.store == nil || cardID == "" {
+		return
+	}
+	rec := CardChangesRecord{CardID: cardID, BoardID: boardID, Branch: d.Branch, Base: d.Base}
+	for _, f := range d.Committed {
+		rec.Files++
+		rec.Added += f.Added
+		rec.Removed += f.Removed
+	}
+	rec.Dirty = len(d.Uncommitted)
+	m.saveCardChanges(rec)
+}
+
+// countCardChanges works out what the card's work amounts to, without building
+// the patches — the numbers are all the button needs — and records the answer.
+// It reports false when there was nothing to look at: no workspace here, or the
+// folder gone with it.
+func (m *Manager) countCardChanges(cardID, boardID string) (CardChangesRecord, bool) {
+	where, err := m.cardGitPlace(cardID)
+	if err != nil || where.reason != "" {
+		return CardChangesRecord{}, false
+	}
+	ctx, cancel := context.WithTimeout(m.rootOr(), cardDiffTimeout)
+	defer cancel()
+
+	rec := CardChangesRecord{CardID: cardID, BoardID: boardID, Branch: where.branch, Base: where.base}
+	if span := where.span(); span != "" {
+		files, added, removed := changedFiles(ctx, where.dir, span)
+		rec.Files, rec.Added, rec.Removed = len(files), added, removed
+	}
+	if where.live {
+		rec.Dirty = len(gitLines(ctx, where.dir, "status", "--porcelain"))
+	}
+	m.saveCardChanges(rec)
+	return rec, true
+}
+
+// refreshCardChanges records the count at a moment this side already knows the
+// work moved: a session ending, a terminal's CLI exiting. Counting it then is
+// what makes a *board* able to ask the question at all — one row per card
+// instead of a git process per card — and it is the only chance to count the
+// unsaved work, which goes with the copy when a stage ends.
+//
+// A card that could not be looked at keeps whatever was counted before: a
+// folder that is briefly unreachable is not a card whose work vanished.
+func (m *Manager) refreshCardChanges(cardID, boardID string) {
+	if m.store == nil || cardID == "" {
+		return
+	}
+	m.countCardChanges(cardID, boardID)
+}
+
+// saveCardChanges keeps the row a board would read. Best effort, and said once
+// per run: the write that fails is the one on a database made before this table
+// existed, and it fails on every card and every session end — a warning per
+// look would drown the log over a row nothing on screen depends on yet.
+func (m *Manager) saveCardChanges(rec CardChangesRecord) {
+	if err := m.store.SetCardChanges(rec); err != nil {
+		m.changesWriteFailed.Do(func() {
+			m.log.Warn("acp: could not record what the card's work amounts to", "card", rec.CardID, "err", err)
+		})
+	}
+}
+
+// CardChanges is what the card's work amounts to, for the surface that has to
+// decide whether there is anything to open.
+//
+// Counted now rather than read off the record. This is asked about one card —
+// the one whose dialog is opening — so it is one git run against a question a
+// stale answer gets wrong in both directions: a button that opens «ничего не
+// изменено», or no button on a card an agent has just committed to. The record
+// is what a *board* would read instead, and this look refreshes it.
+func (m *Manager) CardChanges(cardID string) (CardChangesRecord, bool) {
+	if m.store == nil || cardID == "" {
+		return CardChangesRecord{}, false
+	}
+	if rec, looked := m.countCardChanges(cardID, ""); looked {
+		return rec, rec.Any()
+	}
+	// Nothing to look at here: the work is on another machine, or the folder
+	// has gone with the copy. What was counted last time is the only answer
+	// there is, and about a branch that still exists it is a true one.
+	rec, ok, err := m.store.CardChanges(cardID)
+	if err != nil {
+		m.log.Warn("acp: cannot read what the card's work amounts to", "card", cardID, "err", err)
+		return CardChangesRecord{}, false
+	}
+	return rec, ok && rec.Any()
 }
