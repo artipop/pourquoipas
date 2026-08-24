@@ -308,7 +308,7 @@ const CardDialog = (props: Props): JSX.Element => {
     const diffBtn = (): JSX.Element => (
         <Show when={isCardDiffAvailable() && Boolean(card()) && !isTemplate() && hasChanges()}>
             <Button
-                icon={<CompassIcon icon='file-document-outline'/>}
+                icon={<CompassIcon icon='file-patch-outline'/>}
                 class='cardFollowBtn cardFollowBtn--attach'
                 emphasis='gray'
                 size='medium'

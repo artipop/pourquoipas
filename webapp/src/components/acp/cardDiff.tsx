@@ -269,7 +269,7 @@ export const CardDiffView = (props: {cardId: string}) => {
                         aria-label={intl.formatMessage({id: 'CardDiff.fold-all', defaultMessage: 'Collapse every file'})}
                         onClick={() => setFoldAll(foldAll() + 1)}
                     >
-                        <CompassIcon icon='unfold-less-horizontal'/>
+                        <CompassIcon icon='arrow-collapse'/>
                     </button>
                     <button
                         type='button'
@@ -278,7 +278,7 @@ export const CardDiffView = (props: {cardId: string}) => {
                         aria-label={intl.formatMessage({id: 'CardDiff.unfold-all', defaultMessage: 'Expand every file'})}
                         onClick={() => setUnfoldAll(unfoldAll() + 1)}
                     >
-                        <CompassIcon icon='unfold-more-horizontal'/>
+                        <CompassIcon icon='arrow-expand'/>
                     </button>
                 </Show>
                 <button
@@ -372,7 +372,7 @@ const CardDiffPanel = (props: Props) => {
                     panel and the button that opened it are one thing. A word on
                     its own says «Изменения» about a card that has three other
                     panels; the icon says which. */}
-                <CompassIcon icon='file-document-outline'/>
+                <CompassIcon icon='file-patch-outline'/>
                 <span class='CardDiffPanel__name'>
                     {intl.formatMessage({id: 'CardDiff.title', defaultMessage: 'Changes'})}
                 </span>

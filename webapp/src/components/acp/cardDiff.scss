@@ -40,7 +40,6 @@
     }
 
     &__button {
-        margin-left: auto;
         border: 0;
         border-radius: var(--radius-sm);
         background: transparent;
@@ -51,6 +50,14 @@
 
         &:hover {
             background: rgba(var(--center-channel-color-rgb), 0.08);
+        }
+
+        // Only the first of them takes the free space, so the group sits
+        // together on the right. `margin-left: auto` on every button spread
+        // them evenly across the row — invisible while there was one of them,
+        // plain at three.
+        &:first-of-type {
+            margin-left: auto;
         }
     }
 
