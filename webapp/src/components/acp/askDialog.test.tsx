@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 
 import {wrapIntl} from '../../testUtils'
 
-import AskDialog from './askDialog'
+import AskDialog, {askedInDialog} from './askDialog'
 import {Attention} from './attention'
 import {forgetMovedHere, movedHere} from './movedHere'
 
@@ -86,4 +86,17 @@ it('closes without answering, and asks nothing of the route', async () => {
 
     await waitFor(() => expect(screen.queryByText('Как агенту работать с папкой для этой карточки?')).toBeNull())
     expect(answerCardAsk).not.toHaveBeenCalled()
+})
+
+// The dialog is the answer to "without the notification": while the question is
+// in front of the person, the box in the corner announcing it is noise.
+it('takes the wait it is asking about out of the notification stack', async () => {
+    movedHere('card1')
+    waits.push(held())
+    render(() => wrapIntl(() => <AskDialog/>))
+
+    await waitFor(() => expect(askedInDialog()).toEqual('card:card1'))
+
+    await userEvent.click(screen.getByText('Answer on the card'))
+    await waitFor(() => expect(askedInDialog()).toEqual(''))
 })

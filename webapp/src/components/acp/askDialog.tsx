@@ -1,6 +1,6 @@
 // The Wails-generated Go bindings are PascalCase methods, not constructors.
 /* eslint-disable new-cap */
-import {For, Show, createEffect, createSignal} from 'solid-js'
+import {Accessor, For, Show, createEffect, createSignal, onCleanup} from 'solid-js'
 
 import {useIntl} from '../../intl'
 
@@ -39,11 +39,28 @@ const terminalScreen = (): boolean => (/^\/(acp|m)\/terminal\//).test(window.loc
 // of it.
 const asked = (a: Attention): boolean => a.reason === 'card' && a.awaiting && (a.options || []).length > 0
 
+// asking is the wait the dialog currently has on screen, by its key, or ''.
+//
+// The notification stack reads it and leaves that wait alone: the question is
+// already in front of the person, and a box in the corner announcing the box
+// they are looking at is the noise this dialog was meant to remove. It is a
+// module signal rather than a prop because the two are mounted side by side in
+// app.tsx and neither owns the other.
+const [asking, setAsking] = createSignal('')
+
+export const askedInDialog: Accessor<string> = asking
+
 const AskDialog = () => {
     const intl = useIntl()
     const waiting = useAttention()
-    const [claimed, setClaimed] = createSignal('')
+    const claimed = asking
+    const setClaimed = setAsking
     const [busy, setBusy] = createSignal(false)
+
+    // The signal outlives the component, so a window torn down mid-question
+    // would leave the notification stack hiding a wait nobody is being asked
+    // about any more.
+    onCleanup(() => setAsking(''))
 
     // Claiming is separate from drawing because wasMovedHere answers once: it
     // takes the record with it, so asking it on every render would open the

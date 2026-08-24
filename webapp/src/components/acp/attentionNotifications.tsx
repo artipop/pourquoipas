@@ -23,6 +23,7 @@ import {
     useAttention,
 } from './attention'
 import AttentionAnswers from './attentionAnswers'
+import {askedInDialog} from './askDialog'
 
 import {waitAudience, waitIsMine} from './attentionAudience'
 
@@ -108,7 +109,11 @@ const AttentionNotifications = () => {
         }
         const byKey = new Map<string, Attention>()
         for (const a of waiting()) {
-            if (!a.acked && mine(a)) {
+            // The wait the dialog is asking about is not announced: it is on
+            // screen already, in front of the person who caused it, and a box
+            // saying there is a question over the box asking it is exactly the
+            // noise the dialog exists to remove (askDialog.tsx).
+            if (!a.acked && mine(a) && keyOf(a) !== askedInDialog()) {
                 byKey.set(keyOf(a), a)
             }
         }
