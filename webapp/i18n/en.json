@@ -44,6 +44,7 @@
   "Agents.remove": "Remove",
   "Agents.save": "Save",
   "Agents.subtitle": "Register coding agents (Claude, Codex, Antigravity, GitHub Copilot, JetBrains Junie or any other ACP agent) with their own prompt, model, launch command, environment and proxy. A card goes to the agent it is assigned to.",
+  "AskDialog.later": "Answer on the card",
   "Attachment.Attachment-title": "Attachment",
   "AttachmentBlock.DeleteAction": "delete",
   "AttachmentBlock.addElement": "add {type}",

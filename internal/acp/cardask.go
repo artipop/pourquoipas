@@ -222,7 +222,7 @@ func (m *Manager) holdForAsk(ev CardMoved, edge *FlowEdge, flowID string, to Flo
 
 	m.log.Info("acp: card held at a transition until somebody answers",
 		"card", ev.CardID, "to", to.ID, "questions", len(questions))
-	m.handOverToPerson(ev, askAttentionText(questions[0], to.Column))
+	m.handOverQuestion(ev, askAttentionText(questions[0], to.Column), &questions[0])
 	return true
 }
 

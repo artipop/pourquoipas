@@ -36,6 +36,19 @@ const AttentionCard = "card"
 // handOverToPerson records and announces that the route has parked this card on
 // somebody. text is what is being asked of them, in the words of the stage.
 func (m *Manager) handOverToPerson(ev CardMoved, text string) {
+	m.handOverQuestion(ev, text, nil)
+}
+
+// handOverQuestion is the same handover carrying the question that caused it,
+// for the one kind that has answers to offer: a transition holding the card
+// until somebody says how the work is arranged. The wait then describes itself
+// — id and options — so a surface can put the question in front of whoever is
+// looking instead of pointing them at the card, which is what a person who has
+// just dragged that card needs.
+//
+// The rest of the handovers pass nil, and mean what they always did: the card
+// is on a stage nobody works, and being told is the whole of it.
+func (m *Manager) handOverQuestion(ev CardMoved, text string, q *AskQuestion) {
 	if ev.CardID == "" {
 		return
 	}
@@ -47,7 +60,20 @@ func (m *Manager) handOverToPerson(ev CardMoved, text string) {
 		Text:     text,
 		Awaiting: true,
 		Since:    time.Now().Format(time.RFC3339),
-	}.withKey()
+	}
+	if q != nil {
+		// The options and not the question's id: withKey would key the wait by
+		// that id, and an ask id is the arrow's own word for the question
+		// («workmode») rather than something unique — two cards held on one
+		// route would then be one wait, and answering either would take the
+		// other off every screen. Keyed by the card, which is what a wait about
+		// a card is. Whoever answers names no question, and AnswerCardAsk reads
+		// that as the one the card is being asked now.
+		for _, o := range q.Options {
+			a.Options = append(a.Options, QuestionOption{ID: o.Value, Label: o.Label})
+		}
+	}
+	a = a.withKey()
 
 	m.stageMu.Lock()
 	if m.cardWaits == nil {

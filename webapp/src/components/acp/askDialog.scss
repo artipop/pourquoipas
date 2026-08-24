@@ -1,0 +1,63 @@
+.AskDialog {
+    .AskDialog__box {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 24px;
+    }
+
+    // The card the question is about, above the question: the dialog opens over
+    // a board where several cards are visible, so which one is being asked
+    // about is not obvious from the question alone.
+    .AskDialog__card {
+        color: rgba(var(--center-channel-color-rgb), 0.64);
+        font-size: 12px;
+    }
+
+    .AskDialog__text {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 600;
+    }
+
+    .AskDialog__options {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .AskDialog__option {
+        border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+        border-radius: 4px;
+        background: rgba(var(--center-channel-color-rgb), 0.04);
+        color: rgb(var(--center-channel-color-rgb));
+        padding: 8px 14px;
+        font-size: 14px;
+        cursor: pointer;
+
+        &:hover:not(:disabled) {
+            background: rgba(var(--button-bg-rgb), 0.08);
+            border-color: rgba(var(--button-bg-rgb), 0.32);
+        }
+
+        &:disabled {
+            cursor: default;
+            opacity: 0.6;
+        }
+    }
+
+    // Quiet, because it is the way out rather than an answer.
+    .AskDialog__later {
+        align-self: flex-start;
+        border: none;
+        background: none;
+        color: rgba(var(--center-channel-color-rgb), 0.64);
+        padding: 0;
+        font-size: 12px;
+        cursor: pointer;
+
+        &:hover:not(:disabled) {
+            color: rgb(var(--link-color-rgb));
+        }
+    }
+}

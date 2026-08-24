@@ -44,6 +44,7 @@
   "Agents.remove": "Удалить",
   "Agents.save": "Сохранить",
   "Agents.subtitle": "Кодинг-агенты (Claude, Codex, Antigravity, GitHub Copilot, JetBrains Junie или любой другой ACP-агент) со своим промптом, моделью, командой запуска, окружением и прокси. Карточка попадает к тому агенту, на которого назначена.",
+  "AskDialog.later": "Ответить на карточке",
   "Attachment.Attachment-title": "Вложение",
   "AttachmentBlock.DeleteAction": "Удалить",
   "AttachmentBlock.addElement": "добавить {type}",

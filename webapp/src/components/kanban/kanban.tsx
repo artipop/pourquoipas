@@ -20,6 +20,7 @@ import {getCurrentBoardTemplates} from '../../store/cards'
 import BoardPermissionGate from '../permissions/boardPermissionGate'
 
 import {invalidateBoardColumns} from '../acp/columnBadge'
+import {movedHere} from '../acp/movedHere'
 import AutomationDialog from '../acp/automationDialog'
 
 import KanbanCard from './kanbanCard'
@@ -127,6 +128,12 @@ const Kanban = (props: Props) => {
                     Utils.log(`ondrop. Card: ${draggedCard.title}, column: ${optionId}`)
                     const oldValue = draggedCard.fields.properties[groupByProperty!.id]
                     if (optionId !== oldValue) {
+                        // A transition can hold this card until somebody
+                        // answers, and the route cannot tell a hand from its own
+                        // move — it sees one board event either way. Remembering
+                        // the hand here is what lets the question be asked of
+                        // the person who is holding the card (movedHere.ts).
+                        movedHere(draggedCard.id)
                         awaits.push(mutator.changePropertyValue(props.board.id, draggedCard, groupByProperty!.id, optionId, description))
                     }
                 }

@@ -297,3 +297,33 @@ func TestTheQuestionsOnARouteTravelWithTheBoard(t *testing.T) {
 		t.Fatalf("the question did not survive the board: %+v", ask)
 	}
 }
+
+// The wait a held card raises carries the answers, so a surface can put the
+// question in front of whoever is looking instead of pointing them at the card.
+// Not the question's id, though: withKey would key the wait by it, and an ask
+// id is the arrow's own word rather than something unique — two cards held on
+// one route would collapse into one wait.
+func TestTheWaitRaisedByAHeldCardOffersItsAnswers(t *testing.T) {
+	m, _, events, project := flowManager(t, fakeClaudeHappy,
+		entryAskingFlow(EdgeAsk{ID: "q1", Kind: AskWorkMode}))
+	m.SetBoardCardState(&fakeCardState{})
+
+	events.ch <- flowEvent("card1", project, "Backlog", "To Agent")
+
+	var wait Attention
+	waitFor(t, 20*time.Second, "the card's wait is announced", func() bool {
+		for _, a := range m.Attention() {
+			if a.CardID == "card1" && a.Reason == AttentionCard {
+				wait = a
+				return true
+			}
+		}
+		return false
+	})
+	if len(wait.Options) != 2 || wait.Options[0].ID != WorkModeWorktree {
+		t.Fatalf("the wait does not carry the answers: %+v", wait.Options)
+	}
+	if wait.QuestionID != "" || wait.Key != "card:card1" {
+		t.Fatalf("the wait is keyed by the question rather than by the card: %q %q", wait.QuestionID, wait.Key)
+	}
+}
