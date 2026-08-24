@@ -822,7 +822,13 @@ answers when nobody has picked** (`UseLanguage`, called from `main.tsx`): the
 webview's own locale is a thing only that side can read, and without it
 somebody who never opened the settings would read the app in their language and
 be offered templates in English. It stores nothing — a resolved default is not
-a choice, and storing it would stop the app following the system.
+a choice, and storing it would stop the app following the system — and the page
+**awaits** it before the first render, because everything it reads before the
+boards are replaced is stale. The template picker refetches when it opens for
+the same reason, and that fetch prunes what the board list still holds: nobody
+is a member of an open template, so a template board being deleted reaches no
+client, while the replacement arrives as a new board on the team — the picker
+drew both languages at once.
 
 **Four names sit in those English files in Russian** (`appGivenNames`), and are
 never translated either way: «Входящие»

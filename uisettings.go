@@ -145,12 +145,14 @@ func (a *App) UseLanguage(lang string) error {
 	// Only when it is the answer that counts and it has changed: a pick beats
 	// it, and the templates already record which language they were installed
 	// in, so a repeat costs nothing anyway.
-	if picked == "" && was != lang && a != nil && a.retemplate != nil {
-		go func() {
-			if err := a.retemplate(lang); err != nil {
-				log.Printf("templates: %v", err)
-			}
-		}()
+	//
+	// Here it is done before answering, and the page waits for the answer
+	// before its first render (main.tsx): replacing five boards is measured in
+	// tens of milliseconds, and doing it after the page has drawn means the
+	// page holds a list of boards that no longer exist — the template picker
+	// drew both languages at once.
+	if picked == "" && was != lang {
+		a.reinstallTemplates(lang)
 	}
 	return nil
 }
@@ -194,12 +196,24 @@ func (a *App) SetUIPreference(key, value string) error {
 	// five boards, and the switch on screen must not wait for that. A failure
 	// costs the person templates in the previous language, which is what they
 	// already had, so it is logged rather than returned.
-	if key == "language" && changed && a != nil && a.retemplate != nil {
-		go func(lang string) {
-			if err := a.retemplate(lang); err != nil {
-				log.Printf("templates: %v", err)
-			}
-		}(value)
+	// Off the caller's goroutine: the switch on screen must not wait for five
+	// boards to be deleted and made again, and the picker is a click away at
+	// the earliest. It fetches what it draws when it opens, so by then this is
+	// done. A failure costs the person templates in the language they already
+	// had, so it is logged rather than returned.
+	if key == "language" && changed {
+		go a.reinstallTemplates(value)
 	}
 	return nil
+}
+
+// reinstallTemplates puts the shipped templates into a language, and does the
+// work where it is called from.
+func (a *App) reinstallTemplates(lang string) {
+	if a == nil || a.retemplate == nil {
+		return
+	}
+	if err := a.retemplate(lang); err != nil {
+		log.Printf("templates: %v", err)
+	}
 }

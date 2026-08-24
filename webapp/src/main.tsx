@@ -66,8 +66,10 @@ async function boot() {
 
     // Which language this page settled on — the pick, else the webview's own
     // locale. The Go side cannot read the second one, and it installs the board
-    // templates in a language (internal/boardadapter/templatetext.go).
-    reportLanguage(getCurrentLanguage())
+    // templates in a language (internal/boardadapter/templatetext.go). Awaited,
+    // because it can mean those boards are replaced and everything read before
+    // that is stale.
+    await reportLanguage(getCurrentLanguage())
 
     // The store is created here, not in a module singleton, and everything
     // that writes to it from outside the component tree — the Mutator — gets

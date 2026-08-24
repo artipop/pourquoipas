@@ -100,13 +100,18 @@ export async function hydrateUserSettings(): Promise<void> {
 // webview's own locale, which is the answer when nobody picked, is something
 // only this side can read. It stores nothing; a resolved default is not a
 // choice.
-export function reportLanguage(lang: string): void {
+//
+// Awaited before the first render, because the answer can mean five boards are
+// replaced: a page that has already read the old ones holds boards that no
+// longer exist, and the template picker drew both languages at once. It resolves
+// at once where there is no Go side, and where nothing changed.
+export async function reportLanguage(lang: string): Promise<void> {
     try {
         // eslint-disable-next-line new-cap
-        preferenceBindings()?.UseLanguage?.(lang)?.catch?.(() => undefined)
+        await preferenceBindings()?.UseLanguage?.(lang)
     } catch (e) {
-        // No Go side, or a binding that throws on the way out: the templates
-        // stay in the language they were installed in.
+        // No Go side, or a binding that threw: the templates stay in the
+        // language they were installed in.
     }
 }
 

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 )
 
@@ -96,5 +97,65 @@ func TestUIPreferenceRefusesTheUnreasonable(t *testing.T) {
 	long := make([]byte, 20*1024)
 	if err := app.SetUIPreference("theme", string(long)); err == nil {
 		t.Error("a 20KB value was accepted")
+	}
+}
+
+// The page is the only side that knows which language the app is being read in
+// when nobody has picked one — the webview's own locale. It says so at boot,
+// and that answer must not turn into a setting: storing it would pin the app to
+// whatever it happened to say and stop it following the system.
+func TestTheLanguageThePageResolvedIsNotAPreference(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("XDG_CONFIG_HOME", filepath.Join(home, ".config"))
+	activeLanguage = ""
+	t.Cleanup(func() { activeLanguage = "" })
+
+	// Guarded, because SetUIPreference reinstalls on its own goroutine: the
+	// switch on screen must not wait for five boards.
+	var mu sync.Mutex
+	var installed []string
+	app := &App{retemplate: func(lang string) error {
+		mu.Lock()
+		defer mu.Unlock()
+		installed = append(installed, lang)
+		return nil
+	}}
+	installedSoFar := func() []string {
+		mu.Lock()
+		defer mu.Unlock()
+		return append([]string(nil), installed...)
+	}
+
+	if err := app.UseLanguage("ru"); err != nil {
+		t.Fatal(err)
+	}
+	if prefs, _ := app.GetUIPreferences(); prefs != "{}" {
+		t.Errorf("it was written down as %q", prefs)
+	}
+	if uiLanguage() != "ru" {
+		t.Errorf("the language in force is %q", uiLanguage())
+	}
+	if got := installedSoFar(); len(got) != 1 || got[0] != "ru" {
+		t.Errorf("the templates were installed as %v", got)
+	}
+
+	// Said again, it costs nothing: this runs at every launch.
+	if err := app.UseLanguage("ru"); err != nil {
+		t.Fatal(err)
+	}
+	if got := installedSoFar(); len(got) != 1 {
+		t.Errorf("the templates were reinstalled for the same answer: %v", got)
+	}
+
+	// And a pick beats it — the person said so, the webview only guessed.
+	if err := app.SetUIPreference("language", "en"); err != nil {
+		t.Fatal(err)
+	}
+	if err := app.UseLanguage("ru"); err != nil {
+		t.Fatal(err)
+	}
+	if uiLanguage() != "en" {
+		t.Errorf("the language in force is %q", uiLanguage())
 	}
 }
