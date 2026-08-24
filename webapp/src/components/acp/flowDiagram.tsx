@@ -632,10 +632,20 @@ const FIT_FRAMES = 30
 // edge. Bounded, because a box that is never measured (a canvas with no
 // layout, as in jsdom) must not spin for ever: after FIT_FRAMES it fits to
 // whatever there is, which is what it would have done anyway.
-const fitWhenMeasured = (handle: FlowHandle, ids: string[], frame: number) => {
+//
+// `live` is asked before every frame, because a fit that was asked for is not
+// owed once the picture it was about is gone. Each re-fit is a chain of
+// frames, and a chain that outlived its tab waited its thirty frames for boxes
+// no longer on the canvas and then fitted to none of them — a viewport of
+// nothing, landing half a second after the switch. `done` is told when the
+// fit has landed, which is what the canvas waits for before it is drawn.
+const fitWhenMeasured = (handle: FlowHandle, ids: string[], live: () => boolean, done: () => void, frame = 0) => {
+    if (!live()) {
+        return
+    }
     const measured = ids.every((id) => (handle.getInternalNode?.(id)?.measured?.width || 0) > 0)
     if (!measured && frame < FIT_FRAMES) {
-        requestAnimationFrame(() => fitWhenMeasured(handle, ids, frame + 1))
+        requestAnimationFrame(() => fitWhenMeasured(handle, ids, live, done, frame + 1))
         return
     }
 
@@ -645,6 +655,7 @@ const fitWhenMeasured = (handle: FlowHandle, ids: string[], frame: number) => {
     // columns it does not use. The shelf is there to be dragged from, not to be
     // read, so it does not decide the zoom.
     void handle.fitView?.({...FIT_VIEW, nodes: ids.map((id) => ({id}))})
+    done()
 }
 
 // CanvasHook runs inside the canvas' context and hands its API out: the drop
@@ -1010,8 +1021,20 @@ const FlowDiagram = (props: Props) => {
     // middle of a drag would pull the canvas out from under the pointer. The
     // handle is in the key because it arrives from inside the canvas and may not
     // be there on the first run.
+    //
+    // And it is the *only* fit there is. The canvas has one of its own on init
+    // — fired when its boxes are first measured and its pane has a size,
+    // whichever comes last, and fitted to every box on the canvas, the shelf
+    // of spare columns included — and the two raced: whichever landed second
+    // won, and which that was depended on whether the dialog had finished
+    // laying out before the boxes were measured. So the editor opened centred
+    // on the route one time and on the route-plus-shelf the next, which is a
+    // short route pushed into a corner. `fitView={false}` below takes the
+    // canvas' own out; until this one has landed the picture is not drawn
+    // (`FlowDiagram--unfitted`), or the boxes would stand a frame at the origin.
     const shape = createMemo(() => drawnNodes.map((n) => n.id).join('|'))
     const [paneSize, setPaneSize] = createSignal('')
+    const [fitted, setFitted] = createSignal(false)
     createEffect(() => {
         // What the fit is *about* is the route; what it is *keyed on* is every
         // box, so joining a faded column to the route re-fits to the new shape.
@@ -1020,7 +1043,11 @@ const FlowDiagram = (props: Props) => {
         const ids = props.nodes.map((n) => n.id)
         const handle = flowHandle()
         if (handle?.fitView && ids.length > 0) {
-            fitWhenMeasured(handle, ids, 0)
+            let live = true
+            onCleanup(() => {
+                live = false
+            })
+            fitWhenMeasured(handle, ids, () => live, () => setFitted(true))
         }
     })
 
@@ -1074,7 +1101,7 @@ const FlowDiagram = (props: Props) => {
         <Show when={props.nodes.length > 0 || spare().length > 0}>
             <div
                 ref={watchPane}
-                class={`FlowDiagram${editable() ? ' FlowDiagram--editable' : ''}`}
+                class={`FlowDiagram${editable() ? ' FlowDiagram--editable' : ''}${fitted() ? '' : ' FlowDiagram--unfitted'}`}
                 data-testid='flow-diagram'
                 onDragOver={onDragOver}
                 onDrop={onDrop}
@@ -1097,16 +1124,11 @@ const FlowDiagram = (props: Props) => {
                     elementsSelectable={editable()}
                     edgesFocusable={editable()}
                     deleteKey={editable() ? ['Backspace', 'Delete'] : null}
-                    fitView={true}
 
-                    // Fill the canvas rather than sit 1:1 in the middle of it.
-                    // The dialog is nearly the whole window now, and a route of
-                    // five boxes drawn at 100% left two thirds of it as dots —
-                    // the point of the width was the picture, not the margin.
-                    // Capped so a two-box route is not blown up into a poster.
-                    // The same options the re-fit above uses, or the picture
-                    // would jump the first time the tab changed.
-                    fitViewOptions={FIT_VIEW}
+                    // The fit is ours (the effect above), not the canvas' own:
+                    // two fits to two different sets of boxes raced, and the
+                    // picture opened wherever the loser left it.
+                    fitView={false}
                     minZoom={0.3}
 
                     // Solid Flow is MIT and its own attribution says to feel free to
@@ -1114,7 +1136,14 @@ const FlowDiagram = (props: Props) => {
                     proOptions={{hideAttribution: true}}
                 >
                     <Background/>
-                    <Controls showLock={false}/>
+                    <Controls
+                        showLock={false}
+
+                        // The button fits what the opening fit fitted, the
+                        // route, or pressing it would be the one way to get the
+                        // shelf into the picture — which nobody has asked for.
+                        fitViewOptions={{...FIT_VIEW, nodes: props.nodes.map((n) => ({id: n.id}))}}
+                    />
                     <CanvasHook onReady={setFlowHandle}/>
                 </SolidFlow>
             </div>

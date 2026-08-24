@@ -116,6 +116,34 @@ describe('components/acp/flowDiagram', () => {
         }
     })
 
+    // The fit is the diagram's own and not the canvas' — the two used to race,
+    // and the editor opened centred one time and in a corner the next — so the
+    // picture is held back until the diagram's fit has landed. jsdom measures
+    // nothing, which is the case the wait is bounded for: after its share of
+    // frames the fit lands on whatever there is and the picture is shown.
+    test('the picture is hidden until the diagram has fitted it', () => {
+        const frames: FrameRequestCallback[] = []
+        const raf = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
+            frames.push(cb)
+            return frames.length
+        })
+        const {container} = render(() => wrapIntl(() =>
+            <FlowDiagram
+                nodes={nodes}
+                edges={edges}
+                triggers={triggers}
+            />,
+        ))
+        const pane = container.querySelector('.FlowDiagram')!
+        expect(pane).toHaveClass('FlowDiagram--unfitted')
+
+        for (let i = 0; i < 100 && frames.length > 0; i++) {
+            frames.shift()!(i * 16)
+        }
+        expect(pane).not.toHaveClass('FlowDiagram--unfitted')
+        raf.mockRestore()
+    })
+
     test('an empty route draws nothing at all', () => {
         const {container} = render(() => wrapIntl(() =>
             <FlowDiagram

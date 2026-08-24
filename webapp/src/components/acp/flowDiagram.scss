@@ -17,6 +17,15 @@
     border-radius: var(--radius-sm);
     background: rgba(var(--center-channel-color-rgb), 0.04);
 
+    // Nothing is drawn until the diagram has fitted the picture: the canvas
+    // is told not to fit on its own (flowDiagram.tsx), so before ours lands
+    // the boxes stand at the origin at 1:1, and one frame of that on every
+    // open is a flicker. Opacity rather than visibility, since a measured box
+    // sets its own visibility and would show through.
+    &.FlowDiagram--unfitted .solid-flow__viewport {
+        opacity: 0;
+    }
+
     .FlowDiagram__stage {
         width: 190px;
 
