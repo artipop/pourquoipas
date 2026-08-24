@@ -94,7 +94,7 @@ export type EdgeAsk = {
     // The question's own id, minted by Go on save. Empty on one just added.
     id?: string
 
-    // ASK_WORKMODE or ASK_PROPERTY.
+    // ASK_WORKMODE, ASK_WORKDIR or ASK_PROPERTY.
     kind: string
 
     // The board select the answer is written to, by name, for ASK_PROPERTY.
@@ -193,6 +193,13 @@ export const BLOCKED = 'blocked'
 // dataflow like any other write.
 export const ASK_WORKMODE = 'workmode'
 export const ASK_PROPERTY = 'property'
+
+// ASK_WORKDIR is the folder the card's work happens in, written into the
+// board's own folder field. It is an ASK_PROPERTY in everything but which
+// property: which field a card names its folder in is the board's record
+// rather than a person's to pick. Asked before ASK_WORKMODE, because a card
+// that has not chosen a folder has nothing for that question to be about.
+export const ASK_WORKDIR = 'workdir'
 
 // CARD_CHANGED is the board-side trigger: an option set on the card itself.
 // Its edge must say which option through its condition.

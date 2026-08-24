@@ -13,6 +13,7 @@ import {MCPServers} from './mcpServers'
 import {
     ACTIONS,
     ASK_PROPERTY,
+    ASK_WORKDIR,
     ASK_WORKMODE,
     Automation,
     BoardColumn,
@@ -1088,14 +1089,31 @@ const AutomationEditor = (props: Props) => {
     //
     // Only a closed set can be asked about, for the reason a condition can only
     // ask about one: the answer is a click, and a click needs the answers named.
+    // The machine's own two questions, named once. Their wording when nobody
+    // writes their own is the sentence Go puts on the card, quoted rather than
+    // invented so the editor and the card cannot drift apart.
+    const askKindLabel = (kind: string) => (kind === ASK_WORKDIR ?
+        intl.formatMessage({id: 'Automation.ask-workdir', defaultMessage: 'which folder the agent works in'}) :
+        intl.formatMessage({id: 'Automation.ask-workmode', defaultMessage: 'how the agent works with the folder'}))
+
+    const askPlaceholder = (ask: EdgeAsk) => {
+        if (ask.kind === ASK_WORKDIR) {
+            return intl.formatMessage({id: 'Automation.ask-workdir-default', defaultMessage: 'Which folder should the agent work in on this card?'})
+        }
+        if (ask.kind === ASK_WORKMODE) {
+            return intl.formatMessage({id: 'Automation.ask-workmode-default', defaultMessage: 'How should the agent work with the folder for this card?'})
+        }
+        return intl.formatMessage({id: 'Automation.ask-property-default', defaultMessage: 'What should “{property}” be for this card?'}, {property: ask.property})
+    }
+
     const askChoices = (edge: FlowEdge) => {
-        const taken = new Set((edge.ask || []).map((a) => (a.kind === ASK_WORKMODE ? ASK_WORKMODE : (a.property || '').toLowerCase())))
+        const taken = new Set((edge.ask || []).map((a) => (a.kind === ASK_PROPERTY ? (a.property || '').toLowerCase() : a.kind)))
         const out = []
+        if (!taken.has(ASK_WORKDIR)) {
+            out.push({value: ASK_WORKDIR, label: askKindLabel(ASK_WORKDIR)})
+        }
         if (!taken.has(ASK_WORKMODE)) {
-            out.push({
-                value: ASK_WORKMODE,
-                label: intl.formatMessage({id: 'Automation.ask-workmode', defaultMessage: 'how the agent works with the folder'}),
-            })
+            out.push({value: ASK_WORKMODE, label: askKindLabel(ASK_WORKMODE)})
         }
         for (const p of condProperties()) {
             if (!taken.has(p.name.toLowerCase())) {
@@ -1105,14 +1123,14 @@ const AutomationEditor = (props: Props) => {
         return out
     }
 
-    const askLabel = (ask: EdgeAsk) => (ask.kind === ASK_WORKMODE ? intl.formatMessage({id: 'Automation.ask-workmode', defaultMessage: 'how the agent works with the folder'}) : ask.property || '')
+    const askLabel = (ask: EdgeAsk) => (ask.kind === ASK_PROPERTY ? ask.property || '' : askKindLabel(ask.kind))
 
     const addAsk = (index: number, choice: string) => {
         const edge = edges()[index]
         if (!edge || !choice) {
             return
         }
-        const added: EdgeAsk = choice === ASK_WORKMODE ? {kind: ASK_WORKMODE} : {kind: ASK_PROPERTY, property: choice.slice(ASK_PROPERTY.length + 1)}
+        const added: EdgeAsk = choice.startsWith(`${ASK_PROPERTY}:`) ? {kind: ASK_PROPERTY, property: choice.slice(ASK_PROPERTY.length + 1)} : {kind: choice}
         patchEdge(index, {ask: [...(edge.ask || []), added]})
     }
 
@@ -1154,7 +1172,7 @@ const AutomationEditor = (props: Props) => {
                         <input
                             class='AutomationEditor__input'
                             value={ask.text || ''}
-                            placeholder={ask.kind === ASK_WORKMODE ? intl.formatMessage({id: 'Automation.ask-workmode-default', defaultMessage: 'How should the agent work with the folder for this card?'}) : intl.formatMessage({id: 'Automation.ask-property-default', defaultMessage: 'What should “{property}” be for this card?'}, {property: ask.property})}
+                            placeholder={askPlaceholder(ask)}
                             onInput={(e) => patchAsk(index, at(), {text: e.currentTarget.value})}
                         />
                     </div>
@@ -1780,7 +1798,7 @@ const AutomationEditor = (props: Props) => {
                                 <div class='AutomationEditor__hint'>
                                     {intl.formatMessage(
                                         {id: 'Automation.route-columns', defaultMessage: 'Goes through: {columns}'},
-                                        {columns: columnsOf(current(), props.columns).map((c) => c.name).join(' → ') || '—'},
+                                        {columns: columnsOf(current(), props.columns).map((c) => c.name).join(' › ') || '—'},
                                     )}
                                 </div>
                                 {/* Asked about, and then done — not queued behind

@@ -36,6 +36,17 @@ const (
 	// the deploy both read the card's checkout and nothing else.
 	AskWorkMode = "workmode"
 
+	// AskWorkdir asks which folder the card's work happens in, and the answer
+	// is written into the board's own folder field — so it is an AskProperty
+	// in everything but which property, which is the board's to record rather
+	// than a person's to name (BoardPropProject).
+	//
+	// It exists because the question the whole mechanism was built for is
+	// asked of a card in the backlog, and a card in the backlog has usually
+	// not named a folder yet. Without it the work-mode question below is
+	// unanswerable exactly when it matters and is silently skipped.
+	AskWorkdir = "workdir"
+
 	// AskProperty asks for a value of one of the board's own select
 	// properties, and the answer is written onto the card. That puts it in the
 	// route's dataflow like any other write: a later stage reads it as an
@@ -79,6 +90,13 @@ type AskQuestion struct {
 
 	// Answer is what was picked. Empty means nobody has.
 	Answer string `json:"answer,omitempty"`
+
+	// Skipped says this question could not be put to anybody — a select that
+	// has left the board, a work mode asked about a folder that is not a
+	// repository. Recorded rather than dropped, because whether a question
+	// applies is decided when it comes up and not when the arrow is crossed:
+	// the folder question ahead of it may be what makes it answerable.
+	Skipped bool `json:"skipped,omitempty"`
 }
 
 // AskOption is one answer offered. Value is what is stored — a work mode, an
@@ -100,65 +118,103 @@ func (a *FlowAsk) Next() *AskQuestion {
 		return nil
 	}
 	for i := range a.Questions {
-		if a.Questions[i].Answer == "" {
+		if a.Questions[i].Answer == "" && !a.Questions[i].Skipped {
 			return &a.Questions[i]
 		}
 	}
 	return nil
 }
 
-// askQuestions turns what an arrow declares into what a person can answer.
-//
-// A question this card cannot be asked is dropped rather than parked on: a
-// select that has left the board, a work mode asked about a folder that is not
-// a repository. The route carried cards across this arrow before anybody wrote
-// a question on it, and an unanswerable question must not be the thing that
-// stops it — it is said in the log, where whoever wrote it can find it.
-func (m *Manager) askQuestions(ev CardMoved, edge *FlowEdge) []AskQuestion {
+// declaredQuestions is what an arrow says it asks, before anybody has worked
+// out whether it can be asked. Nothing is dropped here: which questions apply
+// is decided one at a time, as each comes up, because an earlier answer can be
+// what makes a later question answerable — the folder is chosen, and only then
+// does "how should the agent work with it" mean anything.
+func declaredQuestions(edge *FlowEdge) []AskQuestion {
 	if edge == nil || len(edge.Ask) == 0 {
 		return nil
 	}
-	var props []CardProperty
 	out := make([]AskQuestion, 0, len(edge.Ask))
 	for _, a := range edge.Ask {
-		q := AskQuestion{ID: a.ID, Kind: a.Kind, Property: a.Property, Text: strings.TrimSpace(a.Text)}
-		switch a.Kind {
-		case AskWorkMode:
-			workdir, _ := m.resolveWorkdir(ev)
-			if m.WorkModeFor(ev.BoardID, workdir) == WorkModePlain {
-				m.log.Info("acp: the work-mode question does not apply to this card's folder",
-					"card", ev.CardID, "workdir", workdir)
-				continue
-			}
-			if q.Text == "" {
-				q.Text = "Как агенту работать с папкой для этой карточки?"
-			}
-			q.Options = workModeOptions()
-		case AskProperty:
-			if props == nil {
-				props = m.boardCardProperties(ev.BoardID)
-			}
-			values := selectValues(props, a.Property)
-			if len(values) == 0 {
-				m.log.Warn("acp: a transition asks about a property the board has no closed set for",
-					"card", ev.CardID, "property", a.Property)
-				continue
-			}
-			if q.Text == "" {
-				q.Text = fmt.Sprintf("Что выбрать в «%s» для этой карточки?", a.Property)
-			}
-			for _, v := range values {
-				q.Options = append(q.Options, AskOption{Value: v, Label: v})
-			}
-		default:
-			continue
-		}
-		out = append(out, q)
-	}
-	if len(out) == 0 {
-		return nil
+		out = append(out, AskQuestion{
+			ID: a.ID, Kind: a.Kind, Property: a.Property, Text: strings.TrimSpace(a.Text),
+		})
 	}
 	return out
+}
+
+// settle brings the ask up to date against the card as it is now: it finds the
+// next question that can actually be put to somebody, fills in its wording and
+// its answers, and marks the ones before it that cannot be asked. It reports
+// whether anything is left to ask.
+//
+// Called when the card is held and again after every answer, with the card read
+// again in between — the folder just written is what the next question is about.
+func (m *Manager) settle(ev CardMoved, ask *FlowAsk) bool {
+	if ask == nil {
+		return false
+	}
+	for i := range ask.Questions {
+		q := &ask.Questions[i]
+		if q.Answer != "" || q.Skipped {
+			continue
+		}
+		if m.resolveQuestion(ev, q) {
+			return true
+		}
+		q.Skipped = true
+	}
+	return false
+}
+
+// resolveQuestion fills in one question's wording and answers, and reports
+// whether it can be asked at all.
+func (m *Manager) resolveQuestion(ev CardMoved, q *AskQuestion) bool {
+	q.Options = nil
+	switch q.Kind {
+	case AskWorkdir:
+		if path, err := m.resolveWorkdir(ev); err == nil && path != "" {
+			return false // the card has already said where its work happens
+		}
+		for _, e := range m.WorkdirsForBoard(ev.BoardID) {
+			q.Options = append(q.Options, AskOption{Value: e.Name, Label: e.Name})
+		}
+		if len(q.Options) == 0 {
+			m.log.Info("acp: the folder question has nothing to offer on this board",
+				"card", ev.CardID, "board", ev.BoardID)
+			return false
+		}
+		if q.Text == "" {
+			q.Text = "В какой папке будет работать агент над этой карточкой?"
+		}
+	case AskWorkMode:
+		workdir, _ := m.resolveWorkdir(ev)
+		if m.WorkModeFor(ev.BoardID, workdir) == WorkModePlain {
+			m.log.Info("acp: the work-mode question does not apply to this card's folder",
+				"card", ev.CardID, "workdir", workdir)
+			return false
+		}
+		if q.Text == "" {
+			q.Text = "Как агенту работать с папкой для этой карточки?"
+		}
+		q.Options = workModeOptions()
+	case AskProperty:
+		values := selectValues(m.boardCardProperties(ev.BoardID), q.Property)
+		if len(values) == 0 {
+			m.log.Warn("acp: a transition asks about a property the board has no closed set for",
+				"card", ev.CardID, "property", q.Property)
+			return false
+		}
+		if q.Text == "" {
+			q.Text = fmt.Sprintf("Что выбрать в «%s» для этой карточки?", q.Property)
+		}
+		for _, v := range values {
+			q.Options = append(q.Options, AskOption{Value: v, Label: v})
+		}
+	default:
+		return false
+	}
+	return true
 }
 
 // workModeOptions is the machine's own question, in the words the folder list
@@ -187,13 +243,18 @@ func selectValues(props []CardProperty, name string) []string {
 // reports whether the card was held; false means nothing was asked and the
 // caller carries on exactly as it did before this existed.
 func (m *Manager) holdForAsk(ev CardMoved, edge *FlowEdge, flowID string, to FlowNode, move bool, on, detail, said string) bool {
-	questions := m.askQuestions(ev, edge)
+	questions := declaredQuestions(edge)
 	if len(questions) == 0 {
 		return false
 	}
 	ask := &FlowAsk{
 		ToNode: to.ID, On: on, Detail: detail, Said: said, Move: move,
 		Questions: questions, AskedAt: time.Now(),
+	}
+	// Nothing that can be put to anybody is not a card held for ever: the
+	// arrow carried cards before anybody wrote a question on it.
+	if !m.settle(ev, ask) {
+		return false
 	}
 
 	// The card stays on the stage it is leaving: it has not entered anything,
@@ -220,9 +281,10 @@ func (m *Manager) holdForAsk(ev CardMoved, edge *FlowEdge, flowID string, to Flo
 	st.Ask = ask
 	m.saveFlowState(st)
 
+	current := ask.Next()
 	m.log.Info("acp: card held at a transition until somebody answers",
-		"card", ev.CardID, "to", to.ID, "questions", len(questions))
-	m.handOverQuestion(ev, askAttentionText(questions[0], to.Column), &questions[0])
+		"card", ev.CardID, "to", to.ID, "asking", current.Kind)
+	m.handOverQuestion(ev, askAttentionText(*current, to.Column), current)
 	return true
 }
 
@@ -260,15 +322,21 @@ func (m *Manager) AnswerCardAsk(ctx context.Context, cardID, questionID, value s
 	// that starts on the other side of the arrow already sees it: a property
 	// on the card, a work mode on the card's flow state, which is what the
 	// first claim of a workspace reads.
-	if err := m.applyAnswer(ctx, st.CardID, *q); err != nil {
+	if err := m.applyAnswer(ctx, st.CardID, st.BoardID, *q); err != nil {
 		return err
 	}
 	if q.Kind == AskWorkMode {
 		st.WorkMode = value
 	}
 
-	if st.Ask.Pending() {
+	// The card is read again before the next question is worked out, because
+	// the answer just given is part of what that question is about: the folder
+	// written a line above is what makes "how should the agent work with it"
+	// answerable at all.
+	if ev, ok := m.cardNow(st.CardID); ok && m.settle(ev, st.Ask) {
 		m.saveFlowState(st)
+		next := st.Ask.Next()
+		m.handOverQuestion(ev, askAttentionText(*next, m.askColumn(st)), next)
 		m.emitAskRaised(st)
 		return nil
 	}
@@ -292,16 +360,62 @@ func (m *Manager) AnswerCardAsk(ctx context.Context, cardID, questionID, value s
 // write is silent, like every other write of ours: the route is about to move
 // the card itself, and a notify would set the column's automation off a second
 // time for the same decision.
-func (m *Manager) applyAnswer(ctx context.Context, cardID string, q AskQuestion) error {
-	if q.Kind != AskProperty || m.writer == nil {
+func (m *Manager) applyAnswer(ctx context.Context, cardID, boardID string, q AskQuestion) error {
+	if m.writer == nil {
 		return nil
 	}
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
-	if err := m.forCard(cardID).Writer.SetCardFields(ctx, cardID, map[string]string{q.Property: q.Answer}); err != nil {
-		return fmt.Errorf("не удалось записать ответ в «%s»: %w", q.Property, err)
+	switch q.Kind {
+	case AskProperty:
+		if err := m.forCard(cardID).Writer.SetCardFields(ctx, cardID, map[string]string{q.Property: q.Answer}); err != nil {
+			return fmt.Errorf("не удалось записать ответ в «%s»: %w", q.Property, err)
+		}
+	case AskWorkdir:
+		// By the id the board records for its folder field rather than by the
+		// field's name: what that field is called is the board's own business
+		// and a person may have renamed it, which is the whole reason the id
+		// is recorded (BoardPropProject).
+		propID := m.boardProperty(boardID, BoardPropProject)
+		if propID == "" {
+			return fmt.Errorf("на доске не записано, в каком поле карточка называет папку")
+		}
+		if err := m.forCard(cardID).Writer.SetCardOption(ctx, cardID, propID, q.Answer); err != nil {
+			return fmt.Errorf("не удалось записать папку на карточку: %w", err)
+		}
 	}
 	return nil
+}
+
+// cardNow re-reads the card. Absence is not an error to the caller: a card that
+// cannot be read right now is a question that waits where it is.
+func (m *Manager) cardNow(cardID string) (CardMoved, bool) {
+	if m.reader == nil {
+		return CardMoved{}, false
+	}
+	ctx, cancel := context.WithTimeout(m.rootOr(), 10*time.Second)
+	defer cancel()
+	ev, err := m.forCard(cardID).Reader.CardByID(ctx, cardID)
+	if err != nil {
+		m.log.Warn("acp: cannot read the card a question is about", "card", cardID, "err", err)
+		return CardMoved{}, false
+	}
+	return ev, true
+}
+
+// askColumn is the stage the card is being held before, for the sentence the
+// notification carries. The route may have been edited while the card waited,
+// and then the stage's own id is the best there is.
+func (m *Manager) askColumn(st FlowState) string {
+	if st.Ask == nil {
+		return ""
+	}
+	if flow, ok := m.FlowByID(st.FlowID); ok {
+		if node, ok := flow.Node(st.Ask.ToNode); ok {
+			return node.Column
+		}
+	}
+	return st.Ask.ToNode
 }
 
 // resumeAfterAsk finishes the move the question interrupted. The card is read

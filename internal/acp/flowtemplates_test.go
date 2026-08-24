@@ -473,7 +473,10 @@ func TestARouteWrittenWithoutAWayInGetsOne(t *testing.T) {
 	if edge == nil {
 		t.Fatalf("no way into the route's first stage: %+v", flows[0].Edges)
 	}
-	if len(edge.Ask) != 1 || edge.Ask[0].Kind != AskWorkMode {
+	// Both questions, in the order they can be answered: a card coming from
+	// off the route has usually named no folder, and until it has, how to work
+	// that folder is about nothing.
+	if len(edge.Ask) != 2 || edge.Ask[0].Kind != AskWorkdir || edge.Ask[1].Kind != AskWorkMode {
 		t.Fatalf("the way in asks something else: %+v", edge.Ask)
 	}
 }

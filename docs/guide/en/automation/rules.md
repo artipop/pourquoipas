@@ -53,6 +53,8 @@ can ask about that before it lets the card through.
 The question is written on the arrow — the transition panel has **"Ask before
 the card moves on"**. Pick what to ask about:
 
+- **which folder the agent works in** — the board's own folders. The answer is
+  written into the card's folder field, as if you had picked it by hand.
 - **how the agent works with the folder** — a copy of the folder per card, or a
   branch in the folder itself. The answer goes into the card's workspace: it is
   what the copy or the branch is made from, and every later stage — the review,
@@ -67,7 +69,10 @@ written on the card if you type nothing.
 Until somebody answers, the card stays where it was and nothing starts. The
 question is on its route strip — with the name of the stage the card is going
 to, and the answers as buttons; "Ждут" and the notification say so too. An
-answer is one click; several questions are asked one at a time.
+answer is one click; several questions are asked one at a time, in order, and
+each is applied as it is given — until a folder is chosen there is nothing for
+"how should it be worked" to be about, which is why the way into work asks the
+folder first and the second question only then.
 
 The question is about this arrow, not about the stage. The arrow "Not started →
 In progress" asks; the way back, "In review → In progress", does not — there it
@@ -91,6 +96,7 @@ The canvas does not draw the way in yet, so the question on it cannot be changed
 in the editor. Editing the route does not erase it either.
 
 If there is nothing to answer — the property was deleted from the board, or the
-card's folder is not a repository — the card moves on without the question. The
+chosen folder is not a repository — that question is skipped and the card moves
+on. The
 route carried cards before anybody wrote a question on the arrow, and a
 question nobody can answer must not be what stops it.

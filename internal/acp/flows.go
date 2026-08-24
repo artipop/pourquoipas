@@ -703,7 +703,9 @@ func validateEdgeAsks(asks []EdgeAsk) ([]EdgeAsk, error) {
 		a.Property = strings.TrimSpace(a.Property)
 		a.Text = strings.TrimSpace(a.Text)
 		switch a.Kind {
-		case AskWorkMode:
+		case AskWorkMode, AskWorkdir:
+			// Neither names a property: the work mode is not one, and which
+			// field a card names its folder in is the board's own record.
 			a.Property = ""
 		case AskProperty:
 			if a.Property == "" {

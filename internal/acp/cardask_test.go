@@ -327,3 +327,103 @@ func TestTheWaitRaisedByAHeldCardOffersItsAnswers(t *testing.T) {
 		t.Fatalf("the wait is keyed by the question rather than by the card: %q %q", wait.QuestionID, wait.Key)
 	}
 }
+
+// The crossing the whole mechanism was built for: a card in the backlog, which
+// has usually named no folder, dragged into work. It is asked for the folder
+// first, because until there is one the question about how to work it is about
+// nothing — and that is exactly how it used to be skipped, silently, on the one
+// transition it was for.
+func TestACardWithNoFolderIsAskedForOneOnTheWayIn(t *testing.T) {
+	flow := sampleFlow()
+	flow.Edges = append(flow.Edges, entryTransition("work"))
+	m, _, events, project := flowManager(t, fakeClaudeHappy, flow)
+	m.SetBoardCardState(&fakeCardState{})
+	m.SetBoardMeta(&fakeBoardMeta{props: map[string]any{BoardPropProject: "p-folder"}})
+
+	ev := flowEvent("card1", project, "Backlog", "To Agent")
+	ev.OptionNames, ev.Values, ev.SelectedOptions = nil, nil, nil
+	events.ch <- ev
+
+	waitFor(t, 20*time.Second, "the card is held at the way in", func() bool {
+		st, ok, err := m.flowState("card1")
+		return err == nil && ok && st.Ask != nil
+	})
+	st, _, _ := m.flowState("card1")
+	first := st.Ask.Next()
+	if first.Kind != AskWorkdir || len(first.Options) == 0 {
+		t.Fatalf("the first question is not an answerable folder one: %+v", first)
+	}
+
+	// Answering writes the folder onto the card, and the board hands the card
+	// back naming it — which is what makes the second question answerable.
+	m.SetBoardReader(&fakeReader{ev: CardMoved{
+		BoardID: "board1", Title: "Test task",
+		Props:           map[string]string{"branch": flowTestBranch},
+		SelectedOptions: []Column{{PropertyID: "p-folder", Name: testWorkdirName}},
+	}})
+	if err := m.AnswerCardAsk(context.Background(), "card1", first.ID, first.Options[0].Value); err != nil {
+		t.Fatalf("answering the folder: %v", err)
+	}
+
+	st, _, _ = m.flowState("card1")
+	if st.Ask == nil || st.Ask.Next() == nil {
+		t.Fatal("the card was let through without being asked how to work the folder")
+	}
+	if got := st.Ask.Next().Kind; got != AskWorkMode {
+		t.Fatalf("the second question is %q, want %q", got, AskWorkMode)
+	}
+}
+
+// A card that already names a folder is not asked about it again: the question
+// applies or it does not, and it is decided when it comes up.
+func TestACardThatNamesAFolderIsNotAskedForOne(t *testing.T) {
+	flow := sampleFlow()
+	flow.Edges = append(flow.Edges, entryTransition("work"))
+	m, _, events, project := flowManager(t, fakeClaudeHappy, flow)
+	m.SetBoardCardState(&fakeCardState{})
+
+	events.ch <- flowEvent("card1", project, "Backlog", "To Agent")
+
+	waitFor(t, 20*time.Second, "the card is held at the way in", func() bool {
+		st, ok, err := m.flowState("card1")
+		return err == nil && ok && st.Ask != nil
+	})
+	st, _, _ := m.flowState("card1")
+	if got := st.Ask.Next().Kind; got != AskWorkMode {
+		t.Fatalf("a card naming a folder was asked %q, want the work mode", got)
+	}
+}
+
+// A way in written before the folder question existed asks how to work a folder
+// the card has not chosen — the one crossing where it cannot be answered. The
+// board is brought up to date where it is read, and a hand-edited arrow is left
+// alone.
+func TestAWayInWrittenBeforeTheFolderQuestionGainsIt(t *testing.T) {
+	old := FlowEntry{
+		Name:  "Фича",
+		Nodes: []FlowNode{{ID: "work", Column: "To Agent"}},
+		Edges: []FlowEdge{{From: EntryNode, To: "work", Ask: []EdgeAsk{{ID: "workmode", Kind: AskWorkMode}}}},
+	}
+	flows := []FlowEntry{old}
+	if added := addEntryTransitions(flows); added != 1 {
+		t.Fatalf("the way in was not brought up to date: %d", added)
+	}
+	got := flows[0].Edges[0].Ask
+	if len(got) != 2 || got[0].Kind != AskWorkdir || got[1].Kind != AskWorkMode {
+		t.Fatalf("the folder question did not go in front of the work mode: %+v", got)
+	}
+
+	// Twice changes nothing, and an arrow somebody wrote themselves is not
+	// touched: the repair is matched on the ids this app mints.
+	if added := addEntryTransitions(flows); added != 0 {
+		t.Fatalf("the repair repeated itself: %d", added)
+	}
+	mine := []FlowEntry{{
+		Name:  "Своё",
+		Nodes: []FlowNode{{ID: "work", Column: "To Agent"}},
+		Edges: []FlowEdge{{From: EntryNode, To: "work", Ask: []EdgeAsk{{ID: "q1", Kind: AskWorkMode}}}},
+	}}
+	if added := addEntryTransitions(mine); added != 0 {
+		t.Fatalf("a hand-written way in was edited: %d", added)
+	}
+}

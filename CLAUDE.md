@@ -1654,7 +1654,13 @@ canvas does not draw it yet — an entry edge has no source box, and `FlowDiagra
 already filters out edges whose ends are not stages, so it survives every edit
 round trip without being editable there. Two kinds,
 and the split is where the answer goes. `AskProperty` writes a board select
-onto the card, which is the dataflow above and nothing new. `AskWorkMode` is
+onto the card, which is the dataflow above and nothing new. `AskWorkdir` writes the board's own folder field, and is
+asked first for the reason the whole mechanism nearly missed its own case: the
+crossing it was built for is a card leaving the backlog, and such a card has
+usually named no folder, which made the question after it unanswerable exactly
+where it mattered. So questions are resolved **as each comes up** rather than
+when the arrow is crossed, and one that cannot be put to anybody is marked
+skipped rather than dropping the lot. `AskWorkMode` is
 the machine's own — «отдельное рабочее дерево» or «ветка в этой же папке» — and it has no
 card property because it is not a fact about the work but what the workspace is
 made of: it lands on `FlowState.WorkMode`, which `ClaimWorkspace` prefers over

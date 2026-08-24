@@ -80,6 +80,8 @@
   "Automation.ask-pick": "Add a question to this transition",
   "Automation.ask-property-default": "What should “{property}” be for this card?",
   "Automation.ask-remove": "Remove the question",
+  "Automation.ask-workdir": "which folder the agent works in",
+  "Automation.ask-workdir-default": "Which folder should the agent work in on this card?",
   "Automation.ask-workmode": "how the agent works with the folder",
   "Automation.ask-workmode-default": "How should the agent work with the folder for this card?",
   "Automation.block-agent": "Agent",

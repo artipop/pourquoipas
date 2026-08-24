@@ -137,7 +137,23 @@ func (b *flowBuilder) rejected(from, to string) {
 // routes and the ones being brought up to date have to agree about what it
 // carries, and disagreeing would make a board behave by its age.
 func entryTransition(to string) FlowEdge {
-	return FlowEdge{From: EntryNode, To: to, Ask: []EdgeAsk{{ID: "workmode", Kind: AskWorkMode}}}
+	return FlowEdge{From: EntryNode, To: to, Ask: entryQuestions()}
+}
+
+// The two questions a card is asked on its way in, in the order they can be
+// answered: where the work happens, and then how the folder chosen is worked.
+// A card in the backlog has usually named no folder, and until it has, the
+// second question is about nothing — which is why it is second rather than
+// alone.
+//
+// Both are skipped in the ordinary way when they do not apply: a card that
+// already names a folder is not asked again, and a folder that is not a
+// repository has no second question.
+func entryQuestions() []EdgeAsk {
+	return []EdgeAsk{
+		{ID: "workdir", Kind: AskWorkdir},
+		{ID: "workmode", Kind: AskWorkMode},
+	}
 }
 
 // addEntryTransitions gives a way in to every route that has none, and reports
@@ -163,11 +179,20 @@ func addEntryTransitions(flows []FlowEntry) int {
 		}
 		first := flows[i].Nodes[0].ID
 		has := false
-		for _, e := range flows[i].Edges {
-			if e.From == EntryNode && e.To == first {
-				has = true
-				break
+		for j, e := range flows[i].Edges {
+			if e.From != EntryNode || e.To != first {
+				continue
 			}
+			has = true
+			// A way in written before the folder question existed asks how to
+			// work a folder the card has not chosen, which is the one crossing
+			// where it cannot be answered. The missing question goes in front
+			// of it — matched on the id this file mints, so an arrow somebody
+			// has since edited by hand is left alone.
+			if addEntryWorkdirQuestion(&flows[i].Edges[j]) {
+				added++
+			}
+			break
 		}
 		if !has {
 			flows[i].Edges = append(flows[i].Edges, entryTransition(first))
@@ -175,6 +200,27 @@ func addEntryTransitions(flows []FlowEntry) int {
 		}
 	}
 	return added
+}
+
+// addEntryWorkdirQuestion puts the folder question in front of the work-mode
+// one on a way in that has the second and not the first, and reports whether it
+// had to. Both ids are this file's own, so a hand-written arrow — one with a
+// question of somebody else's, or with the folder already asked — is untouched.
+func addEntryWorkdirQuestion(e *FlowEdge) bool {
+	at := -1
+	for i, a := range e.Ask {
+		if a.Kind == AskWorkdir {
+			return false
+		}
+		if a.Kind == AskWorkMode && a.ID == "workmode" {
+			at = i
+		}
+	}
+	if at < 0 {
+		return false
+	}
+	e.Ask = append(e.Ask[:at], append([]EdgeAsk{{ID: "workdir", Kind: AskWorkdir}}, e.Ask[at:]...)...)
+	return true
 }
 
 // TemplateFlows builds the routes the editor offers a board that has none. The

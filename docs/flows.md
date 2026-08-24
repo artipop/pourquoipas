@@ -187,6 +187,11 @@ The canvas does not draw it yet, so it cannot be edited there — but it survive
 every edit, because the diagram leaves out any arrow whose ends are not stages
 rather than dropping it from the route.
 
+- **«В какой папке будет работать агент»** — the board's own folders, written
+  into the field the board records for them (`BoardPropProject`). It exists
+  because the crossing the whole mechanism was built for is a card leaving the
+  backlog, and such a card has usually named no folder — without it the next
+  question is unanswerable exactly where it matters, and was silently skipped.
 - **«Как агенту работать с папкой»** — «отдельное рабочее дерево» or «ветка в
   этой же папке». The answer is not a card property: it is what the workspace is made
   of. It goes onto the card's flow state, from there into the checkout
@@ -209,9 +214,13 @@ reaches «Ждут», the tray and the notification. Several questions are asked
 at a time. The card's outcome buttons are withheld while it is asked something,
 or they would be a second way to move it out from under the question.
 
-A question that **cannot be answered** is dropped rather than parked on: a
+Questions are put one at a time and **resolved as each comes up**, not all at
+once when the arrow is crossed: an answer can be what makes the next question
+answerable, which is the whole of why the folder is asked before the work mode.
+
+A question that **cannot be answered** is skipped rather than parked on: a
 select that has left the board, a work mode asked about a folder that is not a
-repository. The route carried cards across that arrow before anybody wrote a
+repository, a folder asked of a card that already names one. The route carried cards across that arrow before anybody wrote a
 question on it, and an unanswerable question must not be what stops it — it is
 said in the log instead, where whoever wrote it can find it.
 
