@@ -508,7 +508,7 @@ func TestFinishWorkRefusesTheColumnProperty(t *testing.T) {
 	defer m.forgetStage(term.ID)
 
 	err = m.FinishWorkFromTools(term.boardToken, true, "готово",
-		map[string]string{"Статус": "Готово"})
+		map[string]string{DefaultTriggerProperty: "Готово"})
 	if err == nil || !strings.Contains(err.Error(), "move_card") {
 		t.Errorf("setting the column through finish_work was allowed (err=%v)", err)
 	}

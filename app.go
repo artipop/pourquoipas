@@ -12,6 +12,7 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 
 	"github.com/artipop/xciii/internal/acp"
+	"github.com/artipop/xciii/internal/boardadapter"
 	"github.com/artipop/xciii/internal/boardmodel"
 	"github.com/artipop/xciii/internal/sources"
 )
@@ -49,6 +50,11 @@ type App struct {
 	// whenever the release feed could not be configured. Its methods are safe
 	// on a nil receiver, as the tailnet controller's are.
 	updates *updateController
+	// retemplate reinstalls the shipped board templates in a language. Nil when
+	// the templates are not this process's business — an attached desktop works
+	// a hosted board and must not fight the server over them. Set in main,
+	// where the board server is.
+	retemplate func(lang string) error
 }
 
 func NewApp(emitter *wailsEmitter) *App {
@@ -653,7 +659,25 @@ func (a *App) ListFlowTemplates() (string, error) {
 	if a.mgr == nil {
 		return "[]", nil
 	}
-	out, err := json.Marshal(a.mgr.FlowTemplates())
+	// In the language the templates were installed in: these routes stand on
+	// that board's columns, and a route naming "In progress" on a Russian
+	// board is a route with nowhere to run.
+	flows := a.mgr.FlowTemplates()
+	word := boardadapter.TemplateWords(uiLanguage())
+	for i := range flows {
+		flows[i].Name = word(flows[i].Name)
+		flows[i].Property = word(flows[i].Property)
+		for j := range flows[i].Nodes {
+			flows[i].Nodes[j].Column = word(flows[i].Nodes[j].Column)
+		}
+		for j := range flows[i].Edges {
+			if cond := flows[i].Edges[j].If; cond != nil {
+				cond.Property = word(cond.Property)
+				cond.Value = word(cond.Value)
+			}
+		}
+	}
+	out, err := json.Marshal(flows)
 	if err != nil {
 		return "", err
 	}

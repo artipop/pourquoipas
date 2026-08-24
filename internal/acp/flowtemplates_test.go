@@ -15,7 +15,12 @@ import (
 // build enforces that — a template is JSON nobody compiles — so the test reads
 // the templates themselves and compares.
 
-const templateBoardTitle = "Разработка"
+const templateBoardTitle = "Development"
+
+// The property a card picks its route with. The template boards are written in
+// English and translated on the way in (internal/boardadapter/templatetext.go),
+// so this is the file's word and not the one on anybody's screen.
+const templateRouteProperty = "Workflow"
 
 type templateProperty struct {
 	ID      string `json:"id"`
@@ -239,12 +244,12 @@ func TestTemplateFlowsMatchTheBoardTemplate(t *testing.T) {
 
 	// And the property a card picks its route with must offer exactly the
 	// routes that exist: an option naming nothing does nothing.
-	picks := board.options(t, "Сценарий")
+	picks := board.options(t, templateRouteProperty)
 	names := make(map[string]bool, len(flows))
 	for _, f := range flows {
 		names[strings.ToLower(f.Name)] = true
 		if !picks[strings.ToLower(f.Name)] {
-			t.Errorf("flow %q is seeded but the template's «Сценарий» property does not offer it", f.Name)
+			t.Errorf("flow %q is seeded but the template's %q property does not offer it", f.Name, templateRouteProperty)
 		}
 	}
 	for option := range picks {
@@ -378,7 +383,7 @@ func TestTheDeveloperTemplateDeclaresWhatItsMachineStagesProduce(t *testing.T) {
 	board := readTemplateBoard(t)
 
 	wantWrites := map[string]string{
-		strings.ToLower(TemplateDeployColumn): "Превью",
+		strings.ToLower(TemplateDeployColumn): "Preview",
 	}
 	for _, c := range board.Fields.Properties.Columns {
 		want, machine := wantWrites[strings.ToLower(c.Column)]
@@ -401,13 +406,13 @@ func TestTheDeveloperTemplateDeclaresWhatItsMachineStagesProduce(t *testing.T) {
 
 	// And the property itself, since a write naming a field the board has not
 	// got is refused at the moment the stage reports — after the work.
-	if _, ok := board.property("Превью"); !ok {
+	if _, ok := board.property("Preview"); !ok {
 		t.Error("the template writes a preview address to a property it does not carry")
 	}
 }
 
 // How a stage ended is a fact about the card. The template used to say it by
-// having the card land in «Проверено», «Не прошло» or «Заблокировано» — three
+// having the card land in a checked, a failed and a blocked column — three
 // columns whose whole content was one fact about the stage before them, and
 // which then read as places where work happens, on the board and on the canvas
 // alike. The outcome is a field the engine writes for every stage, and those
@@ -415,8 +420,8 @@ func TestTheDeveloperTemplateDeclaresWhatItsMachineStagesProduce(t *testing.T) {
 func TestTheDeveloperTemplateKeepsOutcomesOffTheBoard(t *testing.T) {
 	board := readTemplateBoard(t)
 
-	for _, gone := range []string{"Проверено", "Не прошло", "Заблокировано"} {
-		if board.options(t, "Статус")[strings.ToLower(gone)] {
+	for _, gone := range []string{"Checked", "Failed", "Blocked"} {
+		if board.options(t, DefaultTriggerProperty)[strings.ToLower(gone)] {
 			t.Errorf("«%s» is still a column: an outcome is not a place work happens", gone)
 		}
 	}

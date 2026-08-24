@@ -94,6 +94,22 @@ export async function hydrateUserSettings(): Promise<void> {
     }
 }
 
+// reportLanguage tells the install which language the page settled on, whether
+// or not anybody picked it: the shipped board templates are boards rather than
+// catalogue strings, so the Go side installs them in a language — and the
+// webview's own locale, which is the answer when nobody picked, is something
+// only this side can read. It stores nothing; a resolved default is not a
+// choice.
+export function reportLanguage(lang: string): void {
+    try {
+        // eslint-disable-next-line new-cap
+        preferenceBindings()?.UseLanguage?.(lang)?.catch?.(() => undefined)
+    } catch (e) {
+        // No Go side, or a binding that throws on the way out: the templates
+        // stay in the language they were installed in.
+    }
+}
+
 export class UserSettings {
     static get(key: UserSettingKey): string | null {
         return localStorage.getItem(key)

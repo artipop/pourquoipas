@@ -786,6 +786,55 @@ board carries the version of the template it came from and a copy of that board
 carried it too — the picker counted such a copy as shipped and then showed it in
 neither list.
 
+**A template is one board and a catalogue of words** (`templatetext.go`,
+`templates/i18n/*.json`). The files are written once, in **English**, and
+translated on the way in: the catalogue is keyed by the very string the file
+carries, so there is no third name to keep in step, and a string with no
+translation stays as the file wrote it rather than disappearing. English is the
+source for the reason the page's own strings are — a message id there is an
+English default and `ru.json` translates it — so both halves of the product are
+written the same way round. A copy of the board per language was the
+alternative, and it is two descriptions of one board: a column added to one of
+them is a column missing from the other, and nothing says so until somebody
+opens it. What gets translated is decided by the JSON key (`title`,
+`description`, `name`, `value`, `column`, `property`, `hint`, `prompt`), which
+is what keeps ids, colours and the slug out of it;
+`TestEveryTemplateStringIsTranslated` fails when a template gains a string a
+catalogue has not got, and its opposite fails when a catalogue keeps
+translating something no template says any more. Both read the templates **off
+the disk**, because a base build embeds the paid edition's boards nowhere and a
+catalogue covers every edition.
+
+The columns and route names in `internal/acp/flowtemplates.go` are English for
+the same reason and translated at the same door: they name the template board's
+own columns, so `ListFlowTemplates` puts them through `TemplateWords` before
+the editor offers them — a route naming "In progress" on a Russian board is a
+route with nowhere to run.
+
+Which language is `<dataDir>/ui-settings.json` — the same setting the page
+keeps — so the templates are boards in the language the app is read in.
+Switching it reinstalls them (`App.retemplate`, set in `main.go`), because a
+template is a board rather than a catalogue string and nothing about the files
+changed: only the language recorded on the installed copy
+(`TemplateLanguageProperty`) can say the copy is now in the wrong one. Boards
+somebody already made are untouched — they are theirs. **The page is what
+answers when nobody has picked** (`UseLanguage`, called from `main.tsx`): the
+webview's own locale is a thing only that side can read, and without it
+somebody who never opened the settings would read the app in their language and
+be offered templates in English. It stores nothing — a resolved default is not
+a choice, and storing it would stop the app following the system.
+
+**Four names sit in those English files in Russian** (`appGivenNames`), and are
+never translated either way: «Входящие»
+and «Мои задачи», which the inbox column and view are *found* by title
+(`InboxViewTitle`, `MineColumnTitle`, `sources.DefaultInbox`) — a translated
+board would grow a second Russian pair at the first arrival — and «Исход» with
+«прошло»/«не прошло», the outcome the engine writes for every stage
+(`OutcomePassed`/`OutcomeFailed`) and the value a route's conditional edges
+compare against. They are the app's own field on somebody else's board, and the
+fix is for the engine to write those options by id rather than by name;
+`docs/deferred.md` carries it.
+
 **What an agent is told first is two texts, and there are two because there are
 two owners** (`internal/acp/boardprompts.go`). The board's — `boardPrompts`, on
 the board as `prompt`, so it travels with it — goes to everybody working

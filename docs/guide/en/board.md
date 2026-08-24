@@ -77,7 +77,7 @@ under every one.
 
 Which route a card is on is decided exactly as the automation decides it: the
 card stands on one of the route's stages, or it names the route with an option
-of that name — usually in the «Сценарий» field. See
+of that name — usually in the «Workflow» field. See
 ["How a card gets onto a route"](./automation/index.md).
 
 The pick is kept in the view itself: it is the same after a reload and on

@@ -7,8 +7,8 @@ is, how to answer questions and what stays on the card.
 
 A card is worked by whoever it is assigned to. The assignment field is an
 ordinary board field of the "person" type; templates name it differently:
-«Исполнитель» on the «Разработка» board, «Кто делает» on «Личное», «Кто ведёт»
-on «Контент».
+«Assignee» on the «Development» board, «Who does it» on «Personal»,
+«Who leads it» on «Content».
 
 You do not have to fill it in by hand. If a route stage has its own agent (in
 the editor — "Worked by" on the column or "Worked here by" on the route stage),
@@ -47,8 +47,8 @@ a "Terminal" button. It opens a panel on the right, and the terminal in it
 starts by itself.
 
 **A card has one conversation per column it has stood in.** The conversation
-belongs to the column: wording and plans are talked over in «Не начата», the
-work happens in «В работе», the review in «Ревью». The panel opens the
+belongs to the column: wording and plans are talked over in «Not started», the
+work happens in «In progress», the review in «In review». The panel opens the
 conversation of the column the card stands in now, and a person and the route's
 agent in one column talk in **one** conversation — with that column's agent, in
 its working folder, with its instructions (see
@@ -66,7 +66,7 @@ a conversation being continued already knows them.
 
 It is kept. Close the panel, close the app, move the card away and back — the
 column's conversation continues where it stopped. **A returning card brings the
-new input with it**: sent back from «Ревью», the resumed conversation is told
+new input with it**: sent back from «In review», the resumed conversation is told
 why it is back and what the reviewer said — not the task again.
 
 - if this column's terminal is already running, the same one opens, with its
@@ -134,7 +134,7 @@ exception is a card that was already worked: it has a branch of its own, so
 the button stays even after the agent is removed.
 
 **If no folder resolves, the panel asks.** A card can be talked over without
-code: wording, subtasks, a brief. When neither the «Папка» field nor the
+code: wording, subtasks, a brief. When neither the «Folder» field nor the
 registry names a folder, the question "Which folder will the agent work in?"
 appears, and the answers are chips:
 
@@ -296,8 +296,8 @@ thing here.
 
 ## The card has arrived for you
 
-A stage where nothing runs is a stage for a person: «На ревью», «Прочитать»,
-«На проверке». When the route brings a card there **by itself**, the app says
+A stage where nothing runs is a stage for a person: «In review», «To read»,
+«To check». When the route brings a card there **by itself**, the app says
 so: a notification in the app, a system notification, and the dot on the icon
 beside the clock. Clicking the system notification opens the board the card is
 standing on.

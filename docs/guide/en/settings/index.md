@@ -29,7 +29,10 @@ agents, "The app itself", "Updates", "Import and export" and "Other" remain.
 - **Light or dark** — "Light", "Dark", "As the system is"; every theme has both
   halves. All of it applies immediately; in full, [Themes](./themes.md).
 - **Language** — the list of app languages. When none was ever picked, the
-  system language applies.
+  system language applies. The board templates come in the app's language:
+  changing the language reinstalls them, so the template picker offers boards
+  whose columns and routes are in the new one. Boards you have already made are
+  left alone — they are yours.
 - **Help** — "The guide", with an "Open" button: it opens this guide. Below
   it — "Give feedback", with a "Write" button: it opens your mail program
   addressed to `hello@deffun.com`. The address is also printed next to the

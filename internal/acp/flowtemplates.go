@@ -21,12 +21,18 @@ const (
 	// that creates boards, rather than in the machine's settings — where they
 	// used to be five keys naming the columns of anybody's board and matching
 	// them by name.
-	TemplateWorkColumn   = "В работе"
-	TemplateDeployColumn = "Деплой"
+	//
+	// English, because the template boards are (internal/boardadapter/
+	// templatetext.go): a person reads these words translated into the language
+	// the app is set to, and a route offered to a board has to name that
+	// board's own columns — which is what boardadapter.TemplateWords does on
+	// the way out (App.ListFlowTemplates).
+	TemplateWorkColumn   = "In progress"
+	TemplateDeployColumn = "Deploy"
 	TemplateTestColumn   = "QA"
 
-	TemplateReviewColumn = "На ревью"
-	TemplateDoneColumn   = "Готово 🙌"
+	TemplateReviewColumn = "In review"
+	TemplateDoneColumn   = "Done 🙌"
 )
 
 // There were three more: «Проверено», «Не прошло» and «Заблокировано». Each was
@@ -44,9 +50,9 @@ const (
 // Flow names, which are also the options of the board template's "Workflow"
 // property — the two lists are kept in step by TestTemplateFlowsMatchTheBoardTemplate.
 const (
-	TemplateFlowFeature = "Фича"
-	TemplateFlowHotfix  = "Хотфикс"
-	TemplateFlowReview  = "Только ревью"
+	TemplateFlowFeature = "Feature"
+	TemplateFlowHotfix  = "Hotfix"
+	TemplateFlowReview  = "Review only"
 )
 
 // flowBuilder assembles one route, quietly dropping stages whose column the

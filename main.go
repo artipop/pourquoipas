@@ -185,8 +185,14 @@ func main() {
 	// Not against a server: the templates on a hosted install are its own, and
 	// this would delete the ones this build does not ship — every attached
 	// desktop fighting over them at every launch.
+	// In the language the app is read in: the boards themselves are one set of
+	// files and the words are a catalogue beside them
+	// (internal/boardadapter/templatetext.go).
+	installTemplates := func(lang string) error {
+		return boardadapter.ImportTemplates(srv.App(), logger, lang)
+	}
 	if attach.target() == "" {
-		if err := boardadapter.ImportTemplates(srv.App(), logger); err != nil {
+		if err := installTemplates(uiLanguage()); err != nil {
 			log.Printf("templates: %v", err)
 		}
 	}
@@ -237,6 +243,12 @@ func main() {
 
 	emitter := newWailsEmitter(uiEvents)
 	app := NewApp(emitter)
+	// The templates follow the language they are read in, and a person changes
+	// that while the app runs — so the switch says nothing about a restart and
+	// the picker is right the next time it is opened (uisettings.go).
+	if attach.target() == "" {
+		app.retemplate = installTemplates
+	}
 
 	// The board as the page at /m reads it. Set here rather than beside the
 	// sources registry because a phone lists boards and cards whether or not

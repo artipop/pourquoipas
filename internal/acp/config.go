@@ -767,13 +767,14 @@ type Config struct {
 
 // The column a card is dropped into to hand it to an agent. Work starts where
 // work normally starts on a board, rather than in a lane invented for agents.
-// The names are the ones the boards this app ships use, and a person reads them
-// on the board itself — hence Russian, like everything else they read. An
-// install that already has a config keeps whatever it says: these are the
-// defaults for a machine that has none.
+// The names are the ones the boards this app ships use, so they are English
+// like those files, and a person reads them translated into the language the
+// app is set to (internal/boardadapter/templatetext.go). An install that
+// already has a config keeps whatever it says: these are the defaults for a
+// machine that has none.
 const (
 	// DefaultTriggerProperty is the select property the columns live on.
-	DefaultTriggerProperty = "Статус"
+	DefaultTriggerProperty = "Status"
 	// DefaultTriggerColumn is what a board made from a template calls the column
 	// an agent works in. Kept as the one name the fixtures and the templates
 	// share; the templates' own names are in flowtemplates.go.

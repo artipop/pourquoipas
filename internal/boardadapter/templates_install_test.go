@@ -101,7 +101,7 @@ func TestTemplatesAreInstalledOnceAndStayThere(t *testing.T) {
 	a := newTestApp(t)
 	logger, _ := mlog.NewLogger()
 
-	if err := ImportTemplates(a, logger); err != nil {
+	if err := ImportTemplates(a, logger, SourceLanguage); err != nil {
 		t.Fatalf("first launch: %v", err)
 	}
 	first := installedTemplates(t, a)
@@ -131,7 +131,7 @@ func TestTemplatesAreInstalledOnceAndStayThere(t *testing.T) {
 	// A second launch must find them and leave them alone — including their
 	// ids, since a board somebody made from one keeps no link to it but the
 	// registry's routes are filed under the board they were taken from.
-	if err := ImportTemplates(a, logger); err != nil {
+	if err := ImportTemplates(a, logger, SourceLanguage); err != nil {
 		t.Fatalf("second launch: %v", err)
 	}
 	for slug, board := range installedTemplates(t, a) {
@@ -141,18 +141,57 @@ func TestTemplatesAreInstalledOnceAndStayThere(t *testing.T) {
 	}
 }
 
+// A person switches the app to Russian, and the templates are boards rather
+// than catalogue strings: nothing about the files changed, so only the language
+// recorded on the installed copy can say they are now in the wrong one.
+func TestChangingTheLanguageReinstallsTheTemplates(t *testing.T) {
+	a := newTestApp(t)
+	logger, _ := mlog.NewLogger()
+	if err := ImportTemplates(a, logger, SourceLanguage); err != nil {
+		t.Fatal(err)
+	}
+	before := installedTemplates(t, a)
+	if title := before["developer-tasks"].Title; title != "Development" {
+		t.Fatalf("installed as %q", title)
+	}
+
+	if err := ImportTemplates(a, logger, "ru"); err != nil {
+		t.Fatal(err)
+	}
+	after := installedTemplates(t, a) // fails the test if any slug is there twice
+	if len(after) != len(before) {
+		t.Fatalf("%d templates installed, expected %d", len(after), len(before))
+	}
+	dev := after["developer-tasks"]
+	if dev.Title != "Разработка" {
+		t.Errorf("the Russian copy is called %q", dev.Title)
+	}
+	if templateBoardLanguage(dev) != "ru" {
+		t.Errorf("it says it is in %q", templateBoardLanguage(dev))
+	}
+
+	// And a second launch in the same language leaves them alone, or every
+	// start would delete and recreate five boards.
+	if err := ImportTemplates(a, logger, "ru"); err != nil {
+		t.Fatal(err)
+	}
+	if again := installedTemplates(t, a)["developer-tasks"]; again.ID != dev.ID {
+		t.Error("the Russian copy was reinstalled on the next launch")
+	}
+}
+
 // The upgrade path: an edited template reaches an install that already has the
 // old one, and reaches it as a replacement rather than as a second board with
 // the same name.
 func TestABumpedVersionReplacesTheInstalledCopy(t *testing.T) {
 	a := newTestApp(t)
 	logger, _ := mlog.NewLogger()
-	if err := importTemplates(a, logger, 1); err != nil {
+	if err := importTemplates(a, logger, 1, SourceLanguage); err != nil {
 		t.Fatal(err)
 	}
 	before := installedTemplates(t, a)
 
-	if err := importTemplates(a, logger, 2); err != nil {
+	if err := importTemplates(a, logger, 2, SourceLanguage); err != nil {
 		t.Fatal(err)
 	}
 	after := installedTemplates(t, a) // fails the test if any slug is there twice
@@ -174,7 +213,7 @@ func TestABumpedVersionReplacesTheInstalledCopy(t *testing.T) {
 func TestAnInstalledTemplateKeepsItsCardsAndAutomation(t *testing.T) {
 	a := newTestApp(t)
 	logger, _ := mlog.NewLogger()
-	if err := ImportTemplates(a, logger); err != nil {
+	if err := ImportTemplates(a, logger, SourceLanguage); err != nil {
 		t.Fatal(err)
 	}
 
@@ -213,7 +252,7 @@ func TestAnInstalledTemplateKeepsItsCardsAndAutomation(t *testing.T) {
 func TestATemplateSomebodySavedStopsClaimingToBeOurs(t *testing.T) {
 	a := newTestApp(t)
 	logger, _ := mlog.NewLogger()
-	if err := ImportTemplates(a, logger); err != nil {
+	if err := ImportTemplates(a, logger, SourceLanguage); err != nil {
 		t.Fatal(err)
 	}
 	ours := installedTemplates(t, a)["developer-tasks"]
@@ -236,7 +275,7 @@ func TestATemplateSomebodySavedStopsClaimingToBeOurs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := ImportTemplates(a, logger); err != nil {
+	if err := ImportTemplates(a, logger, SourceLanguage); err != nil {
 		t.Fatal(err)
 	}
 
@@ -265,7 +304,7 @@ func TestATemplateSomebodySavedStopsClaimingToBeOurs(t *testing.T) {
 func TestATemplateThisBuildNoLongerShipsIsRemoved(t *testing.T) {
 	a := newTestApp(t)
 	logger, _ := mlog.NewLogger()
-	if err := ImportTemplates(a, logger); err != nil {
+	if err := ImportTemplates(a, logger, SourceLanguage); err != nil {
 		t.Fatal(err)
 	}
 
@@ -288,7 +327,7 @@ func TestATemplateThisBuildNoLongerShipsIsRemoved(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := ImportTemplates(a, logger); err != nil {
+	if err := ImportTemplates(a, logger, SourceLanguage); err != nil {
 		t.Fatal(err)
 	}
 

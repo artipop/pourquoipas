@@ -69,22 +69,22 @@ question is on its route strip — with the name of the stage the card is going
 to, and the answers as buttons; "Ждут" and the notification say so too. An
 answer is one click; several questions are asked one at a time.
 
-The question is about this arrow, not about the stage. The arrow "Не начата → В
-работе" asks; the way back, "На ревью → В работе", does not — there it is all
-settled already.
+The question is about this arrow, not about the stage. The arrow "Not started →
+In progress" asks; the way back, "In review → In progress", does not — there it
+is all settled already.
 
 ### The way onto the route
 
 A route's first stage has no incoming arrow you can see: the card arrives there
-from "Не начата", from a source, or simply by hand — from somewhere the route
+from "Not started", from a source, or simply by hand — from somewhere the route
 does not pass through. That way in exists all the same, and it is a transition
 too: it can ask.
 
-In the «Разработка» template the way onto each route already asks how the agent
-is to work with the folder. So a card you drag from "Не начата" into "В работе"
+In the «Development» template the way onto each route already asks how the agent
+is to work with the folder. So a card you drag from "Not started" into "In progress"
 asks first and starts work afterwards, in the workspace you chose.
 
-It is asked once. A card coming back into "В работе" from a review arrived along
+It is asked once. A card coming back into "In progress" from a review arrived along
 an ordinary arrow of the route, and is asked nothing.
 
 The canvas does not draw the way in yet, so the question on it cannot be changed

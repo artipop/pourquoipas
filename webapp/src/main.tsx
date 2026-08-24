@@ -6,7 +6,8 @@ import App from './app'
 import {installPolyfills} from './polyfills'
 import {initThemes} from './theme'
 import {importNativeAppSettings} from './nativeApp'
-import {hydrateUserSettings} from './userSettings'
+import {hydrateUserSettings, reportLanguage} from './userSettings'
+import {getCurrentLanguage} from './i18n'
 
 import {IUser} from './user'
 import {getMe} from './store/users'
@@ -62,6 +63,11 @@ const MainApp = () => {
 async function boot() {
     await hydrateUserSettings()
     initThemes()
+
+    // Which language this page settled on — the pick, else the webview's own
+    // locale. The Go side cannot read the second one, and it installs the board
+    // templates in a language (internal/boardadapter/templatetext.go).
+    reportLanguage(getCurrentLanguage())
 
     // The store is created here, not in a module singleton, and everything
     // that writes to it from outside the component tree — the Mutator — gets

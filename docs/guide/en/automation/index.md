@@ -56,7 +56,7 @@ The **"Columns"** tab, select a column — in the panel:
 - **"What the agent is told here"** — the column's instructions. The agent gets
   them in front of the card's task, and they open a conversation a person
   starts in this column too: "You are the reviewer — find defects, fix
-  nothing" on «Ревью» makes the same agent a reviewer. Written in any language —
+  nothing" on «In review» makes the same agent a reviewer. Written in any language —
   passed through as it is;
 - **"Writes onto the card"** — the properties a stage leaves on the card. On an
   agent column it is a contract: the agent passes the values in `finish_work`,
@@ -68,7 +68,7 @@ The **"Columns"** tab, select a column — in the panel:
 
   The list offers not every board property but the ones a stage can actually
   write to: text, a link, a number, an email, a phone and one of a set. A date,
-  a person and «Автор»/«Создана» are left out — there is nothing to write there.
+  a person and «Author»/«Created» are left out — there is nothing to write there.
 
   When the board has no property for the value, the last item in the list is
   **"+ a new property…"**. The form asks for a name and for what the property
@@ -96,10 +96,10 @@ The **"Columns"** tab, select a column — in the panel:
   On the canvas they are ordinary outcome arrows: green on, red back, out of the
   same two points every other stage uses. They travel on the "card was marked"
   event, but colouring them by the event drew the one arrow anybody looks for on
-  «На ревью» as a grey dashed line among the waits.
+  «In review» as a grey dashed line among the waits.
 
   «Исход» can be set by hand as well, and the way back from a review rests on
-  that. Nothing runs in «На ревью», so it has no "failed" of its own — git can
+  that. Nothing runs in «In review», so it has no "failed" of its own — git can
   say a branch was merged and cannot say a reviewer refused. So the reviewer
   sets «Исход» to «не прошло» on the card, and the "card was marked" arrow sends
   it back to work. The app's own write is silent, so a stage that passed never
@@ -115,8 +115,8 @@ The **"Columns"** tab, select a column — in the panel:
   transition for its outcome the card stays where it is, the outcome is on it,
   and the route strip carries the reason in amber.
 
-  A board made from the «Разработка» template has this set up already: the
-  «Деплой» column writes «Превью» (a link), and it shows on that box on the
+  A board made from the «Development» template has this set up already: the
+  «Deploy» column writes «Preview» (a link), and it shows on that box on the
   canvas. How a stage ended goes into «Исход».
 
   The declared writes reach the agent in its brief: what it has to pass in
@@ -125,14 +125,14 @@ The **"Columns"** tab, select a column — in the panel:
   `list_card_fields` tool: every card property of this board, which of them can
   be written to at all, and which this stage has to report;
 - **"Gets from the card"** — the properties the stage reads: their values open
-  its brief ("From the card: Превью: …"), so the agent does not have to think
+  its brief ("From the card: Preview: …"), so the agent does not have to think
   of asking `get_card`.
 
   They do not always have to be ticked. When a route stage's list is empty, it
   gets whatever the stages before it write — the panel shows those in a faint
-  row naming the stage that produces each: «Превью · пишет «Деплой»». Declare a
-  write once and the value travels on by itself. Naming anything in the list
-  replaces that set whole;
+  row naming the stage that produces each: “Preview · written by “Deploy””.
+  Declare a write once and the value travels on by itself. Naming anything in
+  the list replaces that set whole;
 - **"MCP servers of this column"** — the tools the agent working here is given.
   The same JSON any MCP client takes, so it can be copied from a server's own
   README:
@@ -142,7 +142,7 @@ The **"Columns"** tab, select a column — in the panel:
   ```
 
   A column's servers are added to the agent's own rather than replacing them:
-  the same agent needs a browser on «QA» and does not need one on «В работе»,
+  the same agent needs a browser on «QA» and does not need one on «In progress»,
   and there is no second agent to register for it. Their tools run without
   confirmation prompts. The name `board` is taken — that is how the board's own
   tools reach the column, the ones an agent says it has finished with.
@@ -268,7 +268,7 @@ from:
   how one that is a repository is worked in (see [Folders and branches](../folders.md));
 - **"Where to deploy…"** — deploy targets: the Dokku host, the SSH user and
   key, the preview domain. The item is only on a board that asks about
-  deploying — of the shipped templates that is «Разработка». The targets
+  deploying — of the shipped templates that is «Development». The targets
   themselves are shared by the whole machine: one added here is visible to any
   other deploying board;
 - **"Walk the setup again…"** — the same questions the board asked when it was
