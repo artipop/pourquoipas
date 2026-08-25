@@ -1,3 +1,5 @@
+@import '../../styles/field';
+
 .AgentQuickAdd {
     display: flex;
     flex-direction: column;
@@ -17,12 +19,9 @@
         // box comes from widgets/select — same as the input beside it.
         > input,
         > .Select .Select__trigger {
+            @include field;
+
             font-size: 14px;
-            color: rgb(var(--center-channel-color-rgb));
-            padding: 6px 8px;
-            border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
-            border-radius: 4px;
-            background: transparent;
         }
     }
 

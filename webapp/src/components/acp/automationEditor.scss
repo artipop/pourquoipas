@@ -1,4 +1,5 @@
 @import '../../styles/typography';
+@import '../../styles/field';
 
 // The canvas is the wide half on purpose: the picture is the point, the panel
 // is a caption.
@@ -169,22 +170,14 @@
         // (widgets/select) and only needs the panel's sizing.
         input,
         .Select__trigger {
+            @include field;
+
             // A control is as wide as its longest line unless it is told
             // otherwise, and these are column names somebody chose.
             min-width: 0;
             max-width: 100%;
-            border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
-            border-radius: var(--radius-sm);
             padding: 5px 8px;
-            background: rgb(var(--surface-bg-rgb));
-            color: rgb(var(--center-channel-color-rgb));
-            font-family: inherit;
             font-size: 12px;
-
-            &:focus {
-                border-color: rgba(var(--button-bg-rgb), 0.64);
-                outline: none;
-            }
         }
 
         input[type='checkbox'] {

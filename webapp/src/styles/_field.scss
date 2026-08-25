@@ -1,0 +1,46 @@
+// The box a form field draws. Most fields in this product are values you type
+// over — a card's title, a column's name — and draw no box at all (main.scss);
+// the ones that are forms — a settings panel, the setup wizard, a dialog
+// asking for an address — draw this one. It was written at fourteen sites with
+// nine answers: three border strengths, four paddings, two surfaces, two
+// radii, and three panels that wrote nothing and got the browser's own inset
+// border in whatever colour the platform picked — which on a dark theme is a
+// pair of pale lines. Sizes are deliberately not here: a dense editor sets
+// 12px and a search box its height, and the box is the same box under both.
+@mixin field {
+    padding: 6px 8px;
+    border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+    border-radius: var(--radius-sm);
+    background: rgb(var(--surface-bg-rgb));
+    color: rgb(var(--center-channel-color-rgb));
+    font-family: inherit;
+    font-weight: 400;
+
+    // The surface stays the surface: main.scss makes every input transparent
+    // and tints it on hover, which is right for a value you type over and
+    // turns a boxed field into a hole. Said under the body's own class, the
+    // one main.scss says it under, because a panel's `.Panel input` ties with
+    // `.app-body input` on specificity and then loses on order — measured on
+    // the server panel, whose box came out with a border and no ground.
+    // Reaching for a field is said by the border instead, as the dropdown
+    // beside it already says it.
+    .app-body &,
+    .app-body &:hover,
+    .app-body &:focus {
+        background: rgb(var(--surface-bg-rgb));
+    }
+
+    &:hover {
+        border-color: rgba(var(--center-channel-color-rgb), 0.32);
+    }
+
+    &:focus,
+    &:focus-visible {
+        border-color: rgba(var(--button-bg-rgb), 0.64);
+        outline: none;
+    }
+
+    &:disabled {
+        opacity: 0.6;
+    }
+}

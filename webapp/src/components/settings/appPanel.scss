@@ -1,3 +1,5 @@
+@import '../../styles/field';
+
 .AppPanel {
     .AppPanel__content {
         display: flex;
@@ -39,11 +41,8 @@
     // edits, so it is monospaced and does not wrap: a colour that has wrapped
     // onto the next line cannot be read down the column.
     .AppPanel__code {
-        padding: 8px 12px;
-        border: 1px solid rgba(var(--center-channel-color-rgb), 0.12);
-        border-radius: var(--radius-md);
-        background: rgba(var(--center-channel-color-rgb), 0.04);
-        color: rgb(var(--center-channel-color-rgb));
+        @include field;
+
         font-family: var(--font-mono);
         font-size: var(--text-small);
         line-height: 1.5;
@@ -74,12 +73,7 @@
     }
 
     .AppPanel__name {
-        padding: 8px 12px;
-        border: 1px solid rgba(var(--center-channel-color-rgb), 0.12);
-        border-radius: var(--radius-md);
-        background: rgba(var(--center-channel-color-rgb), 0.04);
-        color: rgb(var(--center-channel-color-rgb));
-        font: inherit;
+        @include field;
     }
 
     .AppPanel__customActions {

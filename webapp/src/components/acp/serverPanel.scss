@@ -1,3 +1,5 @@
+@import '../../styles/field';
+
 .ServerPanel {
     display: flex;
     flex-direction: column;
@@ -28,6 +30,10 @@
         span {
             font-size: 12px;
             color: rgba(var(--center-channel-color-rgb), 0.72);
+        }
+
+        input {
+            @include field;
         }
     }
 

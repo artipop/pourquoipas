@@ -1,4 +1,5 @@
 @import '../../styles/typography';
+@import '../../styles/field';
 
 // One card per folder. Everything a person wrote or a machine keeps — the
 // name, the path, a branch — is prose or data rather than the dialog's label
@@ -174,20 +175,13 @@
 
     .WorkdirsPanel__base,
     .WorkdirsPanel__nameInput {
+        @include field;
+
+        padding: 3px 8px;
         font-family: var(--font-mono);
         font-size: 12px;
         text-transform: none;
         letter-spacing: 0;
-        border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
-        border-radius: var(--radius-sm);
-        padding: 3px 8px;
-        background: rgb(var(--surface-bg-rgb));
-        color: rgb(var(--center-channel-color-rgb));
-
-        &:focus {
-            border-color: rgba(var(--button-bg-rgb), 0.64);
-            outline: none;
-        }
     }
 
     .WorkdirsPanel__base {

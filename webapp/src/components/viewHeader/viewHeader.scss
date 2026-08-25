@@ -1,3 +1,5 @@
+@import '../../styles/field';
+
 .ViewHeader {
     flex: 0 0 auto;
     display: flex;
@@ -93,16 +95,11 @@
     position: relative;
 
     input {
-        font-size: 12px;
-        border-radius: var(--radius-sm);
-        padding: 0 12px 0 32px;
-        height: 32px;
-        border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
-        padding-bottom: 1px;
+        @include field;
 
-        &:focus {
-            border-color: rgba(var(--button-bg-rgb), 1);
-        }
+        height: 32px;
+        padding: 0 12px 1px 32px;
+        font-size: 12px;
     }
 
     .board-search-icon {

@@ -1,3 +1,5 @@
+@import '../styles/field';
+
 .RegisterPage {
     border: 1px solid var(--border-strong);
     border-radius: var(--radius-lg);
@@ -47,12 +49,11 @@
         }
 
         input {
+            @include field;
+
             display: inline-block;
             width: 250px;
-            border: 1px solid var(--border-strong);
-            border-radius: var(--radius-sm);
             min-height: 44px;
-            padding: 7px;
         }
     }
 

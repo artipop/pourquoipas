@@ -1,3 +1,5 @@
+@import '../styles/field';
+
 .LoginPage {
     border: 1px solid var(--border-strong);
     border-radius: var(--radius-lg);
@@ -46,11 +48,10 @@
         }
 
         input {
+            @include field;
+
             display: inline-block;
             width: 250px;
-            border: 1px solid var(--border-strong);
-            border-radius: var(--radius-sm);
-            padding: 7px;
             min-height: 44px;
         }
     }
