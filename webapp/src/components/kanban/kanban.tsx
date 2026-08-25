@@ -21,9 +21,7 @@ import {dragAndDropRearrange} from '../cardDetail/cardDetailContentsUtility'
 import {getCurrentBoardTemplates} from '../../store/cards'
 import BoardPermissionGate from '../permissions/boardPermissionGate'
 
-import {invalidateBoardColumns} from '../acp/columnBadge'
 import {movedHere} from '../acp/movedHere'
-import AutomationDialog from '../acp/automationDialog'
 
 import KanbanCard from './kanbanCard'
 import KanbanColumn from './kanbanColumn'
@@ -56,7 +54,6 @@ type Props = {
 const Kanban = (props: Props) => {
     // The column whose automation is open. Held here rather than in the header
     // because a board edit made from inside the dialog re-creates the headers.
-    const [settingsColumn, setSettingsColumn] = createSignal('')
     const intl = useIntl()
     const cardTemplates = useAppSelector(getCurrentBoardTemplates)
     const [defaultTemplateID, setDefaultTemplateID] = createSignal<string>()
@@ -262,7 +259,6 @@ const Kanban = (props: Props) => {
                                 calculationMenuOpen={showCalculationsMenu().get(group.option.id) || false}
                                 onCalculationMenuOpen={() => toggleOptions(group.option.id, true)}
                                 onCalculationMenuClose={() => toggleOptions(group.option.id, false)}
-                                onOpenSettings={setSettingsColumn}
                             />
                             <Show when={dividesAfter(group)}>
                                 <div class='octo-board-divider'/>
@@ -379,14 +375,6 @@ const Kanban = (props: Props) => {
                 </Show>
             </div>
 
-            <Show when={settingsColumn()}>
-                <AutomationDialog
-                    board={props.board}
-                    focusColumnId={settingsColumn()}
-                    onClose={() => setSettingsColumn('')}
-                    onSaved={invalidateBoardColumns}
-                />
-            </Show>
         </div>
     )
 }

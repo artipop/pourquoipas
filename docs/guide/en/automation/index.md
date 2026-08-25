@@ -1,11 +1,8 @@
 # Columns and routes
 
 The board's behaviour is configured in the **"Columns and routes"** window:
-what each column does and where a card moves next. Two ways to open it:
-
-- the board menu (⋯ in the header) → **"Columns and routes"**;
-- any column's menu → **"What happens in this column…"** — the same window with
-  that column already selected.
+what each column does and where a card moves next. It opens from the board
+menu (⋯ in the header) → **"Columns and routes"**.
 
 There are no scripts or formulas: everything is assembled from ready-made
 actions.

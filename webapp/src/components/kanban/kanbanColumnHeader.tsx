@@ -30,7 +30,6 @@ import {personNameById} from '../../userDisplay'
 import BoardPermissionGate from '../permissions/boardPermissionGate'
 
 import ColumnBadge from '../acp/columnBadge'
-import {isAutomationAvailable} from '../acp/automationDialog'
 import {MineColumnTitle, isInboxView} from '../acp/inboxView'
 
 import {KanbanCalculation} from './calculation/calculation'
@@ -50,7 +49,6 @@ type Props = {
     // in this header, because a board edit made from inside it (a palette
     // block dropping a new column, say) re-creates every header and would take
     // the dialog down with it.
-    onOpenSettings: (optionId: string) => void
     calculationMenuOpen: boolean
     onCalculationMenuOpen: () => void
     onCalculationMenuClose: () => void
@@ -204,17 +202,6 @@ export default function KanbanColumnHeader(props: Props): JSX.Element {
                                     name={props.intl.formatMessage({id: 'BoardComponent.hide', defaultMessage: 'Hide'})}
                                     onClick={() => mutator.hideViewColumn(props.board.id, props.activeView, props.group.option.id || '')}
                                 />
-                                {/* A column's settings are a panel of the
-                                    board's automation now, so this opens the
-                                    whole picture with this column selected
-                                    rather than a dialog of its own. */}
-                                <Show when={canEditOption() && isAutomationAvailable()}>
-                                    <Menu.Text
-                                        id='columnAgents'
-                                        name={props.intl.formatMessage({id: 'BoardComponent.column-agents', defaultMessage: 'What happens in this column…'})}
-                                        onClick={() => props.onOpenSettings(props.group.option.id)}
-                                    />
-                                </Show>
                                 <Show when={canEditOption()}>
                                     <Menu.Text
                                         id='delete'
