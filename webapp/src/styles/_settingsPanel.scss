@@ -59,3 +59,20 @@
         max-width: 72ch;
     }
 }
+
+// The box those panels sit in when the dialog is their own rather than the
+// settings one. They were written to be dropped into something that padded
+// around them (the settings dialog pads its panel column), so on their own they
+// stood flush against every edge and the first line of prose started 32px to
+// the left of the title above it. The 32px is the dialog toolbar's own, which
+// is what puts the two under the same first letter.
+//
+// A height of its own rather than the content's: these lists grow by a row per
+// entry and the form under them unfolds, so a box sized to fit changes size
+// while somebody is typing in it.
+@mixin settings-panel-body {
+    padding: 0 32px 32px;
+    max-height: 70vh;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+}

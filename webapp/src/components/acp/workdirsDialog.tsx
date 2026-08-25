@@ -5,6 +5,8 @@ import Dialog from '../dialog'
 
 import WorkdirsPanel from './workdirsPanel'
 
+import './workdirsDialog.scss'
+
 // Where this board's agents work, on its own screen — reached from the board's
 // ⋯ menu rather than folded into the automation dialog. How a repository
 // among them is worked in is asked on the repository's own row: it is a fact
