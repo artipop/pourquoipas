@@ -82,7 +82,8 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
         const buttonElement = screen.getByRole('button', {name: 'View header menu'})
         userEvent.click(buttonElement)
         expect(container).toMatchSnapshot()
-        const buttonExportCSV = screen.getByRole('button', {name: 'Export to CSV'})
+        userEvent.click(screen.getByText('Export'))
+        const buttonExportCSV = screen.getByRole('button', {name: 'To CSV'})
         userEvent.click(buttonExportCSV)
         expect(mockedCsvExporter.exportTableCsv).toHaveBeenCalledTimes(1)
     })
@@ -258,7 +259,7 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
 
         test('the board menu is not', async () => {
             await waitFor(() => expect(screen.getByRole('button', {name: 'Sources…'})).toBeInTheDocument())
-            for (const gone of ['Export to CSV', 'Export board archive', 'Columns and routes…', 'Save as a template…']) {
+            for (const gone of ['Export', 'Columns and routes…', 'Save as a template…']) {
                 expect(screen.queryByRole('button', {name: gone})).toBeNull()
             }
         })
@@ -304,7 +305,8 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
         )
         userEvent.click(screen.getByRole('button', {name: 'View header menu'}))
         await waitFor(() => expect(screen.getByRole('button', {name: 'Sources…'})).toBeInTheDocument())
-        expect(screen.getByRole('button', {name: 'Export to CSV'})).toBeInTheDocument()
+        userEvent.click(screen.getByText('Export'))
+        expect(screen.getByRole('button', {name: 'To CSV'})).toBeInTheDocument()
         delete anyWindow.go
     })
 
@@ -323,7 +325,8 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
         const buttonElement = screen.getByRole('button', {name: 'View header menu'})
         userEvent.click(buttonElement)
         expect(container).toMatchSnapshot()
-        const buttonExportBoardArchive = screen.getByRole('button', {name: 'Export board archive'})
+        userEvent.click(screen.getByText('Export'))
+        const buttonExportBoardArchive = screen.getByRole('button', {name: 'Board archive'})
         userEvent.click(buttonExportBoardArchive)
         expect(mockedArchiver.exportBoardArchive).toHaveBeenCalledTimes(1)
         expect(mockedArchiver.exportBoardArchive).toHaveBeenCalledWith(board)

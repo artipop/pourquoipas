@@ -214,19 +214,34 @@ const ViewHeaderActionsMenu = (props: Props) => {
                                 nobody uses twice. Last, behind a line. There is
                                 no import beside them on purpose: an archive
                                 brings boards, plural, so it is taken in where
-                                boards are (settings → «Данные»). */}
+                                boards are (the import-and-export section of
+                                the settings). */}
                             <Show when={!onInbox()}>
                                 <Menu.Separator/>
-                                <Menu.Text
-                                    id='exportCsv'
-                                    name={intl.formatMessage({id: 'ViewHeader.export-csv', defaultMessage: 'Export to CSV'})}
-                                    onClick={() => onExportCsvTrigger(props.board, props.activeView, props.cards, intl)}
-                                />
-                                <Menu.Text
-                                    id='exportBoardArchive'
-                                    name={intl.formatMessage({id: 'ViewHeader.export-board-archive', defaultMessage: 'Export board archive'})}
-                                    onClick={() => Archiver.exportBoardArchive(props.board)}
-                                />
+                                {/* One word on the menu, the two shapes behind
+                                    it: even folded away and last, two export
+                                    rows were still two rows about one act. The
+                                    sidebar's board menu keeps the long name
+                                    (ViewHeader.export-board-archive), because
+                                    there the row stands alone and the short
+                                    name without the word "export" over it says
+                                    nothing. */}
+                                <Menu.SubMenu
+                                    id='export'
+                                    name={intl.formatMessage({id: 'ViewHeader.export', defaultMessage: 'Export'})}
+                                    position='auto'
+                                >
+                                    <Menu.Text
+                                        id='exportCsv'
+                                        name={intl.formatMessage({id: 'ViewHeader.export-csv', defaultMessage: 'To CSV'})}
+                                        onClick={() => onExportCsvTrigger(props.board, props.activeView, props.cards, intl)}
+                                    />
+                                    <Menu.Text
+                                        id='exportBoardArchive'
+                                        name={intl.formatMessage({id: 'ViewHeader.export-archive', defaultMessage: 'Board archive'})}
+                                        onClick={() => Archiver.exportBoardArchive(props.board)}
+                                    />
+                                </Menu.SubMenu>
                             </Show>
                         </Menu>
                     }
