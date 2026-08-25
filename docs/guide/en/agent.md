@@ -15,9 +15,9 @@ the editor — "Worked by" on the column or "Worked here by" on the route stage)
 the app sets the field itself when the card enters the stage. The field always
 shows who is working the card now. A card assigned to a person is left alone.
 
-To make an agent appear in the assignment list, register it in the settings —
-the [Agents](./settings/agents.md) section. After registration it becomes a
-board member under its own name: open the field and pick it.
+To make an agent appear in the assignment list, register it: the board's ⋯ menu
+→ [Agents…](./settings/agents.md). After registration it becomes a board member
+under its own name: open the field and pick it.
 
 **The list holds this board's agents.** The registry is one per machine, and a
 board names its own in "Worked by" on its columns and stages; those are the ones

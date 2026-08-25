@@ -871,17 +871,27 @@ the registry for the run and the next edit tries again — the file is not a
 fallback any more, which is the trade the move onto the board bought.
 
 **A setting lives where its owner does**, and that is the rule the whole
-settings surface is sorted by. The registries are the machine's — agents,
-proxies, the tailnet, what a card-less conversation opens saying, whether an
-agent waiting may interrupt, and the archive that carries every board in and
-out — so they are `settings/appSettingsDialog.tsx`, one dialog of panels
-opened from `sidebarSettingsButton.tsx`, reachable with no board open. Deploy
-targets are the one registry whose *door* is elsewhere: the list is still the
-machine's (the `deploy_target` table, shared by every board that deploys), but a Dokku
-host only means anything to a board whose automation has a deploy stage, so
-the panel is a fold of that board's `automationDialog.tsx` (`usesDeploys`) and
-no other surface offers it — a settings section put a Dokku form one click
-from a board of shopping lists. **What a person picked for the UI is kept by the install**, not by the
+settings surface is sorted by. What the machine keeps for itself — the tailnet,
+what a card-less conversation opens saying, whether an agent waiting may
+interrupt, and the archive that carries every board in and out — is
+`settings/appSettingsDialog.tsx`, one dialog of panels opened from
+`sidebarSettingsButton.tsx`, reachable with no board open.
+
+**Three registries are the machine's and are offered from a board anyway**,
+because a registry belongs where it means something: the deploy hosts
+(`deploy_target`, shared by every board that deploys), the agents and the
+proxies under them. A Dokku host means nothing to a board of shopping lists and
+neither does an agent, so each is a door in that board's ⋯ menu, drawn on the
+board's own setup plan (`asks('deploy')`, `asks('agent')`) — `deployTargets
+Dialog.tsx` and `agentsDialog.tsx`, beside «Папки…». The lists themselves are
+unchanged and still one per machine; only where they are asked for moved.
+Agents and proxies are **one door and two sections in it**, agents above: a
+proxy exists to be named by an agent (`AgentEntry.proxyName`), so it is the
+second half of one question rather than a settings section of its own. The
+cosmetics those panels grew inside the settings dialog moved to
+`styles/_settingsPanel.scss`, or the same panel would have two designs.
+
+**What a person picked for the UI is kept by the install**, not by the
 browser: `<dataDir>/ui-settings.json` (`GetUIPreferences`/`SetUIPreference`),
 because the desktop window opens on a loopback origin with a random port and
 localStorage forgot everything on every launch. `main.tsx` hydrates

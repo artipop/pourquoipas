@@ -1,0 +1,61 @@
+// What a registry panel expects around it, wherever it is opened.
+//
+// These panels — agents, proxies, the tailnet, the archive — were all sections
+// of one dialog, and the cosmetics they share lived under it: the ink, the
+// subtitle voice under each heading, and the measure prose stops at. Agents and
+// proxies now open from a board's own menu instead, and a panel that looks
+// different in its second home is a panel with two designs. So the rules moved
+// here and both dialogs include them.
+@mixin settings-panel {
+    // The dialog says what colour it is written in rather than inheriting one.
+    // It can be opened from the foot of the sidebar, and the sidebar paints its
+    // own light ink on everything under it: on the light theme that ink is the
+    // paper, so every heading that inherited was a heading nobody could read.
+    // The portal took the dialog out of there; this is what makes it not matter
+    // where it is mounted next.
+    color: rgb(var(--center-channel-color-rgb));
+
+    // And which voice it is written in, for the same reason. A dialog opened
+    // from the board's ⋯ menu is drawn inside `.ViewHeader`, which is chrome
+    // and therefore label-voiced (styles/_typography.scss) — so every sentence
+    // in these panels came out in tracked caps. The controls keep their own
+    // voice: a rule on `.Button` beats what its ancestor hands down.
+    font-family: var(--font-prose);
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: var(--track-prose);
+
+    // Every panel says what it is for under its own heading. The wording is the
+    // panel's, the placement is the dialog's.
+    [class$='__subtitle'] {
+        color: rgba(var(--center-channel-color-rgb), 0.64);
+        font-size: 12px;
+        margin-bottom: 12px;
+    }
+
+    // A line of explanation stops at a length somebody can read. The panel is
+    // as wide as the widest control on it, and that is the wrong measure for
+    // prose: at the full width these ran to 130 characters, where the eye
+    // loses the start of the next line. Rows, fields, buttons and cards keep
+    // the whole width — only the sentences are held in.
+    //
+    // In `ch` rather than pixels, so the 12px hints and the 14px messages come
+    // out the same number of characters: the unit is that font's own digit.
+    [class$='__subtitle'],
+    [class$='__hint'],
+    [class$='__actionHint'],
+    [class$='__groupHint'],
+    [class$='__factValue'],
+    [class$='__empty'],
+    [class$='__error'] {
+        max-width: 72ch;
+    }
+
+    // The one sentence in these panels that belongs to a shared widget rather
+    // than to a panel: the fold over the planning instructions is a whole
+    // sentence, and it was the last 130-character line here. Held to the same
+    // measure, and only inside these dialogs — the widget is used elsewhere.
+    .PromptField > summary {
+        max-width: 72ch;
+    }
+}

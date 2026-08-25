@@ -19,7 +19,7 @@ card's task and nothing else.
 | Prompt | Where it is set | Where it holds |
 |---|---|---|
 | The board's | the board menu → "The board's system prompt…" | every agent of this board |
-| The agent's | "Settings → Agents" | that agent, on **every** board |
+| The agent's | the board's ⋯ menu → "Agents…" | that agent, on **every** board |
 
 The agent is given them in that order — the board's prompt, then the agent's
 own, then the card's task. The order is printed in the window too, under the

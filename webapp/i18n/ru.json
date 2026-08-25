@@ -895,6 +895,7 @@
   "View.Table": "Таблица",
   "ViewHeader.add-template": "Новый шаблон",
   "ViewHeader.all-routes": "Все маршруты",
+  "ViewHeader.agents": "Агенты…",
   "ViewHeader.automation": "Колонки и маршруты…",
   "ViewHeader.board-prompts": "Системный промпт доски…",
   "ViewHeader.delete-template": "Удалить",

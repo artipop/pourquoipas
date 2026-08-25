@@ -21,6 +21,7 @@ import AutomationDialog, {isAutomationAvailable} from '../acp/automationDialog'
 import WorkdirsDialog from '../acp/workdirsDialog'
 import BoardPromptsDialog, {isBoardPromptsAvailable} from '../acp/boardPromptsDialog'
 import DeployTargetsDialog from '../acp/deployTargetsDialog'
+import AgentsDialog, {isAgentsDialogAvailable} from '../acp/agentsDialog'
 import BoardSetupWizard from '../acp/boardSetupWizard'
 import {createSetupPlan, isBoardSetupAvailable} from '../acp/boardSetup'
 import SourcesDialog, {isSourcesAvailable} from '../acp/sourcesDialog'
@@ -90,6 +91,7 @@ const ViewHeaderActionsMenu = (props: Props) => {
     const [showSources, setShowSources] = createSignal(false)
     const [showWorkdirs, setShowWorkdirs] = createSignal(false)
     const [showDeploys, setShowDeploys] = createSignal(false)
+    const [showAgents, setShowAgents] = createSignal(false)
     const [showPrompts, setShowPrompts] = createSignal(false)
     const [showSetup, setShowSetup] = createSignal(false)
 
@@ -155,6 +157,20 @@ const ViewHeaderActionsMenu = (props: Props) => {
                                         id='workdirs'
                                         name={intl.formatMessage({id: 'ViewHeader.workdirs', defaultMessage: 'Folders…'})}
                                         onClick={() => setShowWorkdirs(true)}
+                                    />
+                                </Show>
+
+                                {/* Who picks the cards up. The registry is the
+                                    machine's, like the deploy hosts under it,
+                                    and it is offered here for the same reason:
+                                    it means nothing on a board no agent works.
+                                    In the order the setup asks — the folder,
+                                    then who works in it, then where it goes. */}
+                                <Show when={isAgentsDialogAvailable() && asks('agent')}>
+                                    <Menu.Text
+                                        id='agents'
+                                        name={intl.formatMessage({id: 'ViewHeader.agents', defaultMessage: 'Agents…'})}
+                                        onClick={() => setShowAgents(true)}
                                     />
                                 </Show>
 
@@ -238,6 +254,12 @@ const ViewHeaderActionsMenu = (props: Props) => {
                     board={props.board}
                     onClose={() => setShowPrompts(false)}
                 />
+            </Show>
+            <Show when={showAgents()}>
+                <AgentsDialog onClose={() => {
+                    setShowAgents(false)
+                    refreshPlan()
+                }}/>
             </Show>
             <Show when={showDeploys()}>
                 <DeployTargetsDialog

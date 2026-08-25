@@ -895,6 +895,7 @@
   "View.Table": "Table",
   "ViewHeader.add-template": "New template",
   "ViewHeader.all-routes": "All routes",
+  "ViewHeader.agents": "Agents…",
   "ViewHeader.automation": "Columns and routes…",
   "ViewHeader.board-prompts": "The board’s system prompt…",
   "ViewHeader.delete-template": "Delete",

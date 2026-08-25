@@ -1,11 +1,7 @@
+@import '../../styles/settingsPanel';
+
 .AppSettingsDialog {
-    // The dialog says what colour it is written in rather than inheriting one.
-    // It is opened from the foot of the sidebar, and the sidebar paints its own
-    // light ink on everything under it: on the light theme that ink is the
-    // paper, so every heading that inherited was a heading nobody could read.
-    // The portal took the dialog out of there; this is what makes it not matter
-    // where it is mounted next.
-    color: rgb(var(--center-channel-color-rgb));
+    @include settings-panel;
 
     // One width, whatever section is open. A dialog is shrink-to-fit — its box
     // is as wide as the longest line inside it, up to the 975px every dialog
@@ -80,39 +76,5 @@
         margin: 0 0 4px;
         font-size: 16px;
         font-weight: 600;
-    }
-
-    // Every panel says what it is for under its own heading. The wording is the
-    // panel's, the placement is this dialog's.
-    [class$='__subtitle'] {
-        color: rgba(var(--center-channel-color-rgb), 0.64);
-        font-size: 12px;
-        margin-bottom: 12px;
-    }
-
-    // A line of explanation stops at a length somebody can read. The panel is
-    // as wide as the widest control on it, and that is the wrong measure for
-    // prose: at the full width these ran to 130 characters, where the eye
-    // loses the start of the next line. Rows, fields, buttons and cards keep
-    // the whole width — only the sentences are held in.
-    //
-    // In `ch` rather than pixels, so the 12px hints and the 14px messages come
-    // out the same number of characters: the unit is that font's own digit.
-    [class$='__subtitle'],
-    [class$='__hint'],
-    [class$='__actionHint'],
-    [class$='__groupHint'],
-    [class$='__factValue'],
-    [class$='__empty'],
-    [class$='__error'] {
-        max-width: 72ch;
-    }
-
-    // The one sentence in these panels that belongs to a shared widget rather
-    // than to a panel: the fold over the planning instructions is a whole
-    // sentence, and it was the last 130-character line here. Held to the same
-    // measure, and only inside this dialog — the widget is used elsewhere.
-    .PromptField > summary {
-        max-width: 72ch;
     }
 }

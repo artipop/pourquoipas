@@ -8,8 +8,6 @@ import {getMe} from '../../store/users'
 
 import Dialog from '../dialog'
 
-import AgentsPanel, {isAgentsAvailable} from '../acp/agentsPanel'
-import ProxiesPanel, {isProxiesAvailable} from '../acp/proxiesPanel'
 import ServerPanel, {isServerAttachAvailable} from '../acp/serverPanel'
 import TailnetPanel, {isTailnetAvailable} from '../acp/tailnetPanel'
 import MachineMiscPanel from '../acp/machineMiscPanel'
@@ -22,15 +20,16 @@ import UpdatesPanel, {isUpdatesAvailable} from './updatesPanel'
 import './appSettingsDialog.scss'
 
 // Everything this app is asked about itself rather than about a board: how it
-// looks and what language it speaks, which agents are installed, how they
-// reach the network, whether the board is on the tailnet, what comes in and
-// goes out as an archive, and what it is allowed to interrupt with.
+// looks and what language it speaks, whether the board is on the tailnet, what
+// comes in and goes out as an archive, and what it is allowed to interrupt
+// with.
 //
-// Deploy targets are deliberately not here, although their registry is the
-// machine's too: a deploy target only means anything to a board whose route
-// deploys, so it is offered in that board's the automation dialog — and a
-// board of shopping lists never shows a Dokku form. What a setting depends on
-// is where it is offered, even when where it is stored is the same file.
+// The agents, the proxies under them and the deploy hosts are deliberately not
+// here, although all three registries are the machine's: each of them only
+// means something to a board that runs agents, so each is offered from that
+// board's own ⋯ menu, as the agents item and the deploy item, and a board of
+// shopping lists shows neither. What a setting depends on is where it is offered, even
+// when where it is stored is the same file.
 //
 // All of it used to be reached through a board's ⋯ menu, which put settings
 // behind a board and made them unreachable when none was open; then through the
@@ -90,18 +89,6 @@ const AppSettingsDialog = (props: Props) => {
             name: () => intl.formatMessage({id: 'Updates.title', defaultMessage: 'Updates'}),
             when: isUpdatesAvailable,
             body: UpdatesPanel,
-        },
-        {
-            id: 'agents',
-            name: () => intl.formatMessage({id: 'Machine.section-agents', defaultMessage: 'Agents'}),
-            when: isAgentsAvailable,
-            body: AgentsPanel,
-        },
-        {
-            id: 'proxies',
-            name: () => intl.formatMessage({id: 'Proxies.title', defaultMessage: 'Proxy configurations'}),
-            when: isProxiesAvailable,
-            body: ProxiesPanel,
         },
         {
 

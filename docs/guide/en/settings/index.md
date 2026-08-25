@@ -7,9 +7,6 @@ Sections:
 - **"The app itself"** — theme, language, help and feedback;
 - **"Updates"** — the app's version and moving to a newer one, see
   [Updates](./updates.md);
-- **"Agents"** — this machine's agents and what launches them, see
-  [Agents, npx and Node.js](./agents.md);
-- **"Proxy configurations"** — named network settings that agents refer to;
 - **«Люди»** — who is on the server and who runs it; the section is shown to
   the administrator alone, see ["Your own server"](./team.md);
 - **"Access from a phone"** — see below;
@@ -21,6 +18,11 @@ Sections:
 
 Sections this build does not support are not shown: on a machine without
 agents, "The app itself", "Updates", "Import and export" and "Other" remain.
+
+The agents are not here. Their list is a registry of the machine, as the deploy
+hosts are, but it means something only to a board agents work on: it opens from
+that board's ⋯ menu as **"Agents…"**, and the proxies are in the same window
+under them. See [Agents, npx and Node.js](./agents.md).
 
 ## The app itself: theme, language, help
 

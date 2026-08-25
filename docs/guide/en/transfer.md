@@ -29,11 +29,11 @@ SSH keys, tokens and environment variables are not valid on another computer.
 
 | What | Where to set it up after the move |
 |---|---|
-| Agents — model, environment, MCP servers, proxies | "Settings" → [Agents](./settings/agents.md) |
-| Where to deploy — the Dokku host and the SSH key | on the deploying board: ["Columns and routes"](./automation/index.md) → "Where to deploy" |
-| Proxies | "Settings" → "Proxy configurations" |
+| Agents — model, environment, MCP servers, proxies | the board's ⋯ menu → [Agents…](./settings/agents.md) |
+| Where to deploy — the Dokku host and the SSH key | on the deploying board: the ⋯ menu → "Where to deploy…" |
+| Proxies | the same window as the agents, under the list |
 | Access from a phone | "Settings" → [Access from a phone](./settings/index.md#access-from-a-phone) |
-| Project folders | in ["Columns and routes"](./automation/index.md) |
+| Project folders | the board's ⋯ menu → "Folders…" |
 | Theme and language | "Settings" → "The app itself" |
 | Sources — the token is issued anew | the board's setup wizard, or [Sources](./inbox/sources.md) |
 

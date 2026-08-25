@@ -137,6 +137,10 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
             }
         })
 
+        // Agents and their proxies are the machine's registry and are offered
+        // here — but only to a board that runs them, which this one does not
+        // say it does. The check above is that half of the rule.
+
         // A board that asks for nothing is offered nothing: the setup steps in
         // the menu are this board's own, not a fixed list.
         test('a board with no setup questions is offered none of them', () => {
@@ -197,6 +201,14 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
         test('the folders and the deploy targets are each their own item', async () => {
             await waitFor(() => expect(screen.getByRole('button', {name: 'Folders…'})).toBeInTheDocument())
             expect(screen.getByRole('button', {name: 'Where to deploy…'})).toBeInTheDocument()
+        })
+
+        // Who picks the cards up is asked here too, for the reason the deploy
+        // hosts are: the registry is the machine's, and it means nothing on a
+        // board no agent works. It was two sections of the settings dialog,
+        // which is a screen away from the board being set up.
+        test('and so is who works the cards', async () => {
+            await waitFor(() => expect(screen.getByRole('button', {name: 'Agents…'})).toBeInTheDocument())
         })
 
         // What the board's agents are told first is the board's own answer
