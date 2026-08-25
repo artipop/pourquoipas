@@ -94,9 +94,18 @@ func TestUIPreferenceRefusesTheUnreasonable(t *testing.T) {
 	if err := app.SetUIPreference("", "x"); err == nil {
 		t.Error("an empty key was accepted")
 	}
-	long := make([]byte, 20*1024)
-	if err := app.SetUIPreference("theme", string(long)); err == nil {
-		t.Error("a 20KB value was accepted")
+	// A value the product actually produces has to fit. The cap was 16KB while
+	// a preference was a word; the themes a person writes are a list of configs
+	// and eight of them alone pass that, so it was raised deliberately
+	// (uisettings.go) — and this test went on asserting the old number, which
+	// is what left the trunk red.
+	roomy := make([]byte, 100*1024)
+	if err := app.SetUIPreference("themes", string(roomy)); err != nil {
+		t.Errorf("a value the size of somebody's themes was refused: %v", err)
+	}
+	runaway := make([]byte, 600*1024)
+	if err := app.SetUIPreference("themes", string(runaway)); err == nil {
+		t.Error("a value past the backstop was accepted")
 	}
 }
 
