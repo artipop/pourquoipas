@@ -1,6 +1,8 @@
 import {For, Show} from 'solid-js'
 import type {JSX} from 'solid-js'
 
+import {menuColorLabel} from '../menuColors'
+
 import {useIntl} from '../intl'
 
 import {IPropertyOption} from '../blocks/board'
@@ -74,10 +76,10 @@ const ValueSelectorLabel = (props: LabelProps): JSX.Element => {
                                 />
                                 <Menu.Separator/>
                                 <For each={Object.entries(Constants.menuColors)}>
-                                    {([key, color]: [string, string]) => (
+                                    {([key]: [string, string]) => (
                                         <Menu.Color
                                             id={key}
-                                            name={color}
+                                            name={menuColorLabel(intl, key)}
                                             onClick={() => props.onChangeColor(props.option, key)}
                                         />
                                     )}

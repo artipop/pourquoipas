@@ -1,6 +1,8 @@
 import {For, Show, createEffect, createSignal} from 'solid-js'
 import type {JSX} from 'solid-js'
 
+import {menuColorLabel} from '../../menuColors'
+
 import {FormattedMessage, IntlShape} from '../../intl'
 
 import {Constants, Permission} from '../../constants'
@@ -222,10 +224,10 @@ export default function KanbanColumnHeader(props: Props): JSX.Element {
                                     />
                                     <Menu.Separator/>
                                     <For each={Object.entries(Constants.menuColors)}>
-                                        {([key, color]) => (
+                                        {([key]) => (
                                             <Menu.Color
                                                 id={key}
-                                                name={color}
+                                                name={menuColorLabel(props.intl, key)}
                                                 onClick={() => mutator.changePropertyOptionColor(props.board.id, props.board.cardProperties, props.groupByProperty!, props.group.option, key)}
                                             />
                                         )}
