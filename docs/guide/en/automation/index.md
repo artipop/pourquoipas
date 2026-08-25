@@ -293,7 +293,7 @@ changes to the board itself, and a deleted route — it does not bring back.
 
 ## Templates
 
-A board is born from a template: "+ Add board" → a template in the list on the
+A board is born from a template: "Add board" → a template in the list on the
 left → "Use this template". The template brings the columns, what they do, the
 routes, and the **questions** the setup wizard asks when a board is created
 from it — project folder, agent, deploy target, browser for tests.

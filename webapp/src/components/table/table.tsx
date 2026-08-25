@@ -1,6 +1,8 @@
 import {For, Show} from 'solid-js'
 import type {JSX} from 'solid-js'
 
+import AddIcon from '../../widgets/icons/add'
+
 import {FormattedMessage} from '../../intl'
 
 import {IPropertyOption, IPropertyTemplate, Board, BoardGroup} from '../../blocks/board'
@@ -230,14 +232,15 @@ const Table = (props: Props): JSX.Element => {
                         <Show when={!props.readonly && !props.activeView.fields.groupById}>
                             <BoardPermissionGate permissions={[Permission.ManageBoardCards]}>
                                 <div
-                                    class='octo-table-cell'
+                                    class='octo-table-cell octo-table-cell--new'
                                     onClick={() => {
                                         props.addCard('')
                                     }}
                                 >
+                                    <AddIcon/>
                                     <FormattedMessage
                                         id='TableComponent.plus-new'
-                                        defaultMessage='+ New'
+                                        defaultMessage='New'
                                     />
                                 </div>
                             </BoardPermissionGate>

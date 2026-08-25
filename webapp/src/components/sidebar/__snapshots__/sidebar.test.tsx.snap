@@ -240,7 +240,10 @@ exports[`components/sidebarSidebar > a board in no category is filed under the d
     <div
       class="add-board"
     >
-      + Add board
+      <i
+        class="CompassIcon icon-plus AddIcon"
+      />
+      Add board
     </div>
     <div
       class="SidebarSettingsButton"
@@ -448,7 +451,10 @@ exports[`components/sidebarSidebar > dont show hidden boards 1`] = `
     <div
       class="add-board"
     >
-      + Add board
+      <i
+        class="CompassIcon icon-plus AddIcon"
+      />
+      Add board
     </div>
     <div
       class="SidebarSettingsButton"
@@ -798,7 +804,10 @@ exports[`components/sidebarSidebar > shouldnt do any category assignment is boar
     <div
       class="add-board"
     >
-      + Add board
+      <i
+        class="CompassIcon icon-plus AddIcon"
+      />
+      Add board
     </div>
     <div
       class="SidebarSettingsButton"
@@ -1091,7 +1100,10 @@ exports[`components/sidebarSidebar > sidebar hidden 1`] = `
     <div
       class="add-board"
     >
-      + Add board
+      <i
+        class="CompassIcon icon-plus AddIcon"
+      />
+      Add board
     </div>
     <div
       class="SidebarSettingsButton"
@@ -1438,7 +1450,10 @@ exports[`components/sidebarSidebar > some categories hidden 1`] = `
     <div
       class="add-board"
     >
-      + Add board
+      <i
+        class="CompassIcon icon-plus AddIcon"
+      />
+      Add board
     </div>
     <div
       class="SidebarSettingsButton"

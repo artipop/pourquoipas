@@ -3,6 +3,7 @@
 import {For, Show, createSignal, onCleanup, onMount} from 'solid-js'
 
 import {useIntl} from '../../intl'
+import CompassIcon from '../../widgets/icons/compassIcon'
 
 import {agentBindings} from './bindings'
 import {onAgentEvent} from './agentEvents'
@@ -276,7 +277,9 @@ const FlowStrip = (props: Props) => {
                                     )}
                                     onClick={() => answer(mark)}
                                 >
-                                    {mark.forward ? `${mark.column} →` : `← ${mark.column}`}
+                                    <Show when={!mark.forward}><CompassIcon icon='chevron-left'/></Show>
+                                    <span>{mark.column}</span>
+                                    <Show when={mark.forward}><CompassIcon icon='chevron-right'/></Show>
                                 </button>
                             )}
                         </For>

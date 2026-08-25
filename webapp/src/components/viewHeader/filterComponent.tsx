@@ -1,6 +1,8 @@
 import {For} from 'solid-js'
 import type {JSX} from 'solid-js'
 
+import AddIcon from '../../widgets/icons/add'
+
 import {FormattedMessage} from '../../intl'
 
 import {FilterClause, FilterCondition, createFilterClause} from '../../blocks/filterClause'
@@ -83,10 +85,13 @@ const FilterComponent = (props: Props): JSX.Element => {
 
                 <br/>
 
-                <Button onClick={() => addFilterClicked()}>
+                <Button
+                    icon={<AddIcon/>}
+                    onClick={() => addFilterClicked()}
+                >
                     <FormattedMessage
                         id='FilterComponent.add-filter'
-                        defaultMessage='+ Add filter'
+                        defaultMessage='Add filter'
                     />
                 </Button>
             </div>

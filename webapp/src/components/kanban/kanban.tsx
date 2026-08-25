@@ -1,5 +1,7 @@
 import {For, Show, createEffect, createSignal} from 'solid-js'
 
+import AddIcon from '../../widgets/icons/add'
+
 import {FormattedMessage, useIntl} from '../../intl'
 
 import {useAppSelector} from '../../store/hooks'
@@ -284,11 +286,12 @@ const Kanban = (props: Props) => {
                     <BoardPermissionGate permissions={[Permission.ManageBoardProperties]}>
                         <div class='octo-board-header-cell narrow'>
                             <Button
+                                icon={<AddIcon/>}
                                 onClick={addGroupClicked}
                             >
                                 <FormattedMessage
                                     id='BoardComponent.add-a-group'
-                                    defaultMessage='+ Add a group'
+                                    defaultMessage='Add a group'
                                 />
                             </Button>
                         </div>
@@ -333,6 +336,7 @@ const Kanban = (props: Props) => {
                                 <Show when={!props.readonly}>
                                     <BoardPermissionGate permissions={[Permission.ManageBoardCards]}>
                                         <Button
+                                            icon={<AddIcon/>}
                                             onClick={() => {
                                                 if (defaultTemplateID()) {
                                                     props.addCardFromTemplate(defaultTemplateID()!, group.option.id)
@@ -343,7 +347,7 @@ const Kanban = (props: Props) => {
                                         >
                                             <FormattedMessage
                                                 id='BoardComponent.new'
-                                                defaultMessage='+ New'
+                                                defaultMessage='New'
                                             />
                                         </Button>
                                     </BoardPermissionGate>

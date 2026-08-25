@@ -85,6 +85,8 @@
     }
 
     .FlowStrip__mark {
+        display: inline-flex;
+        align-items: center;
         padding: 3px 10px;
         border-radius: var(--radius-sm);
         border: 1px solid rgba(var(--center-channel-color-rgb), 0.24);
@@ -107,6 +109,14 @@
     .FlowStrip__mark--forward {
         border-color: rgba(var(--button-bg-rgb), 0.64);
         color: rgb(var(--button-bg-rgb));
+    }
+
+    // The chevron is the icon font's and sits tight against the name: pulled
+    // in by the side bearing the glyph carries, or it reads as a word apart.
+    .FlowStrip__mark .CompassIcon {
+        font-size: 14px;
+        line-height: 1;
+        margin: 0 -4px;
     }
 
     .FlowStrip__status {

@@ -86,7 +86,7 @@ describe('components/acp/templateEditor', () => {
             return found!
         })
         expect(carries.textContent).toContain('В работе (an agent works on the card)')
-        expect(carries.textContent).toContain('В работе → На ревью')
+        expect(carries.textContent).toContain('В работе › На ревью')
         expect(container.querySelector('.FlowDiagram')).toBeNull()
         expect(screen.getByDisplayValue('Разработка')).toBeInTheDocument()
     })

@@ -126,7 +126,10 @@ exports[`src/components/workspace > return workspace and showcard 1`] = `
       <div
         class="add-board"
       >
-        + Add board
+        <i
+          class="CompassIcon icon-plus AddIcon"
+        />
+        Add board
       </div>
       <div
         class="SidebarSettingsButton"
@@ -488,9 +491,11 @@ exports[`src/components/workspace > return workspace and showcard 1`] = `
               <button
                 type="button"
               >
-                
+                <i
+                  class="CompassIcon icon-plus AddIcon"
+                />
                 <span>
-                  + Add a group
+                  Add a group
                 </span>
                 
               </button>
@@ -644,9 +649,11 @@ exports[`src/components/workspace > return workspace and showcard 1`] = `
               <button
                 type="button"
               >
-                
+                <i
+                  class="CompassIcon icon-plus AddIcon"
+                />
                 <span>
-                  + New
+                  New
                 </span>
                 
               </button>
@@ -657,16 +664,17 @@ exports[`src/components/workspace > return workspace and showcard 1`] = `
               <button
                 type="button"
               >
-                
+                <i
+                  class="CompassIcon icon-plus AddIcon"
+                />
                 <span>
-                  + New
+                  New
                 </span>
                 
               </button>
             </div>
             
           </div>
-          
         </div>
       </div>
     </div>
@@ -998,7 +1006,6 @@ exports[`src/components/workspace > return workspace readonly and showcard 1`] =
             />
             
           </div>
-          
         </div>
       </div>
     </div>
@@ -1203,7 +1210,10 @@ exports[`src/components/workspace > should match snapshot 1`] = `
       <div
         class="add-board"
       >
-        + Add board
+        <i
+          class="CompassIcon icon-plus AddIcon"
+        />
+        Add board
       </div>
       <div
         class="SidebarSettingsButton"
@@ -1565,9 +1575,11 @@ exports[`src/components/workspace > should match snapshot 1`] = `
               <button
                 type="button"
               >
-                
+                <i
+                  class="CompassIcon icon-plus AddIcon"
+                />
                 <span>
-                  + Add a group
+                  Add a group
                 </span>
                 
               </button>
@@ -1721,9 +1733,11 @@ exports[`src/components/workspace > should match snapshot 1`] = `
               <button
                 type="button"
               >
-                
+                <i
+                  class="CompassIcon icon-plus AddIcon"
+                />
                 <span>
-                  + New
+                  New
                 </span>
                 
               </button>
@@ -1734,16 +1748,17 @@ exports[`src/components/workspace > should match snapshot 1`] = `
               <button
                 type="button"
               >
-                
+                <i
+                  class="CompassIcon icon-plus AddIcon"
+                />
                 <span>
-                  + New
+                  New
                 </span>
                 
               </button>
             </div>
             
           </div>
-          
         </div>
       </div>
     </div>
@@ -2075,7 +2090,6 @@ exports[`src/components/workspace > should match snapshot with readonly 1`] = `
             />
             
           </div>
-          
         </div>
       </div>
     </div>

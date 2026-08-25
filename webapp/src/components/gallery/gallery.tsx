@@ -1,6 +1,8 @@
 import {For, Show} from 'solid-js'
 import type {JSX} from 'solid-js'
 
+import AddIcon from '../../widgets/icons/add'
+
 import {FormattedMessage} from '../../intl'
 
 import {Constants, Permission} from '../../constants'
@@ -90,9 +92,10 @@ const Gallery = (props: Props): JSX.Element => {
                             props.addCard(true)
                         }}
                     >
+                        <AddIcon/>
                         <FormattedMessage
                             id='TableComponent.plus-new'
-                            defaultMessage='+ New'
+                            defaultMessage='New'
                         />
                     </div>
                 </BoardPermissionGate>

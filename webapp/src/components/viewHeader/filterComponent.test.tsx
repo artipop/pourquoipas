@@ -77,7 +77,7 @@ describe('components/viewHeader/filterComponent', () => {
         const buttonElement = screen.getAllByRole('button', {name: 'menuwrapper'})[0]
         userEvent.click(buttonElement)
         expect(container).toMatchSnapshot()
-        const buttonAdd = screen.getByText('+ Add filter')
+        const buttonAdd = screen.getByText('Add filter')
         userEvent.click(buttonAdd)
         expect(mockedMutator.changeViewFilter).toHaveBeenCalledTimes(1)
     })

@@ -136,9 +136,11 @@ exports[`components/cardDialog > already following card 1`] = `
                     <button
                       type="button"
                     >
-                      
+                      <i
+                        class="CompassIcon icon-plus AddIcon"
+                      />
                       <span>
-                        + Add a property
+                        Add a property
                       </span>
                       
                     </button>
@@ -627,9 +629,11 @@ exports[`components/cardDialog > return cardDialog menu content 1`] = `
                     <button
                       type="button"
                     >
-                      
+                      <i
+                        class="CompassIcon icon-plus AddIcon"
+                      />
                       <span>
-                        + Add a property
+                        Add a property
                       </span>
                       
                     </button>
@@ -829,9 +833,11 @@ exports[`components/cardDialog > return cardDialog menu content and cancel delet
                     <button
                       type="button"
                     >
-                      
+                      <i
+                        class="CompassIcon icon-plus AddIcon"
+                      />
                       <span>
-                        + Add a property
+                        Add a property
                       </span>
                       
                     </button>
@@ -1031,9 +1037,11 @@ exports[`components/cardDialog > should match snapshot 1`] = `
                     <button
                       type="button"
                     >
-                      
+                      <i
+                        class="CompassIcon icon-plus AddIcon"
+                      />
                       <span>
-                        + Add a property
+                        Add a property
                       </span>
                       
                     </button>

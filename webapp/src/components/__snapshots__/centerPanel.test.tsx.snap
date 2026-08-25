@@ -416,9 +416,11 @@ exports[`components/centerPanel > return centerPanel and > click on card to show
             class="Button"
             type="button"
           >
-            
+            <i
+              class="CompassIcon icon-plus AddIcon"
+            />
             <span>
-              + Add a group
+              Add a group
             </span>
             
           </button>
@@ -435,9 +437,11 @@ exports[`components/centerPanel > return centerPanel and > click on card to show
             class="Button"
             type="button"
           >
-            
+            <i
+              class="CompassIcon icon-plus AddIcon"
+            />
             <span>
-              + New
+              New
             </span>
             
           </button>
@@ -525,9 +529,11 @@ exports[`components/centerPanel > return centerPanel and > click on card to show
             class="Button"
             type="button"
           >
-            
+            <i
+              class="CompassIcon icon-plus AddIcon"
+            />
             <span>
-              + New
+              New
             </span>
             
           </button>
@@ -542,16 +548,17 @@ exports[`components/centerPanel > return centerPanel and > click on card to show
             class="Button"
             type="button"
           >
-            
+            <i
+              class="CompassIcon icon-plus AddIcon"
+            />
             <span>
-              + New
+              New
             </span>
             
           </button>
         </div>
         
       </div>
-      
     </div>
   </div>
 </div>
@@ -7672,7 +7679,10 @@ exports[`components/centerPanel > should match snapshot for Gallery 1`] = `
       <div
         class="octo-gallery-new"
       >
-        + New
+        <i
+          class="CompassIcon icon-plus AddIcon"
+        />
+        New
       </div>
     </div>
   </div>
@@ -8095,9 +8105,11 @@ exports[`components/centerPanel > should match snapshot for Kanban 1`] = `
             class="Button"
             type="button"
           >
-            
+            <i
+              class="CompassIcon icon-plus AddIcon"
+            />
             <span>
-              + Add a group
+              Add a group
             </span>
             
           </button>
@@ -8114,9 +8126,11 @@ exports[`components/centerPanel > should match snapshot for Kanban 1`] = `
             class="Button"
             type="button"
           >
-            
+            <i
+              class="CompassIcon icon-plus AddIcon"
+            />
             <span>
-              + New
+              New
             </span>
             
           </button>
@@ -8166,9 +8180,11 @@ exports[`components/centerPanel > should match snapshot for Kanban 1`] = `
             class="Button"
             type="button"
           >
-            
+            <i
+              class="CompassIcon icon-plus AddIcon"
+            />
             <span>
-              + New
+              New
             </span>
             
           </button>
@@ -8183,16 +8199,17 @@ exports[`components/centerPanel > should match snapshot for Kanban 1`] = `
             class="Button"
             type="button"
           >
-            
+            <i
+              class="CompassIcon icon-plus AddIcon"
+            />
             <span>
-              + New
+              New
             </span>
             
           </button>
         </div>
         
       </div>
-      
     </div>
   </div>
 </div>
@@ -8614,9 +8631,11 @@ exports[`components/centerPanel > should match snapshot for Kanban, not shared 1
             class="Button"
             type="button"
           >
-            
+            <i
+              class="CompassIcon icon-plus AddIcon"
+            />
             <span>
-              + Add a group
+              Add a group
             </span>
             
           </button>
@@ -8633,9 +8652,11 @@ exports[`components/centerPanel > should match snapshot for Kanban, not shared 1
             class="Button"
             type="button"
           >
-            
+            <i
+              class="CompassIcon icon-plus AddIcon"
+            />
             <span>
-              + New
+              New
             </span>
             
           </button>
@@ -8685,9 +8706,11 @@ exports[`components/centerPanel > should match snapshot for Kanban, not shared 1
             class="Button"
             type="button"
           >
-            
+            <i
+              class="CompassIcon icon-plus AddIcon"
+            />
             <span>
-              + New
+              New
             </span>
             
           </button>
@@ -8702,16 +8725,17 @@ exports[`components/centerPanel > should match snapshot for Kanban, not shared 1
             class="Button"
             type="button"
           >
-            
+            <i
+              class="CompassIcon icon-plus AddIcon"
+            />
             <span>
-              + New
+              New
             </span>
             
           </button>
         </div>
         
       </div>
-      
     </div>
   </div>
 </div>

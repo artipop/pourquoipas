@@ -1,7 +1,7 @@
 # Settings
 
 App settings live in one window: at the bottom of the left-hand list, under
-"+ Add board", the **"Settings"** button with a cog. They apply to all boards.
+"Add board", the **"Settings"** button with a cog. They apply to all boards.
 Sections:
 
 - **"The app itself"** — theme, language, help and feedback;

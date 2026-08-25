@@ -3,6 +3,8 @@ import {For, Show, createEffect, createSignal, onCleanup, onMount} from 'solid-j
 import {useDragDropMonitor} from '@dnd-kit/solid'
 import {isSortable} from '@dnd-kit/dom/sortable'
 
+import AddIcon from '../../widgets/icons/add'
+
 import {FormattedMessage} from '../../intl'
 
 import {loadTheme} from '../../theme'
@@ -573,9 +575,10 @@ const Sidebar = (props: Props) => {
                         class='add-board'
                         onClick={props.onBoardTemplateSelectorOpen}
                     >
+                        <AddIcon/>
                         <FormattedMessage
                             id='Sidebar.add-board'
-                            defaultMessage='+ Add board'
+                            defaultMessage='Add board'
                         />
                     </div>
 

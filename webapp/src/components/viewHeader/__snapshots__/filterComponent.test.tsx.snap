@@ -274,9 +274,11 @@ exports[`components/viewHeader/filterComponent > return filterComponent 1`] = `
         class="Button"
         type="button"
       >
-        
+        <i
+          class="CompassIcon icon-plus AddIcon"
+        />
         <span>
-          + Add filter
+          Add filter
         </span>
         
       </button>
@@ -559,9 +561,11 @@ exports[`components/viewHeader/filterComponent > return filterComponent and add 
         class="Button"
         type="button"
       >
-        
+        <i
+          class="CompassIcon icon-plus AddIcon"
+        />
         <span>
-          + Add filter
+          Add filter
         </span>
         
       </button>
@@ -817,9 +821,11 @@ exports[`components/viewHeader/filterComponent > return filterComponent and clic
         class="Button"
         type="button"
       >
-        
+        <i
+          class="CompassIcon icon-plus AddIcon"
+        />
         <span>
-          + Add filter
+          Add filter
         </span>
         
       </button>
@@ -1086,9 +1092,11 @@ exports[`components/viewHeader/filterComponent > return filterComponent and filt
         class="Button"
         type="button"
       >
-        
+        <i
+          class="CompassIcon icon-plus AddIcon"
+        />
         <span>
-          + Add filter
+          Add filter
         </span>
         
       </button>

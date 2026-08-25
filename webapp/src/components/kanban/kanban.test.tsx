@@ -200,7 +200,7 @@ describe('src/component/kanban/kanban', () => {
             </AppStoreProvider>,
         ), {wrapper: TestRouter})
 
-        expect(screen.queryByText('+ Add a group')).toBeNull()
+        expect(screen.queryByText('Add a group')).toBeNull()
         // The card is there and opens; what it does not do is start a drag.
         expect(container.querySelector('.KanbanCard')).not.toBeNull()
         expect(container.querySelector('.KanbanCard[draggable="true"]')).toBeNull()
@@ -422,7 +422,7 @@ describe('src/component/kanban/kanban', () => {
                 />
             </AppStoreProvider>,
         ), {wrapper: TestRouter})
-        const allButtonsNew = screen.getAllByRole('button', {name: '+ New'})
+        const allButtonsNew = screen.getAllByRole('button', {name: 'New'})
         expect(allButtonsNew).not.toBeNull()
         userEvent.click(allButtonsNew[0])
         expect(mockedAddCard).toHaveBeenCalledTimes(1)
@@ -543,7 +543,7 @@ describe('src/component/kanban/kanban', () => {
                 />
             </AppStoreProvider>,
         ), {wrapper: TestRouter})
-        const buttonAddGroup = screen.getByRole('button', {name: '+ Add a group'})
+        const buttonAddGroup = screen.getByRole('button', {name: 'Add a group'})
         expect(buttonAddGroup).toBeDefined()
         userEvent.click(buttonAddGroup)
         await waitFor(() => {
@@ -669,7 +669,7 @@ describe('src/component/kanban/kanban', () => {
                 />
             </AppStoreProvider>,
         ), {wrapper: TestRouter})
-        const allButtonsNew = screen.getAllByRole('button', {name: '+ New'})
+        const allButtonsNew = screen.getAllByRole('button', {name: 'New'})
         expect(allButtonsNew).not.toBeNull()
         userEvent.click(allButtonsNew[0])
         expect(mockedAddCard).toHaveBeenCalledTimes(1)

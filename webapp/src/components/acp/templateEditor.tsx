@@ -177,7 +177,7 @@ const TemplateEditor = (props: Props) => {
                         {(flow) => (
                             <div class='TemplateEditor__carriesRow'>
                                 <span class='TemplateEditor__carriesLabel'>{flow.name}</span>
-                                <span>{columnsOf(flow, columns()).map((c) => c.name).join(' → ') || '—'}</span>
+                                <span>{columnsOf(flow, columns()).map((c) => c.name).join(' › ') || '—'}</span>
                             </div>
                         )}
                     </For>

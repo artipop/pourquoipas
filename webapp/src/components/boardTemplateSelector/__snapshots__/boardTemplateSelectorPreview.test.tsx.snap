@@ -343,9 +343,11 @@ exports[`components/boardTemplateSelector/boardTemplateSelectorPreview > should 
           <button
             type="button"
           >
-            
+            <i
+              class="CompassIcon icon-plus AddIcon"
+            />
             <span>
-              + Add a group
+              Add a group
             </span>
             
           </button>
@@ -407,9 +409,11 @@ exports[`components/boardTemplateSelector/boardTemplateSelectorPreview > should 
           <button
             type="button"
           >
-            
+            <i
+              class="CompassIcon icon-plus AddIcon"
+            />
             <span>
-              + New
+              New
             </span>
             
           </button>
@@ -420,9 +424,11 @@ exports[`components/boardTemplateSelector/boardTemplateSelectorPreview > should 
           <button
             type="button"
           >
-            
+            <i
+              class="CompassIcon icon-plus AddIcon"
+            />
             <span>
-              + New
+              New
             </span>
             
           </button>
@@ -433,16 +439,17 @@ exports[`components/boardTemplateSelector/boardTemplateSelectorPreview > should 
           <button
             type="button"
           >
-            
+            <i
+              class="CompassIcon icon-plus AddIcon"
+            />
             <span>
-              + New
+              New
             </span>
             
           </button>
         </div>
         
       </div>
-      
     </div>
   </div>
 </div>

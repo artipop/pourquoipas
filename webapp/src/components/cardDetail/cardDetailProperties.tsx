@@ -1,5 +1,7 @@
 import {For, Show, createEffect, createSignal} from 'solid-js'
 
+import AddIcon from '../../widgets/icons/add'
+
 import {FormattedMessage, useIntl} from '../../intl'
 
 import {Board, IPropertyTemplate} from '../../blocks/board'
@@ -272,10 +274,10 @@ const CardDetailProperties = (props: Props) => {
                             </Menu>
                         }
                     >
-                        <Button>
+                        <Button icon={<AddIcon/>}>
                             <FormattedMessage
                                 id='CardDetail.add-property'
-                                defaultMessage='+ Add a property'
+                                defaultMessage='Add a property'
                             />
                         </Button>
                     </MenuWrapper>
