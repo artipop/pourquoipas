@@ -13,9 +13,9 @@ import (
 // Manifests this app ships. A service somebody else wrote an MCP server for is
 // a file in the data directory; a service *this* app carries a server for is a
 // file here, so it is in the dialog from the first run with nothing to install,
-// no path to type and no runtime to have. Today that is Kaiten (see
-// internal/sources/kaiten): its command is this binary re-invoked, which is
-// what SelfCommand stands for.
+// no path to type and no runtime to have. Such a manifest's command is this
+// binary re-invoked (`xciii mcp <name>`), which is what SelfCommand stands
+// for.
 //
 //go:embed manifests/*.json
 var builtinManifests embed.FS
@@ -33,7 +33,7 @@ const SelfCommand = "$self"
 // also the *entire* adapter (see mcpsource.go), so adding a service somebody
 // already wrote an MCP server for is one JSON file and no program at all:
 //
-//	<dataDir>/sources/manifests/kaiten.json
+//	<dataDir>/sources/manifests/tracker.json
 //
 // They are not copied into sources.json. The registry holds what a person
 // configured — sources, and manifests they typed there themselves — while this

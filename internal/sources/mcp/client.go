@@ -65,8 +65,8 @@ type Client struct {
 	done chan struct{}
 }
 
-// ServerInfo is the server introducing itself, kept for error messages: "kaiten
-// 0.1.0 said no" is a sentence somebody can act on.
+// ServerInfo is the server introducing itself, kept for error messages:
+// "tracker 0.1.0 said no" is a sentence somebody can act on.
 type ServerInfo struct {
 	Name    string `json:"name"`
 	Version string `json:"version,omitempty"`

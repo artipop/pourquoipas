@@ -495,8 +495,8 @@ window-position autosave.
 - [docs/local-and-shared-state.md](docs/local-and-shared-state.md) — which of the
   things this app stores belong to the machine and which to the board. A note to
   think about later: nothing in it bites while the app is one process.
-- [docs/sources.md](docs/sources.md) — how an outside event (a mailbox, a Kaiten
-  board, a notification from a phone) becomes a card, and the plugin protocol a
+- [docs/sources.md](docs/sources.md) — how an outside event (a mailbox, a
+  tracker, a notification from a phone) becomes a card, and the plugin protocol a
   source is written against in Go or TypeScript.
 - [docs/deferred.md](docs/deferred.md) — work that was thought through and then put
   down on purpose, with the reasoning that put it down.

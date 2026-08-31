@@ -1374,9 +1374,10 @@ so a manifest says which tool to call, with what arguments, and how to read one
 row of the answer as an item (`internal/sources/mcpsource.go`, mapped with the
 same `text/template` a rule's properties use). Past `dialPlugin` nothing knows
 which protocol the process speaks. Manifests come from two places: the ones
-this app ships (`internal/sources/manifests`, embedded — Kaiten is one, and its
-server is this binary re-invoked, `internal/sources/kaiten`), and the ones
-somebody drops in `<dataDir>/sources/manifests/*.json`, which win by name. A
+this app ships (`internal/sources/manifests`, embedded — each one's server is
+this binary re-invoked, `xciii mcp <name>`, so there is nothing to install), and
+the ones somebody drops in `<dataDir>/sources/manifests/*.json`, which win by
+name. A
 service with a server of its own is the second kind, since a manifest then
 names a path on that machine.
 

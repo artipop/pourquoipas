@@ -25,8 +25,8 @@ import (
 // is exactly what a manifest can say, so a new MCP source is a JSON entry and
 // not a program:
 //
-//	{"name": "kaiten", "kind": "mcp",
-//	 "command": "bun", "args": ["run", "kaiten/server.ts"],
+//	{"name": "tracker", "kind": "mcp",
+//	 "command": "bun", "args": ["run", "server.ts"], "dir": "/path/to/it",
 //	 "mcp": {"tool": "list_my_cards",
 //	         "arguments": {"boardId": "{{.Config.boardId}}"},
 //	         "itemsAt": "cards",
@@ -113,8 +113,8 @@ type mcpConn struct {
 
 // dialMCP starts an MCP server for a source and checks, once, that the tool the
 // manifest names is really there. Checked at dial rather than at the first poll
-// because a manifest is typed by hand: "kaiten has no tool list_my_cards, it
-// has get_card, get_columns…" is an answer, and a poll failing every five
+// because a manifest is typed by hand: "the server has no tool list_my_cards,
+// it has get_card, get_columns…" is an answer, and a poll failing every five
 // minutes is not.
 func dialMCP(ctx context.Context, entry SourceEntry, manifest Manifest, cred plugin.Credentials, _ plugin.Handler) (conn, error) {
 	spec, err := manifest.MCPOr().Validate()
@@ -368,7 +368,7 @@ func rowsAt(payload json.RawMessage, path string) ([]any, error) {
 
 // RenderEnv is the manifest's environment with its templates expanded over the
 // source entry, so a value a person typed into the source dialog — the address
-// of their own Kaiten, their own Jira — reaches the process.
+// of their own tracker, their own Jira — reaches the process.
 func (p Manifest) RenderEnv(entry SourceEntry) (map[string]string, error) {
 	out := make(map[string]string, len(p.Env)+1)
 	for name, tmpl := range p.Env {

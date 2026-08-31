@@ -727,7 +727,7 @@ func (w *Writer) ensureInboxView(boardID, propertyName, optionID, mineID, author
 			// A kanban, and grouped by who made the card — which for what
 			// arrived is the source that brought it. One column per source is
 			// the question a person actually has of an inbox ("what did the
-			// mail bring, what did Kaiten"), and a card is dragged out of it
+			// mail bring, what did the tracker"), and a card is dragged out of it
 			// into work the same way it is dragged anywhere else.
 			"viewType":  inboxViewType,
 			"groupById": authorID,

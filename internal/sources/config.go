@@ -220,9 +220,9 @@ type Manifest struct {
 	Command         string   `json:"command"`
 	Args            []string `json:"args,omitempty"`
 	// Env is the environment the command runs with, and its values are
-	// templates over the source entry — `{"KAITEN_SITE": "{{.Config.site}}"}`.
+	// templates over the source entry — `{"TRACKER_SITE": "{{.Config.site}}"}`.
 	// That is what makes one manifest serve two people: the site somebody's
-	// Kaiten lives at is theirs, not the manifest's, and the same goes for
+	// tracker lives at is theirs, not the manifest's, and the same goes for
 	// every self-hosted thing an MCP server talks to.
 	//
 	// Dir is where the command runs. It matters for the ordinary case of an
@@ -244,8 +244,8 @@ type Manifest struct {
 
 	// TokenEnv is the environment variable an MCP server reads its credential
 	// from. Named by the manifest because MCP has no place for a token and
-	// every server invents its own name for the variable: KAITEN_TOKEN,
-	// GITHUB_TOKEN, and so on. Our own plugins are handed credentials in the
+	// every server invents its own name for the variable: GITHUB_TOKEN,
+	// JIRA_API_TOKEN, and so on. Our own plugins are handed credentials in the
 	// handshake and need none of this.
 	TokenEnv string `json:"tokenEnv,omitempty"`
 }
