@@ -30,6 +30,17 @@ export default defineConfig({
         },
     },
 
+    // `preview` has no proxy of its own: Vite falls its `proxy` back to
+    // `server.proxy` unless it is told otherwise. Inherited, the rules above
+    // send /docs, /docs/xxvi and /docs/vi to dev servers that are not running
+    // during a preview — so the one thing preview exists to show, the built
+    // guides sitting in dist/, is the one thing it would not serve. An empty
+    // object is what turns the inheritance off; there is nothing to proxy here,
+    // because after `build:all` every guide is a real folder under dist/docs.
+    preview: {
+        proxy: {},
+    },
+
     build: {
         rollupOptions: {
             input: {
