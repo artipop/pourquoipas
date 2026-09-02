@@ -854,6 +854,14 @@ textarea:focus {
 .rail-line.w-60 { width: 60%; }
 .rail-line.w-40 { width: 40%; }
 
+/* Where the shape came from. It belongs under the drawing rather than in the
+   prose beside it: the debt is to the layout, and the layout is what is drawn. */
+.rail-credit {
+    margin: 12px 0 0;
+    font-size: 13px;
+    color: var(--muted);
+}
+
 @media (max-width: 900px) {
     .rail-strip {
         height: 104px;
