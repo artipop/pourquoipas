@@ -12,14 +12,20 @@ export default defineConfig({
     // here too — `npm run dev` in docs/guide (pinned to 5174) answers it.
     server: {
         proxy: {
-            // Two guides, two dev servers, and the more specific path first:
-            // the rules are tried in order, so '/docs' listed above would take
-            // /docs/xxvi/ to the XCIII guide.
+            // Three guides, three dev servers, and the more specific paths
+            // first: the rules are tried in order, so '/docs' listed above
+            // would take /docs/xxvi/ and /docs/vi/ to the XCIII guide.
             //
             // `ws` because a guide's own hot reload talks over a socket on
             // these paths too, and a proxy that forwards only HTTP leaves it
             // reconnecting for ever.
+            //
+            // The VI guide lives in the six repository next door
+            // (../../six/docs/guide) rather than in this one: the browser's
+            // documentation ships with the browser. `npm run dev` starts it
+            // along with the rest, so nothing has to be remembered here.
             '/docs/xxvi': {target: 'http://localhost:5175', ws: true},
+            '/docs/vi': {target: 'http://localhost:5176', ws: true},
             '/docs': {target: 'http://localhost:5174', ws: true},
         },
     },

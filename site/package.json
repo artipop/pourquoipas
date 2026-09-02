@@ -3,10 +3,10 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "dev": "concurrently -k -n site,xciii,xxvi -c cyan,magenta,yellow \"vite\" \"npm --prefix ../docs/guide run dev\" \"npm --prefix ../docs/guide-xxvi run dev\"",
+        "dev": "concurrently -k -n site,xciii,xxvi,vi -c cyan,magenta,yellow,green \"vite\" \"npm --prefix ../docs/guide run dev\" \"npm --prefix ../docs/guide-xxvi run dev\" \"npm --prefix ../../six/docs/guide run dev\"",
         "dev:site": "vite",
         "build": "vite build",
-        "build:all": "npm run build && npm --prefix ../docs/guide run build && npm --prefix ../docs/guide-xxvi run build",
+        "build:all": "npm run build && npm --prefix ../docs/guide run build && npm --prefix ../docs/guide-xxvi run build && npm --prefix ../../six/docs/guide run build",
         "preview": "vite preview"
     },
     "devDependencies": {
