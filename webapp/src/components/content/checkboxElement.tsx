@@ -25,7 +25,7 @@ const CheckboxElement = (props: Props) => {
     let titleRef: Focusable | undefined
     const cardDetail = useCardDetailContext()
     const [addedBlockId, setAddedBlockId] = createSignal(cardDetail.lastAddedBlock.id)
-    const [active, setActive] = createSignal(Boolean(props.block.fields.value))
+    const [active, setActive] = createSignal(() => Boolean(props.block.fields.value))
     const [title, setTitle] = createSignal(props.block.title)
 
     createEffect(addedBlockId, (added) => {
@@ -33,10 +33,6 @@ const CheckboxElement = (props: Props) => {
             titleRef?.focus()
             setAddedBlockId('')
         }
-    })
-
-    createEffect(() => Boolean(props.block.fields.value), (next) => {
-        setActive(next)
     })
 
     return (

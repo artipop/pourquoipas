@@ -909,8 +909,6 @@ const FlowDiagram = (props: Props) => {
     // The stores are typed by node-type name for authoring by hand; the graph
     // above already produces the library's Node/Edge shapes, so the input
     // union is narrowed back to them.
-    // Solid 2 store setters: an updater's return value replaces the list, which
-    // is what re-drawing the graph from scratch is.
     const [drawnNodes, setDrawnNodes] = createNodeStore([]) as unknown as [Node[], (next: () => Node[]) => void]
     const [drawnEdges, setDrawnEdges] = createEdgeStore([]) as unknown as [Edge[], (next: () => Edge[]) => void]
 

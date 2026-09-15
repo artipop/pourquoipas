@@ -1,4 +1,4 @@
-import {Show, createEffect, createMemo, createSignal} from 'solid-js'
+import {Show, createMemo, createSignal} from 'solid-js'
 import type {JSX} from '@solidjs/web'
 
 import moment from 'moment'
@@ -51,14 +51,8 @@ function datePropertyToString(dateProperty: DateProperty): string {
 }
 
 function DateRange(props: PropertyProps): JSX.Element {
-    const [value, setValue] = createSignal(props.propertyValue)
+    const [value, setValue] = createSignal(() => props.propertyValue)
     const intl = useIntl()
-
-    // Track only the prop: an effect that also read value() would fire on the
-    // local edit it is meant to survive and stomp it with the stale prop.
-    createEffect(() => props.propertyValue, (propertyValue) => {
-        setValue(propertyValue)
-    }, {defer: true})
 
     const onChange = (newValue: string) => {
         if (value() !== newValue) {

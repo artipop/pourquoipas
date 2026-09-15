@@ -70,17 +70,13 @@ export type CategoryBoardsDroppableData = {
 }
 
 const SidebarCategory = (props: Props) => {
-    const [collapsed, setCollapsed] = createSignal(props.categoryBoards.collapsed)
-    const intl = useIntl()
-    const navigate = useNavigate()
-
     // The click below answers straight away, because a category has to collapse
     // under the finger rather than after a round trip; the server's answer then
     // arrives as a prop, from this window's own echo or from another window, and
     // the signal follows it.
-    createEffect(() => props.categoryBoards.collapsed, (next) => {
-        setCollapsed(next)
-    })
+    const [collapsed, setCollapsed] = createSignal(() => props.categoryBoards.collapsed)
+    const intl = useIntl()
+    const navigate = useNavigate()
 
     // A system category is the one the server made for boards that are in no
     // category of anybody's making -- nobody named it and nobody can rename it,

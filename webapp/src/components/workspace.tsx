@@ -1,4 +1,4 @@
-import {Match, Show, Switch, createEffect, createSignal, onSettled} from 'solid-js'
+import {Match, Show, Switch, createSignal, onSettled} from 'solid-js'
 import type {JSX} from '@solidjs/web'
 
 import {useNavigate} from '@solidjs/router'
@@ -152,7 +152,11 @@ const Workspace = (props: Props): JSX.Element => {
     const board = useAppSelector(getCurrentBoard)
 
     const viewId = useAppSelector(getCurrentViewId)
-    const [boardTemplateSelectorOpen, setBoardTemplateSelectorOpen] = createSignal(false)
+    const [boardTemplateSelectorOpen, setBoardTemplateSelectorOpen] = createSignal(() => {
+        board()
+        viewId()
+        return false
+    })
     const [editingTemplate, setEditingTemplate] = createSignal(false)
 
     const closeBoardTemplateSelector = () => {
@@ -163,9 +167,6 @@ const Workspace = (props: Props): JSX.Element => {
             setBoardTemplateSelectorOpen(true)
         }
     }
-    createEffect(() => [board(), viewId()] as const, () => {
-        setBoardTemplateSelectorOpen(false)
-    })
 
     return (
         <div class='Workspace'>

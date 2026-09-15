@@ -107,7 +107,6 @@ function Combobox<T>(props: Props<T>): JSX.Element {
 
     const [focused, setFocused] = createSignal(false)
     const [ownQuery, setOwnQuery] = createSignal('')
-    const [highlight, setHighlight] = createSignal(-1)
     const [loaded, setLoaded] = createSignal<Array<ComboboxItem<T>>>([])
 
     // Programmatic, the way react-select's autoFocus prop was: the attribute
@@ -158,12 +157,7 @@ function Combobox<T>(props: Props<T>): JSX.Element {
 
     // Nothing is highlighted until the list has something to highlight, and a
     // list that changed under the cursor starts again at the top.
-    createEffect(
-        () => (isOpen() ? firstOption(rows()) : -1),
-        (next) => {
-            setHighlight(next)
-        },
-    )
+    const [highlight, setHighlight] = createSignal(() => (isOpen() ? firstOption(rows()) : -1))
 
     const choose = (option: ComboboxOption<T>) => {
         if (props.isMulti) {

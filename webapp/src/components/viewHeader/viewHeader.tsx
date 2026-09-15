@@ -74,11 +74,7 @@ const ViewHeader = (props: Props) => {
     const withDisplayBy = () => props.activeView.fields.viewType === 'calendar'
     const withSortBy = () => props.activeView.fields.viewType !== 'calendar'
 
-    const [viewTitle, setViewTitle] = createSignal(props.activeView.title)
-
-    createEffect(() => props.activeView.title, (next) => {
-        setViewTitle(next)
-    })
+    const [viewTitle, setViewTitle] = createSignal(() => props.activeView.title)
 
     const hasFilter = () => props.activeView.fields.filter && props.activeView.fields.filter.filters?.length > 0
 

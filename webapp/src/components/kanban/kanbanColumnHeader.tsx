@@ -1,4 +1,4 @@
-import {For, Show, createEffect, createSignal} from 'solid-js'
+import {For, Show, createSignal} from 'solid-js'
 import type {JSX} from '@solidjs/web'
 
 import {menuColorLabel} from '../../menuColors'
@@ -60,7 +60,7 @@ const defaultProperty: IPropertyTemplate = {
 } as IPropertyTemplate
 
 export default function KanbanColumnHeader(props: Props): JSX.Element {
-    const [groupTitle, setGroupTitle] = createSignal(props.group.option.value)
+    const [groupTitle, setGroupTitle] = createSignal(() => props.group.option.value)
     const canEditBoardProperties = useHasCurrentBoardPermissions([Permission.ManageBoardProperties])
 
     // Who a group is, when the board is grouped by a person rather than by an
@@ -95,10 +95,6 @@ export default function KanbanColumnHeader(props: Props): JSX.Element {
         () => Boolean(canEditBoardProperties()),
         (src: IPropertyOption) => props.onDropToColumn(src, undefined, props.group.option),
     )
-
-    createEffect(() => props.group.option.value, (next) => {
-        setGroupTitle(next)
-    })
 
     const classes = () => {
         let name = 'octo-board-header-cell KanbanColumnHeader'

@@ -1,4 +1,4 @@
-import {For, Show, createEffect, createSignal} from 'solid-js'
+import {For, Show, createSignal} from 'solid-js'
 import type {JSX} from '@solidjs/web'
 
 import {menuColorLabel} from '../../menuColors'
@@ -37,15 +37,11 @@ type Props = {
 }
 
 const TableGroupHeaderRow = (props: Props): JSX.Element => {
-    const [groupTitle, setGroupTitle] = createSignal(props.group.option.value)
+    const [groupTitle, setGroupTitle] = createSignal(() => props.group.option.value)
 
     const [isDragging, isOver, groupHeaderRef] = useSortable('groupHeader', () => props.group.option, () => !props.readonly, (src: IPropertyOption, dst?: IPropertyOption) => props.onDrop(src, dst))
     const intl = useIntl()
     const columnResize = useColumnResize()
-
-    createEffect(() => props.group.option.value, (next) => {
-        setGroupTitle(next)
-    })
 
     const classes = () => {
         let name = 'octo-group-header-cell'
