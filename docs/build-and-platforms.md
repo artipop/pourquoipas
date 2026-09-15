@@ -12,7 +12,7 @@
 | Бинарь для этой платформы | `wails3 task build` |
 | `.app` / инсталлятор | `wails3 task package`, `darwin:package:dmg`, `windows:package`, `linux:package` |
 | Headless-сервер | `wails3 task build:server` |
-| Кросс-образ для бинарей | `wails3 task setup:docker` |
+| Кросс-образ для Linux и macOS | `wails3 task setup:docker` |
 | Платное издание | к любой из них — `EDITION=lifetime` |
 
 `Taskfile.yml` в корне и по `Taskfile.yml` на платформу в `build/`. Makefile
@@ -22,7 +22,8 @@
 
 `EXTRA_TAGS` по умолчанию `json1,sqlite3,frontend`:
 
-- `json1`, `sqlite3` — cgo-SQLite;
+- `json1`, `sqlite3` — cgo-SQLite (`mattn/go-sqlite3`), но только если cgo
+  включён; без cgo они ничего не выбирают, и SQLite — чистый Go (ниже);
 - `frontend` — `go:embed` каталога `webapp/pack`;
 - `gtk3` добавляется на Linux сам (`GTK_TAG` в `build/linux/Taskfile.yml`);
 - `server` — headless-сборка, у неё свои файлы (`window_server.go` вместо
@@ -33,22 +34,33 @@
   Добавляется через `EDITION=lifetime`, а не руками: `EDITION=base` (по
   умолчанию) не добавляет тега вовсе. См. [editions.md](editions.md).
 
-## `CGO_ENABLED=0` — ловушка ровно одна, и она тихая
+## Два драйвера SQLite, и выбирает их cgo
 
-Десктопная сборка без cgo падает честно: у `wails/v3/pkg/mac` исключены все
-файлы. **Серверная — компилируется чисто и умирает на первом запросе**:
-`mattn/go-sqlite3` подменяет себя на `static_mock.go`, который регистрирует имя
-драйвера `sqlite3` и на каждый `Open` отвечает «Binary was compiled with
-'CGO_ENABLED=0' […] This is a stub». До первого обращения к базе с бинарём всё
-в порядке.
+Драйвер выбирается ограничением `sqlite3 && cgo`
+(`server/services/store/sqlstore/sqlite.go`): тег и включённый cgo — это
+`mattn/go-sqlite3`, всё остальное — `modernc.org/sqlite`, чистый Go
+(`sqlite_pure.go`), зарегистрированный под тем же именем `sqlite3`, потому что
+`DBType` — одновременно и имя диалекта, и имя драйвера. DSN пишется под тот же
+выбор (`SQLiteDSN`): у двух драйверов разное написание `foreign_keys` и
+`busy_timeout`, а незнакомый параметр оба молча игнорируют.
 
-Cgo в дереве нужен только SQLite и Wails. Остальные два места —
+Раньше `CGO_ENABLED=0` был ловушкой: сборка с тегом `sqlite3` компилировалась
+чисто, линковала заглушку mattn (`static_mock.go` — регистрирует `sqlite3` и на
+каждый `Open` отвечает «Binary was compiled with 'CGO_ENABLED=0' […] This is a
+stub») и умирала на первом запросе. Теперь то же сочетание получает modernc.
+Нового в графе это не добавило: modernc и так был в каждой сборке — его тянет
+sqlite-драйвер golang-migrate (`migrate.go`).
+
+Без cgo не собирается только десктоп на macOS и Linux — из-за самого Wails (у
+`wails/v3/pkg/mac` исключены все файлы, GTK на Linux), и падает он честно. На
+Windows Wails cgo не нужен. Остальные два места с cgo —
 `prometheus/client_golang` (сборщик памяти под Darwin) и `tailscale/certstore` —
 откатываются на чистый Go.
 
 ## Платформы
 
-Собрано и проверено с macOS/arm64, кросс — через `wails3 task setup:docker`.
+Собрано и проверено с macOS/arm64, кросс для Linux — через
+`wails3 task setup:docker`. Windows собрана и на самой Windows.
 
 **macOS.** `build` / `package` / `darwin:package:dmg`: `.app` и `.dmg`
 собираются, приложение запускается, вебвью грузит страницу с front door по
@@ -60,14 +72,32 @@ Cgo в дереве нужен только SQLite и Wails. Остальные 
 bookworm — и кросс-образ вместе с ним — на 4.8. Снять тег можно через
 `GTK_TAG=`.
 
-**Windows.** `wails3 task windows:build` даёт PE32+ x86-64 с cgo-SQLite. Две
-правки, без которых не собирается:
+**Windows.** `wails3 task windows:build` даёт PE32+ x86-64 **без cgo**:
+`CGO_ENABLED=0` задан в `build/windows/Taskfile.yml` жёстко, SQLite — modernc.
+Ни MinGW, ни кросс-образа не нужно — и на самой Windows, и с мака, где это
+тот же `go build` с `GOOS=windows`, а внутренний линкер Go честно ставит
+GUI-подсистему.
 
-- принудительный `CGO_ENABLED=1` — у Wails по умолчанию 0, с чем SQLite не
-  собирается;
-- обход build-скрипта кросс-образа, который экспортирует `CGO_CFLAGS="-w"`:
-  из-за этого zig оставляет включённым UBSan и линковка падает на
-  `undefined symbol: __ubsan_handle_*`.
+Headless-сборка (`wails3 task build:server`) под Windows тоже без cgo:
+`build:server` оставляет `CGO_ENABLED` на усмотрение Go, а без C-компилятора
+это 0 и modernc. На Wails v3.0.0-beta.2, с которой проект начинался, она не
+компилировалась вовсе — `webview_window_windows_nonclient.go` был помечен
+только `windows`, без `!server`; апстрим исправил это в beta.4. Проверено на
+beta.22: сервер стартует, прогоняет миграции на новой базе и отдаёт страницу.
+
+Сборки с cgo под Windows больше нет вовсе — ни через MinGW, ни через
+кросс-образ, — потому что cgo там нужен был одной SQLite. У того пути было две
+грабли, и они — причина не возвращать его без нужды:
+
+- build-скрипт кросс-образа экспортировал `CGO_CFLAGS="-w"`, из-за чего zig
+  оставлял включённым UBSan и линковка падала на
+  `undefined symbol: __ubsan_handle_*`; а zig-овый `lld-link` игнорирует
+  `-H windowsgui`, так что `.exe` выходил с console-подсистемой и мигал
+  консолью;
+- gcc подкладывает в каждый exe свой манифест (`default-manifest.o`), и ld
+  выбрасывает его молча, только если у него нейтральный язык. У WinLibs он
+  собран с 0x409, поэтому линковка писала `.rsrc merge failure: multiple
+  non-default manifests`, и в exe оставались оба манифеста под одним ключом.
 
 `internal/procgroup` под Windows не компилировался вовсе — `Setpgid` и
 `syscall.Kill` там не существуют. Разведён по файлам: `procgroup_unix.go` как
@@ -77,16 +107,15 @@ bookworm — и кросс-образ вместе с ним — на 4.8. Сн�
 ## Инсталляторы — только на своей платформе
 
 Бинарники кросс-собираются, пакеты — нет: AppImage зовёт `ldd`, NSIS — это
-`makensis`, ни того ни другого на маке нет. Кросс-собранный `.exe` вдобавок
-выходит с console-подсистемой (zig-овый `lld-link` игнорирует `-H windowsgui`),
-то есть мигнёт консолью при запуске; нативная сборка MinGW этого не делает — она
-и есть релизный путь.
+`makensis`, ни того ни другого на маке нет.
 
 ## `webapp/pack` не должен исчезать ни на секунду
 
 `go mod tidy` резолвит шаблон `go:embed all:` под всеми тегами и идёт
 параллельно со сборкой фронтенда. Каталог держит открытым закоммиченный
-`.gitkeep`; и задача сборки, и Vite чистят *вокруг* него, а не удаляют его.
+`.gitkeep`; Vite чистит *вокруг* него, а не удаляет его (`emptyPack` в
+`vite.config.ts`). Чистит именно сборка, а не Taskfile: там это был
+`rm -rf`, а у shell-интерпретатора Task на Windows нет `rm`.
 
 Контракт сборки, который обязан выполняться, чем бы фронтенд ни собирался:
 

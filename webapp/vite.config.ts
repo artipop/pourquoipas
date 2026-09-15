@@ -1,4 +1,4 @@
-import {createReadStream, existsSync} from 'fs'
+import {createReadStream, existsSync, mkdirSync, readdirSync, rmSync} from 'fs'
 import {cp} from 'fs/promises'
 import path from 'path'
 import {fileURLToPath} from 'url'
@@ -67,6 +67,40 @@ function appStatic(): Plugin {
     }
 }
 
+// Empties pack/ before a build, around its .gitkeep — Vite's own emptyOutDir,
+// minus the one file it would take with it (see build.emptyOutDir below).
+// Clearing is what keeps a renamed asset from surviving a rebuild, and it is
+// the build's job rather than the Taskfile's: the Taskfile did it with
+// rm/mkdir/touch, which Task's shell does not have on Windows.
+//
+// Never in watch mode, not even on the first build. `wails3 dev` starts the app
+// while `npm run watchdev` makes that first build, and a dev build serves pack/
+// off disk: emptying it there had the app answer "no such file" for
+// index.html until the build landed — a white window until somebody reloaded.
+// A watch rebuild overwrites in place, and what it leaves behind is cleared by
+// the next ordinary build, which is the one that gets embedded.
+function emptyPack(): Plugin {
+    let watching = false
+    return {
+        name: 'xciii-empty-pack',
+        apply: 'build',
+        configResolved(config) {
+            watching = Boolean(config.build.watch)
+        },
+        buildStart() {
+            if (watching) {
+                return
+            }
+            mkdirSync(outDir, {recursive: true})
+            for (const name of readdirSync(outDir)) {
+                if (name !== '.gitkeep') {
+                    rmSync(path.join(outDir, name), {recursive: true, force: true})
+                }
+            }
+        },
+    }
+}
+
 export default defineConfig(({mode}) => {
     const isProduction = mode === 'production'
 
@@ -92,16 +126,18 @@ export default defineConfig(({mode}) => {
             solid(),
             appHtml(),
             appStatic(),
+            emptyPack(),
         ],
 
         build: {
             outDir,
             assetsDir: 'static',
 
-            // The build task clears pack/ itself, around a .gitkeep that keeps
-            // the directory embeddable for `go mod tidy` at every moment — see
-            // build:frontend in build/Taskfile.yml. Emptying it here again
-            // would delete that placeholder and reopen the race.
+            // pack/ holds a committed .gitkeep that keeps the directory
+            // embeddable for `go mod tidy`, which resolves `go:embed all:`
+            // under every tag and runs in parallel with this build. Vite's own
+            // emptying would delete it and reopen that race, so emptyPack()
+            // above clears around it instead.
             emptyOutDir: false,
             target: 'es2019',
             sourcemap: !isProduction,

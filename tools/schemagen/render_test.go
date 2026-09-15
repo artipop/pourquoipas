@@ -10,7 +10,9 @@ import (
 	"strings"
 	"testing"
 
-	_ "github.com/mattn/go-sqlite3"
+	// Any SQLite answers the question these tests ask — what shape the DDL
+	// builds — and this one needs no C compiler.
+	_ "modernc.org/sqlite"
 )
 
 // The checked-in migration is what runs; this generator is only how it was
@@ -281,7 +283,7 @@ const tightenedKey = "a primary key column tightened to NOT NULL, which MySQL re
 func shapeOf(t *testing.T, ddl string) map[string]string {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "schema.db")
-	db, err := sql.Open("sqlite3", path)
+	db, err := sql.Open("sqlite", path)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -512,6 +514,27 @@ func TestTheDiagramOnDiskIsTheOneTheSchemaDescribes(t *testing.T) {
 	}
 	if string(got) != want {
 		t.Errorf("%s is stale — run `go generate ./tools/schemagen`", erdPath)
+	}
+}
+
+// The page is the diagram dressed for a browser. It was dressed by a script run
+// by hand, and was therefore as stale as nobody remembering made it; now it is
+// held to the schema like the diagram is.
+func TestThePageOnDiskIsTheOneTheSchemaDescribes(t *testing.T) {
+	root, err := moduleRoot()
+	if err != nil {
+		t.Fatal(err)
+	}
+	want, err := renderERDPage()
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := os.ReadFile(filepath.Join(root, erdPagePath))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(got) != want {
+		t.Errorf("%s is stale — run `go generate ./tools/schemagen`", erdPagePath)
 	}
 }
 

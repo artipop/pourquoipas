@@ -60,16 +60,22 @@ in a browser.
   `.app`/installer. `darwin:package:dmg`, `windows:package`, `linux:package` for the
   rest. `wails3 task build:server` — the headless build.
 - Build tags travel as `EXTRA_TAGS`, defaulting to `json1,sqlite3,frontend`
-  (cgo SQLite plus the `go:embed` of `webapp/pack`). Linux adds `gtk3`.
-- **`CGO_ENABLED=0` is a trap on the headless build and only there.** A desktop
-  build fails honestly — `wails/v3/pkg/mac` has every file excluded — but the
-  server build *compiles clean* and then dies at the first query, because
-  `mattn/go-sqlite3` swaps itself for `static_mock.go`, which registers the
-  `sqlite3` driver name and answers every `Open` with "Binary was compiled with
-  'CGO_ENABLED=0' […] This is a stub". Nothing is wrong with the binary until it
-  touches the database. One other package in the tree uses cgo at all —
-  `tailscale/certstore` — and it falls back to pure Go, so SQLite and Wails are
-  the whole of the requirement.
+  (the cgo SQLite where cgo is on, plus the `go:embed` of `webapp/pack`). Linux
+  adds `gtk3`.
+- **Which SQLite is compiled in is cgo's answer, not only the tag's.**
+  `sqlite3 && cgo` is `mattn/go-sqlite3`; anything else is `modernc.org/sqlite`,
+  pure Go, registered under the same name (`sqlstore/sqlite_pure.go`) because
+  `DBType` is both the dialect and the driver name — and `SQLiteDSN` spells the
+  connection settings for whichever it is. `CGO_ENABLED=0` used to be a trap on
+  the headless build: it compiled clean, linked mattn's `static_mock.go`, which
+  registers `sqlite3` and answers every `Open` with "This is a stub", and died
+  at the first query. That combination is now simply the pure-Go build, and
+  **Windows builds that way by default** (`build/windows/Taskfile.yml`): Wails
+  needs no cgo there, so neither MinGW nor the Docker image is needed, from a
+  Mac included. A desktop build on macOS or Linux still needs cgo for Wails
+  itself and fails honestly without it. modernc was in the graph before any of
+  this, through golang-migrate's sqlite driver; `tailscale/certstore` is the
+  one other cgo user and falls back to pure Go.
 - **A packaged app is not a child of a shell**, and that is the other difference
   `wails3 dev` hides. launchd hands the `.app` `PATH=/usr/bin:/bin:/usr/sbin:/sbin`
   and nothing else, so npx, node, the agent CLIs and a source plugin are all
@@ -99,14 +105,13 @@ forbids writing them by hand, which is right exactly because the build does it.
   `vite-plugin-solid` with the build through `vitest.config.ts`. Coverage is on by
   default (v8); `--coverage.enabled=false` while iterating, `npm run updatesnapshot`
   to rewrite snapshots.
-- `go test -tags "json1 sqlite3" ./...` — the whole suite, and the tags are not
-  optional: the cgo SQLite driver is registered in a file behind `//go:build
-  sqlite3`, so without them five packages — `server/integrationtests`,
-  `sqlstore`, `server/app`, `internal/boardclient` and anything else raising the
-  server fixture — panic with `sql: unknown driver "sqlite3"`, which reads in
-  the summary exactly like a failing test and has been mistaken for one. The
-  packages that do pass bare get a driver another way, through
-  `internal/appschema`. `go vet -tags "server json1 sqlite3" .` checks
+- `go test -tags "json1 sqlite3" ./...` — the whole suite on mattn, which is
+  what macOS and Linux ship. Without the tags, or without cgo, the same suite
+  runs on modernc, which is what Windows ships; `sqlstore` registers the driver
+  either way and `internal/appschema` takes it from there rather than importing
+  one of its own. Before that, five packages raising the server fixture
+  panicked bare with `sql: unknown driver "sqlite3"`, which read in the summary
+  exactly like a failing test. `go vet -tags "server json1 sqlite3" .` checks
   the headless build, which has its own files. `./...` also walks
   `webapp/node_modules`, where an npm package happens to ship Go sources; that is
   cosmetic, and a nested `go.mod` would not fix it — `go:embed` cannot cross a
@@ -137,12 +142,16 @@ forbids writing them by hand, which is right exactly because the build does it.
 
 `webapp/pack` must never stop existing, even for a moment: `go mod tidy` resolves
 the `go:embed all:` pattern under every build tag and runs in parallel with the
-frontend build, so a committed `.gitkeep` holds the directory open and both the
-build task and Vite clear around it rather than removing it.
+frontend build, so a committed `.gitkeep` holds the directory open and Vite
+clears around it rather than removing it (`emptyPack` in `vite.config.ts`). The
+clearing is the build's own, not the Taskfile's: it was `rm -rf` there, and
+Task's shell has no `rm` on Windows.
 
-Builds are native per platform; cgo SQLite does not cross-compile with the host
-toolchain. `wails3 task setup:docker` builds the image that can, for binaries — the
-installers are native-tool jobs (AppImage shells out to `ldd`, NSIS is `makensis`).
+Builds are native per platform; cgo — which Wails needs on macOS and Linux —
+does not cross-compile with the host toolchain. `wails3 task setup:docker` builds
+the image that can, for binaries — the installers are native-tool jobs (AppImage
+shells out to `ldd`, NSIS is `makensis`). Windows is the exception: it builds
+without cgo, so `wails3 task windows:build` cross-compiles from anywhere.
 
 ## Architecture
 
@@ -554,7 +563,7 @@ bundle — which is every `wails3 dev` run there is, so a dev build has the menu
 bar and no OS notifications. Permission is asked at the first wait rather than
 at launch, so an install whose owner never runs an agent is never interrupted to
 be asked. And the icons are **two inks rather than one template icon**
-(`build/tray/{idle,waiting}-{light,dark}.png`, drawn by `build/appicon.py`):
+(`build/tray/{idle,waiting}-{light,dark}.png`, drawn by `go run ./tools/appicon`):
 macOS renders a template icon from its alpha alone, so the amber badge — the
 whole point — would come out the same grey as the mark. macOS and Linux take one
 icon and never ask for a second, so which ink is right is ours and is redecided
@@ -2268,9 +2277,11 @@ and it made every board of shopping lists look like it was missing one.
   schema maintained by hand is a second description of it, and the second one
   goes wrong. Which tables are drawn together is the one hand-written part
   (`erdGroups`), because that is a judgement rather than something the schema
-  knows. `python3 tools/schemapage.py` dresses the same markdown as
-  `docs/schema/erd.html` — a page to open in a browser, presentation only, and
-  nothing in the Go build calls it. `docs/db-erd.md` is what is stored where in words,
+  knows. `docs/schema/erd.html` is the same diagram dressed as a page to open
+  in a browser, generated beside them and held to the schema by the same kind
+  of test — it was a Python script run by hand, and was as stale as that made
+  it. There is no Python left in the tree: `go run ./tools/appicon` draws the
+  branding the same way. `docs/db-erd.md` is what is stored where in words,
   and how one thing finds another — every reference by id;
   `docs/db-schema-review.md` is the decisions behind it, and
   `docs/sql-dialects.md` is the inventory of what is still written per vendor —

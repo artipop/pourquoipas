@@ -26,7 +26,7 @@ import (
 // would come out the same grey as the mark. macOS and Linux take one icon and
 // never ask for a second (their SetDarkModeIcon is SetIcon), so which ink is
 // right is ours to decide and ours to redecide when the system theme changes;
-// Windows keeps both and swaps them itself. build/appicon.py draws all four.
+// Windows keeps both and swaps them itself. tools/appicon draws all four.
 
 //go:embed build/tray/idle-light.png
 var trayIdleLight []byte

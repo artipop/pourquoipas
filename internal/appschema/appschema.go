@@ -17,8 +17,8 @@ import (
 	"strings"
 	"text/template"
 
-	_ "github.com/mattn/go-sqlite3" // the driver a test's scratch database needs
-
+	// Also the driver: sqlstore registers "sqlite3" as whichever SQLite the
+	// build chose, and importing one here as well would register it twice.
 	"github.com/artipop/xciii/server/services/store/sqlstore"
 )
 
@@ -55,7 +55,7 @@ func Open(path string) (*sql.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	db, err := sql.Open("sqlite3", path+"?_busy_timeout=5000")
+	db, err := sql.Open("sqlite3", sqlstore.SQLiteDSNWithoutForeignKeys(path))
 	if err != nil {
 		return nil, err
 	}
@@ -120,14 +120,13 @@ func SQLite() (string, error) {
 
 // OpenEnforcing is Open with the foreign keys enforced.
 //
-// The DSN is spelled for the driver *this package* registers, which is
-// mattn/go-sqlite3 and is imported above with no build tag. sqlstore.SQLiteDSN
-// looks like the right thing to call and is not: it is tag-selected beside the
-// import that chooses the application's driver, so in a build without
-// `-tags sqlite3` it answers with modernc's `_pragma=foreign_keys(1)` while the
-// driver actually open here is still mattn, which ignores it. The keys were
-// then off, and three cascade tests failed for a reason that had nothing to do
-// with the constraints they were testing.
+// The DSN comes from sqlstore because the driver does: the spelling and the
+// import are chosen by the same build constraint, beside each other. This
+// package once imported mattn itself, unconditionally, and spelled the DSN by
+// hand — because sqlstore's spelling followed the tag while the driver open
+// here did not, a build without `-tags sqlite3` handed mattn modernc's
+// `_pragma=foreign_keys(1)`, the keys were off, and three cascade tests failed
+// for a reason that had nothing to do with the constraints they were testing.
 //
 // The pragma is verified rather than assumed, because that mismatch was silent:
 // a DSN parameter a driver does not recognise is not an error, it is nothing.
@@ -139,7 +138,7 @@ func OpenEnforcing(path string) (*sql.DB, error) {
 	if err := db.Close(); err != nil {
 		return nil, err
 	}
-	enforcing, err := sql.Open("sqlite3", addParam(path, "_foreign_keys", "on"))
+	enforcing, err := sql.Open("sqlite3", sqlstore.SQLiteDSN(path))
 	if err != nil {
 		return nil, err
 	}
@@ -153,18 +152,6 @@ func OpenEnforcing(path string) (*sql.DB, error) {
 		return nil, fmt.Errorf("the sqlite driver did not take the foreign key setting from the DSN")
 	}
 	return enforcing, nil
-}
-
-// addParam appends one DSN setting, minding whether there is a query already.
-func addParam(dsn, key, value string) string {
-	if strings.Contains(dsn, key) {
-		return dsn
-	}
-	sep := "?"
-	if strings.Contains(dsn, "?") {
-		sep = "&"
-	}
-	return dsn + sep + key + "=" + value
 }
 
 // AddCard puts a card on the board, which is all this side ever needs to know

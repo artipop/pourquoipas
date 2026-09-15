@@ -48,7 +48,7 @@ tasks:
       - task: "{{.GOOS}}:run"
 
   setup:docker:
-    summary: Builds the image Linux/Windows cross-compilation needs (~800MB)
+    summary: Builds the image Linux (and macOS-from-elsewhere) cross-compilation needs (~800MB)
     cmds:
       - task: common:setup:docker
 
