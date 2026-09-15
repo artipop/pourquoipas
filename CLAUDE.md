@@ -142,8 +142,10 @@ forbids writing them by hand, which is right exactly because the build does it.
 
 `webapp/pack` must never stop existing, even for a moment: `go mod tidy` resolves
 the `go:embed all:` pattern under every build tag and runs in parallel with the
-frontend build, so a committed `.gitkeep` holds the directory open and both the
-build task and Vite clear around it rather than removing it.
+frontend build, so a committed `.gitkeep` holds the directory open and Vite
+clears around it rather than removing it (`emptyPack` in `vite.config.ts`). The
+clearing is the build's own, not the Taskfile's: it was `rm -rf` there, and
+Task's shell has no `rm` on Windows.
 
 Builds are native per platform; cgo — which Wails needs on macOS and Linux —
 does not cross-compile with the host toolchain. `wails3 task setup:docker` builds

@@ -1,0 +1,10 @@
+# LF in the repository and in every checkout, whatever core.autocrlf says on
+# the machine. Generated files are compared byte for byte with what their
+# generator writes (tools/schemagen, internal/buildversion, internal/edition),
+# and a CRLF checkout on Windows failed every one of those comparisons.
+# text=auto leaves binaries alone.
+* text=auto eol=lf
+
+# cmd.exe wants CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
