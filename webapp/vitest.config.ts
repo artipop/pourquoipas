@@ -80,12 +80,14 @@ export default defineConfig({
         // parallelism buys little beyond making the machine unusable.
         maxWorkers: '50%',
 
+        // Off unless asked for (`npm run test:coverage`): the counters are paid
+        // on every run, and nothing reads the report on an ordinary one.
         coverage: {
 
             // v8's own counters rather than an instrumenting babel pass, which
             // is what let babel out of the toolchain altogether.
             provider: 'v8',
-            enabled: true,
+            enabled: false,
             include: ['src/**/*.{ts,tsx,js,jsx}'],
             exclude: ['src/test/**'],
         },

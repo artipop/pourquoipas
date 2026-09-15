@@ -1,6 +1,5 @@
 import '@testing-library/jest-dom'
 import {render} from '@solidjs/testing-library'
-import 'isomorphic-fetch'
 
 import {FetchMock} from '../test/fetchMock'
 import {TestBlockFactory} from '../test/testBlockFactory'

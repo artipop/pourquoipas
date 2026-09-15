@@ -44,10 +44,24 @@ function appHtml(): Plugin {
 
 // `static/` is served from `/static` in dev and copied to `pack/static` on build
 // — the same contract the Go server expects (it mounts pack/static at /static).
-// Assets imported from TypeScript are emitted into pack/static by Vite itself.
+// Assets imported from TypeScript are emitted into pack/static by Vite itself,
+// hashed, so the copy leaves them out: copied again unhashed they were ~4 MB of
+// duplicates in pack/ and in the binary.
 function appStatic(): Plugin {
+    const imported = new Set<string>()
     return {
         name: 'xciii-static',
+        buildStart() {
+            imported.clear()
+        },
+        buildEnd() {
+            for (const id of this.getModuleIds()) {
+                const file = path.resolve(id.split('?')[0])
+                if (file.startsWith(staticDir + path.sep)) {
+                    imported.add(file)
+                }
+            }
+        },
         configureServer(server: ViteDevServer) {
             server.middlewares.use('/static', ((req, res, next) => {
                 const rel = decodeURIComponent((req.url || '').split('?')[0])
@@ -64,7 +78,10 @@ function appStatic(): Plugin {
             }) as Connect.NextHandleFunction)
         },
         async closeBundle() {
-            await cp(staticDir, path.join(outDir, 'static'), {recursive: true})
+            await cp(staticDir, path.join(outDir, 'static'), {
+                recursive: true,
+                filter: (src) => !imported.has(path.resolve(src)),
+            })
         },
     }
 }

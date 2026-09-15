@@ -1,8 +1,6 @@
 import {fireEvent, render} from '@solidjs/testing-library'
 import '@testing-library/jest-dom'
 
-import 'isomorphic-fetch'
-
 import {TestBlockFactory} from '../../test/testBlockFactory'
 import {FetchMock} from '../../test/fetchMock'
 import {mockAppStore, wrapDNDIntl} from '../../testUtils'

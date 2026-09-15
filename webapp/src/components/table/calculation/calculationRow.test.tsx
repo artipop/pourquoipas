@@ -3,7 +3,6 @@ import '@testing-library/jest-dom'
 
 import {TestBlockFactory} from '../../../test/testBlockFactory'
 import {FetchMock} from '../../../test/fetchMock'
-import 'isomorphic-fetch'
 import {wrapDNDIntl} from '../../../testUtils'
 
 import {ColumnResizeProvider} from '../tableColumnResizeContext'

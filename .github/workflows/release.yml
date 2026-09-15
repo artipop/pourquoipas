@@ -115,9 +115,13 @@ jobs:
         shell: bash
         run: command -v makensis || choco install nsis -y --no-progress
 
+      # The release builds nothing with cypress; its binary is a download per
+      # install.
       - name: Install the webapp dependencies
         working-directory: webapp
         run: npm ci
+        env:
+          CYPRESS_INSTALL_BINARY: 0
 
       - name: Work out the version
         id: version

@@ -1,8 +1,6 @@
-// jsdom's global has no fetch, and emoji-mart calls it while its module is
-// being evaluated. isomorphic-fetch is already a dependency for exactly this;
-// installing it once here saves the individual imports scattered through the
-// suites from having to run first.
-import 'isomorphic-fetch'
+// No fetch polyfill: emoji-mart calls fetch while its module is evaluated, and
+// vitest's jsdom environment keeps Node's own, which every Node this repo
+// supports has.
 
 // jsdom implements no layout, so it has never had scrollIntoView. Under jsdom 16
 // that went unnoticed; jsdom 26 delivers the focus event that rootInput's onFocus

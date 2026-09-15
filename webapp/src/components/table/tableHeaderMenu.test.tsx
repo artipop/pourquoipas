@@ -3,8 +3,6 @@ import {fireEvent, render} from '@solidjs/testing-library'
 import '@testing-library/jest-dom'
 import {wrapIntl} from '../../testUtils'
 
-import 'isomorphic-fetch'
-
 import {Constants} from '../../constants'
 import mutator from '../../mutator'
 

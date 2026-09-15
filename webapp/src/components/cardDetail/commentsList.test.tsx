@@ -1,4 +1,3 @@
-import 'isomorphic-fetch'
 
 import {render} from '@solidjs/testing-library'
 

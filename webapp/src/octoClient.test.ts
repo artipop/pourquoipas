@@ -4,7 +4,6 @@ console.log = vi.fn()
 import {Block} from './blocks/block'
 import {createCard} from './blocks/card'
 import octoClient from './octoClient'
-import 'isomorphic-fetch'
 import {FetchMock} from './test/fetchMock'
 
 global.fetch = FetchMock.fn

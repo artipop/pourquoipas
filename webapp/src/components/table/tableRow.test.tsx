@@ -6,8 +6,6 @@ import '@testing-library/jest-dom'
 import {mockAppStore, wrapDNDIntl} from '../../testUtils'
 import {AppStoreProvider} from '../../store'
 
-import 'isomorphic-fetch'
-
 import {TestBlockFactory} from '../../test/testBlockFactory'
 
 import {ColumnResizeProvider} from './tableColumnResizeContext'

@@ -1,4 +1,3 @@
-import 'isomorphic-fetch'
 import {render, waitFor} from '@solidjs/testing-library'
 
 import userEvent from '@testing-library/user-event'
@@ -50,6 +49,7 @@ describe('components/cardDetail/CardDetail', () => {
     const card = TestBlockFactory.createCard(board)
 
     const createdAt = Date.parse('01 Jan 2021 00:00:00 GMT')
+
     // A rule across the card means a section starts here. The route strip
     // learns only after its data arrives whether it has anything to show, so a
     // rule written beside it in the card stood over nothing on every card

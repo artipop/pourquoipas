@@ -172,9 +172,8 @@ Props — геттеры, деструктуризация делает сним
 ## Тесты
 
 Vitest под jsdom, конфиг `vitest.config.ts` делит `vite-plugin-solid` со
-сборкой. `npm test` в `webapp/`; покрытие (v8) включено по умолчанию,
-`--coverage.enabled=false` пока итерируешь, `npm run updatesnapshot`
-переписывает снапшоты. `npm run check` — это eslint и stylelint; `tsc` в гейт
+сборкой. `npm test` в `webapp/` идёт без покрытия; покрытие (v8) —
+`npm run test:coverage`. `npm run updatesnapshot` переписывает снапшоты. `npm run check` — это eslint и stylelint; `tsc` в гейт
 не входит.
 
 Библиотека — Solid'овская, и это не React:

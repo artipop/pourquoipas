@@ -1,7 +1,6 @@
 import {render} from '@solidjs/testing-library'
 import '@testing-library/jest-dom'
 
-import 'isomorphic-fetch'
 import {wrapDNDIntl} from '../../testUtils'
 
 import {TestBlockFactory} from '../../test/testBlockFactory'

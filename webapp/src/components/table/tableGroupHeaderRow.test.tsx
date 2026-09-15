@@ -3,8 +3,6 @@ import type {JSX} from '@solidjs/web'
 import {fireEvent, render} from '@solidjs/testing-library'
 import '@testing-library/jest-dom'
 
-import 'isomorphic-fetch'
-
 import userEvent from '@testing-library/user-event'
 
 import {wrapDNDIntl} from '../../testUtils'

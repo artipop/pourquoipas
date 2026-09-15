@@ -1,6 +1,5 @@
 import mutator from './mutator'
 import {TestBlockFactory} from './test/testBlockFactory'
-import 'isomorphic-fetch'
 import {FetchMock} from './test/fetchMock'
 import {mockDOM} from './testUtils'
 

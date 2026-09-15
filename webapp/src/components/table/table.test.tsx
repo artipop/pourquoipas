@@ -2,8 +2,6 @@ import {render, screen} from '@solidjs/testing-library'
 import '@testing-library/jest-dom'
 import userEvents from '@testing-library/user-event'
 
-import 'isomorphic-fetch'
-
 import {TestBlockFactory} from '../../test/testBlockFactory'
 import {FetchMock} from '../../test/fetchMock'
 import {BoardView} from '../../blocks/boardView'

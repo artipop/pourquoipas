@@ -74,7 +74,10 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: webapp/package-lock.json
+      # Nothing here runs cypress; its binary is a download per install.
       - run: npm ci
         working-directory: webapp
-      - run: npm test -- --coverage.enabled=false
+        env:
+          CYPRESS_INSTALL_BINARY: 0
+      - run: npm test
         working-directory: webapp

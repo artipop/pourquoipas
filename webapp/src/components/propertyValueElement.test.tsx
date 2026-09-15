@@ -3,7 +3,6 @@ import '@testing-library/jest-dom'
 import userEvent from '@testing-library/user-event'
 
 import {wrapDNDIntl} from '../testUtils'
-import 'isomorphic-fetch'
 import {IPropertyTemplate, IPropertyOption} from '../blocks/board'
 import {TestBlockFactory} from '../test/testBlockFactory'
 

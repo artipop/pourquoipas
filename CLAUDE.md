@@ -62,8 +62,8 @@ code builds a headless server (`-tags server`) that serves the board to a browse
 
 Tests:
 
-- `npm test` in `webapp/` — vitest under jsdom; `--coverage.enabled=false` while
-  iterating, `npm run updatesnapshot` to rewrite snapshots.
+- `npm test` in `webapp/` — vitest under jsdom, no coverage (`npm run
+  test:coverage` for it), `npm run updatesnapshot` to rewrite snapshots.
 - `go test -tags "json1 sqlite3" ./...` — on mattn, as macOS and Linux ship.
   Without tags or cgo it runs on modernc, as Windows ships. `go vet -tags "server
   json1 sqlite3" .` checks the headless build, which has files of its own.

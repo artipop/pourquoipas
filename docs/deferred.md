@@ -201,13 +201,18 @@ DERP-релеи остаются на месте — клиент тот же с
 
 ## Картинки апстрима
 
-В `webapp/static/` лежат `boards-welcome.png`, `boards-welcome-small.png`,
-`boards-screenshots.png`, `app-bar-icon.png`, `upgrade.png` и полдюжины гифок
-тура — это скриншоты Mattermost Boards, оставшиеся от апстрима: вкладки
-Channels и Playbooks, синяя шапка. Слова «Focalboard» на них нет, поэтому
-переименование их не тронуло. Уйти они должны вместе со страницей приветствия
-и туром, которые разбирает [onboarding-plan.md](onboarding-plan.md), —
-отдельно удалять нет смысла.
+В `webapp/static/` лежат гифки и картинка тура (`addProperty.gif`,
+`changeViews.gif`, `comment.gif`, `copyLink.gif`, `share.gif`,
+`addDescription.png`) — скриншоты Mattermost Boards, оставшиеся от апстрима:
+вкладки Channels и Playbooks, синяя шапка. Слова «Focalboard» на них нет,
+поэтому переименование их не тронуло. Уйти они должны вместе с туром, который
+разбирает [onboarding-plan.md](onboarding-plan.md), — отдельно удалять нет
+смысла.
+
+Остальные картинки апстрима (`boards-welcome*.png`, `boards-screenshots.png`,
+`app-bar-icon.png`, `upgrade.png`, `onboardingBg.jpg` и 3,7 МБ
+`emoji_spirit.png`) ни на что не ссылались и удалены 2026-09-15
+([build-speed-plan.md](build-speed-plan.md)).
 
 ## Каналы обновлений и дельты
 
