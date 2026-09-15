@@ -1,7 +1,7 @@
 import {render, screen, waitFor} from '@solidjs/testing-library'
 import userEvent from '@testing-library/user-event'
 import '@testing-library/jest-dom'
-import {createSignal} from 'solid-js'
+import {createSignal, flush} from 'solid-js'
 
 import {TestRouter, mockAppStore, wrapIntl} from '../../testUtils'
 import {AppStoreProvider} from '../../store'
@@ -142,6 +142,7 @@ describe('components/settings/appSettingsDialog', () => {
         expect(screen.getByRole('button', {name: 'Import and export'})).toBeInTheDocument()
 
         setLocale('ru')
+        flush()
 
         expect(screen.getByRole('button', {name: 'Импорт и экспорт'})).toBeInTheDocument()
         expect(screen.getByRole('heading', {name: 'Приложение'})).toBeInTheDocument()

@@ -88,7 +88,9 @@ const CardTerminal = (props: Props) => {
     // and the app kept guessing: work on the card is filed under the column it
     // is happening in, the card's own conversation under nodeTalk, and no route
     // ever finds the second one.
-    const start = async (inWindow: boolean, talk = false) => {
+    // The folder and the agent come in as arguments where a click has just
+    // named them: the signal set in the same handler still reads the old value.
+    const start = async (inWindow: boolean, talk = false, workdir = workdirName(), agent = agentName()) => {
         const open = talk ? bindings?.OpenCardTalk : bindings?.OpenCardTerminal
         if (!open) {
             return
@@ -96,7 +98,7 @@ const CardTerminal = (props: Props) => {
         setBusy(true)
         setError('')
         try {
-            const handle = JSON.parse(await open(props.cardId, workdirName(), agentName(), inWindow))
+            const handle = JSON.parse(await open(props.cardId, workdir, agent, inWindow))
 
             // The desktop app has already opened the window by now; a server
             // build has no windows, so the browser opens a tab instead.
@@ -156,7 +158,7 @@ const CardTerminal = (props: Props) => {
     const chooseAgent = (name: string) => {
         setAgentName(name)
         if (state().folder) {
-            start(false)
+            start(false, false, workdirName(), name)
         }
     }
 
@@ -166,7 +168,7 @@ const CardTerminal = (props: Props) => {
     // shared with the planning dialog — one question in one shape.
     const chooseFolder = async (name: string) => {
         setWorkdirName(name)
-        await start(false)
+        await start(false, false, name)
     }
 
     // A stage of the route may start, end or be named while somebody is

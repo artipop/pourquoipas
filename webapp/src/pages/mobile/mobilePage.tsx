@@ -235,18 +235,24 @@ const MobilePage = () => {
 
             {/* The row of buttons is at the bottom because that is where a
                 thumb is, and it is fixed because the lists above it scroll. */}
+            {/* By position, not by entry: the entries are rebuilt whenever a
+                count changes, and keyed rows would replace every button then —
+                a tap landing on one that was just replaced is a tap lost. */}
             <nav class='MobilePage__tabs'>
-                <For each={tabs(intl, inbox().length, waiting().length, terminals().length)}>
+                <For
+                    each={tabs(intl, inbox().length, waiting().length, terminals().length)}
+                    keyed={false}
+                >
                     {(entry) => (
                         <button
                             type='button'
-                            class={`MobilePage__tab${tab() === entry.id ? ' MobilePage__tab--on' : ''}`}
-                            aria-current={tab() === entry.id}
-                            onClick={() => setTab(entry.id)}
+                            class={`MobilePage__tab${tab() === entry().id ? ' MobilePage__tab--on' : ''}`}
+                            aria-current={tab() === entry().id ? 'page' : undefined}
+                            onClick={() => setTab(entry().id)}
                         >
-                            <span class='MobilePage__tab-name'>{entry.name}</span>
-                            <Show when={entry.count > 0}>
-                                <span class='MobilePage__tab-count'>{entry.count}</span>
+                            <span class='MobilePage__tab-name'>{entry().name}</span>
+                            <Show when={entry().count > 0}>
+                                <span class='MobilePage__tab-count'>{entry().count}</span>
                             </Show>
                         </button>
                     )}

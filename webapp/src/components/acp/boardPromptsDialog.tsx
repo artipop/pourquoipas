@@ -1,6 +1,6 @@
 // The Wails-generated Go bindings are PascalCase methods, not constructors.
 /* eslint-disable new-cap */
-import {Show, createSignal, onSettled} from 'solid-js'
+import {Loading, Show, createMemo, createSignal} from 'solid-js'
 
 import {useIntl} from '../../intl'
 
@@ -41,34 +41,32 @@ const BoardPromptsDialog = (props: Props) => {
     const intl = useIntl()
     const bindings = agentBindings()
 
-    const [prompt, setPrompt] = createSignal('')
-    const [error, setError] = createSignal('')
-    const [saving, setSaving] = createSignal(false)
-
-    onSettled(() => {
-        // Not awaited: onSettled reads a returned promise as a cleanup value.
-        void (async () => {
-            try {
-                if (bindings?.GetBoardPrompt) {
-                    setPrompt(await bindings.GetBoardPrompt(props.board.id))
-                }
-            } catch (e) {
-                setError(String(e))
-            }
-        })()
+    const stored = createMemo(async () => {
+        try {
+            return {text: bindings?.GetBoardPrompt ? await bindings.GetBoardPrompt(props.board.id) : '', error: ''}
+        } catch (e) {
+            return {text: '', error: String(e)}
+        }
     })
+
+    // The form waits for the stored text under Loading: an empty box that took
+    // typing before the answer arrived had what was typed written over by it.
+    const [prompt, setPrompt] = createSignal(() => stored().text)
+    const [saveError, setSaveError] = createSignal('')
+    const error = () => saveError() || stored().error
+    const [saving, setSaving] = createSignal(false)
 
     const save = async () => {
         if (!bindings?.SetBoardPrompt) {
             return
         }
-        setError('')
+        setSaveError('')
         setSaving(true)
         try {
             await bindings.SetBoardPrompt(props.board.id, prompt())
             props.onClose()
         } catch (e) {
-            setError(String(e))
+            setSaveError(String(e))
         } finally {
             setSaving(false)
         }
@@ -81,40 +79,42 @@ const BoardPromptsDialog = (props: Props) => {
             subtitle={<span>{intl.formatMessage({id: 'BoardPrompts.subtitle', defaultMessage: 'Said first to every agent that works on this board — in a session a column starts, and in a conversation somebody opens.'})}</span>}
             onClose={props.onClose}
         >
-            <div class='BoardPromptsDialog__content'>
-                <textarea
-                    rows={10}
-                    value={prompt()}
-                    aria-label={intl.formatMessage({id: 'BoardPrompts.title', defaultMessage: 'The board’s system prompt'})}
-                    placeholder={intl.formatMessage({id: 'BoardPrompts.placeholder', defaultMessage: 'What this board is about, and how work is done on it'})}
-                    onInput={(e) => setPrompt(e.currentTarget.value)}
-                />
+            <Loading>
+                <div class='BoardPromptsDialog__content'>
+                    <textarea
+                        rows={10}
+                        value={prompt()}
+                        aria-label={intl.formatMessage({id: 'BoardPrompts.title', defaultMessage: 'The board’s system prompt'})}
+                        placeholder={intl.formatMessage({id: 'BoardPrompts.placeholder', defaultMessage: 'What this board is about, and how work is done on it'})}
+                        onInput={(e) => setPrompt(e.currentTarget.value)}
+                    />
 
-                {/* The order, printed. An agent is given three texts and a
-                    person can only reason about that if the screen says which
-                    ones and in what order — the whole reason the third prompt
-                    this dialog once had is not here. */}
-                <p class='BoardPromptsDialog__hint'>
-                    {intl.formatMessage({id: 'BoardPrompts.order', defaultMessage: 'The agent is given this text, then its own prompt from "Settings → Agents" — which holds on every board — and then the card’s task.'})}
-                </p>
+                    {/* The order, printed. An agent is given three texts and a
+                        person can only reason about that if the screen says which
+                        ones and in what order — the whole reason the third prompt
+                        this dialog once had is not here. */}
+                    <p class='BoardPromptsDialog__hint'>
+                        {intl.formatMessage({id: 'BoardPrompts.order', defaultMessage: 'The agent is given this text, then its own prompt from "Settings → Agents" — which holds on every board — and then the card’s task.'})}
+                    </p>
 
-                <div class='BoardPromptsDialog__actions'>
-                    <Button
-                        emphasis='primary'
-                        onClick={save}
-                        disabled={saving()}
-                    >
-                        {intl.formatMessage({id: 'BoardPrompts.save', defaultMessage: 'Save'})}
-                    </Button>
-                    <Button onClick={props.onClose}>
-                        {intl.formatMessage({id: 'BoardPrompts.cancel', defaultMessage: 'Cancel'})}
-                    </Button>
+                    <div class='BoardPromptsDialog__actions'>
+                        <Button
+                            emphasis='primary'
+                            onClick={save}
+                            disabled={saving()}
+                        >
+                            {intl.formatMessage({id: 'BoardPrompts.save', defaultMessage: 'Save'})}
+                        </Button>
+                        <Button onClick={props.onClose}>
+                            {intl.formatMessage({id: 'BoardPrompts.cancel', defaultMessage: 'Cancel'})}
+                        </Button>
+                    </div>
+
+                    <Show when={error()}>
+                        <div class='BoardPromptsDialog__error'>{error()}</div>
+                    </Show>
                 </div>
-
-                <Show when={error()}>
-                    <div class='BoardPromptsDialog__error'>{error()}</div>
-                </Show>
-            </div>
+            </Loading>
         </Dialog>
     )
 }

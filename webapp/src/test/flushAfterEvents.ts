@@ -13,6 +13,22 @@ import {flush} from 'solid-js'
 // This covers a write a person's event caused. A test that writes directly —
 // calling a module's own function, driving a signal — still says `flush()`
 // itself, because there is no event to hang it on.
+// An event can be fired from inside a settle — user-event sends `change` to a
+// box that loses focus, and focus moves in a component's onSettled — and Solid
+// refuses a flush there; the writes already join that flush's continuation, so
+// the drain waits a microtask, as the error itself says to. Matched on Solid's
+// own message so that any other error from a flush still fails the test.
+const drain = () => {
+    try {
+        flush()
+    } catch (e) {
+        if (!String((e as Error)?.message).startsWith('Cannot call flush() from inside')) {
+            throw e
+        }
+        queueMicrotask(() => flush())
+    }
+}
+
 const patch = (target: Record<string, any>) => {
     for (const name of Object.keys(target)) {
         const original = target[name]
@@ -21,7 +37,7 @@ const patch = (target: Record<string, any>) => {
         }
         target[name] = (...args: unknown[]) => {
             const result = original(...args)
-            flush()
+            drain()
             return result
         }
     }

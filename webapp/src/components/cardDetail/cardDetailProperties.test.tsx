@@ -285,7 +285,7 @@ describe('components/cardDetail/CardDetailProperties', () => {
         const result = renderComponent()
 
         // rename to "Owner-Renamed"
-        onPropertyRenameNoConfirmationDialog(result.container)
+        await onPropertyRenameNoConfirmationDialog(result.container)
         const propertyTemplate = board.cardProperties[0]
 
         // should be called once on confirming renaming the property
@@ -356,15 +356,18 @@ describe('components/cardDetail/CardDetailProperties', () => {
         expect(confirmDialog).toBeDefined()
     }
 
-    function onPropertyRenameNoConfirmationDialog(container: HTMLElement) {
+    // Awaited step by step, as a person would go: a click that lands while the
+    // menu Enter closed is still on screen blurs the name box and confirms the
+    // name a second time.
+    async function onPropertyRenameNoConfirmationDialog(container: HTMLElement) {
         const propertyLabel = container.querySelector('.MenuWrapper')
         expect(propertyLabel).toBeDefined()
-        userEvent.click(propertyLabel!)
+        await userEvent.click(propertyLabel!)
 
         // write new name in the name text box
         const propertyNameInput = container.querySelector('.PropertyMenu.menu-textbox')
         expect(propertyNameInput).toBeDefined()
-        userEvent.type(propertyNameInput!, 'Owner - Renamed{enter}')
-        userEvent.click(propertyLabel!)
+        await userEvent.type(propertyNameInput!, 'Owner - Renamed{enter}')
+        await userEvent.click(propertyLabel!)
     }
 })

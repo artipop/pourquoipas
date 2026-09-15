@@ -1,4 +1,4 @@
-import {Show, createEffect, createSignal} from 'solid-js'
+import {createEffect, createSignal, flush, Show} from 'solid-js'
 import type {ParentComponent} from 'solid-js'
 import type {JSX} from '@solidjs/web'
 
@@ -39,10 +39,14 @@ const MenuWrapper: ParentComponent<Props> = (props) => {
         trigger?.focus()
     }
 
+    // Drawn away before focus goes back: a write is held until the queue drains,
+    // and moving focus while the menu is still on screen blurs whatever inside
+    // it had focus — a name box confirms its name on blur, so it saved twice.
     const close = (): void => {
         if (open()) {
             setOpen(false)
             props.onToggle && props.onToggle(false)
+            flush()
             restoreFocus()
         }
     }
@@ -84,6 +88,7 @@ const MenuWrapper: ParentComponent<Props> = (props) => {
         setOpen(next)
         props.onToggle && props.onToggle(next)
         if (!next) {
+            flush()
             restoreFocus()
         }
     }
@@ -107,11 +112,14 @@ const MenuWrapper: ParentComponent<Props> = (props) => {
         if (!open()) {
             setOpen(true)
             props.onToggle && props.onToggle(true)
+
+            // A write is held until the queue drains, and focus needs the
+            // options drawn now so the step lands in the same turn as the key.
+            flush()
         }
 
-        // Solid renders the menu as part of the write above, so the options are
-        // already there and the step happens in the same turn as the key. The
-        // second try is for a menu whose options an effect of its own builds.
+        // The second try is for a menu whose options an effect of its own
+        // builds.
         const stepIn = (): boolean => {
             const options = menuOptions(node?.querySelector<HTMLElement>('.Menu') || undefined)
             const step = e.key === 'ArrowDown' ? options[0] : options[options.length - 1]

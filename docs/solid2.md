@@ -160,23 +160,37 @@ wrapper.
 
 ## What is not finished
 
-- **15 tests in 11 files still fail** (of 1550). Mostly tests that write
-  directly and need their own `flush()` — which is also what the one that
-  caught the empty board looked like, so each is worth reading before it is
-  written off. The route canvas is not among them
-  any more: its tests were failing through the compat shim and pass on
-  solid-flow 1.0.
+- **The suite is green** (1546 of 1552, six skipped on purpose). The last
+  fifteen failures were each read before being fixed, and four of them were
+  the app, not the test:
+  - *The card's terminal panel started in the wrong place.* Picking a folder
+    or an agent set a signal and then called `start`, which read the signal
+    back — the old value — so the conversation opened in the board's drafts
+    with nobody named. `start` now takes what was picked as arguments.
+  - *Renaming a property with Enter saved it twice.* The menu closed and
+    focus went back to its trigger in the same turn, while the menu — held
+    by the staged write — was still on screen; the name box blurred, and it
+    confirms on blur. `menuWrapper` flushes the close before moving focus,
+    and the keyboard open the same way, so the first option takes focus in
+    the turn of the key.
+  - *A tap on the phone's tab bar could be lost.* The bar was a keyed `For`
+    over entries rebuilt on every count change, so a count arriving mid-tap
+    replaced the button being tapped. It is `keyed={false}` now.
+  - *The board prompt dialog took typing before it had loaded*, and the
+    stored text then arrived over what was typed. It waits under `Loading`.
+  The rest were tests that wrote directly and needed `flush()`, awaited
+  what they fired, or read a label that was still "Asking the agent…".
+  `Portal` no longer wraps what it ports, so the node's parent is `body`.
 - **A read right after a write in the same handler returns the old value.**
-  The theme picker applied the theme being left, because it set the name and
-  then applied `themeName()`; it now applies the name in hand. A scan for that
-  shape (a setter followed by its own getter in one handler) finds nothing
-  else, but the scan is a heuristic and the bug class is silent.
+  The theme picker and the terminal panel both shipped that bug; a scan for
+  the shape (a setter followed by its own getter in one handler) finds
+  nothing else now, but the scan is a heuristic and the bug class is silent.
 - **`tsc --noEmit` is not clean**, and was not clean before this either. The
   new errors are concentrated in files where TypeScript gives up and reports
   captured bindings as `never`; the build (esbuild) and the linter are the
   gates this repository actually runs.
 - **Nothing has been driven in a browser.** The build is green and the suite
-  is nearly green; a real pass over drag-and-drop, the route canvas and the
+  is green; a real pass over drag-and-drop, the route canvas and the
   calendar is still owed, and jsdom does no layout — see the note about
   verifying UI in a real browser.
 - Solid 2 is at **rc.1** and `@solidjs/router` at `2.0.0-next.17`. Both are

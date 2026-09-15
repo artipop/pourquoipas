@@ -32,5 +32,5 @@ test('Portal renders into document.body', () => {
             <div data-testid='ported'>{'outside the app root'}</div>
         </Portal>
     ))
-    expect(screen.getByTestId('ported').parentElement?.parentElement).toBe(document.body)
+    expect(screen.getByTestId('ported').parentElement).toBe(document.body)
 })

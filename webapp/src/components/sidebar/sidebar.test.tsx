@@ -1,4 +1,4 @@
-import {Show, createSignal} from 'solid-js'
+import {createSignal, flush, Show} from 'solid-js'
 import {render} from '@solidjs/testing-library'
 import userEvent from '@testing-library/user-event'
 
@@ -134,10 +134,12 @@ describe('components/sidebarSidebar', () => {
 
         expect(container.querySelector('.Sidebar')).not.toHaveClass('offscreen')
         setTaken(true)
+        flush()
         expect(container.querySelector('.Sidebar')).toHaveClass('offscreen')
 
         // …and it comes back on its own when whatever took the window is gone.
         setTaken(false)
+        flush()
         expect(container.querySelector('.Sidebar')).not.toHaveClass('offscreen')
     })
 

@@ -148,7 +148,7 @@ describe('components/calendar/toolbar', () => {
     // Week or month is the view's own answer, so it comes back with the view
     // — on the next screen, and after the app has been closed. It lived
     // nowhere at all before this: every mount opened on the month.
-    test('opens on the span the view remembers', () => {
+    test('opens on the span the view remembers', async () => {
         const weekly = TestBlockFactory.createBoardView(board)
         weekly.fields.viewType = 'calendar'
         weekly.fields.calendarSpan = 'dayGridWeek'
@@ -169,6 +169,8 @@ describe('components/calendar/toolbar', () => {
             ),
         )
 
+        // The calendar is built one microtask after the settle (fullCalendar.tsx).
+        await Promise.resolve()
         expect(container.querySelector('.fc-dayGridWeek-view')).not.toBeNull()
         expect(container.querySelector('.fc-dayGridMonth-view')).toBeNull()
     })
@@ -193,6 +195,9 @@ describe('components/calendar/toolbar', () => {
                 </AppStoreProvider>,
             ),
         )
+
+        // The calendar is built one microtask after the settle (fullCalendar.tsx).
+        await Promise.resolve()
 
         // Mounting on the month it already shows writes nothing.
         expect(mockedMutator.changeViewCalendarSpan).not.toHaveBeenCalled()

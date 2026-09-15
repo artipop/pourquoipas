@@ -185,8 +185,6 @@ describe('pages/mobile/mobilePage', () => {
 
         renderPage()
 
-        // Re-queried each time: the bar is a <For>, so the button is a new
-        // element once the count arrives.
         await waitFor(() => expect(screen.getByRole('button', {name: /Inbox/})).toHaveTextContent('1'))
         expect(screen.queryByText('Доставка приедет завтра')).not.toBeInTheDocument()
     })

@@ -1,4 +1,4 @@
-import {createSignal} from 'solid-js'
+import {createSignal, flush} from 'solid-js'
 import {render} from '@solidjs/testing-library'
 import userEvent from '@testing-library/user-event'
 
@@ -267,6 +267,7 @@ describe('components/sidebarCategory', () => {
         expect(container.querySelector('.octo-sidebar-item.category.collapsed')).toBeNull()
 
         setCategory({...categoryBoards1, collapsed: true})
+        flush()
 
         expect(container.querySelector('.octo-sidebar-item.category.collapsed')).not.toBeNull()
     })

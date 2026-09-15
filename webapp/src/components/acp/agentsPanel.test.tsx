@@ -354,7 +354,8 @@ describe('components/acp/agentsPanel', () => {
         userEvent.click(screen.getAllByRole('button', {name: 'Edit'})[0])
         await waitFor(() => expect(bindings.AgentOptions).toHaveBeenCalledTimes(1))
 
-        userEvent.click(screen.getByRole('button', {name: 'Recheck'}))
+        // The button says "Asking the agent…" until that first answer is in.
+        userEvent.click(await screen.findByRole('button', {name: 'Recheck'}))
         await waitFor(() => expect(bindings.AgentOptions).toHaveBeenCalledTimes(2))
         expect(bindings.AgentOptions.mock.calls[1][1]).toBe(true)
     })
