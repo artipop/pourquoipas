@@ -78,11 +78,12 @@ bookworm — и кросс-образ вместе с ним — на 4.8. Сн�
 тот же `go build` с `GOOS=windows`, а внутренний линкер Go честно ставит
 GUI-подсистему.
 
-Headless-сборка (`-tags server`) под Windows не компилируется, и cgo тут ни при
-чём: в Wails v3.0.0-beta.2 `webview_window_windows_nonclient.go` помечен только
-`windows`, без `!server`, и ссылается на `windowsWebviewWindow`, который с
-тегом `server` исключён. Это правка апстрима; headless-сервер собирается на
-macOS и Linux.
+Headless-сборка (`wails3 task build:server`) под Windows тоже без cgo:
+`build:server` оставляет `CGO_ENABLED` на усмотрение Go, а без C-компилятора
+это 0 и modernc. На Wails v3.0.0-beta.2, с которой проект начинался, она не
+компилировалась вовсе — `webview_window_windows_nonclient.go` был помечен
+только `windows`, без `!server`; апстрим исправил это в beta.4. Проверено на
+beta.22: сервер стартует, прогоняет миграции на новой базе и отдаёт страницу.
 
 Сборки с cgo под Windows больше нет вовсе — ни через MinGW, ни через
 кросс-образ, — потому что cgo там нужен был одной SQLite. У того пути было две

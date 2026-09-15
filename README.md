@@ -181,7 +181,7 @@ the one thing a rewrite must not quietly drop.
 
 - Wails v3 CLI (it carries its own task runner, so no separate `task` binary):
   ```
-  go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.2
+  go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.22
   ```
 - A C toolchain where the desktop build needs cgo:
   - **macOS**: Xcode Command Line Tools.
