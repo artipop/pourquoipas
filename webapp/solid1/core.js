@@ -52,18 +52,8 @@ export {getObserver as getListener} from 'solid-js'
 // the whole of what Solid 1's batch did that still needs doing.
 export const batch = (fn) => fn()
 
-// Solid 1's effect tracked its whole body *and* ran after the render that
-// created it. Putting the body in the compute half of a Solid 2 effect kept the
-// tracking and lost the timing — a compute runs at creation — and dnd-kit
-// depends on the timing: `useDeepSignal` subscribes to the fields the component
-// has already read, and at creation it has read none, so `isDropTarget` never
-// changed and no column was ever lit under a dragged card.
-//
-// createTrackedEffect is Solid 2's migration primitive for exactly this shape:
-// tracked, and run in the effect phase. Two adaptations. Its return value is a
-// cleanup, where a Solid 1 effect returns the next `prev`, so the value is kept
-// here instead. And a Solid 1 body registers its cleanups with onCleanup, which
-// is collected while the body runs and returned as the effect's cleanup.
+// Tracked and run after the render, as dnd-kit needs: a compute-phase body
+// subscribed to nothing and no column lit under a dragged card (README.md).
 let collecting = null
 
 export const onCleanup = (fn) => {

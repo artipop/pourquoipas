@@ -13,6 +13,7 @@ import {flush} from 'solid-js'
 // This covers a write a person's event caused. A test that writes directly —
 // calling a module's own function, driving a signal — still says `flush()`
 // itself, because there is no event to hang it on.
+
 // An event can be fired from inside a settle — user-event sends `change` to a
 // box that loses focus, and focus moves in a component's onSettled — and Solid
 // refuses a flush there; the writes already join that flush's continuation, so

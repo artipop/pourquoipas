@@ -80,7 +80,6 @@ const useTutorialTourTipManager = ({
         }
     }
 
-    // Nothing tracked: autoTour is a plain value the caller passed in.
     onSettled(() => {
         if (autoTour) {
             setShow(true)

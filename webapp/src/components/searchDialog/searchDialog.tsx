@@ -93,7 +93,6 @@ const SearchDialog = (props: Props): JSX.Element => {
         }
     }
 
-    // Nothing tracked: the listener is put on once and taken off on disposal.
     onSettled(() => {
         document.addEventListener('keydown', handleUpDownKeyPress)
         return () => {

@@ -86,9 +86,6 @@ export async function readSetupPlan(boardId: string): Promise<SetupPlan> {
     return {...plan, steps: plan.steps || []}
 }
 
-// createSetupPlan is how a component holds one: keyed on the board, re-read
-// when the board changes and when a step has just been answered.
-//
 // NO_SETUP stands in until Go answers rather than a Loading boundary: a board
 // that asks nothing and a board not read yet look the same on screen, and
 // every caller reads the plan straight through.

@@ -11,6 +11,9 @@ import mutator from '../../mutator'
 
 import CalendarView from './fullCalendar'
 
+// The calendar is built one microtask after the settle (fullCalendar.tsx).
+const calendarBuilt = () => Promise.resolve()
+
 vi.mock('../../mutator')
 
 describe('components/calendar/toolbar', () => {
@@ -68,8 +71,7 @@ describe('components/calendar/toolbar', () => {
             ),
         )
 
-        // The calendar is built one microtask after the settle (fullCalendar.tsx).
-        await Promise.resolve()
+        await calendarBuilt()
         expect(container).toMatchSnapshot()
     })
 
@@ -92,8 +94,7 @@ describe('components/calendar/toolbar', () => {
             ),
         )
 
-        // The calendar is built one microtask after the settle (fullCalendar.tsx).
-        await Promise.resolve()
+        await calendarBuilt()
         expect(container).toMatchSnapshot()
     })
 
@@ -117,8 +118,7 @@ describe('components/calendar/toolbar', () => {
             ),
         )
 
-        // The calendar is built one microtask after the settle (fullCalendar.tsx).
-        await Promise.resolve()
+        await calendarBuilt()
         expect(container).toMatchSnapshot()
     })
 
@@ -140,8 +140,7 @@ describe('components/calendar/toolbar', () => {
             ),
         )
 
-        // The calendar is built one microtask after the settle (fullCalendar.tsx).
-        await Promise.resolve()
+        await calendarBuilt()
         expect(container).toMatchSnapshot()
     })
 
@@ -169,8 +168,7 @@ describe('components/calendar/toolbar', () => {
             ),
         )
 
-        // The calendar is built one microtask after the settle (fullCalendar.tsx).
-        await Promise.resolve()
+        await calendarBuilt()
         expect(container.querySelector('.fc-dayGridWeek-view')).not.toBeNull()
         expect(container.querySelector('.fc-dayGridMonth-view')).toBeNull()
     })
@@ -196,8 +194,7 @@ describe('components/calendar/toolbar', () => {
             ),
         )
 
-        // The calendar is built one microtask after the settle (fullCalendar.tsx).
-        await Promise.resolve()
+        await calendarBuilt()
 
         // Mounting on the month it already shows writes nothing.
         expect(mockedMutator.changeViewCalendarSpan).not.toHaveBeenCalled()

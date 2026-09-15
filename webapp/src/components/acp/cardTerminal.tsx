@@ -171,13 +171,9 @@ const CardTerminal = (props: Props) => {
         await start(false, false, name)
     }
 
-    // A stage of the route may start, end or be named while somebody is
-    // reading this panel, and the list has to say so without being closed and
-    // opened again. Its own onSettled, and before the one below: a cleanup is
-    // returned in Solid 2, and an async callback returns a promise instead —
-    // so the subscription cannot share a block with anything awaited. It still
-    // lands before the first await, which is what matters: what happens in
-    // between is exactly what a card with a route running on it does.
+    // A stage may start, end or be named while this panel is open. Its own
+    // onSettled, because an async callback returns a promise where the cleanup
+    // belongs, so the subscription cannot share a block with anything awaited.
     onSettled(() => onAgentEvent('acp:terminal', () => refreshCardAgent(props.cardId)))
 
     onSettled(() => {
@@ -205,8 +201,7 @@ const CardTerminal = (props: Props) => {
     })
 
     // Re-read the list when the card's properties change — a move most of all.
-    // The tracked half is the compute; `defer` skips the mount, which already
-    // refreshes.
+    // `defer` skips the mount, which already refreshes.
     createEffect(() => JSON.stringify(card()?.fields?.properties || {}), () => {
         refreshCardAgent(props.cardId)
     }, {defer: true})

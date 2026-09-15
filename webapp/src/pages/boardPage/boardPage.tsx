@@ -111,7 +111,6 @@ const BoardPage = (props: Props): JSX.Element => {
         if (loaded.blocks.length === 0) {
             joinBoard(user, loaded.teamId, loaded.boardId, false)
         } else {
-            // set board as most recently viewed board
             UserSettings.setLastBoardID(loaded.teamId, loaded.boardId)
         }
         actions.boards.fetchBoardMembers({

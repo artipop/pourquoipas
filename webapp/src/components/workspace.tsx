@@ -43,8 +43,7 @@ import './workspace.scss'
 type Props = {
     readonly: boolean
 
-    // The board page's load of the open board's blocks; absent where nothing
-    // loads one, which reads as never loading.
+    // Absent where nothing loads a board, which reads as never loading.
     boardContent?: () => unknown
 }
 
@@ -77,7 +76,6 @@ function CenterContent(props: Props) {
         actions.cards.setCurrent(cardId || '')
     }
 
-    // Nothing tracked: the subscription is made once and dropped on disposal.
     onSettled(() => {
         const onConfigChangeHandler = (_: WSClient, config: ClientConfig) => {
             actions.clientConfig.setClientConfig(config)
