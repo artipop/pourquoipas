@@ -1,4 +1,4 @@
-import {Show, createEffect, createSignal} from 'solid-js'
+import {Show, createEffect, createMemo, createSignal, refresh} from 'solid-js'
 import type {JSX} from '@solidjs/web'
 
 import {useNavigate} from '@solidjs/router'
@@ -86,6 +86,40 @@ const BoardPage = (props: Props): JSX.Element => {
         return loaded
     }
 
+    // Keyed on who is looking as well as on the board, because nobody signed
+    // in yet cannot read a board and the load waits for them.
+    const boardContent = createMemo(() => {
+        const board = boardId()
+        const team = teamId()
+        if (!board || props.readonly || !me()?.id) {
+            return undefined
+        }
+        return actions.load.fetchBoardBlocks(board).
+            then((blocks) => ({boardId: board, teamId: team, blocks})).
+            catch(() => undefined)
+    })
+
+    // Applied by an effect rather than inside the fetch: an effect over an async
+    // memo sees only the latest answer, so switching boards while one is still
+    // loading can no longer land the old board's cards over the new one.
+    createEffect(boardContent, (loaded) => {
+        const user = me()
+        if (!loaded || !user) {
+            return
+        }
+        actions.load.applyBoardBlocks(loaded.blocks)
+        if (loaded.blocks.length === 0) {
+            joinBoard(user, loaded.teamId, loaded.boardId, false)
+        } else {
+            // set board as most recently viewed board
+            UserSettings.setLastBoardID(loaded.teamId, loaded.boardId)
+        }
+        actions.boards.fetchBoardMembers({
+            teamId: loaded.teamId,
+            boardId: loaded.boardId,
+        })
+    })
+
     useWebsockets(teamId, (wsClient) => {
         const incrementalBlockUpdate = (_: WSClient, blocks: Block[]) => {
             const teamBlocks = blocks
@@ -123,6 +157,10 @@ const BoardPage = (props: Props): JSX.Element => {
 
         const dispatchLoadAction = () => {
             loadAction(boardId())
+
+            // Whatever changed on the board while the socket was down was never
+            // announced, so its blocks are read again too.
+            refresh(boardContent)
         }
 
         Utils.log('useWEbsocket adding onChange handler')
@@ -178,22 +216,6 @@ const BoardPage = (props: Props): JSX.Element => {
         }
     }
 
-    const loadOrJoinBoard = async (myUser: IUser, boardTeamId: string, loadBoardId: string) => {
-        // and fetch its data
-        const result = await actions.load.loadBoardData(loadBoardId)
-        if (result.blocks.length === 0 && myUser.id) {
-            joinBoard(myUser, boardTeamId, loadBoardId, false)
-        } else {
-            // set board as most recently viewed board
-            UserSettings.setLastBoardID(boardTeamId, loadBoardId)
-        }
-
-        actions.boards.fetchBoardMembers({
-            teamId: boardTeamId,
-            boardId: loadBoardId,
-        })
-    }
-
     createEffect(() => [teamId(), me()?.id, boardId(), viewId()] as const, ([, , currentBoardId, currentViewId]) => {
         loadAction(currentBoardId)
 
@@ -209,12 +231,6 @@ const BoardPage = (props: Props): JSX.Element => {
                     UserSettings.setLastViewId(currentBoardId, currentViewId)
                 }
             }
-        }
-    })
-
-    createEffect(() => [me(), boardId(), teamId()] as const, ([user, board, team]) => {
-        if (board && !props.readonly && user) {
-            loadOrJoinBoard(user, team, board)
         }
     })
 
@@ -298,6 +314,7 @@ const BoardPage = (props: Props): JSX.Element => {
                 <Show when={!props.readonly || activeBoardId() !== undefined}>
                     <Workspace
                         readonly={props.readonly || false}
+                        boardContent={boardContent}
                     />
                 </Show>
             </div>

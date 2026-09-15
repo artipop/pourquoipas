@@ -1,3 +1,4 @@
+import {createMemo, flush} from 'solid-js'
 import {render, waitFor} from '@solidjs/testing-library'
 
 import userEvent from '@testing-library/user-event'
@@ -279,6 +280,47 @@ describe('src/components/workspace', () => {
         vi.runOnlyPendingTimers()
 
         expect(container).toMatchSnapshot()
+    })
+
+    // A board somebody opens by its address may not be in the store yet — one
+    // they are about to join is not — and "Create a board" drawn while it loads
+    // tells them the board they asked for does not exist.
+    test('does not offer to create a board while the one opened is loading', async () => {
+        const loadingStore = mockAppStore({
+            users: {me, boardUsers: {[me.id]: me}},
+            teams: {current: {id: 'team-id', title: 'Test Team'}},
+            boards: {current: 'not-here-yet', boards: {}, templates: [], myBoardMemberships: {}},
+            views: {views: {}},
+            cards: {cards: []},
+            globalTemplates: {value: []},
+            searchText: {},
+            clientConfig: {value: {enablePublicSharedBoards: true, teammateNameDisplay: 'username', teamMode: true}},
+            sidebar: {categoryAttributes: [categoryAttribute1], hiddenBoardIDs: []},
+        })
+        let answer: (blocks: unknown[]) => void = () => undefined
+        const blocks = new Promise<unknown[]>((resolve) => {
+            answer = resolve
+        })
+        const result = render(() => wrapDNDIntl(() => {
+            const boardContent = createMemo(() => blocks)
+            return (
+                <AppStoreProvider store={loadingStore}>
+                    <Workspace
+                        readonly={true}
+                        boardContent={boardContent}
+                    />
+                </AppStoreProvider>
+            )
+        }), {wrapper: TestRouter})
+        vi.runOnlyPendingTimers()
+        expect(result.container.textContent).not.toContain('Create a board')
+
+        answer([])
+        await blocks
+        await Promise.resolve()
+        flush()
+        vi.runOnlyPendingTimers()
+        await waitFor(() => expect(result.container.textContent).toContain('Create a board'))
     })
 
     // TODO(react-19): see docs/npm-dependency-warnings.md -- tooltip count depends on effect timing that React 19 changed

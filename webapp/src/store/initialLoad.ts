@@ -138,17 +138,21 @@ export const createInitialLoadActions = (ctx: StoreContext) => {
             }
         },
 
+        // A fetch and an apply rather than one action for the board page, which
+        // asks through an async memo so that the answer for a board somebody has
+        // already left is never applied over the one they opened.
+        fetchBoardBlocks(boardID: string) {
+            return deps.client.getAllBlocks(boardID)
+        },
+
+        applyBoardBlocks(blocks: Parameters<typeof viewsFromBlocks>[0]) {
+            applyBlocks(blocks)
+        },
+
         async loadBoardData(boardID: string) {
-            setState(storePath('boards', 'loadingBoard', true))
-            try {
-                const blocks = await deps.client.getAllBlocks(boardID)
-                applyBlocks(blocks)
-                setState(storePath('boards', 'loadingBoard', false))
-                return {blocks}
-            } catch (e) {
-                setState(storePath('boards', 'loadingBoard', false))
-                throw e
-            }
+            const blocks = await deps.client.getAllBlocks(boardID)
+            applyBlocks(blocks)
+            return {blocks}
         },
 
         async loadBoards() {

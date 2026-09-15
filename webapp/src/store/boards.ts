@@ -9,7 +9,6 @@ import type {RootState} from './index'
 
 export type BoardsState = {
     current: string
-    loadingBoard: boolean
     linkToChannel: string
     boards: {[key: string]: Board}
     templates: {[key: string]: Board}
@@ -19,7 +18,6 @@ export type BoardsState = {
 
 export const initialBoardsState = (): BoardsState => ({
     current: '',
-    loadingBoard: false,
     linkToChannel: '',
     boards: {},
     templates: {},
@@ -69,9 +67,6 @@ export const createBoardsActions = (ctx: StoreContext) => {
         },
         setLinkToChannel(channelId: string) {
             setState(storePath('boards', 'linkToChannel', channelId))
-        },
-        setLoadingBoard(loading: boolean) {
-            setState(storePath('boards', 'loadingBoard', loading))
         },
         updateBoards(boards: Board[]) {
             setState(({boards: s}) => {
@@ -224,8 +219,6 @@ export function getBoard(boardId: string): (state: RootState) => Board|null {
         return null
     }
 }
-
-export const isLoadingBoard = (state: RootState): boolean => state.boards.loadingBoard
 
 export const getCurrentBoardId = (state: RootState): string => state.boards.current || ''
 

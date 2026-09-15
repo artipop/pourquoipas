@@ -50,7 +50,7 @@ const TeamToBoardAndViewRedirect = (): null => {
                 const newPath = Utils.generatePath(currentMatch.path, {...currentMatch.params, boardId: boardID, viewID: undefined})
                 navigate(newPath, {replace: true})
 
-                // return from here because the loadBoardData() call
+                // return from here because the board page's load
                 // will fetch the data to be used below. We'll
                 // use it in the next render cycle.
                 return

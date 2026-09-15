@@ -66,6 +66,18 @@ Mostly mechanical:
   `templateEditor`, the dialogs that seed a draft), stays a signal: what the
   actions write is not a re-read, and splitting one error line in two would
   be the workaround.
+- **The open board is loaded the same way** (`boardPage.tsx`): an async memo
+  over the board, the team and who is signed in fetches the blocks
+  (`fetchBoardBlocks`), and an effect over it applies them
+  (`applyBoardBlocks`), joins the board when it came back empty, and asks
+  for its members. The apply is an effect rather than a line after the
+  `await` because an effect over an async memo is handed the latest answer
+  only — the load used to fetch-then-write, so a board left while it loaded
+  could land its cards over the one opened. A socket that reconnects
+  re-asks it with `refresh`. The store's `loadingBoard` flag is gone:
+  `workspace.tsx` puts the centre under `Loading` for the first load and
+  asks `isPending` for a later one, and only when there is no board to draw
+  — so "Create a board" is never shown for a board still on its way.
 - The module caches that count their consumers (`attention.ts`,
   `liveTerminals.ts`, `boardFlows.ts`, `settings/updates.ts`) keep counting
   rather than moving to a signal's `unobserved` option. There is no matching
