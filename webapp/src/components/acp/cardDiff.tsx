@@ -1,6 +1,6 @@
 // The Wails-generated Go bindings are PascalCase methods, not constructors.
 /* eslint-disable new-cap */
-import {For, Show, createEffect, createMemo, createSignal, onSettled} from 'solid-js'
+import {For, Loading, Show, createEffect, createMemo, createSignal, onSettled, refresh} from 'solid-js'
 
 import {useIntl} from '../../intl'
 
@@ -187,35 +187,28 @@ const FileBlock = (props: {file: DiffFile, foldAll?: number, unfoldAll?: number}
 // and keeping two of them is how they drift.
 export const CardDiffView = (props: {cardId: string}) => {
     const intl = useIntl()
-    const [diff, setDiff] = createSignal<CardDiffData | undefined>()
-    const [error, setError] = createSignal('')
-    const [busy, setBusy] = createSignal(true)
-
-    const load = async () => {
+    const reading = createMemo(async (last?: {diff?: CardDiffData, error: string}) => {
         const bindings = agentBindings()
         if (!bindings?.GetCardDiff) {
-            setBusy(false)
-            return
+            return {error: ''}
         }
-        setBusy(true)
         try {
-            setDiff(JSON.parse(await bindings.GetCardDiff(props.cardId)) as CardDiffData)
-            setError('')
+            return {diff: JSON.parse(await bindings.GetCardDiff(props.cardId)) as CardDiffData, error: ''}
         } catch (e) {
-            setError(String((e as Error)?.message || e))
-        } finally {
-            setBusy(false)
+            // The diff already on screen stays under the error: a folder that
+            // failed to read once has not stopped holding what it held.
+            return {diff: last?.diff, error: String((e as Error)?.message || e)}
         }
-    }
+    })
+    const diff = () => reading().diff
+    const error = () => reading().error
 
     onSettled(() => {
-        void load()
-
         // The work moves while this is open — the agent commits, a stage ends —
         // and a diff that answers for the moment it was opened is a diff that
         // quietly lies. A session event is the cheapest thing that means "the
         // work changed"; the button beside it is for everything else.
-        return onAgentEvent('acp:session', () => load())
+        return onAgentEvent('acp:session', () => refresh(reading))
     })
 
     const total = createMemo(() => {
@@ -238,111 +231,115 @@ export const CardDiffView = (props: {cardId: string}) => {
     const [unfoldAll, setUnfoldAll] = createSignal(0)
 
     return (
-        <div class='CardDiff'>
-            <div class='CardDiff__summary'>
-                <Show when={diff()?.branch}>
-                    <span class='CardDiff__branch'>
-                        <CompassIcon icon='source-branch'/>
-                        {diff()!.branch}
-                    </span>
+        <Loading
+            fallback={
+                <div class='CardDiff'>
+                    <div class='CardDiff__empty'>
+                        {intl.formatMessage({id: 'CardDiff.loading', defaultMessage: 'Reading the folder…'})}
+                    </div>
+                </div>
+            }
+        >
+            <div class='CardDiff'>
+                <div class='CardDiff__summary'>
+                    <Show when={diff()?.branch}>
+                        <span class='CardDiff__branch'>
+                            <CompassIcon icon='source-branch'/>
+                            {diff()!.branch}
+                        </span>
+                    </Show>
+                    <Show when={diff()?.base}>
+                        <span class='CardDiff__base'>
+                            {intl.formatMessage({id: 'CardDiff.base', defaultMessage: 'against {base}'}, {base: diff()!.base})}
+                        </span>
+                    </Show>
+                    <Show when={total().files > 0}>
+                        <span class='CardDiff__counts'>
+                            {intl.formatMessage(
+                                {id: 'CardDiff.counts', defaultMessage: '{files, plural, one {# file} other {# files}}'},
+                                {files: total().files},
+                            )}
+                            <span class='CardDiff__added'>{'+' + total().added}</span>
+                            <span class='CardDiff__removed'>{'−' + total().removed}</span>
+                        </span>
+                    </Show>
+                    <Show when={total().files > 1}>
+                        <button
+                            type='button'
+                            class='CardDiff__button'
+                            title={intl.formatMessage({id: 'CardDiff.fold-all', defaultMessage: 'Collapse every file'})}
+                            aria-label={intl.formatMessage({id: 'CardDiff.fold-all', defaultMessage: 'Collapse every file'})}
+                            onClick={() => setFoldAll(foldAll() + 1)}
+                        >
+                            <CompassIcon icon='arrow-collapse'/>
+                        </button>
+                        <button
+                            type='button'
+                            class='CardDiff__button'
+                            title={intl.formatMessage({id: 'CardDiff.unfold-all', defaultMessage: 'Expand every file'})}
+                            aria-label={intl.formatMessage({id: 'CardDiff.unfold-all', defaultMessage: 'Expand every file'})}
+                            onClick={() => setUnfoldAll(unfoldAll() + 1)}
+                        >
+                            <CompassIcon icon='arrow-expand'/>
+                        </button>
+                    </Show>
+                    <button
+                        type='button'
+                        class='CardDiff__button'
+                        title={intl.formatMessage({id: 'CardDiff.refresh', defaultMessage: 'Read the folder again'})}
+                        aria-label={intl.formatMessage({id: 'CardDiff.refresh', defaultMessage: 'Read the folder again'})}
+                        onClick={() => refresh(reading)}
+                    >
+                        <CompassIcon icon='refresh'/>
+                    </button>
+                </div>
+
+                <Show when={error()}>
+                    <div class='CardDiff__error'>{error()}</div>
                 </Show>
-                <Show when={diff()?.base}>
-                    <span class='CardDiff__base'>
-                        {intl.formatMessage({id: 'CardDiff.base', defaultMessage: 'against {base}'}, {base: diff()!.base})}
-                    </span>
+
+                {/* "Nothing to show" is an ordinary state of a card and says which
+                    one it is — not started, started elsewhere, folder gone. It is
+                    drawn as a note and never as an error. */}
+                <Show when={!error() && diff()?.reason}>
+                    <div class='CardDiff__empty'>{diff()!.reason}</div>
                 </Show>
-                <Show when={total().files > 0}>
-                    <span class='CardDiff__counts'>
-                        {intl.formatMessage(
-                            {id: 'CardDiff.counts', defaultMessage: '{files, plural, one {# file} other {# files}}'},
-                            {files: total().files},
+
+                <Show when={(diff()?.committed.length || 0) > 0}>
+                    <div class='CardDiff__section'>
+                        {intl.formatMessage({id: 'CardDiff.committed', defaultMessage: 'On the branch'})}
+                    </div>
+                    <For each={diff()!.committed}>
+                        {(file) => (
+                            <FileBlock
+                                file={file}
+                                foldAll={foldAll()}
+                                unfoldAll={unfoldAll()}
+                            />
                         )}
-                        <span class='CardDiff__added'>{'+' + total().added}</span>
-                        <span class='CardDiff__removed'>{'−' + total().removed}</span>
-                    </span>
+                    </For>
                 </Show>
-                <Show when={total().files > 1}>
-                    <button
-                        type='button'
-                        class='CardDiff__button'
-                        title={intl.formatMessage({id: 'CardDiff.fold-all', defaultMessage: 'Collapse every file'})}
-                        aria-label={intl.formatMessage({id: 'CardDiff.fold-all', defaultMessage: 'Collapse every file'})}
-                        onClick={() => setFoldAll(foldAll() + 1)}
-                    >
-                        <CompassIcon icon='arrow-collapse'/>
-                    </button>
-                    <button
-                        type='button'
-                        class='CardDiff__button'
-                        title={intl.formatMessage({id: 'CardDiff.unfold-all', defaultMessage: 'Expand every file'})}
-                        aria-label={intl.formatMessage({id: 'CardDiff.unfold-all', defaultMessage: 'Expand every file'})}
-                        onClick={() => setUnfoldAll(unfoldAll() + 1)}
-                    >
-                        <CompassIcon icon='arrow-expand'/>
-                    </button>
+
+                {/* Uncommitted work is its own section rather than a mark on a row:
+                    a stage working in the person's own folder is *told* to leave
+                    its changes like this (composePrompt), so for that card this is
+                    the whole of the work and not a leftover. */}
+                <Show when={(diff()?.uncommitted.length || 0) > 0}>
+                    <div class='CardDiff__section'>
+                        {intl.formatMessage({id: 'CardDiff.uncommitted', defaultMessage: 'Not committed'})}
+                    </div>
+                    <For each={diff()!.uncommitted}>
+                        {(file) => (
+                            <FileBlock
+                                file={file}
+                                foldAll={foldAll()}
+                                unfoldAll={unfoldAll()}
+                            />
+                        )}
+                    </For>
                 </Show>
-                <button
-                    type='button'
-                    class='CardDiff__button'
-                    title={intl.formatMessage({id: 'CardDiff.refresh', defaultMessage: 'Read the folder again'})}
-                    aria-label={intl.formatMessage({id: 'CardDiff.refresh', defaultMessage: 'Read the folder again'})}
-                    onClick={() => load()}
-                >
-                    <CompassIcon icon='refresh'/>
-                </button>
             </div>
-
-            <Show when={error()}>
-                <div class='CardDiff__error'>{error()}</div>
-            </Show>
-
-            {/* "Nothing to show" is an ordinary state of a card and says which
-                one it is — not started, started elsewhere, folder gone. It is
-                drawn as a note and never as an error. */}
-            <Show when={!error() && diff()?.reason}>
-                <div class='CardDiff__empty'>{diff()!.reason}</div>
-            </Show>
-
-            <Show when={busy() && !diff()}>
-                <div class='CardDiff__empty'>
-                    {intl.formatMessage({id: 'CardDiff.loading', defaultMessage: 'Reading the folder…'})}
-                </div>
-            </Show>
-
-            <Show when={(diff()?.committed.length || 0) > 0}>
-                <div class='CardDiff__section'>
-                    {intl.formatMessage({id: 'CardDiff.committed', defaultMessage: 'On the branch'})}
-                </div>
-                <For each={diff()!.committed}>
-                    {(file) => (
-                        <FileBlock
-                            file={file}
-                            foldAll={foldAll()}
-                            unfoldAll={unfoldAll()}
-                        />
-                    )}
-                </For>
-            </Show>
-
-            {/* Uncommitted work is its own section rather than a mark on a row:
-                a stage working in the person's own folder is *told* to leave
-                its changes like this (composePrompt), so for that card this is
-                the whole of the work and not a leftover. */}
-            <Show when={(diff()?.uncommitted.length || 0) > 0}>
-                <div class='CardDiff__section'>
-                    {intl.formatMessage({id: 'CardDiff.uncommitted', defaultMessage: 'Not committed'})}
-                </div>
-                <For each={diff()!.uncommitted}>
-                    {(file) => (
-                        <FileBlock
-                            file={file}
-                            foldAll={foldAll()}
-                            unfoldAll={unfoldAll()}
-                        />
-                    )}
-                </For>
-            </Show>
-        </div>
+        </Loading>
     )
 }
 

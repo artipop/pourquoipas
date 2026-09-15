@@ -1,6 +1,6 @@
 // The Wails-generated Go bindings are PascalCase methods, not constructors.
 /* eslint-disable new-cap */
-import {For, Show, createEffect, createSignal, onSettled} from 'solid-js'
+import {For, Show, createEffect, createMemo, createSignal, onSettled, refresh} from 'solid-js'
 import {useNavigate} from '@solidjs/router'
 
 import {useIntl} from '../../intl'
@@ -10,7 +10,7 @@ import {onAgentEvent} from '../../components/acp/agentEvents'
 import {attentionHeading, useAttention} from '../../components/acp/attention'
 import AttentionAnswers from '../../components/acp/attentionAnswers'
 
-import {BindingBoard, BindingCard, listBoards, listInbox} from '../../bindings/boards'
+import {listBoards, listInbox} from '../../bindings/boards'
 
 import MobileInbox from './mobileInbox'
 import MobileCards from './mobileCards'
@@ -63,30 +63,27 @@ const MobilePage = () => {
     const intl = useIntl()
     const navigate = useNavigate()
     const waiting = useAttention()
-    const [terminals, setTerminals] = createSignal<Terminal[]>([])
     const [tab, setTab] = createSignal<Tab>('waiting')
 
     // The inbox and the boards are read here rather than inside the tab that
     // shows them, because the number on a tab has to be right before anybody
     // opens it — a tab that only counts once you are looking at it counts
     // nothing. The boards are read once and lent to both tabs that need them.
-    const [inbox, setInbox] = createSignal<BindingCard[]>([])
-    const [boards, setBoards] = createSignal<BindingBoard[]>([])
+    const inbox = createMemo(() => listInbox(), {loadingValue: []})
+    const boards = createMemo(() => listBoards(), {loadingValue: []})
 
-    const refreshInbox = async () => setInbox(await listInbox())
-
-    const refreshTerminals = async () => {
+    const terminals = createMemo(async (): Promise<Terminal[]> => {
         const bindings = agentBindings()
         if (!bindings?.ListTerminals) {
-            return
+            return []
         }
         try {
-            setTerminals(JSON.parse(await bindings.ListTerminals()) || [])
+            return JSON.parse(await bindings.ListTerminals()) || []
         } catch {
             // An app that cannot say what is running says nothing.
-            setTerminals([])
+            return []
         }
-    }
+    }, {loadingValue: []})
 
     // The phone app shows one machine per tab, each tab a frame holding that
     // machine's board (mobile/frontend/index.html), and puts the number waiting
@@ -109,16 +106,13 @@ const MobilePage = () => {
     })
 
     onSettled(() => {
-        refreshTerminals()
-        refreshInbox()
-        listBoards().then(setBoards)
-        const off = onAgentEvent('acp:terminal', () => refreshTerminals())
+        const off = onAgentEvent('acp:terminal', () => refresh(terminals))
 
         // A card being written is a card that may have arrived, so the event
         // that redraws a board also asks the inbox to look again.
         const offSession = onAgentEvent('acp:session', () => {
-            refreshTerminals()
-            refreshInbox()
+            refresh(terminals)
+            refresh(inbox)
         })
         return () => {
             off()
@@ -143,7 +137,7 @@ const MobilePage = () => {
                 <MobileInbox
                     cards={inbox()}
                     boards={boards()}
-                    onMoved={refreshInbox}
+                    onMoved={() => refresh(inbox)}
                 />
             </Show>
 

@@ -1,6 +1,6 @@
 // The Wails-generated Go bindings are PascalCase methods, not constructors.
 /* eslint-disable new-cap */
-import {createEffect, createSignal, type Accessor} from 'solid-js'
+import {createMemo, refresh, type Accessor} from 'solid-js'
 
 import {Board} from '../../blocks/board'
 
@@ -89,37 +89,22 @@ export async function readSetupPlan(boardId: string): Promise<SetupPlan> {
 // createSetupPlan is how a component holds one: keyed on the board, re-read
 // when the board changes and when a step has just been answered.
 //
-// A signal and an effect rather than Solid 2's async memo, because there is no
-// loading state to show: every caller reads the plan straight through and
-// NO_SETUP is the answer until Go has one — a board that asks nothing and a
-// board not read yet look the same on screen, deliberately. An async memo
-// would make the first read throw until a Loading boundary caught it, which
-// is a screen this never had.
+// NO_SETUP stands in until Go answers rather than a Loading boundary: a board
+// that asks nothing and a board not read yet look the same on screen, and
+// every caller reads the plan straight through.
 export function createSetupPlan(board: () => Board | undefined): [Accessor<SetupPlan>, () => void] {
-    const [plan, setPlan] = createSignal<SetupPlan>(NO_SETUP)
-    const [asked, ask] = createSignal(0)
-
-    createEffect(() => [board()?.id ?? '', asked()] as const, ([boardId]) => {
-        if (!boardId) {
-            setPlan(NO_SETUP)
-            return undefined
+    const boardId = createMemo(() => board()?.id ?? '')
+    const plan = createMemo(async () => {
+        try {
+            return await readSetupPlan(boardId())
+        } catch {
+            return NO_SETUP
         }
+    }, {loadingValue: NO_SETUP})
 
-        // The board may change again while this read is in flight, and the
-        // answer to the board somebody has left must not land on the one they
-        // are looking at.
-        let live = true
-        readSetupPlan(boardId).then((next) => {
-            if (live) {
-                setPlan(next)
-            }
-        })
-        return () => {
-            live = false
-        }
-    })
-
-    return [plan, () => ask((n) => n + 1)]
+    return [plan, () => {
+        refresh(plan)
+    }]
 }
 
 // Recording is for the answer no registry can be read for: a step deliberately

@@ -1,6 +1,6 @@
 // The Wails-generated Go bindings are PascalCase methods, not constructors.
 /* eslint-disable new-cap */
-import {Accessor, Show, createMemo, createSignal, onSettled} from 'solid-js'
+import {Accessor, Show, createMemo, onSettled, refresh} from 'solid-js'
 
 import {useIntl} from '../../intl'
 
@@ -55,29 +55,27 @@ async function loadColumns(boardId: string): Promise<ColumnSpec[]> {
 // useBoardColumns gives a component the board's column settings, reloading them
 // whenever anything invalidates the cache.
 export function useBoardColumns(boardId: string): Accessor<ColumnSpec[]> {
-    const [specs, setSpecs] = createSignal<ColumnSpec[]>([])
-
-    let cancelled = false
-    const refresh = () => {
-        loadColumns(boardId).then((loaded) => {
-            if (!cancelled) {
-                setSpecs(loaded)
-            }
-        }).catch(() => setSpecs([]))
+    const specs = createMemo(async () => {
+        try {
+            return await loadColumns(boardId)
+        } catch {
+            return []
+        }
+    }, {loadingValue: []})
+    const again = () => {
+        refresh(specs)
     }
 
     onSettled(() => {
-        refresh()
-        listeners.add(refresh)
+        listeners.add(again)
 
         // A session starting or ending changes what the badge counts.
         const off = onAgentEvent('acp:session', () => {
             cache.clear()
-            refresh()
+            again()
         })
         return () => {
-            cancelled = true
-            listeners.delete(refresh)
+            listeners.delete(again)
             off?.()
         }
     })

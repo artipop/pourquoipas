@@ -1,9 +1,9 @@
-import {For, Show, createEffect, createSignal, onSettled} from 'solid-js'
+import {For, Loading, Show, createEffect, createMemo, createSignal, onSettled} from 'solid-js'
 import type {Component} from 'solid-js'
 import {useSearchParams} from '@solidjs/router'
 
 import {FormattedMessage, useIntl} from '../../intl'
-import {BindingBoard, listBoards} from '../../bindings/boards'
+import {listBoards} from '../../bindings/boards'
 
 import {closeShare, shareItem} from './shareBindings'
 import './sharePage.scss'
@@ -43,8 +43,7 @@ const SharePage: Component = () => {
     const intl = useIntl()
     const [params] = useSearchParams()
 
-    const [boards, setBoards] = createSignal<BindingBoard[]>([])
-    const [ready, setReady] = createSignal(false)
+    const boards = createMemo(() => listBoards())
     const [target, setTarget] = createSignal('')
     const [title, setTitle] = createSignal('')
     const [note, setNote] = createSignal('')
@@ -60,15 +59,6 @@ const SharePage: Component = () => {
     onSettled(() => {
         setTitle(String(params.title || ''))
         setNote(String(params.text || ''))
-    })
-
-    onSettled(() => {
-        // Not awaited: onSettled reads a returned promise as a cleanup value.
-        void (async () => {
-            const list = await listBoards()
-            setBoards(list)
-            setReady(true)
-        })()
     })
 
     // Preselected once the boards are known: the one used last time if it is
@@ -167,35 +157,35 @@ const SharePage: Component = () => {
                         defaultMessage='Which board?'
                     />
                 </h2>
-                <Show
-                    when={boards().length > 0}
-                    fallback={
-                        <Show when={ready()}>
+                <Loading>
+                    <Show
+                        when={boards().length > 0}
+                        fallback={
                             <p class='SharePage__empty'>
                                 <FormattedMessage
                                     id='Share.no-boards'
                                     defaultMessage='There are no boards yet.'
                                 />
                             </p>
-                        </Show>
-                    }
-                >
-                    <div class='SharePage__boards'>
-                        <For each={boards()}>
-                            {(board) => (
-                                <button
-                                    type='button'
-                                    class={['SharePage__board', {'SharePage__board--picked': target() === board.id}]}
-                                    aria-pressed={String(target() === board.id)}
-                                    onClick={() => setTarget(board.id)}
-                                >
-                                    <span class='SharePage__icon'>{board.icon}</span>
-                                    {board.title}
-                                </button>
-                            )}
-                        </For>
-                    </div>
-                </Show>
+                        }
+                    >
+                        <div class='SharePage__boards'>
+                            <For each={boards()}>
+                                {(board) => (
+                                    <button
+                                        type='button'
+                                        class={['SharePage__board', {'SharePage__board--picked': target() === board.id}]}
+                                        aria-pressed={String(target() === board.id)}
+                                        onClick={() => setTarget(board.id)}
+                                    >
+                                        <span class='SharePage__icon'>{board.icon}</span>
+                                        {board.title}
+                                    </button>
+                                )}
+                            </For>
+                        </div>
+                    </Show>
+                </Loading>
 
                 <Show when={error()}>
                     <p class='SharePage__error'>{error()}</p>

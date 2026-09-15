@@ -1,6 +1,6 @@
 // The Wails-generated Go bindings are PascalCase methods, not constructors.
 /* eslint-disable new-cap */
-import {For, Show, createSignal, onSettled} from 'solid-js'
+import {For, Show, createMemo, createSignal, onSettled, refresh} from 'solid-js'
 
 import {useIntl} from '../../intl'
 import CompassIcon from '../../widgets/icons/compassIcon'
@@ -110,28 +110,24 @@ type Props = {
 const FlowStrip = (props: Props) => {
     const intl = useIntl()
     const bindings = agentBindings()
-    const [flow, setFlow] = createSignal<CardFlow | null>(null)
-
-    const refresh = async () => {
+    const flow = createMemo(async (): Promise<CardFlow | null> => {
         if (!bindings?.GetCardFlow) {
-            return
+            return null
         }
         try {
-            setFlow(JSON.parse(await bindings.GetCardFlow(props.cardId)))
-        } catch (e) {
-            setFlow(null)
+            return JSON.parse(await bindings.GetCardFlow(props.cardId))
+        } catch {
+            return null
         }
-    }
+    }, {loadingValue: null})
 
     onSettled(() => {
-        refresh()
-
         // A session starting, finishing or moving the card changes the answer.
-        const off = onAgentEvent('acp:session', () => refresh())
+        const off = onAgentEvent('acp:session', () => refresh(flow))
 
         // So does a transition stopping to ask, which is announced as the wait
         // it is rather than as a session — nothing is running.
-        const offWait = onAgentEvent('acp:attention', () => refresh())
+        const offWait = onAgentEvent('acp:attention', () => refresh(flow))
         return () => {
             off?.()
             offWait?.()
@@ -153,7 +149,7 @@ const FlowStrip = (props: Props) => {
         } finally {
             setMarking(false)
         }
-        await refresh()
+        await refresh(flow)
     }
 
     // Answering releases the card: the last answer finishes the move that was
@@ -171,7 +167,7 @@ const FlowStrip = (props: Props) => {
         } finally {
             setAnswering(false)
         }
-        await refresh()
+        await refresh(flow)
     }
 
     const since = () => {

@@ -85,7 +85,9 @@ const CenterPanel = (props: Props) => {
     const [showSetup, setShowSetup] = createSignal(false)
     const [plan, refreshPlan] = createSetupPlan(() => props.board)
     createEffect(() => [props.board, plan()] as const, ([board, current]) => {
-        if (shouldOfferSetup(current)) {
+        // The plan of the board just left is still on hand until the next one
+        // arrives, and offering on its word would mark the new board offered.
+        if (current.boardId === board.id && shouldOfferSetup(current)) {
             // Marked as offered when it opens, not when it closes: closing the
             // window, quitting mid-way or never touching it again all mean the
             // same thing — it has had its turn.

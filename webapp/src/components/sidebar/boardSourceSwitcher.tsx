@@ -1,6 +1,6 @@
 // The Wails-generated Go bindings are PascalCase methods, not constructors.
 /* eslint-disable new-cap */
-import {For, Show, createSignal, onSettled} from 'solid-js'
+import {For, Show, createMemo} from 'solid-js'
 
 import {useIntl} from '../../intl'
 import Menu from '../../widgets/menu'
@@ -34,24 +34,18 @@ type AttachState = {
 const BoardSourceSwitcher = () => {
     const intl = useIntl()
     const bindings = agentBindings()
-    const [state, setState] = createSignal<AttachState | null>(null)
-
-    const load = async () => {
+    const state = createMemo(async (): Promise<AttachState | null> => {
         if (!bindings?.GetServerAttachment) {
-            return
+            return null
         }
         try {
-            setState(JSON.parse(await bindings.GetServerAttachment()) as AttachState)
+            return JSON.parse(await bindings.GetServerAttachment()) as AttachState
         } catch {
             // A desktop that cannot answer has one board, which is what the
             // absence of this control already says.
+            return null
         }
-    }
-
-    // Not awaited: onSettled reads a returned promise as a cleanup value.
-    onSettled(() => {
-        void load()
-    })
+    }, {loadingValue: null})
 
     const sources = () => state()?.sources ?? []
     const current = () => sources().find((s) => s.id === (state()?.selected ?? '')) ?? sources()[0]

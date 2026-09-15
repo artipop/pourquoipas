@@ -1,4 +1,4 @@
-import {For, Show, createEffect, createSignal} from 'solid-js'
+import {For, Show, createMemo, createSignal, refresh} from 'solid-js'
 
 import {useIntl} from '../../intl'
 
@@ -26,23 +26,7 @@ const PeoplePanel = () => {
     const team = useAppSelector<Team|null>(getCurrentTeam)
     const {actions} = useAppStore()
 
-    const [reload, setReload] = createSignal(0)
-
-    // A signal fed by an effect rather than an async memo: the list has no
-    // loading state of its own, and an async memo throws on its first read
-    // until a Loading boundary catches it.
-    const [people, setPeople] = createSignal<Awaited<ReturnType<typeof octoClient.getAdminUsers>>>()
-    createEffect(reload, () => {
-        let live = true
-        octoClient.getAdminUsers().then((list) => {
-            if (live) {
-                setPeople(list)
-            }
-        })
-        return () => {
-            live = false
-        }
-    })
+    const people = createMemo(() => octoClient.getAdminUsers(), {loadingValue: []})
     const [wasCopied, setWasCopied] = createSignal(false)
 
     const inviteLink = () => {
@@ -73,7 +57,7 @@ const PeoplePanel = () => {
         } else {
             say(intl.formatMessage({id: 'People.refused', defaultMessage: 'The server refused that. The last admin cannot be removed or switched off.'}))
         }
-        setReload((n) => n + 1)
+        refresh(people)
     }
 
     const isAdmin = (person: {role?: string}) => person.role === 'admin'
@@ -122,7 +106,7 @@ const PeoplePanel = () => {
             </div>
 
             <div class='PeoplePanel__list'>
-                <For each={people() ?? []}>
+                <For each={people()}>
                     {(person) => (
                         <div
                             class={['PeoplePanel__person', {'PeoplePanel__person--off': !isActive(person)}]}

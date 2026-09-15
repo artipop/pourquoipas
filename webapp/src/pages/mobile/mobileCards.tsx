@@ -1,9 +1,9 @@
-import {For, Show, createEffect, createSignal} from 'solid-js'
+import {For, Loading, Show, createMemo, createSignal} from 'solid-js'
 import type {Component} from 'solid-js'
 
 import {useIntl} from '../../intl'
 
-import {BindingBoard, BindingCard, listBoardCards} from '../../bindings/boards'
+import {BindingBoard, listBoardCards} from '../../bindings/boards'
 
 // The board's cards on a phone: one board at a time, newest first, each with
 // the column it stands in.
@@ -24,28 +24,11 @@ const MobileCards: Component<Props> = (props) => {
     // the moment it opens.
     const current = () => chosen() || props.boards[0]?.id || ''
 
-    // A signal fed by an effect rather than Solid 2's async memo: the screen
-    // shows «нет карточек» until the answer arrives and has no loading state of
-    // its own, where an async memo makes the first read throw for a Loading
-    // boundary to catch. An empty list is what «not read yet» has always looked
-    // like here.
-    const [cards, setCards] = createSignal<BindingCard[]>([])
-    createEffect(current, (boardId) => {
-        if (!boardId) {
-            setCards([])
-            return undefined
-        }
-
-        // Tapping another board while this one is in flight must not land the
-        // wrong board's cards on the screen.
-        let live = true
-        listBoardCards(boardId).then((next) => {
-            if (live) {
-                setCards(next || [])
-            }
-        })
-        return () => {
-            live = false
+    const cards = createMemo(async () => {
+        try {
+            return await listBoardCards(current())
+        } catch {
+            return []
         }
     })
 
@@ -80,27 +63,31 @@ const MobileCards: Component<Props> = (props) => {
                     </For>
                 </div>
 
-                <Show
-                    when={(cards() || []).length > 0}
-                    fallback={
-                        <p class='MobilePage__empty'>
-                            {intl.formatMessage({id: 'Mobile.no-cards', defaultMessage: 'This board has no cards.'})}
-                        </p>
-                    }
-                >
-                    <For each={cards()}>
-                        {(card) => (
-                            <article class='MobilePage__item'>
-                                <Show when={card.column}>
-                                    <span class='MobilePage__who'>{card.column}</span>
-                                </Show>
-                                <span class='MobilePage__card'>
-                                    {card.icon ? `${card.icon} ` : ''}{card.title}
-                                </span>
-                            </article>
-                        )}
-                    </For>
-                </Show>
+                {/* Nothing until the first answer: an empty list read as
+                    "this board has no cards" while it was still being asked. */}
+                <Loading>
+                    <Show
+                        when={cards().length > 0}
+                        fallback={
+                            <p class='MobilePage__empty'>
+                                {intl.formatMessage({id: 'Mobile.no-cards', defaultMessage: 'This board has no cards.'})}
+                            </p>
+                        }
+                    >
+                        <For each={cards()}>
+                            {(card) => (
+                                <article class='MobilePage__item'>
+                                    <Show when={card.column}>
+                                        <span class='MobilePage__who'>{card.column}</span>
+                                    </Show>
+                                    <span class='MobilePage__card'>
+                                        {card.icon ? `${card.icon} ` : ''}{card.title}
+                                    </span>
+                                </article>
+                            )}
+                        </For>
+                    </Show>
+                </Loading>
             </Show>
         </section>
     )

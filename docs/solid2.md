@@ -47,10 +47,25 @@ Mostly mechanical:
   `<X.Provider value=…>` → `<X value=…>`.
 - `classList` is gone: `class` takes the same object form
   (`class={[base, {modifier: on()}]}`).
-- `createResource` is gone. Both call sites became a signal fed by an effect
-  rather than an async memo, because neither screen has a loading state: an
-  async memo throws `NotReadyError` on the first read — through `latest()` as
-  well — until a `Loading` boundary catches it, and neither screen had one.
+- `createResource` is gone, and so is the loader it stood in for — a signal,
+  an effect that fetched into it, and a `live` flag so a late answer for the
+  board somebody left could not land on the one they moved to. A read is an
+  async memo (`createMemo(async () => …)`): the latest question wins by
+  itself, `refresh(memo)` re-asks after an event or a write and keeps the old
+  answer on screen meanwhile, and a rejection is thrown at the reader, so the
+  memo catches its own. Its first read throws `NotReadyError` until a
+  `Loading` boundary catches it. Where "nothing yet" and "nothing" look the
+  same on screen — a plan with no steps, a count of zero — the memo passes
+  `loadingValue` instead and never suspends; where an empty answer says
+  something («нет карточек», "no boards yet") it sits under `Loading`, which
+  is what keeps that sentence off the screen while the question is still out.
+  `eslint-plugin-solid` still knows only Solid 1 and warns "This tracked
+  scope should not be async" at every one of them; the warning is wrong here.
+  A loader whose answer a form then edits, or whose load error shares a line
+  with the errors of the actions beside it (`serverPanel`, `folderChoices`,
+  `templateEditor`, the dialogs that seed a draft), stays a signal: what the
+  actions write is not a re-read, and splitting one error line in two would
+  be the workaround.
 
 Not mechanical, and the bulk of the work: **77 `createEffect` call sites**.
 Solid 1 tracked the whole body; Solid 2 splits it into a tracked compute and an

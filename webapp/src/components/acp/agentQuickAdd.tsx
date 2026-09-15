@@ -1,6 +1,6 @@
 // The Wails-generated Go bindings are PascalCase methods, not constructors.
 /* eslint-disable new-cap */
-import {Show, createSignal, onSettled} from 'solid-js'
+import {Show, createMemo, createSignal, refresh} from 'solid-js'
 
 import {useIntl} from '../../intl'
 
@@ -41,28 +41,24 @@ const AgentQuickAdd = (props: Props) => {
 
     const [name, setName] = createSignal('claude')
     const [kind, setKind] = createSignal('claude')
-    const [adapters, setAdapters] = createSignal<AdapterStatus[]>([])
+    const adapters = createMemo(async (): Promise<AdapterStatus[]> => {
+        if (!bindings?.ListAgentAdapters) {
+            return []
+        }
+        try {
+            return JSON.parse(await bindings.ListAgentAdapters()) || []
+        } catch {
+            // An adapter list we could not read is a warning we cannot show,
+            // not a reason to refuse the form.
+            return []
+        }
+    }, {loadingValue: []})
     const [busy, setBusy] = createSignal(false)
     const [error, setError] = createSignal('')
 
     // Whether the chosen kind can start at all is knowable here, and the
     // alternative is finding out on a card an hour later.
     const adapter = () => adapters().find((a) => a.kind === kind())
-
-    onSettled(() => {
-        // Not awaited: onSettled reads a returned promise as a cleanup value.
-        void (async () => {
-            if (!bindings?.ListAgentAdapters) {
-                return
-            }
-            try {
-                setAdapters(JSON.parse(await bindings.ListAgentAdapters()) || [])
-            } catch {
-                // An adapter list we could not read is a warning we cannot show,
-                // not a reason to refuse the form.
-            }
-        })()
-    })
 
     const installAdapter = async () => {
         if (!bindings?.InstallAgentAdapter) {
@@ -72,7 +68,7 @@ const AgentQuickAdd = (props: Props) => {
         setError('')
         try {
             await bindings.InstallAgentAdapter(kind())
-            setAdapters(JSON.parse(await bindings.ListAgentAdapters!()) || [])
+            await refresh(adapters)
         } catch (e: any) {
             setError(String(e?.message || e))
         } finally {
