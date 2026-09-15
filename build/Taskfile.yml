@@ -63,12 +63,14 @@ tasks:
       - wails3 generate icons -input appicon.png -macfilename darwin/icons.icns -windowsfilename windows/icon.ico -iconcomposerinput appicon.icon -macassetdir darwin
 
   setup:docker:
-    summary: Builds the image Linux/Windows cross-compilation needs (~800MB)
+    summary: Builds the image Linux (and macOS-from-elsewhere) cross-compilation needs (~800MB)
     desc: |
-      Our builds are native per platform — cgo SQLite does not cross-compile
-      with the host toolchain — so this image (Zig + GTK/WebKit headers) is the
-      only way to produce a Linux or Windows binary from a Mac. Build it once,
-      then `wails3 task linux:build` picks it up by itself.
+      The desktop build needs cgo on Linux and macOS — Wails itself does, GTK
+      and Cocoa — and cgo does not cross-compile with the host toolchain, so
+      this image (Zig + GTK/WebKit headers + the macOS SDK) is the way to
+      produce a Linux binary from a Mac. Build it once, then
+      `wails3 task linux:build` picks it up by itself. Windows needs none of
+      it: that build is pure Go.
     cmds:
       - docker build -t wails-cross -f build/docker/Dockerfile.cross build/docker/
     preconditions:
@@ -99,9 +101,10 @@ tasks:
       - go build {{.BUILD_FLAGS}} -o "{{.BIN_DIR}}/{{.APP_NAME}}-server{{exeExt}}"
     vars:
       BUILD_FLAGS: '-tags server,{{.EXTRA_TAGS}}{{if ne .DEV "true"}},production -trimpath -ldflags="-w -s"{{else}} -gcflags=all="-l"{{end}} -buildvcs=false'
-    env:
-      # cgo SQLite; the same requirement the desktop build has.
-      CGO_ENABLED: 1
+    # CGO_ENABLED is left to Go: a server needs no Wails, so cgo matters here
+    # only for which SQLite driver is linked — mattn where a C compiler is
+    # found, modernc's pure Go where it is not (sqlstore/sqlite_pure.go). Both
+    # work; forcing 1 only made a Windows host without MinGW fail to build.
 
   run:server:
     summary: Builds and runs a development server (DEV=true)

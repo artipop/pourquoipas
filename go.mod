@@ -38,6 +38,7 @@ require (
 	github.com/testcontainers/testcontainers-go v0.44.0
 	github.com/testcontainers/testcontainers-go/modules/mysql v0.44.0
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.44.0
+	modernc.org/sqlite v1.44.3
 )
 
 require (
@@ -172,5 +173,4 @@ require (
 	modernc.org/libc v1.67.6 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
-	modernc.org/sqlite v1.44.3 // indirect
 )
