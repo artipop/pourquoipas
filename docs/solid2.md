@@ -66,6 +66,15 @@ Mostly mechanical:
   `templateEditor`, the dialogs that seed a draft), stays a signal: what the
   actions write is not a re-read, and splitting one error line in two would
   be the workaround.
+- The module caches that count their consumers (`attention.ts`,
+  `liveTerminals.ts`, `boardFlows.ts`, `settings/updates.ts`) keep counting
+  rather than moving to a signal's `unobserved` option. There is no matching
+  "observed" hook, so the subscription would have to start on the first read —
+  an untracked read in a click handler included, which nothing would ever
+  release — and `unobserved` fires from the runtime's own sweep, whose timing
+  against a `For` swapping rows was never measured. The counter is explicit,
+  and its one trap (no write during disposal, hence the microtask) is written
+  down where it is.
 
 Not mechanical, and the bulk of the work: **77 `createEffect` call sites**.
 Solid 1 tracked the whole body; Solid 2 splits it into a tracked compute and an
