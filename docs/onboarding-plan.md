@@ -65,20 +65,22 @@ somebody closer to that moment is not onboarding.
 
 Six pieces, each shippable on its own, in dependency order.
 
-### 1. Delete the Focalboard tour
+### 1. Delete the Focalboard tour — half done
 
-`webapp/src/components/onboardingTour/` (twelve steps), `pages/welcome/`,
-`static/boards-welcome*.png`, the gifs the tips used, and — decided
-separately — the server's `POST /teams/{teamID}/onboard` with
-`server/app/onboarding.go`, which duplicates a demo board this app never
-makes.
+Gone already (the fork shrink, `docs/fork-shrink-removed.md`): `pages/welcome/`,
+`POST /teams/{teamID}/onboard` with `server/app/onboarding.go`, and
+`static/boards-welcome*.png` with the other unreferenced upstream images.
+
+Left, all of it page code, so after the Solid 2 migration or coordinated with
+it: `webapp/src/components/onboardingTour/` (twelve steps and their tests), the
+gifs they import from `static/`, and the old preferences
+(`onboardingTourStarted`, `onboardingTourStep`, `tourCategory`), which
+`centerPanel.tsx`, `boardsSwitcher.tsx` and `boardTemplateSelector.tsx` still
+read; step 4 says what replaces them.
 
 Nothing routes any of it. It has now cost two rounds of work to rediscover
 that; leaving it in the tree guarantees a third. The `tutorial_tour_tip/`
 drawing code stays — step 4 uses it.
-
-The old preferences (`onboardingTourStarted`, `onboardingTourStep`,
-`tourCategory`) go too; step 4 says what replaces them.
 
 ### 2. End the wizard with a first task
 
