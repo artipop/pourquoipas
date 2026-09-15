@@ -25,6 +25,13 @@ type uiSettings struct {
 	// on read and never written again.
 	Language    string            `json:"language,omitempty"`
 	Preferences map[string]string `json:"preferences,omitempty"`
+
+	// ResolvedLanguage is the language the page last said it was showing when
+	// nobody had picked one (UseLanguage). Not a preference, and never handed
+	// back as one: the page still resolves it afresh at every launch, so the app
+	// goes on following the system. It is here so the next launch installs the
+	// templates in it before the page asks — see uiLanguage.
+	ResolvedLanguage string `json:"resolvedLanguage,omitempty"`
 }
 
 // One writer at a time: two bindings racing the read-modify-write would drop
@@ -115,31 +122,62 @@ var activeLanguage string
 
 // uiLanguage is the language the app is read in, as the page's own setting
 // names it («ru», «en», «pt_BR»). The pick comes first, then what the page
-// resolved, then the language the templates are written in.
+// resolved in this run, then what it resolved in the last one, then the
+// language the templates are written in.
+//
+// The last run's answer is what startup installs the templates in, and it has
+// to be: activeLanguage is empty until the page reports, so without it every
+// launch put the templates back into English and the page's report then put
+// them back into its own language — two full reinstalls per launch, the
+// second inside the call the first render waits for. On macOS that was a
+// window that stayed blank until somebody reloaded it.
 func uiLanguage() string {
 	uiSettingsMu.Lock()
 	defer uiSettingsMu.Unlock()
-	if picked := readUISettings().Preferences["language"]; picked != "" {
+	return languageInForce(readUISettings())
+}
+
+// languageInForce is uiLanguage's answer for settings already read; the caller
+// holds uiSettingsMu.
+func languageInForce(s uiSettings) string {
+	if picked := s.Preferences["language"]; picked != "" {
 		return picked
 	}
-	return activeLanguage
+	if activeLanguage != "" {
+		return activeLanguage
+	}
+	return s.ResolvedLanguage
 }
 
 // UseLanguage is the page telling this side which language it is showing,
-// whether or not anybody picked it. It writes nothing to the settings — a
-// resolved default is not a choice, and storing it would stop the app following
-// the system — and it exists because the templates are boards rather than
-// catalogue strings: without it a person who never opened the settings would
-// read the app in their own language and be offered templates in English.
+// whether or not anybody picked it. It exists because the templates are boards
+// rather than catalogue strings: without it a person who never opened the
+// settings would read the app in their own language and be offered templates
+// in English.
+//
+// It sets no preference — a resolved default is not a choice, and a pick would
+// stop the app following the system. What it does keep is the answer itself,
+// as ResolvedLanguage, so the next launch starts in it (uiLanguage).
 func (a *App) UseLanguage(lang string) error {
 	lang = strings.TrimSpace(lang)
 	if lang == "" || len(lang) > 64 {
 		return nil
 	}
 	uiSettingsMu.Lock()
-	was := activeLanguage
-	picked := readUISettings().Preferences["language"]
+	s := readUISettings()
+	// What the templates are in right now: this run's answer, or — before the
+	// page has said anything — the last run's, which startup installed them in.
+	was := languageInForce(s)
+	picked := s.Preferences["language"]
 	activeLanguage = lang
+	if s.ResolvedLanguage != lang {
+		s.ResolvedLanguage = lang
+		if err := writeUISettings(s); err != nil {
+			// Costs the next launch a reinstall, which is what every launch
+			// cost before this was kept.
+			log.Printf("ui settings: %v", err)
+		}
+	}
 	uiSettingsMu.Unlock()
 
 	// Only when it is the answer that counts and it has changed: a pick beats
@@ -147,10 +185,11 @@ func (a *App) UseLanguage(lang string) error {
 	// in, so a repeat costs nothing anyway.
 	//
 	// Here it is done before answering, and the page waits for the answer
-	// before its first render (main.tsx): replacing five boards is measured in
-	// tens of milliseconds, and doing it after the page has drawn means the
-	// page holds a list of boards that no longer exist — the template picker
-	// drew both languages at once.
+	// before its first render (main.tsx): doing it after the page has drawn
+	// means the page holds a list of boards that no longer exist — the template
+	// picker drew both languages at once. The price is that a real change of
+	// language holds the first render for as long as the reinstall takes, which
+	// is why it must happen only on a real change.
 	if picked == "" && was != lang {
 		a.reinstallTemplates(lang)
 	}
@@ -202,7 +241,10 @@ func (a *App) SetUIPreference(key, value string) error {
 	// done. A failure costs the person templates in the language they already
 	// had, so it is logged rather than returned.
 	if key == "language" && changed {
-		go a.reinstallTemplates(value)
+		// Into the language now in force, not into value: a pick taken back
+		// is an empty value, and it means "follow the system again" — which is
+		// the page's resolved answer, not the templates' source language.
+		go a.reinstallTemplates(languageInForce(s))
 	}
 	return nil
 }
