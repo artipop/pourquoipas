@@ -34,6 +34,8 @@
 | `server/app/templates.boardarchive` (6,1 МБ) | `6f901d7` | embed'ится `server/assets/templates.boardarchive`, это другой файл, и они различаются |
 | `ws/plugin_adapter_client.go`, `integrationtests/pluginteststore.go` | `6f901d7` | последние два файла половины-плагина, на них не ссылается ничто |
 | notifylogger | `f6681ca` | пишет на debug в логгер, который собран на info и не перенастраивается |
+| чтение `config.json` (`config.ReadConfigFile`, `spf13/viper` и с ним около 25 пакетов: hcl, toml, ini, afero, fsnotify…) | «Drop viper, testify and the second SQLite from the desktop binary» | ни одного вызова: конфиг собирает приложение (см. строку про webhook); сама структура `Configuration` жива |
+| `sqlstore.concatenationSelector`, `elementInColumn` и их тесты | то же | звали только собственные тесты (`docs/sql-dialects.md`, группа 0) |
 
 ## Слой 2 — мёртвые вызовы страницы и парные маршруты
 
@@ -77,8 +79,10 @@
 - `SearchBoardsForUserInTeam` — после ухода linkable у него не осталось
   вызывающих в `api/`, но это поиск в пределах одной команды, и он остаётся по
   тому же правилу, что `search` и `getTeamUsers`.
-- Таблицы `notification_hints` и `sharing` — правка схемы отдельная работа со
-  своим генератором и снапшот-тестом, в удаление кода не мешается.
+- Таблица `notification_hints` — правка схемы отдельная работа со своим
+  генератором и снапшот-тестом, в удаление кода не мешается. `sharing` в этот
+  пункт попала по ошибке: её стор (`sqlstore/sharing.go`), маршрут и тесты
+  живы — это публичный шаринг, который оставлен.
 - `getFrontendBaseURL` и `getBoardPagePath` не удалены, а схлопнуты: первая
   отличалась от `getBaseURL` только чтением `window.frontendBaseURL`, вторая без
   канального маршрута была тождественной функцией. Вызывающие переписаны на то,

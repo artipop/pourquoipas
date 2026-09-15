@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/artipop/xciii/server/model"
-	"github.com/artipop/xciii/server/utils"
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -13,9 +13,9 @@ func TestCreateCategory(t *testing.T) {
 	defer tearDown()
 
 	t.Run("base case", func(t *testing.T) {
-		th.Store.EXPECT().CreateCategory(utils.Anything).Return(nil)
+		th.Store.EXPECT().CreateCategory(gomock.Any()).Return(nil)
 
-		th.Store.EXPECT().GetCategory(utils.Anything).Return(&model.Category{
+		th.Store.EXPECT().GetCategory(gomock.Any()).Return(&model.Category{
 			ID: "category_id_1",
 		}, nil)
 
@@ -65,7 +65,7 @@ func TestUpdateCategory(t *testing.T) {
 	defer tearDown()
 
 	t.Run("base case", func(t *testing.T) {
-		th.Store.EXPECT().GetCategory(utils.Anything).Return(&model.Category{
+		th.Store.EXPECT().GetCategory(gomock.Any()).Return(&model.Category{
 			ID:     "category_id_1",
 			Name:   "Category",
 			TeamID: "team_id_1",
@@ -73,7 +73,7 @@ func TestUpdateCategory(t *testing.T) {
 			Type:   "custom",
 		}, nil)
 
-		th.Store.EXPECT().UpdateCategory(utils.Anything).Return(nil)
+		th.Store.EXPECT().UpdateCategory(gomock.Any()).Return(nil)
 		th.Store.EXPECT().GetCategory("category_id_1").Return(&model.Category{
 			ID:   "category_id_1",
 			Name: "Category",
@@ -92,7 +92,7 @@ func TestUpdateCategory(t *testing.T) {
 	})
 
 	t.Run("updating invalid category", func(t *testing.T) {
-		th.Store.EXPECT().GetCategory(utils.Anything).Return(&model.Category{
+		th.Store.EXPECT().GetCategory(gomock.Any()).Return(&model.Category{
 			ID:     "category_id_1",
 			Name:   "Category",
 			TeamID: "team_id_1",
@@ -138,7 +138,7 @@ func TestUpdateCategory(t *testing.T) {
 	})
 
 	t.Run("trying to update someone else's category", func(t *testing.T) {
-		th.Store.EXPECT().GetCategory(utils.Anything).Return(&model.Category{
+		th.Store.EXPECT().GetCategory(gomock.Any()).Return(&model.Category{
 			ID:     "category_id_1",
 			Name:   "Category",
 			TeamID: "team_id_1",
@@ -159,7 +159,7 @@ func TestUpdateCategory(t *testing.T) {
 	})
 
 	t.Run("trying to update some other team's category", func(t *testing.T) {
-		th.Store.EXPECT().GetCategory(utils.Anything).Return(&model.Category{
+		th.Store.EXPECT().GetCategory(gomock.Any()).Return(&model.Category{
 			ID:     "category_id_1",
 			Name:   "Category",
 			TeamID: "team_id_1",
@@ -180,7 +180,7 @@ func TestUpdateCategory(t *testing.T) {
 	})
 
 	t.Run("should not be allowed to rename system category", func(t *testing.T) {
-		th.Store.EXPECT().GetCategory(utils.Anything).Return(&model.Category{
+		th.Store.EXPECT().GetCategory(gomock.Any()).Return(&model.Category{
 			ID:     "category_id_1",
 			Name:   "Category",
 			TeamID: "team_id_1",
@@ -188,9 +188,9 @@ func TestUpdateCategory(t *testing.T) {
 			Type:   "system",
 		}, nil).Times(1)
 
-		th.Store.EXPECT().UpdateCategory(utils.Anything).Return(nil)
+		th.Store.EXPECT().UpdateCategory(gomock.Any()).Return(nil)
 
-		th.Store.EXPECT().GetCategory(utils.Anything).Return(&model.Category{
+		th.Store.EXPECT().GetCategory(gomock.Any()).Return(&model.Category{
 			ID:        "category_id_1",
 			Name:      "Category",
 			TeamID:    "team_id_1",
@@ -213,7 +213,7 @@ func TestUpdateCategory(t *testing.T) {
 	})
 
 	t.Run("should be allowed to collapse and expand any category type", func(t *testing.T) {
-		th.Store.EXPECT().GetCategory(utils.Anything).Return(&model.Category{
+		th.Store.EXPECT().GetCategory(gomock.Any()).Return(&model.Category{
 			ID:        "category_id_1",
 			Name:      "Category",
 			TeamID:    "team_id_1",
@@ -222,9 +222,9 @@ func TestUpdateCategory(t *testing.T) {
 			Collapsed: false,
 		}, nil).Times(1)
 
-		th.Store.EXPECT().UpdateCategory(utils.Anything).Return(nil)
+		th.Store.EXPECT().UpdateCategory(gomock.Any()).Return(nil)
 
-		th.Store.EXPECT().GetCategory(utils.Anything).Return(&model.Category{
+		th.Store.EXPECT().GetCategory(gomock.Any()).Return(&model.Category{
 			ID:        "category_id_1",
 			Name:      "Category",
 			TeamID:    "team_id_1",
@@ -364,8 +364,8 @@ func TestMoveBoardsToDefaultCategory(t *testing.T) {
 			},
 		}, nil)
 
-		th.Store.EXPECT().CreateCategory(utils.Anything).Return(nil)
-		th.Store.EXPECT().GetCategory(utils.Anything).Return(&model.Category{
+		th.Store.EXPECT().CreateCategory(gomock.Any()).Return(nil)
+		th.Store.EXPECT().GetCategory(gomock.Any()).Return(&model.Category{
 			ID:   "default_category_id",
 			Name: "Boards",
 			Type: "system",

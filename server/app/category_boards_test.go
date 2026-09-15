@@ -3,7 +3,7 @@ package app
 import (
 	"testing"
 
-	"github.com/artipop/xciii/server/utils"
+	"github.com/golang/mock/gomock"
 
 	"github.com/artipop/xciii/server/model"
 	"github.com/stretchr/testify/assert"
@@ -24,8 +24,8 @@ func TestGetUserCategoryBoards(t *testing.T) {
 				},
 			},
 		}, nil).Times(1)
-		th.Store.EXPECT().CreateCategory(utils.Anything).Return(nil)
-		th.Store.EXPECT().GetCategory(utils.Anything).Return(&model.Category{
+		th.Store.EXPECT().CreateCategory(gomock.Any()).Return(nil)
+		th.Store.EXPECT().GetCategory(gomock.Any()).Return(&model.Category{
 			ID:   "boards_category_id",
 			Name: "Boards",
 		}, nil)
@@ -58,7 +58,7 @@ func TestGetUserCategoryBoards(t *testing.T) {
 				Synthetic: false,
 			},
 		}, nil)
-		th.Store.EXPECT().GetBoard(utils.Anything).Return(nil, nil).Times(3)
+		th.Store.EXPECT().GetBoard(gomock.Any()).Return(nil, nil).Times(3)
 		th.Store.EXPECT().AddUpdateCategoryBoard("user_id", "boards_category_id", []string{"board_id_1", "board_id_2", "board_id_3"}).Return(nil)
 
 		categoryBoards, err := th.App.GetUserCategoryBoards("user_id", "team_id")
@@ -73,8 +73,8 @@ func TestGetUserCategoryBoards(t *testing.T) {
 
 	t.Run("user had no default category BUT had no boards", func(t *testing.T) {
 		th.Store.EXPECT().GetUserCategoryBoards("user_id", "team_id").Return([]model.CategoryBoards{}, nil)
-		th.Store.EXPECT().CreateCategory(utils.Anything).Return(nil)
-		th.Store.EXPECT().GetCategory(utils.Anything).Return(&model.Category{
+		th.Store.EXPECT().CreateCategory(gomock.Any()).Return(nil)
+		th.Store.EXPECT().GetCategory(gomock.Any()).Return(&model.Category{
 			ID:   "boards_category_id",
 			Name: "Boards",
 		}, nil)
@@ -113,8 +113,8 @@ func TestCreateBoardsCategory(t *testing.T) {
 	defer tearDown()
 
 	t.Run("user doesn't have any boards - implicit or explicit", func(t *testing.T) {
-		th.Store.EXPECT().CreateCategory(utils.Anything).Return(nil)
-		th.Store.EXPECT().GetCategory(utils.Anything).Return(&model.Category{
+		th.Store.EXPECT().CreateCategory(gomock.Any()).Return(nil)
+		th.Store.EXPECT().GetCategory(gomock.Any()).Return(&model.Category{
 			ID:   "boards_category_id",
 			Type: "system",
 			Name: "Boards",
@@ -131,8 +131,8 @@ func TestCreateBoardsCategory(t *testing.T) {
 	})
 
 	t.Run("user has implicit access to some board", func(t *testing.T) {
-		th.Store.EXPECT().CreateCategory(utils.Anything).Return(nil)
-		th.Store.EXPECT().GetCategory(utils.Anything).Return(&model.Category{
+		th.Store.EXPECT().CreateCategory(gomock.Any()).Return(nil)
+		th.Store.EXPECT().GetCategory(gomock.Any()).Return(&model.Category{
 			ID:   "boards_category_id",
 			Type: "system",
 			Name: "Boards",
@@ -152,7 +152,7 @@ func TestCreateBoardsCategory(t *testing.T) {
 				Synthetic: true,
 			},
 		}, nil)
-		th.Store.EXPECT().GetBoard(utils.Anything).Return(nil, nil).Times(3)
+		th.Store.EXPECT().GetBoard(gomock.Any()).Return(nil, nil).Times(3)
 
 		existingCategoryBoards := []model.CategoryBoards{}
 		boardsCategory, err := th.App.createBoardsCategory("user_id", "team_id", existingCategoryBoards)
@@ -166,8 +166,8 @@ func TestCreateBoardsCategory(t *testing.T) {
 	})
 
 	t.Run("user has explicit access to some board", func(t *testing.T) {
-		th.Store.EXPECT().CreateCategory(utils.Anything).Return(nil)
-		th.Store.EXPECT().GetCategory(utils.Anything).Return(&model.Category{
+		th.Store.EXPECT().CreateCategory(gomock.Any()).Return(nil)
+		th.Store.EXPECT().GetCategory(gomock.Any()).Return(&model.Category{
 			ID:   "boards_category_id",
 			Type: "system",
 			Name: "Boards",
@@ -197,7 +197,7 @@ func TestCreateBoardsCategory(t *testing.T) {
 				Synthetic: false,
 			},
 		}, nil)
-		th.Store.EXPECT().GetBoard(utils.Anything).Return(nil, nil).Times(3)
+		th.Store.EXPECT().GetBoard(gomock.Any()).Return(nil, nil).Times(3)
 		th.Store.EXPECT().AddUpdateCategoryBoard("user_id", "boards_category_id", []string{"board_id_1", "board_id_2", "board_id_3"}).Return(nil)
 
 		th.Store.EXPECT().GetUserCategoryBoards("user_id", "team_id").Return([]model.CategoryBoards{
@@ -222,8 +222,8 @@ func TestCreateBoardsCategory(t *testing.T) {
 	})
 
 	t.Run("user has both implicit and explicit access to some board", func(t *testing.T) {
-		th.Store.EXPECT().CreateCategory(utils.Anything).Return(nil)
-		th.Store.EXPECT().GetCategory(utils.Anything).Return(&model.Category{
+		th.Store.EXPECT().CreateCategory(gomock.Any()).Return(nil)
+		th.Store.EXPECT().GetCategory(gomock.Any()).Return(&model.Category{
 			ID:   "boards_category_id",
 			Type: "system",
 			Name: "Boards",
@@ -247,7 +247,7 @@ func TestCreateBoardsCategory(t *testing.T) {
 				Synthetic: true,
 			},
 		}, nil)
-		th.Store.EXPECT().GetBoard(utils.Anything).Return(nil, nil).Times(3)
+		th.Store.EXPECT().GetBoard(gomock.Any()).Return(nil, nil).Times(3)
 		th.Store.EXPECT().AddUpdateCategoryBoard("user_id", "boards_category_id", []string{"board_id_1"}).Return(nil)
 
 		th.Store.EXPECT().GetUserCategoryBoards("user_id", "team_id").Return([]model.CategoryBoards{

@@ -3,7 +3,7 @@ package app
 import (
 	"testing"
 
-	"github.com/artipop/xciii/server/utils"
+	"github.com/golang/mock/gomock"
 
 	"github.com/stretchr/testify/assert"
 
@@ -463,7 +463,7 @@ func TestPatchBoard(t *testing.T) {
 		// - for AddTeamMembers check
 		th.Store.EXPECT().GetMembersForBoard(boardID).Return([]*model.BoardMember{}, nil).Times(2)
 
-		th.Store.EXPECT().PostMessage(utils.Anything, "", "").Times(1)
+		th.Store.EXPECT().PostMessage(gomock.Any(), "", "").Times(1)
 
 		patchedBoard, err := th.App.PatchBoard(patch, boardID, userID)
 		require.NoError(t, err)
@@ -569,8 +569,8 @@ func TestBoardCategory(t *testing.T) {
 			},
 		}, nil).Times(1)
 
-		th.Store.EXPECT().CreateCategory(utils.Anything).Return(nil)
-		th.Store.EXPECT().GetCategory(utils.Anything).Return(&model.Category{
+		th.Store.EXPECT().CreateCategory(gomock.Any()).Return(nil)
+		th.Store.EXPECT().GetCategory(gomock.Any()).Return(&model.Category{
 			ID:   "default_category_id",
 			Name: "Boards",
 		}, nil)
@@ -633,10 +633,10 @@ func TestDuplicateBoard(t *testing.T) {
 			},
 		}, nil).Times(3)
 
-		th.Store.EXPECT().AddUpdateCategoryBoard("user_id_1", "category_id_1", utils.Anything).Return(nil)
+		th.Store.EXPECT().AddUpdateCategoryBoard("user_id_1", "category_id_1", gomock.Any()).Return(nil)
 
 		// for WS change broadcast
-		th.Store.EXPECT().GetMembersForBoard(utils.Anything).Return([]*model.BoardMember{}, nil).Times(2)
+		th.Store.EXPECT().GetMembersForBoard(gomock.Any()).Return([]*model.BoardMember{}, nil).Times(2)
 
 		bab, members, err := th.App.DuplicateBoard("board_id_1", "user_id_1", "team_id_1", false)
 		assert.NoError(t, err)
@@ -671,7 +671,7 @@ func TestDuplicateBoard(t *testing.T) {
 		th.Store.EXPECT().GetBoard("board_id_1").Return(&model.Board{}, nil)
 
 		// for WS change broadcast
-		th.Store.EXPECT().GetMembersForBoard(utils.Anything).Return([]*model.BoardMember{}, nil).Times(2)
+		th.Store.EXPECT().GetMembersForBoard(gomock.Any()).Return([]*model.BoardMember{}, nil).Times(2)
 
 		bab, members, err := th.App.DuplicateBoard("board_id_1", "user_id_1", "team_id_1", true)
 		assert.NoError(t, err)

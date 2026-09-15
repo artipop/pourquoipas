@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/artipop/xciii/server/utils"
-
 	"github.com/artipop/xciii/server/model"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
@@ -59,14 +57,14 @@ func TestApp_ImportArchive(t *testing.T) {
 			},
 		}, nil)
 		th.Store.EXPECT().GetUserCategoryBoards("user", "test-team")
-		th.Store.EXPECT().CreateCategory(utils.Anything).Return(nil)
-		th.Store.EXPECT().GetCategory(utils.Anything).Return(&model.Category{
+		th.Store.EXPECT().CreateCategory(gomock.Any()).Return(nil)
+		th.Store.EXPECT().GetCategory(gomock.Any()).Return(&model.Category{
 			ID:   "boards_category_id",
 			Name: "Boards",
 		}, nil)
 		th.Store.EXPECT().GetBoardsForUserAndTeam("user", "test-team", false).Return([]*model.Board{}, nil)
 		th.Store.EXPECT().GetMembersForUser("user").Return([]*model.BoardMember{}, nil)
-		th.Store.EXPECT().AddUpdateCategoryBoard("user", utils.Anything, utils.Anything).Return(nil)
+		th.Store.EXPECT().AddUpdateCategoryBoard("user", gomock.Any(), gomock.Any()).Return(nil)
 
 		err := th.App.ImportArchive(r, opts)
 		require.NoError(t, err, "import archive should not fail")
@@ -118,14 +116,14 @@ func TestApp_ImportArchive(t *testing.T) {
 				},
 			},
 		}, nil)
-		th.Store.EXPECT().CreateCategory(utils.Anything).Return(nil)
-		th.Store.EXPECT().GetCategory(utils.Anything).Return(&model.Category{
+		th.Store.EXPECT().CreateCategory(gomock.Any()).Return(nil)
+		th.Store.EXPECT().GetCategory(gomock.Any()).Return(&model.Category{
 			ID:   "boards_category_id",
 			Name: "Boards",
 		}, nil)
 		th.Store.EXPECT().GetMembersForUser("f1tydgc697fcbp8ampr6881jea").Return([]*model.BoardMember{}, nil)
 		th.Store.EXPECT().GetBoardsForUserAndTeam("f1tydgc697fcbp8ampr6881jea", "test-team", false).Return([]*model.Board{}, nil)
-		th.Store.EXPECT().AddUpdateCategoryBoard("f1tydgc697fcbp8ampr6881jea", utils.Anything, utils.Anything).Return(nil)
+		th.Store.EXPECT().AddUpdateCategoryBoard("f1tydgc697fcbp8ampr6881jea", gomock.Any(), gomock.Any()).Return(nil)
 		th.Store.EXPECT().GetBoard(board.ID).AnyTimes().Return(board, nil)
 		th.Store.EXPECT().GetMemberForBoard(board.ID, "f1tydgc697fcbp8ampr6881jea").AnyTimes().Return(bm1, nil)
 		th.Store.EXPECT().GetMemberForBoard(board.ID, "hxxzooc3ff8cubsgtcmpn8733e").AnyTimes().Return(bm2, nil)

@@ -11,57 +11,37 @@
 
 ## Счёт
 
-60 упоминаний `dbType` во всём дереве. В **самих запросах** — 15:
+60 упоминаний `dbType` во всём дереве. В **самих запросах** — 15 (с тех пор
+13: два upsert ушли вместе с `notificationhints.go` и `cloud.go`):
 
 | группа | веток | что делать |
 |---|---|---|
-| [upsert](#1-upsert--десять-раз-одна-форма) | 10 | хелпер |
+| [upsert](#1-upsert--восемь-раз-одна-форма) | 8 | хелпер |
 | [время](#2-время--две-ветки-из-за-строкового-insert_at) | 2 | уходят вместе с `time.Time` |
 | [плейсхолдеры](#3-плейсхолдеры--билдер-это-уже-сделал) | 1 | запрос через билдер |
 | [поиск по JSON](#оставляем-поиск-по-json) | 1 | **оставить** |
 | [`DELETE … LIMIT`](#оставляем-delete--limit) | 1 | **оставить** |
 
 Плюс обвязка вне запросов: `escapeField` (10 вызовов), `castInt` (4),
-`GetSchemaName` (1) — и две мёртвые функции, см. ниже.
+`GetSchemaName` (1). Две мёртвые функции удалены, см. ниже.
 
 Главное, что видно из таблицы: это **не «три диалекта», а «MySQL против
 двух»**. Postgres и SQLite согласны про `ON CONFLICT`, про `$N` и про `"` в
 кавычках. Цена не в трёх вендорах, а в одном, и это меняет форму решения:
 нужно не абстракция на три реализации, а одно место, где MySQL расходится.
 
-## 0. Мёртвые: три арма на функцию, вызывают только тесты
+## 0. Мёртвые — удалены 2026-09-15
 
-`sqlstore.go`:
+`concatenationSelector` (`group_concat` / `string_agg` / `GROUP_CONCAT`) и
+`elementInColumn` (`instr` / `position`) в `sqlstore.go` звали только
+`TestConcatenationSelector` и `TestElementInColumn`, которые проверяли, что
+функция вернула ту строку, которую вернула. Удалены вместе с тестами; заменять
+было нечего.
 
-```go
-func (s *SQLStore) concatenationSelector(field, delimiter string) string {
-	if s.dbType == model.SqliteDBType   { return fmt.Sprintf("group_concat(%s)", field) }
-	if s.dbType == model.PostgresDBType { return fmt.Sprintf("string_agg(%s, '%s')", field, delimiter) }
-	if s.dbType == model.MysqlDBType    { return fmt.Sprintf("GROUP_CONCAT(%s SEPARATOR '%s')", field, delimiter) }
-	return ""
-}
-
-func (s *SQLStore) elementInColumn(column string) string {
-	if s.dbType == model.SqliteDBType || s.dbType == model.MysqlDBType {
-		return fmt.Sprintf("instr(%s, ?) > 0", column)
-	}
-	if s.dbType == model.PostgresDBType {
-		return fmt.Sprintf("position(? in %s) > 0", column)
-	}
-	return ""
-}
-```
-
-Единственные вызовы — `TestConcatenationSelector` и `TestElementInColumn`,
-которые проверяют, что функция вернула ту строку, которую вернула. Тест на код,
-которого нет в продукте.
-
-**Решение: удалить обе вместе с тестами.** Ничего не заменяем — заменять нечего.
-
-## 1. Upsert — десять раз одна форма
+## 1. Upsert — восемь раз одна форма
 
 `system.go`, и так же в `sharing.go`, `subscriptions.go`, `team.go` (дважды),
-`notificationhints.go`, `category_boards.go`, `board.go`, `cloud.go`, `user.go`:
+`category_boards.go`, `board.go`, `user.go`:
 
 ```go
 query := s.getQueryBuilder(db).Insert("system_settings").Columns("id","value").Values(id, value)
@@ -89,7 +69,7 @@ MySQL не трогает `update_at`. Перенос доски между ка
 протухшую метку — молча, и никто этого не видел, потому что жил только SQLite.
 Ровно тот класс ошибок, ради которого писать SQL по вендору руками и не хочется.
 
-**Решение: `s.upsert(query, onConflict []string, set ...)`.** Десять веток → одна
+**Решение: `s.upsert(query, onConflict []string, set ...)`.** Восемь веток → одна
 функция, и расхождение становится невозможным по построению. Перед этим надо
 решить, какое поведение у `category_boards` правильное, а не просто слить ветки.
 
@@ -178,7 +158,7 @@ Postgres не работал никогда**. `NULLIF` — потому что 
 
 После групп 0–3 живыми остаются **три** helper'а: `escapeField` (10 вызовов),
 `castInt` (4), `GetSchemaName` (1). `timestampToCharField` умирает вместе с
-группой 2, `concatenationSelector` и `elementInColumn` — мёртвые.
+группой 2, `concatenationSelector` и `elementInColumn` удалены.
 
 Три функции на структуре — это не проблема, которую решает интерфейс. **Правило:
 сначала убить, потом абстрагировать.** Интерфейс поверх веток, которых не должно
@@ -186,8 +166,8 @@ Postgres не работал никогда**. `NULLIF` — потому что 
 
 ## Порядок
 
-1. группа 0 — удалить мёртвое (пятнадцать минут, ничего не ломает);
-2. группа 1 — upsert-хелпер (минус десять веток, закрывает расхождение);
+1. ~~группа 0 — удалить мёртвое~~ — сделано 2026-09-15;
+2. группа 1 — upsert-хелпер (минус восемь веток, закрывает расхождение);
 3. группа 3 — один запрос через билдер;
 4. группа 2 — отдельным заходом, вместе с типами, потому что это про типы;
 5. интерфейс — не делать.

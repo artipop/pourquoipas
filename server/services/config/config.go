@@ -1,11 +1,5 @@
 package config
 
-import (
-	"log"
-
-	"github.com/spf13/viper"
-)
-
 const (
 	DefaultServerRoot = "http://localhost:8000"
 	DefaultPort       = 8000
@@ -64,58 +58,4 @@ type Configuration struct {
 
 	NotifyFreqCardSeconds  int `json:"notify_freq_card_seconds" mapstructure:"notify_freq_card_seconds"`
 	NotifyFreqBoardSeconds int `json:"notify_freq_board_seconds" mapstructure:"notify_freq_board_seconds"`
-}
-
-// ReadConfigFile read the configuration from the filesystem.
-func ReadConfigFile(configFilePath string) (*Configuration, error) {
-	if configFilePath == "" {
-		viper.SetConfigFile("./config.json")
-	} else {
-		viper.SetConfigFile(configFilePath)
-	}
-
-	viper.SetEnvPrefix("focalboard")
-	viper.AutomaticEnv() // read config values from env like FOCALBOARD_SERVERROOT=...
-	viper.SetDefault("ServerRoot", DefaultServerRoot)
-	viper.SetDefault("DBPingAttempts", DBPingAttempts)
-	viper.SetDefault("Port", DefaultPort)
-	viper.SetDefault("DBType", "sqlite3")
-	viper.SetDefault("DBConfigString", "./focalboard.db")
-	viper.SetDefault("SecureCookie", false)
-	viper.SetDefault("WebPath", "./pack")
-	viper.SetDefault("FilesPath", "./files")
-	viper.SetDefault("FilesDriver", "local")
-	viper.SetDefault("SessionExpireTime", 60*60*24*30) // 30 days session lifetime
-	viper.SetDefault("SessionRefreshTime", 60*60*5)    // 5 minutes session refresh
-	viper.SetDefault("LocalOnly", false)
-	viper.SetDefault("EnablePublicSharedBoards", false)
-	viper.SetDefault("AuthMode", "native")
-	viper.SetDefault("NotifyFreqCardSeconds", 120)    // 2 minutes after last card edit
-	viper.SetDefault("NotifyFreqBoardSeconds", 86400) // 1 day after last card edit
-	viper.SetDefault("FeatureFlags", map[string]string{})
-	viper.SetDefault("TeammateNameDisplay", "username")
-	viper.SetDefault("ShowEmailAddress", false)
-	viper.SetDefault("ShowFullName", false)
-
-	err := viper.ReadInConfig() // Find and read the config file
-	if err != nil {             // Handle errors reading the config file
-		return nil, err
-	}
-
-	configuration := Configuration{}
-
-	err = viper.Unmarshal(&configuration)
-	if err != nil {
-		return nil, err
-	}
-
-	log.Println("readConfigFile")
-	log.Printf("%+v", removeSecurityData(configuration))
-
-	return &configuration, nil
-}
-
-func removeSecurityData(config Configuration) Configuration {
-	clean := config
-	return clean
 }

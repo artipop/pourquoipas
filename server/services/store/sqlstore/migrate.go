@@ -14,15 +14,6 @@ import (
 	"github.com/golang-migrate/migrate/v4/database/mysql"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 
-	// The SQLite migration driver runs on the connection it is handed, so which
-	// of the two golang-migrate ships is picked decides nothing about the SQL —
-	// only which driver the package registers on the side. This one registers
-	// the pure-Go modernc build; its sqlite3 sibling registers cgo mattn, and
-	// would drag cgo SQLite into every build of this package whether or not the
-	// `sqlite3` tag asked for one. Choosing the driver by build tag is what that
-	// tag is for, and sqlite.go is where it is done.
-	"github.com/golang-migrate/migrate/v4/database/sqlite"
-
 	"github.com/artipop/xciii/server/mlog"
 
 	_ "github.com/lib/pq" // postgres driver
@@ -159,7 +150,9 @@ func (s *SQLStore) migrationDriver(db *sql.DB) (database.Driver, error) {
 
 	switch s.dbType {
 	case model.SqliteDBType:
-		return sqlite.WithInstance(db, &sqlite.Config{MigrationsTable: table})
+		// Picked by the same build constraint as the driver itself
+		// (sqlite.go, sqlite_pure.go).
+		return sqliteMigrationDriver(db, table)
 	case model.PostgresDBType:
 		return postgres.WithInstance(db, &postgres.Config{
 			MigrationsTable: table,

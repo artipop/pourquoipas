@@ -5,6 +5,8 @@ package sqlstore
 import (
 	"database/sql"
 
+	"github.com/golang-migrate/migrate/v4/database"
+	"github.com/golang-migrate/migrate/v4/database/sqlite"
 	_ "modernc.org/sqlite" // registers itself as "sqlite"
 )
 
@@ -17,10 +19,9 @@ import (
 // the headless build died at its first query, and a Windows build needed MinGW
 // for nothing else. Now that combination gets this driver instead.
 //
-// modernc is already in every build through golang-migrate's sqlite driver
-// (migrate.go), so this adds a name, not a dependency. The instance is the one
-// modernc registered, fetched back through database/sql, so functions and
-// hooks registered on it apply under either name.
+// The instance is the one modernc registered, fetched back through
+// database/sql, so functions and hooks registered on it apply under either
+// name.
 func init() {
 	db, err := sql.Open("sqlite", "")
 	if err != nil {
@@ -28,4 +29,10 @@ func init() {
 	}
 	sql.Register("sqlite3", db.Driver())
 	_ = db.Close()
+}
+
+// sqliteMigrationDriver: see sqlite.go. This one imports modernc, which this
+// build links anyway.
+func sqliteMigrationDriver(db *sql.DB, table string) (database.Driver, error) {
+	return sqlite.WithInstance(db, &sqlite.Config{MigrationsTable: table})
 }

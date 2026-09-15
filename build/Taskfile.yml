@@ -99,7 +99,7 @@ tasks:
     cmds:
       - go build {{.BUILD_FLAGS}} -o "{{.BIN_DIR}}/{{.APP_NAME}}-server{{exeExt}}"
     vars:
-      BUILD_FLAGS: '-tags server,{{.EXTRA_TAGS}}{{if ne .DEV "true"}},production -trimpath -ldflags="-w -s"{{else}} -gcflags=all="-l"{{end}} -buildvcs=false'
+      BUILD_FLAGS: '-tags server,{{.EXTRA_TAGS}}{{if ne .DEV "true"}},production -trimpath -ldflags="-w -s"{{else}}{{end}} -buildvcs=false'
     # CGO_ENABLED is left to Go: a server needs no Wails, so cgo matters here
     # only for which SQLite driver is linked — mattn where a C compiler is
     # found, modernc's pure Go where it is not (sqlstore/sqlite_pure.go). Both
