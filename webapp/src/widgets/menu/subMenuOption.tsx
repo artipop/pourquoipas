@@ -1,4 +1,4 @@
-import {Show, createSignal, onSettled} from 'solid-js'
+import {Show, createSignal} from 'solid-js'
 import type {JSX} from '@solidjs/web'
 
 import {useIntl} from '../../intl'
@@ -29,9 +29,14 @@ function SubMenuOption(props: SubMenuOptionProps): JSX.Element {
 
     // A submenu is drawn inside the menu and flush against its option, so it
     // is not placed against the viewport the way the menu itself is — all it
-    // asks is which end of the option to hang from, and the answer is the side
-    // of the screen with more room.
-    onSettled(() => {
+    // asks is which end of the option to hang from, on both axes, and the
+    // answer is the side of the screen with more room. Measured when it opens
+    // rather than when the option mounts: the option mounts with the menu,
+    // and the menu is placed by floating-ui a beat later — a rect read at
+    // mount is where the menu was going to be laid out from, not where it is,
+    // and the export submenu on the board's own ⋯ menu answered "plenty of
+    // room to the right" from a corner it never stood in.
+    const open = () => {
         const newStyle: JSX.CSSProperties = {}
         if (props.position === 'auto' && ref) {
             const box = ref.getBoundingClientRect()
@@ -44,10 +49,19 @@ function SubMenuOption(props: SubMenuOptionProps): JSX.Element {
             // otherwise runs off the screen with no way to scroll to the rest.
             // The stylesheet gives .SubMenu overflow-y for exactly this cap.
             newStyle['max-height'] = `${Math.max(above, below, 160) - 12}px`
+
+            // The same choice sideways: the ⋯ menu of the board's header
+            // stands at the right edge of the window, and a submenu that only
+            // ever hangs right is a submenu that opens clipped there.
+            if (window.innerWidth - box.right < box.left) {
+                newStyle.left = 'auto'
+                newStyle.right = '100%'
+            }
         }
 
         setStyle(newStyle)
-    })
+        setIsOpen(true)
+    }
 
     return (
         <div
@@ -57,7 +71,7 @@ function SubMenuOption(props: SubMenuOptionProps): JSX.Element {
             // The submenu is drawn inside this option and flush against it, so
             // the pointer never leaves on its way in: entering opens it, and
             // leaving — for the option below, or off the menu — closes it.
-            onMouseEnter={() => setIsOpen(true)}
+            onMouseEnter={open}
             onMouseLeave={() => setIsOpen(false)}
 
             // A tap opens it too, because a phone has no pointer to hover with
@@ -69,7 +83,7 @@ function SubMenuOption(props: SubMenuOptionProps): JSX.Element {
             onClick={(e: MouseEvent) => {
                 e.preventDefault()
                 e.stopPropagation()
-                setIsOpen(true)
+                open()
             }}
             ref={ref}
         >

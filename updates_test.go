@@ -34,7 +34,7 @@ func TestTurningTheAutomaticCheckOffIsRemembered(t *testing.T) {
 
 // The version a person skipped is the one thing the framework does not keep:
 // its Updater holds it in a field that dies with the process. If this does not
-// survive, «Пропустить эту версию» silently means «до перезапуска».
+// survive, the skip-this-version button silently means until the next launch.
 func TestTheSkippedVersionSurvivesARestart(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "updates.json")
 	if err := writeUpdateSettings(path, updateSettings{SkippedVersion: "2.0.0", LastCheckedAt: "2026-08-13T10:00:00Z"}); err != nil {
@@ -88,7 +88,7 @@ func TestABuildWithoutUpdatingSaysSo(t *testing.T) {
 }
 
 // Two editions are two installers under one app name, so the panel is where
-// «какое у меня стоит» gets answered — including in a build that cannot update
+// what is installed here gets answered — including in a build that cannot update
 // itself, which is still one edition or the other.
 func TestTheUpdateStateNamesTheEdition(t *testing.T) {
 	app := &App{}

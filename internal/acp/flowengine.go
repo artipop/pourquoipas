@@ -52,6 +52,26 @@ func (m *Manager) handleFlowMove(ev CardMoved) bool {
 	m.wg.Add(1)
 	go func() {
 		defer m.wg.Done()
+		// A hand crossing the arrow crosses it whole: the card is already in
+		// the column the person dropped it in, so what is held back is the
+		// stage rather than the move.
+		//
+		// A card that stood on no stage came from off the route — the backlog,
+		// a source, a hand from anywhere the route does not pass through — and
+		// that is the way in rather than no arrow at all, so it crosses the
+		// route's entry transition. It is the one place a question can be asked
+		// once and hold for the whole route: coming back to this stage later
+		// arrives from a real stage and asks nothing again.
+		from := EntryNode
+		if st, ok, err := m.flowState(ev.CardID); err == nil && ok && st.NodeID != "" {
+			from = st.NodeID
+		}
+		if from != n.ID {
+			if edge := f.EdgeBetween(from, n.ID); edge != nil &&
+				m.holdForAsk(ev, edge, f.ID, n, false, "", "перенос вручную", "") {
+				return
+			}
+		}
 		m.enterNode(ev, f, n, false, "", "перенос вручную", "")
 	}()
 	return true
@@ -63,7 +83,7 @@ func (m *Manager) enterNode(ev CardMoved, flow FlowEntry, node FlowNode, move bo
 	if move {
 		property := flow.PropertyOr(m.triggerProperty())
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		err := m.writer.MoveCardByOptionName(ctx, ev.CardID, property, node.Column)
+		err := m.forCard(ev.CardID).Writer.MoveCardByOptionName(ctx, ev.CardID, property, node.Column)
 		cancel()
 		if err != nil {
 			m.log.Warn("acp: flow move failed", "card", ev.CardID, "column", node.Column, "err", err)
@@ -82,10 +102,16 @@ func (m *Manager) enterNode(ev CardMoved, flow FlowEntry, node FlowNode, move bo
 	m.clearStall(ev.CardID)
 
 	workdirPath, _ := m.resolveWorkdir(ev)
-	from, previousBranch := "", ""
+	from, previousBranch, workMode := "", "", ""
 	var visited []string
 	if st, ok, _ := m.flowState(ev.CardID); ok {
 		from, previousBranch, visited = st.NodeID, st.Branch, st.Visited
+		// How this card's work is arranged was answered once and holds for the
+		// whole route: it is what the workspace was made of, and a later stage
+		// remaking a folded copy has to make the same one. The record is
+		// rebuilt from scratch here, so anything not carried is dropped —
+		// which is what happened to it before this line existed.
+		workMode = st.WorkMode
 	}
 	// The stage being left is a stage the card has been through. A route may
 	// loop, so this is a set and not a trail.
@@ -100,17 +126,18 @@ func (m *Manager) enterNode(ev CardMoved, flow FlowEntry, node FlowNode, move bo
 		Branch:      m.flowBranch(ev, workdirPath, previousBranch),
 		WorkdirPath: workdirPath,
 		Visited:     visited,
+		WorkMode:    workMode,
 	})
 	m.appendFlowEvent(FlowEventRecord{
 		CardID: ev.CardID, FlowID: flow.ID, FromNode: from, ToNode: node.ID, On: on, Detail: detail,
 		// The agent's own words on the transition, kept because the stage the
-		// card returns to is briefed from them (returnBrief): «ревьюер вернул с
-		// такими-то замечаниями» is the input the resumed session works from.
+		// card returns to is briefed from them (returnBrief): what the reviewer
+		// sent back is the input the resumed session works from.
 		Said: said,
 	})
 	m.log.Info("acp: flow node entered", "card", ev.CardID, "flow", flow.Name, "node", node.ID, "on", on)
 
-	m.runNodeAction(ev, flow, node)
+	m.runNodeAction(ev, flow, node, move)
 }
 
 // flowBranch is the branch a card's route follows — what the VCS watcher polls
@@ -170,16 +197,61 @@ func (m *Manager) cardBranch(cardID string) string {
 	return branch
 }
 
+// upstreamWrites is what the stages ahead of this one leave on the card, with
+// each stage's column folded in — a node that declares no writes of its own
+// still produces whatever working in that column produces.
+func (m *Manager) upstreamWrites(boardID string, flow FlowEntry, node FlowNode) []string {
+	property := flow.PropertyOr(m.triggerProperty())
+	return flow.UpstreamWrites(node.ID, func(n FlowNode) []PropertyWrite {
+		if len(n.Writes) > 0 {
+			return n.Writes
+		}
+		spec, _ := m.columnFor(boardID, n.asColumn(property))
+		return spec.Writes
+	})
+}
+
+// writeCardOutcome puts how a stage ended onto the card, in the board's own
+// outcome field. Silent and by id, like the branch: it is the machine recording
+// a fact, and a notify would set the column's automation off.
+//
+// A board with no such field gets nothing — every board made before this one
+// existed, and every board whose owner deleted it. That is the same answer the
+// branch field gives, and it is why nothing downstream may depend on the value
+// being there.
+func (m *Manager) writeCardOutcome(cardID, boardID, trigger string) {
+	value := OutcomeValue(trigger)
+	if value == "" || m.writer == nil {
+		return
+	}
+	propID := m.boardProperty(boardID, BoardPropOutcome)
+	if propID == "" {
+		return
+	}
+	ctx, cancel := context.WithTimeout(m.rootCtx, 10*time.Second)
+	defer cancel()
+	if err := m.forCard(cardID).Writer.SetCardOption(ctx, cardID, propID, value); err != nil {
+		m.log.Warn("acp: could not write the stage's outcome onto the card",
+			"card", cardID, "outcome", value, "err", err)
+	}
+}
+
 // runNodeAction starts whatever the stage does. A stage that cannot even start
 // counts as a failed one, so the route can carry the card to its failure branch
 // instead of silently stalling.
-func (m *Manager) runNodeAction(ev CardMoved, flow FlowEntry, node FlowNode) {
+//
+// arrived says the route moved the card here rather than a person dragging it,
+// and it decides one thing: whether the two "this is somebody's now" endings
+// below announce themselves (cardwait.go). Somebody who dragged a card into a
+// review column is looking at it already.
+func (m *Manager) runNodeAction(ev CardMoved, flow FlowEntry, node FlowNode, arrived bool) {
 	// The stage stands on a column, and the column says who works it and how
 	// many at once. The stage overrides only what it names itself.
 	spec, _ := m.columnFor(ev.BoardID, node.asColumn(flow.PropertyOr(m.triggerProperty())))
 	opts := startOptions{flowID: flow.ID, flowNodeID: node.ID, column: spec,
 		deployOverride: node.DeployID, agentCrew: node.Crew(), stagePrompt: node.Prompt,
-		writes: node.Writes, reads: node.Reads, mcp: node.MCPServers}
+		writes: node.Writes, reads: node.Reads, mcp: node.MCPServers,
+		upstream: m.upstreamWrites(ev.BoardID, flow, node)}
 
 	action := node.Action
 	if action == "" {
@@ -187,6 +259,12 @@ func (m *Manager) runNodeAction(ev CardMoved, flow FlowEntry, node FlowNode) {
 	}
 	switch action {
 	case FlowActionNone, "":
+		// Nothing runs here, so the card is waiting for a person — the whole
+		// content of a review stage, and the one place on a route where the
+		// machine has to say so out loud.
+		if arrived {
+			m.handOverToPerson(ev, handoverText(node.Column, false))
+		}
 		return
 	case FlowActionAgent:
 	case FlowActionDeploy:
@@ -215,6 +293,9 @@ func (m *Manager) runNodeAction(ev CardMoved, flow FlowEntry, node FlowNode) {
 	var mine AssignedToHumanError
 	if errors.As(err, &mine) {
 		m.sayCardIsTaken(ev.CardID, node.ID, mine)
+		if arrived {
+			m.handOverToPerson(ev, handoverText(node.Column, true))
+		}
 		return
 	}
 	if err != nil {
@@ -256,6 +337,14 @@ func (m *Manager) advanceFlowWith(cardID, on, detail, agentText string) {
 		m.stallCardSoft(cardID, st.NodeID, fmt.Sprintf("стадия %q исчезла из маршрута — карточка осталась на месте", st.NodeID))
 		return
 	}
+	// The outcome goes onto the card before anything is decided by it: an edge
+	// may branch on it, and the stall below is a card somebody will read. Every
+	// stage produces one, so nothing has to declare it.
+	// The card's board and not the route's: a route may be registered for every
+	// board (an empty BoardID means "any"), and which board's outcome field to
+	// write is a question about the card.
+	m.writeCardOutcome(cardID, st.BoardID, on)
+
 	if !flow.HasEdge(node.ID, on) {
 		// A missing edge for an outcome is worth saying out loud: the route
 		// stops here and somebody has to know why. VCS events are only polled
@@ -274,14 +363,14 @@ func (m *Manager) advanceFlowWith(cardID, on, detail, agentText string) {
 		return
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	ev, err := m.reader.CardByID(ctx, cardID)
+	ev, err := m.forCard(cardID).Reader.CardByID(ctx, cardID)
 	cancel()
 	if err != nil {
 		m.log.Warn("acp: cannot read card for flow transition", "card", cardID, "err", err)
 		return
 	}
 
-	next, cond, ok := flow.Next(node.ID, on, ev.Props, agentText)
+	next, edge, ok := flow.Next(node.ID, on, ev.Props, agentText)
 	if !ok {
 		// Edges exist for this event, but no condition held and there is no
 		// fallback. That is a decision the route made, and worth recording —
@@ -295,18 +384,20 @@ func (m *Manager) advanceFlowWith(cardID, on, detail, agentText string) {
 
 	// One event moves a card once.
 	key := fmt.Sprintf("flow|%s|%s|%s", cardID, node.ID, on)
-	if fresh, err := m.store.ClaimIdempotency(key, "", m.cfg.IdempotencyWindow()); err != nil {
-		m.log.Error("acp: flow idempotency check failed", "err", err)
-		return
-	} else if !fresh {
+	if !m.claimStage(cardID, key) {
 		return
 	}
 
 	if detail == "" {
 		detail = TriggerLabel(on)
 	}
-	if desc := cond.Describe(); desc != "" {
+	if desc := edge.If.Describe(); desc != "" {
 		detail += ", " + desc
+	}
+	// An arrow that asks something holds the card on this side of it: nothing
+	// is started and the card keeps its place until somebody answers.
+	if m.holdForAsk(ev, edge, flow.ID, next, true, on, detail, agentText) {
+		return
 	}
 	m.enterNode(ev, flow, next, true, on, detail, agentText)
 }
@@ -316,7 +407,7 @@ func (m *Manager) advanceFlowWith(cardID, on, detail, agentText string) {
 // on the route's own column — the trigger loop hands those here.
 //
 // Only edges whose condition names the changed property react: setting
-// «Приоритет» must not wake a stage waiting on «Одобрено», and must not leave a
+// a priority property must not wake a stage waiting on an approved option, and must not leave a
 // "nothing matched" comment either — the change was simply not addressed to it.
 func (m *Manager) handleCardChanged(ev CardMoved) bool {
 	if ev.ToColumn.Name == "" {
@@ -401,7 +492,7 @@ func (m *Manager) OnVCSEvent(ev VCSEvent) {
 	// A merged branch is work that is over: the folder it held is somebody
 	// else's turn now. This is the only thing that frees one by itself — a
 	// board working on a branch in the folder itself takes one card at a time,
-	// and «влито в основную» is what says the card is finished with it.
+	// and merged into the main branch is what says the card is finished with it.
 	if ev.Kind == TriggerBranchMerged || ev.Kind == TriggerPRMerged {
 		m.ReleaseMergedBranch(ev.WorkdirPath, ev.Branch)
 	}
@@ -495,7 +586,7 @@ func flowStateCtx() (context.Context, context.CancelFunc) {
 func (m *Manager) flowState(cardID string) (FlowState, bool, error) {
 	if m.cards != nil {
 		ctx, cancel := flowStateCtx()
-		st, ok, err := m.cards.CardFlow(ctx, cardID)
+		st, ok, err := m.forCard(cardID).CardState.CardFlow(ctx, cardID)
 		cancel()
 		if err == nil {
 			return m.boundFlowState(st), ok, nil
@@ -538,7 +629,7 @@ func (m *Manager) flowStates() ([]FlowState, error) {
 func (m *Manager) saveFlowState(st FlowState) {
 	if m.cards != nil {
 		ctx, cancel := flowStateCtx()
-		err := m.cards.SetCardFlow(ctx, st.CardID, st)
+		err := m.forCard(st.CardID).CardState.SetCardFlow(ctx, st.CardID, st)
 		cancel()
 		if err != nil {
 			m.log.Error("acp: cannot record the card's place on its route", "card", st.CardID, "err", err)
@@ -555,7 +646,7 @@ func (m *Manager) saveFlowState(st FlowState) {
 func (m *Manager) clearFlowState(cardID string) {
 	if m.cards != nil {
 		ctx, cancel := flowStateCtx()
-		err := m.cards.ClearCardFlow(ctx, cardID)
+		err := m.forCard(cardID).CardState.ClearCardFlow(ctx, cardID)
 		cancel()
 		if err != nil {
 			m.log.Error("acp: cannot clear the card's place on its route", "card", cardID, "err", err)

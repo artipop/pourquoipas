@@ -3,7 +3,7 @@ package acp
 import "fmt"
 
 // Getting the registries out of config.json and into the tables
-// (docs/model-graph.md), and keeping them there.
+//, and keeping them there.
 //
 // The arrangement is the one the board's automation already has: the table is
 // where the registry lives, and Config holds the same entries as a slice
@@ -183,8 +183,9 @@ func (m *Manager) persistRegistriesLocked() error {
 // registrable reports whether an entry is one a person could ever pick, and
 // remembers the names already taken.
 //
-// Both refusals exist because config.json is hand-edited on purpose (CLAUDE.md:
-// "часть настроек агентов в окно не вынесена") and is never validated, so it can
+// Both refusals exist because config.json is hand-edited on purpose — some of
+// the agent settings are deliberately not on any screen — and is never
+// validated, so it can
 // hold what the editor would have refused. A nameless entry is not a registry
 // entry — nothing can name it, and every list on screen would show a blank row.
 // A second entry under a name already taken is the ambiguity the whole registry

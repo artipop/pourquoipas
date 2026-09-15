@@ -1,4 +1,4 @@
-import {Show, createSignal} from 'solid-js'
+import {Show} from 'solid-js'
 import {useNavigate} from '@solidjs/router'
 
 import {useIntl} from '../../intl'
@@ -10,13 +10,12 @@ import AppLogoIcon from '../../widgets/icons/appLogo'
 import Menu from '../../widgets/menu'
 import MenuWrapper from '../../widgets/menuWrapper'
 import {getMe} from '../../store/users'
+import {getTeamMode} from '../../store/clientConfig'
 import {useAppSelector, useAppStore} from '../../store/hooks'
 
 import ModalWrapper from '../modalWrapper'
 
 import {IAppWindow} from '../../types'
-
-import RegistrationLink from './registrationLink'
 
 import './sidebarUserMenu.scss'
 
@@ -25,8 +24,8 @@ declare let window: IAppWindow
 const SidebarUserMenu = () => {
     const {actions} = useAppStore()
     const navigate = useNavigate()
-    const [showRegistrationLinkDialog, setShowRegistrationLinkDialog] = createSignal(false)
     const user = useAppSelector<IUser|null>(getMe)
+    const teamMode = useAppSelector<boolean>(getTeamMode)
     const intl = useIntl()
 
     return (
@@ -35,7 +34,13 @@ const SidebarUserMenu = () => {
                 <MenuWrapper
                     menu={
                         <Menu>
-                            <Show when={user() && user()!.id !== 'single-user'}>
+                            {/* An account's own menu — the name, logging out,
+                                the password, the invite — is drawn where there
+                                are accounts. It used to ask the id, which
+                                stopped being the question once the person at
+                                the machine registered under it
+                                (docs/teamwork.md). */}
+                            <Show when={user() && teamMode()}>
                                 <Menu.Label><b>{user()!.username}</b></Menu.Label>
                                 <Menu.Text
                                     id='logout'
@@ -51,13 +56,6 @@ const SidebarUserMenu = () => {
                                     name={intl.formatMessage({id: 'Sidebar.changePassword', defaultMessage: 'Change password'})}
                                     onClick={async () => {
                                         navigate('/change_password')
-                                    }}
-                                />
-                                <Menu.Text
-                                    id='invite'
-                                    name={intl.formatMessage({id: 'Sidebar.invite-users', defaultMessage: 'Invite users'})}
-                                    onClick={async () => {
-                                        setShowRegistrationLinkDialog(true)
                                     }}
                                 />
 
@@ -87,13 +85,6 @@ const SidebarUserMenu = () => {
                     </div>
                 </MenuWrapper>
 
-                <Show when={showRegistrationLinkDialog()}>
-                    <RegistrationLink
-                        onClose={() => {
-                            setShowRegistrationLinkDialog(false)
-                        }}
-                    />
-                </Show>
             </ModalWrapper>
         </div>
     )

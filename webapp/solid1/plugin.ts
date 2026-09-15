@@ -5,13 +5,11 @@ import type {Plugin} from 'vite'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 
-// Which packages still speak Solid 1. `@solid-primitives/*` is on the list
-// because `@dschz/solid-flow` pulls it in and it reaches for reactive-graph
-// internals (`getListener`, `equalFn`) that only the shim can answer for.
+// Which packages still speak Solid 1. `@dschz/solid-flow` came off the list
+// with its 1.0 line, which is built for Solid 2 and brings Solid 2 builds of
+// the `@solid-primitives/*` it depends on.
 const solid1Packages = [
     '/node_modules/@dnd-kit/',
-    '/node_modules/@dschz/',
-    '/node_modules/@solid-primitives/',
 ]
 
 const shims: Record<string, string> = {

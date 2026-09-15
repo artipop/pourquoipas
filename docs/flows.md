@@ -100,6 +100,24 @@ with no route chosen, which is where you say what each column does.
   doing what it says, drag it onto the canvas to say where it stands. Rename it
   in the panel; the routes and specs follow the option, not the name.
 
+## Reading the board one route at a time
+
+A board carries several routes, and its kanban draws all of them at once: eight
+columns for a route of three, and cards travelling somebody else's. **«Маршрут»**,
+beside «Сгруппировать по» in the view header, narrows the board to one — its
+own stages, and the cards on it. It is there on any board with a route at all.
+
+- a card is on a route when it **stands on one of its stages**, or when it
+  **names the route** with an option of that name — the same two answers the
+  engine itself works from, so the picture cannot disagree with what runs;
+- a card that has chosen no route is drawn under every one, because it is
+  nobody else's;
+- **the first column stays whatever the route**, separated from the rest by a
+  vertical line. A card arrives there before anything has decided which route
+  it takes, so that column belongs to all of them;
+- the pick belongs to the view, not to the browser: it survives a reload, and
+  a view per route is made by adding a view and picking a route in it.
+
 ## Properties are the dataflow
 
 A stage can **declare what it writes onto the card and what it reads off it**,
@@ -128,6 +146,83 @@ produce it.
   the route writes gets a warning naming it in the editor. Not an error: the
   value may be a person's own click (the `card.changed` wait); but a route
   built on a property nothing produces is a route that quietly never moves.
+
+## A transition can ask before it lets the card through
+
+Everything else on a route is decided without a person: the stage runs, the
+outcome is written, the edge is chosen. A **question on the arrow** is the one
+place where the route stops and asks, and it exists because some decisions are
+neither the agent's nor the board's — how the work is going to be arranged for
+this card. Those used to be settled once for a folder or once for a board,
+which is the wrong grain for a decision made per card.
+
+It hangs off the arrow rather than off the stage, because one stage is entered
+in more than one way and the answers differ: «Не начата» → «В работе» is where
+somebody decides how the work will be arranged, and the same card coming back
+from a review has that decided already.
+
+### Transition 0: the way onto the route
+
+That first example needs an arrow that does not obviously exist. A route's
+first stage has nothing pointing at it — the card arrives from the backlog,
+from a source, from a hand dragging it in from anywhere the route does not pass
+through — so the one crossing where nothing about the work has been decided yet
+was the one crossing with nowhere to write a question on.
+
+So every route has a way in: an edge whose `from` is `@entry` (`acp.EntryNode`).
+It is an ordinary transition in every other respect — it carries questions, and
+the card is held on it exactly as it is held anywhere else — with three things
+that follow from having no stage behind it. It waits for no event, because what
+fires it is the card arriving. There is at most one per stage, because arriving
+from off the route is one situation. And it is skipped when the graph is walked
+backwards for what earlier stages write, because there is no earlier stage.
+
+A card that stood on no stage is read as coming from there, which is what makes
+a question on transition 0 asked exactly once: coming back to the first stage
+later arrives from a real stage of the route and asks nothing again.
+
+Every route gets one when it is built, and the shipped «Разработка» carries it
+on all three of its routes, asking how the agent is to work with the folder.
+The canvas does not draw it yet, so it cannot be edited there — but it survives
+every edit, because the diagram leaves out any arrow whose ends are not stages
+rather than dropping it from the route.
+
+- **«В какой папке будет работать агент»** — the board's own folders, written
+  into the field the board records for them (`BoardPropProject`). It exists
+  because the crossing the whole mechanism was built for is a card leaving the
+  backlog, and such a card has usually named no folder — without it the next
+  question is unanswerable exactly where it matters, and was silently skipped.
+- **«Как агенту работать с папкой»** — «отдельное рабочее дерево» or «ветка в
+  этой же папке». The answer is not a card property: it is what the workspace is made
+  of. It goes onto the card's flow state, from there into the checkout
+  `ClaimWorkspace` makes, and from the checkout into everything downstream —
+  the review's diff and the deploy both read the card's checkout and nothing
+  else. It is carried across every later transition, so a folded worktree
+  remade for a later stage is remade the same way, and the checkout, once it
+  exists, is the fact that wins.
+- **a board select** — the answer is written onto the card, which puts it in
+  the dataflow above like any other write: a later stage reads it, an edge
+  branches on it. Only a closed set can be asked about, for the reason a
+  condition can only ask about one: the answer is a click, and a click needs
+  its answers named.
+
+While a question stands the card **keeps its place**: nothing is started, and
+the card draws the question on its own route strip, named by the stage it leads
+to, with the answers as buttons — the same place and the same shape the two
+outcome buttons have, and for the same reason. It is announced as a wait, so it
+reaches «Ждут», the tray and the notification. Several questions are asked one
+at a time. The card's outcome buttons are withheld while it is asked something,
+or they would be a second way to move it out from under the question.
+
+Questions are put one at a time and **resolved as each comes up**, not all at
+once when the arrow is crossed: an answer can be what makes the next question
+answerable, which is the whole of why the folder is asked before the work mode.
+
+A question that **cannot be answered** is skipped rather than parked on: a
+select that has left the board, a work mode asked about a folder that is not a
+repository, a folder asked of a card that already names one. The route carried cards across that arrow before anybody wrote a
+question on it, and an unanswerable question must not be what stops it — it is
+said in the log instead, where whoever wrote it can find it.
 
 ## Tools a column brings
 
@@ -214,7 +309,7 @@ as a duplicate path.
 Three templates are offered. «Разработка» is the one written for code, with
 the «Фича», «Хотфикс» and «Только ревью» routes across «В работе», «Деплой»
 and «QA». The other two are the same machinery pointed at everything else —
-«Контент» and «Домашние дела» — and they are worth reading as examples,
+«Контент» and «Личное» — and they are worth reading as examples,
 because they show what is left when deploys and browser tests are taken away:
 one column where an agent works, and a route that waits for a person. There the
 agent writes into an ordinary folder, added on the card or in «Папки», with
@@ -280,7 +375,11 @@ where you answer: open the terminal from the card, the notification or «Жду�
 a phone. Nothing of ours is drawn over that screen.
 
 A terminal does not end by itself, so the agent declares the work over with
-**finish_work**: done or not done, and one line about what it did. That line is
+**finish_work**: done or not done, and one line about what it did. The task the
+stage hands over says this in words as well as offering the tool — whether a CLI
+loads the board's tools up front is its own affair, and an agent that never
+looked finishes the work, writes a summary in the terminal and stops, leaving
+the card where it was. That line is
 the event the route acts on, and it stays readable in the terminal it was said
 in. If the terminal is closed
 without it, the card stays where it is and says so — no verdict was given, so
@@ -293,6 +392,33 @@ back (say, from «Ревью» to «В работе») resumes the conversation 
 It is not handed its task again: it is told why it is back, with what the stage
 it returned from reported — the reviewer's own words are the new input the
 resumed session works from.
+
+**What the stage is told includes what is already there.** Besides the board's
+prompt, the stage's own instructions and the card's task, the brief names the
+branch, what it was cut from, the commits standing on it, the files they touched
+and the command that reads the whole diff — assembled from git itself and
+present only when the working copy has something in it. That is what a second
+stage of a route needs and never had: a review that runs an agent used to get
+exactly the brief the stage before it got, in a copy full of somebody else's
+commits, and did the task again instead of checking it.
+
+**A stage where nothing runs announces itself.** «На ревью» and its kind are
+stages for a person, and when the route moves a card onto one — or onto a stage
+whose card is assigned to a person, which an agent will not take — the card says
+so through the same surfaces an agent's question uses: the notification, the
+system notification and the dot beside the clock. Only a move the route made:
+somebody who dragged the card there is looking at it already. And being told
+ends it — the ✕ takes the wait away rather than silencing it, because nothing is
+running that could go on waiting.
+
+**And there is somewhere to read the work.** The card's toolbar has «Изменения»
+beside «Терминал»: the branch's commits, the files they changed and the patches
+themselves, plus whatever is uncommitted in the working copy — read from git
+every time, never cached, with a window of its own for the reading a panel is
+too narrow for. It is read off the *branch* rather than off the copy, because a
+stage ending folds the copy away and «На ревью» is the stage after that. And the
+button is there only when there is something to read: what a card's work amounts
+to is counted as the work moves and kept per card (`card_changes`).
 
 Two things are still done the old way, without a terminal: a **deploy** and a
 **test**. Nobody is watching those, and their result is read by the machine
@@ -310,8 +436,8 @@ the answer given for it on this board, in «Папки…» in the board's menu:
 | The folder | The board says | The card gets |
 |---|---|---|
 | an ordinary folder | — | the folder itself, no branch, one card at a time |
-| a repository | «отдельная копия» (default) | a copy under `~/Library/Application Support/XCIII/acp/worktrees`, on `<card title>-<card id>` |
-| a repository | «в самой папке» | that branch in the folder itself; the next card waits |
+| a repository | «в отдельном рабочем дереве» (default) | a copy under `~/Library/Application Support/XCIII/acp/worktrees`, on `<card title>-<card id>` |
+| a repository | «веткой в этой же папке» | that branch in the folder itself; the next card waits |
 
 The branch is **cut from** the folder's own base branch — a setting, filled in
 from the repository when the folder was added and editable beside it — and it is
@@ -328,7 +454,7 @@ What becomes of the copy:
   nothing was written: no uncommitted changes, no commits ahead of the base.
   `keepFailedWorktrees` keeps those too.
 
-In «в самой папке» the folder is **held** by one card until its branch is merged.
+In «веткой в этой же папке» the folder is **held** by one card until its branch is merged.
 A second card does not fail — its route strip says the folder is held and what
 will free it — and a folder with somebody's uncommitted work in it is never
 switched under them. Uncommitted *tracked* work, that is: untracked files
@@ -379,27 +505,39 @@ actually waiting on**. An idle board makes no requests at all.
 ```mermaid
 flowchart LR
     P["В работе<br/>agent"] -->|done| R["На ревью"]
-    P -->|failed| B["Заблокировано"]
     R -->|branch merged| D["Деплой<br/>deploy"]
     D -->|done| T["QA<br/>test"]
-    D -->|failed| F["Не прошло"]
-    T -->|passed| OK["Проверено"]
+    D -->|failed| P
+    T -->|passed| OK["Готово 🙌"]
     T -->|failed| P
-    T -->|could not test| B
+    R -->|«Исход» = «не прошло»| P
 ```
 
-The loop is the point: a failed check sends the card back to the agent rather
-than to a person, and the next session opens a new branch which the route then
-follows.
+The loop is the point: what fails goes back to the agent rather than to a
+person, and the next session opens a new branch which the route then follows.
+
+**A review that says no is the one arrow a person draws.** Nothing runs in «На
+ревью», so it has no failure of its own to leave by — git can tell you a branch
+was merged and cannot tell you a reviewer said no. The signal is the reviewer
+marking the card: «Исход» set to «не прошло», which is the same field a stage
+that *does* run writes, with the same three values. The engine's own write of it
+is silent (`SetCardOption` disables the notify), so a stage passing can never
+fire the arrow watching for a rejection.
+
+**What has no arrow is not an oversight.** The agent's own stage failing, and a
+check that could not run at all, both leave the card where it stopped: sending a
+task back to the agent that has just failed it is a loop with nothing new in it,
+and a check with no browser to run in is a person's to fix. The card carries the
+outcome in its «Исход» field and the reason on its route strip — which is what
+the «Не прошло» and «Заблокировано» columns used to be, without the columns.
 
 ### «Хотфикс» — written and published
 
 ```mermaid
 flowchart LR
     P["В работе<br/>agent"] -->|done| D["Деплой<br/>deploy"]
-    P -->|failed| B["Заблокировано"]
-    D -->|done| C["Готово"]
-    D -->|failed| F["Не прошло"]
+    D -->|done| C["Готово 🙌"]
+    D -->|failed| P
 ```
 
 ### «Только ревью» — never deployed from here
@@ -407,8 +545,8 @@ flowchart LR
 ```mermaid
 flowchart LR
     P["В работе<br/>agent"] -->|done| R["На ревью"]
-    P -->|failed| B["Заблокировано"]
-    R -->|branch merged| C["Готово"]
+    R -->|branch merged| C["Готово 🙌"]
+    R -->|«Исход» = «не прошло»| P
 ```
 
 A card takes a route by naming it in its **«Сценарий»** field. A card that names
@@ -444,7 +582,7 @@ board: an agent only ever reaches the board its terminal was opened on.
 | hand work on | *move_card* — the card goes into another column, **and the column starts** |
 | finish a stage | *finish_work* — the work of this card is done, or could not be done; the route takes it from there. Carries the stage's declared property values (`properties`), written onto the card before it moves |
 | say what it is doing | *describe_conversation* — one line about this conversation, shown under its name in «Открытые терминалы» and on «Терминалы» on a phone |
-| name the conversation | *name_conversation* — what the row is called; the app asks for it in the conversation itself when somebody presses ✨ |
+| name the conversation | *name_conversation* — what the row is called; the app asks for it in the conversation itself when somebody presses the wand button on the row |
 
 That last row is the one to know about. A card an agent moves is a card moved:
 the column it lands in does what it always does, and the route takes it from
@@ -563,7 +701,7 @@ by hand:
 | `artifactsDir` | screenshots and verdicts of test runs |
 
 Колонок и маршрутов в этом файле нет: **автоматика доски лежит на самой доске**,
-в её собственных свойствах `xciiiColumns` и `xciiiFlows`, вместе со всем остальным,
+в её собственных свойствах `columns` и `flows`, вместе со всем остальным,
 что доске принадлежит. Поэтому она уезжает вместе с доской в экспорт архива и в
 шаблон, копируется вместе с копией доски и исчезает вместе с удалённой — а файл
 рядом с приложением хранит только машинное: агентов, папки, цели деплоя,

@@ -89,8 +89,14 @@ function subscribe(): () => void {
             unsubscribe = undefined
             unsubscribeCutOff?.()
             unsubscribeCutOff = undefined
-            setByCard({})
-            setCutOffByCard({})
+
+            // After the disposal, not during it: see attention.ts.
+            queueMicrotask(() => {
+                if (consumers === 0) {
+                    setByCard({})
+                    setCutOffByCard({})
+                }
+            })
         }
     }
 }

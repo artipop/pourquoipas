@@ -1,6 +1,8 @@
 import {For, Show, createEffect, createSignal} from 'solid-js'
 import type {JSX} from '@solidjs/web'
 
+import {menuColorLabel} from '../../menuColors'
+
 import {FormattedMessage, useIntl} from '../../intl'
 
 import {Constants} from '../../constants'
@@ -140,10 +142,10 @@ const TableGroupHeaderRow = (props: Props): JSX.Element => {
                                 />
                                 <Menu.Separator/>
                                 <For each={Object.entries(Constants.menuColors)}>
-                                    {([key, color]) => (
+                                    {([key]) => (
                                         <Menu.Color
                                             id={key}
-                                            name={color}
+                                            name={menuColorLabel(intl, key)}
                                             onClick={() => mutator.changePropertyOptionColor(props.board.id, props.board.cardProperties, props.groupByProperty!, props.group.option, key)}
                                         />
                                     )}

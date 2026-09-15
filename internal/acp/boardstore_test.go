@@ -6,6 +6,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 )
 
@@ -219,16 +220,23 @@ func TestTheBoardsInstructionsAreTakenFromTheBoard(t *testing.T) {
 
 // fakeCardState is the board seen as a place to keep one key per card.
 type fakeCardState struct {
+	// The engine reads and writes a card's place from several goroutines at
+	// once — the same board block does, under a lock of its own.
+	mu    sync.Mutex
 	state map[string]FlowState
 	board map[string]string // card id → board id
 }
 
 func (f *fakeCardState) CardFlow(_ context.Context, cardID string) (FlowState, bool, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	st, ok := f.state[cardID]
 	return st, ok, nil
 }
 
 func (f *fakeCardState) SetCardFlow(_ context.Context, cardID string, st FlowState) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	if f.state == nil {
 		f.state = map[string]FlowState{}
 	}
@@ -238,11 +246,15 @@ func (f *fakeCardState) SetCardFlow(_ context.Context, cardID string, st FlowSta
 }
 
 func (f *fakeCardState) ClearCardFlow(_ context.Context, cardID string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	delete(f.state, cardID)
 	return nil
 }
 
 func (f *fakeCardState) BoardCardFlows(_ context.Context, boardID string) ([]FlowState, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	out := []FlowState{}
 	for cardID, st := range f.state {
 		if f.board[cardID] == boardID {
@@ -306,55 +318,5 @@ func TestAnEditBeforeTheBoardWasEverReadKeepsItsAutomation(t *testing.T) {
 	}
 	if meta.written["board1"][BoardPropPrompt] != "Отвечай по-русски." {
 		t.Errorf("the instruction did not land: %v", meta.written["board1"][BoardPropPrompt])
-	}
-}
-
-// Every board made before the rename carries the keys under their old names.
-// Reading has to find them, and the first write has to replace them — a board
-// left with both would have two answers and no rule about which wins.
-func TestABoardCarryingTheOldKeyNamesIsReadAndMigrated(t *testing.T) {
-	m, meta, _ := storeManager(t)
-	meta.props = map[string]any{
-		"acpColumns": []ColumnSpec{{Property: "Статус", Column: "В работе", Action: FlowActionNone}},
-		"acpFlows":   []FlowEntry{{Name: "Фича", Nodes: []FlowNode{{ID: "agent", Column: "В работе"}}}},
-		"acpPrompt":  "Отвечай по-русски.",
-		"acpSetup":   BoardSetup{Steps: []BoardSetupStep{{Kind: SetupStepWorkdir}}},
-	}
-
-	m.SeedBoard("board1")
-
-	// Read: the registry took what the board carried under the old names.
-	if len(m.cfg.Columns) != 1 || m.cfg.Columns[0].Column != "В работе" {
-		t.Fatalf("the registry took %+v", m.cfg.Columns)
-	}
-	if len(m.cfg.Flows) != 1 {
-		t.Fatalf("the registry took %+v", m.cfg.Flows)
-	}
-	if got := m.BoardPrompt("board1"); got != "Отвечай по-русски." {
-		t.Errorf("the instruction came back as %q", got)
-	}
-
-	// Written back: new names hold it, old names are gone from the board.
-	written := meta.written["board1"]
-	columns, flows, err := parseBoardAutomation(written)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(columns) != 1 || len(flows) != 1 {
-		t.Fatalf("the board kept %d columns and %d routes", len(columns), len(flows))
-	}
-	if written[BoardPropPrompt] != "Отвечай по-русски." {
-		t.Errorf("the board holds the instruction as %v", written[BoardPropPrompt])
-	}
-	// The questions a template declared are read here and written only by the
-	// template editor, so a rename that deleted the old name without writing
-	// the new one took them off the board for good.
-	if _, ok := written[BoardPropSetup]; !ok {
-		t.Errorf("the board lost the questions it declared: %v", written)
-	}
-	for _, legacy := range legacyNamesOf(BoardPropColumns, BoardPropFlows, BoardPropPrompt, BoardPropSetup) {
-		if _, still := written[legacy]; still {
-			t.Errorf("the board still carries %q after being written", legacy)
-		}
 	}
 }

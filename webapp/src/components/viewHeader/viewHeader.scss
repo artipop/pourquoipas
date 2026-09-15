@@ -1,3 +1,5 @@
+@import '../../styles/field';
+
 .ViewHeader {
     flex: 0 0 auto;
     display: flex;
@@ -9,9 +11,27 @@
     color: rgba(var(--center-channel-color-rgb), 0.64);
     align-items: center;
 
-    @media (max-width: 768px) {
-        overflow: auto;
-        -webkit-overflow-scrolling: touch;
+    // The bar carries as many controls as the board needs and the window is
+    // whatever width somebody made it: it used to cut its right-hand end off —
+    // the search, the ⋯ menu, «Создать» — with no way to reach it and nothing
+    // on screen saying so. Measured at a 1280px window: 1268px of controls in
+    // a 976px bar.
+    //
+    // It wraps rather than scrolls, and that is not a matter of taste. Both
+    // «Фильтр» and the view menu hang a panel off a control here, drawn inside
+    // this element and positioned against it; a bar that scrolls is a bar with
+    // `overflow` on it, and CSS has no way to clip one axis and leave the
+    // other alone — so scrolling made the filter panel invisible the moment it
+    // opened. Wrapping keeps every control reachable without asking the bar to
+    // clip anything, and needs nothing discovered: a second row is on screen.
+    flex-wrap: wrap;
+    row-gap: 8px;
+
+    // Nothing squashes to make room; it moves to the next row instead. The
+    // spacer is the exception — it is what pushes the right-hand group to the
+    // edge while there is room, and it gives way first when there is not.
+    > *:not(.octo-spacer) {
+        flex: 0 0 auto;
     }
 
     > div {
@@ -50,6 +70,23 @@
         .MenuWrapper {
             display: flex;
             align-items: center;
+
+            // The whole thing is one control: the name and the chevron open
+            // the same menu, so it has to look like one target rather than a
+            // word with a button parked at the far end of it.
+            cursor: pointer;
+        }
+
+        // The name is as wide as the name. It used to be an input at all times,
+        // and an input is as wide as its `size` whatever the CSS asks for — so
+        // the chevron sat 131px away from the word it belongs to and the two
+        // did not read as one control.
+        .viewTitle {
+            max-width: 240px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: rgb(var(--center-channel-color-rgb));
         }
     }
 }
@@ -58,16 +95,11 @@
     position: relative;
 
     input {
-        font-size: 12px;
-        border-radius: var(--radius-sm);
-        padding: 0 12px 0 32px;
-        height: 32px;
-        border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
-        padding-bottom: 1px;
+        @include field;
 
-        &:focus {
-            border-color: rgba(var(--button-bg-rgb), 1);
-        }
+        height: 32px;
+        padding: 0 12px 1px 32px;
+        font-size: 12px;
     }
 
     .board-search-icon {

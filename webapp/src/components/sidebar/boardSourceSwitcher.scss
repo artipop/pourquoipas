@@ -1,0 +1,24 @@
+.BoardSourceSwitcher {
+    padding: 4px 12px 8px;
+
+    &__current {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        cursor: pointer;
+        font-weight: 600;
+        // An address is long and has no spaces; the sidebar is narrow.
+        overflow: hidden;
+    }
+
+    &__title {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    &__hint {
+        font-size: 11px;
+        color: rgba(var(--sidebar-text-rgb), 0.64);
+    }
+}

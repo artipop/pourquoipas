@@ -140,7 +140,7 @@ func (s *FileStore) saveLocked() error {
 // Env is a read-only store over the environment, for a credential given to the
 // app from outside — a CI run, a script, somebody who does not want the app to
 // keep it at all. Keys are upper-cased and non-letters become underscores, so
-// «почта» is XCIII_SOURCE_ТОКЕН-shaped rather than unreachable.
+// a source named in Cyrillic is reachable rather than unnameable.
 type Env struct {
 	Prefix string
 }

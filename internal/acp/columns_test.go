@@ -83,7 +83,7 @@ func TestColumnPrefersTheBoardsOwnSpec(t *testing.T) {
 // specs saying exactly what they said before.
 // What used to stand here: a test that the five column-name keys in the
 // machine's settings became a column registry. Those keys named the columns of
-// anybody's board and are gone (docs/model-graph.md, contradiction 9).
+// anybody's board and are gone.
 
 func TestSaveColumnValidatesAndReplaces(t *testing.T) {
 	m := agentManager(t, "", AgentEntry{Name: "claude-1", Kind: "claude"})
@@ -258,6 +258,10 @@ type fakeBoardMeta struct {
 	// that knows only a column's name to the option it means.
 	options []Column
 
+	// cardProps is what the board's cards have, for the stage contract a brief
+	// names and list_card_fields answers with.
+	cardProps []CardProperty
+
 	// written is what each board was told to keep, by board id — the board
 	// database stands in for itself here.
 	written map[string]map[string]any
@@ -293,6 +297,10 @@ func (f *fakeBoardMeta) SetBoardProperties(_ context.Context, boardID string, pr
 		delete(board, k)
 	}
 	return nil
+}
+
+func (f *fakeBoardMeta) CardProperties(context.Context, string) ([]CardProperty, error) {
+	return f.cardProps, nil
 }
 
 func (f *fakeBoardMeta) IsBoardTemplate(context.Context, string) (bool, error) {
@@ -449,7 +457,7 @@ func TestCardAssignedToAPersonIsLeftAlone(t *testing.T) {
 
 // A stage with its own crew names its worker, and the card's assignee is kept
 // truthful by the machine: entering the crewed column writes the crew member
-// into «Кто занимается». A card that already names its agent is left alone —
+// into the assignee field. A card that already names its agent is left alone —
 // nothing is written twice.
 func TestCrewedColumnWritesItsWorkerIntoTheAssignee(t *testing.T) {
 	m, _, events, _ := testManager(t, fakeClaudeHappy, func(c *Config) {
@@ -481,7 +489,7 @@ func TestCrewedColumnWritesItsWorkerIntoTheAssignee(t *testing.T) {
 }
 
 // Testing is worked by the crew of the test column, so the field says so too:
-// «Кто занимается» answers "who is on this card now" wherever it stands, and a
+// the assignee field answers "who is on this card now" wherever it stands, and a
 // card being tested by an agent the field did not name is the field lying.
 func TestCrewedTestColumnWritesItsTesterIntoTheAssignee(t *testing.T) {
 	m, _, events, _ := testManager(t, fakeClaudeHappy, func(c *Config) {
@@ -564,7 +572,7 @@ func TestAssignedCardIsStillDeployed(t *testing.T) {
 }
 
 // A column can carry MCP servers of its own, and the point is that they are the
-// column's rather than the agent's: the same agent works «В работе» with the
+// column's rather than the agent's: the same agent works the in-progress column with the
 // tools that column needs and «QA» with the browser, without being registered
 // twice under two names.
 func TestColumnCarriesItsOwnMCPServers(t *testing.T) {
@@ -607,5 +615,46 @@ func TestStageMCPPrefersTheNodesOwnServers(t *testing.T) {
 	got := opts.stageMCP()
 	if len(got) != 1 || got["figma"].Command != "figma-mcp" {
 		t.Fatalf("the node's own set should replace the column's whole answer: %+v", got)
+	}
+}
+
+// A column's limit is a fact about the board, not about a process. It used to
+// be counted over the manager's own map of live sessions, so two windows of
+// this app each counted their own and a limit of one ran two — and one day two
+// machines on one board will ask the same question.
+//
+// Counted over the sessions the database has, which is also why a session left
+// behind by a crash cannot hold a column shut for ever: those are swept at
+// launch.
+func TestAColumnsLimitIsCountedWhereEverybodyCanSeeIt(t *testing.T) {
+	m, _, _, _ := testManager(t, fakeClaudeHang, func(c *Config) {
+		spec := workColumn(c.TriggerProperty, FlowActionAgent)
+		spec.MaxRunning = 2
+		c.Columns = []ColumnSpec{spec}
+	})
+
+	key := m.cfg.Columns[0].Key()
+	if n := m.runningInColumn(key); n != 0 {
+		t.Fatalf("an idle column counts %d", n)
+	}
+
+	// A session this manager never put in its own map — which is what another
+	// window's session looks like from here.
+	if err := m.store.InsertSession(SessionRecord{
+		ID: "elsewhere", CardID: "cardOne", AgentKind: "claude",
+		Status: StatusRunning, ColumnKey: key, StartedAt: time.Now(),
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if n := m.runningInColumn(key); n != 1 {
+		t.Errorf("counted %d, want the session this window did not start", n)
+	}
+
+	// And a finished one stops counting, or the column would close for good.
+	if err := m.store.SetSessionStatus("elsewhere", StatusDone, ""); err != nil {
+		t.Fatal(err)
+	}
+	if n := m.runningInColumn(key); n != 0 {
+		t.Errorf("counted %d after the session finished", n)
 	}
 }

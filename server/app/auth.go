@@ -33,6 +33,36 @@ func (a *App) GetRegisteredUserCount() (int, error) {
 	return a.store.GetRegisteredUserCount()
 }
 
+// GetAdminCount returns how many accounts administer this install. It is what
+// "has anybody claimed this server yet" asks — the registered-user count cannot
+// answer it, because this app makes an account per agent and per source.
+func (a *App) GetAdminCount() (int, error) {
+	return a.store.GetAdminCount()
+}
+
+// SetUserRole makes somebody an admin, or stops them being one.
+func (a *App) SetUserRole(userID, role string) error {
+	return a.store.SetUserRole(userID, role)
+}
+
+// SetUserActive turns an account off and on again. Turning it off also drops
+// its sessions: every user read filters on delete_at, so login stops working by
+// itself, but a session already open would go on working for three days.
+func (a *App) SetUserActive(userID string, active bool) error {
+	if err := a.store.SetUserActive(userID, active); err != nil {
+		return err
+	}
+	if !active {
+		return a.store.DeleteSessionsForUser(userID)
+	}
+	return nil
+}
+
+// GetUsersForAdmin lists every account, deactivated ones included.
+func (a *App) GetUsersForAdmin() ([]*model.User, error) {
+	return a.store.GetUsersForAdmin()
+}
+
 // GetDailyActiveUsers returns the number of daily active users.
 func (a *App) GetDailyActiveUsers() (int, error) {
 	secondsAgo := int64(SecondsPerMinute * MinutesPerHour * HoursPerDay)
@@ -158,8 +188,31 @@ func (a *App) Logout(sessionID string) error {
 	return nil
 }
 
-// RegisterUser creates a new user if the provided data is valid.
+// RegisterUser registers a person: somebody who logs in. The first one to exist
+// administers the install.
 func (a *App) RegisterUser(username, email, password string) error {
+	return a.RegisterUserWithID(utils.NewID(utils.IDTypeUser), username, email, password)
+}
+
+// RegisterUserWithID is the same registration under an id the caller names, for
+// a caller that has to make an account and an identity agree.
+func (a *App) RegisterUserWithID(id, username, email, password string) error {
+	return a.registerUser(id, username, email, password, model.UserKindPerson)
+}
+
+// RegisterMachineUser makes an account for something that never logs in — an
+// agent, a source. It is a separate door because the rule above must not apply
+// to it: an install where the first agent to be provisioned becomes the admin
+// is an install a person cannot claim, and on a hosted board a desktop attaches
+// and provisions agents before anybody has registered.
+func (a *App) RegisterMachineUser(username, email, password, kind string) error {
+	if kind == model.UserKindPerson {
+		return errors.New("a machine account cannot be a person")
+	}
+	return a.registerUser(utils.NewID(utils.IDTypeUser), username, email, password, kind)
+}
+
+func (a *App) registerUser(id, username, email, password, kind string) error {
 	var user *model.User
 	if username != "" {
 		var err error
@@ -193,14 +246,32 @@ func (a *App) RegisterUser(username, email, password string) error {
 		return errors.Wrap(err, "Invalid password")
 	}
 
+	// The first person to exist administers the install — the shape every
+	// self-hosted board has, and the only one that needs no setup step outside
+	// the product. Counted in admins rather than in users, because this app
+	// makes an account per agent and per source: "somebody has registered" and
+	// "somebody has claimed this server" are not the same question.
+	role := model.RoleMember
+	if kind == model.UserKindPerson {
+		adminCount, err2 := a.store.GetAdminCount()
+		if err2 != nil {
+			return errors.Wrap(err2, "Unable to tell whether this install has an admin")
+		}
+		if adminCount == 0 {
+			role = model.RoleAdmin
+		}
+	}
+
 	_, err = a.store.CreateUser(&model.User{
-		ID:          utils.NewID(utils.IDTypeUser),
+		ID:          id,
 		Username:    username,
 		Email:       email,
 		Password:    auth.HashPassword(password),
 		MfaSecret:   "",
 		AuthService: a.config.AuthMode,
 		AuthData:    "",
+		Role:        role,
+		Kind:        kind,
 	})
 	if err != nil {
 		return errors.Wrap(err, "Unable to create the new user")

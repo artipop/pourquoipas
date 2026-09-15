@@ -8,6 +8,7 @@ import {FormattedMessage, useIntl} from '../intl'
 
 import {useAppSelector, useAppStore} from '../store/hooks'
 import {getLoggedIn} from '../store/users'
+import {getRegistrationOpen} from '../store/clientConfig'
 
 import Button from '../widgets/buttons/button'
 import client from '../octoClient'
@@ -20,6 +21,12 @@ const LoginPage = () => {
     const [errorMessage, setErrorMessage] = createSignal('')
     const {actions} = useAppStore()
     const loggedIn = useAppSelector<boolean|null>(getLoggedIn)
+
+    // A server nobody has registered on has no account to log in with, and the
+    // only way in is a URL you would have to know. So the login page is the one
+    // place that knows to step aside: the first person through the door
+    // registers, and registering is what makes them the administrator.
+    const registrationOpen = useAppSelector<boolean>(getRegistrationOpen)
     const queryParams = new URLSearchParams(useLocation().search)
     const navigate = useNavigate()
 
@@ -42,6 +49,9 @@ const LoginPage = () => {
             when={!loggedIn()}
             fallback={<Redirect href={'/'}/>}
         >
+            <Show when={registrationOpen()}>
+                <Redirect href={'/register'}/>
+            </Show>
             <div class='LoginPage'>
                 <form
                     onSubmit={(e: Event) => {

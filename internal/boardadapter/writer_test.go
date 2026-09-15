@@ -5,6 +5,8 @@ import (
 
 	"github.com/artipop/xciii/server/model"
 
+	"github.com/artipop/xciii/internal/boardmodel"
+
 	"github.com/artipop/xciii/internal/acp"
 )
 
@@ -16,15 +18,15 @@ func TestFindSelectOption(t *testing.T) {
 
 	// Names come from the config, ids from the board — and matching is
 	// case-insensitive, like the trigger columns.
-	propID, optionID, ok := findSelectOption(schema, "status", "TO AGENT")
+	propID, optionID, ok := boardmodel.FindSelectOption(schema, "status", "TO AGENT")
 	if !ok || propID != "prop-status" || optionID != "opt-agent" {
 		t.Fatalf("got %q/%q, ok=%v", propID, optionID, ok)
 	}
 
-	if _, _, ok := findSelectOption(schema, "Status", "Tested"); ok {
+	if _, _, ok := boardmodel.FindSelectOption(schema, "Status", "Tested"); ok {
 		t.Fatal("a column the board does not have must not resolve")
 	}
-	if _, _, ok := findSelectOption(schema, "repo_path", "To Agent"); ok {
+	if _, _, ok := boardmodel.FindSelectOption(schema, "repo_path", "To Agent"); ok {
 		t.Fatal("only select properties may be matched")
 	}
 }
@@ -38,15 +40,15 @@ func TestFindOptionByName(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	propID, optionID, ok := findOptionByName(schema, "to agent")
+	propID, optionID, ok := boardmodel.FindOptionByName(schema, "to agent")
 	if !ok || propID != "prop-status" || optionID != "opt-agent" {
 		t.Fatalf("got %q/%q, ok=%v", propID, optionID, ok)
 	}
 
-	if _, _, ok := findOptionByName(schema, "  "); ok {
+	if _, _, ok := boardmodel.FindOptionByName(schema, "  "); ok {
 		t.Error("an empty name must not resolve to whatever comes first")
 	}
-	if _, _, ok := findOptionByName(schema, "/tmp/project"); ok {
+	if _, _, ok := boardmodel.FindOptionByName(schema, "/tmp/project"); ok {
 		t.Error("only select options may be matched, not the value of a text property")
 	}
 }
@@ -61,7 +63,7 @@ func TestCardPatchFor(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	patch, err := cardPatchFor(schema, acp.CardEdit{Title: " Готово ", Property: "Status", Column: "to agent"})
+	patch, err := boardmodel.CardPatchFor(schema, acp.CardEdit{Title: " Готово ", Property: "Status", Column: "to agent"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -74,7 +76,7 @@ func TestCardPatchFor(t *testing.T) {
 
 	// An option name that happens to be a column must not move a card the
 	// caller only asked to tag.
-	patch, err = cardPatchFor(schema, acp.CardEdit{Property: "Status", Column: "Backlog", Options: []string{"To Agent"}})
+	patch, err = boardmodel.CardPatchFor(schema, acp.CardEdit{Property: "Status", Column: "Backlog", Options: []string{"To Agent"}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -82,14 +84,14 @@ func TestCardPatchFor(t *testing.T) {
 		t.Errorf("the column was overridden by a value: %+v", patch.UpdatedProperties)
 	}
 
-	if _, err := cardPatchFor(schema, acp.CardEdit{Options: []string{"Такого нет"}}); err == nil {
+	if _, err := boardmodel.CardPatchFor(schema, acp.CardEdit{Options: []string{"Такого нет"}}); err == nil {
 		t.Error("a value the board does not have was accepted")
 	}
-	if _, err := cardPatchFor(schema, acp.CardEdit{Property: "Status", Column: "Tested"}); err == nil {
+	if _, err := boardmodel.CardPatchFor(schema, acp.CardEdit{Property: "Status", Column: "Tested"}); err == nil {
 		t.Error("a column the board does not have was accepted")
 	}
 	// A patch that says nothing would clear nothing and mean nothing.
-	if _, err := cardPatchFor(schema, acp.CardEdit{Title: "  "}); err == nil {
+	if _, err := boardmodel.CardPatchFor(schema, acp.CardEdit{Title: "  "}); err == nil {
 		t.Error("an empty change was accepted")
 	}
 }
@@ -125,7 +127,7 @@ func TestCardPropertiesAreResolvedByName(t *testing.T) {
 
 	// A source names the property and, for a select, the option; the board
 	// answers with ids. Case does not matter, as it does not for the columns.
-	got := cardProperties(schema, map[string]string{
+	got := boardmodel.CardProperties(schema, map[string]string{
 		"status":    "backlog",
 		"repo_path": "/tmp/project",
 	})
@@ -145,20 +147,20 @@ func TestCardPropertiesSkipWhatTheBoardDoesNotHave(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got := cardProperties(schema, map[string]string{
+	got := boardmodel.CardProperties(schema, map[string]string{
 		"Заметка": "что-то", // no such property
 		"Status":  "Tested", // no such option
 	})
 	if len(got) != 0 {
 		t.Fatalf("nothing should have resolved: %+v", got)
 	}
-	if cardProperties(schema, nil) != nil {
+	if boardmodel.CardProperties(schema, nil) != nil {
 		t.Fatal("no properties at all must stay nil, not an empty map")
 	}
 }
 
 // Which property is "the columns" is the board's answer, not a constant: the
-// boards this app ships call it «Статус» and the upstream ones "Status", so a
+// boards this app ships call it the status property and the upstream ones "Status", so a
 // source that assumed either name filed nothing on half the boards there are.
 func TestTheColumnPropertyIsWhatTheBoardGroupsBy(t *testing.T) {
 	board := testBoard()
@@ -172,20 +174,20 @@ func TestTheColumnPropertyIsWhatTheBoardGroupsBy(t *testing.T) {
 	}
 
 	view := &model.Block{Type: model.TypeView, Fields: map[string]any{"groupById": "prop-stage"}}
-	if name, ok := columnPropertyName(board, schema, []*model.Block{view}); !ok || name != "Этап" {
+	if name, ok := boardmodel.ColumnPropertyName(board, schema, []*model.Block{view}); !ok || name != "Этап" {
 		t.Fatalf("got %q, ok=%v", name, ok)
 	}
 
 	// A board whose views group by nothing falls back to its first select
 	// property, in the board's own order — which is what a new kanban view
 	// would have grouped by anyway.
-	if name, ok := columnPropertyName(board, schema, nil); !ok || name != "Status" {
+	if name, ok := boardmodel.ColumnPropertyName(board, schema, nil); !ok || name != "Status" {
 		t.Fatalf("fallback: got %q, ok=%v", name, ok)
 	}
 
 	// Grouping by a text property is not grouping by a column.
 	byText := &model.Block{Type: model.TypeView, Fields: map[string]any{"groupById": "prop-project"}}
-	if name, ok := columnPropertyName(board, schema, []*model.Block{byText}); !ok || name != "Status" {
+	if name, ok := boardmodel.ColumnPropertyName(board, schema, []*model.Block{byText}); !ok || name != "Status" {
 		t.Fatalf("a text property is not a column: got %q, ok=%v", name, ok)
 	}
 }
@@ -196,14 +198,14 @@ func TestTheColumnPropertyIsWhatTheBoardGroupsBy(t *testing.T) {
 func TestFindCardProperty(t *testing.T) {
 	board := testBoard()
 
-	prop, ok := findCardProperty(board.CardProperties, "status")
+	prop, ok := boardmodel.FindCardProperty(board.CardProperties, "status")
 	if !ok || prop["id"] != "prop-status" {
 		t.Fatalf("got %+v, ok=%v", prop, ok)
 	}
-	if _, ok := findCardProperty(board.CardProperties, "repo_path"); ok {
+	if _, ok := boardmodel.FindCardProperty(board.CardProperties, "repo_path"); ok {
 		t.Fatal("only a select property can hold columns")
 	}
-	if _, ok := findCardProperty(board.CardProperties, "Этап"); ok {
+	if _, ok := boardmodel.FindCardProperty(board.CardProperties, "Этап"); ok {
 		t.Fatal("a property the board does not have must not resolve")
 	}
 }
@@ -239,7 +241,7 @@ func TestHidingAColumnFromTheKanban(t *testing.T) {
 }
 
 // The link a source brought is filed by what the property *is*, not by what it
-// is called: the app used to write a property literally named «Ссылка», so an
+// is called: the app used to write a property literally named the link property, so an
 // English board — or one whose owner renamed the field — lost every link
 // without saying so.
 func TestTheLinkPropertyIsFoundByTypeWhateverItIsCalled(t *testing.T) {
@@ -252,19 +254,19 @@ func TestTheLinkPropertyIsFoundByTypeWhateverItIsCalled(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if id, ok := propertyOfType(board, schema, "url"); !ok || id != "prop-link" {
+	if id, ok := boardmodel.PropertyOfType(board, schema, "url"); !ok || id != "prop-link" {
 		t.Fatalf("got %q, ok=%v", id, ok)
 	}
 
 	// A board that has none says so, which is what makes the caller add one
 	// rather than quietly drop what it was given.
-	if _, ok := propertyOfType(testBoard(), schema, "url"); ok {
+	if _, ok := boardmodel.PropertyOfType(testBoard(), schema, "url"); ok {
 		t.Fatal("a board without a url property must not answer with one")
 	}
 }
 
 // The inbox view is told from the board's other views by what it shows, not by
-// what it is called: a person may rename a view, and matching «Входящие» by
+// what it is called: a person may rename a view, and matching the inbox view by
 // title meant the next arriving card quietly built a second inbox beside it.
 func TestTheInboxViewIsFoundByWhatItFilters(t *testing.T) {
 	filtered := &model.Block{Type: model.TypeView, Title: "Что пришло", Fields: map[string]any{

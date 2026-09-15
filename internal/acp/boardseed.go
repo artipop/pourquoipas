@@ -11,7 +11,7 @@ import (
 // A board's automation lives on the board. The columns it runs and the routes
 // cards take across it are two of the board's own properties, in the board
 // database, beside everything else that is the board's — which is why a board
-// made from the «Разработка» template works before anything is configured, and
+// made from the the developer template template works before anything is configured, and
 // why a template can carry automation at all.
 //
 // The registry in memory is what the engine reads on every card move — a board
@@ -33,47 +33,100 @@ import (
 // not presuppose an agent: of the twelve triggers an edge can wait on, nine
 // come from git, GitHub or the board itself, and a FlowActionNone stage runs
 // nothing at all. A board can carry a working route with no agent in it.
+// The keys this application keeps on a board, in the board's own `properties`
+// map. Bare names on purpose: the map is shared with the board server's own
+// keys — of which there is exactly one, `trackingTemplateId` — and a prefix
+// here would only be the product's name written into stored data, where a
+// rename becomes a migration.
 const (
-	BoardPropColumns = "xciiiColumns"
-	BoardPropFlows   = "xciiiFlows"
-	BoardPropSetup   = "xciiiSetup"
+	BoardPropColumns = "columns"
+	BoardPropFlows   = "flows"
+	BoardPropSetup   = "setup"
 	// BoardPropPrompt is what this board's agents are told first. It is the
 	// board's, for the same reason its columns are: a household board and a
 	// code board want different first words, and a board carried to another
 	// machine that arrived without them would run its agents unbriefed.
-	BoardPropPrompt = "xciiiPrompt"
-	// BoardPropGit is how this board *used* to say a repository is worked in.
-	// The answer belongs to the folder (WorkdirEntry.Mode) — it is a fact about
-	// the repository and not about the board — so this key is read once, moved
-	// onto the folders that board offers, and taken off the board.
-	BoardPropGit = "xciiiGit"
+	BoardPropPrompt = "prompt"
 	// BoardPropBranch is the id of the text property a card's branch is
 	// written into. An id and not a name, for the reason every other field of
-	// ours is found by one: «Ветка» is what this app calls it when it makes
+	// ours is found by one: the branch field is what this app calls it when it makes
 	// one, and a person may call it anything.
 	//
 	// Written by the page (it owns the board's card properties), read here.
-	BoardPropBranch = "xciiiBranchProperty"
+	BoardPropBranch = "branchProperty"
 	// BoardPropProject is the id of the select property a card names its folder
-	// in — «Папка» when this app makes it. An id for the same reason the branch
+	// in — the folder field when this app makes it. An id for the same reason the branch
 	// field is one, and load-bearing for a second: it is what lets the folder be
 	// read off the card rather than *recognised* among everything the card has
 	// selected (resolveWorkdir).
-	BoardPropProject = "xciiiProjectProperty"
+	BoardPropProject = "projectProperty"
 	// BoardPropColumnProperty is the id of the select property this board's
 	// columns live on — the field a card's column is a value of.
 	//
 	// It is the last of the three "which field is which" records, and the one
 	// that took longest to arrive: which property held the columns was a *name*
 	// in the machine's settings, matched against every board this machine ever
-	// saw (contradiction 1 of docs/model-graph.md). A board in English, or one
-	// where somebody renamed «Статус», matched nothing.
+	// saw. A board in English, or one
+	// where somebody renamed the status property, matched nothing.
 	//
 	// Written here rather than by the page, unlike the folder and branch
 	// records: the columns already carry the property they were bound to, so
 	// the board can be told what it is the first time its automation is saved.
-	BoardPropColumnProperty = "xciiiColumnProperty"
+	BoardPropColumnProperty = "columnProperty"
+	// BoardPropOutcome is the id of the select property this app writes the
+	// outcome of a stage into — every stage, without anybody declaring it.
+	//
+	// It exists because how a stage ended used to be expressible only as *where
+	// the card went*: a board grew a «Проверено», a «Не прошло» and a
+	// «Заблокировано» column whose whole content was one fact about the stage
+	// before them, and that fact then read as a place where work happens — on
+	// the board and on the canvas alike. An outcome belongs to the card, like
+	// the branch and the folder, and a column is for work.
+	//
+	// Written by the engine and never declared, which is what makes it
+	// "служебное": every node produces one, so no node should have to say so.
+	BoardPropOutcome = "outcomeProperty"
 )
+
+// The values that property takes, and there are two. A third was tried —
+// «заблокировано», for a check that could not run — and taken out: what a card
+// carries here is whether the step worked, and every question anybody asks of
+// it is that question. «Заблокировано» is not a third answer to it, it is a
+// reason, and the reason is on the card's route strip already (stallCardSoft),
+// where it can be a sentence instead of a word.
+//
+// Binary is also what makes it cheap to answer by hand: a reviewer marking a
+// card picks between two things and not out of a list.
+const (
+	OutcomePassed = "прошло"
+	OutcomeFailed = "не прошло"
+)
+
+// OutcomePropertyTitle is what this app calls that field when it makes one. A
+// name and not an id, unlike everything else that finds a field of ours — but
+// this one is never *found* by it: it is what a shipped route's condition asks
+// about, and a condition names a property the way a person reading the canvas
+// does. A board whose owner renamed the field renames the condition with it,
+// which is the same bargain every condition on the canvas takes.
+const OutcomePropertyTitle = "Исход"
+
+// OutcomeValue is what a stage's outcome is called on the card. Empty for
+// anything that is not a stage's own outcome — a merged branch is news about
+// the world, not a verdict on the work.
+//
+// A check that could not run answers «не прошло» like anything else that did
+// not pass: the card is asked whether the step worked, and it did not. Why is
+// the stall's business.
+func OutcomeValue(trigger string) string {
+	switch trigger {
+	case TriggerSuccess:
+		return OutcomePassed
+	case TriggerFailure, TriggerBlocked:
+		return OutcomeFailed
+	default:
+		return ""
+	}
+}
 
 // The names these keys had before, still read because every board made until
 // now carries them. They are never written: reading a board carries what it
@@ -86,42 +139,13 @@ const (
 // build ever wrote `acpPrompt`. `acp` was also the one defensible prefix here —
 // this really is what an agent is told — and it was renamed anyway so that a
 // board does not carry four keys under one prefix and a fifth under another.
-var legacyBoardProps = map[string]string{
-	BoardPropColumns: "acpColumns",
-	BoardPropFlows:   "acpFlows",
-	BoardPropSetup:   "acpSetup",
-	BoardPropPrompt:  "acpPrompt",
-	BoardPropProject: "acpProjectProperty",
-}
-
 // boardProp reads one of this app's own keys off a board, under whichever name
 // that board happens to carry it.
 func boardProp(props map[string]any, key string) (any, bool) {
 	if v, ok := props[key]; ok && v != nil {
 		return v, true
 	}
-	if legacy, ok := legacyBoardProps[key]; ok {
-		if v, ok := props[legacy]; ok && v != nil {
-			return v, true
-		}
-	}
 	return nil, false
-}
-
-// legacyNamesOf is the old spelling of the keys named, and only of those.
-//
-// A write may delete the old name of a key it is writing, and of no other: this
-// side reads BoardPropSetup and never writes it, so deleting `acpSetup` beside
-// a write of the columns took the questions a template declared off the board
-// with nothing to put them back. Migrating that one is migrateLegacyProps.
-func legacyNamesOf(keys ...string) []string {
-	out := make([]string, 0, len(keys))
-	for _, key := range keys {
-		if legacy, ok := legacyBoardProps[key]; ok {
-			out = append(out, legacy)
-		}
-	}
-	return out
 }
 
 // BoardMeta is the board's own properties — where a board keeps the automation
@@ -141,10 +165,26 @@ type BoardMeta interface {
 	// recorded an option id to the option it always meant, once, so nothing has
 	// to go on matching a column by its name (contradiction 5).
 	BoardColumnOptions(ctx context.Context, boardID string) ([]Column, error)
+	// CardProperties is the board's card fields, for the one thing a stage's
+	// declared outputs cannot say by themselves: what a value may be. A select
+	// takes one of its option names and nothing else, and until this the agent
+	// found that out by being refused.
+	CardProperties(ctx context.Context, boardID string) ([]CardProperty, error)
 	// IsBoardTemplate says this board is one to copy rather than to work in.
 	// Nothing runs in a template — no card moves in it, no session starts from
 	// it — so nothing about this machine is asked for on its behalf.
 	IsBoardTemplate(ctx context.Context, boardID string) (bool, error)
+}
+
+// CardProperty is one field of a board's cards: what it is called, what kind of
+// value it takes, and — for a closed set — which values those are. Named rather
+// than identified, because that is how a stage declares a write and how
+// finish_work delivers one.
+type CardProperty struct {
+	Name string `json:"name"`
+	Type string `json:"type"`
+	// Values is the closed set, for a select. Empty for everything else.
+	Values []string `json:"values,omitempty"`
 }
 
 // SetBoardMeta supplies the board's own property store.
@@ -205,7 +245,7 @@ func (m *Manager) seedFromBoard(boardID string) {
 		parent = context.Background()
 	}
 	ctx, cancel := context.WithTimeout(parent, 10*time.Second)
-	props, err := m.meta.BoardProperties(ctx, boardID)
+	props, err := m.forBoard(boardID).Meta.BoardProperties(ctx, boardID)
 	cancel()
 	if err != nil {
 		m.log.Warn("acp: cannot read the board's own settings", "board", boardID, "err", err)
@@ -220,6 +260,13 @@ func (m *Manager) seedFromBoard(boardID string) {
 		m.log.Warn("acp: the board's own settings are unreadable", "board", boardID, "err", err)
 		return
 	}
+	// A route written before transition 0 existed has no way in, and the board
+	// is where routes live — so this is where such a route is brought up to
+	// date, before anything reads it and in time for the write-back below.
+	if added := addEntryTransitions(flows); added > 0 {
+		m.log.Info("acp: routes given a way in", "board", boardID, "count", added)
+	}
+
 	// Bind whatever still knows only a column's name to the option it means,
 	// before anything reads it. Asked of the board rather than inferred, and
 	// only where something needs binding: a board whose automation already
@@ -233,13 +280,9 @@ func (m *Manager) seedFromBoard(boardID string) {
 	if added > 0 {
 		m.log.Info("acp: routes taken from the board itself", "board", boardID, "count", added)
 	}
-	m.migrateLegacyProps(boardID, props)
 	m.rememberUnadopted(boardID, unusableColumns, unusableFlows)
 	if m.adoptPrompt(boardID, boardPromptFrom(props)) {
 		m.log.Info("acp: the board's own instructions taken from the board itself", "board", boardID)
-	}
-	if moved := m.moveGitPolicyToWorkdirs(boardID, props); moved > 0 {
-		m.log.Info("acp: how to work in a repository moved onto the folders", "board", boardID, "folders", moved)
 	}
 	m.indexBoardCardFlows(boardID)
 
@@ -275,57 +318,6 @@ func parseBoardAutomation(props map[string]any) ([]ColumnSpec, []FlowEntry, erro
 		}
 	}
 	return columns, flows, nil
-}
-
-// moveGitPolicyToWorkdirs takes a board's old answer about repositories and
-// writes it onto the folders that board offers, then takes the key off the
-// board. One-time, and idempotent: a folder that already says how it is worked
-// in is left alone, and a board whose key is gone does nothing.
-//
-// The answer moved because it is a fact about the repository rather than about
-// the board — see WorkMode. Moving it rather than dropping it is what keeps a
-// board somebody had already set to «в самой папке» working that way.
-func (m *Manager) moveGitPolicyToWorkdirs(boardID string, props map[string]any) int {
-	raw, ok := boardProp(props, BoardPropGit)
-	if !ok {
-		return 0
-	}
-	var p struct {
-		Mode string `json:"mode"`
-	}
-	if err := reinterpret(raw, &p); err != nil {
-		return 0
-	}
-	mode := strings.ToLower(strings.TrimSpace(p.Mode))
-	if mode != WorkModeWorktree && mode != WorkModeBranch {
-		return 0
-	}
-
-	moved := 0
-	m.cfgMu.Lock()
-	for i, e := range m.cfg.Workdirs {
-		if !e.OfferedOn(boardID) || strings.TrimSpace(e.Modes[boardID]) != "" {
-			continue
-		}
-		if m.cfg.Workdirs[i].Modes == nil {
-			m.cfg.Workdirs[i].Modes = map[string]string{}
-		}
-		m.cfg.Workdirs[i].Modes[boardID] = mode
-		moved++
-	}
-	err := m.persistConfigLocked()
-	m.cfgMu.Unlock()
-	if err != nil {
-		m.log.Warn("acp: cannot save how the folders are worked in", "board", boardID, "err", err)
-	}
-
-	// Off the board, so it is moved once and never read again.
-	ctx, cancel := context.WithTimeout(m.rootCtx, 10*time.Second)
-	defer cancel()
-	if err := m.meta.SetBoardProperties(ctx, boardID, nil, []string{BoardPropGit}); err != nil {
-		m.log.Warn("acp: cannot take the old repository setting off the board", "board", boardID, "err", err)
-	}
-	return moved
 }
 
 func reinterpret(from any, into any) error {
@@ -508,7 +500,7 @@ func (m *Manager) indexBoardCardFlows(boardID string) {
 		parent = context.Background()
 	}
 	ctx, cancel := context.WithTimeout(parent, 30*time.Second)
-	states, err := m.cards.BoardCardFlows(ctx, boardID)
+	states, err := m.forBoard(boardID).CardState.BoardCardFlows(ctx, boardID)
 	cancel()
 	if err != nil {
 		m.log.Warn("acp: cannot read where the board's cards stand on their routes", "board", boardID, "err", err)
@@ -528,48 +520,6 @@ func (m *Manager) indexBoardCardFlows(boardID string) {
 	}
 	if indexed > 0 {
 		m.log.Info("acp: cards on a route taken from the board itself", "board", boardID, "count", indexed)
-	}
-}
-
-// migrateLegacyProps moves the keys nothing else writes to their current names.
-//
-// Everything the registry owns is rewritten in full on every edit, so it
-// migrates itself. BoardPropSetup does not: it is the board's own declaration
-// of what to ask, read here and written only by the template editor. Left
-// alone it would sit under its old name for ever on a board nobody edits in
-// that editor — and deleted with the rest it would be gone.
-func (m *Manager) migrateLegacyProps(boardID string, props map[string]any) {
-	if m.meta == nil {
-		return
-	}
-	move := map[string]any{}
-	var remove []string
-	for _, key := range []string{BoardPropSetup} {
-		legacy, ok := legacyBoardProps[key]
-		if !ok {
-			continue
-		}
-		if _, current := props[key]; current {
-			continue
-		}
-		value, ok := props[legacy]
-		if !ok || value == nil {
-			continue
-		}
-		move[key] = value
-		remove = append(remove, legacy)
-	}
-	if len(move) == 0 {
-		return
-	}
-	parent := m.rootCtx
-	if parent == nil {
-		parent = context.Background()
-	}
-	ctx, cancel := context.WithTimeout(parent, 10*time.Second)
-	defer cancel()
-	if err := m.meta.SetBoardProperties(ctx, boardID, move, remove); err != nil {
-		m.log.Warn("acp: cannot rename the board's own keys", "board", boardID, "err", err)
 	}
 }
 
@@ -616,7 +566,7 @@ func (m *Manager) BoardAutomation(boardID string) BoardAutomation {
 // A board that cannot be written to is not a lost edit: the entries stay in the
 // registry for this run, and the next edit tries again. They are not in
 // config.json any more, so the run is as long as they last — which is the
-// trade the move onto the board bought (docs/model-graph.md, contradiction 9).
+// trade the move onto the board bought.
 func (m *Manager) persistBoardLocked(boardID string) {
 	if boardID == "" || m.meta == nil {
 		return
@@ -654,8 +604,7 @@ func (m *Manager) persistBoardLocked(boardID string) {
 	}
 	ctx, cancel := context.WithTimeout(parent, 10*time.Second)
 	defer cancel()
-	remove := legacyNamesOf(BoardPropColumns, BoardPropFlows, BoardPropPrompt)
-	if err := m.meta.SetBoardProperties(ctx, boardID, props, remove); err != nil {
+	if err := m.forBoard(boardID).Meta.SetBoardProperties(ctx, boardID, props, nil); err != nil {
 		m.log.Warn("acp: cannot save the board's automation on the board", "board", boardID, "err", err)
 	}
 }
@@ -697,8 +646,8 @@ func boardOwn(cfg Config, boardID string) ([]ColumnSpec, []FlowEntry) {
 // across it. Exported so a test — and "save this board as a template" —
 // speaks the same shape the template does.
 type BoardAutomation struct {
-	Columns []ColumnSpec `json:"acpColumns,omitempty"`
-	Flows   []FlowEntry  `json:"acpFlows,omitempty"`
+	Columns []ColumnSpec `json:"columns,omitempty"`
+	Flows   []FlowEntry  `json:"flows,omitempty"`
 }
 
 // columnPropertyOf is the property this board's columns are values of, read off
@@ -742,7 +691,7 @@ func (m *Manager) bindToBoardOptions(boardID string, columns []ColumnSpec, flows
 		parent = context.Background()
 	}
 	ctx, cancel := context.WithTimeout(parent, 10*time.Second)
-	options, err := m.meta.BoardColumnOptions(ctx, boardID)
+	options, err := m.forBoard(boardID).Meta.BoardColumnOptions(ctx, boardID)
 	cancel()
 	if err != nil {
 		m.log.Warn("acp: cannot read the board's columns", "board", boardID, "err", err)

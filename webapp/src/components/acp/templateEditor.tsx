@@ -35,7 +35,7 @@ import './templateEditor.scss'
 // What is edited here is only the last of those, plus the three things the
 // template list shows — its name, its icon and what it is for. The automation
 // is **shown and not edited**: a template is made by building the board and
-// saving it («Сохранить как шаблон…»), so the routes it carries are already the
+// saving it (the save-as-template item), so the routes it carries are already the
 // ones that worked, and the way to change them is to change the board and save
 // it again. It was the whole route canvas in a scrolling dialog, which put a
 // graph editor between somebody and the two fields they came to fill in — and
@@ -180,7 +180,7 @@ const TemplateEditor = (props: Props) => {
                         {(flow) => (
                             <div class='TemplateEditor__carriesRow'>
                                 <span class='TemplateEditor__carriesLabel'>{flow.name}</span>
-                                <span>{columnsOf(flow, columns()).map((c) => c.name).join(' → ') || '—'}</span>
+                                <span>{columnsOf(flow, columns()).map((c) => c.name).join(' › ') || '—'}</span>
                             </div>
                         )}
                     </For>

@@ -13,7 +13,7 @@
 //	    sdk.Serve(sdk.Source{
 //	        Capabilities: protocol.Capabilities{Poll: true},
 //	        Poll: func(ctx context.Context, r sdk.PollRequest) (sdk.PollResult, error) {
-//	            return sdk.PollResult{Items: []sdk.Item{{ExternalID: "1", Title: "Привет"}}}, nil
+//	            return sdk.PollResult{Items: []sdk.Item{{ExternalID: "1", Title: "Hello"}}}, nil
 //	        },
 //	    })
 //	}

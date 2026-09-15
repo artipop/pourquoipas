@@ -30,36 +30,12 @@ describe('components/acp/agentSync', () => {
         }
         anyWindow.go = {main: {App: bindings}}
 
-        expect(await syncAgentsToBoard(board)).toEqual({accounts: 1, retired: false})
+        expect(await syncAgentsToBoard(board)).toEqual({accounts: 1})
         expect(bindings.SyncAgentUsers).toHaveBeenCalledWith(board.id)
 
         // The account is the whole of it: a card names an agent the way it
         // names anybody, and no second field is added to say the same thing.
         expect(mockedMutator.updateBoardCardProperties).not.toHaveBeenCalled()
-    })
-
-    // The «Agent» select this app used to keep is a second answer to "who is
-    // doing this", and the card already has one. A board that still carries it
-    // loses it on the next visit to its automation screen.
-    test('takes the retired «Agent» field off a board that still has one', async () => {
-        const board = TestBlockFactory.createBoard()
-        board.cardProperties.push({
-            id: 'agent-prop',
-            name: 'Agent',
-            type: 'select',
-            options: [{id: 'o1', value: 'claude', color: 'propColorDefault'}],
-        })
-        anyWindow.go = {main: {App: {
-            ListAgents: vi.fn().mockResolvedValue(JSON.stringify([{name: 'claude', kind: 'claude'}])),
-            SyncAgentUsers: vi.fn().mockResolvedValue('[]'),
-        }}}
-        mockedMutator.updateBoardCardProperties.mockResolvedValue()
-
-        expect(await syncAgentsToBoard(board)).toEqual({accounts: 0, retired: true})
-
-        const kept = mockedMutator.updateBoardCardProperties.mock.calls[0][2]
-        expect(kept.find((p) => p.name === 'Agent')).toBeUndefined()
-        expect(kept).toHaveLength(board.cardProperties.length - 1)
     })
 
     // Every other board is left exactly as it is: this runs on every visit to
@@ -72,7 +48,7 @@ describe('components/acp/agentSync', () => {
             SyncAgentUsers: vi.fn().mockResolvedValue('[]'),
         }}}
 
-        expect(await syncAgentsToBoard(board)).toEqual({accounts: 0, retired: false})
+        expect(await syncAgentsToBoard(board)).toEqual({accounts: 0})
         expect(mockedMutator.updateBoardCardProperties).not.toHaveBeenCalled()
     })
 
@@ -86,14 +62,14 @@ describe('components/acp/agentSync', () => {
         }
         anyWindow.go = {main: {App: bindings}}
 
-        expect(await syncAgentsToBoard(board)).toEqual({accounts: 0, retired: false})
+        expect(await syncAgentsToBoard(board)).toEqual({accounts: 0})
         expect(bindings.SyncAgentUsers).not.toHaveBeenCalled()
         expect(mockedMutator.updateBoardCardProperties).not.toHaveBeenCalled()
     })
 
     test('does nothing at all in a build with no desktop bindings', async () => {
         const board = TestBlockFactory.createBoard()
-        expect(await syncAgentsToBoard(board)).toEqual({accounts: 0, retired: false})
+        expect(await syncAgentsToBoard(board)).toEqual({accounts: 0})
         expect(mockedMutator.updateBoardCardProperties).not.toHaveBeenCalled()
     })
 })

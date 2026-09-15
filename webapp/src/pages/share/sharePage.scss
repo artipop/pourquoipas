@@ -1,4 +1,5 @@
 @import '../../styles/typography';
+@import '../../styles/field';
 
 // A window the size of the question it asks. It opens over whatever the person
 // was reading, is answered with one tap and goes away, so everything on it is
@@ -32,12 +33,9 @@
     }
 
     &__title {
+        @include field;
+
         width: 100%;
-        padding: 8px 10px;
-        border: 1px solid var(--border-strong);
-        border-radius: 4px;
-        background: rgb(var(--surface-rgb));
-        color: rgb(var(--ink-rgb));
         font-size: var(--text-body);
     }
 

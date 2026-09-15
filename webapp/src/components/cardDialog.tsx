@@ -12,6 +12,7 @@ import octoClient from '../octoClient'
 import {getCardAttachments} from '../store/attachments'
 import {getCard} from '../store/cards'
 import {getCardComments} from '../store/comments'
+import {getTeamMode} from '../store/clientConfig'
 import {getCardContents} from '../store/contents'
 import {useAppSelector, useAppStore} from '../store/hooks'
 import {Utils} from '../utils'
@@ -25,11 +26,15 @@ import Button from '../widgets/buttons/button'
 import {AttachmentBlock, createAttachmentBlock} from '../blocks/attachmentBlock'
 import {Block, createBlock} from '../blocks/block'
 import {Permission} from '../constants'
+import {useHasCurrentBoardPermissions} from '../hooks/permissions'
 
 import BoardPermissionGate from './permissions/boardPermissionGate'
 
 import CardTerminal, {isCardTerminalAvailable} from './acp/cardTerminal'
+import CardDiffPanel, {isCardDiffAvailable} from './acp/cardDiff'
+import CardComments from './cardDetail/cardComments'
 import {cardAgentState, refreshCardAgent} from './acp/cardAgentState'
+import {onAgentEvent} from './acp/agentEvents'
 import {refreshRegisteredAgents, registeredAgents} from './acp/agentRegistry'
 
 import CardDetail from './cardDetail/cardDetail'
@@ -54,12 +59,27 @@ const CardDialog = (props: Props): JSX.Element => {
     const contents = useAppSelector((state) => getCardContents(props.cardId)(state))
     const comments = useAppSelector((state) => getCardComments(props.cardId)(state))
     const attachments = useAppSelector((state) => getCardAttachments(props.cardId)(state))
+    const teamMode = useAppSelector<boolean>(getTeamMode)
+    const canCommentBoardCards = useHasCurrentBoardPermissions([Permission.CommentBoardCards])
     const intl = useIntl()
     const {actions} = useAppStore()
     const isTemplate = () => card() && card()!.fields.isTemplate
 
     const [showConfirmationDialogBox, setShowConfirmationDialogBox] = createSignal<boolean>(false)
-    const [showTerminal, setShowTerminal] = createSignal<boolean>(false)
+
+    // What the panel beside the card is showing, and '' for no panel. One panel
+    // with two things in it rather than two panels: the terminal and the
+    // comments are the same question asked of two readers — what to tell the
+    // agent about this card, and what to tell the person who comes to it later
+    // (docs/teamwork.md).
+    //
+    // The changes are the third thing in it, and they belong here for the same
+    // reason: reading what an agent did is about the card and is not part of
+    // it. A route can park a card on a stage where nothing runs and a person
+    // decides, and until this existed there was nowhere to decide from.
+    const [side, setSide] = createSignal<'' | 'terminal' | 'comments' | 'diff'>('')
+    const showTerminal = () => side() === 'terminal'
+    const toggleSide = (which: 'terminal' | 'comments' | 'diff') => setSide(side() === which ? '' : which)
     const makeTemplateClicked = async () => {
         const currentCard = card()
         if (!currentCard) {
@@ -237,7 +257,21 @@ const CardDialog = (props: Props): JSX.Element => {
     onSettled(() => {
         if (isCardTerminalAvailable()) {
             refreshRegisteredAgents()
-            refreshCardAgent(props.cardId)
+        }
+        if (!isCardTerminalAvailable() && !isCardDiffAvailable()) {
+            return undefined
+        }
+        refreshCardAgent(props.cardId)
+
+        // The work moves while the dialog is open — an agent commits, a stage
+        // ends — and both the terminal rows and the changes count come from the
+        // one call above. A session event is the cheapest thing that means
+        // "look again".
+        const offSession = onAgentEvent('acp:session', () => refreshCardAgent(props.cardId))
+        const offTerminal = onAgentEvent('acp:terminal', () => refreshCardAgent(props.cardId))
+        return () => {
+            offSession()
+            offTerminal()
         }
     })
 
@@ -247,6 +281,50 @@ const CardDialog = (props: Props): JSX.Element => {
     const offersTerminal = () => isCardTerminalAvailable() && Boolean(card()) && !props.readonly &&
         Boolean(agentState().running || agentState().resume?.available || (registeredAgents() || 0) > 0)
 
+    // Comments are a conversation between people, so they are drawn where there
+    // is a second person to have one with: an install of one person has them
+    // switched off entirely, and everything an agent writes goes on being
+    // written (docs/teamwork.md).
+    const commentsBtn = (): JSX.Element => (
+        <Show when={teamMode() && Boolean(card()) && !isTemplate()}>
+            <Button
+                icon={<CompassIcon icon='message-text-outline'/>}
+                class='cardFollowBtn cardFollowBtn--attach'
+                emphasis='gray'
+                size='medium'
+                active={side() === 'comments'}
+                onClick={() => toggleSide('comments')}
+            >
+                {intl.formatMessage({id: 'CardComments.title', defaultMessage: 'Comments'})}
+            </Button>
+        </Show>
+    )
+
+    // Drawn only where there is something to read. What decides is the count
+    // the Go side keeps as the work moves (GetCardAgent's `changes`), not a
+    // live look: on «На ревью» — the stage this is for — the card's working
+    // copy has already been folded away, and asking git per card is a process
+    // per card. A card nobody has worked on gets no button rather than a button
+    // that opens «ничего не изменено».
+    const hasChanges = () => {
+        const changes = agentState().changes
+        return Boolean(changes && (changes.files > 0 || changes.dirty > 0))
+    }
+    const diffBtn = (): JSX.Element => (
+        <Show when={isCardDiffAvailable() && Boolean(card()) && !isTemplate() && hasChanges()}>
+            <Button
+                icon={<CompassIcon icon='file-patch-outline'/>}
+                class='cardFollowBtn cardFollowBtn--attach'
+                emphasis='gray'
+                size='medium'
+                active={side() === 'diff'}
+                onClick={() => toggleSide('diff')}
+            >
+                {intl.formatMessage({id: 'CardDiff.title', defaultMessage: 'Changes'})}
+            </Button>
+        </Show>
+    )
+
     const terminalBtn = (): JSX.Element => (
         <Show when={offersTerminal()}>
             <Button
@@ -254,7 +332,7 @@ const CardDialog = (props: Props): JSX.Element => {
                 class='cardFollowBtn cardFollowBtn--attach'
                 emphasis='gray'
                 size='medium'
-                onClick={() => setShowTerminal(!showTerminal())}
+                onClick={() => toggleSide('terminal')}
             >
                 {intl.formatMessage({id: 'CardDialog.terminal', defaultMessage: 'Terminal'})}
             </Button>
@@ -268,7 +346,7 @@ const CardDialog = (props: Props): JSX.Element => {
                 class='cardDialog'
                 onClose={props.onClose}
                 toolsMenu={!props.readonly && menu()}
-                toolbar={<>{terminalBtn()}{attachBtn()}</>}
+                toolbar={<>{terminalBtn()}{diffBtn()}{commentsBtn()}{attachBtn()}</>}
             >
                 <Show when={isTemplate()}>
                     <div class='banner'>
@@ -303,7 +381,6 @@ const CardDialog = (props: Props): JSX.Element => {
                                 cards={props.cards}
                                 card={card()!}
                                 contents={contents()}
-                                comments={comments()}
                                 attachments={attachments()}
                                 readonly={props.readonly}
                                 onClose={props.onClose}
@@ -313,13 +390,30 @@ const CardDialog = (props: Props): JSX.Element => {
                         </Show>
                     </div>
 
-                    <Show when={showTerminal() && offersTerminal()}>
+                    <Show when={(showTerminal() && offersTerminal()) || side() === 'comments' || side() === 'diff'}>
                         <div class='cardDialog__side'>
-                            <CardTerminal
-                                cardId={props.cardId}
-                                board={props.board}
-                                onClose={() => setShowTerminal(false)}
-                            />
+                            <Show when={side() === 'comments'}>
+                                <CardComments
+                                    cardId={props.cardId}
+                                    boardId={props.board.id}
+                                    comments={comments()}
+                                    readonly={props.readonly || !canCommentBoardCards()}
+                                    onClose={() => setSide('')}
+                                />
+                            </Show>
+                            <Show when={side() === 'diff'}>
+                                <CardDiffPanel
+                                    cardId={props.cardId}
+                                    onClose={() => setSide('')}
+                                />
+                            </Show>
+                            <Show when={showTerminal()}>
+                                <CardTerminal
+                                    cardId={props.cardId}
+                                    board={props.board}
+                                    onClose={() => setSide('')}
+                                />
+                            </Show>
                         </div>
                     </Show>
                 </div>

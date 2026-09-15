@@ -6,8 +6,8 @@ html {
     height: 100%;
 }
 
-.xciii-body,
-#xciii-app {
+.app-body,
+#app-root {
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -24,7 +24,7 @@ html {
     height: 100%;
 }
 
-.xciii-body {
+.app-body {
     --cursor-color: rgb(var(--center-channel-color-rgb));
 
     padding: 0;
@@ -68,6 +68,22 @@ html {
         &:focus {
             background: rgba(var(--center-channel-color-rgb), 0.06);
         }
+
+        // A placeholder has to read as an absence, not as a value: at full
+        // strength it is the same ink as what you typed, and a field showing
+        // its own hint looks like a field showing a name somebody set — which
+        // is exactly how one read as not editable at all.
+        //
+        // Stated here rather than at each field, which is what three
+        // stylesheets were doing with this same 0.4 while every other input
+        // took the platform's own guess. It is the figure the contentEditable
+        // placeholder below already uses, so the two kinds of empty field look
+        // the same. `opacity: 1` because Firefox dims a placeholder of its own
+        // accord and would compound this one.
+        &::placeholder {
+            color: rgba(var(--center-channel-color-rgb), 0.4);
+            opacity: 1;
+        }
     }
 
     a {
@@ -84,7 +100,7 @@ html {
         margin-bottom: 8px;
     }
 
-    #xciii-app {
+    #app-root {
         button {
             &.style--none {
                 background: transparent;

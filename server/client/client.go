@@ -7,6 +7,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/artipop/xciii/server/api"
@@ -14,7 +15,7 @@ import (
 )
 
 const (
-	APIURLSuffix = "/api/v2"
+	APIURLSuffix = "/api/v0"
 )
 
 type RequestReaderError struct {
@@ -213,6 +214,65 @@ func (c *Client) GetTeam(teamID string) (*model.Team, *Response) {
 	return model.TeamFromJSON(r.Body), BuildResponse(r)
 }
 
+// Administering the install rather than a board: who is here, who else runs it,
+// and whose account is switched off.
+
+func (c *Client) GetAdminRoute() string { return "/admin" }
+
+func (c *Client) GetAdminUsers() ([]*model.User, *Response) {
+	r, err := c.DoAPIGet(c.GetAdminRoute()+"/users", "")
+	if err != nil {
+		return nil, BuildErrorResponse(r, err)
+	}
+	defer closeBody(r)
+
+	var users []*model.User
+	if err := json.NewDecoder(r.Body).Decode(&users); err != nil {
+		return nil, BuildErrorResponse(r, err)
+	}
+	return users, BuildResponse(r)
+}
+
+func (c *Client) SetUserRole(userID, role string) (bool, *Response) {
+	body, err := json.Marshal(map[string]string{"role": role})
+	if err != nil {
+		return false, BuildErrorResponse(nil, err)
+	}
+	r, err := c.DoAPIPut(c.GetAdminRoute()+"/users/"+userID+"/role", string(body))
+	if err != nil {
+		return false, BuildErrorResponse(r, err)
+	}
+	defer closeBody(r)
+
+	return true, BuildResponse(r)
+}
+
+func (c *Client) SetUserActive(userID string, active bool) (bool, *Response) {
+	action := "/deactivate"
+	if active {
+		action = "/activate"
+	}
+	r, err := c.DoAPIPost(c.GetAdminRoute()+"/users/"+userID+action, "")
+	if err != nil {
+		return false, BuildErrorResponse(r, err)
+	}
+	defer closeBody(r)
+
+	return true, BuildResponse(r)
+}
+
+// RegenerateTeamSignupToken retires the invite link by minting a new token.
+// Admin-only, and the way a link handed to the wrong person is taken back.
+func (c *Client) RegenerateTeamSignupToken(teamID string) (bool, *Response) {
+	r, err := c.DoAPIPost(c.GetTeamRoute(teamID)+"/regenerate_signup_token", "")
+	if err != nil {
+		return false, BuildErrorResponse(r, err)
+	}
+	defer closeBody(r)
+
+	return true, BuildResponse(r)
+}
+
 func (c *Client) GetBlocksForBoard(boardID string) ([]*model.Block, *Response) {
 	r, err := c.DoAPIGet(c.GetBlocksRoute(boardID), "")
 	if err != nil {
@@ -221,6 +281,79 @@ func (c *Client) GetBlocksForBoard(boardID string) ([]*model.Block, *Response) {
 	defer closeBody(r)
 
 	return model.BlocksFromJSON(r.Body), BuildResponse(r)
+}
+
+// GetBlocksOfType is GetBlocksForBoard narrowed to one block type, which is
+// how a board's cards are read: a board holds its views and its text content in
+// the same table.
+func (c *Client) GetBlocksOfType(boardID, blockType string) ([]*model.Block, *Response) {
+	r, err := c.DoAPIGet(c.GetBlocksRoute(boardID)+"?type="+url.QueryEscape(blockType), "")
+	if err != nil {
+		return nil, BuildErrorResponse(r, err)
+	}
+	defer closeBody(r)
+
+	return model.BlocksFromJSON(r.Body), BuildResponse(r)
+}
+
+// GetBlockByID reads one block. The board has to be named because that is how
+// the route is addressed; a caller holding only a card id gets the board from
+// GetCard, which is one round trip and cacheable.
+//
+// A block rather than a Card on purpose: model.Card is a lossy view that
+// refuses a card whose fields it does not recognise, and a block is what a card
+// actually is.
+func (c *Client) GetBlockByID(boardID, blockID string) (*model.Block, *Response) {
+	r, err := c.DoAPIGet(c.GetBlocksRoute(boardID)+"?block_id="+url.QueryEscape(blockID), "")
+	if err != nil {
+		return nil, BuildErrorResponse(r, err)
+	}
+	defer closeBody(r)
+
+	blocks := model.BlocksFromJSON(r.Body)
+	if len(blocks) == 0 {
+		return nil, BuildResponse(r)
+	}
+	return blocks[0], BuildResponse(r)
+}
+
+// EnsureMachineUser finds or creates the account an agent or a source is named
+// by, idempotent by username. It is what an attached desktop calls instead of
+// writing the users table itself.
+func (c *Client) EnsureMachineUser(teamID, username, kind string) (string, *Response) {
+	body, err := json.Marshal(map[string]string{"username": username, "kind": kind})
+	if err != nil {
+		return "", BuildErrorResponse(nil, err)
+	}
+	r, err := c.DoAPIPost(c.GetTeamRoute(teamID)+"/machine-users", string(body))
+	if err != nil {
+		return "", BuildErrorResponse(r, err)
+	}
+	defer closeBody(r)
+
+	var made struct {
+		UserID string `json:"userId"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&made); err != nil {
+		return "", BuildErrorResponse(r, err)
+	}
+	return made.UserID, BuildResponse(r)
+}
+
+// MoveCardToBoard carries a card to another board keeping its id, so everything
+// outside the board that remembers the card still finds it.
+func (c *Client) MoveCardToBoard(cardID, toBoardID string) (bool, *Response) {
+	body, err := json.Marshal(map[string]string{"toBoardId": toBoardID})
+	if err != nil {
+		return false, BuildErrorResponse(nil, err)
+	}
+	r, err := c.DoAPIPost(c.GetCardRoute(cardID)+"/move", string(body))
+	if err != nil {
+		return false, BuildErrorResponse(r, err)
+	}
+	defer closeBody(r)
+
+	return true, BuildResponse(r)
 }
 
 func (c *Client) GetAllBlocksForBoard(boardID string) ([]*model.Block, *Response) {

@@ -105,6 +105,12 @@
         }
     }
 
+    // The new-row cell carries the add icon in front of the word.
+    .octo-table-cell--new {
+        align-items: center;
+        gap: 6px;
+    }
+
     .octo-table-cell {
         flex: 0 0 auto;
         display: flex;

@@ -1,4 +1,4 @@
-import {render, screen, within} from '@solidjs/testing-library'
+import {render, screen, waitFor, within} from '@solidjs/testing-library'
 import '@testing-library/jest-dom'
 
 import userEvent from '@testing-library/user-event'
@@ -22,6 +22,10 @@ describe('src/components/kanban/kanbanCard', () => {
     const board = TestBlockFactory.createBoard()
     const card = TestBlockFactory.createCard(board)
 
+    // …and the board for the same reason: what the card offers from where it
+    // stands is asked for the whole board at once, by its id.
+    board.id = 'board_id_1'
+
     // Utils is mocked here, so createGuid returns undefined and the card would
     // have no id -- which dnd-kit reads as `source?.id === this.id`, i.e. every
     // card claiming to be the one being dragged. Give it one.
@@ -44,6 +48,11 @@ describe('src/components/kanban/kanbanCard', () => {
         ],
     }
     const state = {
+        // The card menu offers "Copy link" where somebody else can open it,
+        // which is a team install (docs/teamwork.md).
+        clientConfig: {
+            value: {teamMode: true},
+        },
         cards: {
             cards: [card],
         },
@@ -265,6 +274,42 @@ describe('src/components/kanban/kanbanCard', () => {
         ), {wrapper: TestRouter})
 
         expect(await screen.findByTitle('clauuus is asking')).toBeInTheDocument()
+        delete anyWindow.go
+    })
+
+    // Where the card goes next is answered in the card, on its route strip —
+    // never on the face. Two buttons stood here for a while, and what that cost
+    // was a face saying two things at once: what the work is, and a decision
+    // about it. The strip draws them beside the stage they are about.
+    test('does not offer where the card goes next on its face', async () => {
+        const anyWindow = window as any
+        const bindings = {
+            ListAttention: vi.fn().mockResolvedValue('[]'),
+            MarkCardOutcome: vi.fn().mockResolvedValue(undefined),
+        }
+        anyWindow.go = {main: {App: bindings}}
+
+        render(() => wrapDNDIntl(() =>
+            <AppStoreProvider store={store}>
+                <KanbanCard
+                    card={card}
+                    board={board}
+                    visiblePropertyTemplates={[propertyTemplate]}
+                    visibleBadges={false}
+                    isSelected={false}
+                    readonly={false}
+                    onDrop={vi.fn()}
+                    showCard={vi.fn()}
+                    isManualSort={false}
+                    index={0}
+                    groupId='group-1'
+                />
+            </AppStoreProvider>,
+        ), {wrapper: TestRouter})
+
+        await waitFor(() => expect(bindings.ListAttention).toHaveBeenCalled())
+        expect(screen.queryByRole('button', {name: /Деплой/})).toBeNull()
+        expect(screen.queryByRole('button', {name: /В работе/})).toBeNull()
         delete anyWindow.go
     })
 

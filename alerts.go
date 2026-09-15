@@ -21,8 +21,7 @@ import (
 // them. **The dot in the menu bar is an indicator**, like the card's amber
 // button: it is drawn while an agent is waiting and it interrupts nobody, so it
 // is not a setting and it stands whether notifications are on or off. **A
-// notification interrupts**, so it is the switch — «Уведомлять, когда агент
-// ждёт», the one the page already had, and reading it here rather than adding a
+// notification interrupts**, so it is the switch — the notify-when-an-agent-waits switch, the one the page already had, and reading it here rather than adding a
 // second one is what keeps "tell me" a single answer (uisettings.go).
 //
 // This file is the part with no window in it, so that the decision can be
@@ -63,6 +62,12 @@ func alertPlan(told map[string]bool, waiting []acp.Attention) (fresh []acp.Atten
 // notification use (attentionHeading in attention.ts), so one wait reads the
 // same wherever a person meets it.
 func alertTitle(a acp.Attention) string {
+	// A card the route handed over is not an agent asking anything: nothing is
+	// running there, and what the person is being told is that the work is now
+	// theirs (internal/acp/cardwait.go).
+	if a.Reason == acp.AttentionCard {
+		return "Карточка ждёт вас"
+	}
 	if a.Agent != "" {
 		return a.Agent + " спрашивает"
 	}
@@ -82,6 +87,9 @@ func alertBody(a acp.Attention) string {
 		parts = append(parts, text)
 	}
 	if len(parts) == 0 {
+		if a.Reason == acp.AttentionCard {
+			return "Откройте доску, чтобы посмотреть."
+		}
 		return "Откройте терминал, чтобы ответить."
 	}
 	return strings.Join(parts, " — ")
@@ -99,7 +107,7 @@ func alertMenuLabel(a acp.Attention) string {
 }
 
 // hiddenWaitsLabel stands for the waits the menu stopped naming. It counts and
-// does not inflect: «ждут»/«ждёт» would have to agree with the number, and the
+// does not inflect: waiting/waiting would have to agree with the number, and the
 // number is the whole of what this line says.
 func hiddenWaitsLabel(n int) string {
 	return "…и ещё " + strconv.Itoa(n)

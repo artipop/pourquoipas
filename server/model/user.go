@@ -71,10 +71,6 @@ type User struct {
 	// required: true
 	DeleteAt int64 `json:"delete_at"`
 
-	// If the user is a bot or not
-	// required: true
-	IsBot bool `json:"is_bot"`
-
 	// If the user is a guest or not
 	// required: true
 	IsGuest bool `json:"is_guest"`
@@ -82,8 +78,35 @@ type User struct {
 	// Special Permissions the user may have
 	Permissions []string `json:"permissions,omitempty"`
 
-	Roles string `json:"roles"`
+	// Role is who administers this install: RoleAdmin, or empty and RoleMember
+	// reading the same. Install-wide, and a different question from what a
+	// person may do on one board — that is board_members.minimum_role.
+	//
+	// It replaced a dead `Roles string`, the fork's Mattermost-shaped
+	// space-separated list of role *names*: a free-text set that decides
+	// something can carry no constraint, and this one can.
+	Role string `json:"role,omitempty"`
+
+	// Kind tells a person from the accounts this app makes under their own
+	// names — one per agent, one per source. There was no column for it, so
+	// nothing could ask.
+	Kind string `json:"kind,omitempty"`
 }
+
+// The two roles an install has. A third would be a schema change, which is the
+// point of the CHECK behind them.
+const (
+	RoleAdmin  = "admin"
+	RoleMember = "member"
+)
+
+// What an account is. Open on purpose — a delegated runner will want one of its
+// own — so the column carries no CHECK.
+const (
+	UserKindPerson = "person"
+	UserKindAgent  = "agent"
+	UserKindSource = "source"
+)
 
 // UserPreferencesPatch is a user property patch
 // swagger:model

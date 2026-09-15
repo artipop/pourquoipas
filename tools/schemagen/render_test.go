@@ -10,7 +10,9 @@ import (
 	"strings"
 	"testing"
 
-	_ "github.com/mattn/go-sqlite3"
+	// Any SQLite answers the question these tests ask — what shape the DDL
+	// builds — and this one needs no C compiler.
+	_ "modernc.org/sqlite"
 )
 
 // The checked-in migration is what runs; this generator is only how it was
@@ -18,7 +20,11 @@ import (
 // nobody applied, and it would be invisible in review — the SQL in the diff
 // would still look right.
 func TestTheCheckedInMigrationIsWhatTheSchemaSays(t *testing.T) {
-	up, down, err := render()
+	boardUp, boardDown, err := render(boardTables(), boardHeader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	appUp, appDown, err := render(appTables(), appHeader)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -27,8 +33,10 @@ func TestTheCheckedInMigrationIsWhatTheSchemaSays(t *testing.T) {
 		t.Fatal(err)
 	}
 	for name, want := range map[string]string{
-		migrationName + ".up.sql":   up,
-		migrationName + ".down.sql": down,
+		boardMigration + ".up.sql":   boardUp,
+		boardMigration + ".down.sql": boardDown,
+		appMigration + ".up.sql":     appUp,
+		appMigration + ".down.sql":   appDown,
 	} {
 		got, err := os.ReadFile(filepath.Join(root, migrationsDir, name))
 		if err != nil {
@@ -61,11 +69,31 @@ func TestEveryDialectCreatesEveryTable(t *testing.T) {
 // A foreign key onto the board's own tables is the whole reason our tables
 // moved into its database: a deleted card used to leave its conversations, its
 // stall and its place in the queue behind for ever.
+//
+// The route is one hop longer than it was — card_ref stands between, so that a
+// board on another server can be pointed at too — and the guarantee is the
+// same, which is what this checks: every table keyed on a card cascades to the
+// ref, and the ref cascades from the block.
 func TestWhatBelongsToACardGoesWithIt(t *testing.T) {
 	byName := map[string]Table{}
 	for _, t := range appTables() {
 		byName[t.Name] = t
 	}
+
+	ref, ok := byName["card_ref"]
+	if !ok {
+		t.Fatal("no card_ref: nothing a card owns can follow it anywhere")
+	}
+	var refFollowsTheBlock bool
+	for _, fk := range ref.FKs {
+		if fk.RefTable == tableBlocks && fk.OnDelete == Cascade {
+			refFollowsTheBlock = true
+		}
+	}
+	if !refFollowsTheBlock {
+		t.Fatal("card_ref does not follow the block into the bin, so nothing behind it does either")
+	}
+
 	for _, name := range []string{
 		"conversation", "agent_session", "flow_state", "flow_event",
 		"card_stall", "stage_queue",
@@ -76,7 +104,7 @@ func TestWhatBelongsToACardGoesWithIt(t *testing.T) {
 		}
 		var found bool
 		for _, fk := range tbl.FKs {
-			if fk.RefTable == tableBlocks && fk.OnDelete == Cascade {
+			if fk.RefTable == "card_ref" && fk.OnDelete == Cascade {
 				found = true
 			}
 		}
@@ -186,6 +214,8 @@ func TestTheCollapsedMigrationBuildsTheSchemaTheLadderBuilt(t *testing.T) {
 		"table flow_state":  {routeByID},
 		"table flow_event":  {routeByID},
 		"table stage_queue": {routeByID},
+		// A column's limit stopped being counted in one process's memory.
+		"table agent_session": {"column_key: which column's limit this run counts against"},
 	}
 
 	for name, w := range wantShape {
@@ -202,16 +232,38 @@ func TestTheCollapsedMigrationBuildsTheSchemaTheLadderBuilt(t *testing.T) {
 			t.Errorf("%s differs\n  ladder:    %s\n  collapsed: %s", name, w, g)
 		}
 	}
+	// Tables that exist now and did not then. Declared for the same reason
+	// intendedTables is: the snapshot is the "before" and stays frozen, so a
+	// table appearing has to be somebody saying it should.
+	intendedAdditions := map[string]string{
+		"table board_ref":    refsForARemoteBoard,
+		"table card_ref":     refsForARemoteBoard,
+		"table card_changes": "how much a card's branch holds, so the button that opens the diff can be drawn without running git per card",
+	}
 	for name := range gotShape {
-		if _, ok := wantShape[name]; !ok {
-			t.Errorf("the collapsed schema adds %s, which the ladder never made", name)
+		if _, ok := wantShape[name]; ok {
+			continue
 		}
+		if why, ok := intendedAdditions[name]; ok {
+			t.Logf("%s is new on purpose — %s", name, why)
+			continue
+		}
+		t.Errorf("the collapsed schema adds %s, which the ladder never made", name)
 	}
 }
 
+// refsForARemoteBoard is why the tables keyed on a card and a board stopped
+// pointing at blocks and boards directly.
+//
+// A foreign key reaches only inside its own database, and a desktop attached to
+// a hosted board has no row for a remote card. The chain became
+// blocks → card_ref → everything, so a local card cascades exactly as it did
+// and a remote one carries no block_id.
+const refsForARemoteBoard = "a key cannot point at a board on another server, so it points at a ref row here"
+
 // routeByID is why the three tables that record a card's place on a route no
 // longer carry the route's name. Renaming a route lost the place of every card
-// standing on it (docs/model-graph.md, contradiction 4).
+// standing on it.
 const routeByID = "flow (the route's name) became flow_id"
 
 // deadColumns is why five tables are narrower than the ladder left them.
@@ -231,7 +283,7 @@ const tightenedKey = "a primary key column tightened to NOT NULL, which MySQL re
 func shapeOf(t *testing.T, ddl string) map[string]string {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "schema.db")
-	db, err := sql.Open("sqlite3", path)
+	db, err := sql.Open("sqlite", path)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -462,6 +514,27 @@ func TestTheDiagramOnDiskIsTheOneTheSchemaDescribes(t *testing.T) {
 	}
 	if string(got) != want {
 		t.Errorf("%s is stale — run `go generate ./tools/schemagen`", erdPath)
+	}
+}
+
+// The page is the diagram dressed for a browser. It was dressed by a script run
+// by hand, and was therefore as stale as nobody remembering made it; now it is
+// held to the schema like the diagram is.
+func TestThePageOnDiskIsTheOneTheSchemaDescribes(t *testing.T) {
+	root, err := moduleRoot()
+	if err != nil {
+		t.Fatal(err)
+	}
+	want, err := renderERDPage()
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := os.ReadFile(filepath.Join(root, erdPagePath))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(got) != want {
+		t.Errorf("%s is stale — run `go generate ./tools/schemagen`", erdPagePath)
 	}
 }
 

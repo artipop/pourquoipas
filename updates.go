@@ -64,7 +64,7 @@ const updateChannel = edition.Channel
 
 // updateCheckInterval is our own timer rather than updater.Config.CheckInterval.
 // Init may be called once and StopPeriodicCheck cannot be undone, so the
-// framework's timer would make «проверять автоматически» a switch that takes
+// framework's timer would make the check-automatically switch a switch that takes
 // effect at the next launch. This one is read on every tick.
 const updateCheckInterval = 6 * time.Hour
 
@@ -83,7 +83,7 @@ type updateSettings struct {
 	// reads as "not answered" rather than as "the user turned it off".
 	Enabled *bool `json:"enabled,omitempty"`
 	// SkippedVersion is the release a person said no to. Restored into the
-	// Updater at startup, or «Пропустить эту версию» would mean "until you
+	// Updater at startup, or the skip-this-version button would mean "until you
 	// quit".
 	SkippedVersion string `json:"skippedVersion,omitempty"`
 	// LastCheckedAt is RFC 3339, and exists so the panel can answer "has this
@@ -405,7 +405,7 @@ func (c *updateController) checked() {
 func (c *updateController) snapshot() updateState {
 	if c == nil {
 		// Edition even here: a build that cannot update itself is still one
-		// edition or the other, and «какое у меня стоит» is the question this
+		// edition or the other, and what is installed here is the question this
 		// answers.
 		return updateState{
 			Supported:      false,
@@ -476,7 +476,7 @@ func (c *updateController) skip() error {
 var errUpdatesUnavailable = errors.New("обновление этой сборки не поддерживается")
 
 // check asks the feed. It returns as soon as the request is under way: the
-// answer arrives as the event, so the panel draws «проверяем» from the same
+// answer arrives as the event, so the panel draws the checking state from the same
 // state machine that draws everything else rather than from a promise.
 func (c *updateController) check() error {
 	if c == nil {

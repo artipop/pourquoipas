@@ -29,7 +29,7 @@ var Actions = []string{ActionCard, ActionComment, ActionDrop}
 // DefaultInbox is the column an item lands in when no rule sent it anywhere
 // else. There is no matching default for the *property* those columns belong
 // to: that one is asked of the board (BoardWriter.ColumnProperty), because a
-// constant here was "Status" while every board this app ships says «Статус»,
+// constant here was "Status" while every board this app ships says the status property,
 // and the mismatch filed nothing anywhere.
 const DefaultInbox = "Входящие"
 
@@ -59,8 +59,8 @@ type Rule struct {
 	// standing where nothing happens to it, which is what a source that only
 	// files things away wants.
 	Column string `json:"column,omitempty"`
-	// Props are card properties, as Go templates over the item:
-	// {"Ссылка": "{{.URL}}"}.
+	// Props are card properties, as Go templates over the item: a link property
+	// mapped to {{.URL}}, say.
 	Props map[string]string `json:"props,omitempty"`
 	Agent string            `json:"agent,omitempty"`
 }
@@ -220,9 +220,9 @@ type Manifest struct {
 	Command         string   `json:"command"`
 	Args            []string `json:"args,omitempty"`
 	// Env is the environment the command runs with, and its values are
-	// templates over the source entry — `{"KAITEN_SITE": "{{.Config.site}}"}`.
+	// templates over the source entry — `{"TRACKER_SITE": "{{.Config.site}}"}`.
 	// That is what makes one manifest serve two people: the site somebody's
-	// Kaiten lives at is theirs, not the manifest's, and the same goes for
+	// tracker lives at is theirs, not the manifest's, and the same goes for
 	// every self-hosted thing an MCP server talks to.
 	//
 	// Dir is where the command runs. It matters for the ordinary case of an
@@ -244,8 +244,8 @@ type Manifest struct {
 
 	// TokenEnv is the environment variable an MCP server reads its credential
 	// from. Named by the manifest because MCP has no place for a token and
-	// every server invents its own name for the variable: KAITEN_TOKEN,
-	// GITHUB_TOKEN, and so on. Our own plugins are handed credentials in the
+	// every server invents its own name for the variable: GITHUB_TOKEN,
+	// JIRA_API_TOKEN, and so on. Our own plugins are handed credentials in the
 	// handshake and need none of this.
 	TokenEnv string `json:"tokenEnv,omitempty"`
 }
@@ -480,7 +480,7 @@ func SaveConfig(path string, cfg Config) error {
 //
 // The agent does not write to the board. It is given one tool of ours,
 // `file_item`, which posts to this source's own ingest route, so everything
-// that makes the inbox trustworthy is still in the way: the rules, «Входящие»,
+// that makes the inbox trustworthy is still in the way: the rules, the inbox view,
 // the event log, and the (source, external id, version) key that makes filing
 // the same thing twice a no-op. That last one is why the prompt tells the agent
 // to file everything it sees rather than to work out what is new: deciding that

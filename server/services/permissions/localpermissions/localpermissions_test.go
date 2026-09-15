@@ -23,9 +23,65 @@ func TestHasPermissionToTeam(t *testing.T) {
 		assert.True(t, hasPermission)
 	})
 
-	t.Run("no users have PermissionManageTeam on teams", func(t *testing.T) {
-		hasPermission := th.permissions.HasPermissionToTeam("user-id", "team-id", model.PermissionManageTeam)
-		assert.False(t, hasPermission)
+	// Managing the team is the invite link, which is the door into this
+	// install: the admin's, and nobody else's.
+	t.Run("only an admin has PermissionManageTeam on teams", func(t *testing.T) {
+		th.store.EXPECT().
+			GetUserByID("member-id").
+			Return(&model.User{ID: "member-id", Role: model.RoleMember}, nil).
+			Times(1)
+		assert.False(t, th.permissions.HasPermissionToTeam("member-id", "team-id", model.PermissionManageTeam))
+
+		th.store.EXPECT().
+			GetUserByID("admin-id").
+			Return(&model.User{ID: "admin-id", Role: model.RoleAdmin}, nil).
+			Times(1)
+		assert.True(t, th.permissions.HasPermissionToTeam("admin-id", "team-id", model.PermissionManageTeam))
+	})
+
+	// A row written before the column existed is not an admin, which is what
+	// lets the column be nullable and the CHECK admit NULL.
+	t.Run("an account with no role at all is not an admin", func(t *testing.T) {
+		th.store.EXPECT().
+			GetUserByID("old-id").
+			Return(&model.User{ID: "old-id"}, nil).
+			Times(1)
+		assert.False(t, th.permissions.HasPermissionToTeam("old-id", "team-id", model.PermissionManageTeam))
+	})
+}
+
+// PermissionManageSystem is the only permission HasPermissionTo is ever asked
+// for, and it means "about the install rather than about a board".
+func TestHasPermissionTo(t *testing.T) {
+	th := SetupTestHelper(t)
+
+	t.Run("empty input should always unauthorize", func(t *testing.T) {
+		assert.False(t, th.permissions.HasPermissionTo("", model.PermissionManageSystem))
+		assert.False(t, th.permissions.HasPermissionTo("user-id", nil))
+	})
+
+	t.Run("an admin administers the install and a member does not", func(t *testing.T) {
+		th.store.EXPECT().
+			GetUserByID("admin-id").
+			Return(&model.User{ID: "admin-id", Role: model.RoleAdmin}, nil).
+			Times(1)
+		assert.True(t, th.permissions.HasPermissionTo("admin-id", model.PermissionManageSystem))
+
+		th.store.EXPECT().
+			GetUserByID("member-id").
+			Return(&model.User{ID: "member-id", Role: model.RoleMember}, nil).
+			Times(1)
+		assert.False(t, th.permissions.HasPermissionTo("member-id", model.PermissionManageSystem))
+	})
+
+	// A desktop's session carries an id with no row behind it. Not an error,
+	// and not an admin either.
+	t.Run("an id with no account behind it is not an admin", func(t *testing.T) {
+		th.store.EXPECT().
+			GetUserByID(model.SingleUser).
+			Return(nil, model.NewErrNotFound("user")).
+			Times(1)
+		assert.False(t, th.permissions.HasPermissionTo(model.SingleUser, model.PermissionManageSystem))
 	})
 }
 

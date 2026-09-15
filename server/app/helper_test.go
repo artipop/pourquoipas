@@ -35,7 +35,7 @@ func SetupTestHelper(t *testing.T) (*TestHelper, func()) {
 	auth := auth.New(&cfg, store, nil)
 	logger, _ := mlog.NewLogger()
 	sessionToken := "TESTTOKEN"
-	wsserver := ws.NewServer(auth, sessionToken, false, logger, store)
+	wsserver := ws.NewServer(auth, sessionToken, logger, store)
 
 	permissions := permissionsMocks.NewMockPermissionsService(ctrl)
 

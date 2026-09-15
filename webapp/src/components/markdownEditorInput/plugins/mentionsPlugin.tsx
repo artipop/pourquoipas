@@ -58,8 +58,7 @@ const MentionsPlugin = (props: Props): JSX.Element => {
         let users: IUser[]
 
         if (!me()?.is_guest && (allowManageBoardRoles() || (board() && board().type === BoardTypeOpen))) {
-            const excludeBots = true
-            users = await octoClient.searchTeamUsers(term, excludeBots)
+            users = await octoClient.searchTeamUsers(term)
         } else {
             users = boardUsers().
                 filter((user) => {

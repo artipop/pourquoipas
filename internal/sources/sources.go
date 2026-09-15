@@ -64,7 +64,7 @@ type CardSpec struct {
 	Item       ItemRef
 }
 
-// ItemRef is a card's origin, on the card itself (fields.xciiiSource): what
+// ItemRef is a card's origin, on the card itself (fields.source): what
 // stops the same letter becoming a second card.
 //
 // On the card and not only in source_item, because that table is keyed by card
@@ -93,7 +93,7 @@ type BoardWriter interface {
 	AddComment(ctx context.Context, cardID, text string) error
 	MoveCardByOptionName(ctx context.Context, cardID, propertyName, optionName string) error
 
-	// ColumnProperty is asked rather than assumed: ours say «Статус», upstream
+	// ColumnProperty is asked rather than assumed: ours say the status property, upstream
 	// boards say "Status", and a constant is wrong for one of them.
 	ColumnProperty(ctx context.Context, boardID string) (string, error)
 	// EnsureInbox makes the inbox column and its view exist, for a board that

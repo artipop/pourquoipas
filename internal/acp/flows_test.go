@@ -64,7 +64,7 @@ func TestValidateFlow(t *testing.T) {
 		// keeps the board's own copy of the route untouched (rememberUnadopted).
 		"неразрешённое имя агента": func(f *FlowEntry) { f.Nodes[0].AgentNames = []string{"nosuchagent"} },
 		"неразрешённое имя цели":   func(f *FlowEntry) { f.Nodes[0].DeployName = "nosuchtarget" },
-		"пустое условие":     func(f *FlowEntry) { f.Edges[0].If = &EdgeCond{} },
+		"пустое условие":           func(f *FlowEntry) { f.Edges[0].If = &EdgeCond{} },
 		"условие про оба сразу": func(f *FlowEntry) {
 			f.Edges[0].If = &EdgeCond{Property: "Приоритет", Value: "Высокий", CommentContains: "готово"}
 		},
@@ -154,7 +154,7 @@ func TestAddUpdateRemoveFlowPersists(t *testing.T) {
 	}
 }
 
-// Two boards each name their route «Фича» and mean different things by it, so
+// Two boards each name their route a feature route and mean different things by it, so
 // the registry is keyed by the board as well as the name — otherwise the second
 // board cannot even save its own.
 func TestFlowsAreScopedToTheirBoard(t *testing.T) {
@@ -339,7 +339,7 @@ func flowNamed(flows []FlowEntry, name string) (FlowEntry, bool) {
 // What used to stand here: a test that LoadConfig seeded the template routes
 // into the machine's settings for an install that predated routes, and that an
 // emptied list survived a restart. Both went with the seeding
-// (docs/model-graph.md, contradiction 9): a board carries its own routes.
+//: a board carries its own routes.
 
 func TestFlowEntryJSONRoundTrip(t *testing.T) {
 	b, err := json.Marshal(sampleFlow())

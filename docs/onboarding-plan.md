@@ -87,7 +87,7 @@ the one action that explains the product: **«Поставить первую з
 one field, one sentence from the person, and the app makes a card in the
 board's trigger column and opens it.
 
-- The trigger column is already known: `xciiiColumns` on the board says
+- The trigger column is already known: `columns` on the board says
   which column starts an agent. No new configuration.
 - The offer appears **only if the agent step passed**. The wizard already
   knows; an offer that fails because nothing is installed is worse than no
@@ -180,6 +180,6 @@ preferences and navigated to a route that no longer existed.
   offers to install an adapter through npx; whether onboarding waits for
   that or teaches the board without an agent is a product decision.
 - **What carries to the landing.** `site/` has no mention of «Входящие» —
-  mail, Kaiten, share-from-a-phone, webhooks — which is half the product.
+  mail, a tracker, share-from-a-phone, webhooks — which is half the product.
   The first-task flow, once it exists, is also the most demonstrable thing
   here.

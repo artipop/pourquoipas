@@ -4,8 +4,8 @@ import "testing"
 
 // Renaming a column, or the property it lives on, must cost a card nothing.
 // This was the last load-bearing place a name decided something (contradiction
-// 1 of docs/model-graph.md): the check was the property's name against the
-// option's name, so a board where somebody renamed «Статус» — or a board in
+// 1 of docs/db-erd.md): the check was the property's name against the
+// option's name, so a board where somebody renamed the status property — or a board in
 // English — matched nothing, and every conversation on it read as belonging to a
 // column the card had already left.
 func TestACardStandsOnItsStageWhateverTheColumnIsCalledNow(t *testing.T) {
@@ -47,7 +47,7 @@ func TestACardThatSaysNothingIsLeftWhereTheRouteThinksItIs(t *testing.T) {
 // Once the board records which field its columns are on, a card that has moved
 // is recognised as having moved however the field has been renamed — which is
 // the half the option id alone could not answer. That record is
-// `xciiiColumnProperty`, beside the ones the board already keeps for the folder
+// `columnProperty`, beside the ones the board already keeps for the folder
 // and the branch.
 func TestACardThatMovedIsSeenToHaveMovedWhateverTheFieldIsCalled(t *testing.T) {
 	node := FlowNode{ID: "n1", Column: "В работе", OptionID: "opt-work"}

@@ -24,17 +24,17 @@ import './mobilePage.scss'
 // the one thing that settles it. So the page is four screens and a row of
 // buttons at the bottom, which is where a thumb reaches:
 //
-//   «Входящие»  — what a source left and nobody has looked at, moved onto a
+//   the inbox view  — what a source left and nobody has looked at, moved onto a
 //                 board from here, which is the whole point of an inbox;
-//   «Карточки»  — one board's cards as a list, to find out where something got
+//   the cards screen  — one board's cards as a list, to find out where something got
 //                 to without walking to the desk;
-//   «Ждут»      — what is asking for a person. A permission the CLI asked for
+//   the waiting screen      — what is asking for a person. A permission the CLI asked for
 //                 through its hook is answered here, which on a phone is the
 //                 whole point; anything else the agent draws inside its own
 //                 interface, so the screen carries you there instead;
-//   «Терминалы» — which are alive, so the one that went quiet can be typed in.
+//   the terminals screen — which are alive, so the one that went quiet can be typed in.
 //
-// «Ждут» is what opens, because it is the only one of the four that cannot
+// the waiting screen is what opens, because it is the only one of the four that cannot
 // wait; the others say how many are there on their own button.
 //
 // It needs nothing from the board's own API: everything on it comes from the

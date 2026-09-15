@@ -19,8 +19,8 @@ export interface IAppWindow extends Window {
                 PickDirectory(title: string): Promise<string>
                 AddAgentWorkdir(name: string, path: string, boardId: string, kind: string, global: boolean): Promise<string>
 
-                // What work in a folder branches from, and what «влито в
-                // основную» waits for. Empty falls back to what git says.
+                // What work in a folder branches from, and what a merge waits
+                // for. Empty falls back to what git says.
                 SetAgentWorkdirBase?(name: string, branch: string): Promise<string>
 
                 // How a repository is worked in on this board: "worktree" — a
@@ -70,6 +70,9 @@ export interface IAppWindow extends Window {
                 RemoveBoardColumn(boardId: string, optionId: string, column: string): Promise<void>
 
                 GetCardFlow(cardId: string): Promise<string>
+                MarkCardOutcome(cardId: string, value: string): Promise<void>
+                AnswerCardAsk(cardId: string, questionId: string, value: string): Promise<void>
+                ListCardFlows?(boardId: string): Promise<string>
                 GetBoardFlowOverview(boardId: string): Promise<string>
                 SeedBoardAutomation(boardId: string): Promise<void>
                 BoardSetupPlan(boardId: string): Promise<string>
@@ -117,6 +120,17 @@ export interface IAppWindow extends Window {
                 OpenPlanningTerminal?(workdirName: string, agentName: string, boardId: string): Promise<string>
                 GetTerminalInfo?(terminalId: string): Promise<string>
                 GetCardAgent?(cardId: string): Promise<string>
+
+                // What the card's work looks like on disk: the branch, what it
+                // was cut from, and the changed files with their patches. Never
+                // an error for "nothing to show" — a card nobody has worked on
+                // answers with a reason a person can act on.
+                GetCardDiff?(cardId: string): Promise<string>
+
+                // The same reading in a window of its own, the way a terminal
+                // gets one. Answers with the address, so a build with no
+                // windows can go there itself.
+                OpenCardDiff?(cardId: string): Promise<string>
                 CancelSession(cardId: string): Promise<boolean>
                 ListTerminals?(): Promise<string>
 
@@ -156,6 +170,21 @@ export interface IAppWindow extends Window {
                 // the node is brought up or closed by the call itself.
                 GetTailnetAccess?(): Promise<string>
                 SetTailnetAccess?(entryJson: string): Promise<string>
+
+                // Which board this desktop works: its own, or a hosted server
+                // it has logged in to. Unlike the tailnet pair above, attaching
+                // takes effect at the next launch — the board the page is
+                // served and the board the agents work against are both decided
+                // when the app is built up.
+                GetServerAttachment?(): Promise<string>
+                AttachServer?(entryJson: string): Promise<string>
+                DetachServer?(): Promise<string>
+
+                // Which board this window shows. Not which boards the agents
+                // work: both are theirs, whichever is on screen. The page has
+                // to reload, because everything it holds came from the board it
+                // loaded against.
+                SelectBoardSource?(id: string): Promise<string>
 
                 // Replacing this app with a newer one. Everything except the
                 // state read is fire-and-forget: what came of it arrives as the
@@ -197,7 +226,7 @@ export interface IAppWindow extends Window {
                 ListInbox?(): Promise<string>
                 MoveCardToBoard?(cardId: string, boardId: string, column: string): Promise<void>
 
-                // The system's «Поделиться»: a link arrives from another app,
+                // The system's the share dialog: a link arrives from another app,
                 // the /share dialog asks which board, and this files it.
                 ShareItem?(boardId: string, title: string, url: string, note: string): Promise<string>
                 CloseShareWindow?(): Promise<void>

@@ -1,3 +1,5 @@
+@import '../../styles/field';
+
 .BoardSetupWizard {
     .BoardSetupWizard__content {
         display: flex;
@@ -19,13 +21,24 @@
         font-size: 12px;
         color: rgba(var(--center-channel-color-rgb), 0.48);
 
-        li + li::before {
-            content: '→';
-            margin-right: 12px;
+        li {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
 
-            // The arrow separates the steps, so it belongs to the line rather
-            // than to either side of it. Inheriting the current step's weight
-            // and colour made "→ Агент" read as the name of the step.
+        // A chevron from the icon font, the same one every menu and disclosure
+        // in the product points with; the typographic arrow it replaced was
+        // the one thing on the screen drawn in a glyph nothing else uses.
+        li + li::before {
+            content: '\f0142';
+            font-family: 'compass-icons';
+            font-size: 14px;
+            line-height: 1;
+
+            // The chevron separates the steps, so it belongs to the line
+            // rather than to either side of it. Inheriting the current step's
+            // weight and colour made it read as part of the step name.
             font-weight: 400;
             color: rgba(var(--center-channel-color-rgb), 0.48);
         }
@@ -57,16 +70,11 @@
 
         input,
         textarea {
-            padding: 6px 8px;
-            border: 1px solid rgba(var(--center-channel-color-rgb), 0.24);
-            border-radius: var(--radius-sm);
-            background: rgb(var(--surface-bg-rgb));
-            color: rgba(var(--center-channel-color-rgb), 1);
-            font-family: inherit;
+            @include field;
         }
 
         textarea {
-            font-family: monospace;
+            font-family: var(--font-mono);
             font-size: 12px;
         }
     }

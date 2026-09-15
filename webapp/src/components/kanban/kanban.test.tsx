@@ -175,8 +175,7 @@ describe('src/component/kanban/kanban', () => {
         ), {wrapper: TestRouter})
         expect(container).toMatchSnapshot()
     })
-
-    // «Входящие» is a kanban grouped by who brought the card, so its columns
+    // the inbox view is a kanban grouped by who brought the card, so its columns
     // are not places a card can be put: dropping one in another column would be
     // asking the board to have been written by somebody else. The cards do not
     // drag there, and there is no group to add.
@@ -201,8 +200,7 @@ describe('src/component/kanban/kanban', () => {
             </AppStoreProvider>,
         ), {wrapper: TestRouter})
 
-        expect(screen.queryByText('+ Add a group')).toBeNull()
-
+        expect(screen.queryByText('Add a group')).toBeNull()
         // The card is there and opens; what it does not do is start a drag.
         expect(container.querySelector('.KanbanCard')).not.toBeNull()
         expect(container.querySelector('.KanbanCard[draggable="true"]')).toBeNull()
@@ -424,7 +422,7 @@ describe('src/component/kanban/kanban', () => {
                 />
             </AppStoreProvider>,
         ), {wrapper: TestRouter})
-        const allButtonsNew = screen.getAllByRole('button', {name: '+ New'})
+        const allButtonsNew = screen.getAllByRole('button', {name: 'New'})
         expect(allButtonsNew).not.toBeNull()
         userEvent.click(allButtonsNew[0])
         expect(mockedAddCard).toHaveBeenCalledTimes(1)
@@ -545,7 +543,7 @@ describe('src/component/kanban/kanban', () => {
                 />
             </AppStoreProvider>,
         ), {wrapper: TestRouter})
-        const buttonAddGroup = screen.getByRole('button', {name: '+ Add a group'})
+        const buttonAddGroup = screen.getByRole('button', {name: 'Add a group'})
         expect(buttonAddGroup).toBeDefined()
         userEvent.click(buttonAddGroup)
         await waitFor(() => {
@@ -671,9 +669,45 @@ describe('src/component/kanban/kanban', () => {
                 />
             </AppStoreProvider>,
         ), {wrapper: TestRouter})
-        const allButtonsNew = screen.getAllByRole('button', {name: '+ New'})
+        const allButtonsNew = screen.getAllByRole('button', {name: 'New'})
         expect(allButtonsNew).not.toBeNull()
         userEvent.click(allButtonsNew[0])
         expect(mockedAddCard).toHaveBeenCalledTimes(1)
+    })
+
+    // The column every route shares is marked off from the route's own stages,
+    // and in both rows: the header and the body are one picture, so a line in
+    // one of them alone would read as a stray rule.
+    test('draws the line after the column every route shares', () => {
+        const {container} = render(() => wrapDNDIntl(() =>
+            <AppStoreProvider store={store}>
+                <Kanban
+                    board={board}
+                    activeView={activeView}
+                    cards={[card1, card2, card3]}
+                    groupByProperty={groupProperty}
+                    visibleGroups={[
+                        {
+                            option: optionQ1,
+                            cards: [card1, card2],
+                        }, {
+                            option: optionQ2,
+                            cards: [card3],
+                        },
+                    ]}
+                    hiddenGroups={[]}
+                    dividerAfter={optionQ1.id}
+                    selectedCardIds={[]}
+                    readonly={false}
+                    onCardClicked={vi.fn()}
+                    addCard={vi.fn()}
+                    addCardFromTemplate={vi.fn()}
+                    showCard={vi.fn()}
+                />
+            </AppStoreProvider>,
+        ), {wrapper: TestRouter})
+        expect(container.querySelectorAll('.octo-board-divider').length).toEqual(2)
+        expect(container.querySelector('#mainBoardHeader .octo-board-divider')).not.toBeNull()
+        expect(container.querySelector('#mainBoardBody .octo-board-divider')).not.toBeNull()
     })
 })

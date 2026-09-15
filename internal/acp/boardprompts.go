@@ -8,12 +8,12 @@ import (
 // What an agent is told before the task itself, and there are two of them
 // because there are two owners:
 //
-//   - **the board's** — every agent working here is told it. «Отвечай
-//     по-русски», «это домашние дела, а не код». It is this file, it is
-//     «Системный промпт доски…» in the board's ⋯ menu, and it lives on the
+//   - **the board's** — every agent working here is told it: answer in
+//     Russian, this is household chores rather than code. It is this file, it is
+//     the board's system prompt dialog in the board's ⋯ menu, and it lives on the
 //     board so it travels with it.
 //   - **the agent's own** — AgentEntry.Prompt, in the registry, edited in
-//     «Настройки → Агенты». It holds on every board this machine has, because
+//     the agents panel in the settings. It holds on every board this machine has, because
 //     it is about the agent rather than about any board.
 //
 // There is deliberately no third: a text per (board, agent) belongs to no single

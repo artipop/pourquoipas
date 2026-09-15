@@ -1,11 +1,8 @@
 # Columns and routes
 
 The board's behaviour is configured in the **"Columns and routes"** window:
-what each column does and where a card moves next. Two ways to open it:
-
-- the board menu (⋯ in the header) → **"Columns and routes"**;
-- any column's menu → **"What happens in this column…"** — the same window with
-  that column already selected.
+what each column does and where a card moves next. It opens from the board
+menu (⋯ in the header) → **"Columns and routes"**.
 
 There are no scripts or formulas: everything is assembled from ready-made
 actions.
@@ -56,7 +53,7 @@ The **"Columns"** tab, select a column — in the panel:
 - **"What the agent is told here"** — the column's instructions. The agent gets
   them in front of the card's task, and they open a conversation a person
   starts in this column too: "You are the reviewer — find defects, fix
-  nothing" on «Ревью» makes the same agent a reviewer. Written in any language —
+  nothing" on «In review» makes the same agent a reviewer. Written in any language —
   passed through as it is;
 - **"Writes onto the card"** — the properties a stage leaves on the card. On an
   agent column it is a contract: the agent passes the values in `finish_work`,
@@ -64,10 +61,75 @@ The **"Columns"** tab, select a column — in the panel:
   the property is written. A deploy column picks one property for its preview
   address; a test column one for its verdict (`pass`/`fail`/`blocked`). Values
   land on the card **before** it travels on, so a conditional arrow can rely on
-  them;
+  them.
+
+  The list offers not every board property but the ones a stage can actually
+  write to: text, a link, a number, an email, a phone and one of a set. A date,
+  a person and «Author»/«Created» are left out — there is nothing to write there.
+
+  When the board has no property for the value, the last item in the list is
+  **"+ a new property…"**. The form asks for a name and for what the property
+  holds: text, a link, or one of a set of values. The property appears on the
+  board at once — it shows on every card — and is declared as this stage's
+  output in the same breath. A deploy column is not asked what it holds: there
+  it is a link, and the form asks only for the name. A test column has no such
+  field at all — a test's verdict *is* the stage's outcome, and that goes into
+  «Исход» by itself.
+
+  What it holds decides whether an arrow can branch on it. An arrow asks "only
+  if the card has this value", which is a question to a set: a property with a
+  set of values has something to pick from, a text one has not. A text property
+  travels to the stages further on and is read there.
+
+  Setting it by hand does not mean going into the field. While the card stands
+  on a stage where nothing runs, two buttons appear on its **route strip**,
+  inside the card and beside the stage they are about — named by the stage each
+  leads to: «‹ In progress» and «Deploy ›». Pressing one sets «Исход» and
+  moves the card; there is no field to find and no value to pick.
+
+  There are no buttons where the stage answers for itself: while an agent is
+  working, the card has no question for a person.
+
+  On the canvas they are ordinary outcome arrows: green on, red back, out of the
+  same two points every other stage uses. They travel on the "card was marked"
+  event, but colouring them by the event drew the one arrow anybody looks for on
+  «In review» as a grey dashed line among the waits.
+
+  «Исход» can be set by hand as well, and the way back from a review rests on
+  that. Nothing runs in «In review», so it has no "failed" of its own — git can
+  say a branch was merged and cannot say a reviewer refused. So the reviewer
+  sets «Исход» to «не прошло» on the card, and the "card was marked" arrow sends
+  it back to work. The app's own write is silent, so a stage that passed never
+  wakes that arrow.
+
+  One property the app writes itself, and it is not declared: **«Исход»** — how
+  the stage ended: «прошло» or «не прошло», and there is no third value — the
+  card is asked whether the step worked, and *why not* is written as the reason
+  on its route strip, where it can be a sentence rather than a word. Every stage
+  writes it, which is why it is not in the writes list; an arrow can still
+  branch on it, like any property with a set of values. Because of it a board no
+  longer needs columns like «Проверено» or «Не прошло»: when a stage has no
+  transition for its outcome the card stays where it is, the outcome is on it,
+  and the route strip carries the reason in amber.
+
+  A board made from the «Development» template has this set up already: the
+  «Deploy» column writes «Preview» (a link), and it shows on that box on the
+  canvas. How a stage ended goes into «Исход».
+
+  The declared writes reach the agent in its brief: what it has to pass in
+  `finish_work`, and what each value may be — for a property with a set, the
+  values themselves. To check while working, the agent has the
+  `list_card_fields` tool: every card property of this board, which of them can
+  be written to at all, and which this stage has to report;
 - **"Gets from the card"** — the properties the stage reads: their values open
-  its brief ("From the card: Превью: …"), so the agent does not have to think
-  of asking `get_card`;
+  its brief ("From the card: Preview: …"), so the agent does not have to think
+  of asking `get_card`.
+
+  They do not always have to be ticked. When a route stage's list is empty, it
+  gets whatever the stages before it write — the panel shows those in a faint
+  row naming the stage that produces each: “Preview · written by “Deploy””.
+  Declare a write once and the value travels on by itself. Naming anything in
+  the list replaces that set whole;
 - **"MCP servers of this column"** — the tools the agent working here is given.
   The same JSON any MCP client takes, so it can be copied from a server's own
   README:
@@ -77,13 +139,40 @@ The **"Columns"** tab, select a column — in the panel:
   ```
 
   A column's servers are added to the agent's own rather than replacing them:
-  the same agent needs a browser on «QA» and does not need one on «В работе»,
+  the same agent needs a browser on «QA» and does not need one on «In progress»,
   and there is no second agent to register for it. Their tools run without
   confirmation prompts. The name `board` is taken — that is how the board's own
   tools reach the column, the ones an agent says it has finished with.
 
 These settings apply on every route. An exception for one route is set in the
 stage panel — select the stage on the route's tab.
+
+## Outputs on the box, and a fork drawn from one
+
+On a route tab a stage's box carries a third line: what the stage writes onto
+the card. It is not a caption but a point to pull from — drag from a property
+that has a set of values to another stage and you get a transition "the card
+goes here if this property equals…". The value is chosen in the panel; until
+then the arrow is captioned «Вердикт = ?» in amber, because the transition
+exists and the answer does not yet.
+
+A property with no set of values (text, a link) is drawn faint and cannot be
+pulled from: an arrow asks "is the value this one", and text has no set. Such a
+property travels on down the route and is read by the stages further on.
+
+A long arrow — one that skips several stages or sends the card back — runs in a
+corridor of its own under the graph, so that two of them do not travel side by
+side and read as one.
+
+Click an arrow and it is selected, and rings appear at its ends. Drag an end
+onto another stage and the arrow moves there. Drop an end clear of every stage
+and the arrow breaks. Everything else about it is edited in the panel on the
+right.
+
+An arrow you have already drawn asks about properties in the same order: first
+what the stage it leaves writes, then what the stages before it write — with the
+writing stage named beside each — and only then the rest of the board's
+properties.
 
 ### A column that tests
 
@@ -113,9 +202,11 @@ A route tab, select a box — in the panel:
 - **"Worked here by"** — this stage's agents. While none is ticked, the line
   under the boxes says who works it instead — the column's crew. This is how
   one route runs "In progress" with one agent and another with a different one;
-- **"The stage works"** — on the card's own branch, or in the folder itself. It
-  matters for a repository: checking before the branch is merged happens on the
-  card's branch, checking what is already published happens in the folder;
+- **"The stage works"** — on the card's own branch, or in the folder itself.
+  Asked of a deploy and a test, where it decides something: checking before the
+  branch is merged happens on the card's branch, checking what is already
+  published happens in the folder. An agent stage works on the card's branch,
+  and the control only stands there once an answer has been given;
 - **deploy target** — on a deploy stage;
 - **"What the agent is told at this stage"** — instructions for this route
   alone. While the field is empty the column's apply, and the placeholder names
@@ -125,7 +216,9 @@ A route tab, select a box — in the panel:
 - **"MCP servers at this stage"** — the tools for this route alone. While the
   field is empty the column's servers apply and the heading names them; filling
   it in replaces the column's whole set;
-- **"From here the card goes"** — this stage's arrows;
+- **"From here the card goes"** — how many transitions the stage has, and the
+  button to add one; an arrow itself is edited by clicking it on the canvas,
+  which makes the panel about that arrow;
 - **"Settings of the column itself…"** — over to the "Columns" tab, to what is
   true of the column on any route.
 
@@ -147,6 +240,11 @@ Clicking an arrow opens it in the panel: the event, the destination, the
 Click an empty spot on a route tab — the panel shows the route itself: name,
 project (optional) and the list of columns.
 
+The same panel has **"Delete this route"**. It asks first — "Delete “name”? The
+cards standing on it lose their place." — and "Delete" is written through at
+once, while "Keep it" dismisses the question. It is the one edit in this window
+that "Close" does not undo.
+
 A card joins a route by picking the option with the route's name — usually in
 the "Route" field. If the board has no such option, the editor warns you and
 offers a button to add it.
@@ -167,7 +265,7 @@ from:
   how one that is a repository is worked in (see [Folders and branches](../folders.md));
 - **"Where to deploy…"** — deploy targets: the Dokku host, the SSH user and
   key, the preview domain. The item is only on a board that asks about
-  deploying — of the shipped templates that is «Разработка». The targets
+  deploying — of the shipped templates that is «Development». The targets
   themselves are shared by the whole machine: one added here is visible to any
   other deploying board;
 - **"Walk the setup again…"** — the same questions the board asked when it was
@@ -180,18 +278,19 @@ from:
 
 ## Saving
 
-- changes to the board itself — a new column, a rename — apply
+- changes to the board itself — a new column, a new property, a rename — apply
   immediately;
+- deleting a route applies as soon as you confirm it;
 - column actions and routes are written with the **"Save"** button. Everything
   is checked before writing: a transition to nowhere, two stages on one column,
   an empty condition or an unknown agent is rejected with an explanation.
 
-"Close" without saving discards unsaved changes (except changes to the board
-itself — those already applied).
+"Close" without saving discards unsaved changes. What has already been applied —
+changes to the board itself, and a deleted route — it does not bring back.
 
 ## Templates
 
-A board is born from a template: "+ Add board" → a template in the list on the
+A board is born from a template: "Add board" → a template in the list on the
 left → "Use this template". The template brings the columns, what they do, the
 routes, and the **questions** the setup wizard asks when a board is created
 from it — project folder, agent, deploy target, browser for tests.

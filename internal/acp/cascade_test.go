@@ -30,7 +30,7 @@ func enforcingStore(t *testing.T) (*Store, func(cardID string)) {
 }
 
 // Deleting a card takes everything this application knew about it. This is the
-// whole reason the tables moved into the board's database (docs/model-graph.md):
+// whole reason the tables moved into the board's database:
 // deleting a card is a real DELETE FROM blocks, this side never heard about it —
 // BlockChanged handles only notify.Update — so every deleted card left its
 // conversations, its place on a route, its stall and its queue slot behind for
@@ -201,5 +201,78 @@ func TestAValueOutsideAClosedSetIsRefused(t *testing.T) {
 	if _, err := db.Exec(`INSERT INTO board_setup (board_id, step, status, changed_at)
 		VALUES ('board-1', 'workdir', 'skipped', 1)`); err != nil {
 		t.Errorf("a setup status the code writes was refused: %v", err)
+	}
+}
+
+// A card on somebody else's board has no row in this machine's blocks, and a
+// foreign key reaches only inside its own database — so before card_ref stood
+// between, writing anything about such a card was not ambiguous, it was
+// refused. This is the case the whole ref table exists for.
+func TestACardOnAnotherServerCanBeWrittenAbout(t *testing.T) {
+	db, err := appschema.OpenEnforcing(filepath.Join(t.TempDir(), "xciii.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = db.Close() })
+	st := NewStore(db)
+
+	// No AddCard: this card is on a server, and nothing about it exists here.
+	if _, err := db.Exec(`INSERT INTO board_ref (board_id, source_id, local_board_id, created_at)
+		VALUES ('remote-board', 'https://board.example.com', NULL, 0)`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Exec(`INSERT INTO card_ref (card_id, board_id, block_id, created_at)
+		VALUES ('remote-card', 'remote-board', NULL, 0)`); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := st.SetStall(StallRecord{CardID: "remote-card", Reason: "нет папки"}); err != nil {
+		t.Fatalf("a stall on a card of another board was refused: %v", err)
+	}
+	if err := st.SaveFlowState(FlowState{CardID: "remote-card", BoardID: "remote-board", FlowID: "f", NodeID: "n"}); err != nil {
+		t.Fatalf("a route position on a card of another board was refused: %v", err)
+	}
+
+	// And it is still owned: the client that hears the board say the card is
+	// gone deletes the ref, and everything behind it goes.
+	if _, err := db.Exec(`DELETE FROM card_ref WHERE card_id='remote-card'`); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok, err := st.Stall("remote-card"); err != nil || ok {
+		t.Errorf("the stall outlived the card: %v %v", ok, err)
+	}
+	if _, ok, err := st.FlowStateForCard("remote-card"); err != nil || ok {
+		t.Errorf("the route position outlived the card: %v %v", ok, err)
+	}
+}
+
+// The ref is made by the write itself, not by somebody remembering to. Every
+// path that records something about a card goes through the store, and one that
+// forgot would be a foreign-key error at the worst moment — a card moving.
+func TestWritingAboutACardMakesItsRefOnTheWay(t *testing.T) {
+	db, err := appschema.OpenEnforcing(filepath.Join(t.TempDir(), "xciii.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = db.Close() })
+	if err := appschema.AddBoard(db, "board-1"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Exec(`INSERT INTO blocks (id, board_id, type) VALUES ('card-9','board-1','card')`); err != nil {
+		t.Fatal(err)
+	}
+	st := NewStore(db)
+
+	if err := st.SaveFlowState(FlowState{CardID: "card-9", BoardID: "board-1", FlowID: "f", NodeID: "n"}); err != nil {
+		t.Fatalf("the first write about a card was refused: %v", err)
+	}
+
+	// And it carries the block, so the cascade a local card always had is the
+	// same cascade.
+	if _, err := db.Exec(`DELETE FROM blocks WHERE id='card-9'`); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok, err := st.FlowStateForCard("card-9"); err != nil || ok {
+		t.Errorf("the route position outlived the card it was about: %v %v", ok, err)
 	}
 }

@@ -29,18 +29,25 @@ import (
 // request for any other Host is refused, since a name that resolves to this
 // listener but isn't the one we handed out is somebody else's DNS entry
 // pointing here.
-func newFrontDoor(wails, acpRoutes, ingest, board http.Handler, allowedHost string) http.Handler {
+//
+// session says whether a request carries a live board session, and is nil in
+// single-user mode, where there is nothing to carry: the routes that are about
+// this machine rather than about a board — the bound methods, the terminal
+// sockets — are then guarded by the origin and the Host alone. In team mode it
+// is what stops a person who has not logged in from starting an agent
+// (identity.go).
+func newFrontDoor(wails, acpRoutes, ingest, board http.Handler, allowedHost string, session func(string) bool) http.Handler {
 	mux := http.NewServeMux()
-	mux.Handle("/wails/", sameOrigin(wails, allowedHost))
+	mux.Handle("/wails/", requireSession(sameOrigin(wails, allowedHost), session))
 	// Only the socket, not the path around it: /acp/terminal/{id} is the page
 	// that draws the terminal, and that is the webapp, which the board serves
 	// like any other of its routes. A terminal socket is a shell in the user's
 	// project, so it is guarded exactly as the runtime is — more so, if
 	// anything.
-	mux.Handle("/acp/terminal/{id}/ws", sameOrigin(acpRoutes, allowedHost))
+	mux.Handle("/acp/terminal/{id}/ws", requireSession(sameOrigin(acpRoutes, allowedHost), session))
 	// The UI event socket is guarded the same way and for the same reason: it
 	// says what the agents are doing on this machine.
-	mux.Handle("/acp/events/ws", sameOrigin(acpRoutes, allowedHost))
+	mux.Handle("/acp/events/ws", requireSession(sameOrigin(acpRoutes, allowedHost), session))
 	// The board tools an agent calls (boardapi.go). Same origin guard — a page
 	// has no business calling these — on top of the grant token they actually
 	// authenticate with: the caller is a local process, and a local process
@@ -51,6 +58,11 @@ func newFrontDoor(wails, acpRoutes, ingest, board http.Handler, allowedHost stri
 	// bargain as the tools above: a grant token is the authentication, and the
 	// origin guard is free because the caller is a local process with no Origin.
 	mux.Handle(acp.HookPath, sameOrigin(acpRoutes, allowedHost))
+	// The claim a desktop attached to this board makes on a route event
+	// (lease.go). Not same-origin, and it cannot be: the caller is another
+	// machine. What stands in for the check is a live board session, which the
+	// handler asks for — taking work on a board is something a member does.
+	mux.Handle(LeasePath, acpRoutes)
 	// The one route here that is *not* same-origin, and it cannot be: what
 	// posts to it is a script, a webhook or a phone, so its Origin is somebody
 	// else's or absent. Its own token is what stands in for the check — see
@@ -61,11 +73,11 @@ func newFrontDoor(wails, acpRoutes, ingest, board http.Handler, allowedHost stri
 }
 
 // requestLog prints every request the front door serves when
-// XCIII_FRONTDOOR_DEBUG is set. A window that shows nothing is otherwise
+// FRONTDOOR_DEBUG is set. A window that shows nothing is otherwise
 // silent — the webview has a console nobody can read — and the first question
 // is always which of these three the page actually asked for.
 func requestLog(next http.Handler) http.Handler {
-	if os.Getenv("XCIII_FRONTDOOR_DEBUG") == "" {
+	if os.Getenv("FRONTDOOR_DEBUG") == "" {
 		return next
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -166,4 +178,39 @@ func portOf(hostport string) string {
 // door is private to this process and its window.
 func listenLoopback(port int) (net.Listener, error) {
 	return net.Listen("tcp", net.JoinHostPort("127.0.0.1", strconv.Itoa(port)))
+}
+
+// sessionCookie is how the token reaches the front door: the Wails runtime
+// makes its own fetches and a WebSocket takes no header a page can set. Written
+// by the page (session.ts), so not HttpOnly.
+const sessionCookie = "boardSession"
+
+// requireSession refuses a request with no live board session. Installed only
+// on a hosted server, where sessions exist.
+func requireSession(next http.Handler, valid func(string) bool) http.Handler {
+	if valid == nil {
+		return next
+	}
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if openToEverybody(r) {
+			next.ServeHTTP(w, r)
+			return
+		}
+		cookie, err := r.Cookie(sessionCookie)
+		if err != nil || !valid(cookie.Value) {
+			http.Error(w, "not logged in", http.StatusUnauthorized)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+// openToEverybody: the runtime module carries no authority — the calls made
+// through it are the guarded POST — and a login page has to be able to load it
+// to stop being a login page. See docs/decisions.md.
+func openToEverybody(r *http.Request) bool {
+	if r.Method != http.MethodGet && r.Method != http.MethodHead {
+		return false
+	}
+	return r.URL.Path == "/wails/runtime.js"
 }

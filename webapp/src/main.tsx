@@ -6,7 +6,8 @@ import App from './app'
 import {installPolyfills} from './polyfills'
 import {initThemes} from './theme'
 import {importNativeAppSettings} from './nativeApp'
-import {hydrateUserSettings} from './userSettings'
+import {hydrateUserSettings, reportLanguage} from './userSettings'
+import {getCurrentLanguage} from './i18n'
 
 import {IUser} from './user'
 import {getMe} from './store/users'
@@ -23,7 +24,7 @@ import '@mattermost/compass-icons/css/compass-icons.css'
 //
 // Cyrillic is what narrowed the field to these two. The interface is Russian,
 // and most condensed grotesques on offer — IBM Plex Sans Condensed among them —
-// ship only `cyrillic-ext`, which does not cover А–Я.
+// ship only `cyrillic-ext`, which does not cover the basic Cyrillic letters.
 import '@fontsource-variable/roboto-condensed'
 import '@fontsource-variable/jetbrains-mono'
 
@@ -63,6 +64,13 @@ async function boot() {
     await hydrateUserSettings()
     initThemes()
 
+    // Which language this page settled on — the pick, else the webview's own
+    // locale. The Go side cannot read the second one, and it installs the board
+    // templates in a language (internal/boardadapter/templatetext.go). Awaited,
+    // because it can mean those boards are replaced and everything read before
+    // that is stale.
+    await reportLanguage(getCurrentLanguage())
+
     // The store is created here, not in a module singleton, and everything
     // that writes to it from outside the component tree — the Mutator — gets
     // its actions handed over before the first render.
@@ -73,7 +81,7 @@ async function boot() {
         <AppStoreProvider store={store}>
             <MainApp/>
         </AppStoreProvider>
-    ), document.getElementById('xciii-app')!)
+    ), document.getElementById('app-root')!)
 }
 
 boot()

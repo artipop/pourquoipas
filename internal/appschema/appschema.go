@@ -17,16 +17,21 @@ import (
 	"strings"
 	"text/template"
 
-	_ "github.com/mattn/go-sqlite3" // the driver a test's scratch database needs
-
+	// Also the driver: sqlstore registers "sqlite3" as whichever SQLite the
+	// build chose, and importing one here as well would register it twice.
 	"github.com/artipop/xciii/server/services/store/sqlstore"
 )
 
-// migration is the one that creates the schema — the whole of it, the fork's
-// tables and ours, since the ladder was collapsed into it.
-// Named rather than searched for, so that renaming it fails loudly here instead
-// of quietly matching nothing.
-const migration = "migrations/000001_init.up.sql"
+// migrations are the two that create the schema: the board's own tables, then
+// what this application adds beside them. In this order, because every foreign
+// key in the second points at a table the first made.
+//
+// Named rather than searched for, so that renaming one fails loudly here
+// instead of quietly matching nothing.
+var migrations = []string{
+	"migrations/000001_board.up.sql",
+	"migrations/000002_app.up.sql",
+}
 
 // The board's own tables used to be stubbed here, because the migration that
 // made ours did not make them. Since the collapse there is one migration and it
@@ -50,7 +55,7 @@ func Open(path string) (*sql.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	db, err := sql.Open("sqlite3", path+"?_busy_timeout=5000")
+	db, err := sql.Open("sqlite3", sqlstore.SQLiteDSNWithoutForeignKeys(path))
 	if err != nil {
 		return nil, err
 	}
@@ -88,38 +93,40 @@ func alreadyMade(db *sql.DB) (bool, error) {
 // SQLite renders the migration for SQLite — the same rendering the board's own
 // migration source performs, minus the engine that runs it.
 func SQLite() (string, error) {
-	asset, err := fs.ReadFile(sqlstore.Assets, migration)
-	if err != nil {
-		return "", fmt.Errorf("reading %s: %w", migration, err)
-	}
-	tmpl, err := template.New("schema").Parse(string(asset))
-	if err != nil {
-		return "", err
-	}
 	var out bytes.Buffer
-	if err := tmpl.Execute(&out, map[string]any{
-		"sqlite":   true,
-		"mysql":    false,
-		"postgres": false,
-	}); err != nil {
-		return "", err
-	}
-	if !strings.Contains(out.String(), "CREATE TABLE") {
-		return "", fmt.Errorf("%s rendered nothing for SQLite", migration)
+	for _, migration := range migrations {
+		asset, err := fs.ReadFile(sqlstore.Assets, migration)
+		if err != nil {
+			return "", fmt.Errorf("reading %s: %w", migration, err)
+		}
+		tmpl, err := template.New("schema").Parse(string(asset))
+		if err != nil {
+			return "", err
+		}
+		before := out.Len()
+		if err := tmpl.Execute(&out, map[string]any{
+			"sqlite":   true,
+			"mysql":    false,
+			"postgres": false,
+		}); err != nil {
+			return "", err
+		}
+		if !strings.Contains(out.String()[before:], "CREATE TABLE") {
+			return "", fmt.Errorf("%s rendered nothing for SQLite", migration)
+		}
 	}
 	return out.String(), nil
 }
 
 // OpenEnforcing is Open with the foreign keys enforced.
 //
-// The DSN is spelled for the driver *this package* registers, which is
-// mattn/go-sqlite3 and is imported above with no build tag. sqlstore.SQLiteDSN
-// looks like the right thing to call and is not: it is tag-selected beside the
-// import that chooses the application's driver, so in a build without
-// `-tags sqlite3` it answers with modernc's `_pragma=foreign_keys(1)` while the
-// driver actually open here is still mattn, which ignores it. The keys were
-// then off, and three cascade tests failed for a reason that had nothing to do
-// with the constraints they were testing.
+// The DSN comes from sqlstore because the driver does: the spelling and the
+// import are chosen by the same build constraint, beside each other. This
+// package once imported mattn itself, unconditionally, and spelled the DSN by
+// hand — because sqlstore's spelling followed the tag while the driver open
+// here did not, a build without `-tags sqlite3` handed mattn modernc's
+// `_pragma=foreign_keys(1)`, the keys were off, and three cascade tests failed
+// for a reason that had nothing to do with the constraints they were testing.
 //
 // The pragma is verified rather than assumed, because that mismatch was silent:
 // a DSN parameter a driver does not recognise is not an error, it is nothing.
@@ -131,7 +138,7 @@ func OpenEnforcing(path string) (*sql.DB, error) {
 	if err := db.Close(); err != nil {
 		return nil, err
 	}
-	enforcing, err := sql.Open("sqlite3", addParam(path, "_foreign_keys", "on"))
+	enforcing, err := sql.Open("sqlite3", sqlstore.SQLiteDSN(path))
 	if err != nil {
 		return nil, err
 	}
@@ -147,26 +154,22 @@ func OpenEnforcing(path string) (*sql.DB, error) {
 	return enforcing, nil
 }
 
-// addParam appends one DSN setting, minding whether there is a query already.
-func addParam(dsn, key, value string) string {
-	if strings.Contains(dsn, key) {
-		return dsn
-	}
-	sep := "?"
-	if strings.Contains(dsn, "?") {
-		sep = "&"
-	}
-	return dsn + sep + key + "=" + value
-}
-
 // AddCard puts a card on the board, which is all this side ever needs to know
 // about one: our tables reference it by id and read nothing else off it.
 func AddCard(db *sql.DB, boardID, cardID string) error {
 	if err := AddBoard(db, boardID); err != nil {
 		return err
 	}
-	_, err := db.Exec(`INSERT INTO blocks (id, board_id, type) VALUES (?,?,'card') ON CONFLICT(id) DO NOTHING`,
-		cardID, boardID)
+	if _, err := db.Exec(`INSERT INTO blocks (id, board_id, type) VALUES (?,?,'card') ON CONFLICT(id) DO NOTHING`,
+		cardID, boardID); err != nil {
+		return err
+	}
+	// The row every table keyed on a card points at. Made here rather than by
+	// each test, because "a card exists" is what this helper means and the ref
+	// is now part of it — the app's own writes go through
+	// acp.Store.ensureCardRef and never see this.
+	_, err := db.Exec(`INSERT INTO card_ref (card_id, board_id, block_id, created_at)
+		VALUES (?,?,?,0) ON CONFLICT(card_id) DO NOTHING`, cardID, boardID, cardID)
 	return err
 }
 
@@ -175,7 +178,13 @@ func AddCard(db *sql.DB, boardID, cardID string) error {
 // real ones rather than stubs, so a fixture has to make a board a board: one
 // team ('0', the only one this product has), a type, and a title.
 func AddBoard(db *sql.DB, boardID string) error {
-	_, err := db.Exec(`INSERT INTO boards (id, team_id, type, title, minimum_role)
-		VALUES (?, '0', 'P', ?, '') ON CONFLICT(id) DO NOTHING`, boardID, boardID)
+	if _, err := db.Exec(`INSERT INTO boards (id, team_id, type, title, minimum_role)
+		VALUES (?, '0', 'P', ?, '') ON CONFLICT(id) DO NOTHING`, boardID, boardID); err != nil {
+		return err
+	}
+	// local_board_id set, because a board a fixture makes is this machine's:
+	// that is what carries the cascade.
+	_, err := db.Exec(`INSERT INTO board_ref (board_id, source_id, local_board_id, created_at)
+		VALUES (?, NULL, ?, 0) ON CONFLICT(board_id) DO NOTHING`, boardID, boardID)
 	return err
 }

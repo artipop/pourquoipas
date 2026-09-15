@@ -1,6 +1,11 @@
 package acp
 
-import "time"
+import (
+	"context"
+	"fmt"
+	"strings"
+	"time"
+)
 
 // What a card can say about itself: which route it is on, where along it it
 // stands, and what it is waiting for. The card shows this instead of making
@@ -14,6 +19,22 @@ type CardFlowStage struct {
 	Crew    []string `json:"crew,omitempty"` // who works it
 	Current bool     `json:"current"`
 	Done    bool     `json:"done"` // the card has already been through it
+}
+
+// CardFlowMark is a way a person can move the card from where it stands: the
+// value they would put in the outcome field, and the stage that value leads to.
+//
+// It exists because a wait stage is one where nobody works and nothing runs —
+// the card sits until a person says how it went — and saying so was picking a
+// value out of a field on the card, three clicks from the card's face. There
+// are two answers and the route already knows where each of them leads, so the
+// card can offer them as what they are: forward, and back.
+type CardFlowMark struct {
+	Value  string `json:"value"`
+	Column string `json:"column"`
+	// Forward is the answer that carries the work on, as against the one that
+	// sends it back. It decides which way the arrow points and nothing else.
+	Forward bool `json:"forward"`
 }
 
 // CardFlow is the whole answer for one card.
@@ -31,6 +52,32 @@ type CardFlow struct {
 	// to be a comment on the card; it is state, so it lives here and goes away
 	// with the next progress.
 	Stalled string `json:"stalled,omitempty"`
+	// Marks are the moves a person can make from here — see CardFlowMark. Empty
+	// wherever the route does not offer one, which is every stage that decides
+	// for itself.
+	Marks []CardFlowMark `json:"marks,omitempty"`
+
+	// Ask is the question holding the card at a transition, when one is. See
+	// cardask.go: nothing runs and the card does not move until it is
+	// answered.
+	Ask *CardFlowAsk `json:"ask,omitempty"`
+}
+
+// CardFlowAsk is that question as the card draws it: one at a time, which is
+// the shape every other pick in this app has — the folder, the agent, the two
+// outcome buttons.
+type CardFlowAsk struct {
+	QuestionID string      `json:"questionId"`
+	Text       string      `json:"text"`
+	Options    []AskOption `json:"options"`
+
+	// Column is where the card goes once every question is answered, so the
+	// person can see what they are letting it do.
+	Column string `json:"column"`
+
+	// Left counts the questions still unanswered, this one included: a person
+	// answering the first of three should know there are three.
+	Left int `json:"left,omitempty"`
 }
 
 // CardFlowFor describes where a card stands on its route. It returns nothing —
@@ -88,9 +135,18 @@ func (m *Manager) CardFlowFor(cardID string) (*CardFlow, error) {
 		})
 	}
 
-	// Conditions included: «на карточке выбрано «Одобрено» = «Да»» is the
+	// Conditions included: a condition on a card property is the
 	// answer to "what is this card waiting for", the kind alone is not.
 	out.WaitingFor = append(out.WaitingFor, flow.WaitDescriptions(st.NodeID)...)
+	out.Marks = m.marksFrom(flow, st.NodeID)
+	out.Ask = askForCard(flow, st)
+
+	// A card being asked something is a card going nowhere until it is
+	// answered, and the two outcome buttons would be a second way to move it
+	// from under the question.
+	if out.Ask != nil {
+		out.Marks = nil
+	}
 
 	m.mu.Lock()
 	_, out.Running = m.byCard[cardID]
@@ -217,4 +273,137 @@ func (m *Manager) BoardFlowOverview(boardID string) ([]FlowOverview, error) {
 		out = append(out, view)
 	}
 	return out, nil
+}
+
+// marksFrom is what a person can say from this stage: the route's own
+// card.changed edges that ask about the outcome field, named by where they
+// lead. Only those — an edge waiting on a merged branch is the world's answer
+// and not a person's, and an edge on a stage's own outcome belongs to whatever
+// runs there.
+func (m *Manager) marksFrom(flow FlowEntry, nodeID string) []CardFlowMark {
+	var out []CardFlowMark
+	for _, e := range flow.Edges {
+		if e.From != nodeID || e.On != TriggerCardChanged || e.If == nil {
+			continue
+		}
+		if !strings.EqualFold(e.If.Property, OutcomePropertyTitle) {
+			continue
+		}
+		node, ok := flow.Node(e.To)
+		if !ok {
+			continue
+		}
+		out = append(out, CardFlowMark{
+			Value:   e.If.Value,
+			Column:  node.Column,
+			Forward: strings.EqualFold(e.If.Value, OutcomePassed),
+		})
+	}
+	return out
+}
+
+// MarkCardOutcome is a person answering for a stage that runs nothing: «прошло»
+// or «не прошло», put on the card so the route sees it and moves.
+//
+// Through UpdateCard rather than SetCardOption, and that is the whole point:
+// SetCardOption is silent, because everything the machine records about a card
+// must not set the card's own automation off. This one has to — the board's
+// notify is what wakes handleCardChanged, which is what moves the card. It is a
+// person editing the card, and it goes the way a person's edit goes.
+func (m *Manager) MarkCardOutcome(ctx context.Context, cardID, value string) error {
+	if strings.TrimSpace(cardID) == "" {
+		return fmt.Errorf("не сказано, какая карточка")
+	}
+	if value != OutcomePassed && value != OutcomeFailed {
+		return fmt.Errorf("исход бывает «%s» или «%s»", OutcomePassed, OutcomeFailed)
+	}
+	if m.writer == nil {
+		return fmt.Errorf("доска недоступна")
+	}
+	return m.forCard(cardID).Writer.UpdateCard(ctx, cardID, CardEdit{Options: []string{value}})
+}
+
+// askForCard is the pending question, named by the stage it leads to. A route
+// somebody edited while the card stood here may no longer have that stage; the
+// question is still drawn, because the card is still held and the answer is
+// still what releases it.
+func askForCard(flow FlowEntry, st FlowState) *CardFlowAsk {
+	q := st.Ask.Next()
+	if q == nil {
+		return nil
+	}
+	left := 0
+	for _, each := range st.Ask.Questions {
+		if each.Answer == "" {
+			left++
+		}
+	}
+	column := st.Ask.ToNode
+	if node, ok := flow.Node(st.Ask.ToNode); ok {
+		column = node.Column
+	}
+	return &CardFlowAsk{QuestionID: q.ID, Text: q.Text, Options: q.Options, Column: column, Left: left}
+}
+
+// CardFlowsForBoard is which route each card of a board is on, in one call —
+// the answer a view filtered by route needs for every card it draws, and the
+// bargain ListTerminals already takes: a board has as many cards as it likes,
+// and GetCardFlow per card would be a round trip each.
+//
+// Two ways a card belongs to a route, and both are the engine's own rule rather
+// than a second copy of it on the page. Where the card *stands* is the flow
+// state, which exists once the card has entered a stage. Before that the card
+// may already say which route it takes — an option named after one — and that
+// is resolveFlow, the same call handleFlowMove makes. A card the two rules say
+// nothing about is on no route and belongs to every view of the board.
+func (m *Manager) CardFlowsForBoard(ctx context.Context, boardID string) map[string]string {
+	out := map[string]string{}
+	if strings.TrimSpace(boardID) == "" {
+		return out
+	}
+	states, err := m.flowStates()
+	if err != nil {
+		m.log.Warn("acp: cannot read where the cards stand", "board", boardID, "err", err)
+	}
+	for _, st := range states {
+		if st.BoardID != "" && st.BoardID != boardID {
+			continue
+		}
+		if st.FlowID != "" {
+			out[st.CardID] = st.FlowID
+		}
+	}
+	if m.reader == nil {
+		return out
+	}
+	cards, err := m.forBoard(boardID).Reader.CardsForBoard(ctx, boardID)
+	if err != nil {
+		m.log.Warn("acp: cannot read the board's cards", "board", boardID, "err", err)
+		return out
+	}
+
+	// The folder is only ever asked for by the rule that ties a route to one,
+	// and resolving it stats a directory per card. So the cheap rules answer
+	// first, and the folder is resolved only for a board that has such a route.
+	tied := false
+	for _, f := range m.BoardFlows(boardID) {
+		if f.WorkspaceID != "" {
+			tied = true
+			break
+		}
+	}
+	for _, ev := range cards {
+		if _, ok := out[ev.CardID]; ok {
+			continue
+		}
+		flow := m.resolveFlow(ev, "")
+		if flow == nil && tied {
+			path, _ := m.resolveWorkdir(ev)
+			flow = m.resolveFlow(ev, path)
+		}
+		if flow != nil {
+			out[ev.CardID] = flow.ID
+		}
+	}
+	return out
 }

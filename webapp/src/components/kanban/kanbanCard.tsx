@@ -41,7 +41,7 @@ type Props = {
     groupId: string
 
     // dragDisabled is for a board whose columns are not places a card can be
-    // put — «Входящие», grouped by who brought the card. It is not the same as
+    // put — the inbox view, grouped by who brought the card. It is not the same as
     // readonly: the card still opens, and its menu still works.
     dragDisabled?: boolean
 }
@@ -62,7 +62,7 @@ const KanbanCard = (props: Props) => {
     // opening the card — while on a board of several folders, which folder a
     // card belongs to is most of what the board is being scanned for.
     //
-    // The card's own field and nothing else: «черновики доски» is where a
+    // The card's own field and nothing else: the board's drafts folder is where a
     // conversation stands when the card names no folder, not an answer the card
     // gives, and printing it here would say the card belongs to a project it
     // does not. An empty field draws nothing.
@@ -107,6 +107,12 @@ const KanbanCard = (props: Props) => {
     // drops it.
     const paused = () => Boolean(cutOff()) && !attention() && !liveTerminal()
     const showsAgent = () => Boolean(attention() || liveTerminal() || cutOff())
+
+    // How a stage ended is answered in the card, on its route strip — not here.
+    // These two buttons stood on the card's face for a while, and what that
+    // cost was the face saying two things at once: what the work is, and a
+    // decision about it. The strip already draws them, beside the stage they
+    // are about (flowStrip.tsx).
     const canOpenTerminal = () => !props.readonly && isCardTerminalAvailable()
     const agentTitle = () => {
         if (attention()) {

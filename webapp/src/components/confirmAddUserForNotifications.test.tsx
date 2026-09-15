@@ -64,7 +64,7 @@ describe('/components/confirmAddUserForNotifications', () => {
     // An agent is not a person being invited: it reads nothing, is notified of
     // nothing, and does its work through our own API under a grant that has
     // nothing to do with this membership. Asking what permission to give it is
-    // a question with no meaningful answer — and «Наблюдатель» was the one it
+    // a question with no meaningful answer — and the viewer role was the one it
     // defaulted to, which is the opposite of what an agent is for.
     it('asks an agent no permission and adds it as an editor', async () => {
         const onConfirm = vi.fn();

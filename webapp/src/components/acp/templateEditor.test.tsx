@@ -70,7 +70,7 @@ describe('components/acp/templateEditor', () => {
     })
 
     // What a board made from the template will do is said here and edited on a
-    // board: the routes came off one, and «Колонки и маршруты…» is where a
+    // board: the routes came off one, and the automation dialog is where a
     // route is drawn.
     test('says what the template carries, and does not offer to redraw it', async () => {
         stubBindings()
@@ -86,7 +86,7 @@ describe('components/acp/templateEditor', () => {
             return found!
         })
         expect(carries.textContent).toContain('В работе (an agent works on the card)')
-        expect(carries.textContent).toContain('В работе → На ревью')
+        expect(carries.textContent).toContain('В работе › На ревью')
         expect(container.querySelector('.FlowDiagram')).toBeNull()
         expect(screen.getByDisplayValue('Разработка')).toBeInTheDocument()
     })

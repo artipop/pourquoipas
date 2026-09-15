@@ -12,7 +12,21 @@ interface IUser {
     is_bot: boolean
     is_guest: boolean
     permissions?: string[]
-    roles: string
+
+    // Who administers this install: 'admin', or absent and 'member' reading the
+    // same. A different question from what somebody may do on one board, which
+    // is board membership.
+    role?: string
+
+    // person, agent or source — the accounts this app makes under their own
+    // names are accounts like any other, and there was no way to tell them
+    // apart.
+    kind?: string
+
+    // delete_at is a soft delete: an account switched off by an admin. Only the
+    // admin's own list carries deactivated accounts at all; every other read
+    // filters them out.
+    delete_at?: number
 }
 
 interface UserWorkspace {

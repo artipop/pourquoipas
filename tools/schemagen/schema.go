@@ -19,6 +19,11 @@ package main
 // and the board's change in one migration or in none.
 func appTables() []Table {
 	return []Table{
+		// What everything below points at instead of the board's own tables, so
+		// a key still holds when the board is on somebody else's server.
+		boardRef(),
+		cardRef(),
+
 		// The machine's registries. They were arrays in config.json, which is a
 		// file nothing can point at: a card named its folder by an id the
 		// settings file happened to carry, and a column named its agent by the
@@ -36,6 +41,7 @@ func appTables() []Table {
 		flowState(),
 		flowEvent(),
 		cardStall(),
+		cardChanges(),
 		stageQueue(),
 		boardSetup(),
 		vcsSeen(),
@@ -49,7 +55,7 @@ func appTables() []Table {
 // rename is the point rather than decoration: nothing about the entry has to be
 // a directory except its `path`, and the reason it has an id at all is that
 // tomorrow it may be a repository to clone, a drive or a machine over ssh. The
-// screen calls it «папка» and will go on doing so.
+// screen calls it a folder and will go on doing so.
 //
 // The git *settings* live here — kind, base branch, branch prefix, and the mode
 // per board in workspace_board. The git *state* of one card's work is a
@@ -222,14 +228,86 @@ const (
 	tableUsers  = "users"
 )
 
+// boardRef and cardRef are what a foreign key can point at when the board is
+// somebody else's.
+//
+// A key can only reach inside its own database. Everything below used to point
+// straight at blocks(id) and boards(id), and that key is the whole reason these
+// tables live in the board's database at all: deleting a card is a real DELETE
+// FROM blocks, which this side never heard about, so conversations, route
+// positions and stalls leaked for ever.
+//
+// A desktop attached to a hosted board has no such rows — a remote card is not
+// in this machine's blocks — so the insert would not be ambiguous, it would be
+// refused. These two tables are the row the key points at instead. The chain is
+// blocks → card_ref → everything, so a local card cascades exactly as it did;
+// a remote one carries no block_id and its ref row is deleted by the client
+// that hears the board say the card is gone.
+//
+// Not a surrogate id: the ref is keyed by the card's own id, so not one query
+// or column anywhere else had to change. Ids are UUIDv7 and two servers
+// colliding on one is not a risk worth a join.
+func boardRef() Table {
+	return Table{
+		Name: "board_ref",
+		Why: "A board this machine knows about, whoever's it is. What the app's own\n" +
+			"tables point at instead of boards(id), which only has the boards\n" +
+			"served by this process.",
+		Columns: []Column{
+			{Name: "board_id", Type: ID(),
+				Why: "The board's own id, on whichever server it lives."},
+			{Name: "source_id", Type: Name(64), Null: true,
+				Why: "Where the board is. NULL is this machine, which is every board\n" +
+					"until a desktop attaches to a hosted one."},
+			{Name: "local_board_id", Type: ID(), Null: true,
+				Why: "The same board in this process's own table, when it is ours. NULL\n" +
+					"for a board on a server: that is what makes the key possible at all."},
+			{Name: "created_at", Type: Millis()},
+		},
+		PK: []string{"board_id"},
+		FKs: []FK{{
+			Name: "board_ref_local", Columns: []string{"local_board_id"},
+			RefTable: tableBoards, RefCols: []string{"id"}, OnDelete: Cascade,
+		}},
+	}
+}
+
+func cardRef() Table {
+	return Table{
+		Name: "card_ref",
+		Why: "A card this machine knows about. The row every table keyed on a card\n" +
+			"points at, so the cascade survives the board being somewhere else.",
+		Columns: []Column{
+			{Name: "card_id", Type: ID()},
+			{Name: "board_id", Type: ID(), Null: true,
+				Why: "Which board it is on, and through that which server. Nullable\n" +
+					"because three of the writers know a card and not its board — a\n" +
+					"stall, a flow event, a checkout — and the board is filled in by\n" +
+					"whichever writer knows it."},
+			{Name: "block_id", Type: ID(), Null: true,
+				Why: "The same card in this process's own blocks, when it is ours. This\n" +
+					"is the cascade: the card is deleted, the block goes, this row goes,\n" +
+					"and everything about the card goes with it."},
+			{Name: "created_at", Type: Millis()},
+		},
+		PK: []string{"card_id"},
+		FKs: []FK{
+			{Name: "card_ref_board", Columns: []string{"board_id"},
+				RefTable: "board_ref", RefCols: []string{"board_id"}, OnDelete: Cascade},
+			{Name: "card_ref_block", Columns: []string{"block_id"},
+				RefTable: tableBlocks, RefCols: []string{"id"}, OnDelete: Cascade},
+		},
+	}
+}
+
 // cardFK is the key almost every table here wants: what we know about a card
 // stops being true the moment the card does.
 func cardFK(table string) FK {
 	return FK{
 		Name:     table + "_card",
 		Columns:  []string{"card_id"},
-		RefTable: tableBlocks,
-		RefCols:  []string{"id"},
+		RefTable: "card_ref",
+		RefCols:  []string{"card_id"},
 		OnDelete: Cascade,
 	}
 }
@@ -238,8 +316,8 @@ func boardFK(table string) FK {
 	return FK{
 		Name:     table + "_board",
 		Columns:  []string{"board_id"},
-		RefTable: tableBoards,
-		RefCols:  []string{"id"},
+		RefTable: "board_ref",
+		RefCols:  []string{"board_id"},
 		OnDelete: Cascade,
 	}
 }
@@ -262,6 +340,11 @@ func agentSession() Table {
 			{Name: "agent_kind", Type: Name(32)},
 			{Name: "acp_session_id", Type: Name(100), Null: true},
 			{Name: "status", Type: Name(24)},
+			{Name: "column_key", Type: Name(128), Null: true,
+				Why: "Which column's limit this run counts against. Here rather than in\n" +
+					"memory because a column's limit is about the board and not about\n" +
+					"one process: two windows of this app, and one day two machines on\n" +
+					"one board, all have to be counting the same sessions."},
 			{Name: "cwd", Type: Text(), Null: true},
 			{Name: "worktree_path", Type: Text(), Null: true},
 			{Name: "branch", Type: Name(255), Null: true},
@@ -449,6 +532,36 @@ func cardStall() Table {
 	}
 }
 
+// card_changes is the size of what a card's work amounts to.
+func cardChanges() Table {
+	return Table{
+		Name: "card_changes",
+		Why: "How much a card's branch holds, in numbers. The diff itself is read\n" +
+			"from git every time and never from here — this is what the button\n" +
+			"that opens it is drawn on, and what a board could show per card.\n" +
+			"Recorded rather than counted when asked, for two reasons: a stage\n" +
+			"ending folds the working copy away (FoldWorktree) while the question\n" +
+			"is asked on the stage after that one, and a board asking it per card\n" +
+			"is a git process per card.",
+		Columns: []Column{
+			{Name: "card_id", Type: ID()},
+			{Name: "branch", Type: Name(255), Null: true},
+			{Name: "base", Type: Name(255), Null: true,
+				Why: "What the branch was cut from, so a stale row can be told from one\n" +
+					"about a different base."},
+			{Name: "files", Type: Int()},
+			{Name: "added", Type: Int()},
+			{Name: "removed", Type: Int()},
+			{Name: "dirty", Type: Int(),
+				Why: "Files changed and not committed. Counted apart because they exist\n" +
+					"only while a working copy does, and the committed half survives it."},
+			{Name: "computed_at", Type: Millis()},
+		},
+		PK:  []string{"card_id"},
+		FKs: []FK{cardFK("card_changes")},
+	}
+}
+
 // stage_queue is a card waiting for a free place in its column.
 func stageQueue() Table {
 	return Table{
@@ -604,7 +717,7 @@ func sourceItem() Table {
 		PK: []string{"source", "external_id"},
 		FKs: []FK{{
 			Name: "source_item_card", Columns: []string{"card_id"},
-			RefTable: tableBlocks, RefCols: []string{"id"}, OnDelete: SetNull,
+			RefTable: "card_ref", RefCols: []string{"card_id"}, OnDelete: SetNull,
 		}},
 		Indexes: []Index{
 			{Name: "idx_source_item_card", Columns: []string{"card_id"}},
@@ -637,7 +750,7 @@ func sourceEvent() Table {
 		}},
 		FKs: []FK{{
 			Name: "source_event_card", Columns: []string{"card_id"},
-			RefTable: tableBlocks, RefCols: []string{"id"}, OnDelete: SetNull,
+			RefTable: "card_ref", RefCols: []string{"card_id"}, OnDelete: SetNull,
 		}},
 		Indexes: []Index{
 			{Name: "idx_source_event_source", Columns: []string{"source", "id"}},

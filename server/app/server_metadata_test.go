@@ -18,16 +18,11 @@ func TestGetServerMetadata(t *testing.T) {
 	t.Run("Get Server Metadata", func(t *testing.T) {
 		got := th.App.GetServerMetadata()
 		want := &ServerMetadata{
-			Version:     model.CurrentVersion,
-			BuildNumber: model.BuildNumber,
-			BuildDate:   model.BuildDate,
-			Commit:      model.BuildHash,
-			Edition:     model.Edition,
-			DBType:      "TEST_DB_TYPE",
-			DBVersion:   "TEST_DB_VERSION",
-			OSType:      runtime.GOOS,
-			OSArch:      runtime.GOARCH,
-			SKU:         "personal_server",
+			Version:   model.CurrentVersion,
+			DBType:    "TEST_DB_TYPE",
+			DBVersion: "TEST_DB_VERSION",
+			OSType:    runtime.GOOS,
+			OSArch:    runtime.GOARCH,
 		}
 
 		if !reflect.DeepEqual(got, want) {

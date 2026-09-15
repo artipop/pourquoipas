@@ -60,8 +60,11 @@ describe('components/centerPanel', () => {
         ],
     }
     const state = {
+        // The header offers to share a board where there is somebody to share
+        // it with, so these fixtures say the install has accounts on it
+        // (docs/teamwork.md).
         clientConfig: {
-            value: {},
+            value: {teamMode: true},
         },
         searchText: '',
         users: {
@@ -518,9 +521,9 @@ describe('components/centerPanel', () => {
             expect(mockedMutator.performAsUndoGroup).toHaveBeenCalledTimes(1)
         })
 
-        // «Создать» on «Входящие» writes a task of one's own, and it must not
+        // the create button on the inbox view writes a task of one's own, and it must not
         // look like something that arrived: the view admits two columns and
-        // names «Мои задачи» first, and the first value of an "includes" clause
+        // names the my-tasks column first, and the first value of an "includes" clause
         // is what a card made in that view becomes. That is the whole
         // mechanism, and this is the test that would notice it going.
         test('a card made on «Входящие» stands in «Мои задачи», not among what arrived', async () => {
@@ -577,7 +580,7 @@ describe('components/centerPanel', () => {
                 type: 'select',
                 options: folders.map((value, i) => ({id: `folder-${i}`, value, color: 'propColorDefault'})),
             })
-            withFolders.properties = {...withFolders.properties, xciiiProjectProperty: 'folderprop'}
+            withFolders.properties = {...withFolders.properties, projectProperty: 'folderprop'}
             return withFolders
         }
 

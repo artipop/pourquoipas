@@ -5,7 +5,7 @@ import mutator from '../../mutator'
 import {IntlShape} from '../../intl'
 
 import {agentBindings} from './bindings'
-import {Automation, boardAutomationProperties, readBoardAutomation, readBoardSetup} from './automation'
+import {Automation, BOARD_PROP_COLUMNS, BOARD_PROP_FLOWS, boardAutomationProperties, readBoardAutomation, readBoardSetup} from './automation'
 
 // Turning a board somebody has built into a template other boards can start
 // from. The board part of it is Focalboard's own duplicate-as-template; what
@@ -30,7 +30,7 @@ export async function exportAutomation(boardId: string): Promise<Automation> {
         return {columns: [], flows: []}
     }
     const raw = JSON.parse(await bindings.ExportBoardAutomation(boardId)) || {}
-    return {columns: raw.acpColumns || [], flows: raw.acpFlows || []}
+    return {columns: raw[BOARD_PROP_COLUMNS] || [], flows: raw[BOARD_PROP_FLOWS] || []}
 }
 
 // saveBoardAsTemplate copies the board as a template and gives the copy the

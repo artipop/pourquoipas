@@ -6,15 +6,18 @@ cost, and what is not finished.
 
 ## The thing that looked like a blocker and was not
 
-`@dnd-kit/solid` (every drag on the board and in the sidebar) and
-`@dschz/solid-flow` (the route canvas) have no Solid 2 release and no
-maintained branch heading for one. Both import `solid-js/store` and
-`solid-js/web`, which Solid 2 does not publish, and both call primitives it
-removed — `on`, `batch`, `splitProps`, `produce`, `Index`, `Context.Provider`,
-and the one-argument `createEffect`.
+`@dnd-kit/solid` (every drag on the board and in the sidebar) has no Solid 2
+release — not on its beta tag either, as of September 2026. It imports
+`solid-js/web`, which Solid 2 does not publish, and calls primitives it
+removed — `on`, `batch`, `splitProps`, `Context.Provider`, and the one-argument
+`createEffect`. `@dschz/solid-flow` (the route canvas) was in the same place
+when the move started, and is not any more: its `1.0.0-next` line is built for
+Solid 2 and is what the canvas runs on. What that cost is one API change —
+the imperative getters are gone, so a node's measured size is read off
+`useSolidFlow().internalNodes[id]` rather than `getInternalNode(id)`.
 
-They work anyway, behind `webapp/solid1/` — a re-creation of the Solid 1
-surface on top of Solid 2, pointed at **those packages only**, by importer
+dnd-kit works anyway, behind `webapp/solid1/` — a re-creation of the Solid 1
+surface on top of Solid 2, pointed at **that package only**, by importer
 path, from `solid1Compat()` in `vite.config.ts`. `webapp/solid1/README.md` is
 the detail, including the two traps: applied globally the shim rewrites what
 `@solidjs/web` itself imports and the Solid 2 renderer ends up built on Solid 1
@@ -86,9 +89,15 @@ wrapper.
 
 ## What is not finished
 
-- **34 tests in 16 files still fail** (of 1285). Mostly tests that write
-  directly and need their own `flush()`, plus the route canvas, whose library
-  is the one running through the compat shim.
+- **22 tests in 13 files still fail** (of 1549). Mostly tests that write
+  directly and need their own `flush()`. The route canvas is not among them
+  any more: its tests were failing through the compat shim and pass on
+  solid-flow 1.0.
+- **A read right after a write in the same handler returns the old value.**
+  The theme picker applied the theme being left, because it set the name and
+  then applied `themeName()`; it now applies the name in hand. A scan for that
+  shape (a setter followed by its own getter in one handler) finds nothing
+  else, but the scan is a heuristic and the bug class is silent.
 - **`tsc --noEmit` is not clean**, and was not clean before this either. The
   new errors are concentrated in files where TypeScript gives up and reports
   captured bindings as `never`; the build (esbuild) and the linter are the

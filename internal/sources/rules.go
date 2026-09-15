@@ -51,8 +51,8 @@ func matchRegexp(expr, value string) bool {
 // validation and matching cannot disagree about what it means.
 //
 // Matching ignores case, like every name comparison in this application:
-// somebody writing «доставк» means the notification that says «Доставка», and a
-// rule that silently misses it is worse than no rule. The flag is a prefix
+// a rule written in lower case means the notification that shouts, and a rule
+// that silently misses it is worse than no rule. The flag is a prefix
 // rather than a wrapper, so a rule that needs case can still say (?-i).
 func compileMatch(expr string) (*regexp.Regexp, error) {
 	return regexp.Compile("(?i)" + expr)

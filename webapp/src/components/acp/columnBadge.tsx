@@ -6,6 +6,7 @@ import {useIntl} from '../../intl'
 
 import {agentBindings} from './bindings'
 import {invalidateBoardAgents} from './boardAgents'
+import {reloadBoardFlows} from './boardFlows'
 import {onAgentEvent} from './agentEvents'
 import {ColumnSpec, specFor} from './automation'
 
@@ -31,6 +32,10 @@ export function invalidateBoardColumns(): void {
     // the same edit that moves both. One call site, one meaning: the board's
     // automation may have changed.
     invalidateBoardAgents()
+
+    // And the routes: a route added, renamed or deleted changes what the view
+    // header offers to draw the board by.
+    reloadBoardFlows()
 }
 
 async function loadColumns(boardId: string): Promise<ColumnSpec[]> {

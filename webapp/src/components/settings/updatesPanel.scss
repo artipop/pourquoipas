@@ -16,7 +16,7 @@
 
     // Which build it is — quieter than the version and pulled up under it,
     // because it qualifies that line rather than standing beside it: the two
-    // together are one answer to «что у меня стоит».
+    // together are one answer to what is installed here.
     .UpdatesPanel__edition {
         @include label;
 
@@ -97,7 +97,7 @@
         margin-top: 4px;
     }
 
-    // Same shape as the one setting in «Прочее»: the sentence on the left, the
+    // Same shape as the one setting in the other section: the sentence on the left, the
     // switch on the right.
     .UpdatesPanel__setting {
         display: flex;

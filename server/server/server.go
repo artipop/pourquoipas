@@ -30,7 +30,6 @@ const (
 
 	minSessionExpiryTime = int64(60 * 60 * 24 * 31) // 31 days
 
-	MattermostAuthMod = "mattermost"
 )
 
 type Server struct {
@@ -58,7 +57,7 @@ func New(params Params) (*Server, error) {
 	// if no ws adapter is provided, we spin up a websocket server
 	wsAdapter := params.WSAdapter
 	if wsAdapter == nil {
-		wsAdapter = ws.NewServer(authenticator, params.SingleUserToken, params.Cfg.AuthMode == MattermostAuthMod, params.Logger, params.DBStore)
+		wsAdapter = ws.NewServer(authenticator, params.SingleUserToken, params.Logger, params.DBStore)
 	}
 
 	// Attachments go on the disk, under the directory the config names. The S3
@@ -121,14 +120,12 @@ func New(params Params) (*Server, error) {
 		app:                 app,
 	}
 
-	server.initHandlers()
-
 	return &server, nil
 }
 
 // NewStore opens the database and hands back both the board's store and the
 // handle under it. The handle is returned rather than kept private because the
-// application's own tables live in this same database now (docs/model-graph.md):
+// application's own tables live in this same database now:
 // one file, one connection, one transaction — and on SQLite the pool below is
 // capped at one connection, so a second handle would be a second writer.
 func NewStore(config *config.Configuration, isSingleUser bool, logger mlog.LoggerIFace) (store.Store, *sql.DB, error) {
@@ -142,7 +139,7 @@ func NewStore(config *config.Configuration, isSingleUser bool, logger mlog.Logge
 		//
 		// A DSN rather than a PRAGMA because it has to hold for every
 		// connection, and how it is spelled depends on which driver the build
-		// tag chose — see sqlstore.SQLiteParams.
+		// chose — see sqlstore.SQLiteDSN.
 		dsn = sqlstore.SQLiteDSN(dsn)
 	}
 	sqlDB, err := sql.Open(config.DBType, dsn)
@@ -201,18 +198,18 @@ func (s *Server) Start() error {
 	s.servicesStartStopMutex.Lock()
 	defer s.servicesStartStopMutex.Unlock()
 
-	if s.config.AuthMode != MattermostAuthMod {
-		s.cleanUpSessionsTask = scheduler.CreateRecurringTask("cleanUpSessions", func() {
-			secondsAgo := minSessionExpiryTime
-			if secondsAgo < s.config.SessionExpireTime {
-				secondsAgo = s.config.SessionExpireTime
-			}
+	// Sessions are this install's own to reap: nothing else keeps them, which
+	// is why this task survived the fork shrink.
+	s.cleanUpSessionsTask = scheduler.CreateRecurringTask("cleanUpSessions", func() {
+		secondsAgo := minSessionExpiryTime
+		if secondsAgo < s.config.SessionExpireTime {
+			secondsAgo = s.config.SessionExpireTime
+		}
 
-			if err := s.store.CleanUpSessions(secondsAgo); err != nil {
-				s.logger.Error("Unable to clean up the sessions", mlog.Err(err))
-			}
-		}, cleanupSessionTaskFrequency)
-	}
+		if err := s.store.CleanUpSessions(secondsAgo); err != nil {
+			s.logger.Error("Unable to clean up the sessions", mlog.Err(err))
+		}
+	}, cleanupSessionTaskFrequency)
 
 	return nil
 }

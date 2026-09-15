@@ -7,29 +7,40 @@ import Button from '../../widgets/buttons/button'
 import Select from '../../widgets/select'
 import CompassIcon from '../../widgets/icons/compassIcon'
 
-import FlowDiagram, {BLOCK_DRAG_TYPE, NODE_HEIGHT, NODE_WIDTH, StageCount, condLabel, edgeId, edgeIndexOf, stageLabel} from './flowDiagram'
+import FlowDiagram, {BLOCK_DRAG_TYPE, NODE_HEIGHT, NODE_WIDTH, StageCount, StageWrite, condLabel, edgeId, edgeIndexOf, stageLabel} from './flowDiagram'
 import MCPField from './mcpField'
 import {MCPServers} from './mcpServers'
 import {
     ACTIONS,
+    ASK_PROPERTY,
+    ASK_WORKDIR,
+    ASK_WORKMODE,
     Automation,
     BoardColumn,
     CARD_CHANGED,
     ColumnSpec,
+    EdgeAsk,
+    EdgeCond,
     Flow,
     FlowEdge,
     FlowNode,
     FlowTrigger,
+    NewProperty,
     OUTCOMES,
     PropertyWrite,
     SUCCESS,
+    UpstreamWrite,
+    VERDICT_VALUES,
+    WRITABLE_TYPES,
     blankSpec,
     columnsOf,
     nodeFor,
     outgoing,
+    resolvedWrites,
     specFor,
     unwrittenConditions,
     upsertSpec,
+    upstreamWrites,
     withColumn,
     withEdge,
     withNode,
@@ -75,6 +86,12 @@ type Props = {
     // Every property of the board — what a stage's writes and reads pick from.
     // Broader than `properties` on purpose: a preview URL wants a text field.
     allProperties?: IPropertyTemplate[]
+
+    // The field this app writes every stage's outcome into. It is not a stage's
+    // to declare — the engine writes it for all of them — so it is kept out of
+    // the writes picker, exactly as the column property is. A condition may
+    // still ask about it, which is the whole point of it being a closed set.
+    outcomePropertyId?: string
     columns: BoardColumn[]
 
     automation: Automation
@@ -106,6 +123,18 @@ type Props = {
     onCreateColumn?: (name: string) => Promise<BoardColumn | undefined>
     onRenameColumn?: (column: BoardColumn, name: string) => Promise<void>
 
+    // onCreateProperty makes a board property for a stage's output — the same
+    // bargain onCreateColumn takes, and for the same reason: a property is the
+    // board's, shows on every card, and belongs to whoever owns the board. It
+    // returns the created template so the write can be declared without waiting
+    // for the board to come back. Absent where there is no board to patch.
+    onCreateProperty?: (spec: NewProperty) => Promise<IPropertyTemplate | undefined>
+
+    // onDeleteRoute writes a confirmed deletion through at once instead of
+    // leaving it in the draft: see removeRoute. Absent where there is no
+    // registry behind the editor, and then the draft is the whole of it.
+    onDeleteRoute?: (flow: Flow) => void
+
     // onAddRouteOption puts the route's name among the options a card can name
     // it with. Without one, the route is drawn and never taken.
     onAddRouteOption?: (flow: Flow) => void
@@ -118,6 +147,162 @@ type Props = {
 }
 
 type Selection = {kind: 'node' | 'edge', id: string} | null
+
+// NEW_PROPERTY is the writes picker's last option. A sentinel rather than the
+// empty string, which already means "nowhere" in that same list.
+const NEW_PROPERTY = '\u0000new'
+
+type NewPropertyProps = {
+    action: string
+    taken: () => string[]
+
+    // Answers whether the property was made: a refusal from the board leaves
+    // the form standing with what was typed in it.
+    onCreate: (spec: NewProperty) => Promise<boolean>
+    onCancel: () => void
+}
+
+// The form that makes a board property for a stage's output.
+//
+// It knows the two machine outputs by their shape — a deploy stage produces one
+// address, a test one verdict out of a closed set — so there it asks only what
+// to call the field. For an agent stage the kind is the question that decides
+// something: a transition can only ask "is it this value" of a property with a
+// set of values, and a free-text one is carried to later stages instead. That
+// is said here, where the choice is made, rather than in a document.
+const NewPropertyForm = (props: NewPropertyProps) => {
+    const intl = useIntl()
+    const machine = () => props.action === 'deploy' || props.action === 'test'
+    const suggested = () => {
+        if (props.action === 'deploy') {
+            return intl.formatMessage({id: 'Automation.new-property-preview', defaultMessage: 'Preview'})
+        }
+        if (props.action === 'test') {
+            return intl.formatMessage({id: 'Automation.new-property-verdict', defaultMessage: 'Verdict'})
+        }
+        return ''
+    }
+    const firstKind = (): NewProperty['type'] => {
+        switch (props.action) {
+        case 'deploy':
+            return 'url'
+        case 'test':
+            return 'select'
+        default:
+            return 'text'
+        }
+    }
+    const [name, setName] = createSignal(suggested())
+    const [kind, setKind] = createSignal<NewProperty['type']>(firstKind())
+    const [values, setValues] = createSignal(props.action === 'test' ? VERDICT_VALUES.join(', ') : '')
+    const [error, setError] = createSignal('')
+    const [busy, setBusy] = createSignal(false)
+
+    const options = () => values().split(',').map((v) => v.trim()).filter(Boolean)
+
+    const submit = async () => {
+        const wanted = name().trim()
+        if (!wanted) {
+            setError(intl.formatMessage({id: 'Automation.new-property-no-name', defaultMessage: 'Give the property a name.'}))
+            return
+        }
+        if (props.taken().some((n) => n.trim().toLowerCase() === wanted.toLowerCase())) {
+            setError(intl.formatMessage({id: 'Automation.new-property-taken', defaultMessage: 'The board already has a property with this name.'}))
+            return
+        }
+        if (kind() === 'select' && options().length === 0) {
+            setError(intl.formatMessage({id: 'Automation.new-property-no-values', defaultMessage: 'List the values, separated by commas.'}))
+            return
+        }
+        setError('')
+        setBusy(true)
+        try {
+            await props.onCreate({name: wanted, type: kind(), options: kind() === 'select' ? options() : undefined})
+        } finally {
+            setBusy(false)
+        }
+    }
+
+    return (
+        <div class='AutomationEditor__newProperty'>
+            <div class='AutomationEditor__field'>
+                <span class='AutomationEditor__label'>
+                    {intl.formatMessage({id: 'Automation.new-property-name', defaultMessage: 'Name of the property'})}
+                </span>
+                <input
+                    value={name()}
+                    onInput={(e) => setName(e.currentTarget.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && submit()}
+                />
+            </div>
+
+            <Show
+                when={!machine()}
+                fallback={
+                    <span class='AutomationEditor__hint'>
+                        <Show
+                            when={props.action === 'deploy'}
+                            fallback={intl.formatMessage(
+                                {id: 'Automation.new-property-as-verdict', defaultMessage: 'It will hold one of: {values}.'},
+                                {values: VERDICT_VALUES.join(', ')},
+                            )}
+                        >
+                            {intl.formatMessage({id: 'Automation.new-property-as-link', defaultMessage: 'It will hold a link.'})}
+                        </Show>
+                    </span>
+                }
+            >
+                <div class='AutomationEditor__field'>
+                    <span class='AutomationEditor__label'>
+                        {intl.formatMessage({id: 'Automation.new-property-kind', defaultMessage: 'What it holds'})}
+                    </span>
+                    <Select
+                        value={kind()}
+                        options={[
+                            {value: 'text', label: intl.formatMessage({id: 'Automation.new-property-text', defaultMessage: 'text'})},
+                            {value: 'url', label: intl.formatMessage({id: 'Automation.new-property-url', defaultMessage: 'a link'})},
+                            {value: 'select', label: intl.formatMessage({id: 'Automation.new-property-select', defaultMessage: 'one of a set of values'})},
+                        ]}
+                        onChange={(next) => setKind(next as NewProperty['type'])}
+                        label={intl.formatMessage({id: 'Automation.new-property-kind', defaultMessage: 'What it holds'})}
+                    />
+                </div>
+                <Show when={kind() === 'select'}>
+                    <div class='AutomationEditor__field'>
+                        <span class='AutomationEditor__label'>
+                            {intl.formatMessage({id: 'Automation.new-property-values', defaultMessage: 'The values, separated by commas'})}
+                        </span>
+                        <input
+                            value={values()}
+                            onInput={(e) => setValues(e.currentTarget.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && submit()}
+                        />
+                    </div>
+                </Show>
+                <span class='AutomationEditor__hint'>
+                    {intl.formatMessage({id: 'Automation.new-property-branching', defaultMessage: 'A transition can branch on a property with a set of values. A text one is carried to the stages further on and read there.'})}
+                </span>
+            </Show>
+
+            <Show when={error()}>
+                <div class='AutomationEditor__warning'>{error()}</div>
+            </Show>
+
+            <div class='AutomationEditor__newPropertyActions'>
+                <Button
+                    emphasis='primary'
+                    onClick={submit}
+                    disabled={busy()}
+                >
+                    {intl.formatMessage({id: 'Automation.new-property-add', defaultMessage: 'Add the property'})}
+                </Button>
+                <Button onClick={props.onCancel}>
+                    {intl.formatMessage({id: 'Automation.new-property-cancel', defaultMessage: 'Cancel'})}
+                </Button>
+            </div>
+        </div>
+    )
+}
 
 // COLUMNS_VIEW is the canvas with no route on it: what each column does, which
 // is the half of the answer that holds for every card.
@@ -151,6 +336,21 @@ const AutomationEditor = (props: Props) => {
     const [selected, setSelected] = createSignal<Selection>(
         props.focusColumnId ? {kind: 'node', id: props.focusColumnId} : null,
     )
+
+    // Which writes picker has its "a new property" form open, by the action it
+    // belongs to. One signal because one panel is drawn at a time — the column
+    // half and the stage half are exclusive — and it is dropped when the panel
+    // stops being about the same thing, or the form would follow the eye onto
+    // the next stage half-typed.
+    const [creating, setCreating] = createSignal<string | null>(null)
+
+    // Which route has been asked about, if any. One at a time, and dropped
+    // whenever the panel stops being about it.
+    const [confirmingRoute, setConfirmingRoute] = createSignal<string | null>(null)
+    createEffect(() => [selected(), route()] as const, () => {
+        setCreating(null)
+        setConfirmingRoute(null)
+    })
 
     const flows = () => props.automation.flows
     const specs = () => props.automation.columns
@@ -358,6 +558,11 @@ const AutomationEditor = (props: Props) => {
             return
         }
         updateFlow(current.name, (f) => ({...f, edges: [...f.edges, {from: node.id, to: target.id, on: kind}]}))
+
+        // …and the new arrow is what the panel is about now. Without this the
+        // button made something the person then had to find on the canvas,
+        // which is the step the list used to save them.
+        setSelected({kind: 'edge', id: edgeId({from: node.id, to: target.id, on: kind}, current.edges.length)})
         setSelected({kind: 'edge', id: edgeId({from: node.id, to: target.id, on: kind}, current.edges.length)})
     }
 
@@ -405,8 +610,24 @@ const AutomationEditor = (props: Props) => {
     }
 
     const removeRoute = (name: string) => {
-        props.onChange({...props.automation, flows: flows().filter((f) => f.name !== name)})
-        showRoute(COLUMNS_VIEW)
+        const gone = flows().find((f) => f.name === name)
+        const left = flows().filter((f) => f.name !== name)
+        setConfirmingRoute(null)
+        props.onChange({...props.automation, flows: left})
+
+        // …and written through now rather than waiting for Save. Everything
+        // else in this editor is a draft somebody may still be arranging; a
+        // route somebody has just confirmed deleting is not, and leaving it on
+        // screen until a second button reads as the first one not having
+        // worked.
+        if (gone) {
+            props.onDeleteRoute?.(gone)
+        }
+
+        // The next route, or the columns when that was the last one — landing
+        // on the columns while three routes are still there reads as having
+        // deleted more than was asked for.
+        showRoute(left[0]?.name ?? COLUMNS_VIEW)
         setSelected(null)
     }
 
@@ -430,11 +651,63 @@ const AutomationEditor = (props: Props) => {
         })
     }
 
-    const stageTargets = () => nodes().filter((n) => n.id !== selectedNode()?.id)
+    // The select properties a condition may ask about. Two are left out. The
+    // route's own column property, because a change of that is a move and not a
+    // mark. And the outcome field: the app writes it for every stage, a person
+    // answers it on the card in one click, and putting it in a list of things
+    // to configure would make a mechanism out of something that has no
+    // settings. An arrow that already asks about it says so and is not offered
+    // for editing (condEditor).
+    const condProperties = () => props.properties.filter((p) =>
+        p.name !== (flow()?.property || props.property?.name) && p.id !== props.outcomePropertyId)
 
-    // The select properties a condition may ask about. The route's own column
-    // property is excluded: a change of that is a move, not a mark.
-    const condProperties = () => props.properties.filter((p) => p.name !== (flow()?.property || props.property?.name))
+    // Whether this condition is the outcome one — matched by name, because that
+    // is what an edge carries, and by the id the board records for the field.
+    const isOutcomeCond = (cond: EdgeCond | undefined) => {
+        const named = (props.allProperties || []).find((p) => p.id === props.outcomePropertyId)
+        return Boolean(cond?.property && named && cond.property.toLowerCase() === named.name.toLowerCase())
+    }
+
+    // The same list, ordered by the graph: what the stage this arrow leaves
+    // produces comes first, then what the stages before it produce, then the
+    // rest of the board. A condition is a question about a value, and the
+    // useful ones are the values this route actually puts on the card — an
+    // alphabetical list of every select on the board buries them.
+    //
+    // Each is labelled with the stage that writes it, which is the answer to
+    // "will this ever be filled in" — the question unwrittenConditions warns
+    // about after the fact.
+    const condChoices = (from: string) => {
+        const current = flow()
+        const written = new Map<string, string>()
+        if (current) {
+            const node = current.nodes.find((n) => n.id === from)
+            if (node) {
+                for (const w of resolvedWrites(node, specs())) {
+                    written.set(w.property.toLowerCase(), node.column)
+                }
+            }
+            for (const w of upstreamWrites(current, from, specs())) {
+                if (!written.has(w.property.toLowerCase())) {
+                    written.set(w.property.toLowerCase(), w.from)
+                }
+            }
+        }
+        const rank = (p: IPropertyTemplate) => (written.has(p.name.toLowerCase()) ? 0 : 1)
+        return condProperties().
+            slice().
+            sort((a, b) => rank(a) - rank(b)).
+            map((p) => {
+                const stage = written.get(p.name.toLowerCase())
+                return {
+                    value: p.name,
+                    label: stage ? intl.formatMessage(
+                        {id: 'Automation.cond-property-from', defaultMessage: '{property} · written by “{stage}”'},
+                        {property: p.name, stage},
+                    ) : p.name,
+                }
+            })
+    }
 
     // Who works something, ticked off the registry. One component for both
     // answers a stage has — the column's crew and the stage's own — because
@@ -547,16 +820,67 @@ const AutomationEditor = (props: Props) => {
         )
     }
 
-    // The properties a stage may write or read: every board property except the
-    // column one — moving between columns is the route's own business.
+    // What a stage leaves on the card, for the chips on its box: its own list
+    // or its column's, with each marked branchable or not. Only a property with
+    // a closed set can be branched on — an arrow asks "is it this value" — so
+    // that is read off the board rather than guessed at from the name.
+    const writesOf = (node: FlowNode): StageWrite[] =>
+        resolvedWrites(node, specs()).map((w) => ({
+            name: w.property,
+            branchable: Boolean((props.allProperties || []).
+                find((p) => p.name === w.property && p.type === 'select')),
+        }))
+
+    // The properties a stage may read: every board property except the column
+    // one — moving between columns is the route's own business.
     const dataProperties = () =>
         (props.allProperties || []).filter((p) => p.id !== props.property?.id).map((p) => p.name)
 
+    // And the ones it may write, which is a narrower question: SetCardFields
+    // resolves a select by one of its option names and puts everything else on
+    // the card as text, so a date, a person or a file would take a string the
+    // board cannot read back — and createdBy/createdTime and their kin are the
+    // board's own bookkeeping and are not writable at all. Offering them was
+    // offering an answer that fails at the moment the stage reports.
+    const writableProperties = () =>
+        (props.allProperties || []).
+            filter((p) => p.id !== props.property?.id && p.id !== props.outcomePropertyId && WRITABLE_TYPES.includes(p.type)).
+            map((p) => p.name)
+
+    // createProperty makes the board property and declares it in the same
+    // breath: a field created for an output and left undeclared is the state
+    // this whole control exists to prevent. A board that refuses the property
+    // leaves the form standing with what was typed in it.
+    const createProperty = async (
+        spec: NewProperty,
+        machine: boolean,
+        value: () => PropertyWrite[],
+        write: (next: PropertyWrite[] | undefined) => void,
+    ): Promise<boolean> => {
+        const made = await props.onCreateProperty?.(spec)
+        if (!made) {
+            return false
+        }
+        setCreating(null)
+        write(machine ? [{property: made.name}] : [...value(), {property: made.name}])
+        return true
+    }
+
     // writesPicker edits a stage's declared outputs. For an agent stage each row
-    // is a property plus «обязательно» — finish_work is refused without a
+    // is a property plus a required flag — finish_work is refused without a
     // required one; a deploy or test stage writes one machine value (the
     // preview URL, the verdict), so it gets a single picker under the action's
     // own label. `note` names the inherited answer, the crew picker's shape.
+    // A test stage has nothing left to declare. Its verdict *is* how the stage
+    // ended, and how a stage ended is «Исход» — written by the engine for every
+    // stage, with no declaration and no column. Offering a second field for the
+    // same fact is the duplication «Исход» was made to remove.
+    //
+    // Go still writes a verdict into whatever a board declared before this
+    // (writeStageFields), so nobody's board loses a value; there is just no way
+    // to ask for a new one.
+    const writesApply = (action: string) => action !== 'test'
+
     const writesPicker = (
         action: string,
         value: () => PropertyWrite[],
@@ -611,9 +935,20 @@ const AutomationEditor = (props: Props) => {
                     value={machine ? (value()[0]?.property || '') : ''}
                     options={[
                         {value: '', label: machine ? intl.formatMessage({id: 'Automation.writes-nowhere', defaultMessage: '— nowhere —'}) : intl.formatMessage({id: 'Automation.writes-add', defaultMessage: '+ property…'})},
-                        ...(machine ? dataProperties() : free()).map((name) => ({value: name, label: name})),
+                        ...(machine ? writableProperties() : free()).map((name) => ({value: name, label: name})),
+
+                        // The last resort, and on most boards the only right
+                        // answer: nothing here holds a preview address or a
+                        // verdict until somebody makes a field for it, and
+                        // leaving the dialog to make one on the board is how a
+                        // stage ends up declaring nothing.
+                        ...(props.onCreateProperty ? [{value: NEW_PROPERTY, label: intl.formatMessage({id: 'Automation.writes-new', defaultMessage: '+ a new property…'})}] : []),
                     ]}
                     onChange={(name) => {
+                        if (name === NEW_PROPERTY) {
+                            setCreating(action)
+                            return
+                        }
                         if (machine) {
                             write(name ? [{property: name}] : undefined)
                             return
@@ -624,6 +959,14 @@ const AutomationEditor = (props: Props) => {
                     }}
                     label={label}
                 />
+                <Show when={creating() === action}>
+                    <NewPropertyForm
+                        action={action}
+                        taken={() => (props.allProperties || []).map((p) => p.name)}
+                        onCancel={() => setCreating(null)}
+                        onCreate={(spec) => createProperty(spec, machine, value, write)}
+                    />
+                </Show>
                 <Show when={note && note()}>
                     <span class='AutomationEditor__hint'>{note!()}</span>
                 </Show>
@@ -632,17 +975,44 @@ const AutomationEditor = (props: Props) => {
     }
 
     // readsPicker is the mirror: what the stage is handed on the way in.
+    //
+    // `inherited` is the third answer, and the one nobody has to tick: what the
+    // stages ahead of this one on the route declare they write. Shown as ghost
+    // rows naming the stage that produces each, and shown rather than editable
+    // — this is the crew's and the prompt's own shape, where an override is
+    // written by *saying* something and an empty field means the answer above.
+    // A ✕ on a ghost could not work: with one row left, removing it would write
+    // an empty list, and an empty list is what asks the route again.
     const readsPicker = (
         value: () => string[],
         write: (next: string[] | undefined) => void,
         note?: () => string,
+        inherited?: () => UpstreamWrite[],
     ) => {
         const free = () => dataProperties().filter((name) => !value().includes(name))
+        const ghosts = () => (value().length > 0 ? [] : (inherited?.() || []))
         return (
             <div class='AutomationEditor__writes'>
                 <span class='AutomationEditor__label'>
                     {intl.formatMessage({id: 'Automation.reads', defaultMessage: 'Gets from the card'})}
                 </span>
+                <For each={ghosts()}>
+                    {(w) => (
+                        <div class='AutomationEditor__writeRow AutomationEditor__writeRow--inherited'>
+                            <span class='AutomationEditor__writeName'>
+                                {intl.formatMessage(
+                                    {id: 'Automation.reads-from-stage', defaultMessage: '{property} · written by “{stage}”'},
+                                    {property: w.property, stage: w.from},
+                                )}
+                            </span>
+                        </div>
+                    )}
+                </For>
+                <Show when={ghosts().length > 0}>
+                    <span class='AutomationEditor__hint'>
+                        {intl.formatMessage({id: 'Automation.reads-inherited', defaultMessage: 'The route hands these over by itself. Naming a property below replaces the whole list.'})}
+                    </span>
+                </Show>
                 <For each={value()}>
                     {(name) => (
                         <div class='AutomationEditor__writeRow'>
@@ -680,8 +1050,10 @@ const AutomationEditor = (props: Props) => {
 
     const deployPicker = (value: () => string, write: (next: string) => void, blank: string) => (
         <>
-            <label>
-                {intl.formatMessage({id: 'Automation.deploy', defaultMessage: 'Deploy target'})}
+            <div class='AutomationEditor__field'>
+                <span class='AutomationEditor__label'>
+                    {intl.formatMessage({id: 'Automation.deploy', defaultMessage: 'Deploy target'})}
+                </span>
                 <Select
                     value={value()}
                     options={[
@@ -691,7 +1063,7 @@ const AutomationEditor = (props: Props) => {
                     onChange={write}
                     label={intl.formatMessage({id: 'Automation.deploy', defaultMessage: 'Deploy target'})}
                 />
-            </label>
+            </div>
 
             {/* The registry moved out of the app's settings, and this select is
                 exactly where somebody discovers it is empty — so this is where
@@ -706,9 +1078,142 @@ const AutomationEditor = (props: Props) => {
 
     // The condition editor, shared by the node panel's rows and the edge panel:
     // one select for the kind of question, then the question's own fields.
+    // What the arrow asks before it lets the card across. It is edited here and
+    // not on the stage because one stage is entered in more than one way: the
+    // way into work from the backlog is where somebody decides how the work will
+    // be arranged, and the same card coming back from a review has that
+    // decided already.
+    //
+    // Only a closed set can be asked about, for the reason a condition can only
+    // ask about one: the answer is a click, and a click needs the answers named.
+    // The machine's own two questions, named once. Their wording when nobody
+    // writes their own is the sentence Go puts on the card, quoted rather than
+    // invented so the editor and the card cannot drift apart.
+    const askKindLabel = (kind: string) => (kind === ASK_WORKDIR ?
+        intl.formatMessage({id: 'Automation.ask-workdir', defaultMessage: 'which folder the agent works in'}) :
+        intl.formatMessage({id: 'Automation.ask-workmode', defaultMessage: 'how the agent works with the folder'}))
+
+    const askPlaceholder = (ask: EdgeAsk) => {
+        if (ask.kind === ASK_WORKDIR) {
+            return intl.formatMessage({id: 'Automation.ask-workdir-default', defaultMessage: 'Which folder should the agent work in on this card?'})
+        }
+        if (ask.kind === ASK_WORKMODE) {
+            return intl.formatMessage({id: 'Automation.ask-workmode-default', defaultMessage: 'How should the agent work with the folder for this card?'})
+        }
+        return intl.formatMessage({id: 'Automation.ask-property-default', defaultMessage: 'What should “{property}” be for this card?'}, {property: ask.property})
+    }
+
+    const askChoices = (edge: FlowEdge) => {
+        const taken = new Set((edge.ask || []).map((a) => (a.kind === ASK_PROPERTY ? (a.property || '').toLowerCase() : a.kind)))
+        const out = []
+        if (!taken.has(ASK_WORKDIR)) {
+            out.push({value: ASK_WORKDIR, label: askKindLabel(ASK_WORKDIR)})
+        }
+        if (!taken.has(ASK_WORKMODE)) {
+            out.push({value: ASK_WORKMODE, label: askKindLabel(ASK_WORKMODE)})
+        }
+        for (const p of condProperties()) {
+            if (!taken.has(p.name.toLowerCase())) {
+                out.push({value: `${ASK_PROPERTY}:${p.name}`, label: p.name})
+            }
+        }
+        return out
+    }
+
+    const askLabel = (ask: EdgeAsk) => (ask.kind === ASK_PROPERTY ? ask.property || '' : askKindLabel(ask.kind))
+
+    const addAsk = (index: number, choice: string) => {
+        const edge = edges()[index]
+        if (!edge || !choice) {
+            return
+        }
+        const added: EdgeAsk = choice.startsWith(`${ASK_PROPERTY}:`) ? {kind: ASK_PROPERTY, property: choice.slice(ASK_PROPERTY.length + 1)} : {kind: choice}
+        patchEdge(index, {ask: [...(edge.ask || []), added]})
+    }
+
+    const patchAsk = (index: number, at: number, patch: Partial<EdgeAsk>) => {
+        const edge = edges()[index]
+        if (!edge) {
+            return
+        }
+        patchEdge(index, {ask: (edge.ask || []).map((a, i) => (i === at ? {...a, ...patch} : a))})
+    }
+
+    const dropAsk = (index: number, at: number) => {
+        const edge = edges()[index]
+        if (!edge) {
+            return
+        }
+        patchEdge(index, {ask: (edge.ask || []).filter((_, i) => i !== at)})
+    }
+
+    const askEditor = (index: number, edge: FlowEdge) => (
+        <div class='AutomationEditor__field'>
+            <span class='AutomationEditor__label'>
+                {intl.formatMessage({id: 'Automation.ask-label', defaultMessage: 'Ask before the card moves on'})}
+            </span>
+            <For each={edge.ask || []}>
+                {(ask, at) => (
+                    <div class='AutomationEditor__ask'>
+                        <div class='AutomationEditor__askHead'>
+                            <span class='AutomationEditor__askName'>{askLabel(ask)}</span>
+                            <button
+                                type='button'
+                                class='AutomationEditor__askDrop'
+                                aria-label={intl.formatMessage({id: 'Automation.ask-remove', defaultMessage: 'Remove the question'})}
+                                onClick={() => dropAsk(index, at())}
+                            >
+                                <CompassIcon icon='close'/>
+                            </button>
+                        </div>
+                        <input
+                            class='AutomationEditor__input'
+                            value={ask.text || ''}
+                            placeholder={askPlaceholder(ask)}
+                            onInput={(e) => patchAsk(index, at(), {text: e.currentTarget.value})}
+                        />
+                    </div>
+                )}
+            </For>
+            <Show when={askChoices(edge).length > 0}>
+                <Select
+                    value=''
+                    options={[
+                        {value: '', label: intl.formatMessage({id: 'Automation.ask-add', defaultMessage: '+ ask something here'})},
+                        ...askChoices(edge),
+                    ]}
+                    onChange={(choice) => addAsk(index, choice)}
+                    label={intl.formatMessage({id: 'Automation.ask-pick', defaultMessage: 'Add a question to this transition'})}
+                />
+            </Show>
+            <Show when={(edge.ask || []).length > 0}>
+                <span class='AutomationEditor__hint'>
+                    {intl.formatMessage({id: 'Automation.ask-hint', defaultMessage: 'The card waits where it is until somebody answers on it. Nothing starts before that.'})}
+                </span>
+            </Show>
+        </div>
+    )
+
     const condEditor = (index: number, edge: FlowEdge) => {
         const cond = edge.if
         const isOutcome = OUTCOMES.includes(edge.on)
+
+        // An arrow that waits for the outcome field is shown and not edited.
+        // There is nothing to choose in it — the field has two values and the
+        // app owns both — so a pair of dropdowns would be asking a question
+        // whose answer is already the only one.
+        if (isOutcomeCond(cond)) {
+            return (
+                <div class='AutomationEditor__cond'>
+                    <span class='AutomationEditor__hint'>
+                        {intl.formatMessage(
+                            {id: 'Automation.cond-outcome', defaultMessage: 'When the card is marked “{value}”. That mark is the app’s own — it is set on the card, in one click.'},
+                            {value: cond?.value},
+                        )}
+                    </span>
+                </div>
+            )
+        }
         const kind = () => {
             if (!cond) {
                 return 'always'
@@ -750,7 +1255,7 @@ const AutomationEditor = (props: Props) => {
                             value={cond?.property || ''}
                             options={[
                                 {value: '', label: intl.formatMessage({id: 'Automation.cond-pick-property', defaultMessage: '— property —'})},
-                                ...condProperties().map((p) => ({value: p.name, label: p.name})),
+                                ...condChoices(edge.from),
                             ]}
                             onChange={(next) => patchEdge(index, {if: {property: next, value: ''}})}
                             label={intl.formatMessage({id: 'Automation.cond-pick-property', defaultMessage: '— property —'})}
@@ -781,17 +1286,15 @@ const AutomationEditor = (props: Props) => {
 
     return (
         <div class='AutomationEditor'>
+            {/* Routes, and nothing else. «Колонки» stood at the head of this
+                row and is not a route — a list of routes with something that
+                is not one in it makes the reader ask what kind of thing the
+                row holds. The columns are still there to be edited: the way in
+                is «Настройки самой колонки…» in a stage's panel, and a board
+                with no routes opens on them. While they are what is on screen
+                no tab is active, which is true — the card is not on a route —
+                and every route is still one click away. */}
             <div class='AutomationEditor__routes'>
-                <button
-                    type='button'
-                    class={`AutomationEditor__route${route() === COLUMNS_VIEW ? ' AutomationEditor__route--active' : ''}`}
-                    onClick={() => {
-                        showRoute(COLUMNS_VIEW)
-                        setSelected(null)
-                    }}
-                >
-                    {intl.formatMessage({id: 'Automation.columns-view', defaultMessage: 'Columns'})}
-                </button>
                 <For each={flows()}>
                     {(f) => (
                         <button
@@ -855,6 +1358,8 @@ const AutomationEditor = (props: Props) => {
                         counts={props.counts?.[route()]}
                         actionOf={actionOf}
                         crewOf={(node) => agentNamesOf(crewOf(node))}
+                        writesOf={writesOf}
+                        outcomeProperty={(props.allProperties || []).find((p) => p.id === props.outcomePropertyId)?.name}
                         selected={selected()}
                         onSelect={setSelected}
                         onChange={flow() ? onCanvasChange : undefined}
@@ -899,15 +1404,17 @@ const AutomationEditor = (props: Props) => {
                                     lands in it, and who works it on every
                                     route. */}
                                 <Show when={!flow()}>
-                                    <label>
-                                        {intl.formatMessage({id: 'Automation.on-arrival', defaultMessage: 'When a card lands here'})}
+                                    <div class='AutomationEditor__field'>
+                                        <span class='AutomationEditor__label'>
+                                            {intl.formatMessage({id: 'Automation.on-arrival', defaultMessage: 'When a card lands here'})}
+                                        </span>
                                         <Select
                                             value={specOf(node())?.action || 'none'}
                                             options={ACTIONS.map((a) => ({value: a, label: actionLabel(intl, a)}))}
                                             onChange={(action) => updateNodeSpec(node(), {action})}
                                             label={intl.formatMessage({id: 'Automation.on-arrival', defaultMessage: 'When a card lands here'})}
                                         />
-                                    </label>
+                                    </div>
 
                                     <Show when={(specOf(node())?.action || 'none') !== 'none'}>
                                         {crewPicker(
@@ -962,11 +1469,13 @@ const AutomationEditor = (props: Props) => {
                                             a stage here writes is what an edge
                                             can branch on and a later stage can
                                             read off the card. */}
-                                        {writesPicker(
-                                            specOf(node())?.action || 'none',
-                                            () => specOf(node())?.writes || [],
-                                            (writes) => updateNodeSpec(node(), {writes}),
-                                        )}
+                                        <Show when={writesApply(specOf(node())?.action || 'none')}>
+                                            {writesPicker(
+                                                specOf(node())?.action || 'none',
+                                                () => specOf(node())?.writes || [],
+                                                (writes) => updateNodeSpec(node(), {writes}),
+                                            )}
+                                        </Show>
                                         {readsPicker(
                                             () => specOf(node())?.reads || [],
                                             (reads) => updateNodeSpec(node(), {reads}),
@@ -1001,8 +1510,10 @@ const AutomationEditor = (props: Props) => {
                                     list, and two crews for one question read as
                                     a bug rather than as an override. */}
                                 <Show when={flow()}>
-                                    <label>
-                                        {intl.formatMessage({id: 'Automation.stage-action', defaultMessage: 'What happens at this stage'})}
+                                    <div class='AutomationEditor__field'>
+                                        <span class='AutomationEditor__label'>
+                                            {intl.formatMessage({id: 'Automation.stage-action', defaultMessage: 'What happens at this stage'})}
+                                        </span>
                                         <Select
                                             value={node().action || ''}
                                             options={[
@@ -1024,7 +1535,7 @@ const AutomationEditor = (props: Props) => {
                                             onChange={(action) => updateFlow(flow()!.name, (f) => withNode(f, node().id, {action}))}
                                             label={intl.formatMessage({id: 'Automation.stage-action', defaultMessage: 'What happens at this stage'})}
                                         />
-                                    </label>
+                                    </div>
 
                                     <Show when={actionOf(node()) !== 'none'}>
                                         {crewPicker(
@@ -1035,25 +1546,33 @@ const AutomationEditor = (props: Props) => {
                                             () => (node().agentIds?.length ? '' : columnCrewNote(node())),
                                         )}
 
-                                        {/* Where the stage works. It matters for
-                                            a repository and nowhere else: a QA
-                                            stage in the card's own workspace
-                                            checks the work before anything is
-                                            merged, one in the folder checks
-                                            what is already published. */}
-                                        <label>
-                                            {intl.formatMessage({id: 'Automation.run-in', defaultMessage: 'The stage works'})}
-                                            <Select
-                                                value={node().runIn || ''}
-                                                options={[
-                                                    {value: '', label: intl.formatMessage({id: 'Automation.run-in-default', defaultMessage: '— as this kind of stage usually does —'})},
-                                                    {value: 'owner', label: intl.formatMessage({id: 'Automation.run-in-owner', defaultMessage: 'on the card’s own branch'})},
-                                                    {value: 'workdir', label: intl.formatMessage({id: 'Automation.run-in-workdir', defaultMessage: 'in the folder itself'})},
-                                                ]}
-                                                onChange={(runIn) => updateFlow(flow()!.name, (f) => withNode(f, node().id, {runIn: runIn || undefined}))}
-                                                label={intl.formatMessage({id: 'Automation.run-in', defaultMessage: 'The stage works'})}
-                                            />
-                                        </label>
+                                        {/* Where the stage works, and only where
+                                            that decides something. For a deploy
+                                            and a test it is the whole of "QA
+                                            before the merge" — one checks the
+                                            card's own branch, the other what is
+                                            already published. An agent stage
+                                            works on the card's branch and there
+                                            is no second sensible answer, so the
+                                            control only stands there when
+                                            somebody has already given one. */}
+                                        <Show when={actionOf(node()) === 'deploy' || actionOf(node()) === 'test' || node().runIn}>
+                                            <div class='AutomationEditor__field'>
+                                                <span class='AutomationEditor__label'>
+                                                    {intl.formatMessage({id: 'Automation.run-in', defaultMessage: 'The stage works'})}
+                                                </span>
+                                                <Select
+                                                    value={node().runIn || ''}
+                                                    options={[
+                                                        {value: '', label: intl.formatMessage({id: 'Automation.run-in-default', defaultMessage: '— as this kind of stage usually does —'})},
+                                                        {value: 'owner', label: intl.formatMessage({id: 'Automation.run-in-owner', defaultMessage: 'on the card’s own branch'})},
+                                                        {value: 'workdir', label: intl.formatMessage({id: 'Automation.run-in-workdir', defaultMessage: 'in the folder itself'})},
+                                                    ]}
+                                                    onChange={(runIn) => updateFlow(flow()!.name, (f) => withNode(f, node().id, {runIn: runIn || undefined}))}
+                                                    label={intl.formatMessage({id: 'Automation.run-in', defaultMessage: 'The stage works'})}
+                                                />
+                                            </div>
+                                        </Show>
                                     </Show>
 
                                     <Show when={actionOf(node()) === 'deploy'}>
@@ -1084,14 +1603,18 @@ const AutomationEditor = (props: Props) => {
                                         {/* The stage's own outputs and inputs,
                                             overriding the column's — shown
                                             resolved, written to the node. */}
-                                        {writesPicker(
-                                            actionOf(node()),
-                                            () => node().writes || specOf(node())?.writes || [],
-                                            (writes) => updateFlow(flow()!.name, (f) => withNode(f, node().id, {writes})),
-                                        )}
+                                        <Show when={writesApply(actionOf(node()))}>
+                                            {writesPicker(
+                                                actionOf(node()),
+                                                () => node().writes || specOf(node())?.writes || [],
+                                                (writes) => updateFlow(flow()!.name, (f) => withNode(f, node().id, {writes})),
+                                            )}
+                                        </Show>
                                         {readsPicker(
                                             () => node().reads || specOf(node())?.reads || [],
                                             (reads) => updateFlow(flow()!.name, (f) => withNode(f, node().id, {reads})),
+                                            undefined,
+                                            () => upstreamWrites(flow()!, node().id, specs()),
                                         )}
 
                                         {/* The stage's own tools, replacing the
@@ -1121,52 +1644,29 @@ const AutomationEditor = (props: Props) => {
                                         {intl.formatMessage({id: 'Automation.open-column', defaultMessage: 'Settings of the column itself…'})}
                                     </button>
 
+                                    {/* The arrows are on the canvas, and this
+                                        used to be all of them again: two or
+                                        three selects each, in a 300px column,
+                                        saying what the picture beside it says.
+                                        One arrow is edited by clicking it —
+                                        the edge panel is the same panel — so
+                                        what is left here is the way to make a
+                                        new one. */}
                                     <div class='AutomationEditor__transitions'>
                                         <span class='AutomationEditor__label'>
                                             {intl.formatMessage({id: 'Automation.transitions', defaultMessage: 'From here the card goes'})}
                                         </span>
-                                        <For each={outgoing(edges(), node().id)}>
-                                            {({edge, index}) => (
-                                                <div class='AutomationEditor__transition'>
-                                                    <div class='AutomationEditor__transitionRow'>
-                                                        <Select
-                                                            value={edge.on}
-                                                            options={props.triggers.map((t) => ({value: t.kind, label: t.label}))}
-                                                            onChange={(on) => patchEdge(index, {on})}
-                                                            label={intl.formatMessage({id: 'Automation.transition-on', defaultMessage: 'When'})}
-                                                        />
-                                                        <span class='AutomationEditor__arrow'><CompassIcon icon='arrow-right'/></span>
-                                                        <Select
-                                                            value={edge.to}
-                                                            options={stageTargets().map((n) => ({value: n.id, label: n.column}))}
-                                                            onChange={(to) => patchEdge(index, {to})}
-                                                            label={intl.formatMessage({id: 'Automation.transition-to', defaultMessage: 'The card moves to'})}
-                                                        />
-                                                        <button
-                                                            type='button'
-                                                            class='AutomationEditor__remove'
-                                                            title={intl.formatMessage({id: 'Automation.remove-transition', defaultMessage: 'Remove'})}
-                                                            onClick={() => dropEdge(index)}
-                                                        ><CompassIcon icon='close'/></button>
-                                                    </div>
-
-                                                    {/* The rule, right under its arrow: the fork is
-                                                        drawn by conditions, so this is where a route
-                                                        stops being a straight line. */}
-                                                    {condEditor(index, edge)}
-
-                                                    <Show when={OUTCOMES.includes(edge.on) && !edge.if}>
-                                                        <button
-                                                            type='button'
-                                                            class='AutomationEditor__branch'
-                                                            onClick={() => addBranch(index)}
-                                                        >
-                                                            {intl.formatMessage({id: 'Automation.add-branch', defaultMessage: '+ branch on a condition'})}
-                                                        </button>
-                                                    </Show>
-                                                </div>
-                                            )}
-                                        </For>
+                                        <span class='AutomationEditor__hint'>
+                                            <Show
+                                                when={outgoing(edges(), node().id).length > 0}
+                                                fallback={intl.formatMessage({id: 'Automation.transitions-none', defaultMessage: 'Nowhere yet. Pull from the stage’s edge on the canvas, or add one below.'})}
+                                            >
+                                                {intl.formatMessage(
+                                                    {id: 'Automation.transitions-count', defaultMessage: '{count, plural, one {# transition} few {# transitions} other {# transitions}} — click an arrow on the canvas to edit it.'},
+                                                    {count: outgoing(edges(), node().id).length},
+                                                )}
+                                            </Show>
+                                        </span>
                                         <Button onClick={() => addTransition(node())}>
                                             {intl.formatMessage({id: 'Automation.add-transition', defaultMessage: 'Add a transition'})}
                                         </Button>
@@ -1188,25 +1688,47 @@ const AutomationEditor = (props: Props) => {
                                         <span class='AutomationEditor__condBadge'>{condLabel(intl, edge().if)}</span>
                                     </Show>
                                 </div>
-                                <label>
-                                    {intl.formatMessage({id: 'Automation.transition-on', defaultMessage: 'When'})}
+                                <div class='AutomationEditor__field'>
+                                    <span class='AutomationEditor__label'>
+                                        {intl.formatMessage({id: 'Automation.transition-on', defaultMessage: 'When'})}
+                                    </span>
                                     <Select
                                         value={edge().on}
                                         options={props.triggers.map((t) => ({value: t.kind, label: t.label}))}
                                         onChange={(on) => patchEdge(selectedEdgeIndex(), {on})}
                                         label={intl.formatMessage({id: 'Automation.transition-on', defaultMessage: 'When'})}
                                     />
-                                </label>
+                                </div>
                                 {condEditor(selectedEdgeIndex(), edge())}
-                                <label>
-                                    {intl.formatMessage({id: 'Automation.transition-to', defaultMessage: 'The card moves to'})}
+                                {askEditor(selectedEdgeIndex(), edge())}
+
+                                {/* A fork is two arrows on the same event, and
+                                    the ordinary way to draw one is to pull
+                                    twice from the stage's output. This is the
+                                    way for an arrow with no output to pull
+                                    from — a condition on what the agent wrote.
+                                    It lived on every row of a list of every
+                                    arrow; it belongs to the one selected. */}
+                                <Show when={OUTCOMES.includes(edge().on) && !edge().if}>
+                                    <button
+                                        type='button'
+                                        class='AutomationEditor__branch'
+                                        onClick={() => addBranch(selectedEdgeIndex())}
+                                    >
+                                        {intl.formatMessage({id: 'Automation.add-branch', defaultMessage: '+ branch on a condition'})}
+                                    </button>
+                                </Show>
+                                <div class='AutomationEditor__field'>
+                                    <span class='AutomationEditor__label'>
+                                        {intl.formatMessage({id: 'Automation.transition-to', defaultMessage: 'The card moves to'})}
+                                    </span>
                                     <Select
                                         value={edge().to}
                                         options={nodes().filter((n) => n.id !== edge().from).map((n) => ({value: n.id, label: n.column}))}
                                         onChange={(to) => patchEdge(selectedEdgeIndex(), {to})}
                                         label={intl.formatMessage({id: 'Automation.transition-to', defaultMessage: 'The card moves to'})}
                                     />
-                                </label>
+                                </div>
                                 <Button onClick={() => dropEdge(selectedEdgeIndex())}>
                                     {intl.formatMessage({id: 'Automation.remove-transition', defaultMessage: 'Remove'})}
                                 </Button>
@@ -1253,27 +1775,62 @@ const AutomationEditor = (props: Props) => {
                                         </div>
                                     )}
                                 </For>
-                                <label>
-                                    {intl.formatMessage({id: 'Automation.route-project', defaultMessage: 'Folder (optional)'})}
+                                <div class='AutomationEditor__field'>
+                                    <span class='AutomationEditor__label'>
+                                        {intl.formatMessage({id: 'Automation.route-project', defaultMessage: 'Cards from this folder take this route'})}
+                                    </span>
                                     <Select
                                         value={current().workspaceId || ''}
                                         options={[
-                                            {value: '', label: intl.formatMessage({id: 'Automation.route-project-any', defaultMessage: '— any folder —'})},
+                                            {value: '', label: intl.formatMessage({id: 'Automation.route-project-any', defaultMessage: '— no, the card names the route itself —'})},
                                             ...(props.workspaces || []).map((w) => ({value: w.id || '', label: w.name})),
                                         ]}
                                         onChange={(workspaceId) => updateFlow(current().name, (f) => ({...f, workspaceId}))}
-                                        label={intl.formatMessage({id: 'Automation.route-project', defaultMessage: 'Folder (optional)'})}
+                                        label={intl.formatMessage({id: 'Automation.route-project', defaultMessage: 'Cards from this folder take this route'})}
                                     />
-                                </label>
+                                </div>
+                                <div class='AutomationEditor__hint'>
+                                    {intl.formatMessage({id: 'Automation.route-project-hint', defaultMessage: 'A folder here is a rule about which route a card takes, not about where the agent works: a card that names no route and resolves to this folder goes this way. Where the work happens is the card’s own field.'})}
+                                </div>
                                 <div class='AutomationEditor__hint'>
                                     {intl.formatMessage(
                                         {id: 'Automation.route-columns', defaultMessage: 'Goes through: {columns}'},
-                                        {columns: columnsOf(current(), props.columns).map((c) => c.name).join(' → ') || '—'},
+                                        {columns: columnsOf(current(), props.columns).map((c) => c.name).join(' › ') || '—'},
                                     )}
                                 </div>
-                                <Button onClick={() => removeRoute(current().name)}>
-                                    {intl.formatMessage({id: 'Automation.remove-route', defaultMessage: 'Delete this route'})}
-                                </Button>
+                                {/* Asked about, and then done — not queued behind
+                                    Save. Deleting a route is the one edit here
+                                    that cannot be undone by editing it back:
+                                    what goes with it is where every card
+                                    standing on it was. So it takes a second
+                                    press, and the second press is the whole
+                                    act. */}
+                                <Show
+                                    when={confirmingRoute() === current().name}
+                                    fallback={
+                                        <Button onClick={() => setConfirmingRoute(current().name)}>
+                                            {intl.formatMessage({id: 'Automation.remove-route', defaultMessage: 'Delete this route'})}
+                                        </Button>
+                                    }
+                                >
+                                    <div class='AutomationEditor__warning'>
+                                        {intl.formatMessage(
+                                            {id: 'Automation.remove-route-ask', defaultMessage: 'Delete “{name}”? The cards standing on it lose their place.'},
+                                            {name: current().name},
+                                        )}
+                                        <div class='AutomationEditor__newPropertyActions'>
+                                            <Button
+                                                emphasis='primary'
+                                                onClick={() => removeRoute(current().name)}
+                                            >
+                                                {intl.formatMessage({id: 'Automation.remove-route-yes', defaultMessage: 'Delete'})}
+                                            </Button>
+                                            <Button onClick={() => setConfirmingRoute(null)}>
+                                                {intl.formatMessage({id: 'Automation.remove-route-no', defaultMessage: 'Keep it'})}
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </Show>
                             </div>
                         )}
                     </Show>

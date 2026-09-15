@@ -56,19 +56,19 @@ exports[`components/boardTemplateSelector/boardTemplateSelectorPreview > should 
         <div
           class="viewSelector"
         >
-          <input
-            class="Editable "
-            placeholder="Untitled View"
-            spellcheck=""
-            title="View"
-          />
-          <!---->
           <div>
             <div
               aria-label="View menu"
               class="MenuWrapper"
               role="button"
             >
+              <div>
+                <span
+                  class="viewTitle"
+                >
+                  View
+                </span>
+              </div>
               <button
                 type="button"
               >
@@ -84,55 +84,10 @@ exports[`components/boardTemplateSelector/boardTemplateSelectorPreview > should 
             
             <!---->
           </div>
-          <!---->
         </div>
         <div
           class="octo-spacer"
         />
-        <div
-          aria-label="Properties menu"
-          class="MenuWrapper"
-          role="button"
-        >
-          <button
-            type="button"
-          >
-            
-            <span>
-              Properties
-            </span>
-            
-            <!---->
-          </button>
-          <!---->
-          
-          <!---->
-        </div>
-        <div
-          aria-label="menuwrapper"
-          class="MenuWrapper"
-          role="button"
-        >
-          <button
-            type="button"
-          >
-            
-            <span>
-              Group by: 
-              <span
-                id="groupByLabel"
-                style="color:rgb(var(--center-channel-color-rgb))"
-              >
-                name
-              </span>
-            </span>
-            
-            <!---->
-          </button>
-          <!---->
-          
-          <!---->
-        </div>
         <div
           class="ModalWrapper"
         >
@@ -445,9 +400,11 @@ exports[`components/boardTemplateSelector/boardTemplateSelectorPreview > should 
           <button
             type="button"
           >
-            
+            <i
+              class="CompassIcon icon-plus AddIcon"
+            />
             <span>
-              + Add a group
+              Add a group
             </span>
             
             <!---->
@@ -519,9 +476,11 @@ exports[`components/boardTemplateSelector/boardTemplateSelectorPreview > should 
           <button
             type="button"
           >
-            
+            <i
+              class="CompassIcon icon-plus AddIcon"
+            />
             <span>
-              + New
+              New
             </span>
             
             <!---->
@@ -533,9 +492,11 @@ exports[`components/boardTemplateSelector/boardTemplateSelectorPreview > should 
           <button
             type="button"
           >
-            
+            <i
+              class="CompassIcon icon-plus AddIcon"
+            />
             <span>
-              + New
+              New
             </span>
             
             <!---->
@@ -547,9 +508,11 @@ exports[`components/boardTemplateSelector/boardTemplateSelectorPreview > should 
           <button
             type="button"
           >
-            
+            <i
+              class="CompassIcon icon-plus AddIcon"
+            />
             <span>
-              + New
+              New
             </span>
             
             <!---->
@@ -559,7 +522,6 @@ exports[`components/boardTemplateSelector/boardTemplateSelectorPreview > should 
         
         <!---->
       </div>
-      
     </div>
     <!---->
   </div>

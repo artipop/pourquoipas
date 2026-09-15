@@ -44,28 +44,28 @@ func TestALiteralPathWinsOverTheWildcardItLooksLike(t *testing.T) {
 	}{
 		{
 			"searching all boards is not a board named search",
-			http.MethodGet, "/api/v2/boards/search",
-			"GET /api/v2/boards/search",
+			http.MethodGet, "/api/v0/boards/search",
+			"GET /api/v0/boards/search",
 		},
 		{
 			"reordering categories is not a category named reorder",
-			http.MethodPut, "/api/v2/teams/t1/categories/reorder",
-			"PUT /api/v2/teams/{teamID}/categories/reorder",
+			http.MethodPut, "/api/v0/teams/t1/categories/reorder",
+			"PUT /api/v0/teams/{teamID}/categories/reorder",
 		},
 		{
 			"a board's own id still reaches the board route",
-			http.MethodGet, "/api/v2/boards/b1",
-			"GET /api/v2/boards/{boardID}",
+			http.MethodGet, "/api/v0/boards/b1",
+			"GET /api/v0/boards/{boardID}",
 		},
 		{
 			"a file's info is not a file named info",
-			http.MethodGet, "/api/v2/files/teams/t1/b1/f1/info",
-			"GET /api/v2/files/teams/{teamID}/{boardID}/{filename}/info",
+			http.MethodGet, "/api/v0/files/teams/t1/b1/f1/info",
+			"GET /api/v0/files/teams/{teamID}/{boardID}/{filename}/info",
 		},
 		{
 			"one subscriber's subscriptions are not a block's",
-			http.MethodGet, "/api/v2/subscriptions/u1",
-			"GET /api/v2/subscriptions/{subscriberID}",
+			http.MethodGet, "/api/v0/subscriptions/u1",
+			"GET /api/v0/subscriptions/{subscriberID}",
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {

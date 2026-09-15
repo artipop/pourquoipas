@@ -42,6 +42,14 @@ table "users" {
     null = true
     type = text
   }
+  column "role" {
+    null = true
+    type = varchar(16)
+  }
+  column "kind" {
+    null = true
+    type = varchar(32)
+  }
   column "create_at" {
     null = true
     type = bigint
@@ -56,6 +64,9 @@ table "users" {
   }
   primary_key {
     columns = [column.id]
+  }
+  check "users_role" {
+    expr = "`role` IS NULL OR `role` IN ('admin', 'member')"
   }
 }
 table "teams" {
@@ -735,6 +746,63 @@ table "notification_hints" {
     columns = [column.block_id]
   }
 }
+table "board_ref" {
+  column "board_id" {
+    null = false
+    type = varchar(36)
+  }
+  column "source_id" {
+    null = true
+    type = varchar(64)
+  }
+  column "local_board_id" {
+    null = true
+    type = varchar(36)
+  }
+  column "created_at" {
+    null = false
+    type = bigint
+  }
+  primary_key {
+    columns = [column.board_id]
+  }
+  foreign_key "board_ref_local" {
+    columns     = [column.local_board_id]
+    ref_columns = [table.boards.column.id]
+    on_delete   = CASCADE
+  }
+}
+table "card_ref" {
+  column "card_id" {
+    null = false
+    type = varchar(36)
+  }
+  column "board_id" {
+    null = true
+    type = varchar(36)
+  }
+  column "block_id" {
+    null = true
+    type = varchar(36)
+  }
+  column "created_at" {
+    null = false
+    type = bigint
+  }
+  primary_key {
+    columns = [column.card_id]
+  }
+  foreign_key "card_ref_board" {
+    columns     = [column.board_id]
+    ref_columns = [table.board_ref.column.board_id]
+    on_delete   = CASCADE
+  }
+  foreign_key "card_ref_block" {
+    columns     = [column.block_id]
+    ref_columns = [table.blocks.column.id]
+    on_delete   = CASCADE
+  }
+}
 table "proxy" {
   column "id" {
     null = false
@@ -985,6 +1053,10 @@ table "agent_session" {
     null = false
     type = varchar(24)
   }
+  column "column_key" {
+    null = true
+    type = varchar(128)
+  }
   column "cwd" {
     null = true
     type = text
@@ -1014,12 +1086,12 @@ table "agent_session" {
   }
   foreign_key "agent_session_card" {
     columns     = [column.card_id]
-    ref_columns = [table.blocks.column.id]
+    ref_columns = [table.card_ref.column.card_id]
     on_delete   = CASCADE
   }
   foreign_key "agent_session_board" {
     columns     = [column.board_id]
-    ref_columns = [table.boards.column.id]
+    ref_columns = [table.board_ref.column.board_id]
     on_delete   = CASCADE
   }
   index "idx_agent_session_card" {
@@ -1128,12 +1200,12 @@ table "conversation" {
   }
   foreign_key "conversation_card" {
     columns     = [column.card_id]
-    ref_columns = [table.blocks.column.id]
+    ref_columns = [table.card_ref.column.card_id]
     on_delete   = CASCADE
   }
   foreign_key "conversation_board" {
     columns     = [column.board_id]
-    ref_columns = [table.boards.column.id]
+    ref_columns = [table.board_ref.column.board_id]
     on_delete   = CASCADE
   }
   index "idx_conversation_card" {
@@ -1197,12 +1269,12 @@ table "flow_state" {
   }
   foreign_key "flow_state_card" {
     columns     = [column.card_id]
-    ref_columns = [table.blocks.column.id]
+    ref_columns = [table.card_ref.column.card_id]
     on_delete   = CASCADE
   }
   foreign_key "flow_state_board" {
     columns     = [column.board_id]
-    ref_columns = [table.boards.column.id]
+    ref_columns = [table.board_ref.column.board_id]
     on_delete   = CASCADE
   }
 }
@@ -1248,7 +1320,7 @@ table "flow_event" {
   }
   foreign_key "flow_event_card" {
     columns     = [column.card_id]
-    ref_columns = [table.blocks.column.id]
+    ref_columns = [table.card_ref.column.card_id]
     on_delete   = CASCADE
   }
   index "idx_flow_event_card" {
@@ -1281,7 +1353,49 @@ table "card_stall" {
   }
   foreign_key "card_stall_card" {
     columns     = [column.card_id]
-    ref_columns = [table.blocks.column.id]
+    ref_columns = [table.card_ref.column.card_id]
+    on_delete   = CASCADE
+  }
+}
+table "card_changes" {
+  column "card_id" {
+    null = false
+    type = varchar(36)
+  }
+  column "branch" {
+    null = true
+    type = varchar(255)
+  }
+  column "base" {
+    null = true
+    type = varchar(255)
+  }
+  column "files" {
+    null = false
+    type = bigint
+  }
+  column "added" {
+    null = false
+    type = bigint
+  }
+  column "removed" {
+    null = false
+    type = bigint
+  }
+  column "dirty" {
+    null = false
+    type = bigint
+  }
+  column "computed_at" {
+    null = false
+    type = bigint
+  }
+  primary_key {
+    columns = [column.card_id]
+  }
+  foreign_key "card_changes_card" {
+    columns     = [column.card_id]
+    ref_columns = [table.card_ref.column.card_id]
     on_delete   = CASCADE
   }
 }
@@ -1315,12 +1429,12 @@ table "stage_queue" {
   }
   foreign_key "stage_queue_card" {
     columns     = [column.card_id]
-    ref_columns = [table.blocks.column.id]
+    ref_columns = [table.card_ref.column.card_id]
     on_delete   = CASCADE
   }
   foreign_key "stage_queue_board" {
     columns     = [column.board_id]
-    ref_columns = [table.boards.column.id]
+    ref_columns = [table.board_ref.column.board_id]
     on_delete   = CASCADE
   }
   index "idx_stage_queue_column" {
@@ -1349,7 +1463,7 @@ table "board_setup" {
   }
   foreign_key "board_setup_board" {
     columns     = [column.board_id]
-    ref_columns = [table.boards.column.id]
+    ref_columns = [table.board_ref.column.board_id]
     on_delete   = CASCADE
   }
   check "board_setup_status" {
@@ -1437,12 +1551,12 @@ table "checkout" {
   }
   foreign_key "checkout_card" {
     columns     = [column.card_id]
-    ref_columns = [table.blocks.column.id]
+    ref_columns = [table.card_ref.column.card_id]
     on_delete   = CASCADE
   }
   foreign_key "checkout_board" {
     columns     = [column.board_id]
-    ref_columns = [table.boards.column.id]
+    ref_columns = [table.board_ref.column.board_id]
     on_delete   = CASCADE
   }
   index "idx_checkout_card" {
@@ -1490,7 +1604,7 @@ table "source_item" {
   }
   foreign_key "source_item_card" {
     columns     = [column.card_id]
-    ref_columns = [table.blocks.column.id]
+    ref_columns = [table.card_ref.column.card_id]
     on_delete   = SET_NULL
   }
   index "idx_source_item_card" {
@@ -1535,7 +1649,7 @@ table "source_event" {
   }
   foreign_key "source_event_card" {
     columns     = [column.card_id]
-    ref_columns = [table.blocks.column.id]
+    ref_columns = [table.card_ref.column.card_id]
     on_delete   = SET_NULL
   }
   index "idx_source_event_source" {

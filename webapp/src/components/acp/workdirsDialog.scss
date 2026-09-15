@@ -1,0 +1,12 @@
+@import '../../styles/settingsPanel';
+
+// The panel is the settings dialog's, and this is its other home: the same ink,
+// the same measure for prose, and the box it used to be given rather than one
+// flush against the dialog's edges.
+.WorkdirsDialog {
+    @include settings-panel;
+
+    .WorkdirsDialog__content {
+        @include settings-panel-body;
+    }
+}

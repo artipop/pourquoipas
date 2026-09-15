@@ -133,7 +133,7 @@ func (m *Manager) AddSource(entry SourceEntry) (SourceEntry, error) {
 //
 // It exists for the share sheet, which is a source nobody asked for in the
 // dialog: the first thing shared has to land somewhere, and asking a person to
-// register «Поделиться» before they can share anything would be a setup step
+// register the share dialog before they can share anything would be a setup step
 // for a feature whose whole point is that there is no setup. Not overwriting is
 // the other half: once the entry exists it is the person's, rules and all.
 func (m *Manager) EnsureSource(entry SourceEntry) (SourceEntry, error) {
@@ -504,7 +504,7 @@ func boardFor(entry SourceEntry, it Item) (string, error) {
 
 // columnProperty is the property this source's columns live in: what the entry
 // pins, or what the board itself says. Asking the board is the default because
-// no constant can be right for both a board that calls it «Статус» and one that
+// no constant can be right for both a board that calls it the status property and one that
 // calls it "Status".
 func (m *Manager) columnProperty(ctx context.Context, d *delivery, entry SourceEntry, boardID string) (string, error) {
 	if pinned := entry.PinnedProperty(); pinned != "" {

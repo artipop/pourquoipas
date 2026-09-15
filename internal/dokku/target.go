@@ -191,7 +191,7 @@ func AppSlug(branch string) string {
 // translit maps Cyrillic onto the Latin a label can carry. Without it a fully
 // Russian title — which is what the boards this app ships are written in —
 // folded to nothing and came back as the hash fallback: `b-41aa6e` where the
-// person wrote «Почини логин». A hash names nothing, and the branch and the
+// person wrote «Fix the login». A hash names nothing, and the branch and the
 // preview address exist to be read. Only Russian: it is the language of the
 // product's own boards, and any other script still gets the hash.
 var translit = map[rune]string{
@@ -210,8 +210,8 @@ func foldLabel(name string, max int, fallback string) string {
 	lastDash := false
 	for _, r := range strings.ToLower(trimmed) {
 		if mapped, ok := translit[r]; ok {
-			// A hard/soft sign maps to nothing at all — not to a dash, or
-			// «объект» would come out as ob-ekt.
+			// A hard/soft sign maps to nothing at all — not to a dash, or a
+			// word carrying one would come out split by it.
 			if mapped != "" {
 				b.WriteString(mapped)
 				lastDash = false

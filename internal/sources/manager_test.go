@@ -28,7 +28,7 @@ type fakeBoard struct {
 	// once per batch is the whole point of the delivery scope.
 	asked int
 	// property is what the board answers when asked what its columns are. The
-	// Russian name is the point: a board of this app's own says «Статус», and
+	// Russian name is the point: a board of this app's own says the status property, and
 	// the pipeline used to assume "Status" and miss every column.
 	property string
 }
@@ -180,7 +180,7 @@ func TestAnItemBecomesACardInTheColumnItsRuleNames(t *testing.T) {
 	// The move is what the automation sees: a card created straight into a
 	// working column would start nothing, because the trigger fires on a change.
 	// The property is the board's own answer, not a constant: this board calls
-	// its columns «Статус», and a source that assumed "Status" moved nothing.
+	// its columns the status property, and a source that assumed "Status" moved nothing.
 	if len(board.moveLines()) != 1 || board.moveLines()[0] != "card1:Статус:Сегодня" {
 		t.Fatalf("moves: %+v", board.moveLines())
 	}

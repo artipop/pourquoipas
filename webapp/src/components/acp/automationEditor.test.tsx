@@ -1,8 +1,8 @@
-import {fireEvent, render, screen, waitFor} from '@solidjs/testing-library'
+import {fireEvent, render, screen, waitFor, within} from '@solidjs/testing-library'
 import userEvent from '@testing-library/user-event'
 import '@testing-library/jest-dom'
 
-import {chooseOption, wrapIntl} from '../../testUtils'
+import {chooseOption, optionsOf, wrapIntl} from '../../testUtils'
 import {setupReactFlowEnvironment} from '../../test/reactFlowEnvironment'
 import {IPropertyTemplate} from '../../blocks/board'
 
@@ -48,6 +48,15 @@ const automation: Automation = {
     }],
 }
 
+// Every board property, as a stage's writes and reads see them: the column
+// property, the ones a stage can put a value in, and the ones it cannot.
+const allProperties = [
+    property,
+    {id: 'prop-branch', name: 'Ветка', type: 'text', options: []},
+    {id: 'prop-due', name: 'Срок', type: 'date', options: []},
+    {id: 'prop-author', name: 'Автор', type: 'createdBy', options: []},
+] as IPropertyTemplate[]
+
 function renderEditor(overrides: Partial<Parameters<typeof AutomationEditor>[0]> = {}) {
     const onChange = vi.fn()
     const result = render(() => wrapIntl(() => (
@@ -60,6 +69,7 @@ function renderEditor(overrides: Partial<Parameters<typeof AutomationEditor>[0]>
             triggers={triggers}
             agents={[{id: 'ag-claude', name: 'claude'}, {id: 'ag-codex', name: 'codex'}]}
             deploys={[]}
+            allProperties={allProperties}
             onChange={onChange}
             {...overrides}
         />
@@ -214,19 +224,43 @@ describe('components/acp/automationEditor', () => {
         const {container, onChange} = renderEditor()
 
         userEvent.click(screen.getByRole('button', {name: 'Фича'}))
-        const stage = await waitFor(() => {
-            const found = [...container.querySelectorAll('.FlowDiagram__stage')].
-                find((el) => el.textContent?.includes('В работе'))
+        const edge = await waitFor(() => {
+            const found = container.querySelector('.solid-flow__edge')
             expect(found).toBeTruthy()
             return found!
         })
-        fireEvent.click(stage)
+
+        // The panel is about whatever is selected, and a branch is about one
+        // arrow — so the arrow is what is clicked. It used to be a button on
+        // every row of a list of every arrow the stage had.
+        fireEvent.click(edge)
         userEvent.click(await screen.findByRole('button', {name: '+ branch on a condition'}))
 
         await waitFor(() => expect(onChange).toHaveBeenCalled())
         const next: Automation = onChange.mock.calls.at(-1)![0]
         expect(next.flows[0].edges).toHaveLength(2)
         expect(next.flows[0].edges[1]).toMatchObject({from: 'opt-work', on: SUCCESS, if: {property: '', value: ''}})
+    })
+
+    // A transition can also stop and ask, and it is written where the arrow is
+    // edited for the same reason its condition is: the question is about this
+    // way into the stage and not about the stage.
+    test('a question is written on the arrow it holds the card at', async () => {
+        const {container, onChange} = renderEditor()
+
+        userEvent.click(screen.getByRole('button', {name: 'Фича'}))
+        const edge = await waitFor(() => {
+            const found = container.querySelector('.solid-flow__edge')
+            expect(found).toBeTruthy()
+            return found!
+        })
+        fireEvent.click(edge)
+
+        await chooseOption(screen.getByLabelText('Add a question to this transition'), 'how the agent works with the folder')
+
+        await waitFor(() => expect(onChange).toHaveBeenCalled())
+        const next: Automation = onChange.mock.calls.at(-1)![0]
+        expect(next.flows[0].edges[0].ask).toEqual([{kind: 'workmode'}])
     })
 
     // The condition is written where the arrow is edited: property and value
@@ -256,16 +290,16 @@ describe('components/acp/automationEditor', () => {
             properties: [property, priority],
         })
         userEvent.click(screen.getByRole('button', {name: 'Фича'}))
-        const stage = await waitFor(() => {
-            const found = [...container.querySelectorAll('.FlowDiagram__stage')].
-                find((el) => el.textContent?.includes('В работе'))
+        const branch = await waitFor(() => {
+            // The second arrow is the conditional one this test is about.
+            const found = container.querySelectorAll('.solid-flow__edge')[1]
             expect(found).toBeTruthy()
             return found!
         })
-        fireEvent.click(stage)
+        fireEvent.click(branch)
 
         // Scoped to the condition editor: with two select properties the routes
-        // bar has a property picker too, and it also offers «Приоритет».
+        // bar has a property picker too, and it also offers a priority property.
         const propertyPick = container.querySelector('.AutomationEditor__cond .AutomationEditor__condFields .Select') as HTMLElement
         chooseOption(propertyPick, 'Приоритет')
 
@@ -323,6 +357,185 @@ describe('components/acp/automationEditor', () => {
         })
 
         expect(screen.getByText(/No deploy targets yet/)).toBeInTheDocument()
+    })
+
+    // A stage's outputs land through SetCardFields, which resolves a select by
+    // one of its option names and stores everything else as text. A date takes
+    // that string and cannot read it back; createdBy is the board's own
+    // bookkeeping and is not writable at all. Offering either is offering an
+    // answer that fails at the moment the stage reports.
+    test('only the properties a stage can write are offered as outputs', () => {
+        const {container} = renderEditor({
+            automation: {
+                ...automation,
+                columns: [{boardId: 'board-1', optionId: 'opt-work', property: 'Статус', column: 'В работе', action: 'deploy'}],
+            },
+            deploys: [{id: 'dep-1', name: 'dokku-1'}],
+            focusColumnId: 'opt-work',
+        })
+
+        const picker = container.querySelector('.AutomationEditor__writes .Select') as HTMLElement
+        const offered = optionsOf(picker)
+        expect(offered).toContain('Ветка')
+        expect(offered).not.toContain('Срок')
+        expect(offered).not.toContain('Автор')
+
+        // Never the column property: moving between columns is the route's own
+        // business, not a value a stage writes.
+        expect(offered).not.toContain('Статус')
+    })
+
+    // On most boards there is no field a preview address or a verdict could go
+    // into, and leaving the dialog to make one on the board is how a stage ends
+    // up declaring nothing at all. So the field is made here, and declared in
+    // the same breath.
+    test('a new property is made from the picker and declared at once', async () => {
+        const onCreateProperty = vi.fn().mockResolvedValue({id: 'prop-new', name: 'Заметка', type: 'text', options: []})
+        const {container, onChange} = renderEditor({onCreateProperty, focusColumnId: 'opt-work'})
+
+        const picker = container.querySelector('.AutomationEditor__writes .Select') as HTMLElement
+        chooseOption(picker, '+ a new property…')
+
+        const form = container.querySelector('.AutomationEditor__newProperty') as HTMLElement
+        fireEvent.input(form.querySelector('input')!, {target: {value: 'Заметка'}})
+        fireEvent.click(screen.getByRole('button', {name: 'Add the property'}))
+
+        await waitFor(() => expect(onCreateProperty).toHaveBeenCalledWith({name: 'Заметка', type: 'text', options: undefined}))
+        await waitFor(() => expect(onChange).toHaveBeenCalled())
+        const next: Automation = onChange.mock.calls.at(-1)![0]
+        expect(next.columns.find((c) => c.optionId === 'opt-work')?.writes).toEqual([{property: 'Заметка'}])
+    })
+
+    // A deploy stage produces one address and a test one verdict, so the kind
+    // is not a question there — only what to call the field.
+    test('a deploy stage’s new property is a link, and is not asked about', () => {
+        const {container} = renderEditor({
+            automation: {
+                ...automation,
+                columns: [{boardId: 'board-1', optionId: 'opt-work', property: 'Статус', column: 'В работе', action: 'deploy'}],
+            },
+            deploys: [{id: 'dep-1', name: 'dokku-1'}],
+            onCreateProperty: vi.fn(),
+            focusColumnId: 'opt-work',
+        })
+
+        chooseOption(container.querySelector('.AutomationEditor__writes .Select') as HTMLElement, '+ a new property…')
+        const form = container.querySelector('.AutomationEditor__newProperty') as HTMLElement
+        expect((form.querySelector('input') as HTMLInputElement).value).toBe('Preview')
+        expect(within(form).queryByRole('button', {name: 'What it holds'})).toBeNull()
+        expect(within(form).getByText(/It will hold a link/)).toBeInTheDocument()
+    })
+
+    // The outputs are on the box, and which of them a fork can be pulled from is
+    // read off the board: an arrow asks "is it this value", which only a
+    // property with a set of values can answer.
+    test('a stage’s outputs are chips on its box, and only a set of values is a port', () => {
+        const {container} = renderEditor({
+            allProperties: [
+                property,
+                {id: 'prop-verdict',
+                    name: 'Вердикт',
+                    type: 'select',
+                    options: [{id: 'v-pass', value: 'pass', color: ''}, {id: 'v-fail', value: 'fail', color: ''}]},
+                {id: 'prop-note', name: 'Заметка', type: 'text', options: []},
+            ] as IPropertyTemplate[],
+            automation: {
+                columns: [{boardId: 'board-1',
+                    optionId: 'opt-work',
+                    property: 'Статус',
+                    column: 'В работе',
+                    action: 'agent',
+                    writes: [{property: 'Вердикт'}, {property: 'Заметка'}]}],
+                flows: automation.flows,
+            },
+        })
+
+        expect(screen.getByText('Вердикт')).toBeInTheDocument()
+        expect(screen.getByText('Заметка')).toBeInTheDocument()
+
+        // The stage inherits the column's outputs without declaring any of its
+        // own, and one port for the one property that has values.
+        expect(container.querySelectorAll('.FlowDiagram__out--write').length).toBe(1)
+    })
+
+    // A value an earlier stage put on the card is on the card. Making somebody
+    // tick «Превью» again on every stage after the deploy is asking for the
+    // same fact twice, so the route hands it over and the panel says who wrote
+    // it — shown rather than editable, the crew's and the prompt's own shape.
+    test('a stage is shown what the route hands it, with the stage that wrote it', () => {
+        const {container} = renderEditor({
+            automation: {
+                columns: [{boardId: 'board-1',
+                    optionId: 'opt-work',
+                    property: 'Статус',
+                    column: 'В работе',
+                    action: 'agent',
+                    writes: [{property: 'Ветка'}]}],
+                flows: [{
+                    name: 'Фича',
+                    boardId: 'board-1',
+                    property: 'Статус',
+                    nodes: [
+                        {id: 'opt-work', column: 'В работе', optionId: 'opt-work', action: ''},
+                        {id: 'opt-review', column: 'На ревью', optionId: 'opt-review', action: 'agent'},
+                    ],
+                    edges: [{from: 'opt-work', to: 'opt-review', on: SUCCESS}],
+                }],
+            },
+        })
+
+        fireEvent.click(screen.getByText('На ревью'))
+        expect(screen.getByText('Ветка · written by “В работе”')).toBeInTheDocument()
+
+        // No ✕ on it: with one row left, removing it would write an empty list,
+        // and an empty list is what asks the route again.
+        const ghost = container.querySelector('.AutomationEditor__writeRow--inherited') as HTMLElement
+        expect(ghost.querySelector('.AutomationEditor__writeRemove')).toBeNull()
+    })
+
+    // The row above the canvas lists routes. «Колонки» stood at its head and is
+    // not one — a list with something of another kind in it makes the reader
+    // ask what the row holds. The columns are still reached from a stage.
+    test('the row above the canvas holds routes and nothing else', async () => {
+        renderEditor()
+
+        expect(screen.getByRole('button', {name: 'Фича'})).toBeInTheDocument()
+        expect(screen.getByRole('button', {name: '+ route'})).toBeInTheDocument()
+        expect(screen.queryByRole('button', {name: 'Columns'})).toBeNull()
+
+        // And the way in is on the stage, so nothing is stranded.
+        userEvent.click(screen.getByRole('button', {name: 'Фича'}))
+        const stage = await waitFor(() => {
+            const found = [...screen.getByTestId('flow-diagram').querySelectorAll('.FlowDiagram__stage')].
+                find((el) => el.textContent?.includes('В работе'))
+            expect(found).toBeTruthy()
+            return found!
+        })
+        fireEvent.click(stage)
+        expect(await screen.findByRole('button', {name: 'Settings of the column itself…'})).toBeInTheDocument()
+    })
+
+    // A caption is not a control. The Select's trigger is a <button>, which a
+    // <label> counts as the control it names, so clicking the words "Deploy
+    // target" opened the menu — a field that answers to a click three
+    // centimetres above itself.
+    test('clicking a field’s caption does not open its menu', () => {
+        const {container} = renderEditor({
+            automation: {
+                ...automation,
+                columns: [{boardId: 'board-1', optionId: 'opt-work', property: 'Статус', column: 'В работе', action: 'deploy'}],
+            },
+            deploys: [{id: 'dep-1', name: 'dokku-1'}],
+            focusColumnId: 'opt-work',
+        })
+
+        const caption = screen.getByText('Deploy target')
+        fireEvent.click(caption)
+        expect(container.querySelector('.Menu')).toBeNull()
+
+        // The control itself still opens it, or the field would be dead.
+        fireEvent.click(screen.getByRole('button', {name: 'Deploy target'}))
+        expect(container.querySelector('.Menu')).not.toBeNull()
     })
 
     test('the hint is not shown once a target exists', () => {

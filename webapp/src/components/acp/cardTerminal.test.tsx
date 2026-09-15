@@ -77,7 +77,7 @@ describe('components/acp/cardTerminal', () => {
     })
 
     // The card's own conversation and the work on it are two kinds, and the
-    // panel says which is which: «Обсуждение» goes through a door of its own,
+    // panel says which is which: the talk conversation goes through a door of its own,
     // so no route can ever type a task into it and no folder is claimed by
     // thinking out loud.
     it('opens the card’s own conversation through its own door', async () => {
@@ -290,8 +290,8 @@ describe('components/acp/cardTerminal', () => {
         await waitFor(() => expect(open).toHaveBeenLastCalledWith('card-1', 'app', 'клаус', false))
     })
 
-    // «Добавить папку…» is the escape hatch, in the same shape «Добавить
-    // агента…» has: the native picker registers the folder on this board and the
+    // the add-folder link is the escape hatch, in the same shape the add-agent
+    // link has: the native picker registers the folder on this board and the
     // conversation starts in it, in one move.
     it('adds a folder and starts with it', async () => {
         const open = vi.fn().mockResolvedValue(JSON.stringify({id: 'term-6'}))
@@ -324,7 +324,7 @@ describe('components/acp/cardTerminal', () => {
         expect(screen.queryByRole('button', {name: 'Open in a separate window'})).toBeNull()
     })
 
-    // «На весь экран» is a handover, not a copy: two views of one pty fight
+    // Opening the window is a handover, not a copy: two views of one pty fight
     // over its size, so opening the window closes the panel.
     it('hands the conversation to the window and closes the panel', async () => {
         const onClose = vi.fn()
@@ -365,7 +365,7 @@ describe('components/acp/cardTerminal', () => {
     })
 
     // A card that has stood in one column has one conversation, and the list
-    // is one row — named after the column, or «Без колонки» when there is none.
+    // is one row — named after the column, or the no-column label when there is none.
     it('lists one row for a card that has not travelled', async () => {
         stubBindings({
             GetCardAgent: vi.fn().mockResolvedValue(JSON.stringify({

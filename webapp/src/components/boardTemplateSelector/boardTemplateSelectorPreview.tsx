@@ -35,8 +35,8 @@ const BoardTemplateSelectorPreview = (props: Props) => {
 
                     // The view the template was made with, which is the one a
                     // board made from it opens on — not the one whose title
-                    // sorts first. Every template carries «Входящие» as well
-                    // now, and it sorts before «Дела», «Задачи» and «Списки»,
+                    // sorts first. Every template carries the inbox view as well
+                    // now, and it sorts before every template's own first view,
                     // so the preview of every template was an empty inbox and
                     // said nothing about the template.
                     const views = blocks.filter((b) => b.type === 'view') as BoardView[]
@@ -85,6 +85,10 @@ const BoardTemplateSelectorPreview = (props: Props) => {
                             cards={activeTemplateCards()}
                             views={[activeView()!]}
                             groupByProperty={groupByProperty()}
+
+                            // A preview is a picture of a template, and routes
+                            // belong to a live board: there is none to draw by.
+                            flows={[]}
                             addCard={() => null}
                             addCardFromTemplate={() => null}
                             addCardTemplate={() => null}

@@ -110,9 +110,11 @@ exports[`components/cardDetail/CardDetailProperties > cancel on delete dialog sh
           class="Button"
           type="button"
         >
-          
+          <i
+            class="CompassIcon icon-plus AddIcon"
+          />
           <span>
-            + Add a property
+            Add a property
           </span>
           
           <!---->
@@ -240,9 +242,11 @@ exports[`components/cardDetail/CardDetailProperties > should match snapshot 1`] 
           class="Button"
           type="button"
         >
-          
+          <i
+            class="CompassIcon icon-plus AddIcon"
+          />
           <span>
-            + Add a property
+            Add a property
           </span>
           
           <!---->
@@ -370,9 +374,11 @@ exports[`components/cardDetail/CardDetailProperties > should show property types
           class="Button"
           type="button"
         >
-          
+          <i
+            class="CompassIcon icon-plus AddIcon"
+          />
           <span>
-            + Add a property
+            Add a property
           </span>
           
           <!---->

@@ -54,7 +54,7 @@ describe('components/acp/caseStamp', () => {
     })
 
     // The line is named after the folder's setting. A person who chose
-    // «отдельная копия» and reads BRANCH off the card concludes the setting
+    // a copy of its own and reads BRANCH off the card concludes the setting
     // did not take — which is exactly what happened.
     it('names the line worktree when the workspace is a copy, and says the base', async () => {
         anyWindow.go = {

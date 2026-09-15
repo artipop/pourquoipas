@@ -109,6 +109,9 @@ func TestRegisterUser(t *testing.T) {
 	th.Store.EXPECT().GetUserByUsername("newUsername").Return(mockUser, errors.New("user not found"))
 	th.Store.EXPECT().GetUserByEmail("existingEmail").Return(mockUser, nil)
 	th.Store.EXPECT().GetUserByEmail("newEmail").Return(nil, model.NewErrNotFound("user"))
+	// The first person to register administers the install, so registering asks
+	// how many admins there are.
+	th.Store.EXPECT().GetAdminCount().Return(0, nil).Times(1)
 	th.Store.EXPECT().CreateUser(gomock.Any()).Return(nil, nil)
 
 	for _, test := range testcases {

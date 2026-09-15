@@ -1,6 +1,8 @@
 import {For, Show, createEffect, createSignal} from 'solid-js'
 import type {JSX} from '@solidjs/web'
 
+import {menuColorLabel} from '../../menuColors'
+
 import {FormattedMessage, IntlShape} from '../../intl'
 
 import {Constants, Permission} from '../../constants'
@@ -20,6 +22,7 @@ import Label from '../../widgets/label'
 import {useHasCurrentBoardPermissions} from '../../hooks/permissions'
 import {useSortable} from '../../hooks/sortable'
 import {useAppSelector} from '../../store/hooks'
+import {getTeamMode} from '../../store/clientConfig'
 import {getBoardUsers, getMe} from '../../store/users'
 import {IUser} from '../../user'
 import {personNameById} from '../../userDisplay'
@@ -27,7 +30,6 @@ import {personNameById} from '../../userDisplay'
 import BoardPermissionGate from '../permissions/boardPermissionGate'
 
 import ColumnBadge from '../acp/columnBadge'
-import {isAutomationAvailable} from '../acp/automationDialog'
 import {MineColumnTitle, isInboxView} from '../acp/inboxView'
 
 import {KanbanCalculation} from './calculation/calculation'
@@ -47,7 +49,6 @@ type Props = {
     // in this header, because a board edit made from inside it (a palette
     // block dropping a new column, say) re-creates every header and would take
     // the dialog down with it.
-    onOpenSettings: (optionId: string) => void
     calculationMenuOpen: boolean
     onCalculationMenuOpen: () => void
     onCalculationMenuClose: () => void
@@ -63,9 +64,11 @@ export default function KanbanColumnHeader(props: Props): JSX.Element {
     const canEditBoardProperties = useHasCurrentBoardPermissions([Permission.ManageBoardProperties])
 
     // Who a group is, when the board is grouped by a person rather than by an
-    // option: «кто создал» groups by user id, and an id is not a heading.
+    // option: grouping by who created a card groups by user id, and an id is
+    // not a heading.
     const boardUsers = useAppSelector<{[key: string]: IUser}>(getBoardUsers)
     const me = useAppSelector<IUser|null>(getMe)
+    const teamMode = useAppSelector<boolean>(getTeamMode)
     const isPersonGroup = () => {
         const type = props.groupByProperty?.type
         return type === 'person' || type === 'createdBy' || type === 'updatedBy'
@@ -79,7 +82,7 @@ export default function KanbanColumnHeader(props: Props): JSX.Element {
         if (isInboxView(props.activeView) && id === me()?.id) {
             return MineColumnTitle
         }
-        return personNameById(props.intl, id, boardUsers())
+        return personNameById(props.intl, id, boardUsers(), 'username', teamMode())
     }
 
     // A person group has no option behind it to rename, so it is a label and
@@ -199,17 +202,6 @@ export default function KanbanColumnHeader(props: Props): JSX.Element {
                                     name={props.intl.formatMessage({id: 'BoardComponent.hide', defaultMessage: 'Hide'})}
                                     onClick={() => mutator.hideViewColumn(props.board.id, props.activeView, props.group.option.id || '')}
                                 />
-                                {/* A column's settings are a panel of the
-                                    board's automation now, so this opens the
-                                    whole picture with this column selected
-                                    rather than a dialog of its own. */}
-                                <Show when={canEditOption() && isAutomationAvailable()}>
-                                    <Menu.Text
-                                        id='columnAgents'
-                                        name={props.intl.formatMessage({id: 'BoardComponent.column-agents', defaultMessage: 'What happens in this column…'})}
-                                        onClick={() => props.onOpenSettings(props.group.option.id)}
-                                    />
-                                </Show>
                                 <Show when={canEditOption()}>
                                     <Menu.Text
                                         id='delete'
@@ -219,10 +211,10 @@ export default function KanbanColumnHeader(props: Props): JSX.Element {
                                     />
                                     <Menu.Separator/>
                                     <For each={Object.entries(Constants.menuColors)}>
-                                        {([key, color]) => (
+                                        {([key]) => (
                                             <Menu.Color
                                                 id={key}
-                                                name={color}
+                                                name={menuColorLabel(props.intl, key)}
                                                 onClick={() => mutator.changePropertyOptionColor(props.board.id, props.board.cardProperties, props.groupByProperty!, props.group.option, key)}
                                             />
                                         )}

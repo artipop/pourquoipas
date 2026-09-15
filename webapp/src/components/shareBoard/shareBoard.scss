@@ -1,5 +1,6 @@
 
 @import '../../styles/z-index';
+@import '../../styles/field';
 
 .ShareBoardDialog {
     .dialog {
@@ -124,16 +125,11 @@
             }
 
             input {
+                @include field;
+
                 width: 100%;
                 height: 40px;
-                border-radius: var(--radius-sm);
-                border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
                 padding: 0 16px;
-
-                &:focus {
-                    border: 2px solid var(--button-bg);
-                    padding: 0 15px;
-                }
             }
         }
     }
@@ -159,20 +155,15 @@
         }
 
         .userSearchInput {
+            @include field;
+
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            border-radius: var(--radius-sm);
-            border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
             padding-left: 35px;
             font-size: 16px;
-
-            &:focus {
-                border: 2px solid var(--button-bg);
-                padding-left: 39px;
-            }
         }
     }
 

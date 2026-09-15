@@ -24,6 +24,12 @@ export type SelectOption = {
     value: string
     label: string
     disabled?: boolean
+
+    // A line drawn above this option. What it separates is a caller's own
+    // business — the theme list uses it to set the slot for a config you paste
+    // apart from the themes that came with the app — so it is a flag on the
+    // option and not a shape the list has to be built in.
+    separator?: boolean
 }
 
 type Props = {
@@ -53,11 +59,13 @@ const Select = (props: Props): JSX.Element => {
             label={props.label}
             disabled={props.disabled}
 
-            // Most of these stand inside a <label> with their caption, and a
-            // click anywhere in a label is forwarded by the browser to the
-            // control it labels — our own trigger, which had just opened the
-            // menu and now closed it again. The field looked dead. Cancelling
-            // the click is what stops the label from acting on it.
+            // The trigger is a <button>, so anything that acts on a click of its
+            // own further up — a row, a card, a menu — would act on opening the
+            // menu too. **A <label> must not be one of those ancestors**: a
+            // label counts a button as its control and forwards a click on the
+            // caption to it, which opened the menu from the caption; that is
+            // not fixable from here, and every call site puts the caption in a
+            // plain element beside the field instead.
             stopPropagationOnToggle={true}
             menu={
                 <Menu
@@ -66,18 +74,23 @@ const Select = (props: Props): JSX.Element => {
                 >
                     <For each={props.options}>
                         {(option) => (
-                            <Menu.Text
-                                id={option.value}
-                                name={option.label}
-                                disabled={option.disabled}
-                                check={true}
-                                icon={option.value === props.value ? <CheckIcon/> : <div class='empty-icon'/>}
-                                onClick={() => {
-                                    if (!option.disabled) {
-                                        props.onChange(option.value)
-                                    }
-                                }}
-                            />
+                            <>
+                                <Show when={option.separator}>
+                                    <Menu.Separator/>
+                                </Show>
+                                <Menu.Text
+                                    id={option.value}
+                                    name={option.label}
+                                    disabled={option.disabled}
+                                    check={true}
+                                    icon={option.value === props.value ? <CheckIcon/> : <div class='empty-icon'/>}
+                                    onClick={() => {
+                                        if (!option.disabled) {
+                                            props.onChange(option.value)
+                                        }
+                                    }}
+                                />
+                            </>
                         )}
                     </For>
                 </Menu>

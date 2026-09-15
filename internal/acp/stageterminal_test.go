@@ -103,7 +103,7 @@ func TestAStageIsTheAgentsOwnCLIWithTheTaskInIt(t *testing.T) {
 // The card's task is a positional argument, and everything before it on that
 // command line is flags — one of which, `--mcp-config`, takes a list. Without an
 // end-of-options marker the CLI reads the task as a second config file, dies
-// with "MCP config file not found: почини логин", and every card of the board
+// with "MCP config file not found: fix the login", and every card of the board
 // stalls saying the agent never reported.
 func TestTheTaskIsNotEatenByTheFlagBeforeIt(t *testing.T) {
 	argv, taken, err := terminalCommand(
@@ -301,7 +301,7 @@ func TestTheStagePromptLandsInTheBrief(t *testing.T) {
 	prompt := composePrompt(
 		CardMoved{Title: "Починить логин", Body: "Падает на пустом пароле."},
 		AgentEntry{Prompt: "агентский промпт"},
-		"системный промпт", "Ты ревьюер: ищи дефекты, ничего не чини.", true,
+		"системный промпт", "Ты ревьюер: ищи дефекты, ничего не чини.", true, true,
 	)
 	for _, want := range []string{"системный промпт", "агентский промпт", "Ты ревьюер", "Task: Починить логин"} {
 		if !strings.Contains(prompt, want) {
@@ -334,7 +334,7 @@ func TestAReturnedCardBriefsTheResumedConversationWithTheDelta(t *testing.T) {
 		{ID: "opt-review", Column: "Ревью"},
 	}, Edges: []FlowEdge{{From: "opt-work", To: "opt-review", On: TriggerSuccess}}}}
 
-	// The card went В работе → Ревью → В работе, and the reviewer said why.
+	// The card went in-progress → review → in-progress, and the reviewer said why.
 	for _, r := range []FlowEventRecord{
 		{CardID: "card-b", FlowID: "flow-dev", FromNode: "", ToNode: "opt-work", On: "manual"},
 		{CardID: "card-b", FlowID: "flow-dev", FromNode: "opt-work", ToNode: "opt-review", On: TriggerSuccess},
@@ -397,7 +397,7 @@ func TestAStageAdoptsTheConversationAPersonOpenedOnItsNode(t *testing.T) {
 }
 
 // A card can be talked over before it names a folder, and that conversation
-// runs in «черновики доски». When the folder arrives and the route reaches the
+// runs in the board's drafts folder. When the folder arrives and the route reaches the
 // same column, the stage must not be typed into it: the route has claimed the
 // card's workspace, made a branch and written it on the card, and an agent
 // working in the drafts folder would report work that landed nowhere.
@@ -508,7 +508,7 @@ func TestFinishWorkRefusesTheColumnProperty(t *testing.T) {
 	defer m.forgetStage(term.ID)
 
 	err = m.FinishWorkFromTools(term.boardToken, true, "готово",
-		map[string]string{"Статус": "Готово"})
+		map[string]string{DefaultTriggerProperty: "Готово"})
 	if err == nil || !strings.Contains(err.Error(), "move_card") {
 		t.Errorf("setting the column through finish_work was allowed (err=%v)", err)
 	}
@@ -532,13 +532,125 @@ func TestWriteStageFieldsPutsTheValueWhereDeclared(t *testing.T) {
 func TestDeclaredReadsOpenTheBrief(t *testing.T) {
 	inputs := cardInputs(CardMoved{Props: map[string]string{"превью": "https://demo.example.com"}},
 		[]string{"Превью", "Одобрено"})
-	for _, want := range []string{"From the card:", "Превью: https://demo.example.com", "Одобрено: "} {
+	for _, want := range []string{"From the card:", "Превью: https://demo.example.com", "Одобрено: (nobody"} {
 		if !strings.Contains(inputs, want) {
 			t.Errorf("the inputs block is missing %q:\n%s", want, inputs)
 		}
 	}
 	if cardInputs(CardMoved{}, nil) != "" {
 		t.Error("a stage with no reads got an inputs block")
+	}
+
+	// And a block where nothing at all has been written is dropped whole. It is
+	// the ordinary state of a route's first stage — and of every stage of a
+	// route that loops, where a later stage's output is "upstream" of an
+	// earlier one — so it stood at the head of the brief, before the
+	// instructions and the task, saying nothing: «From the card:\nПревью:».
+	if got := cardInputs(CardMoved{}, []string{"Превью", "Одобрено"}); got != "" {
+		t.Errorf("a brief opened with reads nobody has written:\n%s", got)
+	}
+}
+
+// A value an earlier stage put on the card is on the card, so a stage that
+// declares no reads is handed what the route wrote ahead of it. Ticking «Превью»
+// again on every stage after the deploy is asking for the same fact twice.
+func TestAStageReadsWhatTheRouteWroteBeforeIt(t *testing.T) {
+	flow := FlowEntry{
+		Name: "Фича",
+		Nodes: []FlowNode{
+			{ID: "work", Column: "В работе", Writes: []PropertyWrite{{Property: "Заметка"}}},
+			{ID: "deploy", Column: "Деплой", Writes: []PropertyWrite{{Property: "Превью"}}},
+			{ID: "qa", Column: "QA", Writes: []PropertyWrite{{Property: "Вердикт"}}},
+			{ID: "fixed", Column: "Проверено"},
+		},
+		Edges: []FlowEdge{
+			{From: "work", To: "deploy", On: TriggerSuccess},
+			{From: "deploy", To: "qa", On: TriggerSuccess},
+			{From: "qa", To: "fixed", On: TriggerSuccess},
+
+			// The arrow back: a failed check returns the card to the agent, so
+			// the graph has a cycle and the walk has to survive it.
+			{From: "qa", To: "work", On: TriggerFailure},
+		},
+	}
+	own := func(n FlowNode) []PropertyWrite { return n.Writes }
+
+	got := flow.UpstreamWrites("qa", own)
+	if len(got) != 2 || got[0] != "Превью" || got[1] != "Заметка" {
+		t.Errorf("QA is handed %v, want the deploy's preview and the work's note", got)
+	}
+
+	// A stage never reads its own output back, and the cycle must terminate
+	// rather than walk «В работе» round to itself: the card comes back here
+	// with the verdict that sent it, and the preview it was judged on.
+	if got := flow.UpstreamWrites("work", own); len(got) != 2 || got[0] != "Вердикт" || got[1] != "Превью" {
+		t.Errorf("the stage the failure arrow returns to is handed %v", got)
+	}
+
+	// And a stage reachable both ways round sees both sides, once each.
+	if got := flow.UpstreamWrites("deploy", own); len(got) != 2 || got[0] != "Заметка" || got[1] != "Вердикт" {
+		t.Errorf("the deploy is handed %v", got)
+	}
+}
+
+// A stage that declares its own reads keeps them: the graph is what answers
+// when nobody said anything, not a list added to whatever was said.
+func TestADeclaredReadWinsOverTheGraph(t *testing.T) {
+	opts := startOptions{reads: []string{"Превью"}, upstream: []string{"Вердикт", "Заметка"}}
+	if got := opts.declaredReads(); len(got) != 1 || got[0] != "Превью" {
+		t.Errorf("the stage's own list was not kept: %v", got)
+	}
+
+	// And the column's answer stands between the two.
+	column := startOptions{column: ColumnSpec{Reads: []string{"Ветка"}}, upstream: []string{"Вердикт"}}
+	if got := column.declaredReads(); len(got) != 1 || got[0] != "Ветка" {
+		t.Errorf("the column's list was not kept: %v", got)
+	}
+
+	graph := startOptions{upstream: []string{"Вердикт"}}
+	if got := graph.declaredReads(); len(got) != 1 || got[0] != "Вердикт" {
+		t.Errorf("a stage that declared nothing was handed %v", got)
+	}
+}
+
+// The declared writes open the brief too, as the contract they are: what
+// finish_work must carry and what each value may be. Nothing said this before,
+// so an agent asked for a verdict found out what «Вердикт» accepts by being
+// refused, and a required write it was never told about failed the stage on the
+// first attempt to end it.
+func TestDeclaredWritesAreSaidToTheAgent(t *testing.T) {
+	fields := []CardProperty{
+		{Name: "Вердикт", Type: "select", Values: []string{"blocked", "fail", "pass"}},
+		{Name: "Превью", Type: "url"},
+	}
+	outputs := stageOutputs([]PropertyWrite{
+		{Property: "Вердикт", Required: true},
+		{Property: "Превью"},
+	}, fields)
+	for _, want := range []string{
+		"finish_work",
+		"Вердикт: one of blocked, fail, pass (required)",
+		"Превью: a link",
+	} {
+		if !strings.Contains(outputs, want) {
+			t.Errorf("the outputs block is missing %q:\n%s", want, outputs)
+		}
+	}
+	if strings.Contains(outputs, "Превью: a link (required)") {
+		t.Error("an optional write was announced as required")
+	}
+	if stageOutputs(nil, fields) != "" {
+		t.Error("a stage with no writes got an outputs block")
+	}
+}
+
+// The values come from the board rather than from the declaration: a stage
+// declares a name, and an option renamed on the board must not leave a stale
+// list standing in every brief.
+func TestAWriteWithNoPropertyOnTheBoardIsStillNamed(t *testing.T) {
+	outputs := stageOutputs([]PropertyWrite{{Property: "Заметка"}}, nil)
+	if !strings.Contains(outputs, "Заметка: text") {
+		t.Errorf("a write the board has no property for was dropped:\n%s", outputs)
 	}
 }
 
@@ -581,5 +693,58 @@ func TestAStageRunsWithTheColumnsOwnTools(t *testing.T) {
 	}
 	if got := config.MCPServers["playwright"]; got.Command != "npx" || len(got.Args) != 2 {
 		t.Errorf("the column's server did not reach the stage: %s", raw)
+	}
+}
+
+// What working in this column means is the column's own instruction, and it has
+// to reach the agent: a review stage handed the worker's brief reads the card's
+// task and does the task again.
+func TestAStageIsToldWhatWorkingInItsColumnMeans(t *testing.T) {
+	m, _, events, _, _ := stageManager(t, "sleep 30", func(cfg *Config) {
+		column := workColumn(cfg.TriggerProperty, FlowActionAgent)
+		column.Prompt = "REVIEW: read the diff and say whether it should land."
+		cfg.Columns = []ColumnSpec{column}
+	})
+
+	events.ch <- moveEvent("cardReview", "opt-backlog", "opt-agent")
+	term := liveStageTerminal(t, m, "cardReview")
+
+	brief := strings.Join(term.Argv, " ")
+	if !strings.Contains(brief, "REVIEW: read the diff") {
+		t.Errorf("the column's instruction never reached the agent:\n%s", brief)
+	}
+	// And before the card's own task, which is what makes it an instruction
+	// about the stage rather than a note appended to the work.
+	if strings.Index(brief, "REVIEW: read the diff") > strings.Index(brief, "Task:") {
+		t.Errorf("the column's instruction came after the task:\n%s", brief)
+	}
+}
+
+// A stage ends when the agent says so, and the only thing that can say it is a
+// board tool. Whether that tool arrives loaded is the CLI's business — Claude
+// Code deferred the whole board server once, and the agent finished the work,
+// wrote a summary in the terminal and stopped, leaving the card on the stage.
+// So the task says it too.
+func TestAStageIsToldHowItEnds(t *testing.T) {
+	m, _, events, _, _ := stageManager(t, "sleep 30", nil)
+
+	events.ch <- moveEvent("cardEnds", "opt-backlog", "opt-agent")
+	term := liveStageTerminal(t, m, "cardEnds")
+
+	brief := strings.Join(term.Argv, " ")
+	for _, want := range []string{"finish_work", "not by the CLI exiting", "look it up before you finish"} {
+		if !strings.Contains(brief, want) {
+			t.Errorf("the brief does not say %q:\n%s", want, brief)
+		}
+	}
+}
+
+// And a run that is handed no board tools is not told to call one: a deploy and
+// a test are ACP sessions, and a turn spent looking for a tool that was never
+// wired in is a turn wasted.
+func TestARunWithNoBoardToolsIsNotToldToCallOne(t *testing.T) {
+	deploy := composePrompt(CardMoved{Title: "Publish"}, AgentEntry{Name: "a"}, "", "", true, false)
+	if strings.Contains(deploy, "finish_work") {
+		t.Errorf("a run with no board tools was told to end with one:\n%s", deploy)
 	}
 }

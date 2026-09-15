@@ -5,8 +5,9 @@ import (
 	"time"
 
 	"github.com/artipop/xciii/server/app"
-	"github.com/artipop/xciii/server/mlog"
 	"github.com/artipop/xciii/server/model"
+
+	"github.com/artipop/xciii/internal/boardmodel"
 	"github.com/artipop/xciii/server/utils"
 )
 
@@ -86,7 +87,7 @@ func optionID(t *testing.T, a *app.App, boardID, name string) string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, id, ok := findSelectOption(schema, "Статус", name)
+	_, id, ok := boardmodel.FindSelectOption(schema, "Статус", name)
 	if !ok {
 		t.Fatalf("колонки «%s» на доске нет", name)
 	}
@@ -106,7 +107,7 @@ func ids(t *testing.T, raw any) []string {
 
 // A board that has just got its first source has an inbox: what arrives stands
 // in one column and is read in a view of its own, and what the person types
-// there stands in another — so that «Создать» on the inbox does not look like
+// there stands in another — so that the create button on the inbox does not look like
 // something that arrived and nobody has read.
 func TestTheInboxIsTwoColumnsAndAViewShowingBoth(t *testing.T) {
 	a := newTestApp(t)
@@ -130,7 +131,7 @@ func TestTheInboxIsTwoColumnsAndAViewShowingBoth(t *testing.T) {
 	}
 	clause, _ := clauses[0].(map[string]any)
 	values := ids(t, clause["values"])
-	// «Мои задачи» first: the first value of the clause is what a card made in
+	// the my-tasks column first: the first value of the clause is what a card made in
 	// this view becomes, and that is the whole mechanism behind the button.
 	if len(values) != 2 || values[0] != mineID || values[1] != inboxID {
 		t.Fatalf("фильтр пропускает %v, ожидалось [%s %s]", values, mineID, inboxID)
@@ -139,7 +140,7 @@ func TestTheInboxIsTwoColumnsAndAViewShowingBoth(t *testing.T) {
 
 // Both inbox columns are taken off the board's own kanban: what arrived and
 // what the person typed are read on the inbox view, and the board of work
-// stays the board of work. «Мои задачи» stood at the kanban's front for one
+// stays the board of work. the my-tasks column stood at the kanban's front for one
 // version, and that was not what was asked for.
 func TestBothInboxColumnsAreHiddenFromTheKanban(t *testing.T) {
 	a := newTestApp(t)
@@ -176,71 +177,10 @@ func TestBothInboxColumnsAreHiddenFromTheKanban(t *testing.T) {
 	}
 }
 
-// A board the front-column version already arranged is put right on launch:
-// «Мои задачи» leaves the kanban's front and joins «Входящие» among the hidden
-// columns. The sweep runs from ImportTemplates, so having the templates is
-// having the fix.
-func TestALegacyFrontColumnIsHiddenOnLaunch(t *testing.T) {
-	a := newTestApp(t)
-	logger, _ := mlog.NewLogger()
-	if err := ImportTemplates(a, logger); err != nil {
-		t.Fatal(err)
-	}
-	template := installedTemplates(t, a)["home-chores"]
-	bab, _, err := a.DuplicateBoard(template.ID, model.SingleUser, model.GlobalTeamID, false)
-	if err != nil {
-		t.Fatal(err)
-	}
-	board := bab.Boards[0]
-	mineID := optionID(t, a, board.ID, MineColumnTitle)
-	inboxID := optionID(t, a, board.ID, "Входящие")
-
-	// The arrangement version 15 left behind: own tasks first, arrivals hidden.
-	views, err := a.GetBlocks(board.ID, "", model.TypeView)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, view := range views {
-		if view.Title != "Дела" {
-			continue
-		}
-		visible, _ := view.Fields["visibleOptionIds"].([]any)
-		patch := &model.BlockPatch{UpdatedFields: map[string]any{
-			"visibleOptionIds": append([]any{mineID}, visible...),
-			"hiddenOptionIds":  []any{inboxID},
-		}}
-		if _, err := a.PatchBlock(view.ID, patch, model.SystemUserID); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	if err := ImportTemplates(a, logger); err != nil {
-		t.Fatal(err)
-	}
-
-	w := NewWriter(a)
-	kanban := viewsByTitle(t, w, board.ID)["Дела"]
-	if visible := ids(t, kanban.Fields["visibleOptionIds"]); containsString(visible, mineID) {
-		t.Fatalf("«Мои задачи» осталась на канбане: %v", visible)
-	}
-	if hidden := ids(t, kanban.Fields["hiddenOptionIds"]); !containsString(hidden, mineID) || !containsString(hidden, inboxID) {
-		t.Fatalf("скрытые колонки: %v", hidden)
-	}
-}
-
-func containsString(list []string, want string) bool {
-	for _, item := range list {
-		if item == want {
-			return true
-		}
-	}
-	return false
-}
-
-// An install that predates «Мои задачи» has an inbox filtered to what arrived,
+// An install that predates the my-tasks column has an inbox filtered to what arrived,
 // and the person's own card would have vanished the moment it was made. The
 // view is brought up to date rather than replaced: it is in the sidebar, and a
-// second «Входящие» beside it is worse than either.
+// second the inbox view beside it is worse than either.
 func TestAnOlderInboxLearnsAboutOwnTasks(t *testing.T) {
 	a := newTestApp(t)
 	board := boardWithAKanban(t, a)

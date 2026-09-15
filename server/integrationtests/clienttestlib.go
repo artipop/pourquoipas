@@ -3,6 +3,7 @@ package integrationtests
 import (
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"testing"
@@ -112,9 +113,18 @@ func getTestConfig() (*config.Configuration, error) {
 		}
 	}`
 
+	// A port the kernel picks rather than 8888. Two packages raise this fixture
+	// now — the integration tests and internal/boardclient's — and `go test
+	// ./...` runs packages in parallel, so a fixed port made whichever started
+	// second die on bind, before any of its tests ran.
+	port, err := freeTestPort()
+	if err != nil {
+		return nil, err
+	}
+
 	return &config.Configuration{
-		ServerRoot:        "http://localhost:8888",
-		Port:              8888,
+		ServerRoot:        fmt.Sprintf("http://localhost:%d", port),
+		Port:              port,
 		DBType:            dbType,
 		DBConfigString:    connectionString,
 		WebPath:           "./pack",
@@ -479,4 +489,17 @@ func (th *TestHelper) CheckRequestEntityTooLarge(r *client.Response) {
 func (th *TestHelper) CheckNotImplemented(r *client.Response) {
 	require.Equal(th.T, http.StatusNotImplemented, r.StatusCode)
 	require.Error(th.T, r.Error)
+}
+
+// freeTestPort asks the kernel for a port nobody is using. There is a window
+// between closing this listener and the server binding it, and it is the same
+// window the application's own getFreePort lives with: nothing else on the
+// machine is hunting for ports at that moment.
+func freeTestPort() (int, error) {
+	l, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		return 0, err
+	}
+	defer func() { _ = l.Close() }()
+	return l.Addr().(*net.TCPAddr).Port, nil
 }

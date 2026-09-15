@@ -95,23 +95,22 @@ func (a *API) handleGetTeam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var team *model.Team
-	var err error
+	// The root team, whatever id was asked for: this install has exactly one
+	// and its id is '0' (docs/teamwork.md). The other branch answered a team
+	// named by the plugin host, and there is no host.
+	team, err := a.app.GetRootTeam()
+	if err != nil {
+		a.errorResponse(w, r, err)
+		return
+	}
 
-	if a.MattermostAuth {
-		team, err = a.app.GetTeam(teamID)
-		if model.IsErrNotFound(err) {
-			a.errorResponse(w, r, model.NewErrUnauthorized("invalid team"))
-		}
-		if err != nil {
-			a.errorResponse(w, r, err)
-		}
-	} else {
-		team, err = a.app.GetRootTeam()
-		if err != nil {
-			a.errorResponse(w, r, err)
-			return
-		}
+	// The signup token is the door into this install, and this handler is
+	// asked by every member on every page load. It went out to all of them
+	// because the whole model.Team was marshalled.
+	if !a.permissions.HasPermissionToTeam(userID, teamID, model.PermissionManageTeam) {
+		withoutToken := *team
+		withoutToken.SignupToken = ""
+		team = &withoutToken
 	}
 
 	data, err := json.Marshal(team)
@@ -146,8 +145,11 @@ func (a *API) handlePostTeamRegenerateSignupToken(w http.ResponseWriter, r *http
 	//     description: internal error
 	//     schema:
 	//       "$ref": "#/definitions/ErrorResponse"
-	if a.MattermostAuth {
-		a.errorResponse(w, r, model.NewErrNotImplemented("not permitted in plugin mode"))
+	// Retiring the invite link and minting a new one is administering the
+	// install. This checked nothing but the session, so any member could take
+	// away everybody else's link.
+	if !a.permissions.HasPermissionToTeam(getUserID(r), r.PathValue("teamID"), model.PermissionManageTeam) {
+		a.errorResponse(w, r, model.NewErrPermission("access denied to team"))
 		return
 	}
 
@@ -186,11 +188,6 @@ func (a *API) handleGetTeamUsers(w http.ResponseWriter, r *http.Request) {
 	//   description: string to filter users list
 	//   required: false
 	//   type: string
-	// - name: exclude_bots
-	//   in: query
-	//   description: exclude bot users
-	//   required: false
-	//   type: boolean
 	// security:
 	// - BearerAuth: []
 	// responses:
@@ -209,7 +206,6 @@ func (a *API) handleGetTeamUsers(w http.ResponseWriter, r *http.Request) {
 	userID := getUserID(r)
 	query := r.URL.Query()
 	searchQuery := query.Get("search")
-	excludeBots := r.URL.Query().Get("exclude_bots") == True
 
 	if !a.permissions.HasPermissionToTeam(userID, teamID, model.PermissionViewTeam) {
 		a.errorResponse(w, r, model.NewErrPermission("access denied to team"))
@@ -226,7 +222,7 @@ func (a *API) handleGetTeamUsers(w http.ResponseWriter, r *http.Request) {
 		asGuestUser = userID
 	}
 
-	users, err := a.app.SearchTeamUsers(teamID, searchQuery, asGuestUser, excludeBots)
+	users, err := a.app.SearchTeamUsers(teamID, searchQuery, asGuestUser)
 	if err != nil {
 		a.errorResponse(w, r, err)
 		return
@@ -303,14 +299,14 @@ func (a *API) handleGetTeamUsersByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// The single-user id is synthesized (it has no row in the users table); the
-	// rest are looked up as usual, so a single-user install can hold real
-	// accounts alongside it — the desktop app creates one per coding agent, and
-	// this is the call the webapp resolves board members with.
+	// The single-user id is synthesized on a desktop, which asks nobody who
+	// they are. The rest are looked up as usual, so such an install can hold
+	// real accounts alongside it — the desktop app creates one per coding
+	// agent, and this is the call the webapp resolves board members with.
 	realIDs := make([]string, 0, len(userIDs))
 	singleUserRequested := false
 	for _, id := range userIDs {
-		if id == model.SingleUser {
+		if id == model.SingleUser && a.synthesizesSingleUser() {
 			singleUserRequested = true
 			continue
 		}

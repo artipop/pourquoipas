@@ -30,7 +30,7 @@ export type FlowNode = {
 
     // The deploy target this stage publishes to, by the registry entry's id.
     // It used to be the entry's name, and renaming a target then unpinned every
-    // stage that sent work to it (docs/model-graph.md, contradiction 8).
+    // stage that sent work to it.
     deployId?: string
 
     // The stage's own instructions, said to whoever works it here — overriding
@@ -57,9 +57,20 @@ export type FlowNode = {
     y?: number
 }
 
+// ENTRY_NODE is the stage a card comes from when it comes from off the route —
+// the backlog, a source, a hand from anywhere the route does not pass through.
+// Every route has this way in, transition 0, and it is where a question asked
+// once on the way in is declared. Go's acp.EntryNode.
+export const ENTRY_NODE = '@entry'
+
 export type FlowEdge = {
+
+    // A stage id, or ENTRY_NODE for the way onto the route.
     from: string
     to: string
+
+    // Empty on the way onto the route, which waits for no event: what fires it
+    // is the card arriving, which is the move itself.
     on: string
 
     // A condition makes the transition ask about the card: several conditional
@@ -67,6 +78,31 @@ export type FlowEdge = {
     // without one is the fallback. For the card.changed trigger the condition
     // is the event itself: which option firing it means.
     if?: EdgeCond
+
+    // What a person is asked before the card is let across. The card waits
+    // where it is until every question has an answer — see EdgeAsk.
+    ask?: EdgeAsk[]
+}
+
+// EdgeAsk is one question the arrow asks. It is on the arrow and not on the
+// stage because one stage is entered in more than one way and the answers
+// differ: the way into work from the backlog is where somebody decides how the
+// work will be arranged, and the same card coming back from a review has that
+// decided already.
+export type EdgeAsk = {
+
+    // The question's own id, minted by Go on save. Empty on one just added.
+    id?: string
+
+    // ASK_WORKMODE, ASK_WORKDIR or ASK_PROPERTY.
+    kind: string
+
+    // The board select the answer is written to, by name, for ASK_PROPERTY.
+    property?: string
+
+    // What is asked, in the board's own words. Empty takes the built-in
+    // wording, which the editor shows as the placeholder.
+    text?: string
 }
 
 // EdgeCond is exactly one of two questions: does the card's select property
@@ -115,7 +151,7 @@ export type ColumnSpec = {
     maxRunning?: number
 
     // What working in this column means, said to the agent: the reviewer's
-    // brief on «Ревью», the builder's on «В работе». A route node may override
+    // brief on the review column, the builder's on the in-progress column. A route node may override
     // it for its stage alone (FlowNode.prompt).
     prompt?: string
 
@@ -150,11 +186,53 @@ export const SUCCESS = 'success'
 export const FAILURE = 'failure'
 export const BLOCKED = 'blocked'
 
+// The two kinds of question an arrow can ask. ASK_WORKMODE is the machine's
+// own — how this card's work is arranged in the folder — and its answer goes
+// into the card's workspace rather than onto the card. ASK_PROPERTY writes the
+// answer into one of the board's own selects, which puts it in the route's
+// dataflow like any other write.
+export const ASK_WORKMODE = 'workmode'
+export const ASK_PROPERTY = 'property'
+
+// ASK_WORKDIR is the folder the card's work happens in, written into the
+// board's own folder field. It is an ASK_PROPERTY in everything but which
+// property: which field a card names its folder in is the board's record
+// rather than a person's to pick. Asked before ASK_WORKMODE, because a card
+// that has not chosen a folder has nothing for that question to be about.
+export const ASK_WORKDIR = 'workdir'
+
 // CARD_CHANGED is the board-side trigger: an option set on the card itself.
 // Its edge must say which option through its condition.
 export const CARD_CHANGED = 'card.changed'
 
 export const ACTIONS = ['none', 'agent', 'deploy', 'test']
+
+// The board property types a stage can actually write. SetCardFields resolves a
+// select by one of its option names and stores everything else as text, so a
+// date, a person or a file would be handed a string the board cannot read back,
+// and createdBy/createdTime and their kin are the board's own bookkeeping.
+export const WRITABLE_TYPES = ['text', 'url', 'email', 'phone', 'number', 'select']
+
+// NewProperty is a board property a stage's outputs need and the board has not
+// got. The editor asks for it rather than making it, the way it asks for a
+// column: a property is the board's, visible on every card, and belongs to
+// whoever owns the board rather than to the automation over it.
+export type NewProperty = {
+    name: string
+
+    // 'select' is the one that makes the property branchable — a transition can
+    // only ask "is it this value" of a closed set. 'text' and 'url' are carried
+    // to later stages and read there.
+    type: 'text' | 'url' | 'select'
+
+    // The option names, for a select. Empty for the rest.
+    options?: string[]
+}
+
+// The names this app gives the two machine outputs, and their shape. A deploy
+// stage produces one address and a test one verdict, so neither is a question:
+// the form asks for the name and says what kind it will be.
+export const VERDICT_VALUES = ['pass', 'fail', 'blocked']
 
 // OUTCOMES are the triggers produced by the stage's own action — the only ones
 // where the agent spoke, and therefore the only ones a comment condition makes
@@ -379,57 +457,60 @@ export function automationChanges(before: Automation, after: Automation): Automa
 // The board properties a template carries its automation in — the same names Go
 // reads (internal/acp/boardseed.go). A board made from the template brings them,
 // and the first look at it takes them into the registry.
-export const BOARD_PROP_COLUMNS = 'xciiiColumns'
-export const BOARD_PROP_FLOWS = 'xciiiFlows'
-export const BOARD_PROP_SETUP = 'xciiiSetup'
+// KEY_PREFIX is the namespace this application's own keys live under wherever
+// they share a map with somebody else's — a board's `properties`, a card's
+// `fields`. Spelled the same on the Go side (acp.KeyPrefix), and deliberately
+// not the product's name: a name can be revisited, and after a release every
+// key carrying one is a migration in its own store.
+export const KEY_PREFIX = 'app'
+
+export const BOARD_PROP_COLUMNS = 'columns'
+export const BOARD_PROP_FLOWS = 'flows'
+export const BOARD_PROP_SETUP = 'setup'
 
 // What this board's agents are told first. Nothing here writes it — the page
 // asks Go for it (GetBoardPrompts/SetBoardPrompts) and Go keeps it on the board —
 // but it is named here because it is one of the keys a template carries, and
 // anything that rebuilds a board's properties has to leave it alone.
-export const BOARD_PROP_PROMPT = 'xciiiPrompt'
-
-// How a board *used* to say a repository is worked in. The answer belongs to
-// the folder on this board now (SetAgentWorkdirMode); Go moves the old key onto
-// the folders once and takes it off the board. Named here only so that a save
-// which rebuilds a board's properties leaves it alone while it is still there.
-export const BOARD_PROP_GIT = 'xciiiGit'
+export const BOARD_PROP_PROMPT = 'prompt'
 
 // Which card property holds the folders, by id. A name would have been a
 // worse answer twice over: the field is a person's to rename, and the name
 // this app gives it is Russian, so a board in any other language could only
 // ever have been matched by luck.
-export const BOARD_PROP_PROJECT_PROPERTY = 'xciiiProjectProperty'
+export const BOARD_PROP_PROJECT_PROPERTY = 'projectProperty'
+
+// And which one this app writes a stage's outcome into — «прошло», «не прошло»,
+// «заблокировано» — for every stage, without anybody declaring it. Written by
+// the engine (acp.BoardPropOutcome); named here because the editor must not
+// offer it as something a stage declares, the way it does not offer the column
+// property: both are the app's own answer about the card.
+export const BOARD_PROP_OUTCOME_PROPERTY = 'outcomeProperty'
+
+// The values it takes, in the engine's own spelling (acp.OutcomeValue). Two,
+// because what the card carries here is whether the step worked — and every
+// question anybody asks of it is that question. A check that could not run
+// answers «не прошло» like anything else that did not pass; why is the stall's
+// business, where it can be a sentence.
+export const OUTCOME_PASSED = 'прошло'
+export const OUTCOME_FAILED = 'не прошло'
+export const OUTCOME_VALUES = [OUTCOME_PASSED, OUTCOME_FAILED]
+
+// boardOutcomeProperty is the id of that field, or '' for a board without one.
+export function boardOutcomeProperty(board: {properties?: Record<string, unknown>}): string {
+    const recorded = board.properties?.[BOARD_PROP_OUTCOME_PROPERTY]
+    return typeof recorded === 'string' ? recorded : ''
+}
 
 // And which one holds the branch a card's work is on, by id for the same
 // reason. Go writes into it (workspace.go); the page is what creates it,
 // because the board's card properties are the page's to patch.
-export const BOARD_PROP_BRANCH_PROPERTY = 'xciiiBranchProperty'
+export const BOARD_PROP_BRANCH_PROPERTY = 'branchProperty'
 
 // boardBranchProperty is the id of that field, or '' for a board without one.
 export function boardBranchProperty(board: {properties?: Record<string, unknown>}): string {
     const recorded = board.properties?.[BOARD_PROP_BRANCH_PROPERTY]
     return typeof recorded === 'string' ? recorded : ''
-}
-
-// What these keys were called before. Every board made until now carries them,
-// so they are read; they are never written, and a save drops them (see
-// boardAutomationProperties), which is the same migration Go does.
-//
-// The prefix was `acp`, which claimed the agent integration owns all of this.
-// It does not: a route can be made entirely of deterministic transitions — a
-// branch merged, a card property changed — with no agent in it anywhere.
-const LEGACY_BOARD_PROPS: Record<string, string> = {
-    [BOARD_PROP_COLUMNS]: 'acpColumns',
-    [BOARD_PROP_FLOWS]: 'acpFlows',
-    [BOARD_PROP_SETUP]: 'acpSetup',
-    [BOARD_PROP_PROMPT]: 'acpPrompt',
-    [BOARD_PROP_PROJECT_PROPERTY]: 'acpProjectProperty',
-}
-
-// legacyBoardProp is the old name of a key, for reading and for dropping.
-export function legacyBoardProp(key: string): string | undefined {
-    return LEGACY_BOARD_PROPS[key]
 }
 
 // BoardSetupStep is one question the template asks the machine when a board is
@@ -455,8 +536,7 @@ export type SetupStepDef = {
 
 function readProperty<T>(board: Board, key: string, fallback: T): T {
     const properties = board.properties || {}
-    const legacy = legacyBoardProp(key)
-    const raw = properties[key] ?? (legacy ? properties[legacy] : undefined)
+    const raw = properties[key]
     if (raw === undefined || raw === null || raw === '') {
         return fallback
     }
@@ -494,19 +574,6 @@ export function boardAutomationProperties(
     setup: BoardSetup | undefined,
 ): Record<string, string | string[]> {
     const properties = {...(board.properties || {})}
-
-    // A board written by this app carries the current names only. Dropping the
-    // old ones here is what migrates a board saved as a template: mutator's
-    // patch turns a key that is gone into a deletedProperties entry.
-    for (const key of Object.keys(LEGACY_BOARD_PROPS)) {
-        const legacy = legacyBoardProp(key)
-        if (legacy && properties[legacy] !== undefined && properties[key] === undefined) {
-            properties[key] = properties[legacy]
-        }
-        if (legacy) {
-            delete properties[legacy]
-        }
-    }
 
     properties[BOARD_PROP_COLUMNS] = JSON.stringify(automation.columns)
     properties[BOARD_PROP_FLOWS] = JSON.stringify(automation.flows)
@@ -565,18 +632,83 @@ export function routeOptionMissing(board: Board, flow: Flow): boolean {
         (p.options || []).some((o) => o.value.trim().toLowerCase() === name))
 }
 
+// resolvedWrites is what a stage actually leaves on the card: its own list, or
+// the column's — the inheritance the route itself knows nothing about, spelled
+// once so the canvas, the reads and the condition pickers cannot disagree.
+export function resolvedWrites(node: FlowNode, specs: ColumnSpec[]): PropertyWrite[] {
+    if (node.writes?.length) {
+        return node.writes
+    }
+    return specForNode(node, specs)?.writes || []
+}
+
+// specForNode is the column a stage stands on — the option first, across the
+// whole list, and only then the name. The two passes must not be merged into
+// one `find`: a board that has both a spec bound to the option and an older one
+// carrying only the column's name would then be answered by whichever came
+// first, which is the order somebody edited things in. That is specFor's rule,
+// said again for a node — specFor takes a BoardColumn, which a route has not.
+export function specForNode(node: FlowNode, specs: ColumnSpec[]): ColumnSpec | undefined {
+    return (node.optionId ? specs.find((c) => c.optionId === node.optionId) : undefined) ||
+        specs.find((c) => c.column.toLowerCase() === node.column.toLowerCase())
+}
+
+// UpstreamWrite is one property a stage will find on the card when it starts,
+// and the stage that put it there — which is the half that makes the answer
+// readable: «Превью · пишет «Деплой»».
+export type UpstreamWrite = {
+    property: string
+    from: string
+}
+
+// upstreamWrites is every property the stages ahead of this one declare. It is
+// what a stage's reads fall back to (Go's FlowEntry.UpstreamWrites, kept in step
+// with it), so declaring a write once carries the value on by itself.
+//
+// Walked backwards over the incoming edges with a visited set, because a route
+// has cycles on purpose: a failed check sends the card back to the agent. A
+// stage never reads its own output back.
+export function upstreamWrites(flow: Flow, from: string, specs: ColumnSpec[]): UpstreamWrite[] {
+    const nodes = new Map(flow.nodes.map((n) => [n.id, n]))
+    const seen = new Set([from])
+    const taken = new Set<string>()
+    const out: UpstreamWrite[] = []
+    const queue = [from]
+    while (queue.length > 0) {
+        const at = queue.shift() as string
+        for (const edge of flow.edges) {
+            if (edge.to !== at || seen.has(edge.from)) {
+                continue
+            }
+            seen.add(edge.from)
+            queue.push(edge.from)
+            const node = nodes.get(edge.from)
+            if (!node) {
+                continue
+            }
+            for (const w of resolvedWrites(node, specs)) {
+                const key = w.property.trim().toLowerCase()
+                if (!key || taken.has(key)) {
+                    continue
+                }
+                taken.add(key)
+                out.push({property: w.property, from: node.column})
+            }
+        }
+    }
+    return out
+}
+
 // unwrittenConditions is the dataflow check: every conditional edge of the
 // route whose property no stage of the route declares as a write. Not an
-// error — «Одобрено» may be a person's own click — but worth a sentence, since
+// error — an approved option may be a person's own click — but worth a sentence, since
 // an edge waiting on a property nothing produces is a route that quietly never
 // moves. The column property itself is exempt: moving between columns is what
 // the route does, not a value somebody writes.
 export function unwrittenConditions(flow: Flow, specs: ColumnSpec[], columnPropertyName?: string): string[] {
     const written = new Set<string>()
     for (const node of flow.nodes) {
-        const spec = specs.find((c) => (node.optionId && c.optionId === node.optionId) ||
-            c.column.toLowerCase() === node.column.toLowerCase())
-        for (const w of (node.writes?.length ? node.writes : spec?.writes) || []) {
+        for (const w of resolvedWrites(node, specs)) {
             written.add(w.property.toLowerCase())
         }
     }

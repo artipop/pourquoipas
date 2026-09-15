@@ -49,7 +49,7 @@ describe('components/boardTemplateSelector/boardTemplateSelector', () => {
     const template1Title = 'Template 1'
 
     // The selector shows only the templates that ship their own automation,
-    // and it knows them by the marker they carry (xciiiTemplate); everything
+    // and it knows them by the marker they carry (template); everything
     // else is hidden. Two of the global fixtures below carry one.
     const globalTemplateTitle = 'Разработка'
     const householdTemplateTitle = 'Домашние дела'
@@ -144,7 +144,7 @@ describe('components/boardTemplateSelector/boardTemplateSelector', () => {
                     templateVersion: 2,
                     properties: {
                         trackingTemplateId: 'template_id_household',
-                        xciiiTemplate: 'home-chores',
+                        template: 'home-chores',
                     },
                     createdBy: 'system',
                 }, {
@@ -160,7 +160,7 @@ describe('components/boardTemplateSelector/boardTemplateSelector', () => {
                     templateVersion: 2,
                     properties: {
                         trackingTemplateId: 'template_id_global',
-                        xciiiTemplate: 'developer-tasks',
+                        template: 'developer-tasks',
                     },
                     createdBy: 'system',
                 }],
@@ -315,7 +315,7 @@ describe('components/boardTemplateSelector/boardTemplateSelector', () => {
                         isTemplate: true,
                         templateVersion: 2,
                         createdBy: me.id,
-                        properties: {xciiiTemplate: 'developer-tasks'},
+                        properties: {template: 'developer-tasks'},
                     }],
                 },
             })
@@ -327,7 +327,7 @@ describe('components/boardTemplateSelector/boardTemplateSelector', () => {
                 ,
             ), {wrapper: TestRouter})
 
-            // Two boards named «Разработка» — ours and the copy — and so two
+            // Two boards named the developer template — ours and the copy — and so two
             // rows. Three would mean the copy was listed twice, which is what
             // answering both questions used to get it.
             const rows = [...container.querySelectorAll('.templates-list .template-name')].

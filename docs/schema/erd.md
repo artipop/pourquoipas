@@ -8,9 +8,8 @@
 оттуда же и миграция для трёх диалектов, и эта страница, так что разойтись им
 негде.
 
-Читается это словами в `docs/db-erd.md` (что где лежит и почему),
-`docs/model-graph.md` (как одно находит другое) и
-`docs/db-schema-review.md` (разбор решений).
+Читается это словами в `docs/db-erd.md` (что где лежит, чем что
+адресуется и почему) и `docs/db-schema-review.md` (разбор решений).
 
 Типы на схеме — не типы SQL, а то, что в колонке: `id`, `millis`
 (момент в unix-миллисекундах), `name_36` (короткая техническая строка),
@@ -34,8 +33,8 @@
 
 Форк Focalboard. Всё содержимое доски — строки `blocks`: карточка,
 вид, комментарий, вложение; дерево внутри доски — через `parent_id`.
-Наша автоматика лежит в `boards.properties` (`xciiiColumns`,
-`xciiiFlows`, `xciiiPrompt`, …) и в `blocks.fields` карточки, своих
+Наша автоматика лежит в `boards.properties` (`columns`,
+`flows`, `prompt`, …) и в `blocks.fields` карточки, своих
 таблиц у неё нет — потому и едет с доской при экспорте и переезде.
 
 Внешних ключей здесь нет, и намеренно: у форка наследный soft-delete,
@@ -59,7 +58,7 @@ erDiagram
         bool show_description "nullable"
         bool is_template "nullable"
         int32 template_version "nullable"
-        text properties "The board's own automation lives here — xciiiColumns, xciiiFlows, xciiiPrompt and the records of which…"
+        text properties "The board's own automation lives here — columns, flows, prompt and the records of which field is which.…"
         text card_properties "The schema of a card's fields. The product's main denormalisation, and deliberately left alone: the whole…"
         millis create_at "nullable"
         millis update_at "nullable"
@@ -100,6 +99,8 @@ erDiagram
         name_20 auth_service "nullable"
         name_255 auth_data "nullable"
         text props "nullable"
+        name_16 role "admin | member — Who administers this install. NULL and 'member' read the same, so a row written before the…"
+        name_32 kind "person, agent or source. There was no column to tell them apart, and exclude_bots on the team's user list had…"
         millis create_at "nullable"
         millis update_at "nullable"
         millis delete_at "nullable"
@@ -213,7 +214,7 @@ erDiagram
         bool show_description "nullable"
         bool is_template "nullable"
         int32 template_version "nullable"
-        text properties "The board's own automation lives here — xciiiColumns, xciiiFlows, xciiiPrompt and the records of which…"
+        text properties "The board's own automation lives here — columns, flows, prompt and the records of which field is which.…"
         text card_properties "The schema of a card's fields. The product's main denormalisation, and deliberately left alone: the whole…"
         millis create_at "nullable"
         millis update_at "nullable"
@@ -241,6 +242,36 @@ erDiagram
         name_36 user_id PK
         name_10 action "nullable"
         timestamp insert_at PK
+    }
+```
+
+## На что смотрят ключи
+
+Внешний ключ достаёт только внутрь своей базы, а доска бывает на
+чужом сервере. Поэтому всё наше указывает не на `blocks`/`boards`
+напрямую, а на эти две строки: цепочка `blocks → card_ref → всё
+остальное` сохраняет каскад для своей карточки, а у чужой
+`block_id` пуст и строку убирает клиент, услышав, что карточки
+больше нет. Ключ — собственный id карточки, не суррогат: поэтому ни
+один запрос в остальных таблицах не поменялся.
+
+```mermaid
+erDiagram
+    blocks ||--o{ card_ref : "block_id CASCADE"
+    board_ref ||--o{ card_ref : "board_id CASCADE"
+    boards ||--o{ board_ref : "local_board_id CASCADE"
+
+    board_ref {
+        id board_id PK "The board's own id, on whichever server it lives."
+        name_64 source_id "Where the board is. NULL is this machine, which is every board until a desktop attaches to a hosted one."
+        id local_board_id FK "The same board in this process's own table, when it is ours. NULL for a board on a server: that is what makes…"
+        millis created_at
+    }
+    card_ref {
+        id card_id PK
+        id board_id FK "Which board it is on, and through that which server. Nullable because three of the writers know a card and…"
+        id block_id FK "The same card in this process's own blocks, when it is ours. This is the cascade: the card is deleted, the…"
+        millis created_at
     }
 ```
 
@@ -319,10 +350,10 @@ erDiagram
 ```mermaid
 erDiagram
     agent_session ||--o{ session_event : "session_id CASCADE"
-    blocks ||--o{ agent_session : "card_id CASCADE"
-    blocks ||--o{ conversation : "card_id CASCADE"
-    boards ||--o{ agent_session : "board_id CASCADE"
-    boards ||--o{ conversation : "board_id CASCADE"
+    board_ref ||--o{ agent_session : "board_id CASCADE"
+    board_ref ||--o{ conversation : "board_id CASCADE"
+    card_ref ||--o{ agent_session : "card_id CASCADE"
+    card_ref ||--o{ conversation : "card_id CASCADE"
 
     conversation {
         id id PK
@@ -348,6 +379,7 @@ erDiagram
         name_32 agent_kind
         name_100 acp_session_id "nullable"
         name_24 status "queued | running | idle | waiting_permission | done | failed | cancelled"
+        name_128 column_key "Which column's limit this run counts against. Here rather than in memory because a column's limit is about…"
         text cwd "nullable"
         text worktree_path "nullable"
         name_255 branch "nullable"
@@ -372,12 +404,12 @@ erDiagram
 
 ```mermaid
 erDiagram
-    blocks ||--o{ card_stall : "card_id CASCADE"
-    blocks ||--o{ flow_event : "card_id CASCADE"
-    blocks ||--o{ flow_state : "card_id CASCADE"
-    blocks ||--o{ stage_queue : "card_id CASCADE"
-    boards ||--o{ flow_state : "board_id CASCADE"
-    boards ||--o{ stage_queue : "board_id CASCADE"
+    board_ref ||--o{ flow_state : "board_id CASCADE"
+    board_ref ||--o{ stage_queue : "board_id CASCADE"
+    card_ref ||--o{ card_stall : "card_id CASCADE"
+    card_ref ||--o{ flow_event : "card_id CASCADE"
+    card_ref ||--o{ flow_state : "card_id CASCADE"
+    card_ref ||--o{ stage_queue : "card_id CASCADE"
 
     flow_state {
         id card_id PK, FK
@@ -421,11 +453,15 @@ erDiagram
 `checkout` — git-состояние: где копия, какая ветка, от чего
 отрезана. Владелец — карточка либо доска («черновики доски»), ровно
 одна из двух колонок заполнена; обычная папка не пишет строки вовсе.
+`card_changes` — размер сделанного, числами: диф всегда читается из
+git заново, а эта строка нужна, чтобы знать, есть ли что читать, не
+запуская git на каждую карточку.
 
 ```mermaid
 erDiagram
-    blocks ||--o{ checkout : "card_id CASCADE"
-    boards ||--o{ checkout : "board_id CASCADE"
+    board_ref ||--o{ checkout : "board_id CASCADE"
+    card_ref ||--o{ card_changes : "card_id CASCADE"
+    card_ref ||--o{ checkout : "card_id CASCADE"
     workspace ||--o{ checkout : "workspace_id RESTRICT"
     workspace ||--o{ vcs_seen : "workspace_id CASCADE"
 
@@ -448,6 +484,16 @@ erDiagram
         name_64 marker "The commit the event refers to: the same state seen twice fires once."
         millis created_at
     }
+    card_changes {
+        id card_id PK, FK
+        name_255 branch "nullable"
+        name_255 base "What the branch was cut from, so a stale row can be told from one about a different base."
+        int files
+        int added
+        int removed
+        int dirty "Files changed and not committed. Counted apart because they exist only while a working copy does, and the…"
+        millis computed_at
+    }
 ```
 
 ## Входящие
@@ -457,8 +503,8 @@ erDiagram
 
 ```mermaid
 erDiagram
-    blocks ||--o{ source_event : "card_id SET NULL"
-    blocks ||--o{ source_item : "card_id SET NULL"
+    card_ref ||--o{ source_event : "card_id SET NULL"
+    card_ref ||--o{ source_item : "card_id SET NULL"
 
     source_item {
         name_100 source PK
@@ -487,7 +533,7 @@ erDiagram
 
 ```mermaid
 erDiagram
-    boards ||--o{ board_setup : "board_id CASCADE"
+    board_ref ||--o{ board_setup : "board_id CASCADE"
 
     idempotency {
         name_255 token PK

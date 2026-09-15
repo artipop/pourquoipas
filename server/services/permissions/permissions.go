@@ -14,6 +14,10 @@ type PermissionsService interface {
 }
 
 type Store interface {
+	// GetUserByID is what makes an install-wide admin possible: every other
+	// question here is answered by board membership, and "who administers this
+	// install" is not a board question.
+	GetUserByID(userID string) (*model.User, error)
 	GetBoard(boardID string) (*model.Board, error)
 	GetMemberForBoard(boardID, userID string) (*model.BoardMember, error)
 	GetBoardHistory(boardID string, opts model.QueryBoardHistoryOptions) ([]*model.Board, error)

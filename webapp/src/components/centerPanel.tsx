@@ -1,4 +1,4 @@
-import {Match, Show, Switch, createEffect, createMemo, createSignal, onSettled, untrack} from 'solid-js'
+import {Match, Show, Switch, createEffect, createMemo, createSignal, onSettled} from 'solid-js'
 
 import {useIntl} from '../intl'
 
@@ -15,7 +15,7 @@ import mutator from '../mutator'
 import {Utils} from '../utils'
 import {UserSettings} from '../userSettings'
 import {personName} from '../userDisplay'
-import {getCurrentBoardCards, getCurrentCard} from '../store/cards'
+import {getCurrentCard} from '../store/cards'
 import {getVisibleAndHiddenGroups} from '../boardUtils'
 
 import {getClientConfig} from '../store/clientConfig'
@@ -54,8 +54,8 @@ import {BoardTourSteps, FINISHED, TOUR_BOARD, TOUR_CARD} from './onboardingTour'
 import ShareBoardTourStep from './onboardingTour/shareBoard/shareBoard'
 import BoardSetupWizard from './acp/boardSetupWizard'
 import {createSetupPlan, markSetupOffered, shouldOfferSetup} from './acp/boardSetup'
-import {retireAgentProperty} from './acp/agentSync'
-import {narrowWorkdirProperty, soleWorkdirOption} from './acp/workdirSync'
+import {soleWorkdirOption} from './acp/workdirSync'
+import {flowById, flowView, useBoardFlows} from './acp/boardFlows'
 
 type Props = {
     clientConfig?: ClientConfig
@@ -76,12 +76,12 @@ const CenterPanel = (props: Props) => {
 
     // A board that runs something on a machine that cannot run it yet. The
     // wizard opens by itself once per board and never stands anywhere after
-    // that: there used to be a header badge saying «Доска настроена не до
-    // конца», but the app has stopped treating almost anything as mandatory —
+    // that: there used to be a header badge calling the board half-configured,
+    // but the app has stopped treating almost anything as mandatory —
     // a board with no deploy target is a board that does not deploy, not a
     // half-configured one. What replaced the badge is a parting note (the
-    // wizard says how to come back) and the standing way in: «Как работает эта
-    // доска…» → «Пройти настройку заново…».
+    // wizard says how to come back) and the standing way in: the board menu
+    // opens the setup wizard.
     const [showSetup, setShowSetup] = createSignal(false)
     const [plan, refreshPlan] = createSetupPlan(() => props.board)
     createEffect(() => [props.board, plan()] as const, ([board, current]) => {
@@ -92,28 +92,6 @@ const CenterPanel = (props: Props) => {
             markSetupOffered(board.id).catch(() => undefined)
             setShowSetup(true)
         }
-    })
-
-    // The «Agent» field this app used to keep is gone: who works a card is the
-    // assignee, and one question with two fields is a question with two
-    // answers. A board that still carries it loses it here — on being opened,
-    // so a board somebody rarely visits is not left with a field the rest have
-    // lost. It writes only when the field is actually there.
-    createEffect(() => props.board, (board) => {
-        retireAgentProperty(board).catch(() => undefined)
-    })
-
-    const boardCards = useAppSelector(getCurrentBoardCards)
-
-    // The folder field is one choice now, and a board made before that carries
-    // it as a multiSelect. Narrowed here for the same reason the field above is
-    // taken away here — on being opened, so no board is left a version behind
-    // the rest — and with every card of the board rather than the ones this
-    // view shows, since a card the filter hides holds a value too. The cards
-    // are read untracked: what this answers is the board, and the conversion
-    // must not be reconsidered on every keystroke in a card.
-    createEffect(() => props.board, (board) => {
-        narrowWorkdirProperty(board, untrack(boardCards)).catch(() => undefined)
     })
 
     const [cardIdToFocusOnRender, setCardIdToFocusOnRender] = createSignal('')
@@ -205,7 +183,7 @@ const CenterPanel = (props: Props) => {
     }
 
     // What a new card is born with: the view's own filter (which is what puts a
-    // card made in «Входящие» into «Мои задачи»), the group it was dropped into,
+    // card made in the inbox view into the my-tasks column), the group it was dropped into,
     // and the board's folder when the board has only one.
     const newCardProperties = (groupByOptionId?: string): Record<string, string> => {
         const {activeView, board, groupByProperty} = props
@@ -402,13 +380,18 @@ const CenterPanel = (props: Props) => {
         e.stopPropagation()
     }
 
-    const showShareButton = () => !props.readonly && me()?.id !== 'single-user'
-    const showShareLoginButton = () => props.readonly && me()?.id !== 'single-user'
+    // Sharing a board is offered where there is somebody to share it with, and
+    // the same for the log-in button a shared board shows a stranger. The
+    // question used to be asked of the current user's id — which stopped
+    // answering it when the person at the machine got an account under that
+    // very id (docs/teamwork.md).
+    const showShareButton = () => !props.readonly && clientConfig().teamMode
+    const showShareLoginButton = () => props.readonly && clientConfig().teamMode
 
     const getUserDisplayName = (boardGroup: BoardGroup) => {
         const user = boardUsers()[boardGroup.option.id]
         if (user) {
-            return personName(intl, user, clientConfig().teammateNameDisplay)
+            return personName(intl, user, clientConfig().teammateNameDisplay, clientConfig().teamMode)
         } else if (boardGroup.option.id === 'undefined') {
             return intl.formatMessage({
                 id: 'centerPanel.undefined',
@@ -418,9 +401,17 @@ const CenterPanel = (props: Props) => {
         return intl.formatMessage({id: 'centerPanel.unknown-user', defaultMessage: 'Unknown user'})
     }
 
+    // The board's routes, and which of them each card is on: what the route
+    // picker offers and what a view narrowed to one route is drawn from.
+    const routes = useBoardFlows(() => props.board.id)
+    const drawnBy = () => flowById(routes.flows(), props.activeView.fields.flowId || '')
+
     const groups = createMemo(() => {
         const {cards, activeView, groupByProperty} = props
-        const {visible: vg, hidden: hg} = getVisibleAndHiddenGroups(cards, activeView.fields.visibleOptionIds, activeView.fields.hiddenOptionIds, groupByProperty)
+        const all = getVisibleAndHiddenGroups(cards, activeView.fields.visibleOptionIds, activeView.fields.hiddenOptionIds, groupByProperty)
+        const narrowed = flowView(all.visible, drawnBy(), routes.onFlow(), groupByProperty)
+        const vg = narrowed.groups
+        const hg = all.hidden
         if (groupByProperty?.type === 'createdBy' || groupByProperty?.type === 'updatedBy' || groupByProperty?.type === 'person') {
             if (boardUsers()) {
                 vg.forEach((value) => {
@@ -431,7 +422,7 @@ const CenterPanel = (props: Props) => {
                 })
             }
         }
-        return {visible: vg, hidden: hg}
+        return {visible: vg, hidden: hg, dividerAfter: narrowed.dividerAfter}
     })
 
     return (
@@ -486,6 +477,7 @@ const CenterPanel = (props: Props) => {
                 <ViewHeader
                     board={props.board}
                     activeView={props.activeView}
+                    flows={routes.flows()}
                     cards={props.cards}
                     views={props.views}
                     groupByProperty={props.groupByProperty}
@@ -507,6 +499,7 @@ const CenterPanel = (props: Props) => {
                         groupByProperty={props.groupByProperty}
                         visibleGroups={groups().visible}
                         hiddenGroups={groups().hidden}
+                        dividerAfter={groups().dividerAfter}
                         selectedCardIds={selectedCardIds()}
                         readonly={props.readonly}
                         onCardClicked={cardClicked}

@@ -3,6 +3,8 @@ import {For, Show, createEffect, createSignal, onSettled} from 'solid-js'
 import {useDragDropMonitor} from '@dnd-kit/solid'
 import {isSortable} from '@dnd-kit/dom/sortable'
 
+import AddIcon from '../../widgets/icons/add'
+
 import {FormattedMessage} from '../../intl'
 
 import {loadTheme} from '../../theme'
@@ -47,6 +49,7 @@ import {Board} from '../../blocks/board'
 
 import SidebarCategory, {CategoryBoardsDroppableData} from './sidebarCategory'
 import SidebarSettingsButton from './sidebarSettingsButton'
+import BoardSourceSwitcher from './boardSourceSwitcher'
 import SidebarUserMenu from './sidebarUserMenu'
 
 type Props = {
@@ -535,6 +538,10 @@ const Sidebar = (props: Props) => {
                         <div class='WorkspaceTitle'/>
                     </Show>
 
+                    {/* Above the boards, because it decides which boards those
+                        are: this machine's, or the server's. */}
+                    <BoardSourceSwitcher/>
+
                     <BoardsSwitcher/>
 
                     <div class='octo-sidebar-list'>
@@ -562,9 +569,10 @@ const Sidebar = (props: Props) => {
                         class='add-board'
                         onClick={props.onBoardTemplateSelectorOpen}
                     >
+                        <AddIcon/>
                         <FormattedMessage
                             id='Sidebar.add-board'
-                            defaultMessage='+ Add board'
+                            defaultMessage='Add board'
                         />
                     </div>
 

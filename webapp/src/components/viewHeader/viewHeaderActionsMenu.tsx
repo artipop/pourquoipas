@@ -21,6 +21,7 @@ import AutomationDialog, {isAutomationAvailable} from '../acp/automationDialog'
 import WorkdirsDialog from '../acp/workdirsDialog'
 import BoardPromptsDialog, {isBoardPromptsAvailable} from '../acp/boardPromptsDialog'
 import DeployTargetsDialog from '../acp/deployTargetsDialog'
+import AgentsDialog, {isAgentsDialogAvailable} from '../acp/agentsDialog'
 import BoardSetupWizard from '../acp/boardSetupWizard'
 import {createSetupPlan, isBoardSetupAvailable} from '../acp/boardSetup'
 import SourcesDialog, {isSourcesAvailable} from '../acp/sourcesDialog'
@@ -36,21 +37,21 @@ import {isInboxView} from '../acp/inboxView'
 // is offered by the board's own title while it is unanswered, and by the screen
 // below afterwards.
 //
-// And what is true of *this view* is the rest of the sorting. «Входящие» is the
+// And what is true of *this view* is the rest of the sorting. the inbox view is the
 // one view about where cards come from, so it is the one that offers
-// «Источники…» — and offers nothing else: exporting the inbox, saving it as a
+// the sources dialog — and offers nothing else: exporting the inbox, saving it as a
 // template or editing the board's routes are questions about the board, asked
 // from the screen the board is on. Everywhere else the menu is the board's, and
 // sources are not in it: hunting for the setting that feeds the inbox anywhere
 // but on the inbox is what this fixes.
 //
-// With one door left open. A board made empty has no «Входящие» — the view
+// With one door left open. A board made empty has no the inbox view — the view
 // arrives with the first source, and a board nothing arrives on is not given
 // one — so on a board that has none the sources stay in the board's own menu.
 // Otherwise the only way to make an inbox would be through a screen that only
 // exists once you have.
 
-// «Сохранить как шаблон…» is parked rather than deleted, and this is the one
+// the save-as-template item is parked rather than deleted, and this is the one
 // line that parks it. A board set up the way somebody wants it is still the
 // best template there is, and everything behind the door — saveAsTemplate.ts,
 // templateEditor.tsx, their tests — is untouched and still reached by the
@@ -90,13 +91,14 @@ const ViewHeaderActionsMenu = (props: Props) => {
     const [showSources, setShowSources] = createSignal(false)
     const [showWorkdirs, setShowWorkdirs] = createSignal(false)
     const [showDeploys, setShowDeploys] = createSignal(false)
+    const [showAgents, setShowAgents] = createSignal(false)
     const [showPrompts, setShowPrompts] = createSignal(false)
     const [showSetup, setShowSetup] = createSignal(false)
 
     // Which of the setup questions this board asks is the board's own answer,
     // and the menu follows it: a board of shopping lists is offered folders and
     // nothing else, a board that deploys is offered somewhere to deploy to.
-    // They were folds of «Колонки и маршруты…», where setting up where an
+    // They were folds of the automation dialog, where setting up where an
     // agent works was a question about columns and routes — which it is not —
     // and a fold under a canvas is a place nobody opens.
     const [plan, refreshPlan] = createSetupPlan(() => props.board)
@@ -158,6 +160,20 @@ const ViewHeaderActionsMenu = (props: Props) => {
                                     />
                                 </Show>
 
+                                {/* Who picks the cards up. The registry is the
+                                    machine's, like the deploy hosts under it,
+                                    and it is offered here for the same reason:
+                                    it means nothing on a board no agent works.
+                                    In the order the setup asks — the folder,
+                                    then who works in it, then where it goes. */}
+                                <Show when={isAgentsDialogAvailable() && asks('agent')}>
+                                    <Menu.Text
+                                        id='agents'
+                                        name={intl.formatMessage({id: 'ViewHeader.agents', defaultMessage: 'Agents…'})}
+                                        onClick={() => setShowAgents(true)}
+                                    />
+                                </Show>
+
                                 <Show when={asks('deploy')}>
                                     <Menu.Text
                                         id='deploys'
@@ -198,19 +214,34 @@ const ViewHeaderActionsMenu = (props: Props) => {
                                 nobody uses twice. Last, behind a line. There is
                                 no import beside them on purpose: an archive
                                 brings boards, plural, so it is taken in where
-                                boards are (settings → «Данные»). */}
+                                boards are (the import-and-export section of
+                                the settings). */}
                             <Show when={!onInbox()}>
                                 <Menu.Separator/>
-                                <Menu.Text
-                                    id='exportCsv'
-                                    name={intl.formatMessage({id: 'ViewHeader.export-csv', defaultMessage: 'Export to CSV'})}
-                                    onClick={() => onExportCsvTrigger(props.board, props.activeView, props.cards, intl)}
-                                />
-                                <Menu.Text
-                                    id='exportBoardArchive'
-                                    name={intl.formatMessage({id: 'ViewHeader.export-board-archive', defaultMessage: 'Export board archive'})}
-                                    onClick={() => Archiver.exportBoardArchive(props.board)}
-                                />
+                                {/* One word on the menu, the two shapes behind
+                                    it: even folded away and last, two export
+                                    rows were still two rows about one act. The
+                                    sidebar's board menu keeps the long name
+                                    (ViewHeader.export-board-archive), because
+                                    there the row stands alone and the short
+                                    name without the word "export" over it says
+                                    nothing. */}
+                                <Menu.SubMenu
+                                    id='export'
+                                    name={intl.formatMessage({id: 'ViewHeader.export', defaultMessage: 'Export'})}
+                                    position='auto'
+                                >
+                                    <Menu.Text
+                                        id='exportCsv'
+                                        name={intl.formatMessage({id: 'ViewHeader.export-csv', defaultMessage: 'To CSV'})}
+                                        onClick={() => onExportCsvTrigger(props.board, props.activeView, props.cards, intl)}
+                                    />
+                                    <Menu.Text
+                                        id='exportBoardArchive'
+                                        name={intl.formatMessage({id: 'ViewHeader.export-archive', defaultMessage: 'Board archive'})}
+                                        onClick={() => Archiver.exportBoardArchive(props.board)}
+                                    />
+                                </Menu.SubMenu>
                             </Show>
                         </Menu>
                     }
@@ -238,6 +269,12 @@ const ViewHeaderActionsMenu = (props: Props) => {
                     board={props.board}
                     onClose={() => setShowPrompts(false)}
                 />
+            </Show>
+            <Show when={showAgents()}>
+                <AgentsDialog onClose={() => {
+                    setShowAgents(false)
+                    refreshPlan()
+                }}/>
             </Show>
             <Show when={showDeploys()}>
                 <DeployTargetsDialog

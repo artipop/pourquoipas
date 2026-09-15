@@ -1,0 +1,11 @@
+@import '../../styles/settingsPanel';
+
+// As the folders dialog beside it: the panel came from the settings dialog and
+// keeps the box it was written for.
+.DeployTargetsDialog {
+    @include settings-panel;
+
+    .DeployTargetsDialog__content {
+        @include settings-panel-body;
+    }
+}

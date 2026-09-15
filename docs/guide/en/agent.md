@@ -7,17 +7,17 @@ is, how to answer questions and what stays on the card.
 
 A card is worked by whoever it is assigned to. The assignment field is an
 ordinary board field of the "person" type; templates name it differently:
-«Исполнитель» on the developer board, «Кто делает» on chores, «Кто идёт» on
-shopping.
+«Assignee» on the «Development» board, «Who does it» on «Personal»,
+«Who leads it» on «Content».
 
 You do not have to fill it in by hand. If a route stage has its own agent (in
 the editor — "Worked by" on the column or "Worked here by" on the route stage),
 the app sets the field itself when the card enters the stage. The field always
 shows who is working the card now. A card assigned to a person is left alone.
 
-To make an agent appear in the assignment list, register it in the settings —
-the [Agents](./settings/agents.md) section. After registration it becomes a
-board member under its own name: open the field and pick it.
+To make an agent appear in the assignment list, register it: the board's ⋯ menu
+→ [Agents…](./settings/agents.md). After registration it becomes a board member
+under its own name: open the field and pick it.
 
 **The list holds this board's agents.** The registry is one per machine, and a
 board names its own in "Worked by" on its columns and stages; those are the ones
@@ -47,8 +47,8 @@ a "Terminal" button. It opens a panel on the right, and the terminal in it
 starts by itself.
 
 **A card has one conversation per column it has stood in.** The conversation
-belongs to the column: wording and plans are talked over in «Не начата», the
-work happens in «В работе», the review in «Ревью». The panel opens the
+belongs to the column: wording and plans are talked over in «Not started», the
+work happens in «In progress», the review in «In review». The panel opens the
 conversation of the column the card stands in now, and a person and the route's
 agent in one column talk in **one** conversation — with that column's agent, in
 its working folder, with its instructions (see
@@ -66,7 +66,7 @@ a conversation being continued already knows them.
 
 It is kept. Close the panel, close the app, move the card away and back — the
 column's conversation continues where it stopped. **A returning card brings the
-new input with it**: sent back from «Ревью», the resumed conversation is told
+new input with it**: sent back from «In review», the resumed conversation is told
 why it is back and what the reviewer said — not the task again.
 
 - if this column's terminal is already running, the same one opens, with its
@@ -134,7 +134,7 @@ exception is a card that was already worked: it has a branch of its own, so
 the button stays even after the agent is removed.
 
 **If no folder resolves, the panel asks.** A card can be talked over without
-code: wording, subtasks, a brief. When neither the «Папка» field nor the
+code: wording, subtasks, a brief. When neither the «Folder» field nor the
 registry names a folder, the question "Which folder will the agent work in?"
 appears, and the answers are chips:
 
@@ -257,6 +257,62 @@ Notifications can be turned off in the
 card and the dot on the icon next to the clock stay either way — the
 notification is about the question, they are about the agent still waiting.
 
+## The changes, read by eye
+
+The card's toolbar has a **“Changes”** button beside “Terminal”. It is there on
+a card that has something to read: no work started, or nothing changed, and
+there is no button.
+
+It opens a diff in the panel on the right — what has been done on the card:
+
+- **“On the branch”** — what is already committed on top of the main branch;
+- **“Not committed”** — what has been changed and not saved into a commit, plus
+  the new files git is not tracking yet.
+
+Above them: the branch, what it was cut from, and how many files and lines
+there are in all. A file folds away when its row is clicked. The arrows button
+(“Read the folder again”) reads it all again; the diff also refreshes itself
+whenever an agent finishes something.
+
+It can be read after a stage is over, too. When an agent finishes, the card's
+working copy is folded away and the branch stays — so the committed half is read
+from the branch, and it is there on «In review», where the copy is already gone.
+Uncommitted work lives only in a copy: while there is one it is shown, and after
+the fold there is none to show — a folder with unsaved work in it is never
+folded.
+
+The panel beside a card is narrow, so its head carries **“Open in a separate
+window”** — the same reading full size, in a window of its own, the way a
+terminal gets one.
+
+Any card can be looked at, but there is nothing to show until somebody has
+worked on it. The panel says which it is: work never started, or it started on
+another machine — a working copy lives on the machine the agent worked on and
+does not travel with the card.
+
+The diff is read-only. How a stage ended is the card's “Исход” field, answered
+by the two buttons on the route strip; there is no second way to say the same
+thing here.
+
+## The card has arrived for you
+
+A stage where nothing runs is a stage for a person: «In review», «To read»,
+«To check». When the route brings a card there **by itself**, the app says
+so: a notification in the app, a system notification, and the dot on the icon
+beside the clock. Clicking the system notification opens the board the card is
+standing on.
+
+The same happens to a card assigned to a person: the agent does not take it, the
+route leaves it where it is and says you are needed next.
+
+A card you dragged into such a column yourself is not announced — you are
+looking at it already.
+
+This notification lives until the first “I know”: the “Dismiss” cross takes it
+away for good, not merely off the screen — unlike an agent's question, which
+goes on waiting for an answer after you have read it. It comes back if the card
+arrives at such a stage again.
+
 ## When a stage ends
 
 A stage of a route is a conversation in a terminal, and a terminal does not end
@@ -264,6 +320,11 @@ by itself: the CLI keeps running until it is closed. So the agent is the one
 that declares the work over — through the board tool `finish_work`, which the
 app hands it along with the rest. It says whether the work is done or could not
 be done, and briefly what was done.
+
+The task says so as well. A CLI does not always load the board's tools up
+front, and an agent that never went looking for them finishes the work, writes
+its summary in the terminal and stops — leaving the card where it was. So the
+task itself states that the stage ends with a call to `finish_work`.
 
 After that the card travels on along the route and the conversation is closed.
 What exactly was done is in the agent's closing words in the terminal — the
@@ -283,9 +344,12 @@ The branch and the directory are in the line under the card title; where the
 card stands on its route and what it waits for — in the route strip; the
 conversation with the agent — in the terminal panel beside the card.
 
-There are no comments on cards at the moment: the app is built for one person,
-and everything that used to be written into a comment is either shown on the
-card itself or said by the agent in the terminal.
+Comments appear once the install is
+[working as a team](./settings/team.md): the card's toolbar grows a
+**«Комментарии»** button, which opens the same panel on the right that the
+terminal uses, and the card's face shows a badge with their count. While one
+person works the board there are none: everything that used to be written into a
+comment is either shown on the card itself or said by the agent in the terminal.
 
 If a stage could not start — no project found, the column is busy, the route
 has no transition — the reason is shown in amber on the route strip and

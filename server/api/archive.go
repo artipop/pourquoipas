@@ -187,11 +187,6 @@ func (a *API) handleArchiveExportTeam(w http.ResponseWriter, r *http.Request) {
 	//     description: internal error
 	//     schema:
 	//       "$ref": "#/definitions/ErrorResponse"
-	if a.MattermostAuth {
-		a.errorResponse(w, r, model.NewErrNotImplemented("not permitted in plugin mode"))
-		return
-	}
-
 	teamID := r.PathValue("teamID")
 
 	ctx := r.Context()

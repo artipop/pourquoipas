@@ -61,7 +61,7 @@ var (
 )
 
 // BoardOwner is the owner of a conversation that has no card: the board's own,
-// so that «черновики доски» and a planning terminal are one thing rather than a
+// so that the board's drafts folder and a planning terminal are one thing rather than a
 // row per window.
 func BoardOwner(boardID string) string { return boardOwnerPrefix + boardID }
 
@@ -127,11 +127,11 @@ func (m *Manager) workspaceID(path string) string {
 // registerWorkedFolder adds a folder the app found itself working in, under
 // the directory's own name and attached to no board.
 //
-// Unattached on purpose: «не привязана ни к какой доске» is a state the product
+// Unattached on purpose: belonging to no board is a state the product
 // already has, and it is the honest one here — nobody chose this folder on a
 // board. So it is offered nowhere and picked by nothing; it exists so the work
-// in it can be recorded, and so a person can see in «Папки» what has actually
-// been opened.
+// in it can be recorded, and so a person can see in the folder list what has
+// actually been opened.
 //
 // Reaching it at all is a bug somewhere else, hence the warning: since a card
 // can only name a folder the registry offers, there is no longer a path by
@@ -207,7 +207,19 @@ func (m *Manager) ClaimWorkspace(spec WorkSpec) (Workspace, error) {
 	if workdir == "" || strings.TrimSpace(spec.Owner) == "" {
 		return Workspace{}, fmt.Errorf("рабочее место требует папки и владельца")
 	}
+	// Three answers to one question, and the precedence is stated here because
+	// this is the only place that asks it. The checkout is the fact and wins
+	// wherever it exists — heldWorkspace below hands the owner back the
+	// workspace it already has. Above the folder's own setting sits what a
+	// person answered for this card at a transition (cardask.go): the folder
+	// says what the board does by default, and the answer is this card being
+	// an exception to it. A folder that is not a repository has no question.
 	mode := m.WorkModeFor(spec.BoardID, workdir)
+	if mode != WorkModePlain {
+		if chosen := m.cardWorkModeChoice(spec.Owner); chosen != "" {
+			mode = chosen
+		}
+	}
 	if mode == WorkModePlain {
 		// Nothing is created and nothing is recorded: an ordinary folder is
 		// worked in as it stands, by whoever opens it.
@@ -278,7 +290,7 @@ func (m *Manager) writeCardBranch(spec WorkSpec, branch string) {
 	}
 	ctx, cancel := context.WithTimeout(m.rootCtx, 10*time.Second)
 	defer cancel()
-	if err := m.writer.SetCardText(ctx, spec.Owner, propID, branch); err != nil {
+	if err := m.forCard(spec.Owner).Writer.SetCardText(ctx, spec.Owner, propID, branch); err != nil {
 		m.log.Warn("acp: cannot write the branch on the card", "card", spec.Owner, "err", err)
 	}
 }
@@ -290,7 +302,7 @@ func (m *Manager) boardBranchProperty(boardID string) string {
 
 // boardProperty is the id of one of the card fields this app makes, as the
 // board records it. Every such field is found this way and never by name: what
-// it is called is the owner's, and «Ветка» on one board is «Branch» on the
+// it is called is the owner's, and the branch field on one board is «Branch» on the
 // next.
 func (m *Manager) boardProperty(boardID, key string) string {
 	if m.meta == nil || boardID == "" {
@@ -298,7 +310,7 @@ func (m *Manager) boardProperty(boardID, key string) string {
 	}
 	ctx, cancel := context.WithTimeout(m.rootOr(), 10*time.Second)
 	defer cancel()
-	props, err := m.meta.BoardProperties(ctx, boardID)
+	props, err := m.forBoard(boardID).Meta.BoardProperties(ctx, boardID)
 	if err != nil {
 		return ""
 	}
@@ -379,7 +391,7 @@ func (m *Manager) recordClaim(workdir, owner string, ws Workspace) {
 	}
 	workspaceID := m.workspaceID(workdir)
 	if workspaceID == "" {
-		// A directory nobody registered — «черновики доски» is the one that
+		// A directory nobody registered — the board's drafts folder is the one that
 		// happens — claims nothing, which is also what an ordinary folder does.
 		return
 	}
@@ -463,7 +475,7 @@ func (m *Manager) WorkspaceModeForCard(cardID string) (mode, branch, base string
 type CardWork struct {
 	// Branch the card works on, wherever that was learned.
 	Branch string `json:"branch,omitempty"`
-	// Base is what the branch was cut from, and what «влито» waits for. Only a
+	// Base is what the branch was cut from, and what a merge waits for. Only a
 	// claim knows it.
 	Base string `json:"base,omitempty"`
 	// Mode is how the folder is worked in — WorkModeWorktree or
@@ -491,7 +503,7 @@ func (m *Manager) CardWork(cardID string) CardWork {
 	}
 	ctx, cancel := context.WithTimeout(m.rootOr(), 10*time.Second)
 	defer cancel()
-	ev, err := m.reader.CardByID(ctx, cardID)
+	ev, err := m.forCard(cardID).Reader.CardByID(ctx, cardID)
 	if err != nil {
 		return out
 	}

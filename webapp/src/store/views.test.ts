@@ -14,7 +14,7 @@ describe('store/views', () => {
     // A board — and a template's preview — opens on the view it was made with.
     // The list it comes from is sorted by title for the sidebar, so taking its
     // first entry made the alphabet decide: a view added later and named
-    // «Входящие» took the board over from «Дела».
+    // the inbox view took the board over from a chores board.
     it('opens the board on its oldest view, not its first by title', () => {
         const views = [
             view('v-inbox', 'Входящие', 2000),

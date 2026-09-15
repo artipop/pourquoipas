@@ -355,7 +355,7 @@ const BoardSetupWizard = (props: Props) => {
     // puts the board back to offering every agent on the machine.
     //
     // Only once somebody has touched them, though. Chips filled in from the
-    // plan are a picture of what is already there, and «Дальше» pressed without
+    // plan are a picture of what is already there, and the next button pressed without
     // looking must not rewrite it — the plan shows nothing when two columns are
     // crewed differently, and that would flatten both into one.
     const takeAgent = () => {

@@ -130,7 +130,7 @@ describe('components/cardDetail/CardDetailProperties', () => {
     }
 
     // The branch field is the machine's record: the board says which property
-    // it is (xciiiBranchProperty), and the row is not a door — no menu on the
+    // it is (branchProperty), and the row is not a door — no menu on the
     // name, no editor on the value. The machine writes it, the person reads it.
     it('renders the branch property read-only, without its menu', () => {
         const branchBoard = TestBlockFactory.createBoard()
@@ -138,7 +138,7 @@ describe('components/cardDetail/CardDetailProperties', () => {
             {id: 'prop_branch', name: 'Ветка', type: 'text', options: []},
             {id: 'prop_plain', name: 'Заметка', type: 'text', options: []},
         ]
-        branchBoard.properties = {xciiiBranchProperty: 'prop_branch'}
+        branchBoard.properties = {branchProperty: 'prop_branch'}
         const branchCard = TestBlockFactory.createCard(branchBoard)
         branchCard.fields.properties.prop_branch = 'pochini-login-abcd'
 
@@ -178,7 +178,7 @@ describe('components/cardDetail/CardDetailProperties', () => {
                     {id: 'opt_beta', value: 'beta', color: 'propColorDefault'},
                 ]},
         ]
-        folderBoard.properties = {xciiiProjectProperty: 'prop_folder'}
+        folderBoard.properties = {projectProperty: 'prop_folder'}
 
         const renderFolderCard = () => {
             const folderCard = TestBlockFactory.createCard(folderBoard)

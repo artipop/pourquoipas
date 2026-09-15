@@ -129,7 +129,7 @@ func ServeStdio(ctx context.Context, cfg Config) error {
 
 // ListMyCards asks Kaiten twice and merges by id.
 //
-// Kaiten has no single "assigned to me": «ответственный» and «участник» are
+// Kaiten has no single "assigned to me": an owner field and a member are
 // different fields, and a person means both by the phrase. Two questions and a
 // merge is the honest way to ask it — the alternative is a filter language of
 // theirs that would have to be guessed at.

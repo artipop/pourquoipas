@@ -41,7 +41,7 @@ const (
 	TriggerChecksFailed   = "checks.failed"
 
 	// TriggerCardChanged fires when a select option is set on the card while it
-	// stands on the stage — a person marking «Одобрено», say. Which option is
+	// stands on the stage — a person marking an approved option, say. Which option is
 	// the edge's own condition (If), so the trigger kind stays closed and the
 	// board decides only the vocabulary.
 	TriggerCardChanged = "card.changed"
@@ -82,10 +82,9 @@ var FlowTriggers = []FlowTrigger{
 
 // FlowEntry is one named route in the registry.
 type FlowEntry struct {
-	// ID is what a card's place on its route points at. The name used to be the
-	// key, so renaming a route lost the position of every card standing on it
-	// (docs/model-graph.md, contradiction 4). Minted when a route without one is
-	// first validated.
+	// ID is what a card's place on its route points at: keyed by name, renaming
+	// a route lost the place of every card standing on it. Minted when a route
+	// without one is first validated.
 	ID   string `json:"id,omitempty"`
 	Name string `json:"name"` // shown on screen; matches the card "Flow" option
 
@@ -142,7 +141,7 @@ type FlowNode struct {
 
 	// Writes are the properties this stage leaves on the card — its declared
 	// outputs, which is what makes a transition on a property deterministic:
-	// an edge that reads «Вердикт» can point at the stage that must write it.
+	// an edge that reads a verdict property can point at the stage writing it.
 	// An agent stage delivers the values through finish_work and a required
 	// one is refused without them; a deploy stage writes its preview URL into
 	// each named property, a test stage its verdict. Empty inherits the
@@ -220,7 +219,18 @@ func (n FlowNode) asColumn(property string) Column {
 
 // FlowEdge is one transition. On is a FlowTrigger kind; success/failure are the
 // node's own outcomes, which the editor shows as the node's two outputs.
+// EntryNode is the stage a card comes from when it comes from off the route:
+// the backlog, a source, a hand dragging it in from anywhere the route does not
+// pass through. Every route has this way in — it is the transition before the
+// first one — and an arrow out of it is where the questions asked once, on the
+// way in, are declared.
+//
+// Spelled with `@` for the reason nodeNone and nodeTalk are: a node id is a
+// board option id, and those are not made of it.
+const EntryNode = "@entry"
+
 type FlowEdge struct {
+	// From is a stage id, or EntryNode for the way onto the route.
 	From string `json:"from"`
 	To   string `json:"to"`
 	On   string `json:"on"`
@@ -230,6 +240,34 @@ type FlowEdge struct {
 	// no condition is the fallback. For TriggerCardChanged the condition is not
 	// a guard but the event itself: which option firing it means.
 	If *EdgeCond `json:"if,omitempty"`
+
+	// Ask holds the card here until a person answers. See cardask.go for what
+	// a question may be and where its answer goes.
+	Ask []EdgeAsk `json:"ask,omitempty"`
+}
+
+// EdgeAsk is one question a person answers before the card is let across this
+// arrow.
+//
+// On the arrow and not on the stage because one stage is entered in more than
+// one way, and the answers differ: the way into work from the backlog is where
+// somebody decides how the work will be arranged, and the same card coming back
+// from a review has that decided already.
+type EdgeAsk struct {
+	// ID is the question's own, so an answer can name it. Minted on save.
+	ID string `json:"id"`
+
+	// Kind is AskWorkMode or AskProperty — what the answer is about, and
+	// therefore where it is put.
+	Kind string `json:"kind"`
+
+	// Property is the board's select the answer is written to, by name, for
+	// AskProperty. Empty for the machine's own questions.
+	Property string `json:"property,omitempty"`
+
+	// Text is what is asked, in the board's own words. Empty takes the
+	// built-in wording of the kind.
+	Text string `json:"text,omitempty"`
 }
 
 // EdgeCond is what a conditional transition asks about, in exactly one of two
@@ -332,11 +370,54 @@ func (f FlowEntry) NodeByColumn(column string) (FlowNode, bool) {
 	return FlowNode{}, false
 }
 
+// UpstreamWrites is every property a stage can count on finding on the card
+// when it starts: what the stages ahead of it on this route declare as outputs.
+// It is what a stage's reads fall back to, so declaring a write once carries
+// the value on by itself instead of being ticked again on each later stage.
+//
+// resolve is what a node writes with its column's answer folded in — the
+// inheritance the route knows nothing about (startOptions.declaredWrites).
+//
+// The walk is backwards over the incoming edges, with a visited set, because
+// the graph has cycles by design: a failed check sends the card back to the
+// agent, and that arrow is an ordinary part of a route rather than a mistake.
+// The order is the order the properties are met in, so two runs of one stage
+// produce the same brief.
+func (f FlowEntry) UpstreamWrites(nodeID string, resolve func(FlowNode) []PropertyWrite) []string {
+	nodes := make(map[string]FlowNode, len(f.Nodes))
+	for _, n := range f.Nodes {
+		nodes[n.ID] = n
+	}
+	seen := map[string]bool{nodeID: true}
+	taken := map[string]bool{}
+	var out []string
+	for queue := []string{nodeID}; len(queue) > 0; {
+		at := queue[0]
+		queue = queue[1:]
+		for _, e := range f.Edges {
+			if e.To != at || e.From == EntryNode || seen[e.From] {
+				continue
+			}
+			seen[e.From] = true
+			queue = append(queue, e.From)
+			for _, w := range resolve(nodes[e.From]) {
+				key := strings.ToLower(strings.TrimSpace(w.Property))
+				if key == "" || taken[key] {
+					continue
+				}
+				taken[key] = true
+				out = append(out, w.Property)
+			}
+		}
+	}
+	return out
+}
+
 // Next returns the node an event moves the card to: among the edges for this
 // event, the first whose condition holds against the card — and an edge with no
 // condition holds always, which makes it the fallback however the editor
 // ordered it.
-func (f FlowEntry) Next(nodeID, on string, props map[string]string, agentText string) (FlowNode, *EdgeCond, bool) {
+func (f FlowEntry) Next(nodeID, on string, props map[string]string, agentText string) (FlowNode, *FlowEdge, bool) {
 	var fallback *FlowEdge
 	for i, e := range f.Edges {
 		if e.From != nodeID || e.On != on {
@@ -350,14 +431,29 @@ func (f FlowEntry) Next(nodeID, on string, props map[string]string, agentText st
 		}
 		if e.If.holds(props, agentText) {
 			node, ok := f.Node(e.To)
-			return node, e.If, ok
+			return node, &f.Edges[i], ok
 		}
 	}
 	if fallback != nil {
 		node, ok := f.Node(fallback.To)
-		return node, nil, ok
+		return node, fallback, ok
 	}
 	return FlowNode{}, nil, false
+}
+
+// EdgeBetween is the arrow a person draws between two stages, for the one case
+// that has no trigger to look one up by: somebody dragging the card from one
+// column into the next. The first arrow carrying a question wins, because what
+// is being asked is about the move rather than about the event — two arrows
+// between the same pair differ in what they wait for, and a person's hand
+// waits for nothing.
+func (f FlowEntry) EdgeBetween(from, to string) *FlowEdge {
+	for i, e := range f.Edges {
+		if e.From == from && e.To == to && len(e.Ask) > 0 {
+			return &f.Edges[i]
+		}
+	}
+	return nil
 }
 
 // HasEdge reports whether the node has any transition for an event at all —
@@ -384,7 +480,7 @@ func (f FlowEntry) WaitsFor(nodeID string) []string {
 }
 
 // WaitDescriptions is what a parked card says it is waiting on, conditions
-// included — «на карточке выбрано «Одобрено» = «Да»», not just the kind.
+// included — a condition on a card property, not just the kind of trigger.
 func (f FlowEntry) WaitDescriptions(nodeID string) []string {
 	var out []string
 	for _, e := range f.Edges {
@@ -530,15 +626,37 @@ func validateFlow(f FlowEntry, workdirs []WorkdirEntry, agents []AgentEntry, dep
 	// them apart. What stays ambiguous, and refused, is two edges with nothing
 	// to tell them apart: two unconditional ones.
 	seenFallback := make(map[string]bool, len(f.Edges))
+	seenEntry := make(map[string]bool, len(f.Edges))
 	for i, e := range f.Edges {
 		e.From = strings.TrimSpace(e.From)
 		e.To = strings.TrimSpace(e.To)
 		e.On = strings.TrimSpace(e.On)
-		if !seenID[e.From] {
+		if e.From != EntryNode && !seenID[e.From] {
 			return FlowEntry{}, fmt.Errorf("переход ведёт из несуществующей стадии %q", e.From)
 		}
 		if !seenID[e.To] {
 			return FlowEntry{}, fmt.Errorf("переход из %q ведёт в несуществующую стадию %q", e.From, e.To)
+		}
+		// The way onto the route waits for no event: what fires it is the card
+		// arriving on the stage, which is the move itself. So it carries no
+		// trigger and none of the checks that are about one, and two of them
+		// into one stage is the ambiguity worth refusing — a card arrives from
+		// off the route in exactly one way.
+		if e.From == EntryNode {
+			if e.On != "" || e.If != nil {
+				return FlowEntry{}, fmt.Errorf("въезд на маршрут в стадию %q не ждёт события", e.To)
+			}
+			if seenEntry[e.To] {
+				return FlowEntry{}, fmt.Errorf("в стадию %q ведут два въезда на маршрут", e.To)
+			}
+			seenEntry[e.To] = true
+			ask, err := validateEdgeAsks(e.Ask)
+			if err != nil {
+				return FlowEntry{}, fmt.Errorf("въезд на маршрут: %w", err)
+			}
+			e.Ask = ask
+			f.Edges[i] = e
+			continue
 		}
 		trigger, ok := Trigger(e.On)
 		if !ok {
@@ -561,9 +679,51 @@ func validateFlow(f FlowEntry, workdirs []WorkdirEntry, agents []AgentEntry, dep
 			}
 			seenFallback[key] = true
 		}
+		ask, err := validateEdgeAsks(e.Ask)
+		if err != nil {
+			return FlowEntry{}, fmt.Errorf("переход из %q: %w", e.From, err)
+		}
+		e.Ask = ask
 		f.Edges[i] = e
 	}
 	return f, nil
+}
+
+// validateEdgeAsks normalizes the questions one arrow asks. A question with no
+// id gets one here, which is the moment an answer has something to name.
+func validateEdgeAsks(asks []EdgeAsk) ([]EdgeAsk, error) {
+	if len(asks) == 0 {
+		return nil, nil
+	}
+	out := make([]EdgeAsk, 0, len(asks))
+	seen := make(map[string]bool, len(asks))
+	for _, a := range asks {
+		a.ID = strings.TrimSpace(a.ID)
+		a.Kind = strings.ToLower(strings.TrimSpace(a.Kind))
+		a.Property = strings.TrimSpace(a.Property)
+		a.Text = strings.TrimSpace(a.Text)
+		switch a.Kind {
+		case AskWorkMode, AskWorkdir:
+			// Neither names a property: the work mode is not one, and which
+			// field a card names its folder in is the board's own record.
+			a.Property = ""
+		case AskProperty:
+			if a.Property == "" {
+				return nil, fmt.Errorf("вопрос про свойство карточки не говорит, про какое")
+			}
+		default:
+			return nil, fmt.Errorf("неизвестный вопрос перехода %q", a.Kind)
+		}
+		if a.ID == "" {
+			a.ID = newID()
+		}
+		if seen[a.ID] {
+			return nil, fmt.Errorf("два вопроса перехода под одним идентификатором %q", a.ID)
+		}
+		seen[a.ID] = true
+		out = append(out, a)
+	}
+	return out, nil
 }
 
 // validateEdgeCond normalizes one condition and checks it makes sense on its
@@ -592,7 +752,7 @@ func validateEdgeCond(c EdgeCond, trigger FlowTrigger) (EdgeCond, error) {
 // sameFlow reports whether two entries are one route of the registry: the same
 // id, or — for an entry that has none yet — the same name on the same board.
 // This is the predicate every edit is keyed on, which is what lets two boards
-// each have their own «Фича», and what makes renaming one an edit rather than a
+// each have their own a feature route, and what makes renaming one an edit rather than a
 // lookup that fails (contradiction 4).
 func sameFlow(a, b FlowEntry) bool {
 	if a.ID != "" && b.ID != "" {
@@ -769,7 +929,6 @@ func hasAgent(agents []AgentEntry, name string) bool {
 	}
 	return false
 }
-
 
 // flowNameTaken reports whether an existing route already goes by this name on
 // a board that would see it. Names stay unique because a card names its route

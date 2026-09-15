@@ -217,7 +217,7 @@
   .prose p:last-child { margin-bottom: 0; }
 
   /* Diagrams are printed plates: a paper surface in both themes. The diagram
-     spells out its own palette (MERMAID_THEME) instead of inheriting one —
+     spells out its own palette (mermaidTheme) instead of inheriting one —
      inheriting is what made them dark-on-dark and unreadable. */
   .plate {
     margin: 24px 0 0;
@@ -255,15 +255,15 @@
 
 <header class="masthead">
   <div class="masthead-inner">
-    <p class="kicker">xciii · один файл, 35 таблиц</p>
+    <p class="kicker">xciii · один файл, 38 таблиц</p>
     <h1>Схема базы<span class="dot">.</span></h1>
     <p class="standfirst">Всё, что знает приложение, — про карточку или доску, а карточка это строка
       в <code>blocks</code>. Поэтому база одна: доска (форк Focalboard) и наши таблицы рядом, с настоящими
       внешними ключами между ними.</p>
     <div class="stats">
-      <div class="stat"><b>35</b><span>таблиц</span></div>
-      <div class="stat"><b>23</b><span>внешних ключей</span></div>
-      <div class="stat"><b>18</b><span>из них CASCADE</span></div>
+      <div class="stat"><b>38</b><span>таблиц</span></div>
+      <div class="stat"><b>27</b><span>внешних ключей</span></div>
+      <div class="stat"><b>21</b><span>из них CASCADE</span></div>
       <div class="stat"><b>1</b><span>шаг миграции</span></div>
       <div class="stat"><b>3</b><span>диалекта</span></div>
     </div>
@@ -276,12 +276,13 @@
     <ul>
       <li><a href="#g0"><span class="nav-name">Доска</span><span class="nav-count">14</span></a></li>
       <li><a href="#g1"><span class="nav-name">История доски</span><span class="nav-count">3</span></a></li>
-      <li><a href="#g2"><span class="nav-name">Реестры</span><span class="nav-count">5</span></a></li>
-      <li><a href="#g3"><span class="nav-name">Разговоры и сессии</span><span class="nav-count">3</span></a></li>
-      <li><a href="#g4"><span class="nav-name">Маршруты</span><span class="nav-count">4</span></a></li>
-      <li><a href="#g5"><span class="nav-name">Работа в папке</span><span class="nav-count">2</span></a></li>
-      <li><a href="#g6"><span class="nav-name">Входящие</span><span class="nav-count">2</span></a></li>
-      <li><a href="#g7"><span class="nav-name">Защёлки</span><span class="nav-count">2</span></a></li>
+      <li><a href="#g2"><span class="nav-name">На что смотрят ключи</span><span class="nav-count">2</span></a></li>
+      <li><a href="#g3"><span class="nav-name">Реестры</span><span class="nav-count">5</span></a></li>
+      <li><a href="#g4"><span class="nav-name">Разговоры и сессии</span><span class="nav-count">3</span></a></li>
+      <li><a href="#g5"><span class="nav-name">Маршруты</span><span class="nav-count">4</span></a></li>
+      <li><a href="#g6"><span class="nav-name">Работа в папке</span><span class="nav-count">3</span></a></li>
+      <li><a href="#g7"><span class="nav-name">Входящие</span><span class="nav-count">2</span></a></li>
+      <li><a href="#g8"><span class="nav-name">Защёлки</span><span class="nav-count">2</span></a></li>
     </ul>
   </nav>
 
@@ -295,7 +296,7 @@
       <section class="group" id="g0">
         <p class="eyebrow">14 таблиц</p>
         <h2>Доска</h2>
-        <div class="prose"><p>Форк Focalboard. Всё содержимое доски — строки <code>blocks</code>: карточка, вид, комментарий, вложение; дерево внутри доски — через <code>parent_id</code>. Наша автоматика лежит в <code>boards.properties</code> (<code>xciiiColumns</code>, <code>xciiiFlows</code>, <code>xciiiPrompt</code>, …) и в <code>blocks.fields</code> карточки, своих таблиц у неё нет — потому и едет с доской при экспорте и переезде.</p>
+        <div class="prose"><p>Форк Focalboard. Всё содержимое доски — строки <code>blocks</code>: карточка, вид, комментарий, вложение; дерево внутри доски — через <code>parent_id</code>. Наша автоматика лежит в <code>boards.properties</code> (<code>columns</code>, <code>flows</code>, <code>prompt</code>, …) и в <code>blocks.fields</code> карточки, своих таблиц у неё нет — потому и едет с доской при экспорте и переезде.</p>
 <p>Внешних ключей здесь нет, и намеренно: у форка наследный soft-delete, так что настоящий ключ сработал бы ровно на тех путях, где удаление настоящее.</p></div>
         <figure class="plate">
           <pre class="mermaid">%%{init: {&#x27;theme&#x27;:&#x27;base&#x27;,&#x27;themeVariables&#x27;:{&#x27;fontFamily&#x27;:&#x27;ui-monospace, SFMono-Regular, Menlo, Consolas, monospace&#x27;,&#x27;fontSize&#x27;:&#x27;13px&#x27;,&#x27;primaryColor&#x27;:&#x27;#ffffff&#x27;,&#x27;primaryTextColor&#x27;:&#x27;#14171d&#x27;,&#x27;primaryBorderColor&#x27;:&#x27;#aab3bf&#x27;,&#x27;secondaryColor&#x27;:&#x27;#f4f6f8&#x27;,&#x27;tertiaryColor&#x27;:&#x27;#ffffff&#x27;,&#x27;lineColor&#x27;:&#x27;#7c8493&#x27;,&#x27;textColor&#x27;:&#x27;#14171d&#x27;,&#x27;nodeBorder&#x27;:&#x27;#aab3bf&#x27;,&#x27;mainBkg&#x27;:&#x27;#ffffff&#x27;,&#x27;attributeBackgroundColorOdd&#x27;:&#x27;#ffffff&#x27;,&#x27;attributeBackgroundColorEven&#x27;:&#x27;#f4f6f8&#x27;}}}%%
@@ -315,7 +316,7 @@ erDiagram
         bool show_description &quot;nullable&quot;
         bool is_template &quot;nullable&quot;
         int32 template_version &quot;nullable&quot;
-        text properties &quot;The board&#x27;s own automation lives here — xciiiColumns, xciiiFlows, xciiiPrompt and the records of which…&quot;
+        text properties &quot;The board&#x27;s own automation lives here — columns, flows, prompt and the records of which field is which.…&quot;
         text card_properties &quot;The schema of a card&#x27;s fields. The product&#x27;s main denormalisation, and deliberately left alone: the whole…&quot;
         millis create_at &quot;nullable&quot;
         millis update_at &quot;nullable&quot;
@@ -348,7 +349,7 @@ erDiagram
         bool scheme_viewer &quot;nullable&quot;
     }
     users {
-        name_100 id PK &quot;The fork&#x27;s SQLite CREATE left this nullable; build() makes key columns NOT NULL.&quot;
+        name_100 id PK &quot;nullable&quot;
         name_100 username &quot;nullable&quot;
         name_255 email &quot;nullable&quot;
         name_100 password &quot;nullable&quot;
@@ -356,12 +357,14 @@ erDiagram
         name_20 auth_service &quot;nullable&quot;
         name_255 auth_data &quot;nullable&quot;
         text props &quot;nullable&quot;
+        name_16 role &quot;admin | member — Who administers this install. NULL and &#x27;member&#x27; read the same, so a row written before the…&quot;
+        name_32 kind &quot;person, agent or source. There was no column to tell them apart, and exclude_bots on the team&#x27;s user list had…&quot;
         millis create_at &quot;nullable&quot;
         millis update_at &quot;nullable&quot;
         millis delete_at &quot;nullable&quot;
     }
     sessions {
-        name_100 id PK &quot;The fork&#x27;s SQLite CREATE left this nullable; build() makes key columns NOT NULL.&quot;
+        name_100 id PK &quot;nullable&quot;
         name_100 token &quot;nullable&quot;
         name_100 user_id &quot;nullable&quot;
         text props &quot;nullable&quot;
@@ -393,7 +396,7 @@ erDiagram
         bool hidden &quot;nullable&quot;
     }
     sharing {
-        name_36 id PK &quot;The fork&#x27;s SQLite CREATE left this nullable; build() makes key columns NOT NULL.&quot;
+        name_36 id PK &quot;nullable&quot;
         bool enabled &quot;nullable&quot;
         name_100 token &quot;nullable&quot;
         name_36 modified_by &quot;nullable&quot;
@@ -401,16 +404,16 @@ erDiagram
     }
     subscriptions {
         name_10 block_type &quot;nullable&quot;
-        name_36 block_id PK &quot;The fork&#x27;s SQLite CREATE left this nullable; build() makes key columns NOT NULL.&quot;
+        name_36 block_id PK &quot;nullable&quot;
         name_10 subscriber_type &quot;nullable&quot;
-        name_36 subscriber_id PK &quot;The fork&#x27;s SQLite CREATE left this nullable; build() makes key columns NOT NULL.&quot;
+        name_36 subscriber_id PK &quot;nullable&quot;
         millis notified_at &quot;nullable&quot;
         millis create_at &quot;nullable&quot;
         millis delete_at &quot;nullable&quot;
     }
     notification_hints {
         name_10 block_type &quot;nullable&quot;
-        name_36 block_id PK &quot;The fork&#x27;s SQLite CREATE left this nullable; build() makes key columns NOT NULL.&quot;
+        name_36 block_id PK &quot;nullable&quot;
         name_36 modified_by_id &quot;nullable&quot;
         millis create_at &quot;nullable&quot;
         millis notify_at &quot;nullable&quot;
@@ -432,14 +435,14 @@ erDiagram
         text value &quot;nullable&quot;
     }
     teams {
-        name_36 id PK &quot;The fork&#x27;s SQLite CREATE left this nullable; build() makes key columns NOT NULL.&quot;
+        name_36 id PK &quot;nullable&quot;
         name_100 signup_token
         text settings &quot;nullable&quot;
         name_36 modified_by &quot;nullable&quot;
         millis update_at &quot;nullable&quot;
     }
     system_settings {
-        name_100 id PK &quot;The fork&#x27;s SQLite CREATE left this nullable; build() makes key columns NOT NULL.&quot;
+        name_100 id PK &quot;nullable&quot;
         text value &quot;nullable&quot;
     }</pre>
         </figure>
@@ -466,7 +469,7 @@ erDiagram
         bool show_description &quot;nullable&quot;
         bool is_template &quot;nullable&quot;
         int32 template_version &quot;nullable&quot;
-        text properties &quot;The board&#x27;s own automation lives here — xciiiColumns, xciiiFlows, xciiiPrompt and the records of which…&quot;
+        text properties &quot;The board&#x27;s own automation lives here — columns, flows, prompt and the records of which field is which.…&quot;
         text card_properties &quot;The schema of a card&#x27;s fields. The product&#x27;s main denormalisation, and deliberately left alone: the whole…&quot;
         millis create_at &quot;nullable&quot;
         millis update_at &quot;nullable&quot;
@@ -498,6 +501,31 @@ erDiagram
         </figure>
       </section>
       <section class="group" id="g2">
+        <p class="eyebrow">2 таблиц · 3 ключа</p>
+        <h2>На что смотрят ключи</h2>
+        <div class="prose"><p>Внешний ключ достаёт только внутрь своей базы, а доска бывает на чужом сервере. Поэтому всё наше указывает не на <code>blocks</code>/<code>boards</code> напрямую, а на эти две строки: цепочка <code>blocks → card_ref → всё остальное</code> сохраняет каскад для своей карточки, а у чужой <code>block_id</code> пуст и строку убирает клиент, услышав, что карточки больше нет. Ключ — собственный id карточки, не суррогат: поэтому ни один запрос в остальных таблицах не поменялся.</p></div>
+        <figure class="plate">
+          <pre class="mermaid">%%{init: {&#x27;theme&#x27;:&#x27;base&#x27;,&#x27;themeVariables&#x27;:{&#x27;fontFamily&#x27;:&#x27;ui-monospace, SFMono-Regular, Menlo, Consolas, monospace&#x27;,&#x27;fontSize&#x27;:&#x27;13px&#x27;,&#x27;primaryColor&#x27;:&#x27;#ffffff&#x27;,&#x27;primaryTextColor&#x27;:&#x27;#14171d&#x27;,&#x27;primaryBorderColor&#x27;:&#x27;#aab3bf&#x27;,&#x27;secondaryColor&#x27;:&#x27;#f4f6f8&#x27;,&#x27;tertiaryColor&#x27;:&#x27;#ffffff&#x27;,&#x27;lineColor&#x27;:&#x27;#7c8493&#x27;,&#x27;textColor&#x27;:&#x27;#14171d&#x27;,&#x27;nodeBorder&#x27;:&#x27;#aab3bf&#x27;,&#x27;mainBkg&#x27;:&#x27;#ffffff&#x27;,&#x27;attributeBackgroundColorOdd&#x27;:&#x27;#ffffff&#x27;,&#x27;attributeBackgroundColorEven&#x27;:&#x27;#f4f6f8&#x27;}}}%%
+erDiagram
+    blocks ||--o{ card_ref : &quot;block_id CASCADE&quot;
+    board_ref ||--o{ card_ref : &quot;board_id CASCADE&quot;
+    boards ||--o{ board_ref : &quot;local_board_id CASCADE&quot;
+
+    board_ref {
+        id board_id PK &quot;The board&#x27;s own id, on whichever server it lives.&quot;
+        name_64 source_id &quot;Where the board is. NULL is this machine, which is every board until a desktop attaches to a hosted one.&quot;
+        id local_board_id FK &quot;The same board in this process&#x27;s own table, when it is ours. NULL for a board on a server: that is what makes…&quot;
+        millis created_at
+    }
+    card_ref {
+        id card_id PK
+        id board_id FK &quot;Which board it is on, and through that which server. Nullable because three of the writers know a card and…&quot;
+        id block_id FK &quot;The same card in this process&#x27;s own blocks, when it is ours. This is the cascade: the card is deleted, the…&quot;
+        millis created_at
+    }</pre>
+        </figure>
+      </section>
+      <section class="group" id="g3">
         <p class="eyebrow">5 таблиц · 5 ключей</p>
         <h2>Реестры</h2>
         <div class="prose"><p>Что знает эта машина: где работать, кем и куда публиковать. Были массивами в <code>config.json</code>, где у записи не было id и ссылаться на неё можно было только по имени — то есть нельзя было переименовать.</p></div>
@@ -561,7 +589,7 @@ erDiagram
     }</pre>
         </figure>
       </section>
-      <section class="group" id="g3">
+      <section class="group" id="g4">
         <p class="eyebrow">3 таблиц · 5 ключей</p>
         <h2>Разговоры и сессии</h2>
         <div class="prose"><p>Ось — карточка (<code>blocks.id</code>) и нода: id опции колонки, на которой карточка стоит. Разговор переживает процесс, который его рисовал (<code>claude --continue</code>), сессия — это один запуск и один вердикт; поэтому таблицы две.</p></div>
@@ -569,10 +597,10 @@ erDiagram
           <pre class="mermaid">%%{init: {&#x27;theme&#x27;:&#x27;base&#x27;,&#x27;themeVariables&#x27;:{&#x27;fontFamily&#x27;:&#x27;ui-monospace, SFMono-Regular, Menlo, Consolas, monospace&#x27;,&#x27;fontSize&#x27;:&#x27;13px&#x27;,&#x27;primaryColor&#x27;:&#x27;#ffffff&#x27;,&#x27;primaryTextColor&#x27;:&#x27;#14171d&#x27;,&#x27;primaryBorderColor&#x27;:&#x27;#aab3bf&#x27;,&#x27;secondaryColor&#x27;:&#x27;#f4f6f8&#x27;,&#x27;tertiaryColor&#x27;:&#x27;#ffffff&#x27;,&#x27;lineColor&#x27;:&#x27;#7c8493&#x27;,&#x27;textColor&#x27;:&#x27;#14171d&#x27;,&#x27;nodeBorder&#x27;:&#x27;#aab3bf&#x27;,&#x27;mainBkg&#x27;:&#x27;#ffffff&#x27;,&#x27;attributeBackgroundColorOdd&#x27;:&#x27;#ffffff&#x27;,&#x27;attributeBackgroundColorEven&#x27;:&#x27;#f4f6f8&#x27;}}}%%
 erDiagram
     agent_session ||--o{ session_event : &quot;session_id CASCADE&quot;
-    blocks ||--o{ agent_session : &quot;card_id CASCADE&quot;
-    blocks ||--o{ conversation : &quot;card_id CASCADE&quot;
-    boards ||--o{ agent_session : &quot;board_id CASCADE&quot;
-    boards ||--o{ conversation : &quot;board_id CASCADE&quot;
+    board_ref ||--o{ agent_session : &quot;board_id CASCADE&quot;
+    board_ref ||--o{ conversation : &quot;board_id CASCADE&quot;
+    card_ref ||--o{ agent_session : &quot;card_id CASCADE&quot;
+    card_ref ||--o{ conversation : &quot;card_id CASCADE&quot;
 
     conversation {
         id id PK
@@ -598,6 +626,7 @@ erDiagram
         name_32 agent_kind
         name_100 acp_session_id &quot;nullable&quot;
         name_24 status &quot;queued | running | idle | waiting_permission | done | failed | cancelled&quot;
+        name_128 column_key &quot;Which column&#x27;s limit this run counts against. Here rather than in memory because a column&#x27;s limit is about…&quot;
         text cwd &quot;nullable&quot;
         text worktree_path &quot;nullable&quot;
         name_255 branch &quot;nullable&quot;
@@ -614,24 +643,24 @@ erDiagram
     }</pre>
         </figure>
       </section>
-      <section class="group" id="g4">
+      <section class="group" id="g5">
         <p class="eyebrow">4 таблиц · 6 ключей</p>
         <h2>Маршруты</h2>
         <div class="prose"><p>Где карточка на маршруте, как она туда попала и почему стоит. <code>card_stall</code> — одна текущая причина, а не журнал: «в колонке нет места» верно только пока верно, и комментарий пережил бы её шумом.</p></div>
         <figure class="plate">
           <pre class="mermaid">%%{init: {&#x27;theme&#x27;:&#x27;base&#x27;,&#x27;themeVariables&#x27;:{&#x27;fontFamily&#x27;:&#x27;ui-monospace, SFMono-Regular, Menlo, Consolas, monospace&#x27;,&#x27;fontSize&#x27;:&#x27;13px&#x27;,&#x27;primaryColor&#x27;:&#x27;#ffffff&#x27;,&#x27;primaryTextColor&#x27;:&#x27;#14171d&#x27;,&#x27;primaryBorderColor&#x27;:&#x27;#aab3bf&#x27;,&#x27;secondaryColor&#x27;:&#x27;#f4f6f8&#x27;,&#x27;tertiaryColor&#x27;:&#x27;#ffffff&#x27;,&#x27;lineColor&#x27;:&#x27;#7c8493&#x27;,&#x27;textColor&#x27;:&#x27;#14171d&#x27;,&#x27;nodeBorder&#x27;:&#x27;#aab3bf&#x27;,&#x27;mainBkg&#x27;:&#x27;#ffffff&#x27;,&#x27;attributeBackgroundColorOdd&#x27;:&#x27;#ffffff&#x27;,&#x27;attributeBackgroundColorEven&#x27;:&#x27;#f4f6f8&#x27;}}}%%
 erDiagram
-    blocks ||--o{ card_stall : &quot;card_id CASCADE&quot;
-    blocks ||--o{ flow_event : &quot;card_id CASCADE&quot;
-    blocks ||--o{ flow_state : &quot;card_id CASCADE&quot;
-    blocks ||--o{ stage_queue : &quot;card_id CASCADE&quot;
-    boards ||--o{ flow_state : &quot;board_id CASCADE&quot;
-    boards ||--o{ stage_queue : &quot;board_id CASCADE&quot;
+    board_ref ||--o{ flow_state : &quot;board_id CASCADE&quot;
+    board_ref ||--o{ stage_queue : &quot;board_id CASCADE&quot;
+    card_ref ||--o{ card_stall : &quot;card_id CASCADE&quot;
+    card_ref ||--o{ flow_event : &quot;card_id CASCADE&quot;
+    card_ref ||--o{ flow_state : &quot;card_id CASCADE&quot;
+    card_ref ||--o{ stage_queue : &quot;card_id CASCADE&quot;
 
     flow_state {
         id card_id PK, FK
         id board_id FK &quot;nullable&quot;
-        name_200 flow &quot;The route&#x27;s name. It has no id of its own yet — contradiction 4 of docs/model-graph.md, which lives inside…&quot;
+        id flow_id &quot;The route the card is on. An id rather than the route&#x27;s name, so renaming a route does not lose the place of…&quot;
         name_64 node_id
         name_255 branch &quot;nullable&quot;
         text workdir_path &quot;nullable&quot;
@@ -640,7 +669,7 @@ erDiagram
     flow_event {
         id id PK
         id card_id FK
-        name_200 flow
+        id flow_id &quot;nullable&quot;
         name_64 from_node &quot;nullable&quot;
         name_64 to_node
         name_32 on_kind
@@ -659,21 +688,22 @@ erDiagram
         id card_id PK, FK
         id board_id FK &quot;nullable&quot;
         name_128 column_key &quot;board|option — the queue belongs to one column of one board.&quot;
-        name_200 flow &quot;nullable&quot;
+        id flow_id &quot;nullable&quot;
         name_64 node_id &quot;nullable&quot;
         millis queued_at
     }</pre>
         </figure>
       </section>
-      <section class="group" id="g5">
-        <p class="eyebrow">2 таблиц · 4 ключа</p>
+      <section class="group" id="g6">
+        <p class="eyebrow">3 таблиц · 5 ключей</p>
         <h2>Работа в папке</h2>
-        <div class="prose"><p><code>checkout</code> — git-состояние: где копия, какая ветка, от чего отрезана. Владелец — карточка либо доска («черновики доски»), ровно одна из двух колонок заполнена; обычная папка не пишет строки вовсе.</p></div>
+        <div class="prose"><p><code>checkout</code> — git-состояние: где копия, какая ветка, от чего отрезана. Владелец — карточка либо доска («черновики доски»), ровно одна из двух колонок заполнена; обычная папка не пишет строки вовсе. <code>card_changes</code> — размер сделанного, числами: диф всегда читается из git заново, а эта строка нужна, чтобы знать, есть ли что читать, не запуская git на каждую карточку.</p></div>
         <figure class="plate">
           <pre class="mermaid">%%{init: {&#x27;theme&#x27;:&#x27;base&#x27;,&#x27;themeVariables&#x27;:{&#x27;fontFamily&#x27;:&#x27;ui-monospace, SFMono-Regular, Menlo, Consolas, monospace&#x27;,&#x27;fontSize&#x27;:&#x27;13px&#x27;,&#x27;primaryColor&#x27;:&#x27;#ffffff&#x27;,&#x27;primaryTextColor&#x27;:&#x27;#14171d&#x27;,&#x27;primaryBorderColor&#x27;:&#x27;#aab3bf&#x27;,&#x27;secondaryColor&#x27;:&#x27;#f4f6f8&#x27;,&#x27;tertiaryColor&#x27;:&#x27;#ffffff&#x27;,&#x27;lineColor&#x27;:&#x27;#7c8493&#x27;,&#x27;textColor&#x27;:&#x27;#14171d&#x27;,&#x27;nodeBorder&#x27;:&#x27;#aab3bf&#x27;,&#x27;mainBkg&#x27;:&#x27;#ffffff&#x27;,&#x27;attributeBackgroundColorOdd&#x27;:&#x27;#ffffff&#x27;,&#x27;attributeBackgroundColorEven&#x27;:&#x27;#f4f6f8&#x27;}}}%%
 erDiagram
-    blocks ||--o{ checkout : &quot;card_id CASCADE&quot;
-    boards ||--o{ checkout : &quot;board_id CASCADE&quot;
+    board_ref ||--o{ checkout : &quot;board_id CASCADE&quot;
+    card_ref ||--o{ card_changes : &quot;card_id CASCADE&quot;
+    card_ref ||--o{ checkout : &quot;card_id CASCADE&quot;
     workspace ||--o{ checkout : &quot;workspace_id RESTRICT&quot;
     workspace ||--o{ vcs_seen : &quot;workspace_id CASCADE&quot;
 
@@ -695,18 +725,28 @@ erDiagram
         name_32 kind PK
         name_64 marker &quot;The commit the event refers to: the same state seen twice fires once.&quot;
         millis created_at
+    }
+    card_changes {
+        id card_id PK, FK
+        name_255 branch &quot;nullable&quot;
+        name_255 base &quot;What the branch was cut from, so a stale row can be told from one about a different base.&quot;
+        int files
+        int added
+        int removed
+        int dirty &quot;Files changed and not committed. Counted apart because they exist only while a working copy does, and the…&quot;
+        millis computed_at
     }</pre>
         </figure>
       </section>
-      <section class="group" id="g6">
+      <section class="group" id="g7">
         <p class="eyebrow">2 таблиц · 2 ключа</p>
         <h2>Входящие</h2>
         <div class="prose"><p>Дедуп и журнал. <code>card_id</code> здесь <code>SET NULL</code>, а не <code>CASCADE</code>: решение источника переживает карточку, которая из него вышла.</p></div>
         <figure class="plate">
           <pre class="mermaid">%%{init: {&#x27;theme&#x27;:&#x27;base&#x27;,&#x27;themeVariables&#x27;:{&#x27;fontFamily&#x27;:&#x27;ui-monospace, SFMono-Regular, Menlo, Consolas, monospace&#x27;,&#x27;fontSize&#x27;:&#x27;13px&#x27;,&#x27;primaryColor&#x27;:&#x27;#ffffff&#x27;,&#x27;primaryTextColor&#x27;:&#x27;#14171d&#x27;,&#x27;primaryBorderColor&#x27;:&#x27;#aab3bf&#x27;,&#x27;secondaryColor&#x27;:&#x27;#f4f6f8&#x27;,&#x27;tertiaryColor&#x27;:&#x27;#ffffff&#x27;,&#x27;lineColor&#x27;:&#x27;#7c8493&#x27;,&#x27;textColor&#x27;:&#x27;#14171d&#x27;,&#x27;nodeBorder&#x27;:&#x27;#aab3bf&#x27;,&#x27;mainBkg&#x27;:&#x27;#ffffff&#x27;,&#x27;attributeBackgroundColorOdd&#x27;:&#x27;#ffffff&#x27;,&#x27;attributeBackgroundColorEven&#x27;:&#x27;#f4f6f8&#x27;}}}%%
 erDiagram
-    blocks ||--o{ source_event : &quot;card_id SET NULL&quot;
-    blocks ||--o{ source_item : &quot;card_id SET NULL&quot;
+    card_ref ||--o{ source_event : &quot;card_id SET NULL&quot;
+    card_ref ||--o{ source_item : &quot;card_id SET NULL&quot;
 
     source_item {
         name_100 source PK
@@ -728,14 +768,14 @@ erDiagram
     }</pre>
         </figure>
       </section>
-      <section class="group" id="g7">
+      <section class="group" id="g8">
         <p class="eyebrow">2 таблиц · 1 ключ</p>
         <h2>Защёлки</h2>
         <div class="prose"><p>Не сущности, а ответы «это уже сделано»: событие обработано, шаг мастера пройден. Связей между собой у них нет.</p></div>
         <figure class="plate">
           <pre class="mermaid">%%{init: {&#x27;theme&#x27;:&#x27;base&#x27;,&#x27;themeVariables&#x27;:{&#x27;fontFamily&#x27;:&#x27;ui-monospace, SFMono-Regular, Menlo, Consolas, monospace&#x27;,&#x27;fontSize&#x27;:&#x27;13px&#x27;,&#x27;primaryColor&#x27;:&#x27;#ffffff&#x27;,&#x27;primaryTextColor&#x27;:&#x27;#14171d&#x27;,&#x27;primaryBorderColor&#x27;:&#x27;#aab3bf&#x27;,&#x27;secondaryColor&#x27;:&#x27;#f4f6f8&#x27;,&#x27;tertiaryColor&#x27;:&#x27;#ffffff&#x27;,&#x27;lineColor&#x27;:&#x27;#7c8493&#x27;,&#x27;textColor&#x27;:&#x27;#14171d&#x27;,&#x27;nodeBorder&#x27;:&#x27;#aab3bf&#x27;,&#x27;mainBkg&#x27;:&#x27;#ffffff&#x27;,&#x27;attributeBackgroundColorOdd&#x27;:&#x27;#ffffff&#x27;,&#x27;attributeBackgroundColorEven&#x27;:&#x27;#f4f6f8&#x27;}}}%%
 erDiagram
-    boards ||--o{ board_setup : &quot;board_id CASCADE&quot;
+    board_ref ||--o{ board_setup : &quot;board_id CASCADE&quot;
 
     idempotency {
         name_255 token PK
@@ -758,8 +798,7 @@ erDiagram
   <code>go generate ./tools/schemagen</code> из той же Go-схемы, что и миграцию, — устареть ей негде.
   Остальное про модель:
   <ul>
-    <li><code>docs/db-erd.md</code> — что где лежит и почему так ключуется.</li>
-    <li><code>docs/model-graph.md</code> — как одно находит другое.</li>
+    <li><code>docs/db-erd.md</code> — что где лежит, чем что адресуется и почему так.</li>
     <li><code>docs/db-schema-review.md</code> — разбор решений.</li>
     <li><code>docs/schema/app.hcl</code> — та же схема как Atlas HCL.</li>
   </ul>

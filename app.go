@@ -7,11 +7,13 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 
 	"github.com/artipop/xciii/internal/acp"
 	"github.com/artipop/xciii/internal/boardadapter"
+	"github.com/artipop/xciii/internal/boardmodel"
 	"github.com/artipop/xciii/internal/sources"
 )
 
@@ -31,16 +33,28 @@ type App struct {
 	// not be read at all. Its own methods are safe on a nil receiver, so the
 	// bindings do not each have to check.
 	tailnet *tailnetController
+	// attach is which board this desktop works: its own, or a hosted server it
+	// has logged in to. Nil when its settings could not be read; safe on a nil
+	// receiver like the tailnet's.
+	attach *attachController
+	// boards is the page's own door: which board it is served. Switching aims
+	// it somewhere else, and the page reloads onto what it now answers.
+	boards *boardRouter
 	// sources turns outside events into cards. Separate from mgr on purpose: a
 	// board of household chores wants cards from a phone and no agents at all.
 	sources *sources.Manager
 	// board is how the page at /m reads the board, since it is served the
 	// bindings and the event socket and no board API of its own.
-	board *boardadapter.Writer
+	board boardLists
 	// updates is how this app replaces itself; nil in a headless build and
 	// whenever the release feed could not be configured. Its methods are safe
 	// on a nil receiver, as the tailnet controller's are.
 	updates *updateController
+	// retemplate reinstalls the shipped board templates in a language. Nil when
+	// the templates are not this process's business — an attached desktop works
+	// a hosted board and must not fight the server over them. Set in main,
+	// where the board server is.
+	retemplate func(lang string) error
 }
 
 func NewApp(emitter *wailsEmitter) *App {
@@ -140,7 +154,7 @@ func (a *App) AddAgentWorkdir(name, path, boardID, kind string, global bool) (st
 }
 
 // SetAgentWorkdirBase changes what work in a folder branches from, and what
-// «влито в основную» waits for. Empty falls the folder back to what git says.
+// merged into the main branch waits for. Empty falls the folder back to what git says.
 func (a *App) SetAgentWorkdirBase(name, branch string) (string, error) {
 	if a.mgr == nil {
 		return "", errACPDisabled
@@ -492,10 +506,18 @@ func (a *App) RemoveDeployTarget(name string) error {
 // ListFlows returns the routes a board may use as JSON — its own, plus any tied
 // to no board in particular — each a graph of nodes (a column) and edges (an
 // event and where it leads).
+//
+// It reads the board first (SeedBoard), because the registry is filled lazily —
+// by a card being moved, by an edit, by the automation editor opening — and the
+// question this answers is asked by a screen that is opened before any of that
+// happens. A board carrying three routes of its own answered "none" until
+// somebody touched it, and the route picker above the kanban then drew nothing
+// on exactly the boards it is for. Idempotent and once per board per run.
 func (a *App) ListFlows(boardID string) (string, error) {
 	if a.mgr == nil {
 		return "[]", nil
 	}
+	a.mgr.SeedBoard(boardID)
 	out, err := json.Marshal(a.mgr.BoardFlows(boardID))
 	if err != nil {
 		return "", err
@@ -637,7 +659,25 @@ func (a *App) ListFlowTemplates() (string, error) {
 	if a.mgr == nil {
 		return "[]", nil
 	}
-	out, err := json.Marshal(a.mgr.FlowTemplates())
+	// In the language the templates were installed in: these routes stand on
+	// that board's columns, and a route naming "In progress" on a Russian
+	// board is a route with nowhere to run.
+	flows := a.mgr.FlowTemplates()
+	word := boardadapter.TemplateWords(uiLanguage())
+	for i := range flows {
+		flows[i].Name = word(flows[i].Name)
+		flows[i].Property = word(flows[i].Property)
+		for j := range flows[i].Nodes {
+			flows[i].Nodes[j].Column = word(flows[i].Nodes[j].Column)
+		}
+		for j := range flows[i].Edges {
+			if cond := flows[i].Edges[j].If; cond != nil {
+				cond.Property = word(cond.Property)
+				cond.Value = word(cond.Value)
+			}
+		}
+	}
+	out, err := json.Marshal(flows)
 	if err != nil {
 		return "", err
 	}
@@ -758,6 +798,47 @@ func (a *App) GetCardFlow(cardID string) (string, error) {
 	return string(out), nil
 }
 
+// ListCardFlows is which route each card of a board is on, in one call: a view
+// filtered by route asks it of every card it draws.
+func (a *App) ListCardFlows(boardID string) (string, error) {
+	if a.mgr == nil {
+		return "{}", nil
+	}
+	// The board is read first for the reason ListFlows reads it: which route a
+	// card is on is answered against the registry, and the registry is filled
+	// lazily.
+	a.mgr.SeedBoard(boardID)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	out, err := json.Marshal(a.mgr.CardFlowsForBoard(ctx, boardID))
+	if err != nil {
+		return "", err
+	}
+	return string(out), nil
+}
+
+// MarkCardOutcome is the card's own «прошло»/«не прошло» — the two buttons on a
+// stage where nobody works and nothing runs, and the way a review says no.
+func (a *App) MarkCardOutcome(cardID, value string) error {
+	if a.mgr == nil {
+		return nil
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	return a.mgr.MarkCardOutcome(ctx, cardID, value)
+}
+
+// AnswerCardAsk is a person answering the question a transition is holding the
+// card at. The last answer lets the card across.
+func (a *App) AnswerCardAsk(cardID, questionID, value string) error {
+	if a.mgr == nil {
+		return errACPDisabled
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	return a.mgr.AnswerCardAsk(ctx, cardID, questionID, value)
+}
+
 // SeedBoardAutomation takes the columns and routes a board carries of its own
 // into the registry now, rather than waiting for the first card to be moved.
 // The setup wizard calls it, so what the board can do is visible as soon as it
@@ -790,7 +871,7 @@ func (a *App) GetBoardFlowOverview(boardID string) (string, error) {
 // SetAgentWorkdirMode records how a folder that is a repository is worked in
 // on one board: "worktree" — a copy of its own per card — or "branch" — a
 // branch in the folder itself. Asked per (board, folder), because a folder
-// belongs to a board anyway and the one that does not — «на всех досках» — is
+// belongs to a board anyway and the one that does not — shared with every board — is
 // exactly the case where two boards may want different answers.
 func (a *App) SetAgentWorkdirMode(name, boardID, mode string) (string, error) {
 	if a.mgr == nil {
@@ -844,6 +925,84 @@ func (a *App) SetTailnetAccess(entryJSON string) (string, error) {
 	state, err := a.tailnet.update(next)
 	if err != nil {
 		return "", err
+	}
+	out, err := json.Marshal(state)
+	if err != nil {
+		return "", err
+	}
+	return string(out), nil
+}
+
+// GetServerAttachment reports which board this desktop works — its own, or a
+// hosted server. JSON: {"url":…,"username":…,"running":…}, where url and
+// running disagreeing is the app saying a restart is owed: which board the page
+// is served, and which one the agents work against, are both decided when the
+// app is built up.
+func (a *App) GetServerAttachment() (string, error) {
+	out, err := json.Marshal(a.attach.state())
+	if err != nil {
+		return "", err
+	}
+	return string(out), nil
+}
+
+// AttachServer logs in to a hosted board and remembers it for the next launch.
+//
+// The password is not kept: what is stored is the session it bought, in the
+// credential store, and a person who wants out says so with DetachServer.
+func (a *App) AttachServer(entryJSON string) (string, error) {
+	var want struct {
+		URL      string `json:"url"`
+		Username string `json:"username"`
+		Password string `json:"password"`
+	}
+	if err := json.Unmarshal([]byte(entryJSON), &want); err != nil {
+		return "", err
+	}
+	state, err := a.attach.attach(want.URL, want.Username, want.Password)
+	if err != nil {
+		return "", err
+	}
+	out, err := json.Marshal(state)
+	if err != nil {
+		return "", err
+	}
+	return string(out), nil
+}
+
+// DetachServer puts this desktop back on its own board.
+func (a *App) DetachServer() (string, error) {
+	state, err := a.attach.detach()
+	if err != nil {
+		return "", err
+	}
+	out, err := json.Marshal(state)
+	if err != nil {
+		return "", err
+	}
+	return string(out), nil
+}
+
+// SelectBoardSource changes which board the page shows — this machine's own, or
+// the server this desktop is attached to.
+//
+// It changes nothing about which boards the *agents* work: both are theirs,
+// whichever is on screen, so a stage running on the server's card goes on
+// running while somebody looks at their own board.
+//
+// The page has to reload, and does not absorb the change: everything it holds —
+// the boards, the members, both sockets — came from the board it loaded
+// against, and a screen showing one board's cards under another's name is worse
+// than a reload.
+func (a *App) SelectBoardSource(id string) (string, error) {
+	state, err := a.attach.selectBoard(id)
+	if err != nil {
+		return "", err
+	}
+	if a.boards != nil {
+		if err := a.boards.point(a.attach.selected()); err != nil {
+			return "", err
+		}
 	}
 	out, err := json.Marshal(state)
 	if err != nil {
@@ -1064,6 +1223,20 @@ func (a *App) GetCardAgent(cardID string) (string, error) {
 	if work := a.mgr.CardWork(cardID); work.Started {
 		payload["work"] = work
 	}
+	// How much that work amounts to. Present only when there is something to
+	// read, which is what the «Изменения» button is drawn on — a button that
+	// opened «ничего не изменено» was a button nobody could learn
+	// (internal/acp/carddiff.go).
+	if changes, ok := a.mgr.CardChanges(cardID); ok {
+		payload["changes"] = map[string]any{
+			"branch":  changes.Branch,
+			"base":    changes.Base,
+			"files":   changes.Files,
+			"added":   changes.Added,
+			"removed": changes.Removed,
+			"dirty":   changes.Dirty,
+		}
+	}
 	out, err := json.Marshal(payload)
 	if err != nil {
 		return "", err
@@ -1157,6 +1330,53 @@ func (a *App) ShowTerminal(terminalID string) (string, error) {
 	return a.terminalWindow(t)
 }
 
+// GetCardDiff is the card's work read off the disk: the branch, what it was cut
+// from, and the changed files with their patches (internal/acp/carddiff.go).
+// JSON, and never an error for "nothing to show" — a card nobody has worked on
+// answers with a reason a person can act on.
+func (a *App) GetCardDiff(cardID string) (string, error) {
+	if a.mgr == nil {
+		return "", errACPDisabled
+	}
+	d, err := a.mgr.CardDiff(cardID)
+	if err != nil {
+		return "", err
+	}
+	out, err := json.Marshal(d)
+	if err != nil {
+		return "", err
+	}
+	return string(out), nil
+}
+
+// OpenCardDiff gives the diff a window of its own, the way a terminal gets one:
+// reading a review is the thing a panel beside the card is least able to be,
+// and the card is open behind it anyway. Answers with the address, so a build
+// with no windows — a browser, a phone — can still go there itself.
+func (a *App) OpenCardDiff(cardID string) (string, error) {
+	if a.mgr == nil {
+		return "", errACPDisabled
+	}
+	url := a.originURL() + "acp/diff/" + cardID
+	if wapp := a.app(); wapp != nil {
+		openDiffWindow(wapp, cardID, a.cardDiffTitle(cardID), url)
+	}
+	return url, nil
+}
+
+// cardDiffTitle names the window after the card, falling back to the card id:
+// a window in the dock is picked out by its title, and "Изменения" three times
+// over is three windows nobody can tell apart.
+func (a *App) cardDiffTitle(cardID string) string {
+	if a.mgr == nil {
+		return cardID
+	}
+	if title := a.mgr.CardTitle(cardID); title != "" {
+		return title
+	}
+	return cardID
+}
+
 // CloseTerminal ends a terminal session and everything its CLI started.
 func (a *App) CloseTerminal(terminalID string) error {
 	if a.mgr == nil {
@@ -1189,7 +1409,7 @@ func (a *App) AskTerminalName(terminalID string) error {
 // DeleteCardConversation throws away one conversation of a card: the CLI in it
 // ends and the record goes with it, so the next one starts on a blank screen.
 // It is how the card's own conversation is closed for good — everything else
-// about a terminal is kept, which is what makes «продолжить» possible.
+// about a terminal is kept, which is what makes continue possible.
 func (a *App) DeleteCardConversation(cardID, nodeID string) error {
 	if a.mgr == nil {
 		return errACPDisabled
@@ -1428,7 +1648,7 @@ func (a *App) ListInbox() (string, error) {
 		return "[]", nil
 	}
 
-	waiting := make([]boardadapter.CardSummary, 0, 8)
+	waiting := make([]boardmodel.CardSummary, 0, 8)
 	for boardID, columns := range inboxes {
 		cards, err := a.board.BoardCards(context.Background(), boardID)
 		if err != nil {
@@ -1452,8 +1672,7 @@ func (a *App) ListInbox() (string, error) {
 }
 
 // MoveCardToBoard carries a card to another board and, when a column is named,
-// puts it there. It is the phone's half of the card menu's «Переместить на
-// доску…», and it is the same move: the card keeps its id.
+// puts it there. It is the phone's half of the card menu's the move-to-board item, and it is the same move: the card keeps its id.
 func (a *App) MoveCardToBoard(cardID, boardID, column string) error {
 	if a.board == nil {
 		return errNoBoard
@@ -1466,7 +1685,7 @@ func (a *App) MoveCardToBoard(cardID, boardID, column string) error {
 
 // The share sheet.
 //
-// What the system hands over when somebody presses «Поделиться» in another app
+// What the system hands over when somebody presses the share dialog in another app
 // is a link and a title, and the only question left is which board. The dialog
 // that asks it is a page of ours (/share), so this is all it needs from Go:
 // the boards to offer are ListBoards above, and this is the send.
@@ -1474,11 +1693,11 @@ func (a *App) MoveCardToBoard(cardID, boardID, column string) error {
 // It goes through the sources pipeline rather than writing a card directly,
 // because everything the inbox does is there already — the column, the view,
 // the author, the record that keeps a repeat from becoming a second card — and
-// because the phone's «Входящие» only lists boards that have a source.
+// because the phone's the inbox view only lists boards that have a source.
 
 // ShareItem files a shared link on the board the person picked, and reports
 // what came of it in the same shape a delivery does, so the dialog can tell
-// «создана» from «уже была».
+// created from already there.
 func (a *App) ShareItem(boardID, title, url, note string) (string, error) {
 	if a.sources == nil {
 		return "", errors.New("источники недоступны")
@@ -1507,7 +1726,7 @@ func (a *App) ShareItem(boardID, title, url, note string) (string, error) {
 	return string(out), nil
 }
 
-// GetUpdateState reports everything the «Обновления» panel draws: which
+// GetUpdateState reports everything the the updates section panel draws: which
 // version is running, whether the automatic check is on, what the last check
 // found and how far along an install is. JSON, the shape of updateState in
 // updates.go.

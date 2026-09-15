@@ -52,11 +52,6 @@ func (a *API) handleLogin(w http.ResponseWriter, r *http.Request) {
 	//     description: internal error
 	//     schema:
 	//       "$ref": "#/definitions/ErrorResponse"
-	if a.MattermostAuth {
-		a.errorResponse(w, r, model.NewErrNotImplemented("not permitted in plugin mode"))
-		return
-	}
-
 	if len(a.singleUserToken) > 0 {
 		// Not permitted in single-user mode
 		a.errorResponse(w, r, model.NewErrUnauthorized("not permitted in single-user mode"))
@@ -112,11 +107,6 @@ func (a *API) handleLogout(w http.ResponseWriter, r *http.Request) {
 	//     description: internal error
 	//     schema:
 	//       "$ref": "#/definitions/ErrorResponse"
-	if a.MattermostAuth {
-		a.errorResponse(w, r, model.NewErrNotImplemented("not permitted in plugin mode"))
-		return
-	}
-
 	if len(a.singleUserToken) > 0 {
 		// Not permitted in single-user mode
 		a.errorResponse(w, r, model.NewErrUnauthorized("not permitted in single-user mode"))
@@ -159,11 +149,6 @@ func (a *API) handleRegister(w http.ResponseWriter, r *http.Request) {
 	//     description: internal error
 	//     schema:
 	//       "$ref": "#/definitions/ErrorResponse"
-	if a.MattermostAuth {
-		a.errorResponse(w, r, model.NewErrNotImplemented("not permitted in plugin mode"))
-		return
-	}
-
 	if len(a.singleUserToken) > 0 {
 		// Not permitted in single-user mode
 		a.errorResponse(w, r, model.NewErrUnauthorized("not permitted in single-user mode"))
@@ -198,14 +183,18 @@ func (a *API) handleRegister(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
-		// No signup token, check if no active users
-		userCount, err2 := a.app.GetRegisteredUserCount()
+		// No signup token: allowed only while nobody has claimed this install.
+		// Counted in admins rather than in registered users, because this app
+		// makes an account per agent and per source — a desktop attaching to a
+		// fresh server would otherwise close the door before anybody walked
+		// through it.
+		adminCount, err2 := a.app.GetAdminCount()
 		if err2 != nil {
 			a.errorResponse(w, r, err2)
 			return
 		}
-		if userCount > 0 {
-			a.errorResponse(w, r, model.NewErrUnauthorized("no sign-up token and user(s) already exist"))
+		if adminCount > 0 {
+			a.errorResponse(w, r, model.NewErrUnauthorized("no sign-up token and this install already has an admin"))
 			return
 		}
 	}
@@ -257,11 +246,6 @@ func (a *API) handleChangePassword(w http.ResponseWriter, r *http.Request) {
 	//     description: internal error
 	//     schema:
 	//       "$ref": "#/definitions/ErrorResponse"
-	if a.MattermostAuth {
-		a.errorResponse(w, r, model.NewErrNotImplemented("not permitted in plugin mode"))
-		return
-	}
-
 	if len(a.singleUserToken) > 0 {
 		// Not permitted in single-user mode
 		a.errorResponse(w, r, model.NewErrUnauthorized("not permitted in single-user mode"))
@@ -320,24 +304,6 @@ func (a *API) attachSession(handler func(w http.ResponseWriter, r *http.Request)
 				CreateAt:    now,
 				UpdateAt:    now,
 			}
-			ctx := context.WithValue(r.Context(), sessionContextKey, session)
-			handler(w, r.WithContext(ctx))
-			return
-		}
-
-		if a.MattermostAuth && r.Header.Get("Mattermost-User-Id") != "" {
-			userID := r.Header.Get("Mattermost-User-Id")
-			now := utils.GetMillis()
-			session := &model.Session{
-				ID:          userID,
-				Token:       userID,
-				UserID:      userID,
-				AuthService: a.authService,
-				Props:       map[string]interface{}{},
-				CreateAt:    now,
-				UpdateAt:    now,
-			}
-
 			ctx := context.WithValue(r.Context(), sessionContextKey, session)
 			handler(w, r.WithContext(ctx))
 			return

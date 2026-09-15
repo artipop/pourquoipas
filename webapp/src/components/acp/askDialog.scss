@@ -1,0 +1,114 @@
+// The question, drawn as small as the question is.
+//
+// A dialog's head is a title and a way out, and this one has no title on
+// purpose: the question is the heading, and a title above it would be the same
+// sentence twice. What that left was the head's empty half — a band the height
+// of a 22px title with its own 24px of padding, a third of the box, above
+// content that starts with a caption. So the way out moves into the corner and
+// the band goes with it.
+//
+// Said under `.Dialog.AskDialog` because the rules being overridden are the
+// shared dialog's own (`.Dialog .dialog .toolbar`), and a class less would tie
+// on specificity and then lose on order.
+.Dialog.AskDialog {
+    .dialog .toolbar {
+        position: absolute;
+        top: 0;
+        right: 0;
+        left: auto;
+
+        // Level with the caption under it rather than tight to the corner: the
+        // ✕ and the card's name are the two things on that line.
+        padding: 18px;
+        background: none;
+        border-radius: 0;
+    }
+
+    // The empty half of the head. Hidden rather than left to collapse: an empty
+    // h1 still carries its line-height, which is the band this is about.
+    .dialog .dialog-title {
+        display: none;
+    }
+
+    // The shared head pulls its buttons outwards to sit against a 32px padding.
+    // This one has 18px, and the same pull would hang the ✕ off the corner.
+    .dialog .toolbar--right {
+        margin-right: 0;
+    }
+
+    .AskDialog__box {
+        display: flex;
+        flex-direction: column;
+        padding: 24px;
+    }
+
+    // The card the question is about, above the question: the dialog opens over
+    // a board where several cards are visible, so which one is being asked
+    // about is not obvious from the question alone.
+    //
+    // Inset from the right, this line and the question both, so a long card
+    // name does not run under the ✕ standing in that corner.
+    .AskDialog__card {
+        margin: 0 24px 6px 0;
+        color: rgba(var(--center-channel-color-rgb), 0.64);
+        font-size: var(--text-small);
+    }
+
+    .AskDialog__text {
+        margin: 0 24px 18px 0;
+        font-size: 16px;
+        font-weight: 600;
+        line-height: 1.4;
+    }
+
+    .AskDialog__options {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 14px;
+    }
+
+    // The answers share the row rather than sitting at their own widths: there
+    // are two of them here and they are equal in weight, and two chips of
+    // different lengths read as one answer and an afterthought.
+    // Sentence case, not the label voice every .Button wears. These two are
+    // the same pair the card's own route strip draws (.FlowStrip__mark) — one
+    // answer to one question, in two places — and they should read as
+    // siblings; caps also wrapped both of them onto a second line.
+    .AskDialog__option {
+        flex: 1 1 0;
+        min-width: 140px;
+        border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+        border-radius: var(--radius-sm);
+        background: rgba(var(--center-channel-color-rgb), 0.04);
+        color: rgb(var(--center-channel-color-rgb));
+        padding: 11px 16px;
+        font-size: 14px;
+        cursor: pointer;
+
+        &:hover:not(:disabled) {
+            background: rgba(var(--button-bg-rgb), 0.08);
+            border-color: rgba(var(--button-bg-rgb), 0.32);
+        }
+
+        &:disabled {
+            cursor: default;
+            opacity: 0.6;
+        }
+    }
+
+    // Quiet, because it is the way out rather than an answer.
+    .AskDialog__later {
+        align-self: flex-start;
+        border: 0;
+        background: none;
+        color: rgba(var(--center-channel-color-rgb), 0.56);
+        padding: 0;
+        font-size: var(--text-small);
+        cursor: pointer;
+
+        &:hover:not(:disabled) {
+            color: rgb(var(--link-color-rgb));
+        }
+    }
+}

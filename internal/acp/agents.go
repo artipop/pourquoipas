@@ -11,7 +11,7 @@ import (
 // Agent registry: named coding agents (claude/codex with their own prompt,
 // model and env), edited from the desktop UI and persisted into the config
 // file. A card goes to the agent it is assigned to: an agent is a member of the
-// board under its own name, so «Кто занимается» is the whole of the question.
+// board under its own name, so the assignee field is the whole of the question.
 
 // Agents returns a snapshot of the registry.
 func (m *Manager) Agents() []AgentEntry {
@@ -191,7 +191,7 @@ func (m *Manager) ensureAgentAccount(name string) []AgentUser {
 	if m.users == nil || username == "" {
 		return nil
 	}
-	made, err := m.users.EnsureAgentAccounts(context.Background(), []AgentUser{{Name: name, Username: username}})
+	made, err := m.primary().Users.EnsureAgentAccounts(context.Background(), []AgentUser{{Name: name, Username: username}})
 	if err != nil {
 		m.log.Warn("acp: the agent has no board account yet", "agent", name, "err", err)
 		return nil
@@ -250,7 +250,7 @@ func (m *Manager) assignCardAgent(ev CardMoved, agent AgentEntry) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	if err := m.users.AssignCardAgent(ctx, ev.CardID, AgentUser{Name: agent.Name, Username: username}); err != nil {
+	if err := m.forCard(ev.CardID).Users.AssignCardAgent(ctx, ev.CardID, AgentUser{Name: agent.Name, Username: username}); err != nil {
 		m.log.Warn("acp: cannot write the stage's agent into the assignee", "card", ev.CardID, "agent", agent.Name, "err", err)
 	}
 }
@@ -261,7 +261,7 @@ func (m *Manager) ensureAgentAccounts() {
 	if m.users == nil || len(agents) == 0 {
 		return
 	}
-	made, err := m.users.EnsureAgentAccounts(m.rootCtx, agents)
+	made, err := m.primary().Users.EnsureAgentAccounts(m.rootCtx, agents)
 	if err != nil {
 		m.log.Warn("acp: some agents have no board account", "err", err)
 	}
@@ -271,8 +271,8 @@ func (m *Manager) ensureAgentAccounts() {
 // UpdateAgent replaces an existing agent and persists.
 //
 // Matched by id where the caller has one, which is what makes renaming an agent
-// possible: matched by name, the lookup used the new name and answered "агент
-// не найден".
+// possible: matched by name, the lookup used the new name and answered that
+// there is no such agent.
 func (m *Manager) UpdateAgent(a AgentEntry) (AgentEntry, error) {
 	a, err := validateAgent(a)
 	if err != nil {
@@ -335,7 +335,7 @@ func (m *Manager) SyncAgentUsers(ctx context.Context, boardID string) ([]AgentUs
 		return nil, nil
 	}
 
-	return m.users.EnsureAgentUsers(ctx, boardID, agents)
+	return m.forBoard(boardID).Users.EnsureAgentUsers(ctx, boardID, agents)
 }
 
 // PlanningPrompt returns the instructions a planning terminal is opened with.
@@ -371,7 +371,7 @@ func (m *Manager) RemoveAgent(name string) error {
 	if m.users == nil {
 		return nil
 	}
-	if _, err := m.users.RetireAgentUser(context.Background(), removed); err != nil {
+	if _, err := m.primary().Users.RetireAgentUser(context.Background(), removed); err != nil {
 		// The entry is already gone; the account is the part left dangling, so
 		// say so rather than pretend the removal failed.
 		return fmt.Errorf("агент %q удалён из реестра, но его учётная запись осталась в участниках доски: %w", removed.Name, err)
@@ -399,9 +399,9 @@ func (m *Manager) removeAgentEntry(name string) (AgentUser, error) {
 // is why it must stay deterministic.
 //
 // A letter is any letter, not only a Latin one: folded to `a-z0-9`, an agent
-// called «клаус» becomes the empty string and can never be put in «Кто
-// занимается» at all. Nothing here needs ASCII — the username is stored in the
-// board's own table and read back by the same fold.
+// whose name is written in Cyrillic becomes the empty string and can never be
+// put in the assignee field at all. Nothing here needs ASCII — the username is
+// stored in the board's own table and read back by the same fold.
 func AgentUsername(name string) string {
 	var b strings.Builder
 	for _, r := range strings.ToLower(strings.TrimSpace(name)) {

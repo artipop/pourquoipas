@@ -1,5 +1,7 @@
 import {For, Show, createEffect, createSignal} from 'solid-js'
 
+import AddIcon from '../../widgets/icons/add'
+
 import {FormattedMessage, useIntl} from '../../intl'
 
 import {Board, IPropertyTemplate} from '../../blocks/board'
@@ -44,10 +46,10 @@ const CardDetailProperties = (props: Props) => {
 
     // The branch field is the machine's record — where the card's work lives —
     // and the card knows *what kind* of place that is. The board records which
-    // property it is (xciiiBranchProperty); the card's own state says whether
+    // property it is (branchProperty); the card's own state says whether
     // its workspace is a copy or a branch in the folder. The stamp under the
     // title already names its line after the mode, and a field under it saying
-    // «Ветка» over the same value read as the setting not having taken.
+    // the branch field over the same value read as the setting not having taken.
     const branchPropertyId = () => boardBranchProperty(props.board)
     const agentState = () => cardAgentState(props.card.id)()
     const isBranchProperty = (t: IPropertyTemplate) => t.id !== '' && t.id === branchPropertyId()
@@ -64,7 +66,7 @@ const CardDetailProperties = (props: Props) => {
     // the card to another folder afterwards does not move the work, it only
     // makes the card describe somewhere the work is not. The claim is the fact
     // to read, not the column the card stands in, because that is exactly what
-    // "работа началась" means here — a folder was taken for this card.
+    // "the work has started" means here — a folder was taken for this card.
     //
     // Refusing it in the one place a person changes it, rather than refusing
     // later and further away: an agent standing on a card whose field says one
@@ -274,10 +276,10 @@ const CardDetailProperties = (props: Props) => {
                             </Menu>
                         }
                     >
-                        <Button>
+                        <Button icon={<AddIcon/>}>
                             <FormattedMessage
                                 id='CardDetail.add-property'
-                                defaultMessage='+ Add a property'
+                                defaultMessage='Add a property'
                             />
                         </Button>
                     </MenuWrapper>

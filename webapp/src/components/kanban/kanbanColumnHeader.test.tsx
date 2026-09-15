@@ -323,7 +323,7 @@ describe('src/components/kanban/kanbanColumnHeader', () => {
 
     // The inbox's columns say who brought the card; what the person themselves
     // brought is their unprocessed tasks, so their own column is headed by what
-    // the cards are — «Мои задачи» — and everybody else's by who they are.
+    // the cards are — the my-tasks column — and everybody else's by who they are.
     describe('a person group on the inbox view', () => {
         const inboxView = TestBlockFactory.createBoardView(board)
         inboxView.title = 'Входящие'
@@ -372,7 +372,7 @@ describe('src/components/kanban/kanbanColumnHeader', () => {
 
         // The local user has no account, so the API synthesizes its username
         // and cannot know the language of the page: the name comes from the
-        // catalogue («Вы» / "You"), and the id it stands for is never printed.
+        // catalogue (the "you" name / "You"), and the id it stands for is never printed.
         test('outside the inbox the viewer stays themselves', () => {
             renderHeader(activeView, 'single-user')
             expect(screen.getByText('You')).toBeInTheDocument()

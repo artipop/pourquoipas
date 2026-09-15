@@ -14,7 +14,7 @@ import (
 // The tool an agent source files through, against the real ingest route and the
 // real pipeline behind it. This is the whole reason an agent is allowed to
 // bring cards in at all: it does not write to the board, it posts here, and
-// everything that makes the inbox trustworthy — the rules, «Входящие», the
+// everything that makes the inbox trustworthy — the rules, the inbox view, the
 // (source, external id, version) key — is still in the way.
 
 // inboxTool wires the MCP server to a front door serving the real ingest route,

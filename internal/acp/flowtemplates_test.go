@@ -10,12 +10,17 @@ import (
 )
 
 // The board template and the seeded routes are two halves of one promise: open
-// a fresh "Разработка" board and the routes already point at columns that
+// a board from the developer template and the routes already point at columns that
 // exist, with a "Workflow" property whose options name them. Nothing in the
 // build enforces that — a template is JSON nobody compiles — so the test reads
 // the templates themselves and compares.
 
-const templateBoardTitle = "Разработка"
+const templateBoardTitle = "Development"
+
+// The property a card picks its route with. The template boards are written in
+// English and translated on the way in (internal/boardadapter/templatetext.go),
+// so this is the file's word and not the one on anybody's screen.
+const templateRouteProperty = "Workflow"
 
 type templateProperty struct {
 	ID      string `json:"id"`
@@ -33,9 +38,10 @@ type templateBoard struct {
 	Fields struct {
 		CardProperties []templateProperty `json:"cardProperties"`
 		Properties     struct {
-			Columns []ColumnSpec `json:"xciiiColumns"`
-			Flows   []FlowEntry  `json:"xciiiFlows"`
-			Setup   BoardSetup   `json:"xciiiSetup"`
+			Columns         []ColumnSpec `json:"columns"`
+			Flows           []FlowEntry  `json:"flows"`
+			Setup           BoardSetup   `json:"setup"`
+			OutcomeProperty string       `json:"outcomeProperty"`
 		} `json:"properties"`
 	} `json:"fields"`
 }
@@ -102,6 +108,17 @@ func readTemplateBoard(t *testing.T) templateBoard {
 	}
 	t.Fatalf("the %q template is gone from the archive", templateBoardTitle)
 	return templateBoard{}
+}
+
+// property is one of the board's card fields, by name — for the checks that are
+// about the field itself rather than about its options.
+func (b templateBoard) property(name string) (templateProperty, bool) {
+	for _, p := range b.Fields.CardProperties {
+		if strings.EqualFold(p.Name, name) {
+			return p, true
+		}
+	}
+	return templateProperty{}, false
 }
 
 func (b templateBoard) options(t *testing.T, property string) map[string]bool {
@@ -227,12 +244,12 @@ func TestTemplateFlowsMatchTheBoardTemplate(t *testing.T) {
 
 	// And the property a card picks its route with must offer exactly the
 	// routes that exist: an option naming nothing does nothing.
-	picks := board.options(t, "Сценарий")
+	picks := board.options(t, templateRouteProperty)
 	names := make(map[string]bool, len(flows))
 	for _, f := range flows {
 		names[strings.ToLower(f.Name)] = true
 		if !picks[strings.ToLower(f.Name)] {
-			t.Errorf("flow %q is seeded but the template's «Сценарий» property does not offer it", f.Name)
+			t.Errorf("flow %q is seeded but the template's %q property does not offer it", f.Name, templateRouteProperty)
 		}
 	}
 	for option := range picks {
@@ -353,5 +370,138 @@ func TestEveryTemplateAsksForStepsThatExist(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// A machine stage's value has to have somewhere to land, and «Разработка» is
+// where somebody meets that arrangement first. Without a property to write to,
+// the preview address and the verdict die in a comment: the whole dataflow —
+// the card's own fields, the arrow that branches on one, the brief the next
+// stage opens with — starts from a stage declaring an output, and a board that
+// declares none teaches that there is nothing to declare.
+func TestTheDeveloperTemplateDeclaresWhatItsMachineStagesProduce(t *testing.T) {
+	board := readTemplateBoard(t)
+
+	wantWrites := map[string]string{
+		strings.ToLower(TemplateDeployColumn): "Preview",
+	}
+	for _, c := range board.Fields.Properties.Columns {
+		want, machine := wantWrites[strings.ToLower(c.Column)]
+		if !machine {
+			continue
+		}
+		if len(c.Writes) != 1 || c.Writes[0].Property != want {
+			t.Errorf("column %q writes %+v, want just %q", c.Column, c.Writes, want)
+			continue
+		}
+
+		// Not "required": that is the contract an agent's finish_work is
+		// checked against, and these two values are written by the app itself.
+		// The editor's picker for a machine stage cannot show the flag, so a
+		// template carrying one would set something nobody can see or clear.
+		if c.Writes[0].Required {
+			t.Errorf("column %q marks its machine output required, which nothing reads", c.Column)
+		}
+	}
+
+	// And the property itself, since a write naming a field the board has not
+	// got is refused at the moment the stage reports — after the work.
+	if _, ok := board.property("Preview"); !ok {
+		t.Error("the template writes a preview address to a property it does not carry")
+	}
+}
+
+// How a stage ended is a fact about the card. The template used to say it by
+// having the card land in a checked, a failed and a blocked column — three
+// columns whose whole content was one fact about the stage before them, and
+// which then read as places where work happens, on the board and on the canvas
+// alike. The outcome is a field the engine writes for every stage, and those
+// columns are gone.
+func TestTheDeveloperTemplateKeepsOutcomesOffTheBoard(t *testing.T) {
+	board := readTemplateBoard(t)
+
+	for _, gone := range []string{"Checked", "Failed", "Blocked"} {
+		if board.options(t, DefaultTriggerProperty)[strings.ToLower(gone)] {
+			t.Errorf("«%s» is still a column: an outcome is not a place work happens", gone)
+		}
+	}
+
+	outcome, ok := board.property("Исход")
+	if !ok {
+		t.Fatal("the template has no field for a stage's outcome")
+	}
+
+	// A closed set, because an arrow asks "is it this value" and that is the
+	// point of writing it — and the values are the engine's own (OutcomeValue).
+	if outcome.Type != "select" {
+		t.Errorf("the outcome is a %q, so no transition can ask what it is", outcome.Type)
+	}
+	// Two values, and only two: what the card carries here is whether the step
+	// worked, and «заблокировано» is a reason rather than a third answer to
+	// that. A reviewer marking a card by hand picks between two things.
+	values := board.options(t, "Исход")
+	for _, want := range []string{OutcomePassed, OutcomeFailed} {
+		if !values[want] {
+			t.Errorf("the outcome cannot be %q", want)
+		}
+	}
+	if len(values) != 2 {
+		t.Errorf("the outcome has %d values: %v", len(values), values)
+	}
+
+	// And the board says which field it is, or the engine writes nowhere.
+	if board.Fields.Properties.OutcomeProperty != outcome.ID {
+		t.Errorf("the board records %q as its outcome field, want %q",
+			board.Fields.Properties.OutcomeProperty, outcome.ID)
+	}
+}
+
+// A board keeps the routes it was made with, so a route written before the way
+// onto a route existed has no arrow into its first stage — and the question
+// asked on the way in is exactly the one such a board would never ask. It is
+// repaired where the board is read.
+func TestARouteWrittenWithoutAWayInGetsOne(t *testing.T) {
+	flows := []FlowEntry{{
+		Name:  "old",
+		Nodes: []FlowNode{{ID: "agent"}, {ID: "review"}},
+		Edges: []FlowEdge{{From: "agent", To: "review", On: TriggerSuccess}},
+	}}
+	if added := addEntryTransitions(flows); added != 1 {
+		t.Fatalf("added %d ways in, expected 1", added)
+	}
+	edge := flows[0].EdgeBetween(EntryNode, "agent")
+	if edge == nil {
+		t.Fatalf("no way into the route's first stage: %+v", flows[0].Edges)
+	}
+	// Both questions, in the order they can be answered: a card coming from
+	// off the route has usually named no folder, and until it has, how to work
+	// that folder is about nothing.
+	if len(edge.Ask) != 2 || edge.Ask[0].Kind != AskWorkdir || edge.Ask[1].Kind != AskWorkMode {
+		t.Fatalf("the way in asks something else: %+v", edge.Ask)
+	}
+}
+
+// And one somebody has since edited is left as it is: this fills in what is
+// missing rather than restating what the shipped route says.
+func TestARouteThatAlreadyHasAWayInIsLeftAlone(t *testing.T) {
+	flows := []FlowEntry{{
+		Name:  "edited",
+		Nodes: []FlowNode{{ID: "agent"}},
+		Edges: []FlowEdge{{From: EntryNode, To: "agent", Ask: []EdgeAsk{{ID: "mine", Kind: AskProperty, Property: "Приоритет"}}}},
+	}}
+	if added := addEntryTransitions(flows); added != 0 {
+		t.Fatalf("added %d ways in to a route that had one", added)
+	}
+	if q := flows[0].Edges[0].Ask; len(q) != 1 || q[0].ID != "mine" {
+		t.Fatalf("somebody's own question was overwritten: %+v", q)
+	}
+}
+
+// A route with no stages has no first stage to lead into, and must not grow an
+// edge pointing at nothing — which is what the engine refuses to save.
+func TestARouteWithNoStagesGetsNoWayIn(t *testing.T) {
+	flows := []FlowEntry{{Name: "empty"}}
+	if added := addEntryTransitions(flows); added != 0 || len(flows[0].Edges) != 0 {
+		t.Fatalf("a route with no stages was given a way in: %+v", flows[0])
 	}
 }

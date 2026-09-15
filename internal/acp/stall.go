@@ -3,8 +3,9 @@ package acp
 // Why a card is standing still, said where the card already says where it
 // stands — on its route strip — rather than in its comments.
 //
-// Every one of these used to be a comment: «Агент не запущен: …», «Колонка
-// занята…», «нет перехода по событию…». A comment is the durable record of
+// Every one of these used to be a comment: the agent did not start, the column
+// is full, the route has no edge for what happened. A comment is the durable
+// record of
 // work, and these are not work — they are the current state of the machinery,
 // true only until somebody fixes the registry or moves the card, and stale the
 // moment they do. A card that failed to start three times carried three
@@ -39,7 +40,7 @@ func (m *Manager) stallCardKind(cardID, nodeID, kind, reason string) {
 
 // stallCardSoft records the reason only when none is recorded. It is for the
 // consequences of a failure that was already explained: a stage that would not
-// start raises «шаг упал», and a route with no failure edge would then report
+// start raises a failed stage, and a route with no failure edge would then report
 // the missing edge — over the reason the person actually needs. The first
 // reason is the root cause; any progress deletes it and lets a later one in.
 func (m *Manager) stallCardSoft(cardID, nodeID, reason string) {
@@ -53,6 +54,13 @@ func (m *Manager) stallCardSoft(cardID, nodeID, reason string) {
 // session starts, a stage is entered, the card leaves the column — so a
 // recorded reason is always the current one.
 func (m *Manager) clearStall(cardID string) {
+	// A card that makes progress is a card nobody is being kept waiting on
+	// either: the moments that end a stall are exactly the moments that end
+	// «эта карточка за вами» (cardwait.go).
+	if a, ok := m.forgetCardWait(cardID); ok {
+		a.Awaiting = false
+		m.emitAttentionRecord(a)
+	}
 	changed, err := m.store.ClearStall(cardID)
 	if err != nil {
 		m.log.Warn("acp: cannot clear the stall record", "card", cardID, "err", err)

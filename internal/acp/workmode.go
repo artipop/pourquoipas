@@ -12,7 +12,7 @@ import (
 //
 // Not of the board alone: one answer for every repository a board touches is
 // wrong the moment a board has two of them. Not of the folder alone either: a
-// folder marked «на всех досках» is one entry seen from several boards, and the
+// folder marked shared with every board is one entry seen from several boards, and the
 // board where three people work it wants a copy per card while the board where
 // one person does may not. A folder belongs to one board anyway, so for almost
 // every entry there is exactly one answer and it reads as the folder's own.
@@ -37,7 +37,7 @@ const (
 
 var errNoBoard = errors.New("не указана доска")
 
-var errBadWorkMode = errors.New("способ работы в репозитории — «worktree» (своя копия на карточку) или «branch» (ветка в самой папке)")
+var errBadWorkMode = errors.New("способ работы в репозитории — «worktree» (отдельное рабочее дерево на карточку) или «branch» (ветка в этой же папке)")
 
 // DefaultBranchPrefix is what a card's branch is named with when the folder does
 // not say: nothing. It was `acp/` while the branch was the agent integration's

@@ -17,7 +17,7 @@ const WithWebSockets: ParentComponent<Props> = (props) => {
             return
         }
 
-        const token = localStorage.getItem('xciiiSessionId') || queryString.get('r') || ''
+        const token = localStorage.getItem('boardSessionId') || queryString.get('r') || ''
         if (token) {
             wsClient.authenticate(token)
         }
@@ -29,7 +29,7 @@ const WithWebSockets: ParentComponent<Props> = (props) => {
             return
         }
 
-        const token = localStorage.getItem('xciiiSessionId') || queryString.get('r') || ''
+        const token = localStorage.getItem('boardSessionId') || queryString.get('r') || ''
         if (wsClient.token !== token) {
             wsClient.authenticate(token)
         }

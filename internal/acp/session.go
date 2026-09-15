@@ -73,7 +73,7 @@ type Session struct {
 
 	// FlowID/FlowNodeID are set when a flow stage started this session. Its
 	// outcome is then the event that moves the card on.
-	FlowID   string
+	FlowID     string
 	FlowNodeID string
 	// NodeID is the node this session's conversation is keyed under: the flow
 	// node when a route started it, else the option id of the column that did.
@@ -282,7 +282,7 @@ func (m *Manager) runSession(s *Session) {
 		// it, is not a failure of this card's task: it is true until the other
 		// card's branch is merged or the changes are saved, and then it is not.
 		// So it is state — the reason on the card — and never a comment or a
-		// failed stage that carries the card off to «Заблокировано».
+		// failed stage that carries the card off to the blocked column.
 		if errors.Is(err, errWorkdirBusy) || errors.Is(err, errWorkdirDirty) {
 			m.finishSession(s, StatusCancelled, err.Error())
 			m.stallCard(s.CardID, s.FlowNodeID, err.Error())
@@ -291,6 +291,13 @@ func (m *Manager) runSession(s *Session) {
 		m.finishSession(s, StatusFailed, err.Error())
 		m.comment(s, failComment(s, err.Error()))
 		return
+	}
+
+	// What the stage is standing in front of. It can only be known now: the
+	// workspace is claimed above, and the brief was composed before there was
+	// one to describe (branchstate.go).
+	if state := branchState(m.rootCtx, s.Worktree); state != "" {
+		s.PromptText = joinPrompts(s.PromptText, state)
 	}
 
 	// 2. An agent stage is the agent's own CLI in the card's terminal, not a
@@ -474,7 +481,7 @@ func (m *Manager) commentFirstTurn(s *Session, finalText string, err error) {
 	case s.wasCancelled():
 		// A cancelled turn ends with StopReason "cancelled", not an error.
 		// Nothing is said on the card: somebody pressed the button a second
-		// ago and the card's own status says «отменена».
+		// ago and the card's own status already says it was cancelled.
 		m.finishSession(s, StatusCancelled, "сессия отменена")
 	case err != nil:
 		m.finishSession(s, StatusFailed, err.Error())

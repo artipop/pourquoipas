@@ -32,7 +32,7 @@ func upstream(t *testing.T, contentType, body string) int {
 
 func proxied(t *testing.T, port int) *http.Response {
 	t.Helper()
-	h, err := newServerProxy(port, "su-token")
+	h, err := newServerProxy(port, "", func() string { return "su-token" })
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,7 +56,7 @@ func TestProxyInjectsTheBootstrapIntoHTML(t *testing.T) {
 	}
 	// It has to land before the app's own scripts, which is what "right after
 	// <head>" buys: the session token must exist by the time they run.
-	if strings.Index(page, "xciiiSessionId") > strings.Index(page, "<title>") {
+	if strings.Index(page, "boardSessionId") > strings.Index(page, "<title>") {
 		t.Error("bootstrap injected after the head contents")
 	}
 	if got := res.Header.Get("Content-Length"); got != strconv.Itoa(len(body)) {
@@ -120,5 +120,151 @@ func TestBootstrapSendsEveryOutwardLinkToTheBrowser(t *testing.T) {
 	// Same-origin navigation belongs to the app itself.
 	if !strings.Contains(script, "window.location.origin") {
 		t.Error("bootstrap does not keep in-app links inside the webview")
+	}
+}
+
+// The page writes the cookie the guard reads, and the two names are in
+// different languages: this is the one place they can be compared.
+func TestTheBootstrapWritesTheCookieTheGuardReads(t *testing.T) {
+	script := bootstrapScript("su-token")
+	if !strings.Contains(script, sessionCookie+"=") {
+		t.Fatalf("the bootstrap script writes no %q cookie", sessionCookie)
+	}
+}
+
+// A page that could not load the runtime once has to be able to try again: the
+// module map caches a rejected import, so the page has to drop its own handle
+// on it or one bad moment lasts as long as the page does.
+func TestTheBootstrapForgetsARuntimeImportThatFailed(t *testing.T) {
+	script := bootstrapScript("")
+	if !strings.Contains(script, "runtimePromise = null;") {
+		t.Fatal("a failed runtime import is kept, so a bound call can never recover")
+	}
+}
+
+// The token is asked for per response rather than baked in when the proxy is
+// built: a hosted board's session is not known until somebody logs in, and it
+// changes when they log out.
+func TestTheBootstrapCarriesWhateverTokenIsCurrent(t *testing.T) {
+	port := upstream(t, "text/html; charset=utf-8", "<html><head></head><body></body></html>")
+	token := "first"
+	h, err := newServerProxy(port, "", func() string { return token })
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	serve := func() string {
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/", nil))
+		body, _ := io.ReadAll(rec.Result().Body)
+		return string(body)
+	}
+
+	if !strings.Contains(serve(), "first") {
+		t.Fatal("the bootstrap did not carry the token")
+	}
+	token = "second"
+	if !strings.Contains(serve(), "second") {
+		t.Fatal("the bootstrap kept a token that is no longer current")
+	}
+}
+
+// Attached, the target is somebody else's server, and three things about the
+// request have to stop describing our loopback door: the Host it names, the
+// Origin it claims, and our own session cookie.
+func TestARequestToAnAttachedServerDoesNotDescribeOurOwnDoor(t *testing.T) {
+	var got *http.Request
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		got = r.Clone(r.Context())
+		w.Header().Set("Content-Type", "application/json")
+	}))
+	t.Cleanup(srv.Close)
+
+	h, err := newServerProxy(1, srv.URL, func() string { return "session" })
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := httptest.NewRequest(http.MethodGet, "/api/v0/boards", nil)
+	req.Host = "127.0.0.1:9000"
+	req.Header.Set("Origin", "http://127.0.0.1:9000")
+	req.Header.Set("Sec-Fetch-Site", "same-origin")
+	req.AddCookie(&http.Cookie{Name: sessionCookie, Value: "ours"})
+	req.AddCookie(&http.Cookie{Name: "somebody-elses", Value: "kept"})
+	h.ServeHTTP(httptest.NewRecorder(), req)
+
+	if got == nil {
+		t.Fatal("nothing reached the server")
+	}
+	if got.Host == "127.0.0.1:9000" {
+		t.Errorf("Host still names our door: %q — the far side's hostGuard would refuse it", got.Host)
+	}
+	if origin := got.Header.Get("Origin"); strings.Contains(origin, "127.0.0.1:9000") {
+		t.Errorf("Origin still claims our door: %q", origin)
+	}
+	if got.Header.Get("Sec-Fetch-Site") != "" {
+		t.Error("Sec-Fetch-* is the browser's account of a fetch and means nothing after a hop")
+	}
+	if _, err := got.Cookie(sessionCookie); err == nil {
+		t.Error("our own front-door cookie went to somebody else's server")
+	}
+	if _, err := got.Cookie("somebody-elses"); err != nil {
+		t.Error("stripping one cookie took the others with it")
+	}
+}
+
+// The split attaching makes, and the whole of it: the data goes to the server,
+// the page stays here.
+//
+// The page is not fetched from the server because it is already on this disk —
+// webapp/pack is embedded in this binary — and because it is *ours*: the
+// bootstrap injected into it assumes a page that knows window.go.main.App, so a
+// server on another version would hand back one this desktop does not match.
+func TestAttachedTheDataGoesAcrossAndThePageStaysHere(t *testing.T) {
+	var asked []string
+	far := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		asked = append(asked, r.URL.Path)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"from":"the server"}`)
+	}))
+	t.Cleanup(far.Close)
+
+	near := upstream(t, "text/html; charset=utf-8", "<html><head></head><body>ours</body></html>")
+	h, err := newServerProxy(near, far.URL, func() string { return "session" })
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	get := func(path string) string {
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+		body, _ := io.ReadAll(rec.Result().Body)
+		return string(body)
+	}
+
+	for _, path := range []string{"/api/v0/boards", "/api/v0/files/teams/0/b/f", "/ws"} {
+		if got := get(path); !strings.Contains(got, "the server") {
+			t.Errorf("%s was answered here: %q", path, got)
+		}
+	}
+	if len(asked) != 3 {
+		t.Errorf("the server was asked for %v, want the three data paths", asked)
+	}
+
+	// The page and its assets are this binary's own, and they carry the
+	// bootstrap with the server's session in it.
+	page := get("/")
+	if !strings.Contains(page, "ours") {
+		t.Errorf("the page came from somewhere else: %q", page)
+	}
+	if !strings.Contains(page, "session") {
+		t.Error("the page was served without the attached server's session")
+	}
+	for _, path := range []string{"/static/main.js", "/anything/else"} {
+		if got := get(path); !strings.Contains(got, "ours") {
+			t.Errorf("%s left this machine: %q", path, got)
+		}
+	}
+	if len(asked) != 3 {
+		t.Errorf("the server was asked for the page too: %v", asked)
 	}
 }

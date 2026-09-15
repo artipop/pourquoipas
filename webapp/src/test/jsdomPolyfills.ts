@@ -69,3 +69,22 @@ class SilentWebSocket {
 // A side-effect-only file is a global script under --isolatedModules; this makes
 // it a module without changing what it does.
 export {}
+
+// jsdom implements no `matchMedia`, and the theme module asks it which side of
+// the line the machine is on the moment anything reads the current theme —
+// which the settings panel does while it is being built. A stub that answers
+// "light" is the honest default for a headless DOM with no user preference at
+// all, and a test that cares drives it by overriding this.
+const anyMedia = global as unknown as {matchMedia?: unknown}
+if (!anyMedia.matchMedia) {
+    anyMedia.matchMedia = (query: string) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        addListener: () => {},
+        removeListener: () => {},
+        dispatchEvent: () => false,
+    })
+}

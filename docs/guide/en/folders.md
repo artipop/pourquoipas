@@ -1,7 +1,7 @@
 # Folders and branches
 
 An agent always works in some folder on your machine. The list of them is in the
-board's menu → **"Folders…"**. A card picks one of them with its «Папка» field —
+board's menu → **"Folders…"**. A card picks one of them with its «Folder» field —
 one, because a card has one working copy and one branch.
 
 When the board has only one folder, a new card is given it straight away: there
@@ -19,7 +19,7 @@ copy or a branch has been taken for the card, the field stops being editable and
 says which folder the card works in. Changing folders means making a new card:
 the work stayed in the copy it was done in, and moving the field would not move
 it there. This holds on another machine too: the card carries its branch in the
-«Ветка» field, so the work is known about there even when the copy itself is
+«Branch» field, so the work is known about there even when the copy itself is
 not.
 
 **The terminal button in the corner of a card** opens the work on it. When the
@@ -29,9 +29,9 @@ card can still be discussed without a folder: «Обсуждение» in the te
 panel always opens.
 
 Which items a board's menu has is decided by the template it was made from: the
-«Разработка» board asks about a folder, a deploy host and a browser, so its menu
-has "Folders…" and "Where to deploy…"; a board of household chores asks about a
-folder alone.
+«Development» board asks about a folder, a deploy host and a browser, so its menu
+has "Folders…" and "Where to deploy…"; the «Personal» board asks about a folder
+alone.
 
 Every folder in the list is a card of its own: the name, the path under it,
 and — for a repository — its two settings.
@@ -41,7 +41,7 @@ A folder is one of two kinds:
 - **an ordinary folder** — notes, texts, lists. The agent works in it as it
   stands, one card at a time; in the list it carries nothing but its name;
 - **a repository** — a directory under git, marked **"repository"**. Here every
-  card gets a branch of its own, and the card shows it in its «Ветка» field.
+  card gets a branch of its own, and the card shows it in its «Branch» field.
 
 The kind is not recorded once and for all: the app asks git every time it lists
 them. Run `git init` in a folder you added a month ago and it is a repository —
@@ -103,7 +103,7 @@ For names by meaning rather than by spelling — Settings → This machine → O
 agent runs briefly and answers with one name ("fix-sso-login"). No terminal
 opens, and a slow or odd answer falls back to the card's title.
 
-The branch is written into the card's «Ветка» field, so it travels with the card
+The branch is written into the card's «Branch» field, so it travels with the card
 to another board and is visible on another machine. The copy's directory is not
 written to the card — a path means nothing on another machine; it is shown on
 the card's stamp and in the terminal panel.

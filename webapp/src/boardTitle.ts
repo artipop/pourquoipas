@@ -1,8 +1,8 @@
 // A board is told from another by its name, so two boards may not share one.
 //
 // It is a rule about a person's own list rather than about the data: nothing
-// breaks when two boards are called «Разработка» — the app addresses everything
-// by id — but the sidebar, the card's «перенести на доску» and the phone's
+// breaks when two boards are called the developer template — the app addresses everything
+// by id — but the sidebar, the card's move-to-board list and the phone's
 // board list all become a guess, and a board made from a template arrives
 // carrying the template's name, so the second one collides by default.
 //

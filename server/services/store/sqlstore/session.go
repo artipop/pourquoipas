@@ -102,6 +102,18 @@ func (s *SQLStore) deleteSession(db sq.BaseRunner, sessionID string) error {
 	return err
 }
 
+// deleteSessionsForUser is the other half of deactivating an account: every
+// user read already filters delete_at = 0, so login stops working by itself,
+// but a session already in somebody's browser would go on working until it
+// expired — three days by default.
+func (s *SQLStore) deleteSessionsForUser(db sq.BaseRunner, userID string) error {
+	query := s.getQueryBuilder(db).Delete("sessions").
+		Where(sq.Eq{"user_id": userID})
+
+	_, err := query.Exec()
+	return err
+}
+
 func (s *SQLStore) cleanUpSessions(db sq.BaseRunner, expireTimeSeconds int64) error {
 	query := s.getQueryBuilder(db).Delete("sessions").
 		Where(sq.Lt{"update_at": utils.GetMillis() - utils.SecondsToMillis(expireTimeSeconds)})

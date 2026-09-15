@@ -1,7 +1,6 @@
 // The Wails-generated Go bindings are PascalCase methods, not constructors.
 /* eslint-disable new-cap */
-import {Board, IPropertyTemplate} from '../../blocks/board'
-import mutator from '../../mutator'
+import {Board} from '../../blocks/board'
 
 import {agentBindings} from './bindings'
 import {invalidateBoardAgents} from './boardAgents'
@@ -23,18 +22,12 @@ import {invalidateBoardAgents} from './boardAgents'
 // the machine is — so the sync moved to where a board actually is: the board's
 // own automation screen, and the moment somebody adds an agent from a card.
 
-// The property this used to keep. Still named here because a board that has one
-// is a board this app made, and taking it away is the other half of the move.
-const RETIRED_AGENT_PROPERTY = 'Agent'
-
 type SyncResult = {
 
     // How many agent accounts had to be created. Zero is the ordinary case and
     // is worth saying nothing about.
     accounts: number
 
-    // Whether the retired «Agent» field was taken off the board. Once.
-    retired: boolean
 }
 
 // syncAgentsToBoard is idempotent: a board that already knows every agent is
@@ -42,7 +35,7 @@ type SyncResult = {
 // churning the board or its undo history.
 export async function syncAgentsToBoard(board: Board): Promise<SyncResult> {
     const bindings = agentBindings()
-    const result: SyncResult = {accounts: 0, retired: false}
+    const result: SyncResult = {accounts: 0}
     if (!bindings?.ListAgents || !board?.id) {
         return result
     }
@@ -58,30 +51,5 @@ export async function syncAgentsToBoard(board: Board): Promise<SyncResult> {
     // has to know about, one way or the other.
     invalidateBoardAgents()
 
-    result.retired = await retireAgentProperty(board)
     return result
-}
-
-// retireAgentProperty takes the old field off a board that still carries it.
-// The values go with it, which is the point: a card that named an agent there
-// now names one in «Кто занимается», and leaving a second field on the board
-// would leave two answers to the same question — the thing this removes.
-//
-// Exported because a board loses it the moment it is opened, not only when its
-// automation screen is: a field deleted on one board and still on the next four
-// is a deletion nobody can trust.
-export async function retireAgentProperty(board: Board): Promise<boolean> {
-    const retired = board.cardProperties.find((p: IPropertyTemplate) =>
-        p.name.trim().toLowerCase() === RETIRED_AGENT_PROPERTY.toLowerCase() &&
-        (p.type === 'select' || p.type === 'multiSelect'))
-    if (!retired) {
-        return false
-    }
-    await mutator.updateBoardCardProperties(
-        board.id,
-        board.cardProperties,
-        board.cardProperties.filter((p: IPropertyTemplate) => p.id !== retired.id),
-        'retire the Agent field',
-    )
-    return true
 }

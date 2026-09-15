@@ -17,13 +17,14 @@ import fbRoute from './route'
 // xterm.js. Its own route so the window is just a URL — and lazily loaded so a
 // browser build, which cannot open one, never pays for the emulator.
 const TerminalPage = lazy(() => import('./components/acp/terminalPage'))
+const DiffPage = lazy(() => import('./components/acp/diffPage'))
 
 // The board on a phone: what is waiting for a person, and the terminals it is
 // waiting in. Lazy for the same reason — a desktop window never opens these,
 // and a browser build should not carry them.
 const MobilePage = lazy(() => import('./pages/mobile/mobilePage'))
 
-// The dialog the system's «Поделиться» opens: a link, and the one question of
+// The dialog the system's the share dialog opens: a link, and the one question of
 // which board it goes on. Lazy like the other two — the board itself never
 // shows it, and it is opened by the app in a window of its own.
 const SharePage = lazy(() => import('./pages/share/sharePage'))
@@ -87,6 +88,15 @@ const routes = [
         component: () => (
             <Loading fallback={null}>
                 <TerminalPage/>
+            </Loading>
+        ),
+    }),
+
+    fbRoute({
+        path: '/acp/diff/:cardId',
+        component: () => (
+            <Loading fallback={null}>
+                <DiffPage/>
             </Loading>
         ),
     }),

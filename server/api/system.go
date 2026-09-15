@@ -38,17 +38,7 @@ func (a *API) handlePing(w http.ResponseWriter, r *http.Request) {
 	// responses:
 	//   '200':
 	//     description: success
-	serverMetadata := a.app.GetServerMetadata()
-
-	if a.singleUserToken != "" {
-		serverMetadata.SKU = "personal_desktop"
-	}
-
-	if serverMetadata.Edition == "plugin" {
-		serverMetadata.SKU = "suite"
-	}
-
-	bytes, err := json.Marshal(serverMetadata)
+	bytes, err := json.Marshal(a.app.GetServerMetadata())
 	if err != nil {
 		a.errorResponse(w, r, err)
 	}

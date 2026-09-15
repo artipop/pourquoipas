@@ -43,7 +43,7 @@ export type BindingCard = {
 
     // The way back to whatever brought the card. The Go side resolves it off
     // the board's url property, so this screen never has to know what that
-    // property is called — it used to look for one named «Ссылка», and showed
+    // property is called — it used to look for one named the link property, and showed
     // nothing on a board that called it anything else.
     link?: string
     properties?: {[name: string]: string}
@@ -82,8 +82,7 @@ export function listBoardCards(boardId: string): Promise<BindingCard[]> {
     return readList<BindingCard>(bindings?.ListBoardCards && (() => bindings.ListBoardCards!(boardId)))
 }
 
-// moveCardToBoard is the phone's half of the card menu's «Переместить на
-// доску…», and it is the same move: the card keeps its id, so its comments
+// moveCardToBoard is the phone's half of the card menu's the move-to-board item, and it is the same move: the card keeps its id, so its comments
 // come with it and the source that made it still points at it.
 export async function moveCardToBoard(cardId: string, boardId: string, column: string): Promise<void> {
     const bindings = agentBindings()

@@ -162,9 +162,11 @@ exports[`src/component/kanban/kanban > return kanban and change title on KanbanC
         <button
           type="button"
         >
-          
+          <i
+            class="CompassIcon icon-plus AddIcon"
+          />
           <span>
-            + Add a group
+            Add a group
           </span>
           
           <!---->
@@ -266,9 +268,11 @@ exports[`src/component/kanban/kanban > return kanban and change title on KanbanC
         <button
           type="button"
         >
-          
+          <i
+            class="CompassIcon icon-plus AddIcon"
+          />
           <span>
-            + New
+            New
           </span>
           
           <!---->
@@ -322,9 +326,11 @@ exports[`src/component/kanban/kanban > return kanban and change title on KanbanC
         <button
           type="button"
         >
-          
+          <i
+            class="CompassIcon icon-plus AddIcon"
+          />
           <span>
-            + New
+            New
           </span>
           
           <!---->
@@ -367,7 +373,6 @@ exports[`src/component/kanban/kanban > return kanban and change title on KanbanC
       </div>
       <!---->
     </div>
-    
   </div>
 </div>
 `;
@@ -717,9 +722,11 @@ exports[`src/component/kanban/kanban > return kanban and click on KanbanCalculat
         <button
           type="button"
         >
-          
+          <i
+            class="CompassIcon icon-plus AddIcon"
+          />
           <span>
-            + Add a group
+            Add a group
           </span>
           
           <!---->
@@ -821,9 +828,11 @@ exports[`src/component/kanban/kanban > return kanban and click on KanbanCalculat
         <button
           type="button"
         >
-          
+          <i
+            class="CompassIcon icon-plus AddIcon"
+          />
           <span>
-            + New
+            New
           </span>
           
           <!---->
@@ -877,9 +886,11 @@ exports[`src/component/kanban/kanban > return kanban and click on KanbanCalculat
         <button
           type="button"
         >
-          
+          <i
+            class="CompassIcon icon-plus AddIcon"
+          />
           <span>
-            + New
+            New
           </span>
           
           <!---->
@@ -922,7 +933,6 @@ exports[`src/component/kanban/kanban > return kanban and click on KanbanCalculat
       </div>
       <!---->
     </div>
-    
   </div>
 </div>
 `;
@@ -1083,9 +1093,11 @@ exports[`src/component/kanban/kanban > should match snapshot 1`] = `
         <button
           type="button"
         >
-          
+          <i
+            class="CompassIcon icon-plus AddIcon"
+          />
           <span>
-            + Add a group
+            Add a group
           </span>
           
           <!---->
@@ -1187,9 +1199,11 @@ exports[`src/component/kanban/kanban > should match snapshot 1`] = `
         <button
           type="button"
         >
-          
+          <i
+            class="CompassIcon icon-plus AddIcon"
+          />
           <span>
-            + New
+            New
           </span>
           
           <!---->
@@ -1243,9 +1257,11 @@ exports[`src/component/kanban/kanban > should match snapshot 1`] = `
         <button
           type="button"
         >
-          
+          <i
+            class="CompassIcon icon-plus AddIcon"
+          />
           <span>
-            + New
+            New
           </span>
           
           <!---->
@@ -1288,7 +1304,6 @@ exports[`src/component/kanban/kanban > should match snapshot 1`] = `
       </div>
       <!---->
     </div>
-    
   </div>
 </div>
 `;
@@ -1577,7 +1592,6 @@ exports[`src/component/kanban/kanban > should match snapshot without permissions
       </div>
       <!---->
     </div>
-    
   </div>
 </div>
 `;

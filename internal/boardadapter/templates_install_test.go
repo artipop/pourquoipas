@@ -101,7 +101,7 @@ func TestTemplatesAreInstalledOnceAndStayThere(t *testing.T) {
 	a := newTestApp(t)
 	logger, _ := mlog.NewLogger()
 
-	if err := ImportTemplates(a, logger); err != nil {
+	if err := ImportTemplates(a, logger, SourceLanguage); err != nil {
 		t.Fatalf("first launch: %v", err)
 	}
 	first := installedTemplates(t, a)
@@ -131,7 +131,7 @@ func TestTemplatesAreInstalledOnceAndStayThere(t *testing.T) {
 	// A second launch must find them and leave them alone — including their
 	// ids, since a board somebody made from one keeps no link to it but the
 	// registry's routes are filed under the board they were taken from.
-	if err := ImportTemplates(a, logger); err != nil {
+	if err := ImportTemplates(a, logger, SourceLanguage); err != nil {
 		t.Fatalf("second launch: %v", err)
 	}
 	for slug, board := range installedTemplates(t, a) {
@@ -141,18 +141,57 @@ func TestTemplatesAreInstalledOnceAndStayThere(t *testing.T) {
 	}
 }
 
+// A person switches the app to Russian, and the templates are boards rather
+// than catalogue strings: nothing about the files changed, so only the language
+// recorded on the installed copy can say they are now in the wrong one.
+func TestChangingTheLanguageReinstallsTheTemplates(t *testing.T) {
+	a := newTestApp(t)
+	logger, _ := mlog.NewLogger()
+	if err := ImportTemplates(a, logger, SourceLanguage); err != nil {
+		t.Fatal(err)
+	}
+	before := installedTemplates(t, a)
+	if title := before["developer-tasks"].Title; title != "Development" {
+		t.Fatalf("installed as %q", title)
+	}
+
+	if err := ImportTemplates(a, logger, "ru"); err != nil {
+		t.Fatal(err)
+	}
+	after := installedTemplates(t, a) // fails the test if any slug is there twice
+	if len(after) != len(before) {
+		t.Fatalf("%d templates installed, expected %d", len(after), len(before))
+	}
+	dev := after["developer-tasks"]
+	if dev.Title != "Разработка" {
+		t.Errorf("the Russian copy is called %q", dev.Title)
+	}
+	if templateBoardLanguage(dev) != "ru" {
+		t.Errorf("it says it is in %q", templateBoardLanguage(dev))
+	}
+
+	// And a second launch in the same language leaves them alone, or every
+	// start would delete and recreate five boards.
+	if err := ImportTemplates(a, logger, "ru"); err != nil {
+		t.Fatal(err)
+	}
+	if again := installedTemplates(t, a)["developer-tasks"]; again.ID != dev.ID {
+		t.Error("the Russian copy was reinstalled on the next launch")
+	}
+}
+
 // The upgrade path: an edited template reaches an install that already has the
 // old one, and reaches it as a replacement rather than as a second board with
 // the same name.
 func TestABumpedVersionReplacesTheInstalledCopy(t *testing.T) {
 	a := newTestApp(t)
 	logger, _ := mlog.NewLogger()
-	if err := importTemplates(a, logger, 1); err != nil {
+	if err := importTemplates(a, logger, 1, SourceLanguage); err != nil {
 		t.Fatal(err)
 	}
 	before := installedTemplates(t, a)
 
-	if err := importTemplates(a, logger, 2); err != nil {
+	if err := importTemplates(a, logger, 2, SourceLanguage); err != nil {
 		t.Fatal(err)
 	}
 	after := installedTemplates(t, a) // fails the test if any slug is there twice
@@ -174,18 +213,18 @@ func TestABumpedVersionReplacesTheInstalledCopy(t *testing.T) {
 func TestAnInstalledTemplateKeepsItsCardsAndAutomation(t *testing.T) {
 	a := newTestApp(t)
 	logger, _ := mlog.NewLogger()
-	if err := ImportTemplates(a, logger); err != nil {
+	if err := ImportTemplates(a, logger, SourceLanguage); err != nil {
 		t.Fatal(err)
 	}
 
 	board := installedTemplates(t, a)["home-chores"]
 	if board == nil {
-		t.Fatal("«Домашние дела» is not installed")
+		t.Fatal("«Личное» is not installed")
 	}
-	if _, ok := board.Properties["xciiiColumns"]; !ok {
+	if _, ok := board.Properties["columns"]; !ok {
 		t.Error("the board arrived without the columns it runs")
 	}
-	if _, ok := board.Properties["xciiiFlows"]; !ok {
+	if _, ok := board.Properties["flows"]; !ok {
 		t.Error("the board arrived without its routes")
 	}
 	if len(board.CardProperties) == 0 {
@@ -201,70 +240,8 @@ func TestAnInstalledTemplateKeepsItsCardsAndAutomation(t *testing.T) {
 	}
 }
 
-// A board somebody already made from the old developer template keeps saying
-// «Progress Tracker» for ever unless a launch mends it: the version bump only
-// replaces the template, and the board is the user's. Renamed only while the
-// title is still byte-equal to what the file shipped — a name the person
-// changed is theirs.
-func TestALegacyViewNameIsMendedOnLaunch(t *testing.T) {
-	a := newTestApp(t)
-	logger, _ := mlog.NewLogger()
-	if err := ImportTemplates(a, logger); err != nil {
-		t.Fatal(err)
-	}
-
-	template := installedTemplates(t, a)["developer-tasks"]
-	if template == nil {
-		t.Fatal("developer-tasks is not installed")
-	}
-	bab, _, err := a.DuplicateBoard(template.ID, model.SingleUser, model.GlobalTeamID, false)
-	if err != nil {
-		t.Fatal(err)
-	}
-	board := bab.Boards[0]
-
-	// An install that predates version 16: its main view still carries the
-	// upstream name, and a second view carries one the person typed.
-	views, err := a.GetBlocks(board.ID, "", model.TypeView)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(views) < 2 {
-		t.Fatalf("the board arrived with %d views", len(views))
-	}
-	old, kept := "Progress Tracker", "Задачи мои, не трогать"
-	if _, err = a.PatchBlock(views[0].ID, &model.BlockPatch{Title: &old}, model.SystemUserID); err != nil {
-		t.Fatal(err)
-	}
-	if _, err = a.PatchBlock(views[1].ID, &model.BlockPatch{Title: &kept}, model.SystemUserID); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = ImportTemplates(a, logger); err != nil {
-		t.Fatal(err)
-	}
-
-	views, err = a.GetBlocks(board.ID, "", model.TypeView)
-	if err != nil {
-		t.Fatal(err)
-	}
-	titles := map[string]bool{}
-	for _, view := range views {
-		titles[view.Title] = true
-	}
-	if titles["Progress Tracker"] {
-		t.Errorf("the legacy view kept its English name: %v", titles)
-	}
-	if !titles["Задачи"] {
-		t.Errorf("the legacy view was not renamed to «Задачи»: %v", titles)
-	}
-	if !titles[kept] {
-		t.Errorf("a view the person renamed was touched: %v", titles)
-	}
-}
-
-// «Сохранить как шаблон…» copies the board, properties and all — and a board
-// made from «Разработка» carries the marker that says it *is* «Разработка». So
+// the save-as-template item copies the board, properties and all — and a board
+// made from the developer template carries the marker that says it *is* the developer template. So
 // a saved copy claimed to be one of ours: three of them stood in the picker
 // under one name, and the importer kept replacing whichever came last while the
 // rest stayed for ever.
@@ -275,7 +252,7 @@ func TestALegacyViewNameIsMendedOnLaunch(t *testing.T) {
 func TestATemplateSomebodySavedStopsClaimingToBeOurs(t *testing.T) {
 	a := newTestApp(t)
 	logger, _ := mlog.NewLogger()
-	if err := ImportTemplates(a, logger); err != nil {
+	if err := ImportTemplates(a, logger, SourceLanguage); err != nil {
 		t.Fatal(err)
 	}
 	ours := installedTemplates(t, a)["developer-tasks"]
@@ -298,7 +275,7 @@ func TestATemplateSomebodySavedStopsClaimingToBeOurs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := ImportTemplates(a, logger); err != nil {
+	if err := ImportTemplates(a, logger, SourceLanguage); err != nil {
 		t.Fatal(err)
 	}
 
@@ -327,7 +304,7 @@ func TestATemplateSomebodySavedStopsClaimingToBeOurs(t *testing.T) {
 func TestATemplateThisBuildNoLongerShipsIsRemoved(t *testing.T) {
 	a := newTestApp(t)
 	logger, _ := mlog.NewLogger()
-	if err := ImportTemplates(a, logger); err != nil {
+	if err := ImportTemplates(a, logger, SourceLanguage); err != nil {
 		t.Fatal(err)
 	}
 
@@ -350,7 +327,7 @@ func TestATemplateThisBuildNoLongerShipsIsRemoved(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := ImportTemplates(a, logger); err != nil {
+	if err := ImportTemplates(a, logger, SourceLanguage); err != nil {
 		t.Fatal(err)
 	}
 

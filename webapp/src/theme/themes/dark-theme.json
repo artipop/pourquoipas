@@ -1,0 +1,51 @@
+{
+  "id": "dark-theme",
+  "name": "XCIII — экран",
+  "type": "dark",
+
+  "centerChannelBg": "#0c0c0e",
+  "centerChannelColor": "#e9e9ec",
+  "surfaceBg": "#18181b",
+
+  "sidebarBg": "#08080a",
+  "sidebarText": "#e9e9ec",
+  "sidebarUnreadText": "#ffffff",
+  "sidebarTextHoverBg": "#18181b",
+  "sidebarTextActiveBorder": "#e24234",
+  "sidebarTextActiveColor": "#ffffff",
+  "sidebarHeaderBg": "#08080a",
+  "sidebarTeamBarBg": "#050506",
+  "sidebarHeaderTextColor": "#e9e9ec",
+
+  "buttonBg": "#e24234",
+  "buttonColor": "#08080a",
+  "linkColor": "#e24234",
+  "visitedLinkColor": "#b09cff",
+
+  "errorTextColor": "#ff8ca0",
+  "dndIndicator": "#ff8ca0",
+  "awayIndicator": "#ffb44c",
+  "onlineIndicator": "#3db887",
+
+  "mentionBg": "#e24234",
+  "mentionBj": "#e24234",
+  "mentionColor": "#08080a",
+  "mentionHighlightBg": "#3e3618",
+  "mentionHighlightLink": "#b09cff",
+  "newMessageSeparator": "#e24234",
+
+  "shadowColor": "#000000",
+
+  "labelDefault": "#1c1c20",
+  "labelGray": "#2a2a2e",
+  "labelBrown": "#37291d",
+  "labelOrange": "#432c19",
+  "labelYellow": "#3e3618",
+  "labelGreen": "#16321f",
+  "labelBlue": "#16293f",
+  "labelPurple": "#292148",
+  "labelPink": "#3d1e33",
+  "labelRed": "#401f22",
+
+  "codeTheme": "monokai"
+}

@@ -27,7 +27,7 @@ import (
 // upgrade, so a board served through it could never carry /ws; served beside
 // it, it can, and no window.webSocketBaseURL has to name a second port.
 //
-// The address is XCIII_SERVER_HOST/PORT, or the WAILS_SERVER_* names for
+// The address is SERVER_HOST/SERVER_PORT, or the WAILS_SERVER_* names for
 // familiarity. Whichever is used is then removed from the environment, since
 // Wails' own server reads those too and would otherwise publish the private
 // half of this on the same interface.
@@ -39,17 +39,20 @@ type origin struct {
 	tailnet     *tailnetController
 	privatePort int
 	host        string
+	// session says whether a request carries a live board session; nil in
+	// single-user mode, where nothing does. See identity.go.
+	session func(string) bool
 }
 
 const defaultServerPort = 8080
 
-func newOrigin(board, acp, ingest http.Handler, tailnet *tailnetController) (*origin, error) {
-	host := envOnce("XCIII_SERVER_HOST", "WAILS_SERVER_HOST")
+func newOrigin(board, acp, ingest http.Handler, tailnet *tailnetController, session func(string) bool) (*origin, error) {
+	host := envOnce("SERVER_HOST", "WAILS_SERVER_HOST")
 	if host == "" {
 		host = "localhost"
 	}
 	port := defaultServerPort
-	if raw := envOnce("XCIII_SERVER_PORT", "WAILS_SERVER_PORT"); raw != "" {
+	if raw := envOnce("SERVER_PORT", "WAILS_SERVER_PORT"); raw != "" {
 		parsed, err := strconv.Atoi(raw)
 		if err != nil || parsed < 1 || parsed > 65535 {
 			return nil, fmt.Errorf("front door: bad port %q", raw)
@@ -78,6 +81,7 @@ func newOrigin(board, acp, ingest http.Handler, tailnet *tailnetController) (*or
 		tailnet:     tailnet,
 		privatePort: private,
 		host:        net.JoinHostPort(host, strconv.Itoa(port)),
+		session:     session,
 	}, nil
 }
 
@@ -111,7 +115,7 @@ func (o *origin) start() {
 		log.Fatalf("front door: %v", err)
 	}
 	wails := httputil.NewSingleHostReverseProxy(target)
-	server := &http.Server{Handler: newFrontDoor(wails, o.acp, o.ingest, o.board, o.host)}
+	server := &http.Server{Handler: newFrontDoor(wails, o.acp, o.ingest, o.board, o.host, o.session)}
 	go func() {
 		if err := server.Serve(o.listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Fatalf("front door: %v", err)
@@ -121,7 +125,7 @@ func (o *origin) start() {
 	// are keyed to the authority the page is served under, and there it is a
 	// tailnet name, not the address this build was published under.
 	o.tailnet.publish(func(allowedHost string) http.Handler {
-		return newFrontDoor(wails, o.acp, o.ingest, o.board, allowedHost)
+		return newFrontDoor(wails, o.acp, o.ingest, o.board, allowedHost, o.session)
 	})
 }
 
@@ -144,6 +148,10 @@ func newMainWindow(_ *application.App, url string) {
 // openTerminalWindow opens nothing in a server build: there are no windows, so
 // the page that asked opens a browser tab at the same address instead.
 func openTerminalWindow(_ *application.App, _ acp.TerminalInfo, _ string) bool { return false }
+
+// openDiffWindow, likewise: the page is a route the board already serves, and a
+// browser opens it itself.
+func openDiffWindow(_ *application.App, _, _, _ string) {}
 
 // openShareWindow has no window to open. A server build is reached with a
 // browser, and the share dialog is a URL like any other page of it.

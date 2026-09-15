@@ -11,6 +11,7 @@ import (
 	"github.com/artipop/xciii/server/model"
 
 	"github.com/artipop/xciii/internal/acp"
+	"github.com/artipop/xciii/internal/boardmodel"
 )
 
 // Agents as board users: a registered agent gets a board account named
@@ -124,8 +125,10 @@ func (b *EventsBackend) ensureAccount(agent acp.AgentUser) (acp.AgentUser, error
 			return agent, err
 		}
 		// The account exists to be assigned, not to be logged into: the
-		// password is random and never shown anywhere.
-		if err := a.RegisterUser(agent.Username, agent.Username+"@"+agentEmailDomain, password); err != nil {
+		// password is random and never shown anywhere. Through the machine
+		// door rather than the person one, so that provisioning an agent can
+		// never claim an install nobody has registered on yet.
+		if err := a.RegisterMachineUser(agent.Username, agent.Username+"@"+agentEmailDomain, password, model.UserKindAgent); err != nil {
 			return agent, fmt.Errorf("создание пользователя %q: %w", agent.Username, err)
 		}
 		if user, err = a.GetUserByUsername(agent.Username); err != nil || user == nil {
@@ -137,10 +140,9 @@ func (b *EventsBackend) ensureAccount(agent acp.AgentUser) (acp.AgentUser, error
 	return agent, nil
 }
 
-// AssignCardAgent writes the agent into the card's person property — «Кто
-// занимается», or whatever this board calls it: the property is found by its
-// *type*, never by name, because "Assignee" and «Исполнитель» are each right
-// for half the boards there are. A board with no person property has no field
+// AssignCardAgent writes the agent into the card's person property, whatever
+// this board calls it: the property is found by its *type*, never by name,
+// because every board names that field for itself. A board with no person property has no field
 // to keep truthful, and that is not an error.
 //
 // The write is silent (disableNotify): it is the machine recording who a stage
@@ -199,9 +201,9 @@ func (b *EventsBackend) AssignCardAgent(ctx context.Context, cardID string, agen
 		value = []string{agent.UserID}
 	}
 	patch := &model.CardPatch{UpdatedProperties: map[string]any{person.ID: value}}
-	if err := mergeCardProperties(a, cardID, patch); err != nil {
-		return err
-	}
+	// The card was read at the top of this function; merging against it is what
+	// keeps a one-key patch from erasing every other property.
+	boardmodel.MergeCardProperties(boardmodel.RawProperties(block), patch)
 	blockPatch, err := model.CardPatch2BlockPatch(patch)
 	if err != nil {
 		return err
@@ -240,8 +242,9 @@ func (w *Writer) EnsureSourceUser(ctx context.Context, boardID, source string) (
 		if err != nil {
 			return "", err
 		}
-		// The account exists to be named, not to be logged into.
-		if err := w.app.RegisterUser(username, username+"@"+sourceEmailDomain, password); err != nil {
+		// The account exists to be named, not to be logged into. The machine
+		// door, for the reason EnsureAgentAccounts gives.
+		if err := w.app.RegisterMachineUser(username, username+"@"+sourceEmailDomain, password, model.UserKindSource); err != nil {
 			return "", fmt.Errorf("создание пользователя %q: %w", username, err)
 		}
 		if user, err = w.app.GetUserByUsername(username); err != nil || user == nil {
@@ -266,7 +269,7 @@ func (w *Writer) EnsureSourceUser(ctx context.Context, boardID, source string) (
 // sourceUsername is the account name a source gets: its own name, reduced to
 // what a username may hold. Its own name and not a prefixed one, because the
 // board shows the username wherever it names the author — the group headings of
-// the inbox among them — and «source-почта» is not what the source is called.
+// the inbox among them — and a prefixed name is not what the source is called.
 //
 // This is the agents' arrangement again: an agent's account is its own name
 // too. Two of them called the same thing would share an identity, which is why

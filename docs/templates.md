@@ -35,13 +35,13 @@ second of them a copy nobody was looking at.
 | **Rules** | conditions on those arrows | the same outcome forks on the card's own properties, or on what the agent wrote |
 | **Questions to ask** | the list in *«Шаблон»*, the one thing edited there | the setup wizard walks exactly these, in this order |
 
-The first two live in the template board's own properties (`xciiiColumns`,
-`xciiiFlows`), and a board made from it takes them into this machine's registry the
+The first two live in the template board's own properties (`columns`,
+`flows`), and a board made from it takes them into this machine's registry the
 first time it is looked at. From then on they are the board's own: editing them
 there does not touch the template, and editing the template does not reach back
 into boards already made.
 
-A fourth key sits beside them: **`xciiiProjectProperty`** is the id of the card
+A fourth key sits beside them: **`projectProperty`** is the id of the card
 property that holds the projects. Making a board from a template duplicates it
 without renumbering the card properties, so the id the template writes is the id
 the new board has, and nothing has to recognise the field by what it is called —
@@ -114,7 +114,7 @@ carry is the machine: the agents and deploy targets it named live in
 board they were added on, and a board made from the template asks for them
 again.
 
-A copy also carries **the marker** (`xciiiTemplate`), and that one is not the
+A copy also carries **the marker** (`template`), and that one is not the
 copy's to keep. A board made from «Разработка» carries the marker, a copy takes
 the board's properties with it, and the copy then claims to *be* «Разработка»:
 three templates of that name stood in the picker, and the importer maintained
@@ -130,8 +130,9 @@ where it can be deleted.
 
 ## What is offered in the picker
 
-The templates the install ships — «Разработка», «Контент», «Домашние дела» —
-and every template you have made. Which is which is read off
+The templates the install ships — Development, Content and Personal, which a
+Russian install reads as «Разработка», «Контент» and «Личное» — and every
+template you have made. Which is which is read off
 **who created it** and not off its version stamp: the importer files its own
 under the system user, while a version is a thing a template can inherit — a
 board carries the version of the template it came from, and a template saved
@@ -140,9 +141,21 @@ in neither list. The rest of Focalboard's
 own defaults are hidden: they know nothing about columns that run an agent, so
 a board made from one arrives with no automation at all.
 
-«Контент» is also the smallest demonstration of setup following the flow: its
-routes are «Через бриф» (Бриф → Черновик → На вычитке, failures to «Не пошло»)
-and «Сразу черновик», both agent-written and person-read, with no deploy and
-no browser test anywhere — so its `xciiiSetup` declares only
+**They arrive in the language the app is read in.** The files are written once,
+in English, and translated on the way in from a catalogue of words beside them
+(`internal/boardadapter/templates/i18n/*.json`, `templatetext.go`, and
+[i18n.md](i18n.md) for how to add one): the catalogue is keyed by the very
+string the file carries, so a template is one board rather than a copy per
+language, and a string nobody has translated stays as the file wrote it.
+Switching the language in the settings reinstalls them — the boards a person
+already made are theirs and are untouched. Four names are deliberately
+left as they are, because this app finds them by name and not by id: «Входящие»,
+«Мои задачи» and the outcome field «Исход» with «прошло»/«не прошло»
+(`appGivenNames`, and «[Четыре имени](deferred.md)» in the deferred work).
+
+Content is also the smallest demonstration of setup following the flow: its
+routes are "Through a brief" (Brief → Draft → Proofreading, failures to
+"Dropped") and "Straight to a draft", both agent-written and person-read, with
+no deploy and no browser test anywhere — so its `setup` declares only
 project/agent/done, and the wizard for a board made from it asks for a folder
 and an agent and nothing else.

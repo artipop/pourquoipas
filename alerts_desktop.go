@@ -26,7 +26,7 @@ import (
 // would come out the same grey as the mark. macOS and Linux take one icon and
 // never ask for a second (their SetDarkModeIcon is SetIcon), so which ink is
 // right is ours to decide and ours to redecide when the system theme changes;
-// Windows keeps both and swaps them itself. build/appicon.py draws all four.
+// Windows keeps both and swaps them itself. tools/appicon draws all four.
 
 //go:embed build/tray/idle-light.png
 var trayIdleLight []byte
@@ -94,7 +94,7 @@ func initAlerts(wapp *application.App, app *App, mgr *acp.Manager) func() {
 	c.tray.SetMenu(c.menu(nil))
 
 	// **No click handler, deliberately.** Both buttons open the menu, and the
-	// way to the board is «Открыть» inside it.
+	// way to the board is the open item inside it.
 	//
 	// Left click opening the app directly is what this looked like it should
 	// do, and it is not reachable here. Everything the framework offers for a
@@ -104,7 +104,7 @@ func initAlerts(wapp *application.App, app *App, mgr *acp.Manager) func() {
 	// only takes the menu away from the left button (`systrayPreClickCallback`
 	// gives it native menu tracking exactly when no handler is set) and puts
 	// nothing in its place: the left button did nothing at all. Two buttons
-	// that both open a menu whose first item is «Открыть» is one click more
+	// that both open a menu whose first item is the open item is one click more
 	// and always works, which is the better trade.
 
 	// The list is re-read rather than taken from the payload: a wait ending and
@@ -263,7 +263,7 @@ func (c *alertController) menu(waiting []acp.Attention) *application.Menu {
 	// The way out, and the only one there is once the board's window is closed:
 	// the app goes on running without it, so ⌘Q has nothing to be pressed in
 	// front of. It also ends every agent CLI, which is why it is the last item
-	// and behind a separator rather than beside «Открыть».
+	// and behind a separator rather than beside the open item.
 	menu.AddSeparator()
 	menu.Add("Выход").OnClick(func(*application.Context) { go requestQuit(c.wapp) })
 	return menu
@@ -298,6 +298,11 @@ func (c *alertController) notificationClicked(res notifications.NotificationResu
 func (c *alertController) openWait(a acp.Attention) {
 	var err error
 	switch {
+	// Nothing is running on a handed-over card, so there is no terminal to
+	// open: what the person came for is the card, and the board is where it is
+	// (internal/acp/cardwait.go).
+	case a.Reason == acp.AttentionCard:
+		showMainWindow(c.wapp, c.app.originURL()+a.BoardID)
 	case a.TerminalID != "":
 		_, err = c.app.ShowTerminal(a.TerminalID)
 	case a.CardID != "":

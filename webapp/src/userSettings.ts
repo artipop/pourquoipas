@@ -4,6 +4,25 @@ import {Utils} from './utils'
 export enum UserSettingKey {
     Language = 'language',
     Theme = 'theme',
+
+    // Light, dark or whichever the system is set to. Beside `Theme` rather
+    // than folded into it, because which design and which polarity are two
+    // questions: following the system used to mean giving up every design but
+    // the product's own.
+    ThemeMode = 'themeMode',
+
+    // The themes a person brought, as a JSON array: id, name and the text of
+    // both halves. One key rather than three per theme, because the install
+    // reads its settings as a flat map and a list is one value.
+    CustomThemes = 'customThemes',
+
+    // What one slot held before the list did. All three are read once at
+    // startup and never written again: an install that rolls back to a build
+    // before the list still finds its theme where it left it.
+    CustomThemeLight = 'customThemeLight',
+    CustomThemeDark = 'customThemeDark',
+    CustomThemeName = 'customThemeName',
+    CustomTheme = 'customTheme',
     LastTeamId = 'lastTeamId',
     LastBoardId = 'lastBoardId',
     LastViewId = 'lastViewId',
@@ -27,12 +46,18 @@ export enum UserSettingKey {
 // Go side. localStorage is only a boot-time cache for these: the desktop
 // window opens on a loopback origin with a random port, and everything the
 // browser stored under the previous one is unreachable by the next launch —
-// docs/deferred.md, «Уйти из localStorage». The rest of the enum stays
+// docs/deferred.md, moving off localStorage. The rest of the enum stays
 // browser-only on purpose: the emoji-mart keys are the library's own, and
 // welcomePageViewed lives in the user's server-side config.
 const installKept = new Set<string>([
     UserSettingKey.Language,
     UserSettingKey.Theme,
+    UserSettingKey.ThemeMode,
+    UserSettingKey.CustomThemes,
+    UserSettingKey.CustomThemeLight,
+    UserSettingKey.CustomThemeDark,
+    UserSettingKey.CustomThemeName,
+    UserSettingKey.CustomTheme,
     UserSettingKey.NameFormat,
     UserSettingKey.LastTeamId,
     UserSettingKey.LastBoardId,
@@ -69,6 +94,27 @@ export async function hydrateUserSettings(): Promise<void> {
     }
 }
 
+// reportLanguage tells the install which language the page settled on, whether
+// or not anybody picked it: the shipped board templates are boards rather than
+// catalogue strings, so the Go side installs them in a language — and the
+// webview's own locale, which is the answer when nobody picked, is something
+// only this side can read. It stores nothing; a resolved default is not a
+// choice.
+//
+// Awaited before the first render, because the answer can mean five boards are
+// replaced: a page that has already read the old ones holds boards that no
+// longer exist, and the template picker drew both languages at once. It resolves
+// at once where there is no Go side, and where nothing changed.
+export async function reportLanguage(lang: string): Promise<void> {
+    try {
+        // eslint-disable-next-line new-cap
+        await preferenceBindings()?.UseLanguage?.(lang)
+    } catch (e) {
+        // No Go side, or a binding that threw: the templates stay in the
+        // language they were installed in.
+    }
+}
+
 export class UserSettings {
     static get(key: UserSettingKey): string | null {
         return localStorage.getItem(key)
@@ -88,8 +134,13 @@ export class UserSettings {
         // the install remembers for the next one. Fire and forget — a
         // refused write must not block the switch being made.
         if (installKept.has(key)) {
-            // eslint-disable-next-line new-cap
-            preferenceBindings()?.SetUIPreference?.(key, value ?? '')?.catch?.(() => undefined)
+            try {
+                // eslint-disable-next-line new-cap
+                preferenceBindings()?.SetUIPreference?.(key, value ?? '')?.catch?.(() => undefined)
+            } catch (e) {
+                // A binding that throws on the way out rather than in its
+                // promise: the install goes without, this session keeps it.
+            }
         }
         notifySettingsChanged(key)
     }
@@ -108,6 +159,54 @@ export class UserSettings {
 
     static set theme(newValue: string | null) {
         UserSettings.set(UserSettingKey.Theme, newValue)
+    }
+
+    static get themeMode(): string | null {
+        return UserSettings.get(UserSettingKey.ThemeMode)
+    }
+
+    static set themeMode(newValue: string | null) {
+        UserSettings.set(UserSettingKey.ThemeMode, newValue)
+    }
+
+    static get customTheme(): string | null {
+        return UserSettings.get(UserSettingKey.CustomTheme)
+    }
+
+    static set customTheme(newValue: string | null) {
+        UserSettings.set(UserSettingKey.CustomTheme, newValue)
+    }
+
+    static get customThemes(): string | null {
+        return UserSettings.get(UserSettingKey.CustomThemes)
+    }
+
+    static set customThemes(newValue: string | null) {
+        UserSettings.set(UserSettingKey.CustomThemes, newValue)
+    }
+
+    static get customThemeLight(): string | null {
+        return UserSettings.get(UserSettingKey.CustomThemeLight)
+    }
+
+    static set customThemeLight(newValue: string | null) {
+        UserSettings.set(UserSettingKey.CustomThemeLight, newValue)
+    }
+
+    static get customThemeDark(): string | null {
+        return UserSettings.get(UserSettingKey.CustomThemeDark)
+    }
+
+    static set customThemeDark(newValue: string | null) {
+        UserSettings.set(UserSettingKey.CustomThemeDark, newValue)
+    }
+
+    static get customThemeName(): string | null {
+        return UserSettings.get(UserSettingKey.CustomThemeName)
+    }
+
+    static set customThemeName(newValue: string | null) {
+        UserSettings.set(UserSettingKey.CustomThemeName, newValue)
     }
 
     static get lastTeamId(): string | null {
@@ -188,7 +287,7 @@ export class UserSettings {
     }
 
     // On unless it has been turned off: a board with one folder has one answer
-    // to «где работать», and making a person give it on every card is asking a
+    // to where to work, and making a person give it on every card is asking a
     // question that has no second option. What is written is an ordinary value
     // on the card, so it is visible and can be changed or cleared — which is
     // why it is safe to write it without being asked.
@@ -239,8 +338,20 @@ export class UserSettings {
     }
 }
 
+// base64 of the settings as UTF-8 bytes, and not of the string itself: `btoa`
+// takes one byte per character and throws `InvalidCharacterError` on anything
+// above U+00FF. Nothing kept here had held free text until a theme could be
+// given a name, and `notifySettingsChanged` builds this blob on *every* write,
+// before it checks whether there is a native host to send it to — so naming a
+// theme «Ночная смена» threw on each keystroke. ASCII encodes identically
+// either way, so a host that was reading these before reads the same bytes.
 export function exportUserSettingsBlob(): string {
-    return window.btoa(exportUserSettings())
+    const bytes = new TextEncoder().encode(exportUserSettings())
+    let binary = ''
+    for (const byte of bytes) {
+        binary += String.fromCharCode(byte)
+    }
+    return window.btoa(binary)
 }
 
 function exportUserSettings(): string {
@@ -251,7 +362,10 @@ function exportUserSettings(): string {
 }
 
 export function importUserSettingsBlob(blob: string): string[] {
-    return importUserSettings(window.atob(blob))
+    const binary = window.atob(blob)
+    const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0))
+
+    return importUserSettings(new TextDecoder().decode(bytes))
 }
 
 function importUserSettings(json: string): string[] {

@@ -8,19 +8,19 @@ exports[`components/viewHeader/viewHeader > return viewHeader 1`] = `
     <div
       class="viewSelector"
     >
-      <input
-        class="Editable "
-        placeholder="Untitled View"
-        spellcheck=""
-        title="view title"
-      />
-      <!---->
       <div>
         <div
           aria-label="View menu"
           class="MenuWrapper"
           role="button"
         >
+          <div>
+            <span
+              class="viewTitle"
+            >
+              view title
+            </span>
+          </div>
           <button
             class="IconButton"
             type="button"
@@ -37,57 +37,10 @@ exports[`components/viewHeader/viewHeader > return viewHeader 1`] = `
         
         <!---->
       </div>
-      <!---->
     </div>
     <div
       class="octo-spacer"
     />
-    <div
-      aria-label="Properties menu"
-      class="MenuWrapper"
-      role="button"
-    >
-      <button
-        class="Button"
-        type="button"
-      >
-        
-        <span>
-          Properties
-        </span>
-        
-        <!---->
-      </button>
-      <!---->
-      
-      <!---->
-    </div>
-    <div
-      aria-label="menuwrapper"
-      class="MenuWrapper"
-      role="button"
-    >
-      <button
-        class="Button"
-        type="button"
-      >
-        
-        <span>
-          Group by: 
-          <span
-            id="groupByLabel"
-            style="color:rgb(var(--center-channel-color-rgb))"
-          >
-            Status
-          </span>
-        </span>
-        
-        <!---->
-      </button>
-      <!---->
-      
-      <!---->
-    </div>
     <div
       class="ModalWrapper"
     >
@@ -198,16 +151,27 @@ exports[`components/viewHeader/viewHeader > return viewHeader readonly 1`] = `
     <div
       class="viewSelector"
     >
-      <input
-        class="Editable readonly "
-        placeholder="Untitled View"
-        readonly=""
-        spellcheck=""
-        title="view title"
-      />
-      <!---->
-      
-      <!---->
+      <div>
+        <div
+          aria-label="View menu"
+          class="MenuWrapper"
+          role="button"
+        >
+          <div>
+            <span
+              class="viewTitle"
+            >
+              view title
+            </span>
+          </div>
+          <!---->
+          
+          <!---->
+        </div>
+        <!---->
+        
+        <!---->
+      </div>
     </div>
     <div
       class="octo-spacer"
@@ -243,20 +207,19 @@ exports[`components/viewHeader/viewHeader > return viewHeader without permission
     <div
       class="viewSelector"
     >
-      <input
-        class="Editable readonly "
-        placeholder="Untitled View"
-        readonly=""
-        spellcheck=""
-        title="view title"
-      />
-      <!---->
       <div>
         <div
           aria-label="View menu"
           class="MenuWrapper"
           role="button"
         >
+          <div>
+            <span
+              class="viewTitle"
+            >
+              view title
+            </span>
+          </div>
           <button
             class="IconButton"
             type="button"
@@ -273,7 +236,6 @@ exports[`components/viewHeader/viewHeader > return viewHeader without permission
         
         <!---->
       </div>
-      <!---->
     </div>
     <div
       class="octo-spacer"

@@ -91,7 +91,7 @@ func (a *App) PatchCard(cardPatch *model.CardPatch, cardID string, userID string
 // item the card came from — would be pointing at something deleted.
 //
 // Properties are carried over by *name*, because ids are the board's own: the
-// two boards' «Статус» are different properties with different options, and
+// two boards' the status property are different properties with different options, and
 // what a person means is the name they read. A property or option the new board
 // has not got is dropped, the way a card written from outside drops what the
 // board cannot hold — losing a field is better than refusing the move.
@@ -159,7 +159,7 @@ func (a *App) MoveCardToBoard(cardID, toBoardID, userID string) (*model.Card, er
 			a.wsAdapter.BroadcastBlockDelete(fromBoard.TeamID, block.ID, fromBoardID)
 		}
 		for _, block := range blocks {
-			a.wsAdapter.BroadcastBlockChange(toBoard.TeamID, block)
+			a.wsAdapter.BroadcastBlockChange(toBoard.TeamID, block, false)
 		}
 		return nil
 	})

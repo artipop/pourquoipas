@@ -273,7 +273,7 @@ const CalendarFullView = (props: Props): JSX.Element => {
     })
 
     // Everything FullCalendar writes itself — the month in the title, the
-    // weekday headings, «ещё N», which day a week starts on — comes from a
+    // weekday headings, an "N more" line, which day a week starts on — comes from a
     // locale of its own, and it ships with English alone. The definitions are
     // their own chunk, fetched only when the UI is not English, which is the
     // same bargain hooks/momentLocale.ts takes with moment's.

@@ -21,7 +21,11 @@ const cardFlow = {
 }
 
 function stubBindings(flow: unknown) {
-    const bindings = {GetCardFlow: vi.fn().mockResolvedValue(JSON.stringify(flow))}
+    const bindings = {
+        GetCardFlow: vi.fn().mockResolvedValue(JSON.stringify(flow)),
+        MarkCardOutcome: vi.fn().mockResolvedValue(undefined),
+        AnswerCardAsk: vi.fn().mockResolvedValue(undefined),
+    }
     anyWindow.go = {main: {App: bindings}}
     return bindings
 }
@@ -80,7 +84,7 @@ describe('components/acp/flowStrip', () => {
         await waitFor(() => expect(container).toBeEmptyDOMElement())
     })
 
-    // «Агент не запущен: …» used to be a comment on the card; it is the card's
+    // the "agent did not start" comment used to be a comment on the card; it is the card's
     // current state, so the strip says it — verbatim, since the reason arrives
     // as a whole sentence — and drops it as soon as the machinery moves on.
     test('a card whose stage would not start says why on the strip', async () => {
@@ -97,5 +101,75 @@ describe('components/acp/flowStrip', () => {
         render(() => wrapIntl(() => <FlowStrip cardId='card1'/>))
         await waitFor(() => expect(screen.getByText(/working now/)).toBeInTheDocument())
         expect(screen.queryByText(/агент не запущен/)).toBeNull()
+    })
+
+    // A stage where nobody works and nothing runs waits for a person to say how
+    // it went, and saying so used to mean opening the card, finding «Исход» and
+    // picking a value out of it. The route knows where each answer leads, so
+    // the card asks it as two buttons named by the stage they lead to.
+    test('a stage that waits for a person offers its two answers', async () => {
+        const bindings = stubBindings({
+            ...cardFlow,
+            marks: [
+                {value: 'не прошло', column: 'In Progress', forward: false},
+                {value: 'прошло', column: 'Deploy', forward: true},
+            ],
+        })
+        render(() => wrapIntl(() => <FlowStrip cardId='card-1'/>))
+
+        const back = await screen.findByRole('button', {name: /In Progress/})
+        expect(await screen.findByRole('button', {name: /Deploy/})).toBeInTheDocument()
+
+        // The arrow says which way, so the value does not have to be on the
+        // button — but it is what gets written.
+        back.click()
+        await waitFor(() => expect(bindings.MarkCardOutcome).toHaveBeenCalledWith('card-1', 'не прошло'))
+    })
+
+    // A transition may ask before it lets the card through, and the card is
+    // where it is answered: the question is drawn where the two outcome buttons
+    // are, and its answers are the same one-click chips.
+    test('a card held at a transition asks its question on the card', async () => {
+        const bindings = stubBindings({
+            ...cardFlow,
+            ask: {
+                questionId: 'q1',
+                text: 'Как агенту работать с папкой для этой карточки?',
+                column: 'In Progress',
+                options: [
+                    {value: 'worktree', label: 'отдельное рабочее дерево'},
+                    {value: 'branch', label: 'ветка в этой же папке'},
+                ],
+            },
+        })
+        render(() => wrapIntl(() => <FlowStrip cardId='card-1'/>))
+
+        expect(await screen.findByText('Как агенту работать с папкой для этой карточки?')).toBeInTheDocument();
+        (await screen.findByRole('button', {name: 'ветка в этой же папке'})).click()
+        await waitFor(() => expect(bindings.AnswerCardAsk).toHaveBeenCalledWith('card-1', 'q1', 'branch'))
+    })
+
+    // The card goes nowhere until the question is answered, so the two outcome
+    // buttons would be a second way to move it from under the question. Go
+    // leaves them out; this is the card taking that answer at face value.
+    test('a card being asked something offers no outcome buttons', async () => {
+        stubBindings({
+            ...cardFlow,
+            ask: {questionId: 'q1', text: 'Куда?', column: 'Deploy', options: [{value: 'a', label: 'A'}]},
+        })
+        render(() => wrapIntl(() => <FlowStrip cardId='card-1'/>))
+
+        await waitFor(() => expect(screen.getByText('Куда?')).toBeInTheDocument())
+        expect(screen.queryByRole('button', {name: /In Progress/})).toBeNull()
+    })
+
+    // A stage that decides for itself offers nothing: the agent reports, and
+    // two buttons beside a running session would be a second way to answer.
+    test('a working stage offers no answers', async () => {
+        stubBindings({...cardFlow, running: true, marks: [{value: 'прошло', column: 'Deploy', forward: true}]})
+        const {container} = render(() => wrapIntl(() => <FlowStrip cardId='card-1'/>))
+
+        await waitFor(() => expect(container.querySelector('.FlowStrip')).toBeInTheDocument())
+        expect(container.querySelector('.FlowStrip__mark')).toBeNull()
     })
 })

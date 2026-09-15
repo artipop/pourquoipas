@@ -39,7 +39,7 @@ type WorkdirEntry struct {
 
 	// Modes is how this folder is worked in when it is a repository, per board:
 	// WorkModeWorktree (a copy per card) or WorkModeBranch (a branch in place).
-	// Keyed by board because a folder marked «на всех досках» can want a copy
+	// Keyed by board because a folder marked shared with every board can want a copy
 	// per card where three people work it and a branch where one does.
 	Modes map[string]string `json:"modes,omitempty"`
 
@@ -152,7 +152,7 @@ type AgentEntry struct {
 	// folded into ProxyID (bindrefs.go); never written back.
 	ProxyName string `json:"proxyName,omitempty"`
 
-	// UserID is the agent's board account. It is what «Кто занимается» on a
+	// UserID is the agent's board account. It is what the assignee field on a
 	// card actually stores, so it — and not the username derived from Name — is
 	// how an assigned card finds its agent: renaming an agent must not
 	// unassign every card it was working on.
@@ -527,8 +527,8 @@ type acpAdapter struct {
 	// **It carries its own end-of-options marker**, because the task is a
 	// positional argument and everything before it on that command line is
 	// flags. `--mcp-config <configs...>` is variadic, so `claude --mcp-config
-	// f.json "почини логин"` reads the card's task as a second config file and
-	// dies with "MCP config file not found: почини логин" — the terminal opened
+	// f.json "fix the login"` reads the card's task as a second config file and
+	// dies with "MCP config file not found: fix the login" — the terminal opened
 	// and shut in the same breath, and every card of that board stalled saying
 	// the agent had not reported. Whatever this returns goes last, so the
 	// separator belongs to the kind that knows how its own parser spells one.
@@ -681,7 +681,7 @@ type Config struct {
 
 	// Columns is what happens in each column of a board (columns.go).
 	//
-	// Not in the file: a board's automation lives on the board (`xciiiColumns`)
+	// Not in the file: a board's automation lives on the board (`columns`)
 	// so it travels with it. This is the working copy; every edit is written
 	// through by persistBoardLocked.
 	Columns []ColumnSpec `json:"-"`
@@ -690,7 +690,7 @@ type Config struct {
 	// follows which, and on what event. A card without a matching flow still
 	// gets whatever its column does — a flow adds the transitions, not the
 	// behaviour. See flows.go.
-	// Not in the file: `xciiiFlows` on the board. See Columns.
+	// Not in the file: `flows` on the board. See Columns.
 	Flows []FlowEntry `json:"-"`
 
 	// BoardPrompts is that instruction, per board: the text prepended to every
@@ -698,7 +698,7 @@ type Config struct {
 	// prompt and the card task. Keyed by board id, empty for a board that
 	// never set one.
 	//
-	// Not in the file: `xciiiPrompt` on the board. See Columns.
+	// Not in the file: `prompt` on the board. See Columns.
 	BoardPrompts map[string]string `json:"-"`
 
 	// DeployPrompt is what a deploy session is told to do; the concrete facts
@@ -758,7 +758,7 @@ type Config struct {
 	PlanningTools            []string `json:"planningTools,omitempty"`
 	ShowThoughts             bool     `json:"showThoughts"`
 	// DebugLog records every ACP message to DebugLogPath (default
-	// <dataDir>/acp-debug.jsonl). Also switched on by XCIII_ACP_DEBUG.
+	// <dataDir>/acp-debug.jsonl). Also switched on by ACP_DEBUG.
 	DebugLog            bool   `json:"debugLog,omitempty"`
 	DebugLogPath        string `json:"debugLogPath,omitempty"`
 	WorktreeDir         string `json:"worktreeDir"`
@@ -767,20 +767,18 @@ type Config struct {
 
 // The column a card is dropped into to hand it to an agent. Work starts where
 // work normally starts on a board, rather than in a lane invented for agents.
-// The names are the ones the boards this app ships use, and a person reads them
-// on the board itself — hence Russian, like everything else they read. An
-// install that already has a config keeps whatever it says: these are the
-// defaults for a machine that has none.
+// The names are the ones the boards this app ships use, so they are English
+// like those files, and a person reads them translated into the language the
+// app is set to (internal/boardadapter/templatetext.go). An install that
+// already has a config keeps whatever it says: these are the defaults for a
+// machine that has none.
 const (
 	// DefaultTriggerProperty is the select property the columns live on.
-	DefaultTriggerProperty = "Статус"
+	DefaultTriggerProperty = "Status"
 	// DefaultTriggerColumn is what a board made from a template calls the column
 	// an agent works in. Kept as the one name the fixtures and the templates
 	// share; the templates' own names are in flowtemplates.go.
 	DefaultTriggerColumn = TemplateWorkColumn
-	// legacyTriggerColumn is the column earlier versions triggered on; configs
-	// still carrying it are migrated on load.
-	legacyTriggerColumn = "To Agent"
 )
 
 // DefaultConfig returns the defaults written on first run. dataDir is the ACP
@@ -920,7 +918,7 @@ func LoadConfig(path, dataDir string) (Config, error) {
 	// predated something. The trigger column was rewritten off an abandoned
 	// default; columns were built from the five column-name keys this file used
 	// to carry; routes were built from those columns. All three are gone with
-	// the keys (docs/model-graph.md, contradiction 9): a board carries
+	// the keys: a board carries
 	// its own columns and routes, and the machine's settings no longer name the
 	// columns of anybody's board.
 	return cfg, nil

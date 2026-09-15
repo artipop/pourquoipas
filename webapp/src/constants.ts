@@ -39,7 +39,7 @@ class Constants {
     // The product's own pages, and the only addresses the UI hands out: what
     // the app is, how it works, and where a person writes when it does not.
     // The repository stood for all three while there was no site; it is not an
-    // answer to any of them — somebody who opens «Руководство» wants the manual,
+    // answer to any of them — somebody who opens the guide link wants the manual,
     // not a source tree, and a bug report is a letter rather than an account on
     // a hosting service.
     static readonly homeUrl = 'https://deffun.com/xciii/'
@@ -52,6 +52,7 @@ class Constants {
     // docs.mattermost.com's "migrate to Boards" page, which is a different
     // product's documentation with anchors this app's menu invented.
     static readonly archiveHelpPage = `${Constants.guideUrl}transfer`
+    static readonly themeHelpPage = `${Constants.guideUrl}settings/themes`
     static readonly imports = [
         {
             id: 'trello',

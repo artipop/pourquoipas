@@ -1,19 +1,24 @@
-# Solid 1 compatibility, for two libraries and no more
+# Solid 1 compatibility, for one library and no more
 
-`@dnd-kit/solid` and `@dschz/solid-flow` are the only dependencies left that
-speak Solid 1, and neither has a Solid 2 release. They import `solid-js/store`
-and `solid-js/web`, which Solid 2 does not publish, and they call primitives
-Solid 2 removed — `on`, `batch`, `splitProps`, `produce`, `Index`,
-`Context.Provider`, and the one-argument `createEffect`.
+`@dnd-kit/solid` is the only dependency left that speaks Solid 1, and it has no
+Solid 2 release — not even on its beta tag. It imports `solid-js/web`, which
+Solid 2 does not publish, and calls primitives Solid 2 removed — `on`, `batch`,
+`splitProps`, `Context.Provider`, and the one-argument `createEffect`.
 
-So the three files here re-create that surface on top of Solid 2, and
-`solid1Compat()` in `vite.config.ts` points **only those packages** at them, by
+So the files here re-create that surface on top of Solid 2, and
+`solid1Compat()` in `vite.config.ts` points **only that package** at them, by
 importer path. Applied globally the shim would also rewrite what `@solidjs/web`
 itself imports, and the Solid 2 renderer would then be built on Solid 1 effect
 semantics — which is how the first attempt failed.
 
-This is a bridge with an end date: when either library publishes for Solid 2 it
-comes off the list, and when both do the directory goes.
+This is a bridge with an end date. `@dschz/solid-flow` was on it too and came
+off with its 1.0 line, which is built for Solid 2; when dnd-kit publishes for
+Solid 2 the directory goes.
+
+`store.js` and most of `core.js` were written for solid-flow — the path setter,
+`produce`, `Index`, `getListener` — and are kept because dnd-kit's own imports
+are the ones checked, not its future ones; they cost nothing while nobody
+imports them.
 
 ## What is deliberately not faithful
 

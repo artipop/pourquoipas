@@ -104,4 +104,4 @@ function App() {
     )
 }
 
-render(() => <App/>, document.getElementById('xciii-app')!)
+render(() => <App/>, document.getElementById('app-root')!)

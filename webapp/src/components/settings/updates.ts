@@ -92,7 +92,13 @@ function subscribe(): () => void {
         if (consumers === 0) {
             unsubscribe?.()
             unsubscribe = undefined
-            setState(unknown)
+
+            // After the disposal, not during it: see components/acp/attention.ts.
+            queueMicrotask(() => {
+                if (consumers === 0) {
+                    setState(unknown)
+                }
+            })
         }
     }
 }

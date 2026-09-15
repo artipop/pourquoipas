@@ -1469,9 +1469,14 @@ exports[`components/table/Table extended > should have Duplicate Button 1`] = `
         class="octo-table-footer"
       >
         <div
-          class="octo-table-cell"
+          class="octo-table-cell octo-table-cell--new"
         >
-          + New
+          <i
+            class="CompassIcon icon-plus AddIcon"
+          />
+          <!---->
+          New
+          <!---->
         </div>
       </div>
       <div
@@ -2415,9 +2420,14 @@ exports[`components/table/Table extended > should match snapshot with CreatedBy 
         class="octo-table-footer"
       >
         <div
-          class="octo-table-cell"
+          class="octo-table-cell octo-table-cell--new"
         >
-          + New
+          <i
+            class="CompassIcon icon-plus AddIcon"
+          />
+          <!---->
+          New
+          <!---->
         </div>
       </div>
       <div
@@ -2926,9 +2936,14 @@ exports[`components/table/Table extended > should match snapshot with UpdatedAt 
         class="octo-table-footer"
       >
         <div
-          class="octo-table-cell"
+          class="octo-table-cell octo-table-cell--new"
         >
-          + New
+          <i
+            class="CompassIcon icon-plus AddIcon"
+          />
+          <!---->
+          New
+          <!---->
         </div>
       </div>
       <div
@@ -3437,9 +3452,14 @@ exports[`components/table/Table extended > should match snapshot with UpdatedBy 
         class="octo-table-footer"
       >
         <div
-          class="octo-table-cell"
+          class="octo-table-cell octo-table-cell--new"
         >
-          + New
+          <i
+            class="CompassIcon icon-plus AddIcon"
+          />
+          <!---->
+          New
+          <!---->
         </div>
       </div>
       <div

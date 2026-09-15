@@ -17,7 +17,7 @@ import (
 // `<self> mcp <name>` and configured entirely through its environment, so the
 // model picks steps but never targets — the agent's own registry entry, and the
 // column the card landed in (ColumnSpec.MCPServers, columns.go), which is how
-// one agent works «QA» with a browser and «В работе» without one.
+// one agent works the QA column with a browser and the in-progress column without one.
 //
 // Every agent takes the same description by the same road: session/new, where
 // the protocol has a field for them. That is one of the things the vendor

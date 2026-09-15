@@ -169,6 +169,23 @@ func (g *grantedBoard) Card(ctx context.Context, cardID string) (boardmcp.CardIn
 	return cardInfo(card), nil
 }
 
+// Fields is the board's card properties, with the stage's own contract marked
+// on them — the grant is what knows which stage this conversation is.
+func (g *grantedBoard) Fields(ctx context.Context) ([]boardmcp.FieldInfo, error) {
+	fields, err := g.mgr.BoardToolFields(ctx, g.token)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]boardmcp.FieldInfo, 0, len(fields))
+	for _, f := range fields {
+		out = append(out, boardmcp.FieldInfo{
+			Name: f.Name, Kind: f.Kind, Values: f.Values,
+			Writable: f.Writable, Declared: f.Declared, Required: f.Required,
+		})
+	}
+	return out, nil
+}
+
 func (g *grantedBoard) UpdateCard(ctx context.Context, change boardmcp.CardChange) error {
 	return g.mgr.UpdateCardFromTools(ctx, g.token, change.CardID, acp.CardEdit{
 		Title:   change.Title,

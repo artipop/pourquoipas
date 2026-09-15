@@ -29,7 +29,7 @@ import './attentionAnswers.scss'
 // Which is also why a failure here is quiet. Not answering leaves the question
 // exactly where it already was.
 
-// Shared by the notification stack and «Ждут» on a phone, because they show the
+// Shared by the notification stack and the waiting screen on a phone, because they show the
 // same wait and are the two surfaces that had already drifted apart once.
 const AttentionAnswers = (props: {target: Attention}) => {
     const intl = useIntl()

@@ -154,7 +154,7 @@ func (m *Manager) attachTestArtifacts(s *Session, res TestResult) {
 			mimeType = "application/octet-stream"
 		}
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		err = m.writer.AttachFile(ctx, s.CardID, name, mimeType, data)
+		err = m.forCard(s.CardID).Writer.AttachFile(ctx, s.CardID, name, mimeType, data)
 		cancel()
 		if err != nil {
 			m.log.Warn("acp: cannot attach test screenshot", "session", s.ID, "file", rel, "err", err)

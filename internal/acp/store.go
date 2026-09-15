@@ -23,13 +23,6 @@ import (
 // its stall being lifted become one transaction.
 type Store struct {
 	db *sql.DB
-
-	// board and carriedSessions belong to the one-off import of a pre-move
-	// acp.db (legacystore.go) and are nil at every other moment. They sit on
-	// the store rather than being threaded through ten carry functions, which
-	// would be ten signatures carrying something none of them is about.
-	board           *presence
-	carriedSessions map[string]bool
 }
 
 // NewStore wraps the board's database handle. It creates nothing: the tables
@@ -71,12 +64,16 @@ type SessionRecord struct {
 	AgentKind    string        `json:"agentKind"`
 	ACPSessionID string        `json:"acpSessionId"`
 	Status       SessionStatus `json:"status"`
-	Cwd          string        `json:"cwd"`
-	WorktreePath string        `json:"worktreePath"`
-	Branch       string        `json:"branch"`
-	StartedAt    time.Time     `json:"startedAt"`
-	FinishedAt   *time.Time    `json:"finishedAt,omitempty"`
-	ErrorText    string        `json:"errorText,omitempty"`
+	// ColumnKey is which column's limit this run counts against. Recorded so
+	// the count is a question for the database rather than for one process's
+	// memory — see RunningInColumn.
+	ColumnKey    string     `json:"columnKey,omitempty"`
+	Cwd          string     `json:"cwd"`
+	WorktreePath string     `json:"worktreePath"`
+	Branch       string     `json:"branch"`
+	StartedAt    time.Time  `json:"startedAt"`
+	FinishedAt   *time.Time `json:"finishedAt,omitempty"`
+	ErrorText    string     `json:"errorText,omitempty"`
 }
 
 // SessionEventRecord mirrors one session_event row. There is no `seq`: the id
@@ -97,6 +94,9 @@ type SessionEventRecord struct {
 func (s *Store) SaveSetupStep(st SetupStepState) error {
 	if st.At.IsZero() {
 		st.At = time.Now()
+	}
+	if err := s.ensureBoardRef(st.BoardID, true); err != nil {
+		return err
 	}
 	_, err := s.exec(`INSERT INTO board_setup (board_id, step, status, changed_at)
 		VALUES (?,?,?,?)
@@ -175,6 +175,19 @@ type FlowState struct {
 	// travels with the card; flow_event stays as this machine's journal and is
 	// still what answers for a card that predates this.
 	Visited []string `json:"visited,omitempty"`
+
+	// Ask is the transition this card is held at: where it was going and on
+	// what, with the question nobody has answered yet. The card has not
+	// entered the next stage, so NodeID above is still the stage it is
+	// leaving. See cardask.go.
+	Ask *FlowAsk `json:"ask,omitempty"`
+
+	// WorkMode is how a person said this card's work should be arranged, when
+	// a transition asked. Kept on the card because the answer outlives the
+	// working copy: a folded worktree remade for a later stage is made the
+	// same way. The checkout, once it exists, is the fact — this is the
+	// intent, and ClaimWorkspace states the precedence between them.
+	WorkMode string `json:"workMode,omitempty"`
 }
 
 // FlowEventRecord is one transition, kept as the card's route history.
@@ -193,10 +206,65 @@ type FlowEventRecord struct {
 	CreatedAt time.Time `json:"createdAt"`
 }
 
+// Everything below is keyed on a card or a board and points at card_ref and
+// board_ref rather than at the board's own tables: a key reaches only inside its
+// own database, and a desktop attached to a hosted board has no row for a remote
+// card. See tools/schemagen for the chain.
+//
+// ensureRefs runs before every write that names one — an upsert rather than a
+// read, because this is the path a card takes through a route.
+
+// LocalSource is the board this process serves, written as NULL: "no source
+// named" is what a machine that never attached to anything says.
+const LocalSource = ""
+
+// ensureBoardRef makes the row a board key can point at. local says the board
+// is this process's own, which is what carries the cascade.
+func (s *Store) ensureBoardRef(boardID string, local bool) error {
+	if boardID == "" {
+		return nil
+	}
+	var localID any
+	if local {
+		localID = boardID
+	}
+	_, err := s.exec(`INSERT INTO board_ref (board_id, source_id, local_board_id, created_at)
+		VALUES (?,?,?,?)
+		ON CONFLICT(board_id) DO NOTHING`,
+		boardID, nullable(LocalSource), localID, time.Now().UnixMilli())
+	return err
+}
+
+// ensureCardRef makes the row a card key can point at. boardID may be empty:
+// three writers know a card and not its board, and it is filled in by whichever
+// does.
+func (s *Store) ensureCardRef(cardID, boardID string) error {
+	if cardID == "" {
+		return nil
+	}
+	if err := s.ensureBoardRef(boardID, true); err != nil {
+		return err
+	}
+	_, err := s.exec(`INSERT INTO card_ref (card_id, board_id, block_id, created_at)
+		VALUES (?,?,?,?)
+		ON CONFLICT(card_id) DO UPDATE SET
+			board_id=COALESCE(excluded.board_id, card_ref.board_id)`,
+		cardID, nullable(boardID), cardID, time.Now().UnixMilli())
+	return err
+}
+
+// ensureRefs is the pair, for the writers that know both.
+func (s *Store) ensureRefs(cardID, boardID string) error {
+	return s.ensureCardRef(cardID, boardID)
+}
+
 // SaveFlowState records where the card is now, replacing any previous position.
 func (s *Store) SaveFlowState(st FlowState) error {
 	if st.EnteredAt.IsZero() {
 		st.EnteredAt = time.Now()
+	}
+	if err := s.ensureRefs(st.CardID, st.BoardID); err != nil {
+		return err
 	}
 	_, err := s.exec(`INSERT INTO flow_state (card_id, board_id, flow_id, node_id, branch, workdir_path, entered_at)
 		VALUES (?,?,?,?,?,?,?)
@@ -248,6 +316,9 @@ func (s *Store) ClearFlowState(cardID string) error {
 
 // AppendFlowEvent records one transition.
 func (s *Store) AppendFlowEvent(r FlowEventRecord) error {
+	if err := s.ensureCardRef(r.CardID, ""); err != nil {
+		return err
+	}
 	_, err := s.exec(`INSERT INTO flow_event (id, card_id, flow_id, from_node, to_node, on_kind, detail, said, created_at)
 		VALUES (?,?,?,?,?,?,?,?,?)`,
 		newID(), r.CardID, r.FlowID, r.FromNode, r.ToNode, r.On, r.Detail, r.Said, time.Now().UnixMilli())
@@ -300,6 +371,9 @@ const StallKindConversation = "conversation"
 
 // SetStall records the reason, replacing whatever was there.
 func (s *Store) SetStall(r StallRecord) error {
+	if err := s.ensureCardRef(r.CardID, ""); err != nil {
+		return err
+	}
 	_, err := s.exec(`INSERT INTO card_stall (card_id, node_id, kind, reason, created_at)
 		VALUES (?,?,?,?,?)
 		ON CONFLICT(card_id) DO UPDATE SET
@@ -355,6 +429,90 @@ func (s *Store) Stall(cardID string) (StallRecord, bool, error) {
 	return r, true, nil
 }
 
+// CardChangesRecord is how much a card's work amounts to, in numbers. What it
+// is for is the button that opens the diff: the diff itself is read from git
+// every time and never from here.
+//
+// Recorded rather than counted when asked, for two reasons. A stage ending
+// folds the card's working copy away (FoldWorktree) while the question — is
+// there anything to read — is asked on the stage *after* that one. And a board
+// asks it per card, which would be a git process per card.
+type CardChangesRecord struct {
+	CardID string
+	// BoardID is carried so the card's ref row knows its board — which is what
+	// CardChangesForBoard reads, and what an empty one would hide the card from.
+	BoardID string
+	Branch  string
+	Base    string
+	Files   int
+	Added   int
+	Removed int
+	// Dirty is files changed and not committed. Counted apart because they
+	// exist only while a working copy does, and the committed half outlives it.
+	Dirty      int
+	ComputedAt time.Time
+}
+
+// Any reports whether there is anything to read at all.
+func (c CardChangesRecord) Any() bool { return c.Files > 0 || c.Dirty > 0 }
+
+// SetCardChanges records the count, replacing whatever was there.
+func (s *Store) SetCardChanges(r CardChangesRecord) error {
+	if err := s.ensureCardRef(r.CardID, r.BoardID); err != nil {
+		return err
+	}
+	_, err := s.exec(`INSERT INTO card_changes (card_id, branch, base, files, added, removed, dirty, computed_at)
+		VALUES (?,?,?,?,?,?,?,?)
+		ON CONFLICT(card_id) DO UPDATE SET
+			branch=excluded.branch, base=excluded.base, files=excluded.files,
+			added=excluded.added, removed=excluded.removed, dirty=excluded.dirty,
+			computed_at=excluded.computed_at`,
+		r.CardID, nullable(r.Branch), nullable(r.Base), r.Files, r.Added, r.Removed, r.Dirty,
+		time.Now().UnixMilli())
+	return err
+}
+
+// CardChanges is what was last counted for this card.
+func (s *Store) CardChanges(cardID string) (CardChangesRecord, bool, error) {
+	row := s.queryRow(`SELECT card_id, COALESCE(branch,''), COALESCE(base,''), files, added, removed, dirty, computed_at
+		FROM card_changes WHERE card_id=?`, cardID)
+	var r CardChangesRecord
+	var computed int64
+	switch err := row.Scan(&r.CardID, &r.Branch, &r.Base, &r.Files, &r.Added, &r.Removed, &r.Dirty, &computed); {
+	case err == sql.ErrNoRows:
+		return CardChangesRecord{}, false, nil
+	case err != nil:
+		return CardChangesRecord{}, false, err
+	}
+	r.ComputedAt = time.UnixMilli(computed)
+	return r, true, nil
+}
+
+// CardChangesForBoard is every counted card of one board, as card id → record.
+// One query rather than one per card, the bargain ListTerminals and
+// StallsOfKind already take: a board draws this on every card it has.
+func (s *Store) CardChangesForBoard(boardID string) (map[string]CardChangesRecord, error) {
+	rows, err := s.query(`SELECT c.card_id, COALESCE(c.branch,''), COALESCE(c.base,''),
+			c.files, c.added, c.removed, c.dirty, c.computed_at
+		FROM card_changes c JOIN card_ref r ON r.card_id = c.card_id
+		WHERE r.board_id = ?`, boardID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := map[string]CardChangesRecord{}
+	for rows.Next() {
+		var r CardChangesRecord
+		var computed int64
+		if err := rows.Scan(&r.CardID, &r.Branch, &r.Base, &r.Files, &r.Added, &r.Removed, &r.Dirty, &computed); err != nil {
+			return nil, err
+		}
+		r.ComputedAt = time.UnixMilli(computed)
+		out[r.CardID] = r
+	}
+	return out, rows.Err()
+}
+
 // scanner is satisfied by both *sql.Row and *sql.Rows.
 type scanner interface{ Scan(dest ...any) error }
 
@@ -370,11 +528,14 @@ func scanFlowState(row scanner) (FlowState, error) {
 
 // InsertSession stores a new session row.
 func (s *Store) InsertSession(r SessionRecord) error {
+	if err := s.ensureRefs(r.CardID, r.BoardID); err != nil {
+		return err
+	}
 	_, err := s.exec(`INSERT INTO agent_session
-		(id, card_id, board_id, agent_kind, acp_session_id, status, cwd, worktree_path, branch, started_at, error_text)
-		VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+		(id, card_id, board_id, agent_kind, acp_session_id, status, column_key, cwd, worktree_path, branch, started_at, error_text)
+		VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
 		r.ID, nullable(r.CardID), nullable(r.BoardID), r.AgentKind, r.ACPSessionID, string(r.Status),
-		r.Cwd, r.WorktreePath, r.Branch, r.StartedAt.UnixMilli(), r.ErrorText)
+		nullable(r.ColumnKey), r.Cwd, r.WorktreePath, r.Branch, r.StartedAt.UnixMilli(), r.ErrorText)
 	return err
 }
 
@@ -416,7 +577,7 @@ func (s *Store) AppendEvent(sessionID, kind string, payload any) error {
 // SessionsForCard returns all sessions of a card, newest first, with events.
 func (s *Store) SessionsForCard(cardID string) ([]SessionRecord, []SessionEventRecord, error) {
 	rows, err := s.query(`SELECT id, COALESCE(card_id,''), COALESCE(board_id,''), agent_kind, COALESCE(acp_session_id,''), status,
-		COALESCE(cwd,''), COALESCE(worktree_path,''), COALESCE(branch,''), started_at, finished_at, COALESCE(error_text,'')
+		COALESCE(column_key,''), COALESCE(cwd,''), COALESCE(worktree_path,''), COALESCE(branch,''), started_at, finished_at, COALESCE(error_text,'')
 		FROM agent_session WHERE card_id=? ORDER BY started_at DESC`, cardID)
 	if err != nil {
 		return nil, nil, err
@@ -464,7 +625,7 @@ func (s *Store) SessionsForCard(cardID string) ([]SessionRecord, []SessionEventR
 // app crash/restart).
 func (s *Store) StaleSessions() ([]SessionRecord, error) {
 	rows, err := s.query(`SELECT id, COALESCE(card_id,''), COALESCE(board_id,''), agent_kind, COALESCE(acp_session_id,''), status,
-		COALESCE(cwd,''), COALESCE(worktree_path,''), COALESCE(branch,''), started_at, finished_at, COALESCE(error_text,'')
+		COALESCE(column_key,''), COALESCE(cwd,''), COALESCE(worktree_path,''), COALESCE(branch,''), started_at, finished_at, COALESCE(error_text,'')
 		FROM agent_session WHERE status IN (?,?,?)`,
 		string(StatusQueued), string(StatusRunning), string(StatusWaitingPermission))
 	if err != nil {
@@ -506,7 +667,7 @@ func scanSession(rows *sql.Rows) (SessionRecord, error) {
 	var status string
 	var started int64
 	var finished sql.NullInt64
-	if err := rows.Scan(&r.ID, &r.CardID, &r.BoardID, &r.AgentKind, &r.ACPSessionID, &status,
+	if err := rows.Scan(&r.ID, &r.CardID, &r.BoardID, &r.AgentKind, &r.ACPSessionID, &status, &r.ColumnKey,
 		&r.Cwd, &r.WorktreePath, &r.Branch, &started, &finished, &r.ErrorText); err != nil {
 		return r, err
 	}
@@ -533,6 +694,9 @@ type QueuedStage struct {
 // Queueing the same card again keeps its original position: waiting longer must
 // not cost it its turn.
 func (s *Store) EnqueueStage(q QueuedStage) (bool, error) {
+	if err := s.ensureRefs(q.CardID, q.BoardID); err != nil {
+		return false, err
+	}
 	res, err := s.exec(`INSERT INTO stage_queue (card_id, board_id, column_key, flow_id, node_id, queued_at)
 		VALUES (?,?,?,?,?,?) ON CONFLICT(card_id) DO NOTHING`,
 		q.CardID, nullable(q.BoardID), q.ColumnKey, q.FlowID, q.NodeID, time.Now().UnixMilli())
@@ -614,6 +778,9 @@ type TerminalRecord struct {
 
 // InsertTerminal records a terminal session as it starts.
 func (s *Store) InsertTerminal(r TerminalRecord) error {
+	if err := s.ensureRefs(r.CardID, r.BoardID); err != nil {
+		return err
+	}
 	_, err := s.exec(`INSERT INTO conversation
 		(id, card_id, node_id, column_name, board_id, title, workdir_path, cwd, branch, agent, kind, summary, started_at)
 		VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
@@ -789,6 +956,13 @@ func (s *Store) SaveCheckout(c Checkout) error {
 	case err != nil:
 		return err
 	}
+	// The owner is a card or a board, never both — see the checkout table.
+	if err := s.ensureCardRef(c.CardID, ""); err != nil {
+		return err
+	}
+	if err := s.ensureBoardRef(c.BoardID, true); err != nil {
+		return err
+	}
 	_, err = s.exec(`INSERT INTO checkout
 		(id, workspace_id, card_id, board_id, mode, branch, path, base, created_at, released_at)
 		VALUES (?,?,?,?,?,?,?,?,?,NULL)
@@ -887,9 +1061,19 @@ func (s *Store) BranchForCard(cardID string) (string, error) {
 	return branch, nil
 }
 
+// CheckoutForCard is the whole live checkout of a card — the directory
+// included, which is what CheckoutModeForCard deliberately leaves out and what
+// anything reading the work itself needs (carddiff.go).
+func (s *Store) CheckoutForCard(cardID string) (Checkout, bool, error) {
+	row := s.queryRow(`SELECT `+checkoutColumns+` FROM checkout
+		WHERE card_id=? AND released_at IS NULL
+		ORDER BY created_at DESC LIMIT 1`, cardID)
+	return scanCheckout(row)
+}
+
 // CheckoutModeForCard is how the card's live checkout is arranged — "worktree"
 // or "branch" — or "" when it holds none. The card's stamp names its line after
-// it: a person who set «отдельная копия» should read worktree off the card, not
+// it: a person who set a copy of its own should read worktree off the card, not
 // a bare branch label that spells the *other* setting.
 func (s *Store) CheckoutModeForCard(cardID string) (mode, branch, base string, err error) {
 	row := s.queryRow(`SELECT mode, COALESCE(branch,''), COALESCE(base,'') FROM checkout
@@ -902,4 +1086,30 @@ func (s *Store) CheckoutModeForCard(cardID string) (mode, branch, base string, e
 		return "", "", "", err
 	}
 	return mode, branch, base, nil
+}
+
+// nullable turns an empty string into absence. A key column says "there is
+// none" with NULL and never with "" — a planning conversation has no card, an
+// ordinary folder has no branch (CLAUDE.md, "Absence is NULL").
+func nullable(v string) any {
+	if v == "" {
+		return nil
+	}
+	return v
+}
+
+// RunningInColumn counts the sessions of one column that have not finished.
+//
+// In the database rather than in this process's memory: a column's limit is a
+// fact about the board, and two windows of this app each counted their own, so a
+// limit of one ran two. A row left by a crash is swept at launch.
+func (s *Store) RunningInColumn(columnKey string) (int, error) {
+	if columnKey == "" {
+		return 0, nil
+	}
+	row := s.queryRow(`SELECT COUNT(*) FROM agent_session WHERE column_key=? AND status IN (?,?,?)`,
+		columnKey, string(StatusQueued), string(StatusRunning), string(StatusWaitingPermission))
+	var n int
+	err := row.Scan(&n)
+	return n, err
 }

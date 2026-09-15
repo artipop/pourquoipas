@@ -72,7 +72,7 @@ const TeamToBoardAndViewRedirect = (): null => {
                 // — the view it was made with. The list is sorted by title for
                 // the sidebar, and picking its first entry meant which view a
                 // board opened on depended on the alphabet: a view added later
-                // and named «Входящие» took the board over from «Дела».
+                // and named the inbox view took the board over from a chores board.
                 viewID = oldestView(boardViews()).id
                 UserSettings.setLastViewId(boardID, viewID)
                 actions.views.setCurrent(viewID)

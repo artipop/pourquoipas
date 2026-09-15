@@ -213,7 +213,7 @@
 // item would turn the view header into a fence.
 //
 // Inside a dialog it is wrong, and badly: an action reads as a sentence.
-// "Выбрать каталог…" in the setup wizard was indistinguishable from the text
+// The folder picker in the setup wizard was indistinguishable from the text
 // above it. There a button has to look pressable before it is hovered.
 .Dialog .Button,
 .Modal .Button {
@@ -253,7 +253,7 @@
 }
 
 // A button that cannot be pressed has to look like it. Nothing said so before,
-// so the setup wizard's «Дальше» sat there in full accent red while it was
+// so the setup wizard's the next button sat there in full accent red while it was
 // refusing every click — and the first step of the first run is exactly where
 // somebody concludes the app is broken.
 //

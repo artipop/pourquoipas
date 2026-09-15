@@ -81,6 +81,9 @@ func (s *Store) StateOf(source, externalID, version string) (ItemState, string, 
 // board write has succeeded.
 func (s *Store) RememberItem(source, externalID, version, cardID string) error {
 	now := time.Now().UnixMilli()
+	if err := s.ensureCardRef(cardID, ""); err != nil {
+		return err
+	}
 	_, err := s.exec(`INSERT INTO source_item (source, external_id, version, card_id, created_at, updated_at)
 		VALUES (?,?,?,?,?,?)
 		ON CONFLICT(source, external_id) DO UPDATE SET
@@ -125,6 +128,9 @@ type EventRecord struct {
 
 // AppendEvent records one decision.
 func (s *Store) AppendEvent(r EventRecord) error {
+	if err := s.ensureCardRef(r.CardID, ""); err != nil {
+		return err
+	}
 	_, err := s.exec(`INSERT INTO source_event (id, source, external_id, rule, outcome, card_id, detail, created_at)
 		VALUES (?,?,?,?,?,?,?,?)`,
 		newID(), r.Source, r.ExternalID, r.Rule, r.Outcome, nullable(r.CardID), r.Detail, time.Now().UnixMilli())
@@ -163,5 +169,40 @@ func (s *Store) PruneEvents(keep int) error {
 	}
 	_, err := s.exec(`DELETE FROM source_event WHERE id NOT IN (
 		SELECT id FROM source_event ORDER BY id DESC LIMIT ?)`, keep)
+	return err
+}
+
+// nullable turns an empty string into absence. Ours is a schema where a key
+// column says "there is none" with NULL, not with "" — a card that no item was
+// filed onto, a version nobody reported (docs/db-erd.md).
+func nullable(v string) any {
+	if v == "" {
+		return nil
+	}
+	return v
+}
+
+// ensureCardRef makes the row a card key can point at.
+//
+// internal/acp writes the same two tables and says why there: a foreign key
+// reaches only inside its own database, so what a source knows about a card
+// points at card_ref rather than at the board's own blocks. A source puts cards
+// on a board, and that board may be on somebody's server.
+func (s *Store) ensureCardRef(cardID, boardID string) error {
+	if cardID == "" {
+		return nil
+	}
+	if boardID != "" {
+		if _, err := s.exec(`INSERT INTO board_ref (board_id, source_id, local_board_id, created_at)
+			VALUES (?,NULL,?,?) ON CONFLICT(board_id) DO NOTHING`,
+			boardID, boardID, time.Now().UnixMilli()); err != nil {
+			return err
+		}
+	}
+	_, err := s.exec(`INSERT INTO card_ref (card_id, board_id, block_id, created_at)
+		VALUES (?,?,?,?)
+		ON CONFLICT(card_id) DO UPDATE SET
+			board_id=COALESCE(excluded.board_id, card_ref.board_id)`,
+		cardID, nullable(boardID), cardID, time.Now().UnixMilli())
 	return err
 }

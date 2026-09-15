@@ -28,7 +28,7 @@ import './planningDialog.scss'
 // and **a new one**, which is two questions — which agent, then which folder.
 //
 // The open ones come first on purpose. They used to be a line of buttons at the
-// bottom, under the pick, each button labelled «агент · папка» — so the shorter
+// bottom, under the pick, each button labelled agent · folder — so the shorter
 // path was the one below the longer one, and nothing said what any of those
 // conversations was about. Now each is a row that can be read: its name, the
 // recap the agent wrote for it (describe_conversation, one of the two board
@@ -51,7 +51,7 @@ type LiveTerminal = {
     boardFolder?: boolean
 
     // Whether the CLI was handed the board tools, and therefore whether it can
-    // answer «как назвать этот разговор».
+    // answer what the conversation should be called.
     tools?: boolean
 }
 

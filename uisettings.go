@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -10,10 +11,10 @@ import (
 )
 
 // What the install remembers about its own UI — the language and theme a
-// person picked, where they were last, every «больше не показывать». It lives
+// person picked, where they were last, every a do-not-show-again switch. It lives
 // here, in the app's own data, rather than in the browser: the desktop window
 // opens on a loopback origin the browser has no lasting memory for (a random
-// port per launch — docs/deferred.md, «Уйти из localStorage»), and a
+// port per launch — docs/deferred.md, moving off localStorage), and a
 // preference a person set is the install's to keep, the way any desktop app
 // keeps one. The page hydrates its localStorage from this before the first
 // render (userSettings.ts) and writes back through SetUIPreference; in a
@@ -91,7 +92,7 @@ func (a *App) GetUIPreferences() (string, error) {
 	return string(out), nil
 }
 
-// agentNotificationsEnabled is «Уведомлять, когда агент ждёт», read from the
+// agentNotificationsEnabled is the notify-when-an-agent-waits switch, read from the
 // same place the page keeps it — there is one switch for one question, and the
 // OS notification the Go side posts (alerts.go) is the same "tell me" the page's
 // own notification answers. On unless it has been turned off, which is the rule
@@ -106,6 +107,56 @@ func agentNotificationsEnabled() bool {
 	return readUISettings().Preferences["agentNotifications"] != "false"
 }
 
+// activeLanguage is the language the page resolved for itself when nobody has
+// picked one: it reads the webview's own locale (getCurrentLanguage in
+// i18n.tsx) and the Go side has no way to. Reported at boot through
+// UseLanguage; guarded by uiSettingsMu with the rest.
+var activeLanguage string
+
+// uiLanguage is the language the app is read in, as the page's own setting
+// names it («ru», «en», «pt_BR»). The pick comes first, then what the page
+// resolved, then the language the templates are written in.
+func uiLanguage() string {
+	uiSettingsMu.Lock()
+	defer uiSettingsMu.Unlock()
+	if picked := readUISettings().Preferences["language"]; picked != "" {
+		return picked
+	}
+	return activeLanguage
+}
+
+// UseLanguage is the page telling this side which language it is showing,
+// whether or not anybody picked it. It writes nothing to the settings — a
+// resolved default is not a choice, and storing it would stop the app following
+// the system — and it exists because the templates are boards rather than
+// catalogue strings: without it a person who never opened the settings would
+// read the app in their own language and be offered templates in English.
+func (a *App) UseLanguage(lang string) error {
+	lang = strings.TrimSpace(lang)
+	if lang == "" || len(lang) > 64 {
+		return nil
+	}
+	uiSettingsMu.Lock()
+	was := activeLanguage
+	picked := readUISettings().Preferences["language"]
+	activeLanguage = lang
+	uiSettingsMu.Unlock()
+
+	// Only when it is the answer that counts and it has changed: a pick beats
+	// it, and the templates already record which language they were installed
+	// in, so a repeat costs nothing anyway.
+	//
+	// Here it is done before answering, and the page waits for the answer
+	// before its first render (main.tsx): replacing five boards is measured in
+	// tens of milliseconds, and doing it after the page has drawn means the
+	// page holds a list of boards that no longer exist — the template picker
+	// drew both languages at once.
+	if picked == "" && was != lang {
+		a.reinstallTemplates(lang)
+	}
+	return nil
+}
+
 // SetUIPreference remembers one preference; an empty value forgets it. The
 // page sends only the keys it deliberately keeps with the install
 // (userSettings.ts names them); the caps below are a backstop, not a schema —
@@ -115,7 +166,12 @@ func (a *App) SetUIPreference(key, value string) error {
 	if key == "" || len(key) > 64 {
 		return fmt.Errorf("некорректный ключ настройки")
 	}
-	if len(value) > 16*1024 {
+	// A preference used to be a word — a language, a theme's name, a
+	// do-not-show-again. One of them is now a list: the themes a person wrote,
+	// each of them two configs of text, and eight of those alone pass 16KB.
+	// This is still a runaway backstop rather than a schema; it is just set
+	// where a real answer can fit under it.
+	if len(value) > 512*1024 {
 		return fmt.Errorf("значение настройки слишком велико")
 	}
 	uiSettingsMu.Lock()
@@ -124,10 +180,40 @@ func (a *App) SetUIPreference(key, value string) error {
 	if s.Preferences == nil {
 		s.Preferences = map[string]string{}
 	}
+	changed := s.Preferences[key] != value
 	if value == "" {
 		delete(s.Preferences, key)
 	} else {
 		s.Preferences[key] = value
 	}
-	return writeUISettings(s)
+	if err := writeUISettings(s); err != nil {
+		return err
+	}
+
+	// The shipped templates are boards, not catalogue strings, so a language
+	// change has to reinstall them (internal/boardadapter/templatetext.go).
+	// After the write and off the caller's goroutine: it deletes and recreates
+	// five boards, and the switch on screen must not wait for that. A failure
+	// costs the person templates in the previous language, which is what they
+	// already had, so it is logged rather than returned.
+	// Off the caller's goroutine: the switch on screen must not wait for five
+	// boards to be deleted and made again, and the picker is a click away at
+	// the earliest. It fetches what it draws when it opens, so by then this is
+	// done. A failure costs the person templates in the language they already
+	// had, so it is logged rather than returned.
+	if key == "language" && changed {
+		go a.reinstallTemplates(value)
+	}
+	return nil
+}
+
+// reinstallTemplates puts the shipped templates into a language, and does the
+// work where it is called from.
+func (a *App) reinstallTemplates(lang string) {
+	if a == nil || a.retemplate == nil {
+		return
+	}
+	if err := a.retemplate(lang); err != nil {
+		log.Printf("templates: %v", err)
+	}
 }

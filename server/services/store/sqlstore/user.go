@@ -64,6 +64,8 @@ func (s *SQLStore) getUsersByCondition(db sq.BaseRunner, condition interface{}, 
 			"mfa_secret",
 			"auth_service",
 			"auth_data",
+			"COALESCE(role, '')",
+			"COALESCE(kind, '')",
 			"create_at",
 			"update_at",
 			"delete_at",
@@ -127,8 +129,9 @@ func (s *SQLStore) createUser(db sq.BaseRunner, user *model.User) (*model.User, 
 	user.DeleteAt = 0
 
 	query := s.getQueryBuilder(db).Insert("users").
-		Columns("id", "username", "email", "password", "mfa_secret", "auth_service", "auth_data", "create_at", "update_at", "delete_at").
-		Values(user.ID, user.Username, user.Email, user.Password, user.MfaSecret, user.AuthService, user.AuthData, user.CreateAt, user.UpdateAt, user.DeleteAt)
+		Columns("id", "username", "email", "password", "mfa_secret", "auth_service", "auth_data", "role", "kind", "create_at", "update_at", "delete_at").
+		Values(user.ID, user.Username, user.Email, user.Password, user.MfaSecret, user.AuthService, user.AuthData,
+			emptyAsNull(user.Role), emptyAsNull(user.Kind), user.CreateAt, user.UpdateAt, user.DeleteAt)
 
 	_, err := query.Exec()
 	return user, err
@@ -220,7 +223,7 @@ func (s *SQLStore) getUsersByTeam(db sq.BaseRunner, _ string, _ string, _, _ boo
 	return users, err
 }
 
-func (s *SQLStore) searchUsersByTeam(db sq.BaseRunner, _ string, searchQuery string, _ string, _, _, _ bool) ([]*model.User, error) {
+func (s *SQLStore) searchUsersByTeam(db sq.BaseRunner, _ string, searchQuery string, _ string, _, _ bool) ([]*model.User, error) {
 	users, err := s.getUsersByCondition(db, &sq.Like{"username": "%" + searchQuery + "%"}, 10)
 	if model.IsErrNotFound(err) {
 		return []*model.User{}, nil
@@ -243,6 +246,8 @@ func (s *SQLStore) usersFromRows(rows *sql.Rows) ([]*model.User, error) {
 			&user.MfaSecret,
 			&user.AuthService,
 			&user.AuthData,
+			&user.Role,
+			&user.Kind,
 			&user.CreateAt,
 			&user.UpdateAt,
 			&user.DeleteAt,
@@ -413,4 +418,93 @@ func (s *SQLStore) preferencesFromRows(rows *sql.Rows) ([]model.Preference, erro
 	}
 
 	return preferences, nil
+}
+
+// emptyAsNull keeps an unanswered column NULL rather than "": role carries a
+// CHECK that admits NULL and two words, and "" is neither.
+func emptyAsNull(value string) interface{} {
+	if value == "" {
+		return nil
+	}
+	return value
+}
+
+func (s *SQLStore) setUserRole(db sq.BaseRunner, userID, role string) error {
+	result, err := s.getQueryBuilder(db).Update("users").
+		Set("role", emptyAsNull(role)).
+		Set("update_at", utils.GetMillis()).
+		Where(sq.Eq{"id": userID}).
+		Exec()
+	if err != nil {
+		return err
+	}
+	rowCount, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowCount < 1 {
+		return UserNotFoundError{userID}
+	}
+	return nil
+}
+
+// getAdminCount counts the accounts that administer this install. It is what
+// "has anybody claimed this server" asks — not the registered-user count, which
+// an attached desktop raises by provisioning an account per agent.
+func (s *SQLStore) getAdminCount(db sq.BaseRunner) (int, error) {
+	row := s.getQueryBuilder(db).
+		Select("count(*)").
+		From("users").
+		Where(sq.Eq{"role": model.RoleAdmin}).
+		Where(sq.Eq{"delete_at": 0}).
+		QueryRow()
+
+	var count int
+	err := row.Scan(&count)
+	return count, err
+}
+
+// setUserActive is how an admin turns an account off and on again. delete_at is
+// the fork's own soft delete and every user read already filters on it, so
+// login stops working with nothing else to change — the sessions are the part
+// that does not stop by itself (deleteSessionsForUser).
+func (s *SQLStore) setUserActive(db sq.BaseRunner, userID string, active bool) error {
+	deleteAt := utils.GetMillis()
+	if active {
+		deleteAt = 0
+	}
+	// Not getQueryBuilder's usual path: every read filters delete_at = 0, so
+	// reactivating a row cannot go through a WHERE that hides it.
+	result, err := s.getQueryBuilder(db).Update("users").
+		Set("delete_at", deleteAt).
+		Set("update_at", utils.GetMillis()).
+		Where(sq.Eq{"id": userID}).
+		Exec()
+	if err != nil {
+		return err
+	}
+	rowCount, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowCount < 1 {
+		return UserNotFoundError{userID}
+	}
+	return nil
+}
+
+// getUsersForAdmin lists every account, deactivated ones included — which is
+// what makes it the admin's list and not the team's.
+func (s *SQLStore) getUsersForAdmin(db sq.BaseRunner) ([]*model.User, error) {
+	rows, err := s.getQueryBuilder(db).
+		Select("id", "username", "email", "password", "mfa_secret", "auth_service", "auth_data",
+			"COALESCE(role, '')", "COALESCE(kind, '')", "create_at", "update_at", "delete_at").
+		From("users").
+		OrderBy("create_at").
+		Query()
+	if err != nil {
+		return nil, err
+	}
+	defer s.CloseRows(rows)
+	return s.usersFromRows(rows)
 }

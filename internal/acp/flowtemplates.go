@@ -3,7 +3,7 @@ package acp
 import "strings"
 
 // The routes an install starts with. They exist so a fresh board is not a blank
-// registry: the «Разработка» board template ships the columns these
+// registry: the the developer template board template ships the columns these
 // routes name and a "Workflow" property whose options are their names, so the
 // whole mechanism can be seen — and picked — before anything is configured.
 //
@@ -20,24 +20,39 @@ const (
 	// The columns a template route stands on. They live here, with the thing
 	// that creates boards, rather than in the machine's settings — where they
 	// used to be five keys naming the columns of anybody's board and matching
-	// them by name (contradiction 9 of docs/model-graph.md).
-	TemplateWorkColumn     = "В работе"
-	TemplateDeployColumn   = "Деплой"
-	TemplateTestColumn     = "QA"
-	TemplateTestPassColumn = "Проверено"
-	TemplateTestFailColumn = "Не прошло"
+	// them by name.
+	//
+	// English, because the template boards are (internal/boardadapter/
+	// templatetext.go): a person reads these words translated into the language
+	// the app is set to, and a route offered to a board has to name that
+	// board's own columns — which is what boardadapter.TemplateWords does on
+	// the way out (App.ListFlowTemplates).
+	TemplateWorkColumn   = "In progress"
+	TemplateDeployColumn = "Deploy"
+	TemplateTestColumn   = "QA"
 
-	TemplateReviewColumn  = "На ревью"
-	TemplateBlockedColumn = "Заблокировано"
-	TemplateDoneColumn    = "Готово 🙌"
+	TemplateReviewColumn = "In review"
+	TemplateDoneColumn   = "Done 🙌"
 )
+
+// There were three more: «Проверено», «Не прошло» and «Заблокировано». Each was
+// a column whose whole content was one fact about the stage before it — how
+// that stage ended — and a fact is not a place where work happens. It reads as
+// one on the board, where it is a column nobody works in, and on the canvas,
+// where it is a stage that «ждёт» for ever.
+//
+// The engine writes the outcome onto the card instead (BoardPropOutcome), for
+// every stage and without anybody declaring it, so a route no longer needs a
+// column to say "this failed". A stage whose outcome has no edge parks the card
+// where it is and says why (stallCardSoft) — which is what those columns were
+// standing in for, and it does it without adding a place to the board.
 
 // Flow names, which are also the options of the board template's "Workflow"
 // property — the two lists are kept in step by TestTemplateFlowsMatchTheBoardTemplate.
 const (
-	TemplateFlowFeature = "Фича"
-	TemplateFlowHotfix  = "Хотфикс"
-	TemplateFlowReview  = "Только ревью"
+	TemplateFlowFeature = "Feature"
+	TemplateFlowHotfix  = "Hotfix"
+	TemplateFlowReview  = "Review only"
 )
 
 // flowBuilder assembles one route, quietly dropping stages whose column the
@@ -63,6 +78,15 @@ func (b *flowBuilder) node(id, column, action string) string {
 		}
 	}
 	b.flow.Nodes = append(b.flow.Nodes, FlowNode{ID: id, Column: column, Action: action})
+
+	// Transition 0: the way onto the route, which every route has and none has
+	// to declare. It is where a card arrives from the backlog or from a source,
+	// and therefore the one crossing that happens exactly once — which is what
+	// makes it the place to ask how this card's work is to be arranged. Coming
+	// back to the first stage later arrives from a real stage and asks nothing.
+	if len(b.flow.Nodes) == 1 {
+		b.flow.Edges = append(b.flow.Edges, entryTransition(id))
+	}
 	return id
 }
 
@@ -71,6 +95,132 @@ func (b *flowBuilder) edge(from, to, on string) {
 		return
 	}
 	b.flow.Edges = append(b.flow.Edges, FlowEdge{From: from, To: to, On: on})
+}
+
+// passed is the other half of the pair: the same field, the other value, and
+// the way on. A wait stage's forward move usually has an automatic trigger too
+// — «На ревью» goes on when the branch is merged — but the automatic one is the
+// world telling us, and this is a person telling us. Both are needed: the
+// branch is not always merged from here, and somebody watching a review does
+// not want to wait for a poll to notice.
+func (b *flowBuilder) passed(from, to string) {
+	if from == "" || to == "" || from == to {
+		return
+	}
+	b.flow.Edges = append(b.flow.Edges, FlowEdge{
+		From: from, To: to, On: TriggerCardChanged,
+		If: &EdgeCond{Property: OutcomePropertyTitle, Value: OutcomePassed},
+	})
+}
+
+// rejected is the way back from a stage where nobody works and nothing runs.
+// A wait stage produces no outcome — «На ревью» has no "failed" of its own to
+// leave by — so the signal is a person saying so on the card: «Исход» set to
+// «не прошло». The same field the engine writes for a stage that does run, and
+// the same three values, because "how did this step end" is one question
+// whether a machine or a reviewer answers it.
+//
+// The engine's own write is silent (SetCardOption disables notify), so it can
+// never fire this edge itself.
+func (b *flowBuilder) rejected(from, to string) {
+	if from == "" || to == "" || from == to {
+		return
+	}
+	b.flow.Edges = append(b.flow.Edges, FlowEdge{
+		From: from, To: to, On: TriggerCardChanged,
+		If: &EdgeCond{Property: OutcomePropertyTitle, Value: OutcomeFailed},
+	})
+}
+
+// entryTransition is the way onto a route: transition 0, which every route has.
+// It is a function rather than a literal at each call site because the shipped
+// routes and the ones being brought up to date have to agree about what it
+// carries, and disagreeing would make a board behave by its age.
+func entryTransition(to string) FlowEdge {
+	return FlowEdge{From: EntryNode, To: to, Ask: entryQuestions()}
+}
+
+// The two questions a card is asked on its way in, in the order they can be
+// answered: where the work happens, and then how the folder chosen is worked.
+// A card in the backlog has usually named no folder, and until it has, the
+// second question is about nothing — which is why it is second rather than
+// alone.
+//
+// Both are skipped in the ordinary way when they do not apply: a card that
+// already names a folder is not asked again, and a folder that is not a
+// repository has no second question.
+func entryQuestions() []EdgeAsk {
+	return []EdgeAsk{
+		{ID: "workdir", Kind: AskWorkdir},
+		{ID: "workmode", Kind: AskWorkMode},
+	}
+}
+
+// addEntryTransitions gives a way in to every route that has none, and reports
+// how many it had to add.
+//
+// Routes written before transition 0 existed have no arrow into their first
+// stage, and a board made from a template keeps the routes it was made with —
+// importTemplates replaces the template board and never a board made from it.
+// So the shipped template gaining a way in reaches new boards only, and every
+// board anybody already has would ask nothing on the one crossing the question
+// is for. Brought up to date where the board is read (seedFromBoard), which
+// writes the board back, so it happens once and is recorded.
+//
+// Which stage it leads to is the route's first, because that is what "the way
+// in" means for a route drawn as a line of stages. A route whose first stage
+// already has a way in is left alone, questions and all: this repairs what is
+// missing and does not restate what somebody has since edited.
+func addEntryTransitions(flows []FlowEntry) int {
+	added := 0
+	for i := range flows {
+		if len(flows[i].Nodes) == 0 || flows[i].Nodes[0].ID == "" {
+			continue
+		}
+		first := flows[i].Nodes[0].ID
+		has := false
+		for j, e := range flows[i].Edges {
+			if e.From != EntryNode || e.To != first {
+				continue
+			}
+			has = true
+			// A way in written before the folder question existed asks how to
+			// work a folder the card has not chosen, which is the one crossing
+			// where it cannot be answered. The missing question goes in front
+			// of it — matched on the id this file mints, so an arrow somebody
+			// has since edited by hand is left alone.
+			if addEntryWorkdirQuestion(&flows[i].Edges[j]) {
+				added++
+			}
+			break
+		}
+		if !has {
+			flows[i].Edges = append(flows[i].Edges, entryTransition(first))
+			added++
+		}
+	}
+	return added
+}
+
+// addEntryWorkdirQuestion puts the folder question in front of the work-mode
+// one on a way in that has the second and not the first, and reports whether it
+// had to. Both ids are this file's own, so a hand-written arrow — one with a
+// question of somebody else's, or with the folder already asked — is untouched.
+func addEntryWorkdirQuestion(e *FlowEdge) bool {
+	at := -1
+	for i, a := range e.Ask {
+		if a.Kind == AskWorkdir {
+			return false
+		}
+		if a.Kind == AskWorkMode && a.ID == "workmode" {
+			at = i
+		}
+	}
+	if at < 0 {
+		return false
+	}
+	e.Ask = append(e.Ask[:at], append([]EdgeAsk{{ID: "workdir", Kind: AskWorkdir}}, e.Ask[at:]...)...)
+	return true
 }
 
 // TemplateFlows builds the routes the editor offers a board that has none. The
@@ -95,20 +245,34 @@ func featureFlow(cfg Config) FlowEntry {
 	review := b.node("review", TemplateReviewColumn, FlowActionNone)
 	deploy := b.node("deploy", TemplateDeployColumn, FlowActionDeploy)
 	qa := b.node("qa", TemplateTestColumn, FlowActionTest)
-	qaPassed := b.node("qa-passed", TemplateTestPassColumn, FlowActionNone)
-	failed := b.node("failed", TemplateTestFailColumn, FlowActionNone)
-	blocked := b.node("blocked", TemplateBlockedColumn, FlowActionNone)
+	done := b.node("done", TemplateDoneColumn, FlowActionNone)
 
 	b.edge(agent, review, TriggerSuccess)
-	b.edge(agent, blocked, TriggerFailure)
 	// Merged rather than opened: the local git watcher sees it without a token,
 	// so the route works on any hosting and with no credentials at all.
 	b.edge(review, deploy, TriggerBranchMerged)
 	b.edge(deploy, qa, TriggerSuccess)
-	b.edge(deploy, failed, TriggerFailure)
-	b.edge(qa, qaPassed, TriggerSuccess)
+	b.edge(qa, done, TriggerSuccess)
+
+	// What failed goes back to the agent — that loop is the point of the whole
+	// route, and it is where the work can actually be fixed. It replaced a
+	// «Не прошло» column, which was the same arrow with a parking space bolted
+	// to the end of it.
+	b.edge(deploy, agent, TriggerFailure)
 	b.edge(qa, agent, TriggerFailure)
-	b.edge(qa, blocked, TriggerBlocked)
+
+	// A review, answered by a person: nothing runs in «На ревью», so both ways
+	// out of it are somebody saying how it went. Until the first of these
+	// existed the card simply stood there, which is what the route looked like
+	// it was missing.
+	b.rejected(review, agent)
+	b.passed(review, deploy)
+
+	// Except the agent's own stage and «проверить не удалось»: sending a task
+	// back to the agent that just failed it is a loop with nothing new in it,
+	// and a check that could not run is a person's to fix — no browser, no
+	// preview to reach. Both park the card where it stopped with the outcome on
+	// it and the reason on the strip.
 	return b.flow
 }
 
@@ -119,13 +283,10 @@ func hotfixFlow(cfg Config) FlowEntry {
 	agent := b.node("agent", TemplateWorkColumn, FlowActionAgent)
 	deploy := b.node("deploy", TemplateDeployColumn, FlowActionDeploy)
 	done := b.node("done", TemplateDoneColumn, FlowActionNone)
-	failed := b.node("failed", TemplateTestFailColumn, FlowActionNone)
-	blocked := b.node("blocked", TemplateBlockedColumn, FlowActionNone)
 
 	b.edge(agent, deploy, TriggerSuccess)
-	b.edge(agent, blocked, TriggerFailure)
 	b.edge(deploy, done, TriggerSuccess)
-	b.edge(deploy, failed, TriggerFailure)
+	b.edge(deploy, agent, TriggerFailure)
 	return b.flow
 }
 
@@ -136,11 +297,11 @@ func reviewFlow(cfg Config) FlowEntry {
 	agent := b.node("agent", TemplateWorkColumn, FlowActionAgent)
 	review := b.node("review", TemplateReviewColumn, FlowActionNone)
 	done := b.node("done", TemplateDoneColumn, FlowActionNone)
-	blocked := b.node("blocked", TemplateBlockedColumn, FlowActionNone)
 
 	b.edge(agent, review, TriggerSuccess)
-	b.edge(agent, blocked, TriggerFailure)
 	b.edge(review, done, TriggerBranchMerged)
+	b.rejected(review, agent)
+	b.passed(review, done)
 	return b.flow
 }
 

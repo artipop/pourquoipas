@@ -32,58 +32,24 @@ exports[`components/viewHeader/viewHeaderActionsMenu > return menu 1`] = `
               class="MenuOption MenuSeparator menu-separator"
             />
             <div
-              aria-label="Export to CSV"
-              class="MenuOption TextOption menu-option"
-              role="button"
+              class="MenuOption SubMenuOption menu-option"
+              id="export"
               tabindex="-1"
             >
               <div
-                class="d-flex"
-              >
-                <div
-                  class="noicon"
-                />
-              </div>
-              <div
-                class="menu-option__content"
-              >
-                <div
-                  class="menu-name"
-                >
-                  Export to CSV
-                </div>
-                
-              </div>
-              <div
                 class="noicon"
               />
-            </div>
-            <div
-              aria-label="Export board archive"
-              class="MenuOption TextOption menu-option"
-              role="button"
-              tabindex="-1"
-            >
               <div
-                class="d-flex"
+                class="menu-name"
               >
-                <div
-                  class="noicon"
-                />
+                Export
               </div>
-              <div
-                class="menu-option__content"
-              >
-                <div
-                  class="menu-name"
-                >
-                  Export board archive
-                </div>
-                
-              </div>
-              <div
-                class="noicon"
+              <i
+                class="CompassIcon icon-chevron-right"
               />
+              <!---->
+              
+              <!---->
             </div>
           </div>
           <div
@@ -159,58 +125,24 @@ exports[`components/viewHeader/viewHeaderActionsMenu > return menu and verify ca
               class="MenuOption MenuSeparator menu-separator"
             />
             <div
-              aria-label="Export to CSV"
-              class="MenuOption TextOption menu-option"
-              role="button"
+              class="MenuOption SubMenuOption menu-option"
+              id="export"
               tabindex="-1"
             >
               <div
-                class="d-flex"
-              >
-                <div
-                  class="noicon"
-                />
-              </div>
-              <div
-                class="menu-option__content"
-              >
-                <div
-                  class="menu-name"
-                >
-                  Export to CSV
-                </div>
-                
-              </div>
-              <div
                 class="noicon"
               />
-            </div>
-            <div
-              aria-label="Export board archive"
-              class="MenuOption TextOption menu-option"
-              role="button"
-              tabindex="-1"
-            >
               <div
-                class="d-flex"
+                class="menu-name"
               >
-                <div
-                  class="noicon"
-                />
+                Export
               </div>
-              <div
-                class="menu-option__content"
-              >
-                <div
-                  class="menu-name"
-                >
-                  Export board archive
-                </div>
-                
-              </div>
-              <div
-                class="noicon"
+              <i
+                class="CompassIcon icon-chevron-right"
               />
+              <!---->
+              
+              <!---->
             </div>
           </div>
           <div
@@ -286,58 +218,24 @@ exports[`components/viewHeader/viewHeaderActionsMenu > return menu and verify ca
               class="MenuOption MenuSeparator menu-separator"
             />
             <div
-              aria-label="Export to CSV"
-              class="MenuOption TextOption menu-option"
-              role="button"
+              class="MenuOption SubMenuOption menu-option"
+              id="export"
               tabindex="-1"
             >
               <div
-                class="d-flex"
-              >
-                <div
-                  class="noicon"
-                />
-              </div>
-              <div
-                class="menu-option__content"
-              >
-                <div
-                  class="menu-name"
-                >
-                  Export to CSV
-                </div>
-                
-              </div>
-              <div
                 class="noicon"
               />
-            </div>
-            <div
-              aria-label="Export board archive"
-              class="MenuOption TextOption menu-option"
-              role="button"
-              tabindex="-1"
-            >
               <div
-                class="d-flex"
+                class="menu-name"
               >
-                <div
-                  class="noicon"
-                />
+                Export
               </div>
-              <div
-                class="menu-option__content"
-              >
-                <div
-                  class="menu-name"
-                >
-                  Export board archive
-                </div>
-                
-              </div>
-              <div
-                class="noicon"
+              <i
+                class="CompassIcon icon-chevron-right"
               />
+              <!---->
+              
+              <!---->
             </div>
           </div>
           <div

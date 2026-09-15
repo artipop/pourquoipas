@@ -347,7 +347,7 @@ func (m *Manager) CardFolder(cardID string) (string, bool) {
 	}
 	ctx, cancel := context.WithTimeout(m.rootCtx, 5*time.Second)
 	defer cancel()
-	ev, err := m.reader.CardByID(ctx, cardID)
+	ev, err := m.forCard(cardID).Reader.CardByID(ctx, cardID)
 	if err != nil {
 		return "", false
 	}
@@ -363,7 +363,7 @@ func (m *Manager) CardFolder(cardID string) (string, bool) {
 // There used to be a step in front of this one: a card could name a directory
 // outright, in a `project_path` or `repo_path` field, and that path won over
 // the folder field. It was the second way to say the same thing (contradiction
-// 6 of docs/model-graph.md) and the worse one — nothing creates such a field,
+// 6 of docs/db-erd.md) and the worse one — nothing creates such a field,
 // it means nothing on another machine, and being a path rather than a reference
 // it tied to no registry entry, so the only thing standing between a card and
 // any directory on the disk was a whitelist in the settings file. Both are
@@ -400,9 +400,10 @@ func (m *Manager) resolveWorkdir(ev CardMoved) (string, error) {
 // folder holds that id and the folder's name is free to change — or to stop
 // being a folder name at all: a place to work need not be a directory here.
 //
-// Two fallbacks for data that predates the id: an option made before it is
-// matched by *name*, and a board that recorded no folder property gets a scan
-// across everything selected on the card, which is all such a board can say.
+// Two fallbacks by name: an option whose id is not a registry id, and a board
+// that has recorded no folder property — the page records one when it makes the
+// field, so a board it has never opened has none, and the names are all such a
+// board can say.
 func (m *Manager) cardWorkdir(ev CardMoved, workdirs []WorkdirEntry) (WorkdirEntry, bool) {
 	if propID := m.boardProperty(ev.BoardID, BoardPropProject); propID != "" {
 		for _, sel := range ev.SelectedOptions {

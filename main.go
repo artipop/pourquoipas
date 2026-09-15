@@ -3,11 +3,11 @@ package main
 import (
 	"context"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/updater"
 
@@ -41,25 +41,15 @@ func appDataDir(name string, perm os.FileMode) (string, error) {
 	return dir, nil
 }
 
-// openAgentStore hands the agent integration the board's database, after
-// carrying over whatever an `acp.db` from before the move still holds. The
-// import is at startup and happens once: it renames the file when it is done.
+// openAgentStore hands the agent integration the board's database. Both
+// subsystems keep their tables there rather than in files of their own — see
+// CLAUDE.md, "One database" — and neither creates anything: the schema is the
+// migration's.
 func openAgentStore(brd board, dir string) (*acp.Store, error) {
-	if n, err := acp.ImportLegacyStore(brd.db, filepath.Join(dir, "acp.db")); err != nil {
-		return nil, err
-	} else if n > 0 {
-		log.Printf("acp: %d rows carried over from acp.db, which is now acp.db.migrated", n)
-	}
 	return acp.NewStore(brd.db), nil
 }
 
-// openSourceStore does the same for `sources.db`.
 func openSourceStore(brd board, dir string) (*sources.Store, error) {
-	if n, err := sources.ImportLegacyStore(brd.db, filepath.Join(dir, "sources.db")); err != nil {
-		return nil, err
-	} else if n > 0 {
-		log.Printf("sources: %d rows carried over from sources.db, which is now sources.db.migrated", n)
-	}
 	return sources.NewStore(brd.db), nil
 }
 
@@ -73,6 +63,11 @@ func sourcesDataDir() (string, error) { return appDataDir("sources", 0o750) }
 // tailnetDataDir returns where the tailnet door keeps its settings and the
 // node's own state. Tighter than the rest: it holds an auth key.
 func tailnetDataDir() (string, error) { return appDataDir("tailnet", 0o700) }
+
+// attachDataDir returns where the address of the hosted board this desktop is
+// attached to is kept. Tight like the tailnet's: it names a server somebody
+// works on, and the session for it is in the credential store beside it.
+func attachDataDir() (string, error) { return appDataDir("server", 0o700) }
 
 // ignoreViteDevServer removes the variable `wails3 dev` sets to point the app at
 // a Vite dev server. This app never has one: the page is the board webapp,
@@ -123,7 +118,29 @@ func main() {
 		}
 	}
 
-	sessionToken := "su-" + uuid.New().String()
+	// Who this install asks about is a property of the build, not a setting: a
+	// desktop is one person and gets a single-user token, a hosted server is a
+	// team and gets none, so /login and /register are open there and nowhere
+	// else (identity.go).
+	sessionToken := localSessionToken()
+	if sessionToken == "" {
+		log.Printf("hosted server: everybody logs in; /login and /register are open")
+	}
+
+	// Whether this desktop works its own board or a hosted one is read once
+	// here, because the page's proxy and the board seam are both built with
+	// the answer (attach.go).
+	var attach *attachController
+	if dir, err := attachDataDir(); err != nil {
+		log.Printf("attach: unavailable, no data dir: %v", err)
+	} else if attach, err = newAttachController(filepath.Join(dir, "settings.json"), openVault()); err != nil {
+		log.Printf("attach: unavailable, settings error: %v", err)
+		attach = nil
+	}
+
+	// The board on a server, once there is one. Declared here because the page's
+	// router is built before it and the manager after.
+	var attached *boardSeam
 
 	port, err := getFreePort()
 	if err != nil {
@@ -147,7 +164,10 @@ func main() {
 	}
 
 	logger := newServerLogger()
-	if acpEnabled {
+	// Only for a board this process serves: attached, card moves arrive over
+	// the server's own websocket, and the local board has nobody moving cards
+	// on it.
+	if acpEnabled && attach.target() == "" {
 		events = boardadapter.NewEventsBackend(logger)
 		backends = append(backends, events)
 	}
@@ -162,14 +182,45 @@ func main() {
 	// templates); the server module's are the upstream's examples and carry no
 	// automation. Failing to install them costs the selector its contents, not
 	// the app, so it is logged rather than fatal.
-	if err := boardadapter.ImportTemplates(srv.App(), logger); err != nil {
-		log.Printf("templates: %v", err)
+	// Not against a server: the templates on a hosted install are its own, and
+	// this would delete the ones this build does not ship — every attached
+	// desktop fighting over them at every launch.
+	// In the language the app is read in: the boards themselves are one set of
+	// files and the words are a catalogue beside them
+	// (internal/boardadapter/templatetext.go).
+	installTemplates := func(lang string) error {
+		return boardadapter.ImportTemplates(srv.App(), logger, lang)
+	}
+	if attach.target() == "" {
+		if err := installTemplates(uiLanguage()); err != nil {
+			log.Printf("templates: %v", err)
+		}
 	}
 
-	handler, err := newServerProxy(port, sessionToken)
+	// Which board the page is served is the attachment's answer: this
+	// process's own, or a hosted server this desktop logged in to (attach.go).
+	// The token follows it — the single-user one for our own board, the
+	// session for somebody else's.
+	if !attachableBuild && attach != nil && attach.state().URL != "" {
+		log.Printf("attach: ignoring %s — a hosted server works its own board", attach.state().URL)
+	}
+	// Which board the page is served is the selection's answer, not the
+	// attachment's: a desktop can be attached to a server and looking at its
+	// own board. The token follows the same answer.
+	pageToken := func() string {
+		if attach.selected() != "" {
+			return attach.token()
+		}
+		return sessionToken
+	}
+	if attach.selected() != "" {
+		log.Printf("showing %s: the page is served that board", attach.selected())
+	}
+	router, err := newBoardRouter(port, attach.selected(), pageToken)
 	if err != nil {
 		log.Fatalf("failed to create the server proxy: %v", err)
 	}
+	handler := http.Handler(router)
 
 	// The terminal sockets live on the front door beside the board. The routes
 	// are created before the manager exists — the manager needs the board
@@ -181,18 +232,37 @@ func main() {
 	uiEvents := newEventRoutes()
 	// The board tools an agent calls back through, on the same subtree.
 	boardTools := newBoardToolRoutes()
-	acpSockets := newACPSockets(terminals, uiEvents, boardTools.Handler(), boardTools.HookHandler())
+	// The claim a desktop attached to this board makes on one of its route
+	// events. Its store arrives with the rest of the agent integration below;
+	// until then it answers that agents are off, which is true.
+	leases := newLeaseRoutes(boardSessionGuard(srv.App()))
+	acpSockets := newACPSockets(terminals, uiEvents, boardTools.Handler(), boardTools.HookHandler(), leases)
 	// The ingest endpoint, on the same terms: it is a route on the front door,
 	// and it is handed its manager once the board exists.
 	ingest := newSourceRoutes()
 
 	emitter := newWailsEmitter(uiEvents)
 	app := NewApp(emitter)
+	// The templates follow the language they are read in, and a person changes
+	// that while the app runs — so the switch says nothing about a restart and
+	// the picker is right the next time it is opened (uisettings.go).
+	if attach.target() == "" {
+		app.retemplate = installTemplates
+	}
 
 	// The board as the page at /m reads it. Set here rather than beside the
 	// sources registry because a phone lists boards and cards whether or not
 	// this machine has a source or an agent.
-	app.board = boardadapter.NewWriter(srv.App())
+	// The board this process serves is always worked: it is where this
+	// machine's own cards are, whether or not anybody is looking at them.
+	seam := localSeam(events, srv.App())
+	lists := selectedLists{local: seam.lists, on: attach.selected}
+	if target := attach.target(); target != "" {
+		remote, _ := remoteSeam(target, attach.token(), logger)
+		attached = &remote
+		lists.remote = remote.lists
+	}
+	app.board = lists
 
 	// The tailnet door publishes the same front door to the user's own tailnet,
 	// so a phone can reach the board. Off unless its settings file says
@@ -206,11 +276,17 @@ func main() {
 		tailnet = nil
 	}
 	app.tailnet = tailnet
+	app.attach = attach
+	app.boards = router
 
 	// The front door is the origin the page is served under — a loopback
 	// listener of ours in a desktop build, the published address in a server
 	// build. Its listener is bound here so the window can be pointed at it.
-	front, err := newOrigin(handler, acpSockets, ingest, tailnet)
+	// The guard on the routes that are about this machine rather than about a
+	// board. Nil on a desktop, which is what "nothing authenticates a user"
+	// means (frontdoor.go).
+	sessionGuard := newSessionGuard(srv.App())
+	front, err := newOrigin(handler, acpSockets, ingest, tailnet, sessionGuard)
 	if err != nil {
 		log.Fatalf("failed to open the front door: %v", err)
 	}
@@ -246,7 +322,13 @@ func main() {
 		log.Printf("sources: disabled, store error: %v", err)
 		sourceStore = nil
 	} else {
-		sourceWriter := boardadapter.NewSourceWriter(srv.App())
+		// A source belongs to a board (SourceEntry.BoardID) and a board belongs
+		// to this machine or to the server, so where a source writes is not a
+		// question anybody has to answer: it writes to the board it names.
+		sourceWriter := newSourcesByBoard(seam.sourceWriter, nil, nil)
+		if attached != nil {
+			sourceWriter = newSourcesByBoard(seam.sourceWriter, attached.sourceWriter, onServerBoard(attached.meta))
+		}
 		sourceMgr := sources.NewManager(cfg, filepath.Join(dir, "sources.json"),
 			sourceStore, sourceWriter, nil)
 		// Lets the board answer "have we brought this one already", so a board
@@ -285,34 +367,46 @@ func main() {
 	// before it (agents may still post comments during the grace period).
 	var mgr *acp.Manager
 	if acpEnabled {
-		events.SetApp(srv.App())
+		if events != nil {
+			events.SetApp(srv.App())
+		}
 		dir, _ := acpDataDir()
 		store, err := openAgentStore(brd, dir)
 		if err != nil {
 			log.Printf("acp: disabled, store error: %v", err)
 		} else {
-			writer := boardadapter.NewWriter(srv.App())
-			mgr = acp.NewManager(acpCfg, filepath.Join(dir, "config.json"), store, writer, emitter, nil)
+			leases.SetStore(store)
+			mgr = acp.NewManager(acpCfg, filepath.Join(dir, "config.json"), store, seam.writer, emitter, nil)
 			// Lets the UI open a console on a card without moving it.
-			mgr.SetBoardReader(events)
+			mgr.SetBoardReader(seam.reader)
 			// Where the GitHub token for pull-request polling comes from. It
 			// was `githubToken` in config.json, which is a credential in a
 			// settings file people edit by hand and paste into issues.
 			mgr.SetSecrets(vault)
-			mgr.SetBoardMeta(events)
+			mgr.SetBoardMeta(seam.meta)
 			// Keeps a card's place on its route on the card, so it travels
 			// with the board rather than staying on this machine.
-			mgr.SetBoardCardState(writer)
+			mgr.SetBoardCardState(seam.cardState)
 			// Lets the UI give agents board accounts, so cards can be
 			// assigned to them in a person property.
-			mgr.SetBoardUsers(events)
+			mgr.SetBoardUsers(seam.users)
 			// Lets a board that asks to be asked about sources see the
 			// question as already answered when this machine has one.
 			mgr.SetRegistryProbe("sources", sourcesReady)
-			if err := mgr.Start(context.Background(), events); err != nil {
+			if err := mgr.Start(context.Background(), seam.events); err != nil {
 				log.Printf("acp: disabled, start error: %v", err)
 				mgr = nil
 			} else {
+				// Both boards are worked, whichever one is on screen: an agent
+				// on the server's card must not stop because somebody went to
+				// look at their own board.
+				if attached != nil {
+					mgr.AddBoardSource(acp.BoardSource{
+						ID: attach.target(), Writer: attached.writer, Reader: attached.reader,
+						Users: attached.users, Meta: attached.meta, CardState: attached.cardState,
+						Events: attached.events, Lease: attached.lease,
+					})
+				}
 				app.mgr = mgr
 				terminals.SetManager(mgr)
 				boardTools.SetManager(mgr)
@@ -324,7 +418,6 @@ func main() {
 				if sourcePlugins != nil {
 					sourcePlugins.SetAgentRunner(inboxAgentRunner{mgr})
 				}
-				log.Printf("acp: enabled (columns on %q)", acpCfg.TriggerProperty)
 			}
 		}
 	}

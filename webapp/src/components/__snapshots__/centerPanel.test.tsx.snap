@@ -121,19 +121,19 @@ exports[`components/centerPanel > return centerPanel and > click on card to show
         <div
           class="viewSelector"
         >
-          <input
-            class="Editable "
-            placeholder="Untitled View"
-            spellcheck=""
-            title="view title"
-          />
-          <!---->
           <div>
             <div
               aria-label="View menu"
               class="MenuWrapper"
               role="button"
             >
+              <div>
+                <span
+                  class="viewTitle"
+                >
+                  view title
+                </span>
+              </div>
               <button
                 class="IconButton"
                 type="button"
@@ -150,57 +150,10 @@ exports[`components/centerPanel > return centerPanel and > click on card to show
             
             <!---->
           </div>
-          <!---->
         </div>
         <div
           class="octo-spacer"
         />
-        <div
-          aria-label="Properties menu"
-          class="MenuWrapper"
-          role="button"
-        >
-          <button
-            class="Button"
-            type="button"
-          >
-            
-            <span>
-              Properties
-            </span>
-            
-            <!---->
-          </button>
-          <!---->
-          
-          <!---->
-        </div>
-        <div
-          aria-label="menuwrapper"
-          class="MenuWrapper"
-          role="button"
-        >
-          <button
-            class="Button"
-            type="button"
-          >
-            
-            <span>
-              Group by: 
-              <span
-                id="groupByLabel"
-                style="color:rgb(var(--center-channel-color-rgb))"
-              >
-                name
-              </span>
-            </span>
-            
-            <!---->
-          </button>
-          <!---->
-          
-          <!---->
-        </div>
         <div
           class="ModalWrapper"
         >
@@ -445,6 +398,9 @@ exports[`components/centerPanel > return centerPanel and > click on card to show
           <!---->
         </div>
         <div
+          class="octo-board-divider"
+        />
+        <div
           class="octo-board-header-cell KanbanColumnHeader"
           style="opacity: 1;"
         >
@@ -524,9 +480,11 @@ exports[`components/centerPanel > return centerPanel and > click on card to show
             class="Button"
             type="button"
           >
-            
+            <i
+              class="CompassIcon icon-plus AddIcon"
+            />
             <span>
-              + Add a group
+              Add a group
             </span>
             
             <!---->
@@ -545,9 +503,11 @@ exports[`components/centerPanel > return centerPanel and > click on card to show
             class="Button"
             type="button"
           >
-            
+            <i
+              class="CompassIcon icon-plus AddIcon"
+            />
             <span>
-              + New
+              New
             </span>
             
             <!---->
@@ -646,14 +606,19 @@ exports[`components/centerPanel > return centerPanel and > click on card to show
             class="Button"
             type="button"
           >
-            
+            <i
+              class="CompassIcon icon-plus AddIcon"
+            />
             <span>
-              + New
+              New
             </span>
             
             <!---->
           </button>
         </div>
+        <div
+          class="octo-board-divider"
+        />
         <div
           class="octo-board-column"
         >
@@ -661,9 +626,11 @@ exports[`components/centerPanel > return centerPanel and > click on card to show
             class="Button"
             type="button"
           >
-            
+            <i
+              class="CompassIcon icon-plus AddIcon"
+            />
             <span>
-              + New
+              New
             </span>
             
             <!---->
@@ -673,7 +640,6 @@ exports[`components/centerPanel > return centerPanel and > click on card to show
         
         <!---->
       </div>
-      
     </div>
     <!---->
   </div>
@@ -801,19 +767,19 @@ exports[`components/centerPanel > return centerPanel and > click on new card to 
         <div
           class="viewSelector"
         >
-          <input
-            class="Editable "
-            placeholder="Untitled View"
-            spellcheck=""
-            title="view title"
-          />
-          <!---->
           <div>
             <div
               aria-label="View menu"
               class="MenuWrapper"
               role="button"
             >
+              <div>
+                <span
+                  class="viewTitle"
+                >
+                  view title
+                </span>
+              </div>
               <button
                 class="IconButton"
                 type="button"
@@ -830,57 +796,10 @@ exports[`components/centerPanel > return centerPanel and > click on new card to 
             
             <!---->
           </div>
-          <!---->
         </div>
         <div
           class="octo-spacer"
         />
-        <div
-          aria-label="Properties menu"
-          class="MenuWrapper"
-          role="button"
-        >
-          <button
-            class="Button"
-            type="button"
-          >
-            
-            <span>
-              Properties
-            </span>
-            
-            <!---->
-          </button>
-          <!---->
-          
-          <!---->
-        </div>
-        <div
-          aria-label="menuwrapper"
-          class="MenuWrapper"
-          role="button"
-        >
-          <button
-            class="Button"
-            type="button"
-          >
-            
-            <span>
-              Group by: 
-              <span
-                id="groupByLabel"
-                style="color:rgb(var(--center-channel-color-rgb))"
-              >
-                name
-              </span>
-            </span>
-            
-            <!---->
-          </button>
-          <!---->
-          
-          <!---->
-        </div>
         <div
           class="ModalWrapper"
         >
@@ -1554,16 +1473,27 @@ exports[`components/centerPanel > return centerPanel and > press touch 1 with re
         <div
           class="viewSelector"
         >
-          <input
-            class="Editable readonly "
-            placeholder="Untitled View"
-            readonly=""
-            spellcheck=""
-            title="view title"
-          />
-          <!---->
-          
-          <!---->
+          <div>
+            <div
+              aria-label="View menu"
+              class="MenuWrapper"
+              role="button"
+            >
+              <div>
+                <span
+                  class="viewTitle"
+                >
+                  view title
+                </span>
+              </div>
+              <!---->
+              
+              <!---->
+            </div>
+            <!---->
+            
+            <!---->
+          </div>
         </div>
         <div
           class="octo-spacer"
@@ -2049,19 +1979,19 @@ exports[`components/centerPanel > return centerPanel and > press touch ctrl+d fo
         <div
           class="viewSelector"
         >
-          <input
-            class="Editable "
-            placeholder="Untitled View"
-            spellcheck=""
-            title="view title"
-          />
-          <!---->
           <div>
             <div
               aria-label="View menu"
               class="MenuWrapper"
               role="button"
             >
+              <div>
+                <span
+                  class="viewTitle"
+                >
+                  view title
+                </span>
+              </div>
               <button
                 class="IconButton"
                 type="button"
@@ -2078,57 +2008,10 @@ exports[`components/centerPanel > return centerPanel and > press touch ctrl+d fo
             
             <!---->
           </div>
-          <!---->
         </div>
         <div
           class="octo-spacer"
         />
-        <div
-          aria-label="Properties menu"
-          class="MenuWrapper"
-          role="button"
-        >
-          <button
-            class="Button"
-            type="button"
-          >
-            
-            <span>
-              Properties
-            </span>
-            
-            <!---->
-          </button>
-          <!---->
-          
-          <!---->
-        </div>
-        <div
-          aria-label="menuwrapper"
-          class="MenuWrapper"
-          role="button"
-        >
-          <button
-            class="Button"
-            type="button"
-          >
-            
-            <span>
-              Group by: 
-              <span
-                id="groupByLabel"
-                style="color:rgb(var(--center-channel-color-rgb))"
-              >
-                name
-              </span>
-            </span>
-            
-            <!---->
-          </button>
-          <!---->
-          
-          <!---->
-        </div>
         <div
           class="ModalWrapper"
         >
@@ -2827,19 +2710,19 @@ exports[`components/centerPanel > return centerPanel and > press touch del for o
         <div
           class="viewSelector"
         >
-          <input
-            class="Editable "
-            placeholder="Untitled View"
-            spellcheck=""
-            title="view title"
-          />
-          <!---->
           <div>
             <div
               aria-label="View menu"
               class="MenuWrapper"
               role="button"
             >
+              <div>
+                <span
+                  class="viewTitle"
+                >
+                  view title
+                </span>
+              </div>
               <button
                 class="IconButton"
                 type="button"
@@ -2856,57 +2739,10 @@ exports[`components/centerPanel > return centerPanel and > press touch del for o
             
             <!---->
           </div>
-          <!---->
         </div>
         <div
           class="octo-spacer"
         />
-        <div
-          aria-label="Properties menu"
-          class="MenuWrapper"
-          role="button"
-        >
-          <button
-            class="Button"
-            type="button"
-          >
-            
-            <span>
-              Properties
-            </span>
-            
-            <!---->
-          </button>
-          <!---->
-          
-          <!---->
-        </div>
-        <div
-          aria-label="menuwrapper"
-          class="MenuWrapper"
-          role="button"
-        >
-          <button
-            class="Button"
-            type="button"
-          >
-            
-            <span>
-              Group by: 
-              <span
-                id="groupByLabel"
-                style="color:rgb(var(--center-channel-color-rgb))"
-              >
-                name
-              </span>
-            </span>
-            
-            <!---->
-          </button>
-          <!---->
-          
-          <!---->
-        </div>
         <div
           class="ModalWrapper"
         >
@@ -3605,19 +3441,19 @@ exports[`components/centerPanel > return centerPanel and > press touch esc for o
         <div
           class="viewSelector"
         >
-          <input
-            class="Editable "
-            placeholder="Untitled View"
-            spellcheck=""
-            title="view title"
-          />
-          <!---->
           <div>
             <div
               aria-label="View menu"
               class="MenuWrapper"
               role="button"
             >
+              <div>
+                <span
+                  class="viewTitle"
+                >
+                  view title
+                </span>
+              </div>
               <button
                 class="IconButton"
                 type="button"
@@ -3634,57 +3470,10 @@ exports[`components/centerPanel > return centerPanel and > press touch esc for o
             
             <!---->
           </div>
-          <!---->
         </div>
         <div
           class="octo-spacer"
         />
-        <div
-          aria-label="Properties menu"
-          class="MenuWrapper"
-          role="button"
-        >
-          <button
-            class="Button"
-            type="button"
-          >
-            
-            <span>
-              Properties
-            </span>
-            
-            <!---->
-          </button>
-          <!---->
-          
-          <!---->
-        </div>
-        <div
-          aria-label="menuwrapper"
-          class="MenuWrapper"
-          role="button"
-        >
-          <button
-            class="Button"
-            type="button"
-          >
-            
-            <span>
-              Group by: 
-              <span
-                id="groupByLabel"
-                style="color:rgb(var(--center-channel-color-rgb))"
-              >
-                name
-              </span>
-            </span>
-            
-            <!---->
-          </button>
-          <!---->
-          
-          <!---->
-        </div>
         <div
           class="ModalWrapper"
         >
@@ -4383,19 +4172,19 @@ exports[`components/centerPanel > return centerPanel and > press touch esc for o
         <div
           class="viewSelector"
         >
-          <input
-            class="Editable "
-            placeholder="Untitled View"
-            spellcheck=""
-            title="view title"
-          />
-          <!---->
           <div>
             <div
               aria-label="View menu"
               class="MenuWrapper"
               role="button"
             >
+              <div>
+                <span
+                  class="viewTitle"
+                >
+                  view title
+                </span>
+              </div>
               <button
                 class="IconButton"
                 type="button"
@@ -4412,57 +4201,10 @@ exports[`components/centerPanel > return centerPanel and > press touch esc for o
             
             <!---->
           </div>
-          <!---->
         </div>
         <div
           class="octo-spacer"
         />
-        <div
-          aria-label="Properties menu"
-          class="MenuWrapper"
-          role="button"
-        >
-          <button
-            class="Button"
-            type="button"
-          >
-            
-            <span>
-              Properties
-            </span>
-            
-            <!---->
-          </button>
-          <!---->
-          
-          <!---->
-        </div>
-        <div
-          aria-label="menuwrapper"
-          class="MenuWrapper"
-          role="button"
-        >
-          <button
-            class="Button"
-            type="button"
-          >
-            
-            <span>
-              Group by: 
-              <span
-                id="groupByLabel"
-                style="color:rgb(var(--center-channel-color-rgb))"
-              >
-                name
-              </span>
-            </span>
-            
-            <!---->
-          </button>
-          <!---->
-          
-          <!---->
-        </div>
         <div
           class="ModalWrapper"
         >
@@ -5161,19 +4903,19 @@ exports[`components/centerPanel > return centerPanel and > press touch esc for t
         <div
           class="viewSelector"
         >
-          <input
-            class="Editable "
-            placeholder="Untitled View"
-            spellcheck=""
-            title="view title"
-          />
-          <!---->
           <div>
             <div
               aria-label="View menu"
               class="MenuWrapper"
               role="button"
             >
+              <div>
+                <span
+                  class="viewTitle"
+                >
+                  view title
+                </span>
+              </div>
               <button
                 class="IconButton"
                 type="button"
@@ -5190,57 +4932,10 @@ exports[`components/centerPanel > return centerPanel and > press touch esc for t
             
             <!---->
           </div>
-          <!---->
         </div>
         <div
           class="octo-spacer"
         />
-        <div
-          aria-label="Properties menu"
-          class="MenuWrapper"
-          role="button"
-        >
-          <button
-            class="Button"
-            type="button"
-          >
-            
-            <span>
-              Properties
-            </span>
-            
-            <!---->
-          </button>
-          <!---->
-          
-          <!---->
-        </div>
-        <div
-          aria-label="menuwrapper"
-          class="MenuWrapper"
-          role="button"
-        >
-          <button
-            class="Button"
-            type="button"
-          >
-            
-            <span>
-              Group by: 
-              <span
-                id="groupByLabel"
-                style="color:rgb(var(--center-channel-color-rgb))"
-              >
-                name
-              </span>
-            </span>
-            
-            <!---->
-          </button>
-          <!---->
-          
-          <!---->
-        </div>
         <div
           class="ModalWrapper"
         >
@@ -5939,19 +5634,19 @@ exports[`components/centerPanel > return centerPanel and > press touch esc for t
         <div
           class="viewSelector"
         >
-          <input
-            class="Editable "
-            placeholder="Untitled View"
-            spellcheck=""
-            title="view title"
-          />
-          <!---->
           <div>
             <div
               aria-label="View menu"
               class="MenuWrapper"
               role="button"
             >
+              <div>
+                <span
+                  class="viewTitle"
+                >
+                  view title
+                </span>
+              </div>
               <button
                 class="IconButton"
                 type="button"
@@ -5968,57 +5663,10 @@ exports[`components/centerPanel > return centerPanel and > press touch esc for t
             
             <!---->
           </div>
-          <!---->
         </div>
         <div
           class="octo-spacer"
         />
-        <div
-          aria-label="Properties menu"
-          class="MenuWrapper"
-          role="button"
-        >
-          <button
-            class="Button"
-            type="button"
-          >
-            
-            <span>
-              Properties
-            </span>
-            
-            <!---->
-          </button>
-          <!---->
-          
-          <!---->
-        </div>
-        <div
-          aria-label="menuwrapper"
-          class="MenuWrapper"
-          role="button"
-        >
-          <button
-            class="Button"
-            type="button"
-          >
-            
-            <span>
-              Group by: 
-              <span
-                id="groupByLabel"
-                style="color:rgb(var(--center-channel-color-rgb))"
-              >
-                name
-              </span>
-            </span>
-            
-            <!---->
-          </button>
-          <!---->
-          
-          <!---->
-        </div>
         <div
           class="ModalWrapper"
         >
@@ -6717,19 +6365,19 @@ exports[`components/centerPanel > return centerPanel and > press touch esc for t
         <div
           class="viewSelector"
         >
-          <input
-            class="Editable "
-            placeholder="Untitled View"
-            spellcheck=""
-            title="view title"
-          />
-          <!---->
           <div>
             <div
               aria-label="View menu"
               class="MenuWrapper"
               role="button"
             >
+              <div>
+                <span
+                  class="viewTitle"
+                >
+                  view title
+                </span>
+              </div>
               <button
                 class="IconButton"
                 type="button"
@@ -6746,57 +6394,10 @@ exports[`components/centerPanel > return centerPanel and > press touch esc for t
             
             <!---->
           </div>
-          <!---->
         </div>
         <div
           class="octo-spacer"
         />
-        <div
-          aria-label="Properties menu"
-          class="MenuWrapper"
-          role="button"
-        >
-          <button
-            class="Button"
-            type="button"
-          >
-            
-            <span>
-              Properties
-            </span>
-            
-            <!---->
-          </button>
-          <!---->
-          
-          <!---->
-        </div>
-        <div
-          aria-label="menuwrapper"
-          class="MenuWrapper"
-          role="button"
-        >
-          <button
-            class="Button"
-            type="button"
-          >
-            
-            <span>
-              Group by: 
-              <span
-                id="groupByLabel"
-                style="color:rgb(var(--center-channel-color-rgb))"
-              >
-                name
-              </span>
-            </span>
-            
-            <!---->
-          </button>
-          <!---->
-          
-          <!---->
-        </div>
         <div
           class="ModalWrapper"
         >
@@ -7495,19 +7096,19 @@ exports[`components/centerPanel > return centerPanel and > select one card and c
         <div
           class="viewSelector"
         >
-          <input
-            class="Editable "
-            placeholder="Untitled View"
-            spellcheck=""
-            title="view title"
-          />
-          <!---->
           <div>
             <div
               aria-label="View menu"
               class="MenuWrapper"
               role="button"
             >
+              <div>
+                <span
+                  class="viewTitle"
+                >
+                  view title
+                </span>
+              </div>
               <button
                 class="IconButton"
                 type="button"
@@ -7524,57 +7125,10 @@ exports[`components/centerPanel > return centerPanel and > select one card and c
             
             <!---->
           </div>
-          <!---->
         </div>
         <div
           class="octo-spacer"
         />
-        <div
-          aria-label="Properties menu"
-          class="MenuWrapper"
-          role="button"
-        >
-          <button
-            class="Button"
-            type="button"
-          >
-            
-            <span>
-              Properties
-            </span>
-            
-            <!---->
-          </button>
-          <!---->
-          
-          <!---->
-        </div>
-        <div
-          aria-label="menuwrapper"
-          class="MenuWrapper"
-          role="button"
-        >
-          <button
-            class="Button"
-            type="button"
-          >
-            
-            <span>
-              Group by: 
-              <span
-                id="groupByLabel"
-                style="color:rgb(var(--center-channel-color-rgb))"
-              >
-                name
-              </span>
-            </span>
-            
-            <!---->
-          </button>
-          <!---->
-          
-          <!---->
-        </div>
         <div
           class="ModalWrapper"
         >
@@ -8273,19 +7827,19 @@ exports[`components/centerPanel > return centerPanel and > select one card and c
         <div
           class="viewSelector"
         >
-          <input
-            class="Editable "
-            placeholder="Untitled View"
-            spellcheck=""
-            title="view title"
-          />
-          <!---->
           <div>
             <div
               aria-label="View menu"
               class="MenuWrapper"
               role="button"
             >
+              <div>
+                <span
+                  class="viewTitle"
+                >
+                  view title
+                </span>
+              </div>
               <button
                 class="IconButton"
                 type="button"
@@ -8302,57 +7856,10 @@ exports[`components/centerPanel > return centerPanel and > select one card and c
             
             <!---->
           </div>
-          <!---->
         </div>
         <div
           class="octo-spacer"
         />
-        <div
-          aria-label="Properties menu"
-          class="MenuWrapper"
-          role="button"
-        >
-          <button
-            class="Button"
-            type="button"
-          >
-            
-            <span>
-              Properties
-            </span>
-            
-            <!---->
-          </button>
-          <!---->
-          
-          <!---->
-        </div>
-        <div
-          aria-label="menuwrapper"
-          class="MenuWrapper"
-          role="button"
-        >
-          <button
-            class="Button"
-            type="button"
-          >
-            
-            <span>
-              Group by: 
-              <span
-                id="groupByLabel"
-                style="color:rgb(var(--center-channel-color-rgb))"
-              >
-                name
-              </span>
-            </span>
-            
-            <!---->
-          </button>
-          <!---->
-          
-          <!---->
-        </div>
         <div
           class="ModalWrapper"
         >
@@ -9051,19 +8558,19 @@ exports[`components/centerPanel > should match snapshot for Gallery 1`] = `
         <div
           class="viewSelector"
         >
-          <input
-            class="Editable "
-            placeholder="Untitled View"
-            spellcheck=""
-            title="view title"
-          />
-          <!---->
           <div>
             <div
               aria-label="View menu"
               class="MenuWrapper"
               role="button"
             >
+              <div>
+                <span
+                  class="viewTitle"
+                >
+                  view title
+                </span>
+              </div>
               <button
                 class="IconButton"
                 type="button"
@@ -9080,31 +8587,10 @@ exports[`components/centerPanel > should match snapshot for Gallery 1`] = `
             
             <!---->
           </div>
-          <!---->
         </div>
         <div
           class="octo-spacer"
         />
-        <div
-          aria-label="Properties menu"
-          class="MenuWrapper"
-          role="button"
-        >
-          <button
-            class="Button"
-            type="button"
-          >
-            
-            <span>
-              Properties
-            </span>
-            
-            <!---->
-          </button>
-          <!---->
-          
-          <!---->
-        </div>
         <div
           class="ModalWrapper"
         >
@@ -9245,7 +8731,12 @@ exports[`components/centerPanel > should match snapshot for Gallery 1`] = `
       <div
         class="octo-gallery-new"
       >
-        + New
+        <i
+          class="CompassIcon icon-plus AddIcon"
+        />
+        <!---->
+        New
+        <!---->
       </div>
       <!---->
     </div>
@@ -9375,19 +8866,19 @@ exports[`components/centerPanel > should match snapshot for Kanban 1`] = `
         <div
           class="viewSelector"
         >
-          <input
-            class="Editable "
-            placeholder="Untitled View"
-            spellcheck=""
-            title="view title"
-          />
-          <!---->
           <div>
             <div
               aria-label="View menu"
               class="MenuWrapper"
               role="button"
             >
+              <div>
+                <span
+                  class="viewTitle"
+                >
+                  view title
+                </span>
+              </div>
               <button
                 class="IconButton"
                 type="button"
@@ -9404,57 +8895,10 @@ exports[`components/centerPanel > should match snapshot for Kanban 1`] = `
             
             <!---->
           </div>
-          <!---->
         </div>
         <div
           class="octo-spacer"
         />
-        <div
-          aria-label="Properties menu"
-          class="MenuWrapper"
-          role="button"
-        >
-          <button
-            class="Button"
-            type="button"
-          >
-            
-            <span>
-              Properties
-            </span>
-            
-            <!---->
-          </button>
-          <!---->
-          
-          <!---->
-        </div>
-        <div
-          aria-label="menuwrapper"
-          class="MenuWrapper"
-          role="button"
-        >
-          <button
-            class="Button"
-            type="button"
-          >
-            
-            <span>
-              Group by: 
-              <span
-                id="groupByLabel"
-                style="color:rgb(var(--center-channel-color-rgb))"
-              >
-                name
-              </span>
-            </span>
-            
-            <!---->
-          </button>
-          <!---->
-          
-          <!---->
-        </div>
         <div
           class="ModalWrapper"
         >
@@ -9699,6 +9143,9 @@ exports[`components/centerPanel > should match snapshot for Kanban 1`] = `
           <!---->
         </div>
         <div
+          class="octo-board-divider"
+        />
+        <div
           class="octo-board-header-cell KanbanColumnHeader"
           style="opacity: 1;"
         >
@@ -9778,9 +9225,11 @@ exports[`components/centerPanel > should match snapshot for Kanban 1`] = `
             class="Button"
             type="button"
           >
-            
+            <i
+              class="CompassIcon icon-plus AddIcon"
+            />
             <span>
-              + Add a group
+              Add a group
             </span>
             
             <!---->
@@ -9799,9 +9248,11 @@ exports[`components/centerPanel > should match snapshot for Kanban 1`] = `
             class="Button"
             type="button"
           >
-            
+            <i
+              class="CompassIcon icon-plus AddIcon"
+            />
             <span>
-              + New
+              New
             </span>
             
             <!---->
@@ -9857,14 +9308,19 @@ exports[`components/centerPanel > should match snapshot for Kanban 1`] = `
             class="Button"
             type="button"
           >
-            
+            <i
+              class="CompassIcon icon-plus AddIcon"
+            />
             <span>
-              + New
+              New
             </span>
             
             <!---->
           </button>
         </div>
+        <div
+          class="octo-board-divider"
+        />
         <div
           class="octo-board-column"
         >
@@ -9872,9 +9328,11 @@ exports[`components/centerPanel > should match snapshot for Kanban 1`] = `
             class="Button"
             type="button"
           >
-            
+            <i
+              class="CompassIcon icon-plus AddIcon"
+            />
             <span>
-              + New
+              New
             </span>
             
             <!---->
@@ -9884,7 +9342,6 @@ exports[`components/centerPanel > should match snapshot for Kanban 1`] = `
         
         <!---->
       </div>
-      
     </div>
     <!---->
   </div>
@@ -10012,19 +9469,19 @@ exports[`components/centerPanel > should match snapshot for Kanban, not shared 1
         <div
           class="viewSelector"
         >
-          <input
-            class="Editable "
-            placeholder="Untitled View"
-            spellcheck=""
-            title="view title"
-          />
-          <!---->
           <div>
             <div
               aria-label="View menu"
               class="MenuWrapper"
               role="button"
             >
+              <div>
+                <span
+                  class="viewTitle"
+                >
+                  view title
+                </span>
+              </div>
               <button
                 class="IconButton"
                 type="button"
@@ -10041,57 +9498,10 @@ exports[`components/centerPanel > should match snapshot for Kanban, not shared 1
             
             <!---->
           </div>
-          <!---->
         </div>
         <div
           class="octo-spacer"
         />
-        <div
-          aria-label="Properties menu"
-          class="MenuWrapper"
-          role="button"
-        >
-          <button
-            class="Button"
-            type="button"
-          >
-            
-            <span>
-              Properties
-            </span>
-            
-            <!---->
-          </button>
-          <!---->
-          
-          <!---->
-        </div>
-        <div
-          aria-label="menuwrapper"
-          class="MenuWrapper"
-          role="button"
-        >
-          <button
-            class="Button"
-            type="button"
-          >
-            
-            <span>
-              Group by: 
-              <span
-                id="groupByLabel"
-                style="color:rgb(var(--center-channel-color-rgb))"
-              >
-                name
-              </span>
-            </span>
-            
-            <!---->
-          </button>
-          <!---->
-          
-          <!---->
-        </div>
         <div
           class="ModalWrapper"
         >
@@ -10336,6 +9746,9 @@ exports[`components/centerPanel > should match snapshot for Kanban, not shared 1
           <!---->
         </div>
         <div
+          class="octo-board-divider"
+        />
+        <div
           class="octo-board-header-cell KanbanColumnHeader"
           style="opacity: 1;"
         >
@@ -10415,9 +9828,11 @@ exports[`components/centerPanel > should match snapshot for Kanban, not shared 1
             class="Button"
             type="button"
           >
-            
+            <i
+              class="CompassIcon icon-plus AddIcon"
+            />
             <span>
-              + Add a group
+              Add a group
             </span>
             
             <!---->
@@ -10436,9 +9851,11 @@ exports[`components/centerPanel > should match snapshot for Kanban, not shared 1
             class="Button"
             type="button"
           >
-            
+            <i
+              class="CompassIcon icon-plus AddIcon"
+            />
             <span>
-              + New
+              New
             </span>
             
             <!---->
@@ -10494,14 +9911,19 @@ exports[`components/centerPanel > should match snapshot for Kanban, not shared 1
             class="Button"
             type="button"
           >
-            
+            <i
+              class="CompassIcon icon-plus AddIcon"
+            />
             <span>
-              + New
+              New
             </span>
             
             <!---->
           </button>
         </div>
+        <div
+          class="octo-board-divider"
+        />
         <div
           class="octo-board-column"
         >
@@ -10509,9 +9931,11 @@ exports[`components/centerPanel > should match snapshot for Kanban, not shared 1
             class="Button"
             type="button"
           >
-            
+            <i
+              class="CompassIcon icon-plus AddIcon"
+            />
             <span>
-              + New
+              New
             </span>
             
             <!---->
@@ -10521,7 +9945,6 @@ exports[`components/centerPanel > should match snapshot for Kanban, not shared 1
         
         <!---->
       </div>
-      
     </div>
     <!---->
   </div>
@@ -10649,19 +10072,19 @@ exports[`components/centerPanel > should match snapshot for Table 1`] = `
         <div
           class="viewSelector"
         >
-          <input
-            class="Editable "
-            placeholder="Untitled View"
-            spellcheck=""
-            title="view title"
-          />
-          <!---->
           <div>
             <div
               aria-label="View menu"
               class="MenuWrapper"
               role="button"
             >
+              <div>
+                <span
+                  class="viewTitle"
+                >
+                  view title
+                </span>
+              </div>
               <button
                 class="IconButton"
                 type="button"
@@ -10678,57 +10101,10 @@ exports[`components/centerPanel > should match snapshot for Table 1`] = `
             
             <!---->
           </div>
-          <!---->
         </div>
         <div
           class="octo-spacer"
         />
-        <div
-          aria-label="Properties menu"
-          class="MenuWrapper"
-          role="button"
-        >
-          <button
-            class="Button"
-            type="button"
-          >
-            
-            <span>
-              Properties
-            </span>
-            
-            <!---->
-          </button>
-          <!---->
-          
-          <!---->
-        </div>
-        <div
-          aria-label="menuwrapper"
-          class="MenuWrapper"
-          role="button"
-        >
-          <button
-            class="Button"
-            type="button"
-          >
-            
-            <span>
-              Group by: 
-              <span
-                id="groupByLabel"
-                style="color:rgb(var(--center-channel-color-rgb))"
-              >
-                name
-              </span>
-            </span>
-            
-            <!---->
-          </button>
-          <!---->
-          
-          <!---->
-        </div>
         <div
           class="ModalWrapper"
         >

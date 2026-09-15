@@ -108,15 +108,44 @@ const Menu: Component<Props> & {
             if (box.width === 0 && box.height === 0) {
                 return
             }
-            const middleware = [flip(), shift({padding: VIEWPORT_PADDING})]
-            if (props.matchAnchorWidth) {
-                middleware.push(size({
+
+            // `size` runs after `flip`, so the height it reports is the room
+            // on the side the menu actually ended up on. The cap is what makes
+            // the stylesheet's `overflow-y: auto` mean anything: without it a
+            // list longer than the screen — the theme list is twelve entries
+            // and headings — simply runs off the bottom, and the last of it is
+            // unreachable rather than scrollable.
+            const middleware = [
+                flip(),
+                shift({padding: VIEWPORT_PADDING}),
+                size({
                     padding: VIEWPORT_PADDING,
-                    apply: ({rects, elements}) => {
-                        elements.floating.style.minWidth = `${rects.reference.width}px`
+                    apply: ({availableHeight, rects, elements}) => {
+                        elements.floating.style.maxHeight = `${availableHeight}px`
+                        if (props.matchAnchorWidth) {
+                            elements.floating.style.minWidth = `${rects.reference.width}px`
+                        }
+
+                        // The stylesheet's `overflow-y: auto` is what lets a
+                        // long menu scroll — and CSS has no way to leave the
+                        // other axis alone, so a menu that carries it is a
+                        // scroll container in both directions and clips a
+                        // submenu, which is drawn flush against its option and
+                        // therefore sticks out sideways. «Добавить вид» opened
+                        // in the DOM, reported itself visible, and was painted
+                        // nowhere.
+                        //
+                        // So the menu clips only while it has something to
+                        // scroll. `.menu-contents` is measured rather than the
+                        // menu's own scrollHeight, because an open submenu is
+                        // out of flow: it inflates the scroll height and would
+                        // switch the clipping back on the moment it appeared.
+                        const contents = elements.floating.querySelector('.menu-contents')
+                        const height = contents?.getBoundingClientRect().height || 0
+                        elements.floating.style.overflowY = height > availableHeight ? 'auto' : 'visible'
                     },
-                }))
-            }
+                }),
+            ]
             computePosition(anchor, floating, {
                 strategy: 'fixed',
                 placement: floatingPlacement(props.position),

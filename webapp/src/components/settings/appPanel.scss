@@ -1,3 +1,5 @@
+@import '../../styles/field';
+
 .AppPanel {
     .AppPanel__content {
         display: flex;
@@ -9,6 +11,81 @@
         margin: 0 0 8px;
         font-size: 14px;
         font-weight: 600;
+    }
+
+    // `widgets/select` draws its own field; all this settles is that it is as
+    // wide as the panel, the way the code field under it is. It began life as
+    // a native `<select>`, which is the thing that widget exists instead of.
+    .AppPanel__select {
+        width: 100%;
+    }
+
+    // The editor is a thing being made, not a setting being read: the panel
+    // around it is a column of one-line answers, and it read as one more of
+    // them until it was given an edge of its own.
+    .AppPanel__editor {
+        padding: 16px;
+        border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+        border-radius: var(--radius-lg);
+        background: rgba(var(--center-channel-color-rgb), 0.03);
+    }
+
+    .AppPanel__custom {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 12px;
+    }
+
+    // A theme config is twenty-six lines of JSON somebody pastes and then
+    // edits, so it is monospaced and does not wrap: a colour that has wrapped
+    // onto the next line cannot be read down the column.
+    .AppPanel__code {
+        @include field;
+
+        font-family: var(--font-mono);
+        font-size: var(--text-small);
+        line-height: 1.5;
+        resize: vertical;
+        white-space: pre;
+        overflow-wrap: normal;
+        overflow-x: auto;
+    }
+
+    // The one place in this panel that is a form field rather than a value you
+    // type over: a name has to look like something you can put a name in.
+    .AppPanel__field {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .AppPanel__fieldName {
+        font-size: var(--text-small);
+        color: rgba(var(--center-channel-color-rgb), 0.64);
+    }
+
+    // The half being edited is a choice inside a choice, so its chips are
+    // quieter than the ones that decide what the whole board wears.
+    .AppPanel__halves .AppPanel__choice {
+        padding: 6px 10px;
+        font-size: var(--text-small);
+    }
+
+    .AppPanel__name {
+        @include field;
+    }
+
+    .AppPanel__customActions {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .AppPanel__customError {
+        color: rgb(var(--error-text-rgb));
+        font-size: var(--text-small);
     }
 
     // Every choice is on the panel rather than behind a menu, so the row wraps
@@ -114,6 +191,42 @@
 
         &:hover {
             background: rgba(var(--button-bg-rgb), 0.16);
+        }
+
+        &:disabled {
+            opacity: 0.4;
+            cursor: default;
+
+            &:hover {
+                background: rgba(var(--button-bg-rgb), 0.08);
+            }
+        }
+    }
+
+    // Deleting is the one thing in this panel that cannot be taken back, so it
+    // stands away from the pair it shares a row with and carries the colour
+    // the product marks a failure in.
+    .AppPanel__actionLink--danger {
+        margin-left: auto;
+        background: transparent;
+        color: rgb(var(--error-text-rgb));
+
+        &:hover {
+            background: rgba(var(--error-text-rgb), 0.12);
+        }
+    }
+
+    // The second of a pair, and the one that undoes rather than does.
+    .AppPanel__actionLink--quiet {
+        background: transparent;
+        color: rgba(var(--center-channel-color-rgb), 0.64);
+
+        &:hover {
+            background: rgba(var(--center-channel-color-rgb), 0.08);
+        }
+
+        &:disabled:hover {
+            background: transparent;
         }
     }
 }

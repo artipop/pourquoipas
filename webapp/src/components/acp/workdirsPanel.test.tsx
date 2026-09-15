@@ -96,7 +96,7 @@ describe('components/acp/workdirsPanel', () => {
         await waitFor(() => expect(setBase).toHaveBeenCalledWith('code', 'develop'))
     })
 
-    // The field this app made used to be called «Проекты», and a card that
+    // The field this app made used to be called the old projects name, and a card that
     // names a folder should not be asked about a project. The name is ours, so
     // it is renamed once, in place — the board records the field by id, so
     // nothing that points at it notices.
@@ -108,7 +108,7 @@ describe('components/acp/workdirsPanel', () => {
             type: 'multiSelect',
             options: [{id: 'o1', value: 'alpha', color: 'propColorDefault'}],
         })
-        legacyBoard.properties = {...legacyBoard.properties, xciiiProjectProperty: 'projectprop'}
+        legacyBoard.properties = {...legacyBoard.properties, projectProperty: 'projectprop'}
         anyWindow.go = {main: {App: {
             ListAgentWorkdirs: vi.fn().mockResolvedValue(JSON.stringify([{name: 'alpha', path: '/tmp/alpha'}])),
             PickDirectory: vi.fn(),
@@ -258,7 +258,7 @@ describe('components/acp/workdirsPanel', () => {
             type: 'multiSelect',
             options: [{id: 'o1', value: 'alpha', color: 'propColorDefault'}],
         })
-        boardWithProjects.properties = {...boardWithProjects.properties, xciiiProjectProperty: 'projectprop'}
+        boardWithProjects.properties = {...boardWithProjects.properties, projectProperty: 'projectprop'}
         const bindings = {
             ListAgentWorkdirs: vi.fn().mockResolvedValue(JSON.stringify([
                 {name: 'alpha', path: '/tmp/alpha'}, // already an option
@@ -327,7 +327,7 @@ describe('components/acp/workdirsPanel', () => {
 
         // And the board is told which field it is, so it is never guessed again.
         await waitFor(() => expect(mockedMutator.updateBoard).toHaveBeenCalledTimes(1))
-        expect(mockedMutator.updateBoard.mock.calls[0][0].properties.xciiiProjectProperty).toBe(made.id)
+        expect(mockedMutator.updateBoard.mock.calls[0][0].properties.projectProperty).toBe(made.id)
     })
 
     test('leaves the board alone when its field already lists every workdir', async () => {
@@ -341,7 +341,7 @@ describe('components/acp/workdirsPanel', () => {
 
         // Deliberately the key's old name: every board made before the rename
         // carries it, and the panel has to go on finding the field.
-        boardWithProjects.properties = {...boardWithProjects.properties, acpProjectProperty: 'projectprop'}
+        boardWithProjects.properties = {...boardWithProjects.properties, projectProperty: 'projectprop'}
         const bindings = {
             ListAgentWorkdirs: vi.fn().mockResolvedValue(JSON.stringify([{name: 'alpha', path: '/tmp/alpha'}])),
             PickDirectory: vi.fn(),

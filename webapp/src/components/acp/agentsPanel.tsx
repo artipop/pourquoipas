@@ -512,15 +512,15 @@ const AgentsPanel = () => {
                                 onInput={(e) => updateForm({name: e.currentTarget.value})}
                             />
                         </label>
-                        <label>
-                            {intl.formatMessage({id: 'Agents.kind', defaultMessage: 'Kind'})}
+                        <div class='AgentsPanel__field'>
+                            <span>{intl.formatMessage({id: 'Agents.kind', defaultMessage: 'Kind'})}</span>
                             <Select
                                 value={form()!.kind}
                                 options={AGENT_KINDS}
                                 onChange={changeKind}
                                 label={intl.formatMessage({id: 'Agents.kind', defaultMessage: 'Kind'})}
                             />
-                        </label>
+                        </div>
                         <Show when={adapter() && (!adapter()!.ready || adapter()!.viaNpx)}>
                             <div class={`AgentsPanel__adapter${adapter()!.ready ? '' : ' AgentsPanel__adapter--missing'}`}>
                                 <span>{adapter()!.detail}</span>
@@ -592,8 +592,8 @@ const AgentsPanel = () => {
                                     <div
                                         class='AgentsPanel__option'
                                     >
-                                        <label>
-                                            {option.name || option.id}
+                                        <div class='AgentsPanel__field'>
+                                            <span>{option.name || option.id}</span>
                                             <Select
                                                 value={form()!.options?.[option.id] || ''}
                                                 options={[
@@ -609,7 +609,7 @@ const AgentsPanel = () => {
                                                 onChange={(next) => updateForm({options: {...form()!.options, [option.id]: next}})}
                                                 label={option.name || option.id}
                                             />
-                                        </label>
+                                        </div>
                                         <Show when={option.description}>
                                             <div class='AgentsPanel__hint'>{option.description}</div>
                                         </Show>
@@ -686,8 +686,8 @@ const AgentsPanel = () => {
                             rows={6}
                             onInput={(text) => updateForm({prompt: text})}
                         />
-                        <label>
-                            {intl.formatMessage({id: 'Agents.proxyName', defaultMessage: 'Proxy configuration'})}
+                        <div class='AgentsPanel__field'>
+                            <span>{intl.formatMessage({id: 'Agents.proxyName', defaultMessage: 'Proxy configuration'})}</span>
                             <Select
                                 value={form()!.proxyName || ''}
                                 options={[
@@ -697,7 +697,7 @@ const AgentsPanel = () => {
                                 onChange={(next) => updateForm({proxyName: next})}
                                 label={intl.formatMessage({id: 'Agents.proxyName', defaultMessage: 'Proxy configuration'})}
                             />
-                        </label>
+                        </div>
                         <Show when={proxies().length === 0}>
                             <div class='AgentsPanel__hint'>
                                 {intl.formatMessage({id: 'Agents.proxy-hint', defaultMessage: 'Configurations are added under "Proxy configurations", beside this section.'})}

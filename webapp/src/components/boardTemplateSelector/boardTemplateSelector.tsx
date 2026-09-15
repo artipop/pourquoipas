@@ -61,7 +61,9 @@ type Props = {
 // simply not in a base binary, so their slugs match nothing and the filter
 // drops them. Which is the point of deciding an edition at compile time — a
 // page that knew would be a page that could be told otherwise.
-const TEMPLATE_MARKER = 'xciiiTemplate'
+import {KEY_PREFIX} from '../acp/automation'
+
+const TEMPLATE_MARKER = 'template'
 const VISIBLE_TEMPLATE_SLUGS = [
     'developer-tasks',
     'content-making',
@@ -116,10 +118,13 @@ const BoardTemplateSelector = (props: Props) => {
         }
     }
 
+    // Every time it opens, not only when the list is empty: the install's own
+    // templates are replaced whole when the language they are read in changes
+    // (internal/boardadapter/templatetext.go), and the answer this reads was
+    // fetched before that. The fetch also prunes what the board list is still
+    // holding from before it.
     onSettled(() => {
-        if (octoClient.teamId !== Constants.globalTeamId && (globalTemplates() || []).length === 0) {
-            actions.globalTemplates.fetchGlobalTemplates()
-        }
+        actions.globalTemplates.fetchGlobalTemplates()
     })
 
     const onBoardTemplateDelete = (template: Board) => {

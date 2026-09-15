@@ -12,6 +12,7 @@ import IconButton from '../../widgets/buttons/iconButton'
 import DropdownIcon from '../../widgets/icons/dropdown'
 import MenuWrapper from '../../widgets/menuWrapper'
 import Editable from '../../widgets/editable'
+import type {Focusable} from '../../widgets/editable'
 
 import ModalWrapper from '../modalWrapper'
 
@@ -32,10 +33,10 @@ import {OnboardingBoardTitle} from '../cardDetail/cardDetail'
 import AddViewTourStep from '../onboardingTour/addView/add_view'
 import {getCurrentCard} from '../../store/cards'
 import BoardPermissionGate from '../permissions/boardPermissionGate'
+import type {Flow} from '../acp/automation'
 
 import NewCardButton from './newCardButton'
-import ViewHeaderPropertiesMenu from './viewHeaderPropertiesMenu'
-import ViewHeaderGroupByMenu from './viewHeaderGroupByMenu'
+import ViewHeaderFlowMenu from './viewHeaderFlowMenu'
 import ViewHeaderDisplayByMenu from './viewHeaderDisplayByMenu'
 import ViewHeaderSortMenu from './viewHeaderSortMenu'
 import ViewHeaderActionsMenu from './viewHeaderActionsMenu'
@@ -49,6 +50,10 @@ type Props = {
     activeView: BoardView
     views: BoardView[]
     cards: Card[]
+
+    // The routes this board may be drawn by. Read by whoever owns the board's
+    // subscription, so the picker and the columns are narrowed from one list.
+    flows: Flow[]
     groupByProperty?: IPropertyTemplate
     addCard: () => void
     addCardFromTemplate: (cardTemplateId: string) => void
@@ -64,7 +69,8 @@ const ViewHeader = (props: Props) => {
     const intl = useIntl()
     const canEditBoardProperties = useHasCurrentBoardPermissions([Permission.ManageBoardProperties])
 
-    const withGroupBy = () => props.activeView.fields.viewType === 'board' || props.activeView.fields.viewType === 'table'
+    // withGroupBy is parked with the control it gated — see the render below.
+    // const withGroupBy = () => props.activeView.fields.viewType === 'board' || props.activeView.fields.viewType === 'table'
     const withDisplayBy = () => props.activeView.fields.viewType === 'calendar'
     const withSortBy = () => props.activeView.fields.viewType !== 'calendar'
 
@@ -110,64 +116,116 @@ const ViewHeader = (props: Props) => {
 
     const showAddViewTourStep = () => showTourBaseCondition() && delayComplete()
 
+    // Renaming is a mode now rather than "the field is always a field": the
+    // name is the menu's trigger, so it is read-only until «Переименовать вид»
+    // asks for it, and it goes back to read-only on save, on cancel and on the
+    // blur Editable already reports as a save.
+    const [renaming, setRenaming] = createSignal(false)
+    let titleFocus: Focusable | undefined
+    const startRenaming = () => {
+        setRenaming(true)
+
+        // After the menu has closed and the input has stopped being read-only,
+        // or the focus lands on something that cannot take it.
+        queueMicrotask(() => titleFocus?.focus(true))
+    }
+
     return (
         <div class='ViewHeader'>
             <div class='viewSelector'>
-                <Editable
-                    value={viewTitle()}
-                    placeholderText='Untitled View'
-                    onSave={(): void => {
-                        mutator.changeBlockTitle(props.activeView.boardId, props.activeView.id, props.activeView.title, viewTitle())
-                    }}
-                    onCancel={(): void => {
-                        setViewTitle(props.activeView.title)
-                    }}
-                    onChange={setViewTitle}
-                    saveOnEsc={true}
-                    readonly={props.readonly || !canEditBoardProperties()}
-                    spellCheck={true}
-                    autoExpand={false}
-                />
-                <Show when={!props.readonly}>
-                    <div>
-                        <MenuWrapper
-                            label={intl.formatMessage({id: 'ViewHeader.view-menu', defaultMessage: 'View menu'})}
-                            menu={
-                                <ViewMenu
-                                    board={props.board}
-                                    activeView={props.activeView}
-                                    views={props.views}
+                <div>
+                    <MenuWrapper
+                        label={intl.formatMessage({id: 'ViewHeader.view-menu', defaultMessage: 'View menu'})}
+                        menu={
+                            <ViewMenu
+                                board={props.board}
+                                activeView={props.activeView}
+                                views={props.views}
+                                readonly={props.readonly || !canEditBoardProperties()}
+                                onRename={canEditBoardProperties() && !props.readonly ? startRenaming : undefined}
+                            />
+                        }
+                    >
+                        {/* The name is inside the trigger, so clicking the word
+                            «Задачи» opens the view menu. It used to be a text
+                            field 131px wide with the chevron parked past the
+                            end of it, and the only 24px that opened anything
+                            were the ones nobody aims at: clicking the name put
+                            a cursor in it and nothing else happened. */}
+                        <div onClick={(e) => renaming() && e.stopPropagation()}>
+                            <Show
+                                when={renaming()}
+                                fallback={<span class='viewTitle'>{viewTitle() || 'Untitled View'}</span>}
+                            >
+                                {/* A field only while it is one. An input is as
+                                    wide as its `size` whatever the CSS says, so
+                                    a read-only one drew a 20-character box
+                                    around a seven-letter name and put the
+                                    chevron past the end of it. */}
+                                <Editable
+                                    ref={(f) => {
+                                        titleFocus = f
+                                    }}
+                                    value={viewTitle()}
+                                    placeholderText='Untitled View'
+                                    onSave={(): void => {
+                                        setRenaming(false)
+                                        mutator.changeBlockTitle(props.activeView.boardId, props.activeView.id, props.activeView.title, viewTitle())
+                                    }}
+                                    onCancel={(): void => {
+                                        setRenaming(false)
+                                        setViewTitle(props.activeView.title)
+                                    }}
+                                    onChange={setViewTitle}
+                                    saveOnEsc={true}
                                     readonly={props.readonly || !canEditBoardProperties()}
+                                    spellCheck={true}
+                                    autoExpand={false}
                                 />
-                            }
-                        >
+                            </Show>
+                        </div>
+                        <Show when={!props.readonly}>
                             <IconButton icon={<DropdownIcon/>}/>
-                        </MenuWrapper>
-                        <Show when={showAddViewTourStep()}>
-                            <AddViewTourStep/>
                         </Show>
-                    </div>
-                </Show>
-
+                    </MenuWrapper>
+                    <Show when={showAddViewTourStep()}>
+                        <AddViewTourStep/>
+                    </Show>
+                </div>
             </div>
 
             <div class='octo-spacer'/>
 
             <Show when={!props.readonly && canEditBoardProperties()}>
-                {/* Card properties */}
+                {/* Card properties and Group by are parked rather than removed.
+                    Which fields a card shows is a question nobody has been
+                    asked whether they want here, and the board is always
+                    grouped by the column property — the stages of a route are
+                    its options, so grouping by anything else is a board the
+                    automation cannot read. Both cost a slot in a bar that was
+                    already overflowing. The machinery is untouched, and this
+                    is one uncomment away.
 
                 <ViewHeaderPropertiesMenu
                     properties={props.board.cardProperties}
                     activeView={props.activeView}
                 />
 
-                {/* Group by */}
-
                 <Show when={withGroupBy()}>
                     <ViewHeaderGroupByMenu
                         properties={props.board.cardProperties}
                         activeView={props.activeView}
                         groupByProperty={props.groupByProperty}
+                    />
+                </Show>
+                */}
+
+                {/* Route */}
+
+                <Show when={props.activeView.fields.viewType === 'board'}>
+                    <ViewHeaderFlowMenu
+                        activeView={props.activeView}
+                        flows={props.flows}
                     />
                 </Show>
 

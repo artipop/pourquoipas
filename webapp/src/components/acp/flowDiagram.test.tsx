@@ -1,10 +1,11 @@
 import {render, screen} from '@solidjs/testing-library'
+import {flush} from 'solid-js'
 import '@testing-library/jest-dom'
 
 import {wrapIntl} from '../../testUtils'
 import {setupReactFlowEnvironment} from '../../test/reactFlowEnvironment'
 
-import FlowDiagram, {depths, layout, edgeKind, connectEdge, HANDLE_EVENT, HANDLE_FAILURE, HANDLE_SUCCESS, NODE_WIDTH} from './flowDiagram'
+import FlowDiagram, {depths, layout, edgeKind, connectEdge, lanePath, longHaul, stageHeight, HANDLE_EVENT, HANDLE_FAILURE, HANDLE_SUCCESS, HANDLE_WRITE, NODE_HEIGHT, NODE_WIDTH, WRITE_ROW} from './flowDiagram'
 import {SUCCESS, FAILURE} from './automation'
 
 setupReactFlowEnvironment()
@@ -116,6 +117,37 @@ describe('components/acp/flowDiagram', () => {
         }
     })
 
+    // The fit is the diagram's own and not the canvas' — the two used to race,
+    // and the editor opened centred one time and in a corner the next — so the
+    // picture is held back until the diagram's fit has landed. jsdom measures
+    // nothing, which is the case the wait is bounded for: after its share of
+    // frames the fit lands on whatever there is and the picture is shown.
+    test('the picture is hidden until the diagram has fitted it', () => {
+        const frames: FrameRequestCallback[] = []
+        const raf = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
+            frames.push(cb)
+            return frames.length
+        })
+        const {container} = render(() => wrapIntl(() =>
+            <FlowDiagram
+                nodes={nodes}
+                edges={edges}
+                triggers={triggers}
+            />,
+        ))
+        const pane = container.querySelector('.FlowDiagram')!
+        expect(pane).toHaveClass('FlowDiagram--unfitted')
+
+        for (let i = 0; i < 100 && frames.length > 0; i++) {
+            frames.shift()!(i * 16)
+        }
+
+        // A frame callback is not an event, so nothing drains the write it made.
+        flush()
+        expect(pane).not.toHaveClass('FlowDiagram--unfitted')
+        raf.mockRestore()
+    })
+
     test('an empty route draws nothing at all', () => {
         const {container} = render(() => wrapIntl(() =>
             <FlowDiagram
@@ -190,6 +222,34 @@ describe('components/acp/flowDiagram builder', () => {
         expect(editable.container.querySelectorAll('.FlowDiagram__out--success').length).toBe(nodes.length)
     })
 
+    // The rings on an arrow's ends are the only way to re-point one or to break
+    // it where it is, and they went in as a 14-unit target that the zoom then
+    // shrank — so what is asserted is that they are there to be grabbed at all,
+    // and only where the route can be redrawn.
+    test('a selected arrow offers a ring at each end, and only on a canvas being built', () => {
+        const readonly = render(() => wrapIntl(() =>
+            <FlowDiagram
+                nodes={nodes}
+                edges={edges}
+                triggers={triggers}
+                selected={{kind: 'edge', id: 'agent-success-0'}}
+            />,
+        ))
+        expect(readonly.container.querySelectorAll('.FlowDiagram__anchor').length).toBe(0)
+        readonly.unmount()
+
+        const editable = render(() => wrapIntl(() =>
+            <FlowDiagram
+                nodes={nodes}
+                edges={edges}
+                triggers={triggers}
+                selected={{kind: 'edge', id: 'agent-success-0'}}
+                onChange={vi.fn()}
+            />,
+        ))
+        expect(editable.container.querySelectorAll('.FlowDiagram__anchor').length).toBe(2)
+    })
+
     test('the map says how many cards stand on a stage', async () => {
         render(() => wrapIntl(() =>
             <FlowDiagram
@@ -200,5 +260,90 @@ describe('components/acp/flowDiagram builder', () => {
             />,
         ))
         expect(screen.getByText('3')).toBeInTheDocument()
+    })
+
+    // The dataflow is drawn on the box, and the fork is pulled from the thing
+    // that produces the value: this is the whole point of the row. An arrow
+    // dragged from ○Вердикт is «поедет сюда, если Вердикт = …», assembled from
+    // the gesture rather than from a panel listing every field on the board.
+    test('an arrow pulled from an output branches on that property', () => {
+        const next = connectEdge([], 'test', 'agent', HANDLE_WRITE + 'Вердикт', triggers)
+        expect(next).toEqual([{from: 'test', to: 'agent', on: SUCCESS, if: {property: 'Вердикт', value: ''}}])
+
+        // The value is the one thing the gesture cannot carry, so it is left
+        // empty on purpose and the caption says «Вердикт = ?» until it is
+        // chosen. Pulling again makes a second branch rather than replacing the
+        // first — which is what a fork is, and what the plain outputs do not do.
+        const twice = connectEdge(next, 'test', 'review', HANDLE_WRITE + 'Вердикт', triggers)
+        expect(twice.length).toBe(2)
+    })
+
+    // A stage with outputs stands taller, and the canvas is told so before it
+    // paints — the box is stated, never measured, or the arrows are drawn from
+    // the wrong corner on the first frame.
+    test('a stage with outputs is taller than one without', () => {
+        expect(stageHeight()).toBe(NODE_HEIGHT)
+        expect(stageHeight([])).toBe(NODE_HEIGHT)
+        expect(stageHeight([{name: 'Вердикт', branchable: true}])).toBe(NODE_HEIGHT + WRITE_ROW)
+    })
+
+    // Only a property with a closed set can be branched on, because an arrow
+    // asks "is it this value". A text output is drawn — it is what the stages
+    // further on will read — but there is nothing to pull from it.
+    test('only an output with a set of values carries a port', () => {
+        const {container} = render(() => wrapIntl(() =>
+            <FlowDiagram
+                nodes={nodes}
+                edges={edges}
+                triggers={triggers}
+                onChange={vi.fn()}
+                writesOf={(node) => (node.id === 'test' ? [{name: 'Вердикт', branchable: true}, {name: 'Заметка', branchable: false}] : [])}
+            />,
+        ))
+        expect(screen.getByText('Вердикт')).toBeInTheDocument()
+        expect(screen.getByText('Заметка')).toBeInTheDocument()
+        expect(container.querySelectorAll('.FlowDiagram__out--write').length).toBe(1)
+    })
+
+    // Two arrows that cross the picture used to travel it side by side and read
+    // as one thick line — which is what «дубли линий» turned out to be. Each
+    // gets a corridor of its own under the graph.
+    test('an arrow that skips columns gets a lane, a step to the next stage does not', () => {
+        const lanes = longHaul(nodes, edges)
+
+        // agent → review → deploy → test are one step each; the failure back to
+        // the agent skips three.
+        expect(lanes.has('agent-success-0')).toBe(false)
+        expect(lanes.has('deploy-success-2')).toBe(false)
+        expect(lanes.get('test-failure-3')).toBe(0)
+    })
+
+    // And a return of one column is still a return: it travels the width of two
+    // boxes to get there, and the library draws it through them — which cuts it
+    // into what look like two broken stubs.
+    test('an arrow one column back is laned too', () => {
+        const back = [
+            {id: 'a', column: 'A', action: 'agent'},
+            {id: 'b', column: 'B', action: 'deploy'},
+        ]
+        const lanes = longHaul(back, [
+            {from: 'a', to: 'b', on: SUCCESS},
+            {from: 'b', to: 'a', on: FAILURE},
+        ])
+        expect(lanes.has('a-success-0')).toBe(false)
+        expect(lanes.get('b-failure-1')).toBe(0)
+    })
+
+    test('a lane runs under the lower of the two stages, and two lanes do not share a corridor', () => {
+        const first = lanePath(100, 50, 400, 50, 0)
+        const second = lanePath(100, 50, 500, 50, 1)
+        const corridor = (d: string) => Number(d.split('L')[2].split(',')[1])
+
+        // Under both boxes, and each lane lower than the one before it.
+        expect(corridor(first.d)).toBeGreaterThan(50 + (NODE_HEIGHT / 2))
+        expect(corridor(second.d)).toBeGreaterThan(corridor(first.d))
+
+        // The caption rides in the corridor rather than over a box.
+        expect(first.labelY).toBe(corridor(first.d))
     })
 })

@@ -3,7 +3,7 @@
 //
 // It exists so that an agent bringing things in cannot write to the board. Everything
 // it finds goes down the pipeline every other source goes down — the rules,
-// «Входящие», the event log, and the (source, external id, version) key that
+// the inbox view, the event log, and the (source, external id, version) key that
 // makes filing the same thing twice a no-op. The agent is therefore allowed to
 // be dumb: the prompt tells it to file everything it sees rather than to work
 // out what is new, because deciding that is what it would get wrong and the

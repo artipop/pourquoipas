@@ -14,7 +14,7 @@ type PickedEmoji = {
     native?: string
 }
 
-// «Часто используемые», «Люди», «Поиск» — every word the picker draws around
+// Frequently used, People, Search — every word the picker draws around
 // the glyphs is emoji-mart's own, and it carries English alone. Handed a
 // locale and no `i18n`, it fetches the rest from jsdelivr, which is a network
 // this app does not have and an origin the page may not reach; so the bundle

@@ -11,8 +11,8 @@
 // required a patch would be a plugin with extra steps.
 //
 // Only the client half is here, and only the three messages a feed needs:
-// initialize, tools/list (for the диагностика of a manifest somebody typed by
-// hand) and tools/call. The transport is the one everything else here uses —
+// initialize, tools/list (for diagnosing a manifest somebody typed by hand)
+// and tools/call. The transport is the one everything else here uses —
 // JSON-RPC 2.0, one message per line, over stdio — so procgroup spawns it and
 // cleans it up like any other plugin.
 package mcp
@@ -65,8 +65,8 @@ type Client struct {
 	done chan struct{}
 }
 
-// ServerInfo is the server introducing itself, kept for error messages: "kaiten
-// 0.1.0 said no" is a sentence somebody can act on.
+// ServerInfo is the server introducing itself, kept for error messages:
+// "tracker 0.1.0 said no" is a sentence somebody can act on.
 type ServerInfo struct {
 	Name    string `json:"name"`
 	Version string `json:"version,omitempty"`

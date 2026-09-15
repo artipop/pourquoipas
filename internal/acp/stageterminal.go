@@ -185,7 +185,7 @@ func (m *Manager) startStageTerminal(s *Session) (*TerminalSession, error) {
 	//
 	// Only one standing where the stage was told to run, though: a person can
 	// open the card's terminal before the card names a folder, and that
-	// conversation runs in «черновики доски» — same node, different directory.
+	// conversation runs in the board's drafts folder — same node, different directory.
 	// Adopt it and the task goes to a CLI in the drafts folder while the route
 	// believes the stage is on the card's branch. The test is the folder, and
 	// the directory once one is claimed — not "is this the drafts folder", since
@@ -234,8 +234,8 @@ func (m *Manager) startStageTerminal(s *Session) (*TerminalSession, error) {
 // CLI reads a repeated brief as a fresh instruction — but why it is back, in
 // the words of whatever sent it. The latest arrival on this node carries the
 // trigger and, for a stage's own verdict, what that stage reported
-// (FlowEventRecord.Said): «ревьюер вернул с такими-то замечаниями» is exactly
-// the new input the resumed session works from. Empty when the card has not
+// (FlowEventRecord.Said): what the reviewer sent it back with is exactly the
+// new input the resumed session works from. Empty when the card has not
 // been away, and the resume then delivers the ordinary prompt.
 func (m *Manager) returnBrief(cardID, nodeID string) string {
 	events, err := m.store.FlowEvents(cardID)
@@ -333,7 +333,7 @@ func (m *Manager) FinishWorkFromTools(token string, ok bool, summary string, fie
 			continue
 		}
 		if strings.TrimSpace(fieldValue(fields, w.Property)) == "" {
-			return fmt.Errorf("стадия обязана записать свойство %q — передай его в properties", w.Property)
+			return fmt.Errorf("стадия обязана записать свойство %q — передай его в properties (что оно принимает, покажет list_card_fields)", w.Property)
 		}
 	}
 	if len(fields) > 0 {
@@ -347,7 +347,7 @@ func (m *Manager) FinishWorkFromTools(token string, ok bool, summary string, fie
 		}
 		ctx, cancel := context.WithTimeout(m.rootCtx, 10*time.Second)
 		defer cancel()
-		if err := m.writer.SetCardFields(ctx, wait.cardID, fields); err != nil {
+		if err := m.forCard(wait.cardID).Writer.SetCardFields(ctx, wait.cardID, fields); err != nil {
 			return err
 		}
 	}

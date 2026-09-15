@@ -43,8 +43,15 @@
             flex-direction: column;
             align-items: flex-start;
 
+            // The side padding is a share of the column rather than a fixed
+            // 126px, and the cap is what that 126px was: opening the panel
+            // takes 46% of the dialog, and two fixed margins then left the
+            // card itself 275px of a 527px column — a title wrapping after one
+            // word with the rest of the row empty. A percentage resolves
+            // against this column, so the wide dialog is unchanged (13% of it
+            // is more than the cap) and the narrow one keeps its text.
             @media not screen and (max-width: 975px) {
-                padding: 10px 126px;
+                padding: 10px clamp(32px, 13%, 126px);
             }
 
             @media screen and (max-width: 975px) {

@@ -33,7 +33,7 @@ const (
 	// SetupStepName is the board's own name, and the one step that asks about
 	// the board rather than about this machine. It is first and it is not
 	// optional: a board arrives called what its template is called, so the
-	// second one made from «Разработка» is a second «Разработка» in the
+	// second one made from the developer template is a second the developer template in the
 	// sidebar, and the moment to say what this one is for is the moment it is
 	// made.
 	SetupStepName    = "name"
@@ -242,7 +242,7 @@ func (m *Manager) SetupPlanFor(boardID string) SetupPlan {
 // Deletable once boards made before the wording changed are gone; each entry
 // says what it was fixing.
 var retiredHints = map[string]string{
-	// Said what the machinery does («в отдельном worktree»), and how a
+	// Said what the machinery does — a worktree of its own — and how a
 	// repository is worked in is now the board's own answer rather than a fact
 	// about the step. What the step needs to know is what to point at.
 	"Репозиторий с кодом: агент работает в отдельном worktree и оставляет ветку.": "Папка с файлами по проекту или git-репозиторий",
@@ -482,7 +482,7 @@ func (m *Manager) SetTestAgent(boardID, agentName string, servers MCPServerSet) 
 // columns.
 //
 // A crew, not one name, because that is what a stage holds and what a person
-// answering «кто работает карточки этой доски» may mean — two agents sharing
+// answering "who works this board's cards" may mean — two agents sharing
 // the column is an ordinary arrangement, and the engine already picks the free
 // one. An empty list is an answer too: it takes the crew off, and a board that
 // names nobody is back to offering every agent on the machine, which is what a
@@ -519,7 +519,7 @@ func (m *Manager) setStageCrew(boardID string, names []string, action string, se
 
 	// The browser goes on the stage that tests, not on the agent that works it.
 	// It used to go on the agent, and that made setting up QA on one board an
-	// edit to an agent every other board also runs: «клаус» given a browser
+	// edit to an agent every other board also runs: an agent named in Russian given a browser
 	// here drove one everywhere. A stage is the narrower owner and the honest
 	// one — testing is what needs a browser, not the tester.
 	var placed bool
@@ -833,7 +833,7 @@ func (m *Manager) isBoardTemplate(boardID string) bool {
 	}
 	ctx, cancel := context.WithTimeout(parent, 10*time.Second)
 	defer cancel()
-	isTemplate, err := m.meta.IsBoardTemplate(ctx, boardID)
+	isTemplate, err := m.forBoard(boardID).Meta.IsBoardTemplate(ctx, boardID)
 	if err != nil {
 		m.log.Warn("acp: cannot tell whether the board is a template", "board", boardID, "err", err)
 		return false
@@ -855,7 +855,7 @@ func (m *Manager) boardProperties(boardID string) map[string]any {
 	}
 	ctx, cancel := context.WithTimeout(parent, 10*time.Second)
 	defer cancel()
-	props, err := m.meta.BoardProperties(ctx, boardID)
+	props, err := m.forBoard(boardID).Meta.BoardProperties(ctx, boardID)
 	if err != nil {
 		m.log.Warn("acp: cannot read the board's own settings", "board", boardID, "err", err)
 		return nil

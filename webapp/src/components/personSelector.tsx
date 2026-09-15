@@ -64,8 +64,8 @@ const PersonSelector = (props: Props): JSX.Element => {
     // The chosen person carries the way to take them off, right beside their
     // name. It used to be the widget's own clear button, which sits at the far
     // end of the control — and on a card that control was the whole width of
-    // the property row, so the ✕ for «клаус» stood 360px away from the word
-    // «клаус», over nothing. Every other value on a card is a chip with its own
+    // the property row, so the ✕ for an agent named in Russian stood 360px away from the word
+    // an agent named in Russian, over nothing. Every other value on a card is a chip with its own
     // cross (the select property's), and this is that.
     const formatOptionLabel = (user: IUser, context?: ComboboxContext): JSX.Element => {
         if (!user) {
@@ -86,7 +86,7 @@ const PersonSelector = (props: Props): JSX.Element => {
                         src={profileImg}
                     />
                 </Show>
-                {personName(intl, user, clientConfig().teammateNameDisplay)}
+                {personName(intl, user, clientConfig().teammateNameDisplay, clientConfig().teamMode)}
                 <GuestBadge show={Boolean(user?.is_guest)}/>
 
                 {/* Only the single-person field: a multi one is a row of chips
@@ -139,7 +139,8 @@ const PersonSelector = (props: Props): JSX.Element => {
                     update_at: currentMe.update_at,
                     is_bot: false,
                     is_guest: currentMe.is_guest,
-                    roles: currentMe.roles,
+                    role: currentMe.role,
+                    kind: currentMe.kind,
                 })
                 returnUsers.push(...boardUsers().filter((u) => u.id !== currentMe.id))
             } else {
@@ -155,8 +156,7 @@ const PersonSelector = (props: Props): JSX.Element => {
             }
             return (await offerable(returnUsers)).map(asOption)
         }
-        const excludeBots = true
-        const allUsers = await client.searchTeamUsers(value, excludeBots)
+        const allUsers = await client.searchTeamUsers(value)
         const usersInsideBoard: IUser[] = []
         const usersOutsideBoard: IUser[] = []
         for (const u of await offerable(allUsers)) {

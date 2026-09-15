@@ -16,6 +16,7 @@ import BoardIcon from '../widgets/icons/board'
 import CalendarIcon from '../widgets/icons/calendar'
 import DeleteIcon from '../widgets/icons/delete'
 import DuplicateIcon from '../widgets/icons/duplicate'
+import EditIcon from '../widgets/icons/edit'
 import GalleryIcon from '../widgets/icons/gallery'
 import TableIcon from '../widgets/icons/table'
 import Menu from '../widgets/menu'
@@ -28,6 +29,12 @@ type Props = {
     activeView: BoardView
     views: BoardView[]
     readonly: boolean
+
+    // Renaming the view happens in the header, where the name is drawn. It is
+    // offered from here because the name itself now opens this menu: a click
+    // that used to land in a text field has somewhere better to go, and the
+    // one thing it did instead needs a door of its own.
+    onRename?: () => void
 }
 
 const ViewMenu = (props: Props) => {
@@ -208,6 +215,10 @@ const ViewMenu = (props: Props) => {
             })
     }
 
+    const renameViewText = intl.formatMessage({
+        id: 'View.RenameView',
+        defaultMessage: 'Rename view',
+    })
     const duplicateViewText = intl.formatMessage({
         id: 'View.DuplicateView',
         defaultMessage: 'Duplicate view',
@@ -261,6 +272,16 @@ const ViewMenu = (props: Props) => {
                 <BoardPermissionGate permissions={[Permission.ManageBoardProperties]}>
                     <Menu.Separator/>
                 </BoardPermissionGate>
+                <Show when={Boolean(props.onRename) && !props.readonly}>
+                    <BoardPermissionGate permissions={[Permission.ManageBoardProperties]}>
+                        <Menu.Text
+                            id='__renameView'
+                            name={renameViewText}
+                            icon={<EditIcon/>}
+                            onClick={() => props.onRename?.()}
+                        />
+                    </BoardPermissionGate>
+                </Show>
                 <Show when={!props.readonly}>
                     <BoardPermissionGate permissions={[Permission.ManageBoardProperties]}>
                         <Menu.Text

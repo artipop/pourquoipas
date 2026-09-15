@@ -318,14 +318,20 @@ const SidebarCategory = (props: Props) => {
         >
             <div
                 class={`SidebarCategory${props.categoryBoards.isNew ? ' new' : ''}${boardDraggingOver() ? ' draggingOver' : ''}`}
-                ref={menuWrapperRef}
             >
                 <div
                     class={`categoryBoardsDroppableArea${isBoardOver() ? ' draggingOver' : ''}`}
                     ref={boardsRef}
                 >
+                    {/* The menu's anchor. It sat on the whole .SidebarCategory
+                        for the fork's own space arithmetic, where it was only
+                        measured — and when floating-ui took over the placing
+                        it became the literal anchor, so the category's ⋯ menu
+                        opened under the whole block, boards and all, at the
+                        sidebar's left edge. The row is what the ⋯ sits in. */}
                     <div
                         class={`octo-sidebar-item category ${collapsed() || props.forceCollapse ? 'collapsed' : 'expanded'} ${props.categoryBoards.id === props.activeCategoryId ? 'active' : ''}`}
+                        ref={menuWrapperRef}
                     >
                         <div
                             class='octo-sidebar-title category-title'

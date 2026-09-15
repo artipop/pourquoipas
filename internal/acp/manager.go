@@ -41,9 +41,13 @@ type Manager struct {
 	// travels with it. Optional; without it the position lives in this
 	// machine's store alone and stays behind when the board moves.
 	cards BoardCardState
-	ui    UIEmitter
-	log   *slog.Logger
-	tr    *Tracer
+	// routing is how a board or a card is matched to the source it lives on,
+	// once there is more than one (boardsource.go). Empty and unused on every
+	// install that works its own board.
+	routing boardRouting
+	ui      UIEmitter
+	log     *slog.Logger
+	tr      *Tracer
 
 	mu     sync.Mutex
 	active map[string]*Session // session ID → session
@@ -70,6 +74,10 @@ type Manager struct {
 	stageMu      sync.Mutex
 	stageWaits   map[string]stageWait // terminal ID → the running stage finish_work answers to
 	stageWaiting map[string]Attention // terminal ID → the wait it is showing
+	cardWaits    map[string]Attention // card ID → the route handing it to a person (cardwait.go)
+	// changesWriteFailed keeps the "no card_changes table" warning to one line
+	// a run — see saveCardChanges.
+	changesWriteFailed sync.Once
 
 	// acked is which waits a person has already been told about, so that being
 	// told is a thing that happens once (attentionack.go). Its own lock: it is
@@ -308,6 +316,10 @@ type startOptions struct {
 	// column's. Empty falls back, like the crew.
 	writes []PropertyWrite
 	reads  []string
+	// upstream is what the stages ahead of this one on the route write, which
+	// is what reads fall back to when nothing was declared at all. Filled by
+	// the engine, which is the only caller that has a route to walk.
+	upstream []string
 	// mcp are the node's own MCP servers, overriding the column's. Empty falls
 	// back, like the crew.
 	mcp MCPServerSet
@@ -332,12 +344,23 @@ func (o startOptions) declaredWrites() []PropertyWrite {
 	return o.column.Writes
 }
 
-// declaredReads is what this stage is handed on the way in.
+// declaredReads is what this stage is handed on the way in: the node's own
+// list, else the column's — and, when neither says anything, whatever the
+// stages ahead of it on the route declare that they write (upstreamReads).
+//
+// The graph is the third answer rather than nothing because it is the true one:
+// a value put on the card by an earlier stage is on the card, and making
+// somebody tick it again on every stage that needs it is asking for the same
+// fact twice. An explicit list still wins, which is how a stage says "not all
+// of it" — and clearing the list gives the graph's answer back.
 func (o startOptions) declaredReads() []string {
 	if len(o.reads) > 0 {
 		return o.reads
 	}
-	return o.column.Reads
+	if len(o.column.Reads) > 0 {
+		return o.column.Reads
+	}
+	return o.upstream
 }
 
 // prompt is what this stage wants said to whoever works it: the node's own
@@ -415,8 +438,8 @@ func (m *Manager) startSession(ev CardMoved, opts startOptions) (*Session, error
 	if busy {
 		return nil, errStageBusy
 	}
-	// A stage with its own crew names its worker, so the card's «Кто
-	// занимается» is written to match — by the machine, as the card travels.
+	// A stage with its own crew names its worker, so the card's assignee field
+	// is written to match — by the machine, as the card travels.
 	// Before the launch rather than after: the stage gave the card to this
 	// agent whether or not the start then succeeds, and the field should say
 	// so either way. A person in the field never reaches this line
@@ -489,12 +512,28 @@ func (m *Manager) startSession(ev CardMoved, opts startOptions) (*Session, error
 	systemPrompt, deployPrompt, testPrompt := m.cfg.BoardPrompts[ev.BoardID], m.cfg.DeployPrompt, m.cfg.TestPrompt
 	m.cfgMu.RUnlock()
 	inputs := cardInputs(ev, opts.declaredReads())
-	prompt := composePrompt(ev, agent, systemPrompt, joinPrompts(opts.prompt(), inputs), worktreeAvailable)
+
+	// The contract, but only where the agent is the one who delivers it: a
+	// deploy stage's address and a test stage's verdict are written by this side
+	// (writeStageFields), so naming them here would ask for something the agent
+	// has no way to produce.
+	outputs := ""
+	if deploy == nil && test == nil {
+		outputs = stageOutputs(opts.declaredWrites(), m.boardCardProperties(ev.BoardID))
+	}
+	stage := joinPrompts(opts.prompt(), inputs, outputs)
+	// Whether the agent will be handed the board's tools at all, which is what
+	// decides whether the task may tell it to end the stage with finish_work:
+	// a stage that runs as an ACP session takes no board server, and telling it
+	// to call a tool it does not have is a turn spent looking for one. The same
+	// test runSession makes before it opens a terminal at all.
+	prompt := composePrompt(ev, agent, systemPrompt, stage, worktreeAvailable,
+		deploy == nil && test == nil && stageRunsInTerminal(agent))
 	switch {
 	case deploy != nil:
-		prompt = composeDeployPrompt(ev, agent, systemPrompt, deployPrompt, joinPrompts(opts.prompt(), inputs), *deploy, deployBranch)
+		prompt = composeDeployPrompt(ev, agent, systemPrompt, deployPrompt, stage, *deploy, deployBranch)
 	case test != nil:
-		prompt = composeTestPrompt(ev, agent, systemPrompt, testPrompt, joinPrompts(opts.prompt(), inputs), *test)
+		prompt = composeTestPrompt(ev, agent, systemPrompt, testPrompt, stage, *test)
 	}
 	// The tools of the deploy server are allowed up front: nobody is watching a
 	// card-triggered run, and an unanswered prompt is a rejected one. Seeding
@@ -521,7 +560,7 @@ func (m *Manager) startSession(ev CardMoved, opts startOptions) (*Session, error
 		ColumnName:   opts.column.Column,
 		Test:         test,
 		Artifacts:    artifacts,
-		FlowID:     opts.flowID,
+		FlowID:       opts.flowID,
 		FlowNodeID:   opts.flowNodeID,
 		NodeID:       firstNonEmpty(opts.flowNodeID, ev.ToColumn.OptionID, opts.column.OptionID, nodeNone),
 		Writes:       opts.declaredWrites(),
@@ -547,6 +586,10 @@ func (m *Manager) startSession(ev CardMoved, opts startOptions) (*Session, error
 		BoardID:   s.BoardID,
 		AgentKind: agent.Kind,
 		Status:    StatusQueued,
+		// What the column's limit counts. Written with the row rather than
+		// held in memory, so every window and every restart counts the same
+		// sessions (Store.RunningInColumn).
+		ColumnKey: s.ColumnKey,
 		StartedAt: time.Now(),
 	}
 	if err := m.store.InsertSession(rec); err != nil {
@@ -615,7 +658,7 @@ func (m *Manager) StartDeployForCard(cardID, branch string) (*Session, error) {
 	}
 	ctx, cancel := context.WithTimeout(m.rootCtx, 10*time.Second)
 	defer cancel()
-	ev, err := m.reader.CardByID(ctx, cardID)
+	ev, err := m.forCard(cardID).Reader.CardByID(ctx, cardID)
 	if err != nil {
 		return nil, fmt.Errorf("не удалось прочитать карточку: %w", err)
 	}
@@ -767,6 +810,12 @@ func (m *Manager) finishSession(s *Session, status SessionStatus, errText string
 }
 
 func (m *Manager) releaseSession(s *Session) {
+	// What the work amounts to now (carddiff.go). Here rather than in
+	// finishSession, which is the status transition and stands in front of the
+	// card's own comment: a git run there delayed the comment by as long as git
+	// took, and the first thing that noticed was a test reading the card the
+	// moment the session went to done.
+	m.refreshCardChanges(s.CardID, s.BoardID)
 	m.mu.Lock()
 	delete(m.active, s.ID)
 	if m.byCard[s.CardID] == s {
@@ -824,7 +873,7 @@ func (m *Manager) commentCard(cardID, text string) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	if err := m.writer.AddComment(ctx, cardID, text); err != nil {
+	if err := m.forCard(cardID).Writer.AddComment(ctx, cardID, text); err != nil {
 		m.log.Error("acp: failed to add card comment", "card", cardID, "err", err)
 	}
 }
@@ -906,26 +955,111 @@ func planningPrompt(systemPrompt, planning string, agent AgentEntry, workdir Wor
 
 // cardInputs is the stage's declared reads, valued: what an earlier stage
 // wrote onto the card — the preview URL, the reviewer's verdict — handed to
-// the agent in its brief instead of hoping it asks get_card. A read with no
-// value is named as empty rather than dropped, so the agent knows the field
-// exists and nobody filled it.
+// the agent in its brief instead of hoping it asks get_card.
+//
+// A read that nobody has filled in is still named, so the agent knows the field
+// exists and is empty rather than wondering whether it was told — but only
+// beside one that has a value. A block where *every* read is empty is dropped
+// whole: it is the ordinary state of a route's first stage (and of every stage
+// on a route that loops, where a later stage's output is "upstream" of an
+// earlier one), it tells the agent nothing it can act on, and it stands at the
+// head of the brief where the task should be. Measured on a real run: the task
+// opened «From the card:\nПревью:» and the instructions came after.
 func cardInputs(ev CardMoved, reads []string) string {
 	if len(reads) == 0 {
 		return ""
 	}
 	var b strings.Builder
-	b.WriteString("From the card:")
+	valued := false
 	for _, name := range reads {
-		fmt.Fprintf(&b, "\n%s: %s", name, ev.Props[strings.ToLower(name)])
+		value := strings.TrimSpace(ev.Props[strings.ToLower(name)])
+		if value == "" {
+			fmt.Fprintf(&b, "\n%s: (nobody has filled this in)", name)
+			continue
+		}
+		valued = true
+		fmt.Fprintf(&b, "\n%s: %s", name, value)
+	}
+	if !valued {
+		return ""
+	}
+	return "From the card:" + b.String()
+}
+
+// boardCardProperties is the board's fields, or nothing. A brief that cannot
+// name a select's values is still a brief that names the properties, and the
+// board being unreachable must not stop a stage from starting.
+func (m *Manager) boardCardProperties(boardID string) []CardProperty {
+	if m.meta == nil || boardID == "" {
+		return nil
+	}
+	ctx, cancel := context.WithTimeout(m.rootCtx, 5*time.Second)
+	defer cancel()
+	fields, err := m.meta.CardProperties(ctx, boardID)
+	if err != nil {
+		m.log.Warn("acp: could not read the board's card properties", "board", boardID, "err", err)
+		return nil
+	}
+	return fields
+}
+
+// stageOutputs is the stage's declared writes, said as the contract they are:
+// what finish_work must carry, and — for a property with a closed set — which
+// values it may be. Nothing said this before, so an agent asked for a verdict
+// found out what «Вердикт» accepts by being refused, and a required write it
+// was never told about failed the whole stage on the first attempt to end it.
+//
+// The values come from the board rather than from the declaration, so renaming
+// an option cannot leave a stale list standing in a brief.
+func stageOutputs(writes []PropertyWrite, fields []CardProperty) string {
+	if len(writes) == 0 {
+		return ""
+	}
+	var b strings.Builder
+	b.WriteString("Before this stage can end, report these card properties in finish_work's `properties`:")
+	for _, w := range writes {
+		fmt.Fprintf(&b, "\n%s: %s", w.Property, propertyShape(w.Property, fields))
+		if w.Required {
+			b.WriteString(" (required)")
+		}
 	}
 	return b.String()
+}
+
+// propertyShape is what a value for this property may be, in the words a model
+// needs: the closed set where there is one, and the kind otherwise.
+func propertyShape(name string, fields []CardProperty) string {
+	for _, f := range fields {
+		if !strings.EqualFold(f.Name, name) {
+			continue
+		}
+		if len(f.Values) > 0 {
+			return "one of " + strings.Join(f.Values, ", ")
+		}
+		switch f.Type {
+		case "url":
+			return "a link"
+		case "number":
+			return "a number"
+		case "email":
+			return "an email address"
+		case "phone":
+			return "a phone number"
+		default:
+			return "text"
+		}
+	}
+	// The board has no such property. Said as text rather than left out: the
+	// stage still declares it, and the refusal SetCardFields answers with names
+	// the real problem to the one party that can report it.
+	return "text"
 }
 
 // composePrompt builds the agent task text from the card: what the board says
 // and what the agent carries (promptLead), what the stage wants said
 // (stagePrompt — the column's instructions, or its route node's), then the
 // card task.
-func composePrompt(ev CardMoved, agent AgentEntry, systemPrompt, stagePrompt string, useWorktree bool) string {
+func composePrompt(ev CardMoved, agent AgentEntry, systemPrompt, stagePrompt string, useWorktree, endsWithFinishWork bool) string {
 	b := []byte(promptLead(systemPrompt, agent))
 	if p := strings.TrimSpace(stagePrompt); p != "" {
 		b = fmt.Appendf(b, "%s\n\n", p)
@@ -939,8 +1073,30 @@ func composePrompt(ev CardMoved, agent AgentEntry, systemPrompt, stagePrompt str
 	} else {
 		b = fmt.Appendf(b, "\nWork in the current directory — it is the person's own working folder. Do not switch branches, do not commit and do not push: leave the changes uncommitted for review.")
 	}
+	if endsWithFinishWork {
+		b = fmt.Appendf(b, "\n\n%s", finishWorkBrief)
+	}
 	return string(b)
 }
+
+// finishWorkBrief is how the stage ends, said in the task itself.
+//
+// It was said only by the board's MCP server, in the instructions that come
+// with its tools — and a CLI is free not to load them. Measured: Claude Code
+// deferred the whole board server, so `finish_work` reached the agent as a name
+// in a list and nothing else; the agent did the work, wrote a summary in the
+// terminal and stopped, and the card stood on the stage with nobody able to say
+// it was over. The same route had run to the end the day before, which is what
+// makes this worth saying twice: whether the tools arrive loaded is not ours to
+// decide, and the task text is the one thing that always arrives.
+//
+// Deliberately not naming how to load a tool: that is each CLI's own business,
+// and a sentence about ToolSearch would be wrong everywhere else.
+const finishWorkBrief = `How this stage ends: by you saying so, not by the CLI exiting. ` +
+	`Call the board tool ` + "`finish_work`" + ` — done or not done, and one line about what you did — ` +
+	`the moment the work is finished, or when you find you cannot finish it. ` +
+	`It is on the board's MCP server; if it is not among the tools you have loaded, look it up before you finish. ` +
+	`Nothing else can end this stage: until you call it the card stands where it is and nobody is told.`
 
 // composeDeployPrompt builds the task text of a deploy session: the same brief
 // an ordinary task gets, then the deploy instructions, then the concrete

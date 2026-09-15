@@ -47,8 +47,39 @@ The **Входящие** view is created by the board itself once something star
 arriving from outside — see [the Inbox section](./inbox/index.md). (The app
 names that view in Russian, and the name is not translated.)
 
-The view header has **"Properties"** (which fields to show on a card), **"Group
-by"**, **"Filter"**, **"Sort"** and search. These are settings of the view, not
-of the board: each view has its own. The ⋯ menu belongs to the view too: on
-Входящие it holds **"Sources"** and nothing else, while exporting and the
-board's settings are in the menus of the other views.
+The view header has the view's name, **"Route"**, **"Filter"**, **"Sort"** and
+search. These are settings of the view, not of the board: each view has its own.
+When they do not fit the window the bar scrolls sideways. The ⋯ menu belongs to
+the view too: on Входящие it holds **"Sources"** and nothing else, while
+exporting and the board's settings are in the menus of the other views.
+
+Clicking the view's name opens a menu: the board's views, **"Rename view"**,
+**"Duplicate view"**, **"Delete view"** and **"Add view"**. Renaming opens a
+field in the header itself — Enter saves it, Esc cancels.
+
+## Showing one route
+
+The kanban's view header has **"Route"**. It starts on "All
+routes": the board shows every column and every card. Pick a route and the
+board keeps only that route's stages and only the cards travelling it.
+
+The button is there on any board with a route at all, even a single one:
+narrowing a board of nine columns to the three its route goes through is worth
+it too.
+
+The board's first column is separated from the rest by a vertical line —
+always, not only when a route is picked. What arrives is to the left of it,
+what the board does with it is to the right. A card arrives in that first
+column before anything has decided which route it takes, so it stays there
+whatever the route is: that column belongs to every route at once. A card already travelling
+another route disappears from it; a card that has chosen no route is shown
+under every one.
+
+Which route a card is on is decided exactly as the automation decides it: the
+card stands on one of the route's stages, or it names the route with an option
+of that name — usually in the «Workflow» field. See
+["How a card gets onto a route"](./automation/index.md).
+
+The pick is kept in the view itself: it is the same after a reload and on
+another screen. For a view per route, add a view and pick the route in it — the
+other views are untouched.

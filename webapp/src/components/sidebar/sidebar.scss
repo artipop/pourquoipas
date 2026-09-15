@@ -162,6 +162,7 @@
 
     .add-board {
         display: flex;
+        gap: 6px;
         padding: 0 16px 0 20px;
         cursor: pointer;
         color: rgba(var(--sidebar-text-rgb), 0.64);

@@ -11,8 +11,15 @@
 //   1. A theme block below declares raw values only. Everything derived lives in
 //      the last block, which contains no colour at all — so a colour experiment
 //      is a two-line edit inside one theme, not a sweep through the file.
-//   2. Nothing outside this file may name a colour. `tokens.test.ts` checks the
-//      contrast of what is here; a hex elsewhere is invisible to it.
+//   2. No stylesheet outside this file may name a colour. `tokens.test.ts`
+//      checks the contrast of what is here; a hex elsewhere is invisible to it.
+//
+// The two blocks below are also the *first paint*, and no longer the only
+// place the palette exists. A theme is a config (`src/theme/`), applying one
+// writes these same raw tokens onto the document element, and the two shipped
+// configs — `theme/themes/{light,dark}-theme.json` — are checked against this
+// file value for value by `theme/themes.test.ts`. Edit one and the test names
+// the other.
 
 :root {
     // ---------------------------------------------------------------------
@@ -34,10 +41,25 @@
     // is made of: one ink, used in two places.
     --accent-rgb: 28, 26, 22;
     --accent-ink-rgb: 240, 237, 229;
-    --stamp-rgb: 179, 38, 30;
+    // A few levels brighter than the stamp the paper theme prints with, and
+    // that is the config layer talking: the bar beside the open board is a
+    // mark on the near-black sidebar, and the red it was — the same one the
+    // danger text uses — sat at 2.7:1 there. Every theme is held to 3:1 for a
+    // mark now, this one included.
+    --stamp-rgb: 185, 54, 46;
+
+    // A link is the print too, and a theme config may say otherwise: the two
+    // are one decision here and two keys in the format (`buttonBg`,
+    // `linkColor`), so they are declared apart rather than derived from each
+    // other. Same for the presence dot, which Mattermost names separately from
+    // the error text this product draws in the same red.
+    --link-rgb: 28, 26, 22;
+    --dnd-rgb: 179, 38, 30;
 
     --danger-rgb: 179, 38, 30;
-    --warning-rgb: 168, 112, 20;
+    // Deeper than the amber it was for the same reason: `--warning-rgb` is
+    // drawn as *text* in six places and was 3.5:1 on the paper.
+    --warning-rgb: 146, 98, 17;
     --success-rgb: 27, 110, 78;
     --visited-rgb: 109, 74, 199;
 
@@ -100,6 +122,8 @@
     // button sinks into the board. Bright accent, dark ink, both readable.
     --accent-ink-rgb: 8, 8, 10;
     --stamp-rgb: 226, 66, 52;
+    --link-rgb: 226, 66, 52;
+    --dnd-rgb: 255, 140, 160;
 
     // Danger has to stay apart from an accent that is now red, so it moves
     // toward pink — far enough that a failed field is not just the accent
@@ -146,7 +170,7 @@
     --button-bg-rgb: var(--accent-rgb);
     --button-color-rgb: var(--accent-ink-rgb);
     --button-text-rgb: var(--accent-ink-rgb);
-    --link-color-rgb: var(--accent-rgb);
+    --link-color-rgb: var(--link-rgb);
     --link-visited-color-rgb: var(--visited-rgb);
     --sidebar-text-active-border-rgb: var(--stamp-rgb);
 
@@ -154,7 +178,7 @@
     --button-danger-bg-rgb: var(--danger-rgb);
     --button-danger-color-rgb: var(--accent-ink-rgb);
     --online-indicator-rgb: var(--success-rgb);
-    --dnd-indicator-rgb: var(--danger-rgb);
+    --dnd-indicator-rgb: var(--dnd-rgb);
     --away-indicator-rgb: var(--warning-rgb);
 
     // Borders. Two weights, both alpha over the ink, so they follow the theme.

@@ -94,7 +94,7 @@ func TestATemplateIsAskedForNothing(t *testing.T) {
 
 // The one question that is about the board rather than about the machine, and
 // the one nobody can be let past: a board arrives called what its template is
-// called, so the second one made from «Разработка» is a second «Разработка» in
+// called, so the second one made from the developer template is a second the developer template in
 // the sidebar until somebody says what this one is for.
 func TestEveryBoardIsAskedItsNameFirst(t *testing.T) {
 	boards := map[string]*Manager{
@@ -271,7 +271,7 @@ func TestABoardIsAskedForWhatItGrewAfterItWasMade(t *testing.T) {
 }
 
 // …and the other way: the stage is gone, so the question goes with it. A
-// declaration is written once, and «Разработка» with its deploy column deleted
+// declaration is written once, and the developer template with its deploy column deleted
 // went on asking for a Dokku host for ever.
 func TestABoardStopsAskingForWhatItNoLongerDoes(t *testing.T) {
 	m := setupManager(t, boardProps(t, map[string]any{

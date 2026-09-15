@@ -37,12 +37,15 @@ type origin struct {
 	ingest   http.Handler
 	tailnet  *tailnetController
 	server   *http.Server
+	// session says whether a request carries a live board session; nil in
+	// single-user mode, where nothing does. See identity.go.
+	session func(string) bool
 }
 
 // newOrigin binds the front door's listener up front, so its address is known
 // before the application — and therefore the window — is created. Serving
 // starts later, when Wails hands over the asset handler.
-func newOrigin(board, acp, ingest http.Handler, tailnet *tailnetController) (*origin, error) {
+func newOrigin(board, acp, ingest http.Handler, tailnet *tailnetController, session func(string) bool) (*origin, error) {
 	listener, err := listenLoopback(0)
 	if err != nil {
 		return nil, fmt.Errorf("front door: %w", err)
@@ -54,13 +57,15 @@ func newOrigin(board, acp, ingest http.Handler, tailnet *tailnetController) (*or
 		acp:           acp,
 		ingest:        ingest,
 		tailnet:       tailnet,
+		session:       session,
 	}, nil
 }
 
 // ServeAssets is called by Wails once the asset server exists. Everything but
 // /wails/ goes to the board.
 func (o *origin) ServeAssets(assetHandler http.Handler) error {
-	o.server = &http.Server{Handler: newFrontDoor(assetHandler, o.acp, o.ingest, o.board, o.host())}
+	assetHandler = quietOptionalCustomJS(assetHandler)
+	o.server = &http.Server{Handler: newFrontDoor(assetHandler, o.acp, o.ingest, o.board, o.host(), o.session)}
 	go func() {
 		if err := o.server.Serve(o.listener); err != nil && err != http.ErrServerClosed {
 			log.Printf("front door stopped: %v", err)
@@ -70,9 +75,34 @@ func (o *origin) ServeAssets(assetHandler http.Handler) error {
 	// are keyed to the authority the page is served under, and there it is a
 	// tailnet name, not this loopback address.
 	o.tailnet.publish(func(allowedHost string) http.Handler {
-		return newFrontDoor(assetHandler, o.acp, o.ingest, o.board, allowedHost)
+		return newFrontDoor(assetHandler, o.acp, o.ingest, o.board, allowedHost, o.session)
 	})
 	return nil
+}
+
+// customJSPath is the optional script the Wails runtime probes for on every
+// page load.
+const customJSPath = "/wails/custom.js"
+
+// quietOptionalCustomJS answers that probe with "nothing here" instead of an
+// error. Wails serves custom.js in a server build (it carries the runtime's
+// WebSocket connection) and deliberately 404s it in a desktop one, because the
+// runtime reads the refusal as "there is no custom script". The browser reads
+// it as a failed resource and writes it into the console on every launch, where
+// it looks like a broken app.
+//
+// 204 says the same thing to the runtime — it checks response.ok and then the
+// content type, and takes anything that is not JavaScript as nothing to load —
+// without the console entry, and without the second request an empty script
+// would cost. Desktop only, since a server build has a real one to serve.
+func quietOptionalCustomJS(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == customJSPath {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 // frontDoorDrain bounds the wait for requests in flight, because Shutdown runs
@@ -121,7 +151,7 @@ const mainWindowName = "main"
 // Two mechanisms, because the platforms disagree about whose question this is.
 // macOS asks whether to terminate once the last window closed; Windows and
 // Linux call Options.ShouldQuit from a teardown that App.Quit() also goes
-// through — so a constant "never" would make «Выйти» do nothing. Hence a flag.
+// through — so a constant "never" would make the quit item do nothing. Hence a flag.
 var quitting atomic.Bool
 
 // requestQuit is a person asking to leave, from the one place left to ask once
@@ -242,8 +272,28 @@ func openTerminalWindow(wapp *application.App, info acp.TerminalInfo, url string
 	return true
 }
 
+// openDiffWindow gives a card's changes a window, named after the card so a
+// second ask focuses the one already open. Deliberately not the terminal's
+// black: a diff is read like a document, and the page paints it on the theme's
+// own ground.
+func openDiffWindow(wapp *application.App, cardID, title, url string) {
+	name := "acp-diff-" + cardID
+	if existing, ok := wapp.Window.GetByName(name); ok {
+		existing.Show()
+		existing.Focus()
+		return
+	}
+	wapp.Window.NewWithOptions(application.WebviewWindowOptions{
+		Name:   name,
+		Title:  "Изменения · " + title,
+		Width:  1040,
+		Height: 760,
+		URL:    url,
+	})
+}
+
 // openShareWindow opens the share dialog: a small window, on top of whatever
-// the person was reading when they pressed «Поделиться», and named so that a
+// the person was reading when they pressed the share dialog, and named so that a
 // second share focuses the one already open rather than stacking dialogs.
 //
 // It is deliberately not the main window: the app may not be running visibly at

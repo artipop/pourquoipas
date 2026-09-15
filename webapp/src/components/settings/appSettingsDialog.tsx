@@ -3,30 +3,33 @@ import {Dynamic} from '@solidjs/web'
 import type {Component} from 'solid-js'
 
 import {useIntl} from '../../intl'
+import {useAppSelector} from '../../store/hooks'
+import {getMe} from '../../store/users'
 
 import Dialog from '../dialog'
 
-import AgentsPanel, {isAgentsAvailable} from '../acp/agentsPanel'
-import ProxiesPanel, {isProxiesAvailable} from '../acp/proxiesPanel'
+import ServerPanel, {isServerAttachAvailable} from '../acp/serverPanel'
 import TailnetPanel, {isTailnetAvailable} from '../acp/tailnetPanel'
 import MachineMiscPanel from '../acp/machineMiscPanel'
 
 import AppPanel from './appPanel'
 import DataPanel from './dataPanel'
+import PeoplePanel from './peoplePanel'
 import UpdatesPanel, {isUpdatesAvailable} from './updatesPanel'
 
 import './appSettingsDialog.scss'
 
 // Everything this app is asked about itself rather than about a board: how it
-// looks and what language it speaks, which agents are installed, how they
-// reach the network, whether the board is on the tailnet, what comes in and
-// goes out as an archive, and what it is allowed to interrupt with.
+// looks and what language it speaks, whether the board is on the tailnet, what
+// comes in and goes out as an archive, and what it is allowed to interrupt
+// with.
 //
-// Deploy targets are deliberately not here, although their registry is the
-// machine's too: a deploy target only means anything to a board whose route
-// deploys, so it is offered in that board's «Колонки и маршруты…» — and a
-// board of shopping lists never shows a Dokku form. What a setting depends on
-// is where it is offered, even when where it is stored is the same file.
+// The agents, the proxies under them and the deploy hosts are deliberately not
+// here, although all three registries are the machine's: each of them only
+// means something to a board that runs agents, so each is offered from that
+// board's own ⋯ menu, as the agents item and the deploy item, and a board of
+// shopping lists shows neither. What a setting depends on is where it is offered, even
+// when where it is stored is the same file.
 //
 // All of it used to be reached through a board's ⋯ menu, which put settings
 // behind a board and made them unreachable when none was open; then through the
@@ -60,6 +63,13 @@ type Props = {
 const AppSettingsDialog = (props: Props) => {
     const intl = useIntl()
 
+    // Administering the install is a thing only a hosted server has: a desktop
+    // asks nobody who they are, so nobody there is an admin and the section is
+    // not drawn. The answer comes from the account rather than from the mode,
+    // because a member of a team is not an admin either.
+    const me = useAppSelector(getMe)
+    const administersInstall = () => Boolean(me()?.permissions?.includes('manage_system'))
+
     const sections: Section[] = [
         {
 
@@ -81,16 +91,22 @@ const AppSettingsDialog = (props: Props) => {
             body: UpdatesPanel,
         },
         {
-            id: 'agents',
-            name: () => intl.formatMessage({id: 'Machine.section-agents', defaultMessage: 'Agents'}),
-            when: isAgentsAvailable,
-            body: AgentsPanel,
+
+            // Beside the tailnet: the two are the same kind of question — who
+            // may reach this board — asked about people and about devices.
+            id: 'people',
+            name: () => intl.formatMessage({id: 'People.title', defaultMessage: 'People'}),
+            when: administersInstall,
+            body: PeoplePanel,
         },
         {
-            id: 'proxies',
-            name: () => intl.formatMessage({id: 'Proxies.title', defaultMessage: 'Proxy configurations'}),
-            when: isProxiesAvailable,
-            body: ProxiesPanel,
+
+            // Before the tailnet, because the two are asked in that order: whose
+            // board this is, and then where it can be reached from.
+            id: 'server',
+            name: () => intl.formatMessage({id: 'Server.title', defaultMessage: 'Server'}),
+            when: isServerAttachAvailable,
+            body: ServerPanel,
         },
         {
             id: 'tailnet',

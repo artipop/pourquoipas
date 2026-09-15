@@ -48,7 +48,7 @@ const SelectProperty = (props: PropertyProps) => {
     // the two apart, and it is set on the card and nowhere else.
     //
     // Without this, clearing meant opening the selector and finding the cross
-    // inside it. The only thing that looked like a way out was «Удалить» in the
+    // inside it. The only thing that looked like a way out was the delete item in the
     // option's own menu, which deletes the option from the whole board.
     const clearable = () => isEditable() && props.showEmptyPlaceholder && Boolean(option())
 

@@ -62,7 +62,9 @@ const ru = {
                 text: 'Настройки',
                 items: [
                     {text: 'Обзор', link: '/settings/'},
+                    {text: 'Темы', link: '/settings/themes'},
                     {text: 'Агенты, npx и Node.js', link: '/settings/agents'},
+                    {text: 'Свой сервер', link: '/settings/team'},
                     {text: 'Обновления', link: '/settings/updates'},
                 ],
             },
@@ -146,7 +148,9 @@ const en = {
                 text: 'Settings',
                 items: [
                     {text: 'Overview', link: '/en/settings/'},
+                    {text: 'Themes', link: '/en/settings/themes'},
                     {text: 'Agents, npx and Node.js', link: '/en/settings/agents'},
+                    {text: 'Your own server', link: '/en/settings/team'},
                     {text: 'Updates', link: '/en/settings/updates'},
                 ],
             },

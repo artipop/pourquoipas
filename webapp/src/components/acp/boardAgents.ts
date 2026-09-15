@@ -6,7 +6,7 @@ import {agentBindings} from './bindings'
 
 // Which agents a board offers on a card. The registry is the machine's — every
 // agent registered anywhere gets an account on every board — so a machine with
-// two agents offered both of them in «Исполнитель» on every board, with nothing
+// two agents offered both of them in the assignee field on every board, with nothing
 // on screen saying which had anything to do with the work there.
 //
 // What a board says about it is its automation: the crew of its columns and of

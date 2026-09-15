@@ -2055,15 +2055,48 @@ func TestPermissionsRegenerateSignupToken(t *testing.T) {
 		defer th.TearDown()
 		clients := setupLocalClients(th)
 		testData := setupData(t, th)
+		// The invite link is the door into the install, so being an admin *of a
+		// board* buys nothing here — only the person who administers the
+		// install can retire it. th.Client is that person: setupLocalClients
+		// registers sysadmin first, and the first registrant is the admin.
 		ttCases := []TestCase{
 			{"/teams/test-team/regenerate_signup_token", methodPost, "", userAnon, http.StatusUnauthorized, 0},
-			{"/teams/test-team/regenerate_signup_token", methodPost, "", userAdmin, http.StatusOK, 0},
+			{"/teams/test-team/regenerate_signup_token", methodPost, "", userAdmin, http.StatusForbidden, 0},
 
 			{"/teams/empty-team/regenerate_signup_token", methodPost, "", userAnon, http.StatusUnauthorized, 0},
-			{"/teams/empty-team/regenerate_signup_token", methodPost, "", userAdmin, http.StatusOK, 0},
+			{"/teams/empty-team/regenerate_signup_token", methodPost, "", userAdmin, http.StatusForbidden, 0},
 		}
 		runTestCases(t, ttCases, testData, clients)
+
+		before, resp := th.Client.GetTeam(model.GlobalTeamID)
+		th.CheckOK(resp)
+		require.NotEmpty(t, before.SignupToken)
+
+		success, resp := th.Client.RegenerateTeamSignupToken(model.GlobalTeamID)
+		th.CheckOK(resp)
+		require.True(t, success)
+
+		after, resp := th.Client.GetTeam(model.GlobalTeamID)
+		th.CheckOK(resp)
+		require.NotEqual(t, before.SignupToken, after.SignupToken)
 	})
+}
+
+// The token used to travel inside every GET /teams/{id}, which every member
+// asks on every page load: "only the admin can invite" was a sentence about a
+// button, not about the API.
+func TestOnlyAnAdminSeesTheInviteToken(t *testing.T) {
+	th := SetupTestHelperLocalMode(t)
+	defer th.TearDown()
+	clients := setupLocalClients(th)
+
+	asAdmin, resp := th.Client.GetTeam(model.GlobalTeamID)
+	th.CheckOK(resp)
+	require.NotEmpty(t, asAdmin.SignupToken)
+
+	asMember, resp := clients.TeamMember.GetTeam(model.GlobalTeamID)
+	th.CheckOK(resp)
+	require.Empty(t, asMember.SignupToken)
 }
 
 func TestPermissionsGetTeamUsers(t *testing.T) {

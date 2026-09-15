@@ -24,7 +24,7 @@ const board = TestBlockFactory.createBoard()
 const activeView = TestBlockFactory.createBoardView(board)
 const card = TestBlockFactory.createCard(board)
 
-// The board a source already feeds: it has «Входящие», so that is where the
+// The board a source already feeds: it has the inbox view, so that is where the
 // question about sources is asked and the board's own menu says nothing of it.
 const inboxView = TestBlockFactory.createBoardView(board)
 inboxView.id = 'view-inbox'
@@ -82,7 +82,8 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
         const buttonElement = screen.getByRole('button', {name: 'View header menu'})
         userEvent.click(buttonElement)
         expect(container).toMatchSnapshot()
-        const buttonExportCSV = screen.getByRole('button', {name: 'Export to CSV'})
+        userEvent.click(screen.getByText('Export'))
+        const buttonExportCSV = screen.getByRole('button', {name: 'To CSV'})
         userEvent.click(buttonExportCSV)
         expect(mockedCsvExporter.exportTableCsv).toHaveBeenCalledTimes(1)
     })
@@ -137,6 +138,10 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
             }
         })
 
+        // Agents and their proxies are the machine's registry and are offered
+        // here — but only to a board that runs them, which this one does not
+        // say it does. The check above is that half of the rule.
+
         // A board that asks for nothing is offered nothing: the setup steps in
         // the menu are this board's own, not a fixed list.
         test('a board with no setup questions is offered none of them', () => {
@@ -145,7 +150,7 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
             }
         })
 
-        // Where cards come from is a question about «Входящие», and that is
+        // Where cards come from is a question about the inbox view, and that is
         // where it is answered now. On the board itself it was one more thing
         // to walk past.
         test('and neither are the sources of a board', () => {
@@ -154,7 +159,7 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
     })
 
     // The setup questions a board asks are its own screens in its own menu.
-    // They used to be folds of «Колонки и маршруты…», where setting up
+    // They used to be folds of the automation dialog, where setting up
     // where an agent works was filed under columns and routes — and a fold
     // under a canvas is a place nobody opens.
     describe('a board offers the setup steps it asks for', () => {
@@ -199,6 +204,14 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
             expect(screen.getByRole('button', {name: 'Where to deploy…'})).toBeInTheDocument()
         })
 
+        // Who picks the cards up is asked here too, for the reason the deploy
+        // hosts are: the registry is the machine's, and it means nothing on a
+        // board no agent works. It was two sections of the settings dialog,
+        // which is a screen away from the board being set up.
+        test('and so is who works the cards', async () => {
+            await waitFor(() => expect(screen.getByRole('button', {name: 'Agents…'})).toBeInTheDocument())
+        })
+
         // What the board's agents are told first is the board's own answer
         // too, and it was a fold at the bottom of the route canvas.
         test('and so is what the board tells its agents', async () => {
@@ -212,7 +225,7 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
         })
     })
 
-    // «Входящие» is the screen about what arrives, so its menu is about that
+    // the inbox view is the screen about what arrives, so its menu is about that
     // and about nothing else: exporting or saving as a template are questions
     // about the board, asked where the board is.
     describe('on «Входящие» the menu is the sources and nothing else', () => {
@@ -246,7 +259,7 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
 
         test('the board menu is not', async () => {
             await waitFor(() => expect(screen.getByRole('button', {name: 'Sources…'})).toBeInTheDocument())
-            for (const gone of ['Export to CSV', 'Export board archive', 'Columns and routes…', 'Save as a template…']) {
+            for (const gone of ['Export', 'Columns and routes…', 'Save as a template…']) {
                 expect(screen.queryByRole('button', {name: gone})).toBeNull()
             }
         })
@@ -270,7 +283,7 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
         expect(screen.queryByRole('button', {name: 'View header menu'})).toBeNull()
     })
 
-    // A board made empty has no «Входящие» — the view arrives with the first
+    // A board made empty has no the inbox view — the view arrives with the first
     // source — so the door to make one has to stay on the board itself, or
     // there is no way to add a source to such a board at all.
     test('a board with no «Входящие» keeps the sources in its own menu', async () => {
@@ -292,7 +305,8 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
         )
         userEvent.click(screen.getByRole('button', {name: 'View header menu'}))
         await waitFor(() => expect(screen.getByRole('button', {name: 'Sources…'})).toBeInTheDocument())
-        expect(screen.getByRole('button', {name: 'Export to CSV'})).toBeInTheDocument()
+        userEvent.click(screen.getByText('Export'))
+        expect(screen.getByRole('button', {name: 'To CSV'})).toBeInTheDocument()
         delete anyWindow.go
     })
 
@@ -311,7 +325,8 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
         const buttonElement = screen.getByRole('button', {name: 'View header menu'})
         userEvent.click(buttonElement)
         expect(container).toMatchSnapshot()
-        const buttonExportBoardArchive = screen.getByRole('button', {name: 'Export board archive'})
+        userEvent.click(screen.getByText('Export'))
+        const buttonExportBoardArchive = screen.getByRole('button', {name: 'Board archive'})
         userEvent.click(buttonExportBoardArchive)
         expect(mockedArchiver.exportBoardArchive).toHaveBeenCalledTimes(1)
         expect(mockedArchiver.exportBoardArchive).toHaveBeenCalledWith(board)

@@ -47,7 +47,7 @@ export default defineConfig({
         // package that does not publish it.
         server: {
             deps: {
-                inline: [/@dnd-kit\//, /@dschz\//, /@solid-primitives\//],
+                inline: [/@dnd-kit\//],
             },
         },
 

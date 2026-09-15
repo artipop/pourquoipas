@@ -1,15 +1,14 @@
 # Settings
 
 App settings live in one window: at the bottom of the left-hand list, under
-"+ Add board", the **"Settings"** button with a cog. They apply to all boards.
+"Add board", the **"Settings"** button with a cog. They apply to all boards.
 Sections:
 
 - **"The app itself"** — theme, language, help and feedback;
 - **"Updates"** — the app's version and moving to a newer one, see
   [Updates](./updates.md);
-- **"Agents"** — this machine's agents and what launches them, see
-  [Agents, npx and Node.js](./agents.md);
-- **"Proxy configurations"** — named network settings that agents refer to;
+- **«Люди»** — who is on the server and who runs it; the section is shown to
+  the administrator alone, see ["Your own server"](./team.md);
 - **"Access from a phone"** — see below;
 - **"Import and export"** — board archive export and import, see
   [Moving](../transfer.md);
@@ -20,12 +19,22 @@ Sections:
 Sections this build does not support are not shown: on a machine without
 agents, "The app itself", "Updates", "Import and export" and "Other" remain.
 
+The agents are not here. Their list is a registry of the machine, as the deploy
+hosts are, but it means something only to a board agents work on: it opens from
+that board's ⋯ menu as **"Agents…"**, and the proxies are in the same window
+under them. See [Agents, npx and Node.js](./agents.md).
+
 ## The app itself: theme, language, help
 
-- **Theme** — "Light theme", "Dark theme", "System theme". Applies
-  immediately.
+- **Theme** — a dropdown: XCIII, the ported ones, the acid ones, and "Custom
+  config" — a field to paste a theme in Mattermost's format into.
+- **Light or dark** — "Light", "Dark", "As the system is"; every theme has both
+  halves. All of it applies immediately; in full, [Themes](./themes.md).
 - **Language** — the list of app languages. When none was ever picked, the
-  system language applies.
+  system language applies. The board templates come in the app's language:
+  changing the language reinstalls them, so the template picker offers boards
+  whose columns and routes are in the new one. Boards you have already made are
+  left alone — they are yours.
 - **Help** — "The guide", with an "Open" button: it opens this guide. Below
   it — "Give feedback", with a "Write" button: it opens your mail program
   addressed to `hello@deffun.com`. The address is also printed next to the

@@ -12,6 +12,7 @@ import (
 	"github.com/artipop/xciii/server/utils"
 
 	"github.com/artipop/xciii/internal/acp"
+	"github.com/artipop/xciii/internal/boardmodel"
 )
 
 // Writer implements acp.BoardWriter over the server's app layer. All writes
@@ -119,7 +120,7 @@ func (w *Writer) MoveCardByOptionName(ctx context.Context, cardID, propertyName,
 	if err != nil {
 		return err
 	}
-	propID, optionID, ok := findSelectOption(schema, propertyName, optionName)
+	propID, optionID, ok := boardmodel.FindSelectOption(schema, propertyName, optionName)
 	if !ok {
 		return fmt.Errorf("на доске %s нет колонки %q в свойстве %q", board.ID, optionName, propertyName)
 	}
@@ -153,7 +154,7 @@ func (w *Writer) UpdateCard(ctx context.Context, cardID string, edit acp.CardEdi
 		return err
 	}
 
-	patch, err := cardPatchFor(schema, edit)
+	patch, err := boardmodel.CardPatchFor(schema, edit)
 	if err != nil {
 		return err
 	}
@@ -168,6 +169,42 @@ func (w *Writer) SetCardText(ctx context.Context, cardID, propertyID, value stri
 		return nil
 	}
 	return w.patchCard(cardID, &model.CardPatch{UpdatedProperties: map[string]any{propertyID: value}}, true)
+}
+
+// SetCardOption writes one select property by id, choosing the option whose
+// name this is. Silent, like SetCardText and for the same reason: it is the
+// machine recording a fact about the card, not a person editing it, and a
+// notify here would set the column's automation off.
+//
+// An option the board does not have is not invented: adding options is a
+// deliberate act elsewhere, and a stage outcome arriving at a board whose
+// property somebody has edited must not quietly grow it back.
+func (w *Writer) SetCardOption(ctx context.Context, cardID, propertyID, optionName string) error {
+	if strings.TrimSpace(propertyID) == "" || strings.TrimSpace(optionName) == "" {
+		return nil
+	}
+	card, err := w.cardBlock(cardID)
+	if err != nil {
+		return err
+	}
+	board, err := w.app.GetBoard(card.BoardID)
+	if err != nil {
+		return fmt.Errorf("get board %s: %w", card.BoardID, err)
+	}
+	schema, err := model.ParsePropertySchema(board)
+	if err != nil {
+		return err
+	}
+	def, ok := schema[propertyID]
+	if !ok {
+		return fmt.Errorf("на доске нет свойства с id %q", propertyID)
+	}
+	for oid, opt := range def.Options {
+		if strings.EqualFold(opt.Value, optionName) {
+			return w.patchCard(cardID, &model.CardPatch{UpdatedProperties: map[string]any{propertyID: oid}}, true)
+		}
+	}
+	return fmt.Errorf("у свойства %q нет значения %q", def.Name, optionName)
 }
 
 // SetCardFields writes named properties of a card: a select property gets the
@@ -194,9 +231,9 @@ func (w *Writer) SetCardFields(ctx context.Context, cardID string, fields map[st
 	}
 	properties := map[string]any{}
 	for name, value := range fields {
-		propID, def, ok := findPropertyByName(schema, name)
+		propID, def, ok := boardmodel.FindPropertyByName(schema, name)
 		if !ok {
-			return fmt.Errorf("на доске нет свойства %q", name)
+			return fmt.Errorf("на доске нет свойства %q — посмотрите list_card_fields", name)
 		}
 		if def.Type == "select" {
 			optionID := ""
@@ -207,7 +244,7 @@ func (w *Writer) SetCardFields(ctx context.Context, cardID string, fields map[st
 				}
 			}
 			if optionID == "" {
-				return fmt.Errorf("у свойства %q нет значения %q", name, value)
+				return fmt.Errorf("у свойства %q нет значения %q — допустимые перечислены в list_card_fields", name, value)
 			}
 			properties[propID] = optionID
 			continue
@@ -217,23 +254,17 @@ func (w *Writer) SetCardFields(ctx context.Context, cardID string, fields map[st
 	return w.patchCard(cardID, &model.CardPatch{UpdatedProperties: properties}, true)
 }
 
-// findPropertyByName resolves a property the way a person names it.
-func findPropertyByName(schema model.PropSchema, name string) (string, model.PropDef, bool) {
-	for id, def := range schema {
-		if strings.EqualFold(def.Name, name) {
-			return id, def, true
-		}
-	}
-	return "", model.PropDef{}, false
-}
-
 // patchCard applies a card patch as a block patch. app.PatchCard would do the
 // same and then convert the result back into a Card, which fails for a card
 // whose contentOrder is not a list — and a write that landed must not be
 // reported as an error because the answer could not be rendered.
 func (w *Writer) patchCard(cardID string, patch *model.CardPatch, disableNotify bool) error {
-	if err := mergeCardProperties(w.app, cardID, patch); err != nil {
-		return err
+	if len(patch.UpdatedProperties) > 0 {
+		block, err := w.app.GetBlockByID(cardID)
+		if err != nil {
+			return fmt.Errorf("get card %s: %w", cardID, err)
+		}
+		boardmodel.MergeCardProperties(boardmodel.RawProperties(block), patch)
 	}
 	blockPatch, err := model.CardPatch2BlockPatch(patch)
 	if err != nil {
@@ -241,113 +272,6 @@ func (w *Writer) patchCard(cardID string, patch *model.CardPatch, disableNotify 
 	}
 	_, err = w.app.PatchBlockAndNotify(cardID, blockPatch, model.SingleUser, disableNotify)
 	return err
-}
-
-// mergeCardProperties folds the card's current properties into the patch.
-// CardPatch2BlockPatch puts UpdatedProperties into the block's `properties`
-// field whole, and a block patch replaces a field it names — so a patch that
-// set one property silently erased every other one. The board's own webapp
-// never hits this because its mutator always sends the full map; every write
-// from this side — a route moving the card, an agent's update_card, the
-// assignee kept truthful by a stage — sends one key and lost the rest.
-func mergeCardProperties(a *app.App, cardID string, patch *model.CardPatch) error {
-	if len(patch.UpdatedProperties) == 0 {
-		return nil
-	}
-	block, err := a.GetBlockByID(cardID)
-	if err != nil {
-		return fmt.Errorf("get card %s: %w", cardID, err)
-	}
-	merged := map[string]any{}
-	if block != nil {
-		if existing, ok := block.Fields["properties"].(map[string]any); ok {
-			for k, v := range existing {
-				merged[k] = v
-			}
-		}
-	}
-	for k, v := range patch.UpdatedProperties {
-		merged[k] = v
-	}
-	patch.UpdatedProperties = merged
-	return nil
-}
-
-// cardPatchFor turns named values into the ids a card stores, or says which name
-// the board does not have.
-func cardPatchFor(schema model.PropSchema, edit acp.CardEdit) (*model.CardPatch, error) {
-	patch := &model.CardPatch{}
-	if title := strings.TrimSpace(edit.Title); title != "" {
-		patch.Title = &title
-	}
-	properties := map[string]any{}
-	if edit.Column != "" {
-		propID, optionID, ok := findSelectOption(schema, edit.Property, edit.Column)
-		if !ok {
-			return nil, fmt.Errorf("на доске нет колонки %q в свойстве %q", edit.Column, edit.Property)
-		}
-		properties[propID] = optionID
-	}
-	for _, option := range edit.Options {
-		propID, optionID, ok := findOptionByName(schema, option)
-		if !ok {
-			return nil, fmt.Errorf("на доске нет значения %q", option)
-		}
-		// The column is the edit's own field, so an option name that happens to
-		// match a column must not move the card somewhere nobody asked for.
-		if properties[propID] == nil {
-			properties[propID] = optionID
-		}
-	}
-	if patch.Title == nil && len(properties) == 0 {
-		return nil, fmt.Errorf("не сказано, что менять")
-	}
-	if len(properties) > 0 {
-		patch.UpdatedProperties = properties
-	}
-	return patch, nil
-}
-
-// findSelectOption resolves a (property name, option name) pair to the ids the
-// card actually stores. Matching is case-insensitive, like the trigger columns.
-// The property may be named or identified. A name is what the config and an
-// agent's own words carry; an id is what a board records for itself
-// (BoardPropColumnProperty), and it is the answer that survives a rename and a
-// board in another language.
-func findSelectOption(schema model.PropSchema, property, optionName string) (propID, optionID string, ok bool) {
-	for id, def := range schema {
-		if def.Type != "select" || (id != property && !strings.EqualFold(def.Name, property)) {
-			continue
-		}
-		for oid, opt := range def.Options {
-			if strings.EqualFold(opt.Value, optionName) {
-				return id, oid, true
-			}
-		}
-	}
-	return "", "", false
-}
-
-// findOptionByName resolves a bare option name — "xciii", "claude", "Быстрый
-// маршрут" — to the property that owns it. Which property that is, is the
-// board's business: a card is read back the same way, by the names of the
-// options selected on it and not by where they sit.
-func findOptionByName(schema model.PropSchema, optionName string) (propID, optionID string, ok bool) {
-	name := strings.TrimSpace(optionName)
-	if name == "" {
-		return "", "", false
-	}
-	for id, def := range schema {
-		if def.Type != "select" {
-			continue
-		}
-		for oid, opt := range def.Options {
-			if strings.EqualFold(opt.Value, name) {
-				return id, oid, true
-			}
-		}
-	}
-	return "", "", false
 }
 
 // boardViews is every view of a board.
@@ -369,7 +293,7 @@ func (w *Writer) boardViews(boardID string) ([]*model.Block, error) {
 // ColumnProperty is the name of the property whose options are this board's
 // columns. It is asked of the board rather than assumed, because a constant
 // default can only ever be right for boards in one language: ours say
-// «Статус», the upstream templates say "Status", and a source pointed at the
+// the status property, the upstream templates say "Status", and a source pointed at the
 // wrong name files nothing anywhere.
 //
 // The answer is the property the board itself groups by — what a person sees as
@@ -388,34 +312,11 @@ func (w *Writer) ColumnProperty(ctx context.Context, boardID string) (string, er
 	if err != nil {
 		return "", err
 	}
-	name, ok := columnPropertyName(board, schema, views)
+	name, ok := boardmodel.ColumnPropertyName(board, schema, views)
 	if !ok {
 		return "", fmt.Errorf("на доске %s нет свойства-колонок", boardID)
 	}
 	return name, nil
-}
-
-// columnPropertyName picks the property whose options a person reads as the
-// board's columns: what a view groups by, or failing that the board's first
-// select property, which is what a new kanban view would have grouped by too.
-func columnPropertyName(board *model.Board, schema model.PropSchema, views []*model.Block) (string, bool) {
-	for _, view := range views {
-		groupBy, _ := view.Fields["groupById"].(string)
-		if def, ok := schema[groupBy]; ok && def.Type == "select" {
-			return def.Name, true
-		}
-	}
-	// CardProperties keeps the board's own order and schema is a map, so the
-	// fallback is read off the ordered half — otherwise "the first select
-	// property" would be a different one on every call.
-	for _, prop := range board.CardProperties {
-		if id, ok := prop["id"].(string); ok {
-			if def, ok := schema[id]; ok && def.Type == "select" {
-				return def.Name, true
-			}
-		}
-	}
-	return "", false
 }
 
 // EnsureColumn returns the id of the named option of the named select property,
@@ -438,10 +339,10 @@ func (w *Writer) EnsureColumn(ctx context.Context, boardID, propertyName, option
 	if err != nil {
 		return "", err
 	}
-	if _, optionID, ok := findSelectOption(schema, propertyName, optionName); ok {
+	if _, optionID, ok := boardmodel.FindSelectOption(schema, propertyName, optionName); ok {
 		return optionID, nil
 	}
-	prop, ok := findCardProperty(board.CardProperties, propertyName)
+	prop, ok := boardmodel.FindCardProperty(board.CardProperties, propertyName)
 	if !ok {
 		// The property itself is not invented: a board with no column property
 		// has no columns to file anything into, and guessing one would put the
@@ -470,7 +371,7 @@ func (w *Writer) EnsureColumn(ctx context.Context, boardID, propertyName, option
 const InboxViewTitle = "Входящие"
 
 // MineColumnTitle is the column a person's own card lands in when they press
-// «Создать» on the inbox — everything else there was brought by a source, and a
+// the create button on the inbox — everything else there was brought by a source, and a
 // task somebody typed is not something that arrived and nobody has read.
 //
 // It is a column of the board rather than a group of the view because the view
@@ -507,9 +408,9 @@ func (w *Writer) EnsureInbox(ctx context.Context, boardID, propertyName, optionN
 
 // arrangeKanbans takes the inbox's two columns off the board's own kanbans:
 // both are the inbox screen's business, and neither belongs in the middle of
-// the work. «Мои задачи» stood at the front of the main kanban for one
+// the work. the my-tasks column stood at the front of the main kanban for one
 // version and that was the wrong reading of the ask — a person's unprocessed
-// tasks live on «Входящие» (where the view shows them as their own column),
+// tasks live on the inbox view (where the view shows them as their own column),
 // and the main board stays exactly the board of work.
 //
 // Both in one pass, and one patch per view, because a view's history is keyed
@@ -582,7 +483,7 @@ func withoutOption(raw any, optionID string) ([]any, bool) {
 // clause on the column property, and whether anything changed. The column goes
 // first, because the first value of an "includes" clause is what a card made in
 // that view becomes (CardFilter.propertyThatMeetsFilterClause in the webapp) —
-// which is the whole of how «Создать» on the inbox lands in «Мои задачи».
+// which is the whole of how the create button on the inbox lands in the my-tasks column.
 //
 // A view with no clause on that property is left alone: it was filtered by
 // somebody, and a filter of ours put back would be an edit nobody asked for.
@@ -651,7 +552,7 @@ const inboxViewType = "board"
 // property it had rather than growing a second one saying the same thing.
 const AuthorPropertyTitle = "Автор"
 
-// mineColumnColor is what «Мои задачи» is painted on a board that grew one
+// mineColumnColor is what the my-tasks column is painted on a board that grew one
 // later, and it is the colour the templates ship it in: the same column has to
 // look the same wherever it came from.
 const mineColumnColor = "propColorPurple"
@@ -676,10 +577,10 @@ func (w *Writer) ensureInboxSchema(boardID, propertyName, inboxName string) (inb
 	}
 
 	var updated []map[string]any
-	_, inboxID, hasInbox := findSelectOption(schema, propertyName, inboxName)
-	_, mineID, hasMine := findSelectOption(schema, propertyName, MineColumnTitle)
+	_, inboxID, hasInbox := boardmodel.FindSelectOption(schema, propertyName, inboxName)
+	_, mineID, hasMine := boardmodel.FindSelectOption(schema, propertyName, MineColumnTitle)
 	if !hasInbox || !hasMine {
-		prop, ok := findCardProperty(board.CardProperties, propertyName)
+		prop, ok := boardmodel.FindCardProperty(board.CardProperties, propertyName)
 		if !ok {
 			// The property itself is not invented: a board with no column
 			// property has no columns to file anything into, and guessing one
@@ -726,14 +627,8 @@ func (w *Writer) ensureInboxSchema(boardID, propertyName, inboxName string) (inb
 // arrivedAuthor finds the board's own createdBy property, in the board's order
 // so the answer is the same on every call.
 func arrivedAuthor(board *model.Board, schema model.PropSchema) (string, bool) {
-	return propertyOfType(board, schema, "createdBy")
+	return boardmodel.PropertyOfType(board, schema, "createdBy")
 }
-
-// LinkPropertyTitle is what the board calls the way back to what a source
-// brought. Like AuthorPropertyTitle it is a name given at creation and never a
-// key: the property is found by its *type*, so a board that calls it "Link", or
-// whose owner renamed it, keeps working and does not grow a second one.
-const LinkPropertyTitle = "Ссылка"
 
 // ensureLinkProperty returns the id of the board's url property, adding one if
 // it has none. A card from a source is the only thing that asks for it, so a
@@ -748,13 +643,13 @@ func (w *Writer) ensureLinkProperty(boardID string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if id, ok := propertyOfType(board, schema, "url"); ok {
+	if id, ok := boardmodel.PropertyOfType(board, schema, "url"); ok {
 		return id, nil
 	}
 	propID := utils.NewID(utils.IDTypeBlock)
 	prop := map[string]any{
 		"id":      propID,
-		"name":    LinkPropertyTitle,
+		"name":    boardmodel.LinkPropertyTitle,
 		"type":    "url",
 		"options": []any{},
 	}
@@ -763,23 +658,6 @@ func (w *Writer) ensureLinkProperty(boardID string) (string, error) {
 		return "", fmt.Errorf("add the link property to board %s: %w", boardID, err)
 	}
 	return propID, nil
-}
-
-// propertyOfType finds the board's first property of a given type, walking
-// CardProperties rather than the parsed schema: the schema is a map, and a
-// board with two properties of one type would otherwise answer differently on
-// different runs.
-func propertyOfType(board *model.Board, schema model.PropSchema, propType string) (string, bool) {
-	for _, prop := range board.CardProperties {
-		id, ok := prop["id"].(string)
-		if !ok {
-			continue
-		}
-		if def, ok := schema[id]; ok && def.Type == propType {
-			return id, true
-		}
-	}
-	return "", false
 }
 
 // ensureInboxView adds the view if the board has not got one already, and
@@ -824,8 +702,8 @@ func (w *Writer) ensureInboxView(boardID, propertyName, optionID, mineID, author
 		if viewType, _ := view.Fields["viewType"].(string); viewType != inboxViewType {
 			fields["viewType"] = inboxViewType
 		}
-		// And an inbox made before «Мои задачи» existed shows only what
-		// arrived, so a card made with the «Создать» button standing right
+		// And an inbox made before the my-tasks column existed shows only what
+		// arrived, so a card made with the the create button button standing right
 		// there would vanish the moment it was made.
 		if filter, changed := filterWithColumn(view.Fields["filter"], propID, mineID); changed {
 			fields["filter"] = filter
@@ -849,13 +727,13 @@ func (w *Writer) ensureInboxView(boardID, propertyName, optionID, mineID, author
 			// A kanban, and grouped by who made the card — which for what
 			// arrived is the source that brought it. One column per source is
 			// the question a person actually has of an inbox ("what did the
-			// mail bring, what did Kaiten"), and a card is dragged out of it
+			// mail bring, what did the tracker"), and a card is dragged out of it
 			// into work the same way it is dragged anywhere else.
 			"viewType":  inboxViewType,
 			"groupById": authorID,
-			// Two columns, and «Мои задачи» first: the first value of an
+			// Two columns, and the my-tasks column first: the first value of an
 			// "includes" clause is what a card made in this view becomes, so
-			// pressing «Создать» here writes a task of one's own rather than
+			// pressing the create button here writes a task of one's own rather than
 			// something that arrived and nobody has read.
 			"filter": map[string]any{
 				"operation": "and",
@@ -890,7 +768,7 @@ func (w *Writer) ensureInboxView(boardID, propertyName, optionID, mineID, author
 // isInboxView tells the inbox view from the board's other views by what it
 // shows — a view filtered to the inbox option — rather than by what it is
 // called. The title is the fallback and not the answer: renaming a view is
-// something a person may do, and matching on «Входящие» meant the next card to
+// something a person may do, and matching on the inbox view meant the next card to
 // arrive built a second inbox beside the renamed one.
 func isInboxView(view *model.Block, propID, optionID string) bool {
 	filter, _ := view.Fields["filter"].(map[string]any)
@@ -911,22 +789,6 @@ func isInboxView(view *model.Block, propID, optionID string) bool {
 		}
 	}
 	return strings.EqualFold(view.Title, InboxViewTitle)
-}
-
-// findCardProperty returns the board's raw definition of a property, which is
-// what a patch replaces. The parsed schema cannot be used for this: it drops
-// everything the board wrote that we do not read, and patching with it would
-// silently delete those fields.
-func findCardProperty(props []map[string]any, name string) (map[string]any, bool) {
-	for _, prop := range props {
-		if propType, _ := prop["type"].(string); propType != "select" {
-			continue
-		}
-		if propName, _ := prop["name"].(string); strings.EqualFold(propName, name) {
-			return prop, true
-		}
-	}
-	return nil, false
 }
 
 // AttachFile puts a file into the card's content: an image is rendered inline,
@@ -987,14 +849,14 @@ func (w *Writer) CreateCard(ctx context.Context, spec acp.NewCard) (string, erro
 
 	properties := map[string]any{}
 	if spec.Column != "" {
-		propID, optionID, ok := findSelectOption(schema, spec.Property, spec.Column)
+		propID, optionID, ok := boardmodel.FindSelectOption(schema, spec.Property, spec.Column)
 		if !ok {
 			return "", fmt.Errorf("на доске %s нет колонки %q в свойстве %q", board.ID, spec.Column, spec.Property)
 		}
 		properties[propID] = optionID
 	}
 	for _, option := range spec.Options {
-		propID, optionID, ok := findOptionByName(schema, option)
+		propID, optionID, ok := boardmodel.FindOptionByName(schema, option)
 		// Not the column property: the column is the spec's own field, and an
 		// option name that happens to match a column must not move the card
 		// somewhere the caller did not ask for.

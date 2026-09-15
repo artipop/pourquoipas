@@ -8,12 +8,12 @@ import './conversationRow.scss'
 
 // One conversation in a list of them.
 //
-// Two screens list conversations — «Обсудить с агентом», where they have no
+// Two screens list conversations — the planning dialog, where they have no
 // card behind them, and the panel beside a card, where they are the card's own
 // and its route's — and they list the same thing: what the conversation is
 // called, the line the agent wrote about what is going on in it, and who is
 // talking where. They were two shapes of one list for a while, which is how a
-// list drifts: the card's said «Разработка — клаус» in a chip and the planning
+// list drifts: the card's said column and agent in a chip and the planning
 // screen said everything else.
 //
 // What a row can *do* differs, so that is the caller's: an action is an icon, a
@@ -140,9 +140,15 @@ const ConversationRow = (props: Props) => {
                                 class={['ConversationRow__dot', {'ConversationRow__dot--running': Boolean(props.running)}]}
                                 title={props.running ? intl.formatMessage({id: 'Conversation.running', defaultMessage: 'A CLI is running in it'}) : intl.formatMessage({id: 'Conversation.idle', defaultMessage: 'Nothing is running in it'})}
                             />
+                            {/* A row with nothing to open is drawn as one: a
+                                passed stage's conversation continues when the
+                                card comes back, and until then a click on it
+                                does nothing. Said in the ink rather than left
+                                to be discovered — it read as a button that had
+                                stopped working. */}
                             <Show
                                 when={props.onPick}
-                                fallback={<span class='ConversationRow__name'>{props.name}</span>}
+                                fallback={<span class='ConversationRow__name ConversationRow__name--quiet'>{props.name}</span>}
                             >
                                 <button
                                     type='button'

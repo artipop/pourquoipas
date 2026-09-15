@@ -19,6 +19,7 @@ import {
     readBoardAutomation,
     readBoardSetup,
     routeOptionMissing,
+    upstreamWrites,
     withColumn,
     withEdge,
     withoutColumn,
@@ -235,28 +236,48 @@ describe('components/acp/automation', () => {
         expect(condIsComplete({property: 'Приоритет', value: 'Высокий', commentContains: 'x'})).toBe(false)
     })
 
-    // Boards made before the rename carry the old key names. Reading has to
-    // find them, and saving has to replace them rather than leave both.
-    test('a template written under the old key names is read and migrated', () => {
-        const board = boardWith({
-            acpColumns: [{property: 'Статус', column: 'В работе', action: 'agent'}],
-            acpFlows: [{name: 'Фича', nodes: [], edges: []}],
-            acpSetup: {steps: [{kind: 'project'}]},
-            acpPrompt: 'Отвечай по-русски.',
+    // A value an earlier stage put on the card is on the card, so a stage that
+    // declares no reads is handed what the route wrote ahead of it — and the
+    // chip says which stage, which is the half that makes it readable.
+    describe('upstreamWrites', () => {
+        const specs = [{boardId: 'b',
+            property: 'Статус',
+            column: 'В работе',
+            action: 'agent',
+            optionId: 'opt-work',
+            writes: [{property: 'Заметка'}]}]
+        const flow: Flow = {
+            name: 'Фича',
+            nodes: [
+                {id: 'work', column: 'В работе', optionId: 'opt-work', action: ''},
+                {id: 'deploy', column: 'Деплой', action: 'deploy', writes: [{property: 'Превью'}]},
+                {id: 'qa', column: 'QA', action: 'test', writes: [{property: 'Вердикт'}]},
+            ],
+            edges: [
+                {from: 'work', to: 'deploy', on: SUCCESS},
+                {from: 'deploy', to: 'qa', on: SUCCESS},
+
+                // A failed check returns the card to the agent: the graph has a
+                // cycle on purpose and the walk has to survive it.
+                {from: 'qa', to: 'work', on: 'failure'},
+            ],
+        }
+
+        test('a stage is handed what the stages before it write, named by their stage', () => {
+            expect(upstreamWrites(flow, 'qa', specs)).toEqual([
+                {property: 'Превью', from: 'Деплой'},
+
+                // The stage that declares nothing still produces what its
+                // column produces.
+                {property: 'Заметка', from: 'В работе'},
+            ])
         })
 
-        expect(readBoardAutomation(board).columns[0].column).toBe('В работе')
-        expect(readBoardAutomation(board).flows[0].name).toBe('Фича')
-        expect(readBoardSetup(board)!.steps).toEqual([{kind: 'project'}])
-
-        const properties = boardAutomationProperties(board, readBoardAutomation(board), readBoardSetup(board))
-        expect(JSON.parse(properties[BOARD_PROP_COLUMNS] as string)[0].column).toBe('В работе')
-
-        // The prompt is not this page's to write, but it must survive under the
-        // current name rather than be dropped with the old one.
-        expect(properties[BOARD_PROP_PROMPT]).toBe('Отвечай по-русски.')
-        for (const legacy of ['acpColumns', 'acpFlows', 'acpSetup', 'acpPrompt']) {
-            expect(properties[legacy]).toBeUndefined()
-        }
+        test('a stage never reads its own output back, and the cycle terminates', () => {
+            expect(upstreamWrites(flow, 'work', specs)).toEqual([
+                {property: 'Вердикт', from: 'QA'},
+                {property: 'Превью', from: 'Деплой'},
+            ])
+        })
     })
 })

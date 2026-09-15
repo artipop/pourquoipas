@@ -49,6 +49,9 @@ describe('components/cardDialog', () => {
     card.createdBy = 'user-id-1'
 
     const state = {
+        // One person by default, which is what an install is until somebody
+        // turns team mode on: the tests about what a team offers say so
+        // themselves (docs/teamwork.md).
         clientConfig: {
             value: {},
         },
@@ -277,8 +280,11 @@ describe('components/cardDialog', () => {
     })
 
     test('return cardDialog menu content and do a copy Link', async () => {
+        // A link to a card is worth copying where somebody else can open it,
+        // so this control belongs to a team install (docs/teamwork.md).
+        const team = mockAppStore({...state, clientConfig: {value: {teamMode: true}}})
         render(() => wrapDNDIntl(() =>
-            <AppStoreProvider store={store}>
+            <AppStoreProvider store={team}>
                 <CardDialog
                     board={board}
                     activeView={boardView}
@@ -356,6 +362,55 @@ describe('components/cardDialog', () => {
         expect(screen.queryByRole('button', {name: 'Terminal'})).toBeNull()
     })
 
+    // The changes are worth a button only when there are some. On «На ревью»
+    // the card's working copy has already been folded away, so the count comes
+    // from what the Go side recorded as the work moved — never from a look.
+    it('offers the changes only when the card has some', async () => {
+        const bindings = {
+            GetCardAgent: vi.fn().mockResolvedValue('{}'),
+            GetCardDiff: vi.fn(),
+            ListAgentAccounts: vi.fn().mockResolvedValue('[]'),
+        };
+        (window as any).go = {main: {App: bindings}}
+
+        const {unmount} = render(() => wrapDNDIntl(() =>
+            <AppStoreProvider store={store}>
+                <CardDialog
+                    board={board}
+                    activeView={boardView}
+                    views={[boardView]}
+                    cards={[card]}
+                    cardId={card.id}
+                    onClose={vi.fn()}
+                    showCard={vi.fn()}
+                    readonly={false}
+                />
+            </AppStoreProvider>,
+        ))
+        await waitFor(() => expect(bindings.GetCardAgent).toHaveBeenCalled())
+        expect(screen.queryByRole('button', {name: 'Changes'})).toBeNull()
+        unmount()
+
+        bindings.GetCardAgent = vi.fn().mockResolvedValue(JSON.stringify({
+            changes: {branch: 'fix-login', files: 2, added: 9, removed: 1, dirty: 0},
+        }))
+        render(() => wrapDNDIntl(() =>
+            <AppStoreProvider store={store}>
+                <CardDialog
+                    board={board}
+                    activeView={boardView}
+                    views={[boardView]}
+                    cards={[card]}
+                    cardId={card.id}
+                    onClose={vi.fn()}
+                    showCard={vi.fn()}
+                    readonly={false}
+                />
+            </AppStoreProvider>,
+        ))
+        expect(await screen.findByRole('button', {name: 'Changes'})).toBeInTheDocument()
+    })
+
     // The terminal is beside the card rather than in it: the card is what a
     // person wrote, and the dialog's toolbar is where the machinery lives.
     it('opens the terminal in a panel beside the card', async () => {
@@ -391,6 +446,65 @@ describe('components/cardDialog', () => {
         await waitFor(() => expect(bindings.OpenCardTerminal).toHaveBeenCalledWith(card.id, '', '', false))
         expect(await screen.findByTestId('terminal')).toHaveTextContent('term-7')
         expect(container.querySelector('.cardDialog__side')).not.toBeNull()
+
+        await userEvent.click(screen.getByRole('button', {name: 'Close the panel'}))
+        expect(container.querySelector('.cardDialog__side')).toBeNull()
+    })
+
+    // A comment is said to a person who reads it later, so on an install of one
+    // person there is nobody to say it to and the button is not there at all
+    // (docs/teamwork.md).
+    it('offers no comments while one person works the board', async () => {
+        render(() => wrapDNDIntl(() =>
+            <AppStoreProvider store={store}>
+                <CardDialog
+                    board={board}
+                    activeView={boardView}
+                    views={[boardView]}
+                    cards={[card]}
+                    cardId={card.id}
+                    onClose={vi.fn()}
+                    showCard={vi.fn()}
+                    readonly={false}
+                />
+            </AppStoreProvider>,
+        ))
+        expect(screen.queryByRole('button', {name: 'Comments'})).toBeNull()
+    })
+
+    // The comments share the terminal's panel rather than getting one of their
+    // own: they are the same question asked of the other reader.
+    it('draws the comments in the panel beside the card', async () => {
+        const comment = TestBlockFactory.createComment(card)
+        comment.title = 'проверь ветку'
+        const team = mockAppStore({
+            ...state,
+            clientConfig: {value: {teamMode: true, featureFlags: {}}},
+            comments: {comments: {[comment.id]: comment}, commentsByCard: {[card.id]: [comment]}},
+        })
+
+        const {container} = render(() => wrapDNDIntl(() =>
+            <AppStoreProvider store={team}>
+                <CardDialog
+                    board={board}
+                    activeView={boardView}
+                    views={[boardView]}
+                    cards={[card]}
+                    cardId={card.id}
+                    onClose={vi.fn()}
+                    showCard={vi.fn()}
+                    readonly={false}
+                />
+            </AppStoreProvider>,
+        ))
+
+        await userEvent.click(await screen.findByRole('button', {name: 'Comments'}))
+        expect(container.querySelector('.cardDialog__side')).not.toBeNull()
+
+        // One row for the one comment. What it says is markdown rendered
+        // through Utils, which this file mocks wholesale, so the row itself is
+        // what there is to see here.
+        expect(container.querySelectorAll('.CommentsList .comment-text').length).toBe(1)
 
         await userEvent.click(screen.getByRole('button', {name: 'Close the panel'}))
         expect(container.querySelector('.cardDialog__side')).toBeNull()
