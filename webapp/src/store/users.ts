@@ -61,7 +61,9 @@ export const createUsersActions = ({setState, deps}: StoreContext) => ({
     // the store for ever: settings could forget that the welcome screen had been
     // shown, and the page went on believing it had.
     patchProps(props: UserPreference[]) {
-        setState(storePath('users', 'myConfig', reconcile(parseUserProps(props))))
+        setState((draft) => {
+            reconcile(parseUserProps(props))(draft.users.myConfig)
+        })
     },
     async fetchMe(): Promise<void> {
         try {
@@ -72,7 +74,9 @@ export const createUsersActions = ({setState, deps}: StoreContext) => ({
             setState(storePath('users', 'me', me || null))
             setState(storePath('users', 'loggedIn', Boolean(me)))
             if (myConfig) {
-                setState(storePath('users', 'myConfig', reconcile(parseUserProps(myConfig))))
+                setState((draft) => {
+                    reconcile(parseUserProps(myConfig))(draft.users.myConfig)
+                })
             }
         } catch (e) {
             setState(storePath('users', 'me', null))

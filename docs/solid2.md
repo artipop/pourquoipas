@@ -35,8 +35,9 @@ Mostly mechanical:
 
 - `solid-js/web` → `@solidjs/web`; the `JSX` namespace comes from there too.
 - `solid-js/store` → `solid-js`; `produce` is gone, so every call site is a
-  draft callback (`setState(({sidebar}) => …)`), and every path setter is
-  wrapped in `storePath`.
+  draft callback (`setState(({sidebar}) => …)`), and every plain path setter
+  is wrapped in `storePath`. A `reconcile` is **not** a plain path setter — see
+  below.
 - `batch` is gone: Solid 2 batches until the microtask drains, so the wrapper
   was dropped and the body lifted.
 - `onMount` → `onSettled`, which refuses `onCleanup` inside it — a cleanup is
@@ -74,6 +75,28 @@ say what it actually depends on.
 Solid 2 also fixed one: `galleryCard`'s "with an image content" test had been
 recording the *fallback* branch.
 
+## The bug that did ship: every board was empty
+
+The initial load writes each branch with `reconcile`, and the migration wrapped
+those writes like every other path setter:
+`setState(storePath('cards', 'cards', reconcile(cards)))`. `storePath` keeps an
+updater's **return value**, and `reconcile` mutates in place and returns
+nothing — so boards, views, cards, contents, comments, attachments and the
+user's config were fetched, written, and written away again, and the board
+drew empty with no error anywhere. The build was green and the suite nearly so.
+
+What should have caught it did: `a preference the server dropped is dropped
+from myConfig` failed with `Cannot reconcile null or undefined state`, and was
+put down as one of the tests that only wanted a `flush()`. The rest of the store
+tests did only want one, which is how the one that did not hid among them.
+
+A `reconcile` is applied to the draft branch now —
+`setState((d) => { reconcile(x)(d.cards.cards) })` — and
+`a board opened is in the store with its views and cards` fails on the old
+loader and passes on this one. What Solid 2's `reconcile` does *not* do any more
+is keep a record's identity when its fields change, which the loader's comment
+still counts on ("does not redraw every card"); that costs a redraw, not data.
+
 ## The suite
 
 `src/test/flushAfterEvents.ts` drains the queue after every `fireEvent` and
@@ -89,8 +112,10 @@ wrapper.
 
 ## What is not finished
 
-- **22 tests in 13 files still fail** (of 1549). Mostly tests that write
-  directly and need their own `flush()`. The route canvas is not among them
+- **15 tests in 11 files still fail** (of 1550). Mostly tests that write
+  directly and need their own `flush()` — which is also what the one that
+  caught the empty board looked like, so each is worth reading before it is
+  written off. The route canvas is not among them
   any more: its tests were failing through the compat shim and pass on
   solid-flow 1.0.
 - **A read right after a write in the same handler returns the old value.**

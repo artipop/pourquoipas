@@ -3,7 +3,7 @@
 // shape, the load fan-out into multiple domains, and the reactive edge — an
 // effect must re-run when an action changes what a selector reads.
 
-import {createRenderEffect, createRoot} from 'solid-js'
+import {createRenderEffect, createRoot, flush} from 'solid-js'
 
 import {ErrorId} from '../errors'
 import {rememberSession, sessionToken} from '../session'
@@ -61,10 +61,15 @@ describe('createAppStore', () => {
             card('card-1', 'board-1', 'One'),
             card('tpl-1', 'board-1', 'Tpl', {fields: {properties: {}, contentOrder: [], isTemplate: true}}),
         ])
+
+        // A store write is staged until the queue drains; outside an event
+        // or a render nothing drains it but this.
+        flush()
         expect(Object.keys(state.cards.cards)).toEqual(['card-1'])
         expect(Object.keys(state.cards.templates)).toEqual(['tpl-1'])
 
         actions.cards.updateCards([card('card-1', 'board-1', 'One', {deleteAt: 1})])
+        flush()
         expect(Object.keys(state.cards.cards)).toEqual([])
     })
 
@@ -113,7 +118,9 @@ describe('createAppStore', () => {
 
         store.actions.cards.updateCards([card('card-1', 'board-1', 'One')])
         store.actions.cards.setCurrent('card-1')
+        flush()
         store.actions.cards.updateCards([card('card-1', 'board-1', 'Renamed')])
+        flush()
 
         expect(seen).toEqual([undefined, 'One', 'Renamed'])
         dispose()
@@ -124,8 +131,10 @@ describe('createAppStore', () => {
 
         actions.boards.updateBoards([board('board-1', 'Alpha'), board('tpl-1', 'Tpl', {isTemplate: true})])
         actions.boards.setCurrent('board-1')
+        flush()
         expect(getCurrentBoard(state)?.title).toBe('Alpha')
         actions.boards.setCurrent('tpl-1')
+        flush()
         expect(getCurrentBoard(state)?.title).toBe('Tpl')
     })
 
@@ -161,6 +170,28 @@ describe('createAppStore', () => {
         const before = getCards(state)
         expect(Object.keys(before)).toHaveLength(0)
         actions.cards.addCard(card('card-1', 'board-1', 'One'))
+        flush()
         expect(getCards(state)['card-1'].title).toBe('One')
+    })
+
+    // What opening a board fetches has to arrive in the store. It once did not:
+    // every branch of the load went through storePath with reconcile, and
+    // storePath keeps an updater's return value — reconcile returns nothing,
+    // so the board loaded and was then written away, and the page drew an
+    // empty board with no error anywhere.
+    test('a board opened is in the store with its views and cards', async () => {
+        const blocks = [
+            card('card-1', 'board-1', 'One'),
+            {id: 'view-1', boardId: 'board-1', parentId: 'board-1', type: 'view', title: 'Board', createAt: 1, updateAt: 1, deleteAt: 0, fields: {viewType: 'board'}},
+        ]
+        const store = createAppStore({client: fakeClient({getAllBlocks: vi.fn(async () => blocks)} as Partial<OctoClient>)})
+
+        await store.actions.load.loadBoardData('board-1')
+        flush()
+
+        expect(Object.keys(store.state.cards.cards)).toEqual(['card-1'])
+        expect(Object.keys(store.state.views.views)).toEqual(['view-1'])
+        expect(store.state.contents).toBeDefined()
+        expect(store.state.comments).toBeDefined()
     })
 })

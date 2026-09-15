@@ -27,12 +27,24 @@ export const createInitialLoadActions = (ctx: StoreContext) => {
     // does not redraw every card.
     const applyBlocks = (blocks: Parameters<typeof viewsFromBlocks>[0]) => {
         const {cards, templates} = cardsFromBlocks(blocks)
-        setState(storePath('views', 'views', reconcile(viewsFromBlocks(blocks))))
-        setState(storePath('cards', 'cards', reconcile(cards)))
-        setState(storePath('cards', 'templates', reconcile(templates)))
-        setState(storePath('contents', reconcile(contentsFromBlocks(blocks))))
-        setState(storePath('comments', reconcile(commentsFromBlocks(blocks))))
-        setState(storePath('attachments', reconcile(attachmentsFromBlocks(blocks))))
+        setState((draft) => {
+            reconcile(viewsFromBlocks(blocks))(draft.views.views)
+        })
+        setState((draft) => {
+            reconcile(cards)(draft.cards.cards)
+        })
+        setState((draft) => {
+            reconcile(templates)(draft.cards.templates)
+        })
+        setState((draft) => {
+            reconcile(contentsFromBlocks(blocks))(draft.contents)
+        })
+        setState((draft) => {
+            reconcile(commentsFromBlocks(blocks))(draft.comments)
+        })
+        setState((draft) => {
+            reconcile(attachmentsFromBlocks(blocks))(draft.attachments)
+        })
     }
 
     return {
@@ -111,8 +123,12 @@ export const createInitialLoadActions = (ctx: StoreContext) => {
                 } else {
                     boards[board.id] = board
                 }
-                setState(storePath('boards', 'boards', reconcile(boards)))
-                setState(storePath('boards', 'templates', reconcile(templates)))
+                setState((draft) => {
+                    reconcile(boards)(draft.boards.boards)
+                })
+                setState((draft) => {
+                    reconcile(templates)(draft.boards.templates)
+                })
                 applyBlocks(blocks)
 
                 return {board, blocks}
@@ -137,19 +153,23 @@ export const createInitialLoadActions = (ctx: StoreContext) => {
 
         async loadBoards() {
             const boards = await deps.client.getBoards()
-            setState(storePath('boards', 'boards', reconcile(boards.reduce((acc: {[key: string]: Board}, b: Board) => {
-                acc[b.id] = b
-                return acc
-            }, {}))))
+            setState((draft) => {
+                reconcile(boards.reduce((acc: {[key: string]: Board}, b: Board) => {
+                    acc[b.id] = b
+                    return acc
+                }, {}))(draft.boards.boards)
+            })
             return {boards}
         },
 
         async loadMyBoardsMemberships() {
             const boardsMemberships = await deps.client.getMyBoardMemberships()
-            setState(storePath('boards', 'myBoardMemberships', reconcile(boardsMemberships.reduce((acc: {[key: string]: typeof boardsMemberships[0]}, m) => {
-                acc[m.boardId] = m
-                return acc
-            }, {}))))
+            setState((draft) => {
+                reconcile(boardsMemberships.reduce((acc: {[key: string]: typeof boardsMemberships[0]}, m) => {
+                    acc[m.boardId] = m
+                    return acc
+                }, {}))(draft.boards.myBoardMemberships)
+            })
             return {boardsMemberships}
         },
     }

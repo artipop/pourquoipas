@@ -152,8 +152,11 @@ and read with `useAppSelector(selector)`, which memoizes on the fields the
 selector touched. There is no dispatch and no thunk — an action is a method that
 writes the store, and the client it calls arrives through `deps` rather than a
 module import, which is what lets a test hand it a mock. A path write goes
-through `storePath`; a mutation in place is a draft callback, never `storePath`,
-which takes an updater's return value and so wipes the branch.
+through `storePath`; a mutation in place — a `produce`-style body, or a
+`reconcile` — is a draft callback, never `storePath`, which takes an updater's
+return value and so writes the branch away. `reconcile` returns nothing, and
+`storePath(…, reconcile(x))` on every branch of the initial load drew every
+board empty with no error anywhere.
 
 React-only libraries were replaced rather than wrapped: `@dnd-kit/solid`,
 `@dschz/solid-flow` for the workflow canvas, `@solidjs/router`, `@formatjs/intl`

@@ -4,6 +4,8 @@
 // not replace the category, because the sidebar draws one row per category and
 // `For` throws a row away the moment its item is a different object.
 
+import {flush} from 'solid-js'
+
 import {OctoClient} from '../octoClient'
 
 import type {Category, CategoryBoards} from './sidebar'
@@ -33,6 +35,7 @@ describe('the sidebar store', () => {
         const {state, actions} = createAppStore({client: fakeClient()}, {sidebar: {categoryAttributes: [category()]}})
 
         actions.sidebar.updateCategories([{...category(), collapsed: true, updateAt: 2} as Category])
+        flush()
 
         expect(state.sidebar.categoryAttributes[0].collapsed).toBe(true)
     })
@@ -42,6 +45,7 @@ describe('the sidebar store', () => {
         const before = state.sidebar.categoryAttributes[0]
 
         actions.sidebar.updateCategories([{...category(), name: 'Renamed', updateAt: 2} as Category])
+        flush()
 
         expect(state.sidebar.categoryAttributes[0]).toBe(before)
         expect(before.name).toBe('Renamed')
