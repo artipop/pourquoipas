@@ -102,10 +102,19 @@ func main() {
 			os.Exit(1)
 		}
 	}
-	// The diagram and the HCL are generated beside the SQL rather than by a
-	// second command, because a picture nobody remembers to regenerate is a
-	// wrong picture.
+	// The diagram, its page and the HCL are generated beside the SQL rather
+	// than by a second command, because a picture nobody remembers to
+	// regenerate is a wrong picture.
 	if err := os.WriteFile(filepath.Join(root, erdPath), []byte(renderERDDoc()), 0o644); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	page, err := renderERDPage()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	if err := os.WriteFile(filepath.Join(root, erdPagePath), []byte(page), 0o644); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}

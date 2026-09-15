@@ -563,7 +563,7 @@ bundle — which is every `wails3 dev` run there is, so a dev build has the menu
 bar and no OS notifications. Permission is asked at the first wait rather than
 at launch, so an install whose owner never runs an agent is never interrupted to
 be asked. And the icons are **two inks rather than one template icon**
-(`build/tray/{idle,waiting}-{light,dark}.png`, drawn by `build/appicon.py`):
+(`build/tray/{idle,waiting}-{light,dark}.png`, drawn by `go run ./tools/appicon`):
 macOS renders a template icon from its alpha alone, so the amber badge — the
 whole point — would come out the same grey as the mark. macOS and Linux take one
 icon and never ask for a second, so which ink is right is ours and is redecided
@@ -2277,9 +2277,11 @@ and it made every board of shopping lists look like it was missing one.
   schema maintained by hand is a second description of it, and the second one
   goes wrong. Which tables are drawn together is the one hand-written part
   (`erdGroups`), because that is a judgement rather than something the schema
-  knows. `python3 tools/schemapage.py` dresses the same markdown as
-  `docs/schema/erd.html` — a page to open in a browser, presentation only, and
-  nothing in the Go build calls it. `docs/db-erd.md` is what is stored where in words,
+  knows. `docs/schema/erd.html` is the same diagram dressed as a page to open
+  in a browser, generated beside them and held to the schema by the same kind
+  of test — it was a Python script run by hand, and was as stale as that made
+  it. There is no Python left in the tree: `go run ./tools/appicon` draws the
+  branding the same way. `docs/db-erd.md` is what is stored where in words,
   and how one thing finds another — every reference by id;
   `docs/db-schema-review.md` is the decisions behind it, and
   `docs/sql-dialects.md` is the inventory of what is still written per vendor —

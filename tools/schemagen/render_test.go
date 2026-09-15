@@ -517,6 +517,27 @@ func TestTheDiagramOnDiskIsTheOneTheSchemaDescribes(t *testing.T) {
 	}
 }
 
+// The page is the diagram dressed for a browser. It was dressed by a script run
+// by hand, and was therefore as stale as nobody remembering made it; now it is
+// held to the schema like the diagram is.
+func TestThePageOnDiskIsTheOneTheSchemaDescribes(t *testing.T) {
+	root, err := moduleRoot()
+	if err != nil {
+		t.Fatal(err)
+	}
+	want, err := renderERDPage()
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := os.ReadFile(filepath.Join(root, erdPagePath))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(got) != want {
+		t.Errorf("%s is stale — run `go generate ./tools/schemagen`", erdPagePath)
+	}
+}
+
 // The HCL on disk is the same rendering, for the same reason as the diagram.
 func TestTheHCLOnDiskIsTheOneTheSchemaDescribes(t *testing.T) {
 	root, err := moduleRoot()
