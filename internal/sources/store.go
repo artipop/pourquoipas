@@ -94,13 +94,21 @@ func (s *Store) RememberItem(source, externalID, version, cardID string) error {
 
 // ForgetSource drops everything a removed source left behind, so a source
 // created again under the same name starts clean rather than silently ignoring
-// everything it brings.
+// everything it brings. One transaction, so a failure between the two cannot
+// leave the log of a source that no longer exists.
 func (s *Store) ForgetSource(source string) error {
-	if _, err := s.exec(`DELETE FROM source_item WHERE source=?`, source); err != nil {
+	tx, err := s.db.Begin()
+	if err != nil {
 		return err
 	}
-	_, err := s.exec(`DELETE FROM source_event WHERE source=?`, source)
-	return err
+	defer func() { _ = tx.Rollback() }()
+	if _, err := tx.Exec(`DELETE FROM source_item WHERE source=?`, source); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(`DELETE FROM source_event WHERE source=?`, source); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 // Outcomes an event can record.
@@ -162,13 +170,25 @@ func (s *Store) Events(source string, limit int) ([]EventRecord, error) {
 	return out, rows.Err()
 }
 
-// PruneEvents keeps the log bounded: it is a diagnostic, not an archive.
-func (s *Store) PruneEvents(keep int) error {
+// PruneEvents keeps a source's log to its newest keep lines: it is a
+// diagnostic, not an archive. Per source, because the log is read per source
+// (Events), and a limit on the whole table let one chatty source wash out the
+// log of every quiet one. The cutoff is found first rather than with
+// NOT IN (… LIMIT), which MySQL refuses.
+func (s *Store) PruneEvents(source string, keep int) error {
 	if keep <= 0 {
 		keep = 500
 	}
-	_, err := s.exec(`DELETE FROM source_event WHERE id NOT IN (
-		SELECT id FROM source_event ORDER BY id DESC LIMIT ?)`, keep)
+	var cutoff string
+	err := s.queryRow(`SELECT id FROM source_event WHERE source=? ORDER BY id DESC LIMIT 1 OFFSET ?`,
+		source, keep-1).Scan(&cutoff)
+	if err == sql.ErrNoRows {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	_, err = s.exec(`DELETE FROM source_event WHERE source=? AND id < ?`, source, cutoff)
 	return err
 }
 

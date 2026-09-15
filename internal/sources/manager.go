@@ -590,5 +590,13 @@ func (m *Manager) record(r EventRecord) {
 	}
 	if err := m.store.AppendEvent(r); err != nil {
 		m.log.Warn("sources: не удалось записать событие", "source", r.Source, "err", err)
+		return
+	}
+	if err := m.store.PruneEvents(r.Source, eventsKept); err != nil {
+		m.log.Warn("sources: cannot prune the log", "source", r.Source, "err", err)
 	}
 }
+
+// eventsKept is how much of a source's log survives. The log answers "why did
+// nothing happen" about recent deliveries; nobody reads it as an archive.
+const eventsKept = 500
