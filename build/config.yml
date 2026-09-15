@@ -41,8 +41,8 @@ dev_mode:
       - node_modules
       - pack
       - bin
-      # The webapp has its own watcher (below) and a dev build serves its pack
-      # off disk, so a TS edit must not trigger a Go rebuild and a restart.
+      # The page is Vite's business in a dev build (below): a TS edit reaches
+      # the window by HMR and must not trigger a Go rebuild and a restart.
       - webapp
     file:
       - .DS_Store
@@ -57,9 +57,10 @@ dev_mode:
   executes:
     - cmd: wails3 build DEV=true EXTRA_TAGS=json1,sqlite3
       type: blocking
-    # The webapp is its own npm project: `vite build --watch` keeps
-    # webapp/pack current, which is what a dev build serves off disk.
-    - cmd: cd webapp && npm run watchdev
+    # Vite with HMR, as in the Wails template. `wails3 dev` hands the app its
+    # address in FRONTEND_DEVSERVER_URL, and a development build's front door
+    # takes the page from it (devserver.go, proxy.go).
+    - cmd: wails3 task common:dev:frontend
       type: background
     - cmd: wails3 task run EXTRA_TAGS=json1,sqlite3
       type: primary

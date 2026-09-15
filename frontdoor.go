@@ -210,15 +210,16 @@ const sessionCookie = "boardSession"
 
 // requireSession refuses a request with no live board session. Installed only
 // on a hosted server, where sessions exist.
+//
+// There is no exception under it any more. The runtime module used to be one —
+// the page imported /wails/runtime.js before anybody had logged in — and the
+// page now bundles the runtime with the bindings, so nothing it needs before a
+// login lives behind this guard.
 func requireSession(next http.Handler, valid func(string) bool) http.Handler {
 	if valid == nil {
 		return next
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if openToEverybody(r) {
-			next.ServeHTTP(w, r)
-			return
-		}
 		cookie, err := r.Cookie(sessionCookie)
 		if err != nil || !valid(cookie.Value) {
 			http.Error(w, "not logged in", http.StatusUnauthorized)
@@ -226,14 +227,4 @@ func requireSession(next http.Handler, valid func(string) bool) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
-}
-
-// openToEverybody: the runtime module carries no authority — the calls made
-// through it are the guarded POST — and a login page has to be able to load it
-// to stop being a login page. See docs/decisions.md.
-func openToEverybody(r *http.Request) bool {
-	if r.Method != http.MethodGet && r.Method != http.MethodHead {
-		return false
-	}
-	return r.URL.Path == "/wails/runtime.js"
 }

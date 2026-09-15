@@ -12,6 +12,8 @@
 | Бинарь для этой платформы | `wails3 task build` |
 | `.app` / инсталлятор | `wails3 task package`, `darwin:package:dmg`, `windows:package`, `linux:package` |
 | Headless-сервер | `wails3 task build:server` |
+| Docker-образ сервера | `wails3 task build:docker`, `run:docker` |
+| Привязки к Go после правки `App` | `wails3 task generate:bindings` |
 | Кросс-образ для Linux и macOS | `wails3 task setup:docker` |
 | Платное издание | к любой из них — `EDITION=lifetime` |
 
@@ -136,11 +138,59 @@ beta.22: сервер стартует, прогоняет миграции на
 - на выходе `webapp/pack/index.html` и `pack/static/*`;
 - в `index.html` есть Go-шаблон `{{.BaseURL}}`;
 - ссылки на ассеты из JS и CSS — относительные;
-- работают `npm run pack`, `watchdev`, `deveditor`;
+- работают `npm run pack`, `dev`, `deveditor`;
 - `go build -tags frontend` встраивает `webapp/pack`, headless-сборка отдаёт
   страницу, `/api` и `/ws`;
 - три глобала из README («What this app requires of the frontend») — каждый с
-  feature-detection на месте вызова, потому что тот же бандл ездит в браузер.
+  feature-detection на месте вызова, потому что тот же бандл ездит в браузер;
+- `webapp/bindings` совпадает с тем, что генерирует `wails3 task
+  generate:bindings`, а `@wailsio/runtime` — ровно та версия Wails, что в
+  `go.mod` (`bindings_test.go`, джоб `bindings` в CI).
+
+## Разработка: страница из Vite
+
+`wails3 dev` — шаблонный цикл Wails: Vite с HMR в фоне
+(`common:dev:frontend`, порт `VITE_PORT`, по умолчанию 9245), приложение —
+основным процессом. Адрес Vite приложение получает в `FRONTEND_DEVSERVER_URL`,
+и dev-сборка берёт оттуда страницу и модули через front door, вставляя в HTML
+тот же bootstrap, что и в релизе; `/api/v0` и `/ws` остаются доске
+(`devserver.go`, `proxy.go`). HMR-сокет Vite открывается на origin страницы —
+то есть на front door — и проходит тем же прокси. Релизная сборка
+переменную не читает.
+
+Переменную приложение не сбрасывает: preRun самого Wails по ней ждёт, пока Vite
+ответит, прежде чем открыть окно, — это ровно то ожидание, которое здесь и
+нужно. Но `localhost` в ней заменяется на `127.0.0.1`, и Vite запускается там
+же (`--host 127.0.0.1`): `wails3 dev` всегда пишет `localhost`, Node на Windows
+вешает его на `::1`, а на машине, где IPv6-loopback отказывает, Wails пять
+секунд ждал уже поднятый Vite и ронял приложение (`devserver.go`).
+
+## Сервер в контейнере и его база
+
+`wails3 task build:docker` — образ серверного режима по шаблону Wails
+(`build/docker/Dockerfile.server`): сначала собирается страница (`webapp/pack`
+вшивается тегом `frontend`, node в образе нет), потом чистый Go без cgo на
+`distroless/static`. `CGO_ENABLED=1` с glibc-образами даёт mattn вместо
+modernc. `run:docker` запускает его с данными в томе `xciii-data`.
+
+Настраивается окружением при `docker run`:
+
+- `WAILS_SERVER_HOST`/`WAILS_SERVER_PORT` (или `SERVER_HOST`/`SERVER_PORT`) —
+  где слушает front door; в образе `0.0.0.0:8080`;
+- `XCIII_DB_TYPE` — `sqlite3` (по умолчанию), `postgres` или `mysql`, и
+  `XCIII_DB_DSN` — строка подключения в синтаксисе драйвера; для SQLite это
+  путь, по умолчанию файл в каталоге данных (`database_server.go`);
+- `/data` — каталог установки (`XDG_CONFIG_HOME`): база SQLite, файлы,
+  настройки. Без тома каждый перезапуск — новая установка.
+
+На Postgres и MySQL работает доска; агенты и источники выключены и пишут в лог
+почему (`appTablesSupported`): их SQL написан на диалекте SQLite. Что нужно,
+чтобы это изменить, — в [deferred.md](deferred.md), «Одна база: хвосты плана».
+Десктоп всегда на SQLite и ничего из этого не читает.
+
+Образ — это доска. Агентам нужны CLI (claude, codex, git, node), которых в
+distroless нет, так что серверу с агентами нужен `RUNTIME_IMAGE`, который их
+несёт.
 
 ## Запакованное приложение — не потомок оболочки
 
@@ -157,8 +207,8 @@ codex CLI, так что «найти бинарь и запустить его 
 
 Способ проверки — и его собственные ловушки — в [verifying.md](verifying.md).
 
-Курлом по front door на обеих сборках: страница отдаётся,
-`/wails/runtime.js` отдаётся, `Call.ByName('main.App.…')` возвращает данные
+Курлом по front door на обеих сборках: страница отдаётся, вызов привязки
+(`POST /wails/runtime` с id метода из `webapp/bindings`) возвращает данные
 настоящих реестров, `/ws` отвечает `101 Switching Protocols` с того же origin,
 кросс-origin вызов биндинга получает `403`. В десктопной сборке WebKit-процесс
 держит живое соединение с front door — страница загружена по HTTP, а не по

@@ -36,11 +36,19 @@ code builds a headless server (`-tags server`) that serves the board to a browse
 
 `docs/build-and-platforms.md` has the details and the traps already paid for.
 
-- `wails3 dev` — the dev loop; needs `npm ci` in `webapp/` once. A dev build (no
-  `frontend` tag) serves `webapp/pack` off disk, kept current by the watcher in
-  `build/config.yml`.
+- `wails3 dev` — the dev loop, the template's: Vite with HMR beside the app;
+  needs `npm ci` in `webapp/` once. A development build's front door takes the
+  page from Vite (`FRONTEND_DEVSERVER_URL`, `devserver.go`) and injects the
+  bootstrap into it as into any page; `/api` and `/ws` stay the board's.
 - `wails3 task build` / `package` (`darwin:package:dmg`, `windows:package`,
-  `linux:package`) / `build:server`. `EDITION=lifetime` on any of them.
+  `linux:package`) / `build:server` / `build:docker`. `EDITION=lifetime` on any
+  of them.
+- **A server's database is the environment's** (`database_server.go`):
+  `XCIII_DB_TYPE` (`sqlite3`, `postgres`, `mysql`) and `XCIII_DB_DSN`. A desktop
+  is always SQLite. On the other two the board runs and the agents and sources
+  are off, because their SQL is SQLite's (`appTablesSupported`).
+- `wails3 task generate:bindings` — after any change to a method of `App`.
+  `bindings_test.go` and CI's regeneration fail when somebody forgets.
 - Build tags travel as `EXTRA_TAGS`, default `json1,sqlite3,frontend`; Linux adds
   `gtk3`.
 - **Which SQLite is compiled in is cgo's answer.** `sqlite3 && cgo` is
@@ -99,19 +107,25 @@ answers a WebSocket upgrade with 501**.
 - **Who is asked is the build** (`identity.go` + `identity_desktop.go`/
   `identity_server.go`, `docs/teamwork.md`): a desktop is one person with a
   single-user token; a hosted server is a team with `/login` open, and there
-  `/wails/` and both sockets require a session (`requireSession`) — except the
-  runtime module itself (`openToEverybody`). A desktop joins a server by logging
-  in (`attach.go`) and keeps its agents.
+  `/wails/` and both sockets require a session (`requireSession`), with no
+  exception: the page bundles the Wails runtime, so nothing it needs before a
+  login is behind the guard. A desktop joins a server by logging in
+  (`attach.go`) and keeps its agents.
 - `tsnetdoor.go` is the only supported way off the machine: the same front door
   published as a node of the user's tailnet (`tsnet`, `ListenTLS`), gated by
   `WhoIs` in front of *everything*, page included, because the page hands out the
   board's session token. It gets a front door built for its own authority.
 
-### The page talks to Go through a shim, not through generated bindings
+### The page talks to Go through generated bindings
 
-The bootstrap script in `proxy.go` loads `/wails/runtime.js` and rebuilds
-`window.go.main.App` as a Proxy over `Call.ByName('main.App.<name>')`. No bindings
-are generated: **adding a method to `App` makes it callable.**
+`webapp/bindings` is generated from `App` (`wails3 task generate:bindings`) and
+committed; the page calls through it over the `@wailsio/runtime` it bundles,
+pinned to go.mod's Wails (`bindings_test.go`). **Every exported method of `App`
+is callable from the page**, so wiring `main` does itself stays unexported. The
+bootstrap in `proxy.go` only seeds the session and sets `window.hasGoSide`;
+`goBridge.ts` then loads the bindings into `window.go.main.App`, which is where
+every call site feature-detects and where a test puts its fake. In a plain
+browser nothing is loaded.
 
 **Events come back over a socket, not the Wails bus** (`eventsws.go`,
 `/acp/events/ws`), because the bus only reaches windows the app owns and a page

@@ -64,6 +64,28 @@ jobs:
               ./server/services/store/... ./server/integrationtests/...
           fi
 
+  # The page calls Go through bindings generated from App and committed
+  # (webapp/bindings). bindings_test.go catches a method added or removed; this
+  # regenerates them with the version of Wails go.mod names and fails on any
+  # difference, which is what also catches a changed signature.
+  bindings:
+    name: bindings
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Install the Wails CLI go.mod names
+        run: go install "github.com/wailsapp/wails/v3/cmd/wails3@$(go list -m -f '{{.Version}}' github.com/wailsapp/wails/v3)"
+      - name: Regenerate the bindings
+        run: wails3 task common:generate:bindings
+      - name: They are what was committed
+        run: |
+          git status --porcelain -- webapp/bindings
+          test -z "$(git status --porcelain -- webapp/bindings)"
+
   webapp:
     name: webapp
     runs-on: ubuntu-latest

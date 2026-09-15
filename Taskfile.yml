@@ -24,6 +24,9 @@ vars:
   EDITION_TAG: '{{if eq .EDITION "base"}}{{else}},{{.EDITION}}{{end}}'
   BASE_TAGS: '{{.EXTRA_TAGS | default "json1,sqlite3,frontend"}}{{.EDITION_TAG}}'
   EXTRA_TAGS: '{{.BASE_TAGS}}'
+  # The port `wails3 dev` chose for Vite (common:dev:frontend), as in the
+  # template.
+  VITE_PORT: '{{.WAILS_VITE_PORT | default 9245}}'
 
 includes:
   common: ./build/Taskfile.yml
@@ -54,11 +57,15 @@ tasks:
 
   dev:
     summary: Runs the application in development mode
-    # Go edits rebuild and restart the app; the webapp watcher declared in
-    # build/config.yml rebuilds webapp/pack, which a dev build (no `frontend`
-    # tag) serves straight off disk.
+    # Go edits rebuild and restart the app; the page comes from Vite with HMR
+    # (build/config.yml), through the app's own front door.
     cmds:
       - wails3 dev -config ./build/config.yml
+
+  generate:bindings:
+    summary: Regenerates webapp/bindings from the App service
+    cmds:
+      - task: common:generate:bindings
 
   version:set:
     summary: Writes one version number into every file that states one (VERSION=x.y.z)
@@ -84,6 +91,16 @@ tasks:
     summary: Runs the application in server mode
     cmds:
       - task: common:run:server
+
+  build:docker:
+    summary: Builds a Docker image of the headless server
+    cmds:
+      - task: common:build:docker
+
+  run:docker:
+    summary: Builds and runs the Docker image
+    cmds:
+      - task: common:run:docker
 
   test:db:
     summary: Runs the store and API suites against one vendor (DB=sqlite3|mysql|postgres)

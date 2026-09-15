@@ -15,10 +15,6 @@ const root = path.dirname(fileURLToPath(import.meta.url))
 const staticDir = path.join(root, 'static')
 const outDir = path.join(root, 'pack')
 
-// Where `npm run dev` proxies the API: the standalone server's default port
-// from config.json, i.e. whatever `make watch` is running in another terminal.
-const devServerURL = 'http://localhost:8000'
-
 const mimeTypes: Record<string, string> = {
     '.gif': 'image/gif',
     '.jpg': 'image/jpeg',
@@ -91,25 +87,11 @@ function appStatic(): Plugin {
 // Clearing is what keeps a renamed asset from surviving a rebuild, and it is
 // the build's job rather than the Taskfile's: the Taskfile did it with
 // rm/mkdir/touch, which Task's shell does not have on Windows.
-//
-// Never in watch mode, not even on the first build. `wails3 dev` starts the app
-// while `npm run watchdev` makes that first build, and a dev build serves pack/
-// off disk: emptying it there had the app answer "no such file" for
-// index.html until the build landed — a white window until somebody reloaded.
-// A watch rebuild overwrites in place, and what it leaves behind is cleared by
-// the next ordinary build, which is the one that gets embedded.
 function emptyPack(): Plugin {
-    let watching = false
     return {
         name: 'xciii-empty-pack',
         apply: 'build',
-        configResolved(config) {
-            watching = Boolean(config.build.watch)
-        },
         buildStart() {
-            if (watching) {
-                return
-            }
             mkdirSync(outDir, {recursive: true})
             for (const name of readdirSync(outDir)) {
                 if (name !== '.gitkeep') {
@@ -199,16 +181,13 @@ export default defineConfig(({mode}) => {
             },
         },
 
-        // `npm run dev` — browser-only dev server with HMR, run alongside
-        // `make watch`. The desktop app does not use it: `make dev-wails` keeps
-        // serving the page from the Go server and rebuilds pack/ on the side.
-        server: {
-            port: 5173,
-            strictPort: true,
-            proxy: Object.fromEntries(
-                ['/api', '/plugins', '/files', '/login', '/register', '/logout'].
-                    map((route) => [route, {target: devServerURL, changeOrigin: true}]),
-            ),
-        },
+        // `npm run dev` is what `wails3 dev` starts (`common:dev:frontend`,
+        // with the port on the command line), and nobody opens it directly:
+        // a development build's front door takes the page and its modules
+        // from here and serves them under its own origin with the bootstrap
+        // injected, while /api and /ws stay the board's (proxy.go). The HMR
+        // client connects back to that origin, and the door passes the upgrade
+        // through. So there is no proxy to configure here — the door is it.
+        server: {},
     }
 })

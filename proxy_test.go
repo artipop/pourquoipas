@@ -1,13 +1,17 @@
 package main
 
 import (
+	"bufio"
+	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 )
 
 // upstream stands in for the in-process board server.
@@ -32,7 +36,7 @@ func upstream(t *testing.T, contentType, body string) int {
 
 func proxied(t *testing.T, port int) *http.Response {
 	t.Helper()
-	h, err := newServerProxy(port, "", func() string { return "su-token" })
+	h, err := newServerProxy(port, "", "", func() string { return "su-token" })
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -46,7 +50,7 @@ func TestProxyInjectsTheBootstrapIntoHTML(t *testing.T) {
 	body, _ := io.ReadAll(res.Body)
 	page := string(body)
 
-	if !strings.Contains(page, "su-token") || !strings.Contains(page, "window.go = ") {
+	if !strings.Contains(page, "su-token") || !strings.Contains(page, "window.hasGoSide = true") {
 		t.Fatalf("bootstrap missing from the page:\n%s", page)
 	}
 	// The page, the API and /ws share the front door's origin now, so nothing
@@ -72,22 +76,21 @@ func TestProxyLeavesNonHTMLAlone(t *testing.T) {
 	}
 }
 
-// v3 injects nothing into the page, so the bridge the webapp calls through —
-// window.go.main.App and window.runtime — is ours to build on top of the v3
-// runtime. Without it every ACP dialog silently decides it is not running in
-// the desktop app.
-func TestBootstrapBridgesTheWebappToTheV3Runtime(t *testing.T) {
+// The page calls Go through bindings generated from App and loads them itself
+// (goBridge.ts). What it cannot find out by itself is whether anything answers
+// behind its origin — the same bundle runs in a plain browser — and that is the
+// one thing the bootstrap has to say: without it every desktop-only screen
+// silently decides it is not running in the app. A bridge built here as well
+// would be a second, untyped way to the same methods.
+func TestTheBootstrapTellsThePageThereIsAGoSide(t *testing.T) {
 	script := bootstrapScript("su-token")
 
-	for _, want := range []string{
-		`import('/wails/runtime.js')`,       // the runtime is loaded by the page itself
-		`rt.Call.ByName('main.App.' + name`, // bound service methods, called by FQN
-		`window.go = {main: {App: app}}`,    // the surface the webapp feature-detects
-		`rt.Events.On(event`,                // window.runtime.EventsOn
-		`callback(e && e.data)`,             // v3 passes an event object, v2 the payload
-	} {
-		if !strings.Contains(script, want) {
-			t.Errorf("bootstrap does not contain %q:\n%s", want, script)
+	if !strings.Contains(script, "window.hasGoSide = true") {
+		t.Errorf("bootstrap does not mark the Go side:\n%s", script)
+	}
+	for _, unwanted := range []string{"Call.ByName", "/wails/runtime.js", "new Proxy", "window.runtime"} {
+		if strings.Contains(script, unwanted) {
+			t.Errorf("bootstrap still builds a bridge of its own (%q)", unwanted)
 		}
 	}
 }
@@ -132,23 +135,13 @@ func TestTheBootstrapWritesTheCookieTheGuardReads(t *testing.T) {
 	}
 }
 
-// A page that could not load the runtime once has to be able to try again: the
-// module map caches a rejected import, so the page has to drop its own handle
-// on it or one bad moment lasts as long as the page does.
-func TestTheBootstrapForgetsARuntimeImportThatFailed(t *testing.T) {
-	script := bootstrapScript("")
-	if !strings.Contains(script, "runtimePromise = null;") {
-		t.Fatal("a failed runtime import is kept, so a bound call can never recover")
-	}
-}
-
 // The token is asked for per response rather than baked in when the proxy is
 // built: a hosted board's session is not known until somebody logs in, and it
 // changes when they log out.
 func TestTheBootstrapCarriesWhateverTokenIsCurrent(t *testing.T) {
 	port := upstream(t, "text/html; charset=utf-8", "<html><head></head><body></body></html>")
 	token := "first"
-	h, err := newServerProxy(port, "", func() string { return token })
+	h, err := newServerProxy(port, "", "", func() string { return token })
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -180,7 +173,7 @@ func TestARequestToAnAttachedServerDoesNotDescribeOurOwnDoor(t *testing.T) {
 	}))
 	t.Cleanup(srv.Close)
 
-	h, err := newServerProxy(1, srv.URL, func() string { return "session" })
+	h, err := newServerProxy(1, srv.URL, "", func() string { return "session" })
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -229,7 +222,7 @@ func TestAttachedTheDataGoesAcrossAndThePageStaysHere(t *testing.T) {
 	t.Cleanup(far.Close)
 
 	near := upstream(t, "text/html; charset=utf-8", "<html><head></head><body>ours</body></html>")
-	h, err := newServerProxy(near, far.URL, func() string { return "session" })
+	h, err := newServerProxy(near, far.URL, "", func() string { return "session" })
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -266,5 +259,86 @@ func TestAttachedTheDataGoesAcrossAndThePageStaysHere(t *testing.T) {
 	}
 	if len(asked) != 3 {
 		t.Errorf("the server was asked for the page too: %v", asked)
+	}
+}
+
+// Under `wails3 dev` the page comes from Vite and the data from the board: Vite
+// has the modules, the board has /api and /ws. The page gets the bootstrap
+// either way, since that is what seeds the session and says there is a Go side.
+func TestWithADevServerThePageComesFromViteAndTheDataFromTheBoard(t *testing.T) {
+	board := upstream(t, "application/json", `{"from":"the board"}`)
+	vite := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		_, _ = io.WriteString(w, "<html><head></head><body>from vite</body></html>")
+	}))
+	t.Cleanup(vite.Close)
+
+	h, err := newServerProxy(board, "", vite.URL, func() string { return "su-token" })
+	if err != nil {
+		t.Fatal(err)
+	}
+	get := func(path string) string {
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+		body, _ := io.ReadAll(rec.Result().Body)
+		return string(body)
+	}
+
+	for _, path := range []string{"/api/v0/boards", "/ws"} {
+		if got := get(path); !strings.Contains(got, "the board") {
+			t.Errorf("%s did not reach the board: %q", path, got)
+		}
+	}
+	for _, path := range []string{"/", "/board/abc", "/src/main.tsx", "/@vite/client"} {
+		if got := get(path); !strings.Contains(got, "from vite") {
+			t.Errorf("%s did not come from Vite: %q", path, got)
+		}
+	}
+	if page := get("/"); !strings.Contains(page, "su-token") {
+		t.Error("the page from Vite came without the bootstrap")
+	}
+}
+
+// Vite's HMR client opens its socket against the page's own origin, which is
+// the front door, so the upgrade has to pass through the proxy the page came
+// down. Without it the page loads and no edit ever arrives.
+func TestTheHMRSocketGoesThroughToVite(t *testing.T) {
+	vite := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Upgrade") != "websocket" {
+			http.Error(w, "not an upgrade", http.StatusBadRequest)
+			return
+		}
+		conn, buf, err := w.(http.Hijacker).Hijack()
+		if err != nil {
+			return
+		}
+		defer conn.Close()
+		_, _ = buf.WriteString("HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n\r\n")
+		_ = buf.Flush()
+	}))
+	t.Cleanup(vite.Close)
+
+	h, err := newServerProxy(upstream(t, "application/json", "{}"), "", vite.URL, func() string { return "" })
+	if err != nil {
+		t.Fatal(err)
+	}
+	door := httptest.NewServer(h)
+	t.Cleanup(door.Close)
+
+	conn, err := net.Dial("tcp", door.Listener.Addr().String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+	_ = conn.SetDeadline(time.Now().Add(5 * time.Second))
+	_, _ = fmt.Fprintf(conn, "GET /?token=t HTTP/1.1\r\nHost: %s\r\nConnection: Upgrade\r\nUpgrade: websocket\r\n"+
+		"Sec-WebSocket-Version: 13\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\nSec-WebSocket-Protocol: vite-hmr\r\n\r\n",
+		door.Listener.Addr())
+	status, err := bufio.NewReader(conn).ReadString('\n')
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(status, "101") {
+		t.Fatalf("the HMR upgrade was answered %q", strings.TrimSpace(status))
 	}
 }

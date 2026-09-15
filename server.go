@@ -10,6 +10,7 @@ import (
 	"path"
 	"path/filepath"
 
+	"github.com/artipop/xciii/server/model"
 	"github.com/artipop/xciii/server/server"
 	"github.com/artipop/xciii/server/services/config"
 	"github.com/artipop/xciii/server/services/notify"
@@ -136,6 +137,23 @@ func newServerLogger() mlog.LoggerIFace {
 type board struct {
 	srv *server.Server
 	db  *sql.DB
+	// dbType is which database that is — "sqlite3" on every desktop, and on a
+	// server whatever boardDatabase was told.
+	dbType string
+}
+
+// appTablesSupported says whether this application's own tables — the agents',
+// the sources' — can be worked on the board's database. Their queries are
+// written in SQLite's dialect (? placeholders, ON CONFLICT upserts), which MySQL
+// does not speak and Postgres only half does, so on a server that keeps its
+// boards in either, the two subsystems are switched off with this as the reason
+// rather than failing at their first write. docs/deferred.md carries what it
+// would take.
+func appTablesSupported(dbType string) error {
+	if dbType != model.SqliteDBType {
+		return fmt.Errorf("the agent and source tables are written in SQLite's dialect and do not run on %s yet (docs/deferred.md)", dbType)
+	}
+	return nil
 }
 
 // runServerWithLogger starts the board server in-process (single-user
@@ -148,11 +166,16 @@ func runServerWithLogger(logger mlog.LoggerIFace, port int, sessionToken string,
 		return board{}, fmt.Errorf("resolving data dir: %w", err)
 	}
 
+	dbType, dsn, err := boardDatabase(data)
+	if err != nil {
+		return board{}, err
+	}
+
 	cfg := &config.Configuration{
 		ServerRoot:         fmt.Sprintf("http://localhost:%d", port),
 		Port:               port,
-		DBType:             "sqlite3",
-		DBConfigString:     path.Join(data, "xciii.db"),
+		DBType:             dbType,
+		DBConfigString:     dsn,
 		UseSSL:             false,
 		SecureCookie:       true,
 		WebPath:            resolveWebPath(logger),
@@ -192,5 +215,5 @@ func runServerWithLogger(logger mlog.LoggerIFace, port int, sessionToken string,
 	if err := srv.Start(); err != nil {
 		return board{}, fmt.Errorf("starting server: %w", err)
 	}
-	return board{srv: srv, db: handle}, nil
+	return board{srv: srv, db: handle, dbType: dbType}, nil
 }

@@ -40,12 +40,12 @@ server `/wails/` and both sockets
 require a live board session (`requireSession`), read off a cookie the page
 writes beside the token it already keeps: the Wails runtime makes its own
 fetches, and a browser lets nobody set a header on a WebSocket handshake.
-**The runtime module itself is the one exception** (`openToEverybody`): it is a
-script with no authority, and every capability it offers goes through the POST
-beside it, which stays guarded. Refusing it refused the login page the ability
-to *become* a logged-in one — a browser caches a rejected dynamic import, and
-logging in navigates without reloading, so one bad moment outlived the session
-it was about.
+**Nothing under that guard is open to everybody.** The runtime module was, for
+a while (`openToEverybody`): the page imported `/wails/runtime.js` before
+anybody had logged in, a browser caches a rejected dynamic import, and logging
+in navigates without reloading, so refusing it left a login page unable to
+*become* a logged-in one. The page now bundles the runtime with the generated
+bindings (below), so the exception protected nothing and went with the import.
 
 The API's synthesizers for the `single-user` id (`api/users.go`,
 `api/teams.go`) are gated on single-user mode: unguarded, they answer every
@@ -69,15 +69,60 @@ because fetching the page is how a caller gets the token. Settings live in
 `<dataDir>/tailnet/settings.json` and the feature is off until that file says
 otherwise.
 
-## The page talks to Go through a shim, not through generated bindings
+## The page talks to Go through generated bindings
 
-v3 injects nothing into the page: it serves `/wails/runtime.js` and the page loads
-it. So the bootstrap script in `proxy.go` imports that module and rebuilds the
-surface the webapp knows: `window.go.main.App` is a Proxy turning every property
-read into `Call.ByName('main.App.<name>', …)` — the fully qualified name of a method
-on the bound `App` service — and `window.runtime.EventsOn` wraps `Events.On`,
-unwrapping the event object v3 passes. No bindings are generated; adding a method to
-`App` is all it takes to make it callable.
+The page calls the bound `App` service through bindings Wails generates from it,
+as in a project `wails3 init` writes: `webapp/bindings/…/app.ts`, one function
+per exported method, each a `Call.ByID` over the `@wailsio/runtime` package the
+page bundles. `wails3 task generate:bindings` writes them, against the headless
+build with cgo off — `App` is the same service in both builds, the output is
+identical, and that is the combination that type-checks on any machine.
+
+They replaced a shim, and the reason is the types. The bootstrap in `proxy.go`
+used to import `/wails/runtime.js` and build `window.go.main.App` as a Proxy
+turning every property read into `Call.ByName('main.App.<name>')`, with the
+methods' types written by hand beside it in `IAppWindow`. That hand-written list
+drifted from Go silently — a renamed method or a changed argument was found out
+at runtime — and the first compile against the generated types found a method
+the page was calling that the list did not have (`ListCutOffConversations`).
+Now the types are Go's own.
+
+Three things follow.
+
+- **Every exported method of `App` is callable from the page**, the way it
+  always was, and now it is also in a file somebody reads. Wiring that `main`
+  does itself — `setApplication`, `setOrigin` — is unexported for that reason:
+  exported, it was a setter any page could call, and it dragged three packages
+  of Wails' own models into the page's bindings.
+- **They are committed**, so building or testing the page needs no Go. What that
+  costs is that they can fall behind: `bindings_test.go` fails on a method added
+  or removed without regenerating, and CI regenerates them with the Wails that
+  go.mod names and fails on any difference, which also catches a changed
+  signature. The npm runtime is pinned to exactly that Wails version, by the
+  same test, because the two are halves of one protocol shipped in two packages.
+- **The page still has to be told whether there is a Go side at all**, because
+  the same bundle runs in a plain browser. So the bootstrap now seeds the
+  session, sets `window.hasGoSide` and wires the outward-link catch-all, and
+  nothing else; `goBridge.ts` loads the bindings — a dynamic import, so a browser
+  without a Go side never loads the runtime, which goes looking for a webview
+  that is not there — and puts them at `window.go.main.App`. That global stays
+  the seam on purpose: every call site feature-detects through
+  `agentBindings()`, and forty test files put a fake there. Moving them to
+  `vi.mock` of the bindings module was the plan's last step and was left out
+  (`docs/deferred.md`).
+
+**Under `wails3 dev` the page is Vite's.** `build/config.yml` is the template's
+dev loop — the Vite dev server in the background, with HMR — and `wails3 dev`
+hands the app its address in `FRONTEND_DEVSERVER_URL`. A development build's
+front door takes the page and every module from there (`devserver.go`,
+`newServerProxy`), injects the bootstrap into Vite's HTML exactly as into the
+board server's, and leaves `/api/v0` and `/ws` to the board. Vite's HMR client
+connects back to the page's own origin, which is the front door, and goes down
+the same proxy as an ordinary upgrade. Before this the dev loop rebuilt the
+bundle with `vite build --watch` and served it off disk, which cost a rebuild per
+edit and made a class of bug of its own — the window read `pack/` in the middle
+of a rebuild and opened white. A release build never listens to the variable:
+the page it serves is the one it embeds.
 
 **Events do not come back that way, though.** The Wails bus delivers an event by
 running JS in the windows the application owns, so a page served through the tailnet

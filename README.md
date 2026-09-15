@@ -64,7 +64,7 @@ The Go code is platform-agnostic — the same files build for every OS:
 - `proxy.go` — a reverse proxy to the in-process server, sitting behind the
   front door on everything but `/wails/`. It injects a bootstrap `<script>` into
   the served HTML that seeds the single-user session token into `localStorage`,
-  **builds the bridge the webapp calls through** (see below), and wires
+  **tells the page there is a Go side** (see below), and wires
   `window.openInNewBrowser` to open external links in the system browser. A
   capture-phase click handler sends **every** absolute http(s) anchor there,
   same-origin ones excepted. It deliberately does not defer to the inline
@@ -73,15 +73,12 @@ The Go code is platform-agnostic — the same files build for every OS:
   to an outside origin either — which is what made preview links in card
   comments dead.
 
-  **The bridge** is what replaces v2's generated bindings. v3 injects nothing
-  into the page: it serves `/wails/runtime.js` and the page loads it. So the
-  bootstrap imports that module once and builds `window.go.main.App` (every
-  property read becomes `Call.ByName('main.App.<name>', …)`, the fully qualified
-  name of a method on the bound `App` service) and `window.runtime.EventsOn`
-  (`Events.On`, unwrapping the event object v3 passes where v2 passed the
-  payload). The webapp therefore sees exactly the surface it saw under v2 —
-  the migration needed no change in `webapp/` at all — and stays inert in
-  browser and plugin builds, where nothing injects this script.
+  **The bindings** are Wails' own, generated from `App` into
+  `webapp/bindings` (`wails3 task generate:bindings`) and committed. The page
+  bundles `@wailsio/runtime` and calls each method by id; `goBridge.ts` loads
+  them into `window.go.main.App` when the bootstrap has set
+  `window.hasGoSide`, and in a plain browser, where nothing injects this
+  script, it loads nothing and the desktop-only UI stays inert.
 - `internal/acp/terminal.go`, `terminalws.go` — **the way a person works a card with
   an agent**, and the only one: the agent's own CLI running in a pty in the card's
   own directory, drawn by xterm.js in a second window of the app and wired to the pty over
@@ -157,18 +154,20 @@ compiled in with `go:embed`. `index.html` must still carry the Go template
 `{{.BaseURL}}`, and asset URLs referenced from JS and CSS must stay relative so
 they survive a non-empty base path.
 
-**Three globals**, built by the bootstrap script in `proxy.go` — v3 injects
-nothing, so the script imports `/wails/runtime.js` and rebuilds the surface the
-webapp already knows:
+**The bindings.** `webapp/bindings` is generated from the bound `App` service
+and committed; `@wailsio/runtime` in `webapp/package.json` is pinned to the
+Wails version in `go.mod`. `bindings_test.go` checks both.
 
-- `window.go.main.App.*` — a Proxy turning every property read into
-  `Call.ByName('main.App.<name>', …)`. This is how the ACP UI reaches the agent,
-  repo, proxy and flow registries.
-- `window.runtime.EventsOn` — wraps `Events.On`, unwrapping the event object v3
-  passes where v2 passed the payload.
+**Three globals**, the first two set by the bootstrap script in `proxy.go`:
+
+- `window.hasGoSide` — there is a Go side behind this origin. Nothing but the
+  front door injects the script, so its presence is the answer.
 - `window.openInNewBrowser` — hands a link to the system browser rather than the
   webview. Called from `utils.ts`, `csvExporter.ts`, `archiver.ts` and the
   sidebar user menu.
+- `window.go.main.App.*` — the generated bindings, put there by the page itself
+  (`goBridge.ts`) when `hasGoSide` is set. This is how the ACP UI reaches the
+  agent, repo, proxy and flow registries.
 
 There is deliberately **no `window.webSocketBaseURL`** here, unlike v2:
 `frontdoor.go` owns the origin, so `/ws` opens from the page's own origin.
@@ -374,23 +373,19 @@ From this repository:
 wails3 dev
 ```
 
-`build/config.yml` declares the dev loop: Go edits rebuild and restart the app,
-and `cd webapp && npm run watchdev` runs alongside it, keeping
-`webapp/pack` current with `vite build --watch`. Needs webapp deps — run
-`npm ci` in `webapp/` once if `webapp/node_modules` is missing. The watcher's
-own directory is excluded from the Go watch list, so a TS edit rebuilds the
-bundle without restarting the app.
+`build/config.yml` declares the dev loop, the one `wails3 init` writes: Go
+edits rebuild and restart the app, and the Vite dev server runs alongside it
+(`wails3 task common:dev:frontend`), so a TS edit reaches the window by HMR
+without a rebuild. Needs webapp deps — run `npm ci` in `webapp/` once if
+`webapp/node_modules` is missing. `webapp/` is excluded from the Go watch list,
+so a TS edit never restarts the app.
 
-A dev build leaves the `frontend` tag out, so nothing is embedded and the Go
-side serves the on-disk bundle (`diskWebPath` finds `webapp/pack`).
-The page still goes through the front door and `proxy.go` exactly as in a
-release build, which is why nothing here needs to know the board server's port
-or the session token — both stay random per launch.
-
-There is deliberately no Vite dev server in the loop: pointing the webview at
-it would buy HMR but would mean re-implementing the bootstrap script in
-`vite.config.ts`, and the page would no longer be the page a release build
-serves.
+The window still opens on the front door, not on Vite: a development build
+takes the page and its modules from the address `wails3 dev` hands it
+(`FRONTEND_DEVSERVER_URL`), injects the bootstrap into it, and keeps `/api` and
+`/ws` for the board (`devserver.go`, `proxy.go`). That is why nothing here needs
+to know the board server's port or the session token — both stay random per
+launch — and why Vite's own config has no proxy in it.
 
 To run it manually instead:
 

@@ -12,6 +12,7 @@ import {getMe} from './store/users'
 import {useAppSelector} from './store/hooks'
 import {AppStoreProvider, createAppStore} from './store'
 import mutator from './mutator'
+import {installGoBridge} from './goBridge'
 
 import '@mattermost/compass-icons/css/compass-icons.css'
 
@@ -55,6 +56,10 @@ const MainApp = () => {
 // appears, not corrected after it. One binding call over loopback; a build
 // with no Go side resolves it at once.
 async function boot() {
+    // First, because everything after it may call Go: the settings below come
+    // from the install, through the bindings this puts on the page.
+    await installGoBridge()
+
     await hydrateUserSettings()
     initThemes()
 

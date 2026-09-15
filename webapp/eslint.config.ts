@@ -28,7 +28,8 @@ export default [
 
         // Flat config replaces .eslintignore. `pack` and `coverage` are build output
         // that the eslintrc setup never reached because it only ran with --ext ts,tsx.
-        ignores: ['node_modules/', 'wailsjs/', 'pack/', 'coverage/'],
+        // `bindings` is generated from the Go side (`wails3 task generate:bindings`).
+        ignores: ['node_modules/', 'bindings/', 'pack/', 'coverage/'],
     },
     {
         files: ['**/*.ts', '**/*.tsx'],
