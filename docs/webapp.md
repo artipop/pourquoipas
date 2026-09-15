@@ -7,7 +7,7 @@
 `pack/` при этом не менялись — по этому контракту и проверялось, что переписали
 то же самое.
 
-Общие правила работы со Solid — в [CLAUDE.md](../CLAUDE.md), раздел «The page is
+Общие правила работы со Solid — в [architecture.md](architecture.md), раздел «The page is
 Solid». Здесь — что где лежит.
 
 ## Состояние
@@ -61,7 +61,7 @@ Props — геттеры, деструктуризация делает сним
 
 ## Как отмечена цель перетаскивания
 
-Правила самого DnD — в [CLAUDE.md](../CLAUDE.md), раздел «The page is Solid»
+Правила самого DnD — в [architecture.md](architecture.md), раздел «The page is Solid»
 (почему нет `OptimisticSortingPlugin`, почему две сущности не могут делить id) и
 в `hooks/sortable.tsx`. Здесь — как эта цель выглядит и что ломается при попытке
 её перерисовать.
