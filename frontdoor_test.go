@@ -73,6 +73,38 @@ func TestFrontDoorRefusesCrossOriginRuntimeCalls(t *testing.T) {
 	}
 }
 
+// The door listens on the whole loopback, so the page can be opened as
+// 127.0.0.1 while published as localhost; the host guard lets that in, and a
+// runtime that then refused every binding call left the page with no terminal,
+// no settings and no word of why. But a door published on every interface
+// accepts any Host, and taking any Origin with it would hand the bindings to
+// every site — the loopback allowance is for a loopback door only.
+func TestFrontDoorTakesTheOtherLoopbackNameButNoOtherSite(t *testing.T) {
+	cases := []struct {
+		published, host, origin string
+		want                    int
+	}{
+		{"localhost:9000", "127.0.0.1:9000", "http://127.0.0.1:9000", http.StatusOK},
+		{"127.0.0.1:9000", "localhost:9000", "http://localhost:9000", http.StatusOK},
+		{"127.0.0.1:9000", "[::1]:9000", "http://[::1]:9000", http.StatusOK},
+		{"127.0.0.1:9000", "127.0.0.1:9000", "http://localhost:9001", http.StatusForbidden},
+		{"127.0.0.1:9000", "127.0.0.1:9000", "http://evil.example:9000", http.StatusForbidden},
+		{"0.0.0.0:9000", "evil.example:9000", "http://evil.example:9000", http.StatusForbidden},
+		{"0.0.0.0:9000", "0.0.0.0:9000", "http://localhost:9000", http.StatusForbidden},
+	}
+	for _, c := range cases {
+		door := newFrontDoor(named("wails"), named("acp"), named("ingest"), named("board"), c.published, nil)
+		req := httptest.NewRequest(http.MethodPost, "/wails/runtime", nil)
+		req.Host = c.host
+		req.Header.Set("Origin", c.origin)
+		rec := httptest.NewRecorder()
+		door.ServeHTTP(rec, req)
+		if rec.Code != c.want {
+			t.Errorf("published %s, Origin %s: status %d, want %d", c.published, c.origin, rec.Code, c.want)
+		}
+	}
+}
+
 // The tailnet door serves the same handler over TLS (tsnetdoor.go), so the
 // page's own origin is https there. Without this the phone's every binding call
 // and both sockets would be refused as somebody else's site — and the board

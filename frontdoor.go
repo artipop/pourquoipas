@@ -4,6 +4,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -97,12 +98,9 @@ func requestLog(next http.Handler) http.Handler {
 // loopback for the window, TLS on the tailnet for a phone. The guard is about
 // which *site* is calling, and that is the host.
 func sameOrigin(next http.Handler, allowedHost string) http.Handler {
-	allowed := map[string]bool{
-		"http://" + allowedHost:  true,
-		"https://" + allowedHost: true,
-	}
+	allowedPort := portOf(allowedHost)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if origin := r.Header.Get("Origin"); origin != "" && !allowed[origin] {
+		if origin := r.Header.Get("Origin"); origin != "" && !originAllowed(origin, allowedHost, allowedPort) {
 			http.Error(w, "cross-origin request refused", http.StatusForbidden)
 			return
 		}
@@ -112,6 +110,35 @@ func sameOrigin(next http.Handler, allowedHost string) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+// originAllowed accepts the published authority, and — only when the door is
+// published under a loopback name — the other loopback names on its port, so a
+// page opened as 127.0.0.1 while published as localhost can still call the
+// bindings. Not hostAllowed: its wildcard branch is right for Host and would
+// let any site's Origin through here, and this check is what keeps a foreign
+// page off the bindings (measured: a door on 0.0.0.0 took evil.example).
+func originAllowed(origin, allowedHost, allowedPort string) bool {
+	u, err := url.Parse(origin)
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") {
+		return false
+	}
+	if u.Host == allowedHost {
+		return true
+	}
+	name, port, err := net.SplitHostPort(u.Host)
+	if err != nil || port != allowedPort {
+		return false
+	}
+	return isLoopbackName(strings.TrimSuffix(allowedHost, ":"+allowedPort)) && isLoopbackName(name)
+}
+
+func isLoopbackName(name string) bool {
+	switch strings.ToLower(name) {
+	case "localhost", "127.0.0.1", "[::1]", "::1":
+		return true
+	}
+	return false
 }
 
 // hostGuard refuses a request whose Host is not the authority the front door
@@ -151,11 +178,7 @@ func hostAllowed(host, allowedHost, allowedPort string) bool {
 	if boundHost := strings.TrimSuffix(allowedHost, ":"+allowedPort); isWildcardHost(boundHost) {
 		return true
 	}
-	switch strings.ToLower(name) {
-	case "localhost", "127.0.0.1", "[::1]", "::1":
-		return true
-	}
-	return false
+	return isLoopbackName(name)
 }
 
 func isWildcardHost(host string) bool {
