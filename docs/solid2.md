@@ -93,9 +93,21 @@ tests did only want one, which is how the one that did not hid among them.
 A `reconcile` is applied to the draft branch now —
 `setState((d) => { reconcile(x)(d.cards.cards) })` — and
 `a board opened is in the store with its views and cards` fails on the old
-loader and passes on this one. What Solid 2's `reconcile` does *not* do any more
-is keep a record's identity when its fields change, which the loader's comment
-still counts on ("does not redraw every card"); that costs a redraw, not data.
+loader and passes on this one. Applied that way `reconcile` still does what the
+loader's comment counts on: a `For` over the cards creates no row when the same
+cards are loaded again, or when one of them is renamed. (Comparing the store
+proxies with `===` says otherwise, and is not what `For` looks at.)
+
+## The bug that did ship: no column lit under a dragged card
+
+The wash on a column while a card is held over it went missing, and no test
+looked at it. dnd-kit's Solid bindings subscribe to the fields a component has
+already read (`useDeepSignal`), from inside a `createEffect` — and the compat
+layer ran a Solid 1 effect body as the compute half of a Solid 2 effect, which
+runs at creation, before the component has read anything. So `isDropTarget`
+never changed. The layer runs it through `createTrackedEffect` now, which is
+tracked and runs in the effect phase, the way a Solid 1 effect did, and
+`sortableDrag.test.tsx` holds a card over a zone and reads the class.
 
 ## The suite
 

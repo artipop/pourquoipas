@@ -69,6 +69,48 @@ describe('hooks/sortable dragging', () => {
         expect(onCard).toHaveBeenCalledWith(a, b)
     })
 
+    // The wash on a column while a card is held over it is the only thing that
+    // says where the card will land. It went missing once without a test
+    // noticing: dnd-kit's Solid bindings subscribe to what the component has
+    // already read, and under the compat layer they subscribed before the
+    // component had read anything, so `isDropTarget` never changed.
+    it('says it is the target while a card is held over it', async () => {
+        function LitZone() {
+            const [isOver, ref] = useDropZone<Item>('card', () => true, () => undefined)
+            return (
+                <div
+                    ref={ref}
+                    data-testid='lit'
+                    class={isOver() ? 'dragover' : ''}
+                />
+            )
+        }
+        const {getByTestId} = render(() => (
+            <SortableProvider>
+                <Card
+                    item={a}
+                    onDrop={vi.fn()}
+                />
+                <LitZone/>
+            </SortableProvider>
+        ))
+        setRect(getByTestId('a'), {x: 0, y: 0, width: 100, height: 40})
+        setRect(getByTestId('lit'), {x: 0, y: 200, width: 100, height: 100})
+
+        // Read after every step of the drag, so the hover is seen before the
+        // release clears it.
+        const lit: boolean[] = []
+        const watching = async (fn: () => Promise<void>) => {
+            await fn()
+            await new Promise((resolve) => setTimeout(resolve, 0))
+            lit.push(getByTestId('lit').classList.contains('dragover'))
+        }
+        await drag(watching, getByTestId('a'), {x: 50, y: 250})
+
+        expect(lit).toContain(true)
+        expect(lit[lit.length - 1]).toBe(false)
+    })
+
     it('drops a card into a zone that holds none', async () => {
         const {getByTestId, onZone} = setup()
 

@@ -20,6 +20,17 @@ Solid 2 the directory goes.
 are the ones checked, not its future ones; they cost nothing while nobody
 imports them.
 
+## The effect is the part that has to be exactly right
+
+A Solid 1 `createEffect` tracked its whole body and ran after the render that
+created it. Both halves matter to dnd-kit: its bindings subscribe to what the
+component has already read, so an effect that runs at creation subscribes to
+nothing and a column is never lit under a dragged card — which is what the
+first version of this file did, by putting the body in the compute half of a
+Solid 2 effect. `core.js` runs it through `createTrackedEffect` instead, keeps
+the returned value as the next `prev` (Solid 2 would read it as a cleanup), and
+collects the body's `onCleanup` calls into the cleanup it does return.
+
 ## What is deliberately not faithful
 
 - `batch` runs its callback and nothing else. Solid 2 batches by default.

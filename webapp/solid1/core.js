@@ -7,6 +7,8 @@ import {
     createEffect as createEffect2,
     createMemo,
     createRenderEffect as createRenderEffect2,
+    createTrackedEffect,
+    onCleanup as onCleanup2,
     Errored,
     For,
     getObserver,
@@ -36,7 +38,6 @@ export {
     Match,
     merge,
     omit,
-    onCleanup,
     resolve,
     runWithOwner,
     sharedConfig,
@@ -51,10 +52,42 @@ export {getObserver as getListener} from 'solid-js'
 // the whole of what Solid 1's batch did that still needs doing.
 export const batch = (fn) => fn()
 
-// Solid 1 tracked the entire effect body. That is exactly what the compute
-// half of a Solid 2 effect is, so the body goes there and the apply half is
-// empty — a faithful translation rather than an idiomatic one.
-export const createEffect = (fn, value) => createEffect2((prev) => fn(prev), () => {}, value)
+// Solid 1's effect tracked its whole body *and* ran after the render that
+// created it. Putting the body in the compute half of a Solid 2 effect kept the
+// tracking and lost the timing — a compute runs at creation — and dnd-kit
+// depends on the timing: `useDeepSignal` subscribes to the fields the component
+// has already read, and at creation it has read none, so `isDropTarget` never
+// changed and no column was ever lit under a dragged card.
+//
+// createTrackedEffect is Solid 2's migration primitive for exactly this shape:
+// tracked, and run in the effect phase. Two adaptations. Its return value is a
+// cleanup, where a Solid 1 effect returns the next `prev`, so the value is kept
+// here instead. And a Solid 1 body registers its cleanups with onCleanup, which
+// is collected while the body runs and returned as the effect's cleanup.
+let collecting = null
+
+export const onCleanup = (fn) => {
+    if (collecting) {
+        collecting.push(fn)
+        return fn
+    }
+    return onCleanup2(fn)
+}
+
+export const createEffect = (fn, value) => {
+    let prev = value
+    createTrackedEffect(() => {
+        const cleanups = []
+        const outer = collecting
+        collecting = cleanups
+        try {
+            prev = fn(prev)
+        } finally {
+            collecting = outer
+        }
+        return cleanups.length ? () => cleanups.forEach((cleanup) => cleanup()) : undefined
+    })
+}
 export const createRenderEffect = (fn, value) => createRenderEffect2((prev) => fn(prev), () => {}, value)
 export const createComputed = (fn, value) => createEffect2((prev) => fn(prev), () => {}, value)
 
