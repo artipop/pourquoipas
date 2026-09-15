@@ -115,6 +115,44 @@ func TestAnInstallThatRecordedItsMigrationsTheOldWayKeepsItsPlace(t *testing.T) 
 	}
 }
 
+// Before the schema was split in two it was one migration, and a database it
+// built records version 1. Taken for a board at its first rung, it had the
+// second migration run over its own tables and failed with the migration's
+// whole text in the log; it gets the same short answer as the old ladder.
+func TestADatabaseFromTheSingleInitialMigrationIsToldToStartAgain(t *testing.T) {
+	dbType, connectionString, err := PrepareNewTestDatabase()
+	require.NoError(t, err)
+	logger, _ := mlog.NewLogger()
+	defer func() { _ = logger.Shutdown() }()
+
+	open := func() (*sql.DB, *SQLStore, error) {
+		db, err := sql.Open(dbType, connectionString)
+		require.NoError(t, err)
+		store, err := New(Params{
+			DBType:           dbType,
+			ConnectionString: connectionString,
+			DBPingAttempts:   5,
+			Logger:           logger,
+			DB:               db,
+		})
+		return db, store, err
+	}
+
+	db, store, err := open()
+	require.NoError(t, err)
+	_, err = db.Exec("UPDATE schema_migrations SET version = 1")
+	require.NoError(t, err)
+	_ = store.Shutdown()
+
+	db, _, err = open()
+	_ = db.Close()
+	require.ErrorContains(t, err, "delete the database file")
+
+	if dbType == model.SqliteDBType {
+		_ = os.Remove(connectionString)
+	}
+}
+
 // Opening a board twice must not migrate it twice — the plainest thing the
 // version table is for, and the thing a format change is most likely to break.
 func TestOpeningAnAlreadyMigratedDatabaseChangesNothing(t *testing.T) {

@@ -240,6 +240,15 @@ func (s *SQLStore) refuseOldLadder(engine *migrate.Migrate) error {
 	if err != nil {
 		return err
 	}
+	// Before the schema was split into the board's half and ours it was one
+	// migration, 000001_init, and a database it built records version 1: it
+	// would pass the check below and have the second migration run over tables
+	// it already has, failing with the migration's whole text in the log.
+	if version == 1 && s.hasTable("board_ref") {
+		return errors.New("this database was built by an earlier single initial migration (it records " +
+			"version 1 and already has this application's tables). There is no upgrade path on purpose, " +
+			"because there has been no release: delete the database file and start it again")
+	}
 	// The schema is two migrations now — the board's tables, then this
 	// application's — so anything at or below the second was made by them.
 	if version <= 2 {
@@ -248,6 +257,17 @@ func (s *SQLStore) refuseOldLadder(engine *migrate.Migrate) error {
 	return fmt.Errorf("this database was built by the previous migrations (it records version %d, "+
 		"and the schema is now made in one step). There is no upgrade path on purpose, because there "+
 		"has been no release: delete the database file and start it again", version)
+}
+
+// hasTable asks by selecting nothing from the table: every dialect answers a
+// missing one with an error, and no catalogue query has to be spelled per vendor.
+func (s *SQLStore) hasTable(name string) bool {
+	rows, err := s.db.Query("SELECT 1 FROM " + name + " WHERE 1=0")
+	if err != nil {
+		return false
+	}
+	_ = rows.Close()
+	return true
 }
 
 // runMigrationSequence applies the schema.
