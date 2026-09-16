@@ -1,10 +1,9 @@
-import moment from 'moment'
-
 import {IntlShape} from '../../intl'
 
 import {Card} from '../../blocks/card'
 import {IPropertyTemplate} from '../../blocks/board'
 import {Utils} from '../../utils'
+import {humanizeDuration} from '../../localeDates'
 import {Constants} from '../../constants'
 import {DateProperty} from '../../properties/date/date'
 
@@ -289,7 +288,7 @@ function dateRange(cards: readonly Card[], property: IPropertyTemplate, intl: In
     if (resultLatest === Number.NEGATIVE_INFINITY) {
         return ''
     }
-    return moment.duration(resultLatest - resultEarliest, 'milliseconds').locale(intl.locale.toLowerCase()).humanize()
+    return humanizeDuration(resultLatest - resultEarliest, intl.locale)
 }
 
 const Calculations: Record<string, (cards: readonly Card[], property: IPropertyTemplate, intl: IntlShape) => string> = {

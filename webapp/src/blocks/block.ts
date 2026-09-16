@@ -1,5 +1,3 @@
-import difference from 'lodash/difference'
-
 import {Utils} from '../utils'
 
 const contentBlockTypes = ['text', 'image', 'divider', 'checkbox', 'h1', 'h2', 'h3', 'list-item', 'attachment', 'quote', 'video'] as const
@@ -65,11 +63,19 @@ function createBlock(block?: Block): Block {
     }
 }
 
+// keysMissing is the keys of `from` that `other` does not have: which fields a
+// patch has to delete. Board patches ask the same question, so it is exported
+// rather than written twice.
+export function keysMissing(from: string[], other: string[]): string[] {
+    const have = new Set(other)
+    return from.filter((key) => !have.has(key))
+}
+
 // createPatchesFromBlocks creates two BlockPatch instances, one that
 // contains the delta to update the block and another one for the undo
 // action, in case it happens
 function createPatchesFromBlocks(newBlock: Block, oldBlock: Block): BlockPatch[] {
-    const newDeletedFields = difference(Object.keys(newBlock.fields), Object.keys(oldBlock.fields))
+    const newDeletedFields = keysMissing(Object.keys(newBlock.fields), Object.keys(oldBlock.fields))
     const newUpdatedFields: Record<string, any> = {}
     const newUpdatedData: Record<string, any> = {}
     Object.keys(newBlock.fields).forEach((val) => {
@@ -83,7 +89,7 @@ function createPatchesFromBlocks(newBlock: Block, oldBlock: Block): BlockPatch[]
         }
     })
 
-    const oldDeletedFields = difference(Object.keys(oldBlock.fields), Object.keys(newBlock.fields))
+    const oldDeletedFields = keysMissing(Object.keys(oldBlock.fields), Object.keys(newBlock.fields))
     const oldUpdatedFields: Record<string, any> = {}
     const oldUpdatedData: Record<string, any> = {}
     Object.keys(oldBlock.fields).forEach((val) => {

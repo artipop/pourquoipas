@@ -1,6 +1,4 @@
 
-import cloneDeep from 'lodash/cloneDeep'
-
 import {IntlShape} from './intl'
 
 import {BlockIcons} from './blockIcons'
@@ -582,7 +580,12 @@ class Mutator {
     async insertPropertyOption(boardId: string, oldCardProperties: IPropertyTemplate[], template: IPropertyTemplate, option: IPropertyOption, description = 'add option') {
         Utils.assert(oldCardProperties.includes(template))
 
-        const newCardProperties: IPropertyTemplate[] = cloneDeep(oldCardProperties)
+        // A copy to edit while the old one is kept for the undo. A round trip
+        // through JSON is the whole job here — a board's properties are what
+        // came out of the API, so there is nothing in them JSON cannot carry —
+        // and it asks nothing of the browser, unlike structuredClone, which
+        // Safari has only since 15.4 while this page still says 15.
+        const newCardProperties: IPropertyTemplate[] = JSON.parse(JSON.stringify(oldCardProperties))
         const newTemplate = newCardProperties.find((o: IPropertyTemplate) => o.id === template.id)!
         newTemplate.options.push(option)
 
@@ -590,7 +593,7 @@ class Mutator {
     }
 
     async deletePropertyOption(boardId: string, oldCardProperties: IPropertyTemplate[], template: IPropertyTemplate, option: IPropertyOption) {
-        const newCardProperties: IPropertyTemplate[] = cloneDeep(oldCardProperties)
+        const newCardProperties: IPropertyTemplate[] = JSON.parse(JSON.stringify(oldCardProperties))
         const newTemplate = newCardProperties.find((o: IPropertyTemplate) => o.id === template.id)!
         newTemplate.options = newTemplate.options.filter((o) => o.id !== option.id)
 
@@ -601,7 +604,7 @@ class Mutator {
         const srcIndex = template.options.indexOf(option)
         Utils.log(`srcIndex: ${srcIndex}, destIndex: ${destIndex}`)
 
-        const newCardProperties: IPropertyTemplate[] = cloneDeep(oldCardProperties)
+        const newCardProperties: IPropertyTemplate[] = JSON.parse(JSON.stringify(oldCardProperties))
         const newTemplate = newCardProperties.find((o: IPropertyTemplate) => o.id === template.id)!
         newTemplate.options.splice(destIndex, 0, newTemplate.options.splice(srcIndex, 1)[0])
 
@@ -609,7 +612,7 @@ class Mutator {
     }
 
     async changePropertyOptionValue(boardId: string, oldCardProperties: IPropertyTemplate[], propertyTemplate: IPropertyTemplate, option: IPropertyOption, value: string) {
-        const newCardProperties: IPropertyTemplate[] = cloneDeep(oldCardProperties)
+        const newCardProperties: IPropertyTemplate[] = JSON.parse(JSON.stringify(oldCardProperties))
         const newTemplate = newCardProperties.find((o: IPropertyTemplate) => o.id === propertyTemplate.id)!
         const newOption = newTemplate.options.find((o) => o.id === option.id)!
         newOption.value = value
@@ -620,7 +623,7 @@ class Mutator {
     }
 
     async changePropertyOptionColor(boardId: string, oldCardProperties: IPropertyTemplate[], template: IPropertyTemplate, option: IPropertyOption, color: string) {
-        const newCardProperties: IPropertyTemplate[] = cloneDeep(oldCardProperties)
+        const newCardProperties: IPropertyTemplate[] = JSON.parse(JSON.stringify(oldCardProperties))
         const newTemplate = newCardProperties.find((o: IPropertyTemplate) => o.id === template.id)!
         const newOption = newTemplate.options.find((o) => o.id === option.id)!
         newOption.color = color

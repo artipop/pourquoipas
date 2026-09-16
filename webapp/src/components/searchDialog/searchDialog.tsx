@@ -2,9 +2,10 @@ import {For, Match, Switch, createSignal, onSettled} from 'solid-js'
 import type {JSX} from '@solidjs/web'
 
 import './searchDialog.scss'
-import debounce from 'lodash/debounce'
 
 import {FormattedMessage, useIntl} from '../../intl'
+
+import {debounce} from '../../timing'
 
 import Dialog from '../dialog'
 import {Utils} from '../../utils'

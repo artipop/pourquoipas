@@ -1,6 +1,7 @@
 import {createMemo, createSignal, onSettled} from 'solid-js'
 import type {Accessor} from 'solid-js'
-import throttle from 'lodash/throttle'
+
+import {throttle} from '../../timing'
 
 import useElementAvailable from './useElementAvailable'
 

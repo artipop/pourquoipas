@@ -3,7 +3,7 @@ import type {JSX} from '@solidjs/web'
 
 import {$createTextNode, $getSelection, $isRangeSelection, LexicalEditor, TextNode} from 'lexical'
 
-import debounce from 'lodash/debounce'
+import {debounce} from '../../../timing'
 
 import {useAppSelector} from '../../../store/hooks'
 import {IUser} from '../../../user'

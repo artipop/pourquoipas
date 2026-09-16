@@ -275,8 +275,9 @@ const CalendarFullView = (props: Props): JSX.Element => {
     // Everything FullCalendar writes itself — the month in the title, the
     // weekday headings, an "N more" line, which day a week starts on — comes from a
     // locale of its own, and it ships with English alone. The definitions are
-    // their own chunk, fetched only when the UI is not English, which is the
-    // same bargain hooks/momentLocale.ts takes with moment's.
+    // their own chunk, fetched only when the UI is not English — this library
+    // is the last one left that needs such a fetch at all, now that the page's
+    // own dates are Intl's (localeDates.ts).
     const [locales, setLocales] = createSignal<LocaleInput[]>([])
     createEffect(() => [intl.locale, locales().length] as const, ([locale, loaded]) => {
         if (locale.toLowerCase() === 'en' || loaded > 0) {

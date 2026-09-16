@@ -1,8 +1,6 @@
 import {Show, createMemo, createSignal} from 'solid-js'
 import type {JSX} from '@solidjs/web'
 
-import moment from 'moment'
-
 import {useIntl} from '../../intl'
 
 import mutator from '../../mutator'
@@ -15,7 +13,7 @@ import Calendar from '../../widgets/calendar'
 import Modal from '../../components/modal'
 import ModalWrapper from '../../components/modalWrapper'
 import {Utils} from '../../utils'
-import useMomentLocale from '../../hooks/momentLocale'
+import {firstDayOfWeekIn, shortDatePattern} from '../../localeDates'
 import {addDayToRange, isDate, parseLocalizedDate} from '../../widgets/dateUtils'
 
 import './date.scss'
@@ -86,11 +84,7 @@ function DateRange(props: PropertyProps): JSX.Element {
     const isRange = () => dateTo() !== undefined
 
     const locale = () => intl.locale.toLowerCase()
-    const momentRevision = useMomentLocale(locale)
-    const firstDayOfWeek = () => {
-        momentRevision()
-        return moment.localeData(locale()).firstDayOfWeek()
-    }
+    const firstDayOfWeek = () => firstDayOfWeekIn(locale())
 
     const saveRangeValue = (range: DateProperty) => {
         const rangeUTC = {...range}
@@ -192,7 +186,7 @@ function DateRange(props: PropertyProps): JSX.Element {
                                     <div class={'inputContainer'}>
                                         <Editable
                                             value={fromInput()}
-                                            placeholderText={moment.localeData(locale()).longDateFormat('L')}
+                                            placeholderText={shortDatePattern(locale())}
                                             onFocus={() => {
                                                 const from = dateFrom()
                                                 if (from) {
@@ -221,7 +215,7 @@ function DateRange(props: PropertyProps): JSX.Element {
                                         <Show when={dateTo()}>
                                             <Editable
                                                 value={toInput()}
-                                                placeholderText={moment.localeData(locale()).longDateFormat('L')}
+                                                placeholderText={shortDatePattern(locale())}
                                                 onFocus={() => {
                                                     const to = dateTo()
                                                     if (to) {

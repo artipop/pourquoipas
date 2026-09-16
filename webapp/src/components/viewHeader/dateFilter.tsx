@@ -1,8 +1,6 @@
 import {Show, createSignal} from 'solid-js'
 import type {JSX} from '@solidjs/web'
 
-import moment from 'moment'
-
 import {useIntl} from '../../intl'
 
 import mutator from '../../mutator'
@@ -15,7 +13,7 @@ import {BoardView} from '../../blocks/boardView'
 import Modal from '../../components/modal'
 import ModalWrapper from '../../components/modalWrapper'
 import {Utils} from '../../utils'
-import useMomentLocale from '../../hooks/momentLocale'
+import {firstDayOfWeekIn, shortDatePattern} from '../../localeDates'
 import {isDate, parseLocalizedDate} from '../../widgets/dateUtils'
 
 import './dateFilter.scss'
@@ -92,11 +90,7 @@ function DateFilter(props: Props): JSX.Element {
     const [input, setInput] = createSignal<string>(getDisplayDate(offsetDate()))
 
     const locale = () => intl.locale.toLowerCase()
-    const momentRevision = useMomentLocale(locale)
-    const firstDayOfWeek = () => {
-        momentRevision()
-        return moment.localeData(locale()).firstDayOfWeek()
-    }
+    const firstDayOfWeek = () => firstDayOfWeekIn(locale())
 
     const saveValue = (newValue: Date | undefined) => {
         onChange(newValue)
@@ -148,7 +142,7 @@ function DateFilter(props: Props): JSX.Element {
                                 <div class={'inputContainer'}>
                                     <Editable
                                         value={input()}
-                                        placeholderText={moment.localeData(locale()).longDateFormat('L')}
+                                        placeholderText={shortDatePattern(locale())}
                                         onFocus={() => {
                                             const date = offsetDate()
                                             if (date) {

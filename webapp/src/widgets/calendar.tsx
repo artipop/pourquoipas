@@ -19,7 +19,7 @@ type Props = {
     // Which month to open on; the user's own paging takes over from there.
     defaultMonth?: Date
 
-    // 0 is Sunday. The call sites read it off the locale moment has loaded.
+    // 0 is Sunday, which is how localeDates.firstDayOfWeekIn counts it.
     firstDayOfWeek: number
 
     onDayClick: (day: Date) => void

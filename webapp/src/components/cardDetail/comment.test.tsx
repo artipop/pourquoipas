@@ -1,6 +1,5 @@
 import {render, screen} from '@solidjs/testing-library'
 import userEvent from '@testing-library/user-event'
-import moment from 'moment'
 
 import {mockAppStore, wrapIntl} from '../../testUtils'
 import {AppStoreProvider} from '../../store'
@@ -32,17 +31,16 @@ describe('components/cardDetail/comment', () => {
     }
     const store = mockAppStore(state)
 
+    // A day after the comment was written, so "yesterday" is what it says and
+    // the snapshots do not age.
     beforeEach(() => {
         vi.clearAllMocks()
-        moment.now = () => {
-            return dateFixed + (24 * 60 * 60 * 1000)
-        }
+        vi.useFakeTimers()
+        vi.setSystemTime(dateFixed + (24 * 60 * 60 * 1000))
     })
 
     afterEach(() => {
-        moment.now = () => {
-            return Number(new Date())
-        }
+        vi.useRealTimers()
     })
 
     test('return comment', () => {

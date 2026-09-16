@@ -1,8 +1,8 @@
 import {marked} from 'marked'
 
-import moment from 'moment'
-
 import {IntlShape} from './intl'
+
+import {relativeTime} from './localeDates'
 
 import {IUser} from './user'
 
@@ -388,7 +388,7 @@ class Utils {
     }
 
     static relativeDisplayDateTime(date: Date, intl: IntlShape): string {
-        return moment(date).locale(intl.locale.toLowerCase()).fromNow()
+        return relativeTime(date, intl.locale)
     }
 
     static sleep(miliseconds: number): Promise<void> {

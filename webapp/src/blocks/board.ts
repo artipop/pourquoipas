@@ -1,8 +1,6 @@
-import difference from 'lodash/difference'
-
 import {Utils, IDType} from '../utils'
 
-import {Block, BlockPatch, createPatchesFromBlocks} from './block'
+import {Block, BlockPatch, createPatchesFromBlocks, keysMissing} from './block'
 import {Card} from './card'
 
 const BoardTypeOpen = 'O'
@@ -227,7 +225,7 @@ function createCardPropertiesPatches(newCardProperties: IPropertyTemplate[], old
 // contains the delta to update the board and another one for the undo
 // action, in case it happens
 function createPatchesFromBoards(newBoard: Board, oldBoard: Board): BoardPatch[] {
-    const newDeletedProperties = difference(Object.keys(newBoard.properties || {}), Object.keys(oldBoard.properties || {}))
+    const newDeletedProperties = keysMissing(Object.keys(newBoard.properties || {}), Object.keys(oldBoard.properties || {}))
 
     const newUpdatedProperties: Record<string, any> = {}
     Object.keys(newBoard.properties || {}).forEach((val) => {
@@ -245,7 +243,7 @@ function createPatchesFromBoards(newBoard: Board, oldBoard: Board): BoardPatch[]
         }
     })
 
-    const oldDeletedProperties = difference(Object.keys(oldBoard.properties || {}), Object.keys(newBoard.properties || {}))
+    const oldDeletedProperties = keysMissing(Object.keys(oldBoard.properties || {}), Object.keys(newBoard.properties || {}))
 
     const oldUpdatedProperties: Record<string, any> = {}
     Object.keys(oldBoard.properties || {}).forEach((val) => {

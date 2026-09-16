@@ -1,4 +1,4 @@
-import moment from 'moment'
+import {parseShortDate} from '../localeDates'
 
 // react-day-picker 7 shipped DateUtils and a moment adapter, and later versions
 // dropped both before the library itself was dropped. The three things this
@@ -36,9 +36,8 @@ export function addDayToRange(day: Date, range: {from?: Date, to?: Date}): {from
     return {from, to}
 }
 
-// Parses a date typed in the user's own short format ('L'), which is what
-// MomentLocaleUtils.parseDate did.
+// Parses a date typed in the user's own short format, which is what
+// MomentLocaleUtils.parseDate did. The format itself is localeDates'.
 export function parseLocalizedDate(value: string, locale: string): Date | undefined {
-    const parsed = moment(value, 'L', locale, true)
-    return parsed.isValid() ? parsed.toDate() : undefined
+    return parseShortDate(value, locale)
 }

@@ -25,7 +25,7 @@ exports[`components/cardDetail/comment > return comment 1`] = `
         <div
           class="comment-date"
         >
-          a day ago
+          yesterday
         </div>
         <!---->
         
@@ -162,7 +162,7 @@ exports[`components/cardDetail/comment > return comment and delete comment 1`] =
         <div
           class="comment-date"
         >
-          a day ago
+          yesterday
         </div>
         <!---->
         
@@ -299,7 +299,7 @@ exports[`components/cardDetail/comment > return comment readonly 1`] = `
         <div
           class="comment-date"
         >
-          a day ago
+          yesterday
         </div>
         <!---->
         
@@ -353,7 +353,7 @@ exports[`components/cardDetail/comment > return guest comment 1`] = `
         <div
           class="comment-date"
         >
-          a day ago
+          yesterday
         </div>
         <!---->
         
@@ -498,7 +498,7 @@ exports[`components/cardDetail/comment > return guest comment and delete comment
         <div
           class="comment-date"
         >
-          a day ago
+          yesterday
         </div>
         <!---->
         
@@ -643,7 +643,7 @@ exports[`components/cardDetail/comment > return guest comment readonly 1`] = `
         <div
           class="comment-date"
         >
-          a day ago
+          yesterday
         </div>
         <!---->
         

@@ -1,7 +1,5 @@
 import {storePath} from 'solid-js'
 
-import isEqual from 'lodash/isEqual'
-
 import {BoardView, createBoardView} from '../blocks/boardView'
 import {Block} from '../blocks/block'
 import {Utils} from '../utils'
@@ -18,6 +16,32 @@ export type ViewsState = {
 }
 
 export const initialViewsState = (): ViewsState => ({views: {}, current: ''})
+
+// isEqual compares what a view's fields are made of: arrays, plain objects,
+// strings and numbers as they came out of JSON. Written here rather than taken
+// from a library because this is the only place the page compares by value, and
+// like lodash's it counts a key that is present but undefined as a difference.
+function isEqual(a: unknown, b: unknown): boolean {
+    if (a === b) {
+        return true
+    }
+    if (Array.isArray(a) && Array.isArray(b)) {
+        return a.length === b.length && a.every((item, i) => isEqual(item, b[i]))
+    }
+    if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) {
+        return false
+    }
+    const keys = Object.keys(a)
+    if (keys.length !== Object.keys(b).length) {
+        return false
+    }
+
+    // hasOwnProperty through call, not Object.hasOwn: the page still supports a
+    // Safari that predates it, and this file is not the place to find that out.
+    return keys.every((key) =>
+        Object.prototype.hasOwnProperty.call(b, key) &&
+        isEqual((a as Record<string, unknown>)[key], (b as Record<string, unknown>)[key]))
+}
 
 // This update ensure that we are not regenerating that fields all the time
 const smartViewUpdate = (oldView: BoardView, newView: BoardView) => {

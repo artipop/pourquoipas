@@ -15,7 +15,6 @@ import MenuWrapper from '../../widgets/menuWrapper'
 import {getUser} from '../../store/users'
 import {useAppSelector} from '../../store/hooks'
 import {getTeamMode} from '../../store/clientConfig'
-import useMomentLocale from '../../hooks/momentLocale'
 import Tooltip from '../../widgets/tooltip'
 import GuestBadge from '../../widgets/guestBadge'
 
@@ -39,15 +38,7 @@ const Comment: Component<Props> = (props: Props) => {
     const teamMode = useAppSelector<boolean>(getTeamMode)
     const date = () => new Date(props.comment.createAt)
 
-    // A relative time is moment's phrasing, and moment only knows it once the
-    // locale definitions have arrived. Read the revision inside the same
-    // expression that formats, or the comment keeps the English it was first
-    // drawn with.
-    const momentRevision = useMomentLocale(() => intl.locale.toLowerCase())
-    const relativeDate = () => {
-        momentRevision()
-        return Utils.relativeDisplayDateTime(date(), intl)
-    }
+    const relativeDate = () => Utils.relativeDisplayDateTime(date(), intl)
 
     // A session's report is a log entry, not somebody talking; the Go side
     // marks the comments it writes so the card can say so.

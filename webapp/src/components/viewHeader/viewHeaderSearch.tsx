@@ -1,8 +1,9 @@
 import {createEffect, createSignal, onCleanup} from 'solid-js'
 import type {JSX} from '@solidjs/web'
-import debounce from 'lodash/debounce'
 
 import {useIntl} from '../../intl'
+
+import {debounce} from '../../timing'
 
 import {useHotkeys} from '../../hooks/hotkeys'
 import {useRouteMatch} from '../../hooks/routerMatch'
