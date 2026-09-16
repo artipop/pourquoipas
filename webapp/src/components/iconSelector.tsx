@@ -1,16 +1,19 @@
-import {Show} from 'solid-js'
+import {Loading, Show, lazy} from 'solid-js'
 import type {Component} from 'solid-js'
 import type {JSX} from '@solidjs/web'
 
 import {useIntl} from '../intl'
 
 import RandomIcon from '../widgets/icons/random'
-import EmojiPicker from '../widgets/emojiPicker'
 import DeleteIcon from '../widgets/icons/delete'
 import EmojiIcon from '../widgets/icons/emoji'
 import Menu from '../widgets/menu'
 import MenuWrapper from '../widgets/menuWrapper'
 import './iconSelector.scss'
+
+// emoji-mart and its data set arrive with the picker, which opens from a
+// submenu and not before.
+const EmojiPicker = lazy(() => import('../widgets/emojiPicker'))
 
 type Props = {
     readonly?: boolean
@@ -43,7 +46,9 @@ const IconSelector: Component<Props> = (props) => {
                                 icon={<EmojiIcon/>}
                                 name={intl.formatMessage({id: 'ViewTitle.pick-icon', defaultMessage: 'Pick icon'})}
                             >
-                                <EmojiPicker onSelect={props.onSelectEmoji}/>
+                                <Loading fallback={null}>
+                                    <EmojiPicker onSelect={props.onSelectEmoji}/>
+                                </Loading>
                             </Menu.SubMenu>
                             <Menu.Text
                                 id='remove'

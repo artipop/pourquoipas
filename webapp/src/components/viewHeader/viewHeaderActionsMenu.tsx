@@ -1,4 +1,4 @@
-import {Show, createSignal} from 'solid-js'
+import {Loading, Show, createSignal, lazy} from 'solid-js'
 
 import {useIntl, IntlShape} from '../../intl'
 
@@ -17,7 +17,7 @@ import {getCurrentBoardViews} from '../../store/views'
 
 import ModalWrapper from '../modalWrapper'
 import {sendFlashMessage} from '../flashMessages'
-import AutomationDialog, {isAutomationAvailable} from '../acp/automationDialog'
+import {isAutomationAvailable} from '../acp/bindings'
 import WorkdirsDialog from '../acp/workdirsDialog'
 import BoardPromptsDialog, {isBoardPromptsAvailable} from '../acp/boardPromptsDialog'
 import DeployTargetsDialog from '../acp/deployTargetsDialog'
@@ -84,6 +84,11 @@ function onExportCsvTrigger(board: Board, activeView: BoardView, cards: Card[], 
         sendFlashMessage({content: exportFailedMessage, severity: 'high'})
     }
 }
+
+// The route canvas (solid-flow, xyflow, d3) rides with this dialog and with
+// nothing else on the board, so it arrives when the dialog is opened. Whether
+// to offer it at all is asked of bindings.ts, which costs nothing to import.
+const AutomationDialog = lazy(() => import('../acp/automationDialog'))
 
 const ViewHeaderActionsMenu = (props: Props) => {
     const intl = useIntl()
@@ -250,10 +255,12 @@ const ViewHeaderActionsMenu = (props: Props) => {
                 </MenuWrapper>
             </Show>
             <Show when={showWorkflows()}>
-                <AutomationDialog
-                    board={props.board}
-                    onClose={() => setShowWorkflows(false)}
-                />
+                <Loading fallback={null}>
+                    <AutomationDialog
+                        board={props.board}
+                        onClose={() => setShowWorkflows(false)}
+                    />
+                </Loading>
             </Show>
             <Show when={showWorkdirs()}>
                 <WorkdirsDialog

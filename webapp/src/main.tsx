@@ -1,6 +1,4 @@
 import {render} from '@solidjs/web'
-import {init as initEmojiMart} from 'emoji-mart'
-import emojiMartData from '@emoji-mart/data'
 
 import App from './app'
 import {installPolyfills} from './polyfills'
@@ -35,14 +33,10 @@ import './styles/_markdown.scss'
 
 import WithWebSockets from './components/withWebSockets'
 
-// emoji-mart 5 persists skin/frequently-used itself, under the same `emoji-mart.*`
-// localStorage keys UserSettings used to route for it, so it needs no handlers --
-// only its data set, which v5 no longer bundles.
 // Before anything else: what a library calls unconditionally and this webview
 // does not have (polyfills.ts says which, and what it costs when it is missing).
 installPolyfills()
 
-initEmojiMart({data: emojiMartData})
 importNativeAppSettings()
 
 const MainApp = () => {

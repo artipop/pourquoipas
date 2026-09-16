@@ -1,4 +1,4 @@
-import {Match, Show, Switch, createEffect, createMemo, createSignal, onSettled} from 'solid-js'
+import {Loading, Match, Show, Switch, createEffect, createMemo, createSignal, lazy, onSettled} from 'solid-js'
 
 import {useIntl} from '../intl'
 
@@ -47,8 +47,6 @@ import Kanban from './kanban/kanban'
 
 import Table from './table/table'
 
-import CalendarFullView from './calendar/fullCalendar'
-
 import Gallery from './gallery/gallery'
 import {BoardTourSteps, FINISHED, TOUR_BOARD, TOUR_CARD} from './onboardingTour'
 import ShareBoardTourStep from './onboardingTour/shareBoard/shareBoard'
@@ -56,6 +54,10 @@ import BoardSetupWizard from './acp/boardSetupWizard'
 import {createSetupPlan, markSetupOffered, shouldOfferSetup} from './acp/boardSetup'
 import {soleWorkdirOption} from './acp/workdirSync'
 import {flowById, flowView, useBoardFlows} from './acp/boardFlows'
+
+// FullCalendar is half a megabyte of source, and a board opens on its kanban:
+// the calendar arrives when somebody switches to it.
+const CalendarFullView = lazy(() => import('./calendar/fullCalendar'))
 
 type Props = {
     clientConfig?: ClientConfig
@@ -527,17 +529,19 @@ const CenterPanel = (props: Props) => {
                     />
                 </Match>
                 <Match when={props.activeView.fields.viewType === 'calendar'}>
-                    <CalendarFullView
-                        board={props.board}
-                        cards={props.cards}
-                        activeView={props.activeView}
-                        readonly={props.readonly}
-                        dateDisplayProperty={props.dateDisplayProperty}
-                        showCard={showCard}
-                        addCard={(properties: Record<string, string>) => {
-                            addCard('', true, properties)
-                        }}
-                    />
+                    <Loading fallback={null}>
+                        <CalendarFullView
+                            board={props.board}
+                            cards={props.cards}
+                            activeView={props.activeView}
+                            readonly={props.readonly}
+                            dateDisplayProperty={props.dateDisplayProperty}
+                            showCard={showCard}
+                            addCard={(properties: Record<string, string>) => {
+                                addCard('', true, properties)
+                            }}
+                        />
+                    </Loading>
                 </Match>
                 <Match when={props.activeView.fields.viewType === 'gallery'}>
                     <Gallery

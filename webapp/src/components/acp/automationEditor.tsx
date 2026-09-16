@@ -32,6 +32,7 @@ import {
     UpstreamWrite,
     VERDICT_VALUES,
     WRITABLE_TYPES,
+    actionLabel,
     blankSpec,
     columnsOf,
     nodeFor,
@@ -1863,20 +1864,6 @@ export function blockName(intl: IntlShape, kind: string): string {
         return intl.formatMessage({id: 'Automation.block-test', defaultMessage: 'Test'})
     default:
         return intl.formatMessage({id: 'Automation.block-none', defaultMessage: 'Column'})
-    }
-}
-
-// actionLabel names what happens in a column, in the reader's language.
-export function actionLabel(intl: IntlShape, action: string): string {
-    switch (action) {
-    case 'agent':
-        return intl.formatMessage({id: 'Automation.action-agent', defaultMessage: 'an agent works on the card'})
-    case 'deploy':
-        return intl.formatMessage({id: 'Automation.action-deploy', defaultMessage: 'deploy the card’s branch'})
-    case 'test':
-        return intl.formatMessage({id: 'Automation.action-test', defaultMessage: 'test the preview'})
-    default:
-        return intl.formatMessage({id: 'Automation.action-none', defaultMessage: 'nothing — the card waits'})
     }
 }
 

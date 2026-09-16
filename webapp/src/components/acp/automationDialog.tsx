@@ -52,10 +52,6 @@ type FlowOverview = {
     stages: StageCount[]
 }
 
-export function isAutomationAvailable(): boolean {
-    return Boolean(agentBindings()?.ListFlows)
-}
-
 type Props = {
     board: Board
 

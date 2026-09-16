@@ -89,8 +89,10 @@ describe('components/blockIconSelector', () => {
         expect(mockedMutator.changeBlockIcon).toHaveBeenCalledTimes(1)
     })
 
-    test('return a new icon after click on EmojiPicker', () => {
-        const {container, getByRole, getAllByRole} = render(() => wrapIntl(() =>
+    // The picker is loaded when it is opened and not before (iconSelector), so
+    // the buttons it draws are awaited rather than queried straight away.
+    test('return a new icon after click on EmojiPicker', async () => {
+        const {container, getByRole, findAllByRole} = render(() => wrapIntl(() =>
             <BlockIconSelector
                 block={card}
                 size='l'
@@ -102,7 +104,7 @@ describe('components/blockIconSelector', () => {
 
         userEvent.click(menuPicker!)
 
-        const allButtonThumbUp = getAllByRole('button', {name: /thumbsup/i})
+        const allButtonThumbUp = await findAllByRole('button', {name: /thumbsup/i})
         userEvent.click(allButtonThumbUp[0])
         expect(mockedMutator.changeBlockIcon).toHaveBeenCalledTimes(1)
         expect(mockedMutator.changeBlockIcon).toHaveBeenCalledWith(card.boardId, card.id, card.fields.icon, '👍')

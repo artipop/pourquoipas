@@ -4,6 +4,8 @@ import {Picker} from 'emoji-mart'
 
 import {useIntl} from '../intl'
 
+import {ensureEmojiData} from './emojiData'
+
 import './emojiPicker.scss'
 
 type Props = {
@@ -49,8 +51,8 @@ function emojiI18n(locale: string): Promise<unknown> | undefined {
 }
 
 // emoji-mart 5 is not a framework component: Picker is a custom element that
-// mounts itself into a host node, so the wrapper stays this small. The data
-// set is registered once at startup in main.tsx.
+// mounts itself into a host node, so the wrapper stays this small. The data set
+// it needs is fetched on the way in (emojiData.ts) rather than at startup.
 const EmojiPicker: Component<Props> = (props) => {
     const intl = useIntl()
     let host: HTMLDivElement | undefined
@@ -66,21 +68,32 @@ const EmojiPicker: Component<Props> = (props) => {
         // shadow root, which is why the .emoji-mart-* overrides that used to sit
         // in emojiPicker.scss cannot reach it any more.
         const locale = intl.locale
-        const picker = new Picker({
-            parent: node,
-            previewPosition: 'none',
-            i18n: () => emojiI18n(locale),
-            onEmojiSelect: (emoji: PickedEmoji) => {
-                if (emoji.native) {
-                    // props.onSelect is read at pick time, so a new handler
-                    // never remounts the picker and never loses its state.
-                    props.onSelect(emoji.native)
-                }
-            },
-        }) as unknown as {remove?: () => void}
+        let picker: {remove?: () => void} | undefined
+        let gone = false
+
+        // The data set is a fetch now, so the picker is built when it lands —
+        // and not at all if the submenu was closed while it travelled.
+        void ensureEmojiData().then(() => {
+            if (gone) {
+                return
+            }
+            picker = new Picker({
+                parent: node,
+                previewPosition: 'none',
+                i18n: () => emojiI18n(locale),
+                onEmojiSelect: (emoji: PickedEmoji) => {
+                    if (emoji.native) {
+                        // props.onSelect is read at pick time, so a new handler
+                        // never remounts the picker and never loses its state.
+                        props.onSelect(emoji.native)
+                    }
+                },
+            }) as unknown as {remove?: () => void}
+        })
 
         return () => {
-            picker.remove?.()
+            gone = true
+            picker?.remove?.()
             node.replaceChildren()
         }
     })

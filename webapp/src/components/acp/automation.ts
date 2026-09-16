@@ -1,3 +1,5 @@
+import type {IntlShape} from '../../intl'
+
 import {Board, IPropertyOption, IPropertyTemplate} from '../../blocks/board'
 
 import {MCPServers} from './mcpServers'
@@ -723,4 +725,24 @@ export function unwrittenConditions(flow: Flow, specs: ColumnSpec[], columnPrope
         }
     }
     return [...out]
+}
+
+// actionLabel names what happens in a column, in the reader's language.
+//
+// Here rather than in the editor that draws it, because the template summary
+// wants the same sentence: importing it from automationEditor pulled the route
+// canvas — solid-flow, xyflow and d3 — into the board's first chunk for four
+// strings. The IntlShape is a type, so this module still carries no imports of
+// its own into a bundle.
+export function actionLabel(intl: IntlShape, action: string): string {
+    switch (action) {
+    case 'agent':
+        return intl.formatMessage({id: 'Automation.action-agent', defaultMessage: 'an agent works on the card'})
+    case 'deploy':
+        return intl.formatMessage({id: 'Automation.action-deploy', defaultMessage: 'deploy the card’s branch'})
+    case 'test':
+        return intl.formatMessage({id: 'Automation.action-test', defaultMessage: 'test the preview'})
+    default:
+        return intl.formatMessage({id: 'Automation.action-none', defaultMessage: 'nothing — the card waits'})
+    }
 }

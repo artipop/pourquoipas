@@ -6,7 +6,9 @@ import {chooseOption, wrapIntl} from '../../testUtils'
 import {setupReactFlowEnvironment} from '../../test/reactFlowEnvironment'
 import {Board, createBoard} from '../../blocks/board'
 
-import AutomationDialog, {isAutomationAvailable} from './automationDialog'
+import {isAutomationAvailable} from './bindings'
+
+import AutomationDialog from './automationDialog'
 import {SUCCESS} from './automation'
 
 setupReactFlowEnvironment()
@@ -16,7 +18,7 @@ vi.mock('../../mutator')
 const anyWindow = window as any
 
 const board: Board = {
-...createBoard(),
+    ...createBoard(),
     id: 'board-1',
     cardProperties: [{
         id: 'prop-status',
@@ -58,7 +60,7 @@ function stubBindings(overrides: Record<string, unknown> = {}) {
         AddFlow: vi.fn().mockResolvedValue('{}'),
         UpdateFlow: vi.fn().mockResolvedValue('{}'),
         RemoveFlow: vi.fn().mockResolvedValue(undefined),
-...overrides,
+        ...overrides,
     }
     anyWindow.go = {main: {App: bindings}}
     return bindings

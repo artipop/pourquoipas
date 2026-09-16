@@ -1,4 +1,4 @@
-import {Match, Show, Switch, createEffect, createMemo, createSignal} from 'solid-js'
+import {Loading, Match, Show, Switch, createEffect, createMemo, createSignal, lazy} from 'solid-js'
 
 import {Board} from '../../blocks/board'
 import {Card} from '../../blocks/card'
@@ -11,10 +11,14 @@ import ViewHeader from '../viewHeader/viewHeader'
 import ViewTitle from '../viewTitle'
 import Kanban from '../kanban/kanban'
 import Table from '../table/table'
-import CalendarFullView from '../calendar/fullCalendar'
+
 import Gallery from '../gallery/gallery'
 
 import './boardTemplateSelectorPreview.scss'
+
+// FullCalendar is half a megabyte of source and the calendar view is the one
+// nobody opens first, so it arrives when a calendar is actually drawn.
+const CalendarFullView = lazy(() => import('../calendar/fullCalendar'))
 
 type Props = {
     activeTemplate: Board|null
@@ -143,15 +147,17 @@ const BoardTemplateSelectorPreview = (props: Props) => {
                         />
                     </Match>
                     <Match when={activeView()?.fields.viewType === 'calendar'}>
-                        <CalendarFullView
-                            board={props.activeTemplate!}
-                            cards={activeTemplateCards()}
-                            activeView={activeView()!}
-                            readonly={false}
-                            dateDisplayProperty={dateDisplayProperty()}
-                            showCard={() => null}
-                            addCard={() => Promise.resolve()}
-                        />
+                        <Loading fallback={null}>
+                            <CalendarFullView
+                                board={props.activeTemplate!}
+                                cards={activeTemplateCards()}
+                                activeView={activeView()!}
+                                readonly={false}
+                                dateDisplayProperty={dateDisplayProperty()}
+                                showCard={() => null}
+                                addCard={() => Promise.resolve()}
+                            />
+                        </Loading>
                     </Match>
                 </Switch>
             </div>

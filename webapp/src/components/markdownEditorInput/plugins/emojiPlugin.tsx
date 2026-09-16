@@ -5,6 +5,8 @@ import {SearchIndex} from 'emoji-mart'
 
 import {$createTextNode, $getSelection, $isRangeSelection, LexicalEditor, TextNode} from 'lexical'
 
+import {ensureEmojiData} from '../../../widgets/emojiData'
+
 import {TypeaheadMenu, basicTypeaheadTriggerMatch} from './typeahead'
 
 type EmojiResult = {
@@ -40,16 +42,21 @@ const EmojiPlugin = (props: Props): JSX.Element => {
         // Solid 2 runs it before the next apply, so `cancelled` is read by
         // exactly the run that was superseded.
         let cancelled = false
-        SearchIndex.search(q).then((results: Array<{id: string, name: string, skins?: Array<{native?: string}>}>) => {
-            if (cancelled) {
-                return
-            }
-            const found = (results || []).
-                slice(0, MAX_EMOJI_SUGGESTIONS).
-                map((e): EmojiResult => ({id: e.id, name: e.name, colons: `:${e.id}:`, native: e.skins?.[0]?.native || ''})).
-                filter((e) => Boolean(e.native))
-            setOptions(found)
-        })
+
+        // The data set is no longer registered at startup, so the first `:`
+        // waits for it; every search after that is the same call it was.
+        ensureEmojiData().
+            then(() => SearchIndex.search(q)).
+            then((results: Array<{id: string, name: string, skins?: Array<{native?: string}>}>) => {
+                if (cancelled) {
+                    return
+                }
+                const found = (results || []).
+                    slice(0, MAX_EMOJI_SUGGESTIONS).
+                    map((e): EmojiResult => ({id: e.id, name: e.name, colons: `:${e.id}:`, native: e.skins?.[0]?.native || ''})).
+                    filter((e) => Boolean(e.native))
+                setOptions(found)
+            })
         return () => {
             cancelled = true
         }

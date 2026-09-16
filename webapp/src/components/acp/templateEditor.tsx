@@ -10,12 +10,12 @@ import Button from '../../widgets/buttons/button'
 import Dialog from '../dialog'
 
 import {agentBindings} from './bindings'
-import {actionLabel} from './automationEditor'
 import {
     Automation,
     BoardSetup,
     BoardSetupStep,
     SetupStepDef,
+    actionLabel,
     boardAutomationProperties,
     boardColumns,
     columnProperty,

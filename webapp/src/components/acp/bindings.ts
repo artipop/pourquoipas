@@ -7,3 +7,12 @@
 export function agentBindings() {
     return (window as unknown as import('../../types').IAppWindow).go?.main?.App
 }
+
+// Whether this build has the route editor at all. Here rather than beside the
+// dialog for the reason above, one size larger: the view menu asks the question
+// on every render, and asking it in the dialog's own module meant every board
+// loaded the route canvas — solid-flow, xyflow and d3 — to find out whether to
+// draw one menu item.
+export function isAutomationAvailable(): boolean {
+    return Boolean(agentBindings()?.ListFlows)
+}
