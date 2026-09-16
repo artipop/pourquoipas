@@ -15,4 +15,11 @@ package main
 // the point; seeding it is a matter of copying the directory by hand.
 const appDirName = "XCIII-dev"
 
+// singleInstanceID is the lock a second launch looks for. Shared with the
+// installed app, it made `wails3 dev` hand itself to whichever XCIII was
+// already running and exit without a word, leaving only Vite's address in the
+// terminal — as if the dev loop served the page to a browser instead of
+// opening a window.
+const singleInstanceID = "io.deffun.xciii.dev"
+
 const appIsDev = true

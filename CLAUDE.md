@@ -38,7 +38,10 @@ code builds a headless server (`-tags server`) that serves the board to a browse
 `docs/build-and-platforms.md` has the details and the traps already paid for.
 
 - `wails3 dev` — the dev loop, the template's: Vite with HMR beside the app;
-  the frontend's dependencies install themselves (`install:frontend:deps`). A development build's front door takes the
+  the frontend's dependencies install themselves (`install:frontend:deps`). A dev
+  build is its own install — data dir, keychain service and single-instance
+  lock (`datadir_dev.go`) — or its window hands itself to a running XCIII and
+  exits silently. A development build's front door takes the
   page from Vite (`FRONTEND_DEVSERVER_URL`, `devserver.go`) and injects the
   bootstrap into it as into any page; `/api` and `/ws` stay the board's.
 - `wails3 task build` / `package` (`darwin:package:dmg`, `windows:package`,

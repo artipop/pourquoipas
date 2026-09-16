@@ -33,7 +33,8 @@ The Go code is platform-agnostic — the same files build for every OS:
 - `datadir_production.go` / `datadir_dev.go` — which install that is.
   A packaged build (`-tags production`, which every one of them carries) uses
   `XCIII`; `wails3 dev` builds without the tag and uses `XCIII-dev`, including
-  as the keychain service name. One product, two installs, so what is tried out
+  as the keychain service name, and a single-instance lock of its own, so the
+  dev window opens while the installed app runs. One product, two installs, so what is tried out
   in development is not in the app afterwards.
 - `frontend_embed.go` / `frontend_disk.go` — the page's bundle is compiled into
   the binary with `go:embed` (release builds, `-tags frontend`) straight from

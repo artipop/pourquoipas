@@ -468,7 +468,7 @@ func main() {
 		// launched the second process — macOS delivers it as an Apple Event and
 		// not in argv — and passes it here in Args.
 		SingleInstance: &application.SingleInstanceOptions{
-			UniqueID: "io.deffun.xciii",
+			UniqueID: singleInstanceID,
 			OnSecondInstanceLaunch: func(data application.SecondInstanceData) {
 				if req, ok := shareURLFrom(data.Args); ok {
 					app.openShare(req)
