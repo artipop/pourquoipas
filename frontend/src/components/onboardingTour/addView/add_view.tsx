@@ -6,7 +6,7 @@ import {useMeasurePunchouts} from '../../tutorial_tour_tip/hooks'
 
 import './add_view.scss'
 import {Utils} from '../../../utils'
-import changeViews from '../../../../static/changeViews.gif'
+import changeViews from '../../../assets/changeViews.gif'
 
 import {BoardTourSteps, TOUR_BOARD} from '../index'
 import TourTipRenderer from '../tourTipRenderer/tourTipRenderer'

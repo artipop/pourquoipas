@@ -73,7 +73,7 @@ Gone already (the fork shrink, `docs/fork-shrink-removed.md`): `pages/welcome/`,
 
 Left, all of it page code, so after the Solid 2 migration or coordinated with
 it: `frontend/src/components/onboardingTour/` (twelve steps and their tests), the
-gifs they import from `static/`, and the old preferences
+gifs they import from `src/assets/`, and the old preferences
 (`onboardingTourStarted`, `onboardingTourStep`, `tourCategory`), which
 `centerPanel.tsx`, `boardsSwitcher.tsx` and `boardTemplateSelector.tsx` still
 read; step 4 says what replaces them.

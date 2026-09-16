@@ -135,7 +135,7 @@ beta.22: сервер стартует, прогоняет миграции на
 
 Контракт сборки, который обязан выполняться, чем бы фронтенд ни собирался:
 
-- на выходе `frontend/dist/index.html` и `frontend/dist/static/*`;
+- на выходе `frontend/dist/index.html`, собранное в `frontend/dist/assets/*` и содержимое `public/` в корне `dist`;
 - в `index.html` есть Go-шаблон `{{.BaseURL}}`;
 - ссылки на ассеты из JS и CSS — относительные;
 - работают `npm run build`, `dev`, `deveditor`;

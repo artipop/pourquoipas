@@ -112,9 +112,9 @@ viper с ~25 пакетами ушёл из `go.mod` (`docs/fork-shrink-removed.
 
 Удалены картинки, на которые не ссылалось ничто: `emoji_spirit.png` (3,7 МБ),
 `boards-screenshots.png`, `boards-welcome*.png`, `onboardingBg.jpg`,
-`upgrade.png`, `app-bar-icon.png`. `appStatic` больше не копирует то, что
-импортирует бандл: Vite и так кладёт такие файлы с хешем. `dist` — 8,4 МБ
-вместо 18. Гифки тура остаются в `static/` до удаления самого тура
+`upgrade.png`, `app-bar-icon.png`. Картинки, которые импортирует бандл, не
+копируются второй раз: Vite кладёт их в `dist/assets` с хешем. `dist` — 8,4 МБ
+вместо 18. Гифки тура остаются в `src/assets/` до удаления самого тура
 (`onboarding-plan.md`, шаг 1).
 
 ### ~~3. Главный чанк: что сделать ленивым~~ — сделано 2026-09-16

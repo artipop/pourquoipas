@@ -6,7 +6,7 @@ import {useMeasurePunchouts} from '../../tutorial_tour_tip/hooks'
 
 import './add_description.scss'
 import {Utils} from '../../../utils'
-import addDescription from '../../../../static/addDescription.png'
+import addDescription from '../../../assets/addDescription.png'
 
 import {CardTourSteps, TOUR_CARD} from '../index'
 import TourTipRenderer from '../tourTipRenderer/tourTipRenderer'

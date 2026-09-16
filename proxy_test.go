@@ -142,7 +142,7 @@ func TestAttachedTheDataGoesAcrossAndThePageStaysHere(t *testing.T) {
 	if !strings.Contains(page, "session") {
 		t.Error("the page was served without the attached server's session")
 	}
-	for _, path := range []string{"/static/main.js", "/anything/else"} {
+	for _, path := range []string{"/assets/main.js", "/anything/else"} {
 		if got := get(path); !strings.Contains(got, "ours") {
 			t.Errorf("%s left this machine: %q", path, got)
 		}

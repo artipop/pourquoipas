@@ -194,7 +194,7 @@ DERP-релеи остаются на месте — клиент тот же с
 
 ## Картинки апстрима
 
-В `frontend/static/` лежат гифки и картинка тура (`addProperty.gif`,
+В `frontend/src/assets/` лежат гифки и картинка тура (`addProperty.gif`,
 `changeViews.gif`, `comment.gif`, `copyLink.gif`, `share.gif`,
 `addDescription.png`) — скриншоты Mattermost Boards, оставшиеся от апстрима:
 вкладки Channels и Playbooks, синяя шапка. Слова «Focalboard» на них нет,
@@ -581,12 +581,9 @@ CI-матрице, потом включать. MySQL — ещё и upsert'ы н
 `dev:frontend`, `generate:bindings` (зависимость `build:frontend`),
 `build:server`, `build:docker` — как их
 пишет `wails3 init` (`docs/architecture.md`, «The page talks to Go through
-generated bindings»). Отличия ниже сделаны сознательно.
-
-**Статика — `static/`, а не `public/`.** Сервер доски раздаёт `dist/static` по
-`/static`, и Vite кладёт туда же свои ассеты (`appStatic` в `vite.config.ts`).
-`public/` копировался бы в корень `dist`, и путь поменялся бы у каждой ссылки на
-картинку и шрифт — поведение ради имени каталога.
+generated bindings»): импортируемые из кода картинки лежат в `src/assets`, favicon —
+в `public/`, сборка кладёт свой вывод в `dist/assets`. Отличия ниже сделаны
+сознательно.
 
 **Своим остаётся то, что шаблон не умеет.** Front door — потому что asset
 server Wails отвечает 501 на WebSocket-upgrade, а у нас `/ws`, терминалы и

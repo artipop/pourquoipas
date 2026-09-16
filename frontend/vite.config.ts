@@ -1,27 +1,17 @@
-import {createReadStream, existsSync, mkdirSync, readdirSync, rmSync} from 'fs'
-import {cp} from 'fs/promises'
+import {mkdirSync, readdirSync, rmSync} from 'fs'
 import path from 'path'
 import {fileURLToPath} from 'url'
 
 import formatjs from '@formatjs/unplugin/vite'
 import autoprefixer from 'autoprefixer'
 import {defineConfig} from 'vite'
-import type {Connect, Plugin, ViteDevServer} from 'vite'
+import type {Plugin} from 'vite'
 import solid from '@solidjs/vite-plugin'
 
 import {solid1Compat} from './solid1/plugin'
 
 const root = path.dirname(fileURLToPath(import.meta.url))
-const staticDir = path.join(root, 'static')
 const outDir = path.join(root, 'dist')
-
-const mimeTypes: Record<string, string> = {
-    '.gif': 'image/gif',
-    '.jpg': 'image/jpeg',
-    '.jpeg': 'image/jpeg',
-    '.png': 'image/png',
-    '.svg': 'image/svg+xml',
-}
 
 // In a build the Go server resolves {{.BaseURL}} when it templates index.html;
 // the dev server serves the file as-is, so the placeholder is dropped here.
@@ -34,59 +24,6 @@ function appHtml(): Plugin {
             handler(html: string) {
                 return html.replace(/\{\{\.BaseURL\}\}/g, '')
             },
-        },
-    }
-}
-
-// `static/` is served from `/static` in dev and copied to `dist/static` on build
-// — the same contract the Go server expects (it mounts dist/static at /static).
-// Assets imported from TypeScript are emitted into dist/static by Vite itself,
-// hashed, so the copy leaves them out: copied again unhashed they were ~4 MB of
-// duplicates in dist/ and in the binary.
-function appStatic(): Plugin {
-    const imported = new Set<string>()
-    return {
-        name: 'xciii-static',
-        buildStart() {
-            imported.clear()
-        },
-        buildEnd() {
-            for (const id of this.getModuleIds()) {
-                const file = path.resolve(id.split('?')[0])
-                if (file.startsWith(staticDir + path.sep)) {
-                    imported.add(file)
-                }
-            }
-        },
-        configureServer(server: ViteDevServer) {
-            server.middlewares.use('/static', ((req, res, next) => {
-                // An asset a module imports is asked for as `?import` (or
-                // `?url`, `?raw`), and the answer Vite owes is a JavaScript
-                // module naming the file. Answered here with the file itself,
-                // the browser refuses a gif as a module script and the page
-                // never renders.
-                if ((/[?&](import|url|raw|inline)(&|=|$)/).test(req.url || '')) {
-                    next()
-                    return
-                }
-                const rel = decodeURIComponent((req.url || '').split('?')[0])
-                const file = path.join(staticDir, rel)
-                if (!file.startsWith(staticDir) || !existsSync(file)) {
-                    next()
-                    return
-                }
-                const type = mimeTypes[path.extname(file).toLowerCase()]
-                if (type) {
-                    res.setHeader('Content-Type', type)
-                }
-                createReadStream(file).pipe(res)
-            }) as Connect.NextHandleFunction)
-        },
-        async closeBundle() {
-            await cp(staticDir, path.join(outDir, 'static'), {
-                recursive: true,
-                filter: (src) => !imported.has(path.resolve(src)),
-            })
         },
     }
 }
@@ -118,10 +55,6 @@ export default defineConfig(({mode}) => {
         root,
         base: '/',
 
-        // Handled by appStatic: Vite would copy publicDir to the output
-        // root, but these files have to land in dist/static.
-        publicDir: false,
-
         plugins: [
 
             // formatjs's own universal build plugin, standing in for the
@@ -136,13 +69,11 @@ export default defineConfig(({mode}) => {
             solid1Compat(),
             solid(),
             appHtml(),
-            appStatic(),
             emptyDist(),
         ],
 
         build: {
             outDir,
-            assetsDir: 'static',
 
             // dist/ holds a committed .gitkeep that keeps the directory
             // embeddable for `go mod tidy`, which resolves `go:embed all:`

@@ -144,9 +144,11 @@ writing down, because it is the whole of what a port to another framework has to
 keep — `frontend/src/types/index.d.ts` declares the shape, and this is the
 contract behind it.
 
-**The build output.** `build:frontend` must leave `frontend/dist/index.html` plus
-everything under `frontend/dist/static/`, which is compiled in with
-`go:embed`. `index.html` must still carry the Go template
+**The build output.** `build:frontend` must leave `frontend/dist/index.html`,
+Vite's output under `frontend/dist/assets/` and what `public/` holds at the root
+of `frontend/dist`, all compiled in with `go:embed`. The board server serves a
+path naming a file of the bundle as that file and every other path as the page
+(`server/web/webserver.go`), as a Wails asset server does. `index.html` must still carry the Go template
 `{{.BaseURL}}`, and asset URLs referenced from JS and CSS must stay relative so
 they survive a non-empty base path.
 

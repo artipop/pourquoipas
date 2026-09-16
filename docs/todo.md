@@ -180,12 +180,12 @@ Mattermost. Доставку и писателя очереди вынесли �
 для имён, собранных на лету:
 
 ```
-cd frontend && npx purgecss --css dist/static/index-XXXX.css \
+cd frontend && npx purgecss --css dist/assets/index-XXXX.css \
   --content 'src/**/*.tsx' 'src/**/*.ts' '../frontend/index.html' --rejected
 ```
 
 Ловушки: имя css-файла брать из `dist/index.html`, а не по маске — в
-`dist/static` бывают файлы прошлых прогонов; без safelist он
+`dist/assets` бывают файлы прошлых прогонов; без safelist он
 врёт (`icon-*`, `propColor*`, `Foo__${kind}` собираются на лету). Удалять по
 списку тоже не механически: имена сидят в перечислениях через запятую и во
 вложенных правилах.

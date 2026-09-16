@@ -7,7 +7,7 @@ import {useMeasurePunchouts} from '../../tutorial_tour_tip/hooks'
 
 import './add_properties.scss'
 import {Utils} from '../../../utils'
-import addProperty from '../../../../static/addProperty.gif'
+import addProperty from '../../../assets/addProperty.gif'
 
 import {BaseTourSteps, CardTourSteps, TOUR_BASE, TOUR_CARD} from '../index'
 import TourTipRenderer from '../tourTipRenderer/tourTipRenderer'

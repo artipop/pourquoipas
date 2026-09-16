@@ -6,7 +6,7 @@ import {useMeasurePunchouts} from '../../tutorial_tour_tip/hooks'
 
 import './shareBoard.scss'
 import {Utils} from '../../../utils'
-import shareBoard from '../../../../static/share.gif'
+import shareBoard from '../../../assets/share.gif'
 
 import {BoardTourSteps, TOUR_BOARD} from '../index'
 import TourTipRenderer from '../tourTipRenderer/tourTipRenderer'

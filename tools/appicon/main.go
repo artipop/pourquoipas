@@ -6,7 +6,7 @@
 // darwin/icons.icns and windows/icon.ico come from
 // `wails3 task common:generate:icons`, which reads appicon.png and
 // appicon.icon; run that after this. The webapp's favicon
-// (frontend/static/favicon.svg) draws the same shape by hand.
+// (frontend/public/favicon.svg) draws the same shape by hand.
 //
 // Two images it deliberately does not draw, though the script it replaces did.
 // The disk image's own icon is rendered by create:dmg:icon from the built

@@ -6,7 +6,7 @@ import {useMeasurePunchouts} from '../../tutorial_tour_tip/hooks'
 
 import './copy_link.scss'
 import {Utils} from '../../../utils'
-import copyLink from '../../../../static/copyLink.gif'
+import copyLink from '../../../assets/copyLink.gif'
 
 import {BoardTourSteps, TOUR_BOARD} from '../index'
 import {OnboardingCardClassName} from '../../kanban/kanbanCard'
