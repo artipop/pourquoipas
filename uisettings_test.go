@@ -168,3 +168,56 @@ func TestTheLanguageThePageResolvedIsNotAPreference(t *testing.T) {
 		t.Errorf("the language in force is %q", uiLanguage())
 	}
 }
+
+// A launch must not reinstall the templates the page is about to ask for. The
+// language the page resolved used to live only in memory, so every launch put
+// the templates into English and the page's report put them back — the second
+// time inside the call the first render waits for.
+func TestARestartKeepsTheTemplatesInTheLanguageThePageLastAskedFor(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("XDG_CONFIG_HOME", filepath.Join(home, ".config"))
+	// os.UserConfigDir reads this one on Windows; without it the test writes
+	// into the real install's settings there.
+	t.Setenv("APPDATA", filepath.Join(home, "AppData"))
+	activeLanguage = ""
+	t.Cleanup(func() { activeLanguage = "" })
+
+	var installed []string
+	app := &App{retemplate: func(lang string) error {
+		installed = append(installed, lang)
+		return nil
+	}}
+
+	if err := app.UseLanguage("ru"); err != nil {
+		t.Fatal(err)
+	}
+	if len(installed) != 1 || installed[0] != "ru" {
+		t.Fatalf("the first report installed %v", installed)
+	}
+
+	// A restart: the process's memory is gone, the install's is not. Startup
+	// installs the templates in uiLanguage(), so that is the language they are
+	// in by the time the page reports.
+	activeLanguage = ""
+	if got := uiLanguage(); got != "ru" {
+		t.Errorf("a launch would install the templates in %q", got)
+	}
+	if err := app.UseLanguage("ru"); err != nil {
+		t.Fatal(err)
+	}
+	if len(installed) != 1 {
+		t.Errorf("the same answer after a restart reinstalled them: %v", installed)
+	}
+	if prefs, _ := app.GetUIPreferences(); prefs != "{}" {
+		t.Errorf("remembering the answer made it a preference: %q", prefs)
+	}
+
+	// The system changing its language is still followed, once.
+	if err := app.UseLanguage("en"); err != nil {
+		t.Fatal(err)
+	}
+	if len(installed) != 2 || installed[1] != "en" {
+		t.Errorf("a new language installed %v", installed)
+	}
+}
