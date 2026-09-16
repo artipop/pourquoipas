@@ -13,6 +13,11 @@ frontend/dist/*
 /schemagen
 # The frontend is its own npm project. So are the landing and the guide site.
 node_modules
+# Vite's dependency cache lives in node_modules/.vite, but when Vite starts in a
+# directory whose package.json is missing — frontend/ while a checkout of an
+# older commit has taken it away and an IDE watcher is still running — it
+# falls back to .vite beside the config.
+.vite
 # VitePress' own working directory, for both guides (docs/guide, the XCIII one,
 # and docs/guide-xxvi). They build into site/dist instead, so a `dist` here only
 # appears if somebody overrides outDir.
