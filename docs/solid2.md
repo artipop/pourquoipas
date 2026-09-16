@@ -29,6 +29,15 @@ A dnd-kit probe under the shim renders byte-for-byte what the same probe
 renders on Solid 1. That, rather than the build passing, is why the shim is
 trusted.
 
+**The peer ranges do not agree, so `webapp/.npmrc` sets
+`legacy-peer-deps=true`.** `@dnd-kit/solid` still declares solid-js 1, and
+`@solidjs/vite-plugin` next declares an older jest-dom; a plain `npm ci`
+refuses the lockfile with ERESOLVE. The move was built and tested in a
+checkout whose `node_modules` were already installed, so the first clean
+`npm ci` — on a fresh checkout, and in CI — was what found it. An `overrides`
+entry for dnd-kit was tried first and does not help: npm still checks the
+next package's peers.
+
 ## What the migration actually changed in our code
 
 Mostly mechanical:
