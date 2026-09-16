@@ -72,14 +72,17 @@ export const FlashMessages: Component<Props> = (props) => {
         }
     })
 
+    // Read as a message that may already be gone: while anything async is
+    // being asked again, Solid 2 lets a binding in here run once more after
+    // the message went null, and a throw there halts the page (docs/solid2.md).
     return (
         <Show when={message()}>
             <div
-                class={'FlashMessages ' + message()!.severity + (message()!.notice ? ' FlashMessages--notice' : '') + (fadeOut() ? ' flashOut' : ' flashIn')}
+                class={'FlashMessages ' + (message()?.severity ?? '') + (message()?.notice ? ' FlashMessages--notice' : '') + (fadeOut() ? ' flashOut' : ' flashIn')}
                 onClick={handleClick}
             >
-                {message()!.content}
-                <Show when={message()!.notice}>
+                {message()?.content}
+                <Show when={message()?.notice}>
                     <button
                         type='button'
                         class='FlashMessages__close'

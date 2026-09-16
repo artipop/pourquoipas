@@ -1,8 +1,10 @@
 // The Wails-generated Go bindings are PascalCase methods, not constructors.
 /* eslint-disable new-cap */
-import {Accessor, Show, createMemo, onSettled, refresh} from 'solid-js'
+import {Accessor, Show, createMemo, onSettled} from 'solid-js'
 
 import {useIntl} from '../../intl'
+
+import {createLoader} from '../../hooks/loader'
 
 import {agentBindings} from './bindings'
 import {invalidateBoardAgents} from './boardAgents'
@@ -55,16 +57,7 @@ async function loadColumns(boardId: string): Promise<ColumnSpec[]> {
 // useBoardColumns gives a component the board's column settings, reloading them
 // whenever anything invalidates the cache.
 export function useBoardColumns(boardId: string): Accessor<ColumnSpec[]> {
-    const specs = createMemo(async () => {
-        try {
-            return await loadColumns(boardId)
-        } catch {
-            return []
-        }
-    }, {loadingValue: []})
-    const again = () => {
-        refresh(specs)
-    }
+    const [specs, again] = createLoader(() => loadColumns(boardId).catch(() => [] as ColumnSpec[]), [] as ColumnSpec[])
 
     onSettled(() => {
         listeners.add(again)

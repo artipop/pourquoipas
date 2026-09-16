@@ -140,6 +140,11 @@ is a board server with cgo SQLite; the phone app is a window per machine onto
   staged until the microtask drains; `onSettled` refuses `onCleanup` inside it
   and an `async` callback cannot be one; a boolean handed to `aria-expanded`
   drops the attribute — write `String(…)`.
+- **No async memo is asked again while on screen** — no `refresh`, no async
+  memo whose source changes. In the Solid 2 RC that tears `<Show>`: a binding
+  inside runs once with the falsy value, `value()!.field` throws, and the whole
+  page stops updating. Reads from Go go through `createLoader`
+  (`hooks/loader.ts`); `docs/solid2.md` has the measurements.
 - **`@dnd-kit/solid` is Solid 1 only** and runs on `webapp/solid1/`, a compat
   layer pointed at that package alone by importer path. Applied globally it
   rewrites what `@solidjs/web` itself imports. It goes when dnd-kit ships Solid 2.

@@ -1,12 +1,14 @@
 // The Wails-generated Go bindings are PascalCase methods, not constructors.
 /* eslint-disable new-cap */
-import {Show, createMemo, createSignal, refresh} from 'solid-js'
+import {Show, createSignal} from 'solid-js'
 
 import {useIntl} from '../../intl'
 
 import {Board} from '../../blocks/board'
 import Button from '../../widgets/buttons/button'
 import Select from '../../widgets/select'
+
+import {createLoader} from '../../hooks/loader'
 
 import {agentBindings} from './bindings'
 import {AGENT_KINDS, AdapterStatus} from './agentsPanel'
@@ -41,7 +43,7 @@ const AgentQuickAdd = (props: Props) => {
 
     const [name, setName] = createSignal('claude')
     const [kind, setKind] = createSignal('claude')
-    const adapters = createMemo(async (): Promise<AdapterStatus[]> => {
+    const [adapters, reloadAdapters] = createLoader(async (): Promise<AdapterStatus[]> => {
         if (!bindings?.ListAgentAdapters) {
             return []
         }
@@ -52,7 +54,7 @@ const AgentQuickAdd = (props: Props) => {
             // not a reason to refuse the form.
             return []
         }
-    }, {loadingValue: []})
+    }, [] as AdapterStatus[])
     const [busy, setBusy] = createSignal(false)
     const [error, setError] = createSignal('')
 
@@ -68,7 +70,7 @@ const AgentQuickAdd = (props: Props) => {
         setError('')
         try {
             await bindings.InstallAgentAdapter(kind())
-            await refresh(adapters)
+            reloadAdapters()
         } catch (e: any) {
             setError(String(e?.message || e))
         } finally {

@@ -1,9 +1,10 @@
-import {For, Loading, Show, createMemo, createSignal} from 'solid-js'
+import {For, Show, createSignal} from 'solid-js'
 import type {Component} from 'solid-js'
 
 import {useIntl} from '../../intl'
 
-import {BindingBoard, listBoardCards} from '../../bindings/boards'
+import {BindingBoard, BindingCard, listBoardCards} from '../../bindings/boards'
+import {createLoader} from '../../hooks/loader'
 
 // The board's cards on a phone: one board at a time, newest first, each with
 // the column it stands in.
@@ -24,13 +25,7 @@ const MobileCards: Component<Props> = (props) => {
     // the moment it opens.
     const current = () => chosen() || props.boards[0]?.id || ''
 
-    const cards = createMemo(async () => {
-        try {
-            return await listBoardCards(current())
-        } catch {
-            return []
-        }
-    })
+    const [cards] = createLoader((boardId: string) => listBoardCards(boardId).catch(() => []), undefined as BindingCard[] | undefined, current)
 
     return (
         <section class='MobilePage__section'>
@@ -65,16 +60,16 @@ const MobileCards: Component<Props> = (props) => {
 
                 {/* Nothing until the first answer: an empty list read as
                     "this board has no cards" while it was still being asked. */}
-                <Loading>
+                <Show when={cards()}>
                     <Show
-                        when={cards().length > 0}
+                        when={(cards() || []).length > 0}
                         fallback={
                             <p class='MobilePage__empty'>
                                 {intl.formatMessage({id: 'Mobile.no-cards', defaultMessage: 'This board has no cards.'})}
                             </p>
                         }
                     >
-                        <For each={cards()}>
+                        <For each={cards() || []}>
                             {(card) => (
                                 <article class='MobilePage__item'>
                                     <Show when={card.column}>
@@ -87,7 +82,7 @@ const MobileCards: Component<Props> = (props) => {
                             )}
                         </For>
                     </Show>
-                </Loading>
+                </Show>
             </Show>
         </section>
     )

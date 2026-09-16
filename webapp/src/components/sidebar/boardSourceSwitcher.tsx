@@ -1,12 +1,13 @@
 // The Wails-generated Go bindings are PascalCase methods, not constructors.
 /* eslint-disable new-cap */
-import {For, Show, createMemo} from 'solid-js'
+import {For, Show} from 'solid-js'
 
 import {useIntl} from '../../intl'
 import Menu from '../../widgets/menu'
 import MenuWrapper from '../../widgets/menuWrapper'
 import CompassIcon from '../../widgets/icons/compassIcon'
 import {agentBindings} from '../acp/bindings'
+import {createLoader} from '../../hooks/loader'
 
 import './boardSourceSwitcher.scss'
 
@@ -34,7 +35,7 @@ type AttachState = {
 const BoardSourceSwitcher = () => {
     const intl = useIntl()
     const bindings = agentBindings()
-    const state = createMemo(async (): Promise<AttachState | null> => {
+    const [state] = createLoader(async (): Promise<AttachState | null> => {
         if (!bindings?.GetServerAttachment) {
             return null
         }
@@ -45,7 +46,7 @@ const BoardSourceSwitcher = () => {
             // absence of this control already says.
             return null
         }
-    }, {loadingValue: null})
+    }, null as AttachState | null)
 
     const sources = () => state()?.sources ?? []
     const current = () => sources().find((s) => s.id === (state()?.selected ?? '')) ?? sources()[0]

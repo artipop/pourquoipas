@@ -1,4 +1,4 @@
-import {Show, createEffect, createMemo, createSignal, refresh} from 'solid-js'
+import {Show, createEffect, createMemo, createSignal} from 'solid-js'
 import type {JSX} from '@solidjs/web'
 
 import {useNavigate} from '@solidjs/router'
@@ -11,6 +11,7 @@ import {Subscription, WSClient} from '../../wsclient'
 import {Utils} from '../../utils'
 import {useWebsockets} from '../../hooks/websockets'
 import {useRouteMatch} from '../../hooks/routerMatch'
+import {createLoader} from '../../hooks/loader'
 import {IUser} from '../../user'
 import {Block} from '../../blocks/block'
 import {ContentBlock} from '../../blocks/contentBlock'
@@ -88,20 +89,23 @@ const BoardPage = (props: Props): JSX.Element => {
 
     // Keyed on who is looking as well as on the board, because nobody signed
     // in yet cannot read a board and the load waits for them.
-    const boardContent = createMemo(() => {
+    const boardToLoad = createMemo(() => {
         const board = boardId()
-        const team = teamId()
         if (!board || props.readonly || !me()?.id) {
             return undefined
         }
-        return actions.load.fetchBoardBlocks(board).
-            then((blocks) => ({boardId: board, teamId: team, blocks})).
-            catch(() => undefined)
-    })
+        return {boardId: board, teamId: teamId()}
+    }, {equals: (a, b) => a?.boardId === b?.boardId && a?.teamId === b?.teamId})
+    const [boardContent, reloadBoard, boardLoading] = createLoader(
+        async (wanted: {boardId: string, teamId: string} | undefined) => (wanted ? {...wanted, blocks: await actions.load.fetchBoardBlocks(wanted.boardId)} : undefined),
+        undefined as {boardId: string, teamId: string, blocks: Block[]} | undefined,
+        boardToLoad,
+    )
 
-    // Applied by an effect rather than inside the fetch: an effect over an async
-    // memo sees only the latest answer, so switching boards while one is still
-    // loading can no longer land the old board's cards over the new one.
+    // Applied once the answer is in rather than straight after the fetch: the
+    // loader drops an answer for a board already left, so switching boards
+    // while one is still loading cannot land the old board's cards over the
+    // new one.
     createEffect(boardContent, (loaded) => {
         const user = me()
         if (!loaded || !user) {
@@ -159,7 +163,7 @@ const BoardPage = (props: Props): JSX.Element => {
 
             // Whatever changed on the board while the socket was down was never
             // announced, so its blocks are read again too.
-            refresh(boardContent)
+            reloadBoard()
         }
 
         Utils.log('useWEbsocket adding onChange handler')
@@ -313,7 +317,7 @@ const BoardPage = (props: Props): JSX.Element => {
                 <Show when={!props.readonly || activeBoardId() !== undefined}>
                     <Workspace
                         readonly={props.readonly || false}
-                        boardContent={boardContent}
+                        boardLoading={boardLoading}
                     />
                 </Show>
             </div>

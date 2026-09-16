@@ -1,6 +1,8 @@
 // The Wails-generated Go bindings are PascalCase methods, not constructors.
 /* eslint-disable new-cap */
-import {createMemo, refresh, type Accessor} from 'solid-js'
+import type {Accessor} from 'solid-js'
+
+import {createLoader} from '../../hooks/loader'
 
 import {Board} from '../../blocks/board'
 
@@ -86,22 +88,12 @@ export async function readSetupPlan(boardId: string): Promise<SetupPlan> {
     return {...plan, steps: plan.steps || []}
 }
 
-// NO_SETUP stands in until Go answers rather than a Loading boundary: a board
-// that asks nothing and a board not read yet look the same on screen, and
-// every caller reads the plan straight through.
+// NO_SETUP stands in until Go answers: a board that asks nothing and a board
+// not read yet look the same on screen, and every caller reads the plan
+// straight through.
 export function createSetupPlan(board: () => Board | undefined): [Accessor<SetupPlan>, () => void] {
-    const boardId = createMemo(() => board()?.id ?? '')
-    const plan = createMemo(async () => {
-        try {
-            return await readSetupPlan(boardId())
-        } catch {
-            return NO_SETUP
-        }
-    }, {loadingValue: NO_SETUP})
-
-    return [plan, () => {
-        refresh(plan)
-    }]
+    const [plan, reload] = createLoader((boardId: string) => readSetupPlan(boardId).catch(() => NO_SETUP), NO_SETUP, () => board()?.id ?? '')
+    return [plan, reload]
 }
 
 // Recording is for the answer no registry can be read for: a step deliberately

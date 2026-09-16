@@ -56,37 +56,39 @@ Mostly mechanical:
   `<X.Provider value=…>` → `<X value=…>`.
 - `classList` is gone: `class` takes the same object form
   (`class={[base, {modifier: on()}]}`).
-- `createResource` is gone, and so is the loader it stood in for — a signal,
-  an effect that fetched into it, and a `live` flag so a late answer for the
-  board somebody left could not land on the one they moved to. A read is an
-  async memo (`createMemo(async () => …)`): the latest question wins by
-  itself, `refresh(memo)` re-asks after an event or a write and keeps the old
-  answer on screen meanwhile, and a rejection is thrown at the reader, so the
-  memo catches its own. Its first read throws `NotReadyError` until a
-  `Loading` boundary catches it. Where "nothing yet" and "nothing" look the
-  same on screen — a plan with no steps, a count of zero — the memo passes
-  `loadingValue` instead and never suspends; where an empty answer says
-  something («нет карточек», "no boards yet") it sits under `Loading`, which
-  is what keeps that sentence off the screen while the question is still out.
-  `eslint-plugin-solid` still knows only Solid 1 and warns "This tracked
-  scope should not be async" at every one of them; the warning is wrong here.
-  A loader whose answer a form then edits, or whose load error shares a line
-  with the errors of the actions beside it (`serverPanel`, `folderChoices`,
-  `templateEditor`, the dialogs that seed a draft), stays a signal: what the
-  actions write is not a re-read, and splitting one error line in two would
-  be the workaround.
-- **The open board is loaded the same way** (`boardPage.tsx`): an async memo
-  over the board, the team and who is signed in fetches the blocks
-  (`fetchBoardBlocks`), and an effect over it applies them
-  (`applyBoardBlocks`), joins the board when it came back empty, and asks
-  for its members. The apply is an effect rather than a line after the
-  `await` because an effect over an async memo is handed the latest answer
-  only — the load used to fetch-then-write, so a board left while it loaded
-  could land its cards over the one opened. A socket that reconnects
-  re-asks it with `refresh`. The store's `loadingBoard` flag is gone:
-  `workspace.tsx` puts the centre under `Loading` for the first load and
-  asks `isPending` for a later one, and only when there is no board to draw
-  — so "Create a board" is never shown for a board still on its way.
+- `createResource` is gone. Its replacement in Solid 2 is an async memo
+  (`createMemo(async () => …)`, `refresh(memo)`, `Loading`, `isPending`), and
+  **this app does not use one**, because of a bug in the RC (below). A read
+  from Go or the server is `createLoader` (`hooks/loader.ts`): a signal, an
+  effect keyed on what is being read, the latest question winning, `reload`
+  for "look again", a `loading` flag. It replaced thirteen hand-written copies
+  of the same signal-effect-`live`-flag shape, and was briefly replaced itself
+  by async memos, which is how the bug was found.
+- **An async memo asked again while on screen tears `<Show>`.** While one is
+  pending with a stale value — after `refresh`, or after one of its sources
+  changed — a `<Show>` going falsy anywhere on the page lets a binding inside
+  it run once more with the falsy value before the branch is removed. The
+  common `value()!.field` then throws, and Solid 2 answers any throw in a
+  computation by halting reactivity for the whole page: it keeps its pixels
+  and ignores every update until reloaded. Measured on rc.1 and rc.8, dev and
+  production builds alike; `<Show>{(v) => v().field}</Show>` throws in the
+  same place ("stale value from `<Show>`"), `value()?.field` and `<Show
+  keyed>` do not, and a first load under `Loading` (a `lazy` page included)
+  does not trigger it. Found as a flash message that ran out while the
+  Windows folder picker kept a Go call waiting. The report for Solid is
+  written; until it is fixed, nothing here re-asks through an async memo.
+  `flashMessages.tsx` reads its message with `?.` regardless, and its test
+  reproduces the crash with an async memo beside it.
+- **The open board is loaded through the same loader** (`boardPage.tsx`),
+  keyed on the board, the team and whether anybody is signed in: the fetch is
+  `fetchBoardBlocks`, and an effect over the answer applies it
+  (`applyBoardBlocks`), joins the board when it came back empty, and asks for
+  its members. Applying the answer rather than writing straight after the
+  fetch is what keeps a board left while it loaded from landing its cards
+  over the one opened. A socket that reconnects reloads it. The loader's
+  `loading` flag is what `workspace.tsx` reads to keep "Create a board" off
+  the screen while the board named in the address is on its way; the store's
+  `loadingBoard` flag is gone.
 - The module caches that count their consumers (`attention.ts`,
   `liveTerminals.ts`, `boardFlows.ts`, `settings/updates.ts`) keep counting
   rather than moving to a signal's `unobserved` option. There is no matching
@@ -186,7 +188,8 @@ wrapper.
     over entries rebuilt on every count change, so a count arriving mid-tap
     replaced the button being tapped. It is `keyed={false}` now.
   - *The board prompt dialog took typing before it had loaded*, and the
-    stored text then arrived over what was typed. It waits under `Loading`.
+    stored text then arrived over what was typed. The form now appears once
+    the stored text is in.
   The rest were tests that wrote directly and needed `flush()`, awaited
   what they fired, or read a label that was still "Asking the agent…".
   `Portal` no longer wraps what it ports, so the node's parent is `body`.

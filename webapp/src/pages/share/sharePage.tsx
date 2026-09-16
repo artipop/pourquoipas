@@ -1,9 +1,10 @@
-import {For, Loading, Show, createEffect, createMemo, createSignal, onSettled} from 'solid-js'
+import {For, Show, createEffect, createSignal, onSettled} from 'solid-js'
 import type {Component} from 'solid-js'
 import {useSearchParams} from '@solidjs/router'
 
 import {FormattedMessage, useIntl} from '../../intl'
-import {listBoards} from '../../bindings/boards'
+import {BindingBoard, listBoards} from '../../bindings/boards'
+import {createLoader} from '../../hooks/loader'
 
 import {closeShare, shareItem} from './shareBindings'
 import './sharePage.scss'
@@ -43,7 +44,7 @@ const SharePage: Component = () => {
     const intl = useIntl()
     const [params] = useSearchParams()
 
-    const boards = createMemo(() => listBoards())
+    const [boards] = createLoader(() => listBoards(), undefined as BindingBoard[] | undefined)
     const [target, setTarget] = createSignal('')
     const [title, setTitle] = createSignal('')
     const [note, setNote] = createSignal('')
@@ -65,7 +66,7 @@ const SharePage: Component = () => {
     // still there, otherwise the first. A dialog that opens with nothing
     // selected asks two questions instead of one.
     createEffect(() => [target(), boards()] as const, ([chosen, available]) => {
-        if (chosen || available.length === 0) {
+        if (chosen || !available?.length) {
             return
         }
         const remembered = available.find((board) => board.id === recalledBoard())
@@ -157,9 +158,9 @@ const SharePage: Component = () => {
                         defaultMessage='Which board?'
                     />
                 </h2>
-                <Loading>
+                <Show when={boards()}>
                     <Show
-                        when={boards().length > 0}
+                        when={(boards() || []).length > 0}
                         fallback={
                             <p class='SharePage__empty'>
                                 <FormattedMessage
@@ -170,7 +171,7 @@ const SharePage: Component = () => {
                         }
                     >
                         <div class='SharePage__boards'>
-                            <For each={boards()}>
+                            <For each={boards() || []}>
                                 {(board) => (
                                     <button
                                         type='button'
@@ -185,7 +186,7 @@ const SharePage: Component = () => {
                             </For>
                         </div>
                     </Show>
-                </Loading>
+                </Show>
 
                 <Show when={error()}>
                     <p class='SharePage__error'>{error()}</p>

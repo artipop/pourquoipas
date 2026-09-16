@@ -1,8 +1,9 @@
-import {For, Show, createMemo, createSignal, refresh} from 'solid-js'
+import {For, Show, createSignal} from 'solid-js'
 
 import {useIntl} from '../../intl'
 
 import octoClient from '../../octoClient'
+import {createLoader} from '../../hooks/loader'
 import {Utils} from '../../utils'
 import {useAppSelector, useAppStore} from '../../store/hooks'
 import {getMe} from '../../store/users'
@@ -26,7 +27,7 @@ const PeoplePanel = () => {
     const team = useAppSelector<Team|null>(getCurrentTeam)
     const {actions} = useAppStore()
 
-    const people = createMemo(() => octoClient.getAdminUsers(), {loadingValue: []})
+    const [people, reloadPeople] = createLoader(() => octoClient.getAdminUsers(), [] as Awaited<ReturnType<typeof octoClient.getAdminUsers>>)
     const [wasCopied, setWasCopied] = createSignal(false)
 
     const inviteLink = () => {
@@ -57,7 +58,7 @@ const PeoplePanel = () => {
         } else {
             say(intl.formatMessage({id: 'People.refused', defaultMessage: 'The server refused that. The last admin cannot be removed or switched off.'}))
         }
-        refresh(people)
+        reloadPeople()
     }
 
     const isAdmin = (person: {role?: string}) => person.role === 'admin'

@@ -1,5 +1,5 @@
 import {render, screen} from '@solidjs/testing-library'
-import {flush} from 'solid-js'
+import {createMemo, flush, refresh} from 'solid-js'
 
 import '@testing-library/jest-dom'
 
@@ -20,6 +20,46 @@ afterEach(() => {
 })
 
 describe('components/flashMessages', () => {
+    // Something on the page being asked again is the ordinary state of a
+    // board, and a message running out meanwhile once halted the whole page:
+    // Solid 2 ran the class binding once more with the message already null.
+    // The async memo stands in for whatever is being asked again.
+    test('a message running out while something else is being asked again does not stop the page', async () => {
+        vi.useRealTimers()
+        const tick = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+        const errors = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+        let calls = 0
+        let asked!: () => number
+        render(() => {
+            asked = createMemo(async () => {
+                calls++
+                await tick(calls === 1 ? 1 : 400)
+                return calls
+            }, {loadingValue: 0})
+            return wrapIntl(() => (
+                <div>
+                    <span>{String(asked())}</span>
+                    <FlashMessages milliseconds={250}/>
+                </div>
+            ))
+        })
+        await tick(20)
+
+        sendFlashMessage({content: 'First', severity: 'normal'})
+        await tick(10)
+        expect(screen.getByText('First')).toBeInTheDocument()
+
+        refresh(asked)
+        await tick(350)
+        expect(screen.queryByText('First')).toBeNull()
+
+        sendFlashMessage({content: 'Second', severity: 'high'})
+        await tick(10)
+        expect(screen.getByText('Second')).toBeInTheDocument()
+        expect(errors.mock.calls.flat().join(' ')).not.toContain('REACTIVITY_HALTED')
+        errors.mockRestore()
+    })
+
     test('renders a flash message with high severity', () => {
         const {container} = render(() =>
             wrapIntl(() => <FlashMessages milliseconds={200}/>),

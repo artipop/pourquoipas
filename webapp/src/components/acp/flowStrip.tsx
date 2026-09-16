@@ -1,9 +1,11 @@
 // The Wails-generated Go bindings are PascalCase methods, not constructors.
 /* eslint-disable new-cap */
-import {For, Show, createMemo, createSignal, onSettled, refresh} from 'solid-js'
+import {For, Show, createSignal, onSettled} from 'solid-js'
 
 import {useIntl} from '../../intl'
 import CompassIcon from '../../widgets/icons/compassIcon'
+
+import {createLoader} from '../../hooks/loader'
 
 import {agentBindings} from './bindings'
 import {onAgentEvent} from './agentEvents'
@@ -110,24 +112,24 @@ type Props = {
 const FlowStrip = (props: Props) => {
     const intl = useIntl()
     const bindings = agentBindings()
-    const flow = createMemo(async (): Promise<CardFlow | null> => {
+    const [flow, reloadFlow] = createLoader(async (cardId: string): Promise<CardFlow | null> => {
         if (!bindings?.GetCardFlow) {
             return null
         }
         try {
-            return JSON.parse(await bindings.GetCardFlow(props.cardId))
+            return JSON.parse(await bindings.GetCardFlow(cardId))
         } catch {
             return null
         }
-    }, {loadingValue: null})
+    }, null as CardFlow | null, () => props.cardId)
 
     onSettled(() => {
         // A session starting, finishing or moving the card changes the answer.
-        const off = onAgentEvent('acp:session', () => refresh(flow))
+        const off = onAgentEvent('acp:session', () => reloadFlow())
 
         // So does a transition stopping to ask, which is announced as the wait
         // it is rather than as a session — nothing is running.
-        const offWait = onAgentEvent('acp:attention', () => refresh(flow))
+        const offWait = onAgentEvent('acp:attention', () => reloadFlow())
         return () => {
             off?.()
             offWait?.()
@@ -149,7 +151,7 @@ const FlowStrip = (props: Props) => {
         } finally {
             setMarking(false)
         }
-        await refresh(flow)
+        reloadFlow()
     }
 
     // Answering releases the card: the last answer finishes the move that was
@@ -167,7 +169,7 @@ const FlowStrip = (props: Props) => {
         } finally {
             setAnswering(false)
         }
-        await refresh(flow)
+        reloadFlow()
     }
 
     const since = () => {

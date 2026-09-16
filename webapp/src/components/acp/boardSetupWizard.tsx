@@ -1,12 +1,13 @@
 // The Wails-generated Go bindings are PascalCase methods, not constructors.
 /* eslint-disable new-cap */
-import {For, Show, createEffect, createMemo, createSignal, onSettled} from 'solid-js'
+import {For, Show, createEffect, createSignal, onSettled} from 'solid-js'
 
 import {useIntl} from '../../intl'
 
 import {Board} from '../../blocks/board'
 import {titleTaken} from '../../boardTitle'
 import {listBoards} from '../../bindings/boards'
+import {createLoader} from '../../hooks/loader'
 import mutator from '../../mutator'
 import Button from '../../widgets/buttons/button'
 import Dialog from '../dialog'
@@ -141,13 +142,7 @@ const BoardSetupWizard = (props: Props) => {
     // The other boards' names, read from Go rather than from the store: this
     // dialog talks to Go for everything else it knows, and a store dependency
     // here would need a provider around it in every test that renders it.
-    const boards = createMemo(async () => {
-        try {
-            return await listBoards()
-        } catch {
-            return []
-        }
-    }, {loadingValue: []})
+    const [boards] = createLoader(() => listBoards().catch(() => []), [] as Array<{id: string, title: string}>)
     const nameTaken = () => titleTaken(boards(), boardName(), props.board.id)
 
     const renameBoard = () => run(async () => {

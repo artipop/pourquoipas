@@ -1,10 +1,12 @@
 // The Wails-generated Go bindings are PascalCase methods, not constructors.
 /* eslint-disable new-cap */
-import {For, Loading, Show, createEffect, createMemo, createSignal, onSettled, refresh} from 'solid-js'
+import {For, Show, createEffect, createMemo, createSignal, onSettled} from 'solid-js'
 
 import {useIntl} from '../../intl'
 
 import CompassIcon from '../../widgets/icons/compassIcon'
+
+import {createLoader} from '../../hooks/loader'
 
 import {agentBindings} from './bindings'
 import {onAgentEvent} from './agentEvents'
@@ -187,28 +189,28 @@ const FileBlock = (props: {file: DiffFile, foldAll?: number, unfoldAll?: number}
 // and keeping two of them is how they drift.
 export const CardDiffView = (props: {cardId: string}) => {
     const intl = useIntl()
-    const reading = createMemo(async (last?: {diff?: CardDiffData, error: string}) => {
+    const [reading, reread] = createLoader(async (cardId: string): Promise<{diff?: CardDiffData, error: string}> => {
         const bindings = agentBindings()
         if (!bindings?.GetCardDiff) {
             return {error: ''}
         }
         try {
-            return {diff: JSON.parse(await bindings.GetCardDiff(props.cardId)) as CardDiffData, error: ''}
+            return {diff: JSON.parse(await bindings.GetCardDiff(cardId)) as CardDiffData, error: ''}
         } catch (e) {
             // The diff already on screen stays under the error: a folder that
             // failed to read once has not stopped holding what it held.
-            return {diff: last?.diff, error: String((e as Error)?.message || e)}
+            return {diff: reading()?.diff, error: String((e as Error)?.message || e)}
         }
-    })
-    const diff = () => reading().diff
-    const error = () => reading().error
+    }, undefined as {diff?: CardDiffData, error: string} | undefined, () => props.cardId)
+    const diff = () => reading()?.diff
+    const error = () => reading()?.error ?? ''
 
     onSettled(() => {
         // The work moves while this is open — the agent commits, a stage ends —
         // and a diff that answers for the moment it was opened is a diff that
         // quietly lies. A session event is the cheapest thing that means "the
         // work changed"; the button beside it is for everything else.
-        return onAgentEvent('acp:session', () => refresh(reading))
+        return onAgentEvent('acp:session', () => reread())
     })
 
     const total = createMemo(() => {
@@ -231,7 +233,8 @@ export const CardDiffView = (props: {cardId: string}) => {
     const [unfoldAll, setUnfoldAll] = createSignal(0)
 
     return (
-        <Loading
+        <Show
+            when={reading()}
             fallback={
                 <div class='CardDiff'>
                     <div class='CardDiff__empty'>
@@ -288,7 +291,7 @@ export const CardDiffView = (props: {cardId: string}) => {
                         class='CardDiff__button'
                         title={intl.formatMessage({id: 'CardDiff.refresh', defaultMessage: 'Read the folder again'})}
                         aria-label={intl.formatMessage({id: 'CardDiff.refresh', defaultMessage: 'Read the folder again'})}
-                        onClick={() => refresh(reading)}
+                        onClick={() => reread()}
                     >
                         <CompassIcon icon='refresh'/>
                     </button>
@@ -339,7 +342,7 @@ export const CardDiffView = (props: {cardId: string}) => {
                     </For>
                 </Show>
             </div>
-        </Loading>
+        </Show>
     )
 }
 

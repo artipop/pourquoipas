@@ -1,4 +1,4 @@
-import {Loading, Match, Show, Switch, createSignal, isPending, onSettled} from 'solid-js'
+import {Match, Show, Switch, createSignal, onSettled} from 'solid-js'
 import type {JSX} from '@solidjs/web'
 
 import {useNavigate} from '@solidjs/router'
@@ -44,7 +44,7 @@ type Props = {
     readonly: boolean
 
     // Absent where nothing loads a board, which reads as never loading.
-    boardContent?: () => unknown
+    boardLoading?: () => boolean
 }
 
 function CenterContent(props: Props) {
@@ -120,39 +120,34 @@ function CenterContent(props: Props) {
         return result
     }
 
-    // Read only when there is no board to draw, so a board already on screen is
-    // never held back by the next one loading. The first load suspends into
-    // the boundary below; a later one is pending and keeps what is drawn.
-    const loadingBoard = () => Boolean(props.boardContent) && isPending(() => props.boardContent!())
+    const loadingBoard = () => props.boardLoading?.() ?? false
 
     return (
-        <Loading fallback={null}>
-            <Switch>
-                <Match when={board() && !isBoardHidden() && activeView()}>
-                    <CenterPanel
-                        clientConfig={clientConfig()}
-                        readonly={props.readonly}
-                        board={board()!}
-                        cards={cards()}
-                        shownCardId={match().params.cardId}
-                        showCard={showCard}
-                        activeView={activeView()!}
-                        groupByProperty={property()}
-                        dateDisplayProperty={displayProperty()}
-                        views={views()}
-                    />
-                </Match>
-                <Match when={(board() && !isBoardHidden()) || loadingBoard()}>
-                    {null}
-                </Match>
-                <Match when={me()?.is_guest}>
-                    <GuestNoBoards/>
-                </Match>
-                <Match when={true}>
-                    {templateSelector()}
-                </Match>
-            </Switch>
-        </Loading>
+        <Switch>
+            <Match when={board() && !isBoardHidden() && activeView()}>
+                <CenterPanel
+                    clientConfig={clientConfig()}
+                    readonly={props.readonly}
+                    board={board()!}
+                    cards={cards()}
+                    shownCardId={match().params.cardId}
+                    showCard={showCard}
+                    activeView={activeView()!}
+                    groupByProperty={property()}
+                    dateDisplayProperty={displayProperty()}
+                    views={views()}
+                />
+            </Match>
+            <Match when={(board() && !isBoardHidden()) || loadingBoard()}>
+                {null}
+            </Match>
+            <Match when={me()?.is_guest}>
+                <GuestNoBoards/>
+            </Match>
+            <Match when={true}>
+                {templateSelector()}
+            </Match>
+        </Switch>
     )
 }
 
@@ -220,7 +215,7 @@ const Workspace = (props: Props): JSX.Element => {
                 </Show>
                 <CenterContent
                     readonly={props.readonly}
-                    boardContent={props.boardContent}
+                    boardLoading={props.boardLoading}
                 />
             </div>
         </div>

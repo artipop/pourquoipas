@@ -1,12 +1,14 @@
 // The Wails-generated Go bindings are PascalCase methods, not constructors.
 /* eslint-disable new-cap */
-import {Loading, Show, createMemo, createSignal} from 'solid-js'
+import {Show, createSignal} from 'solid-js'
 
 import {useIntl} from '../../intl'
 
 import {Board} from '../../blocks/board'
 import Button from '../../widgets/buttons/button'
 import Dialog from '../dialog'
+
+import {createLoader} from '../../hooks/loader'
 
 import {agentBindings} from './bindings'
 
@@ -41,19 +43,19 @@ const BoardPromptsDialog = (props: Props) => {
     const intl = useIntl()
     const bindings = agentBindings()
 
-    const stored = createMemo(async () => {
+    const [stored] = createLoader(async (): Promise<{text: string, error: string}> => {
         try {
             return {text: bindings?.GetBoardPrompt ? await bindings.GetBoardPrompt(props.board.id) : '', error: ''}
         } catch (e) {
             return {text: '', error: String(e)}
         }
-    })
+    }, undefined as {text: string, error: string} | undefined)
 
-    // The form waits for the stored text under Loading: an empty box that took
-    // typing before the answer arrived had what was typed written over by it.
-    const [prompt, setPrompt] = createSignal(() => stored().text)
+    // The form waits for the stored text: an empty box that took typing before
+    // the answer arrived had what was typed written over by it.
+    const [prompt, setPrompt] = createSignal(() => stored()?.text ?? '')
     const [saveError, setSaveError] = createSignal('')
-    const error = () => saveError() || stored().error
+    const error = () => saveError() || stored()?.error || ''
     const [saving, setSaving] = createSignal(false)
 
     const save = async () => {
@@ -79,7 +81,7 @@ const BoardPromptsDialog = (props: Props) => {
             subtitle={<span>{intl.formatMessage({id: 'BoardPrompts.subtitle', defaultMessage: 'Said first to every agent that works on this board — in a session a column starts, and in a conversation somebody opens.'})}</span>}
             onClose={props.onClose}
         >
-            <Loading>
+            <Show when={stored()}>
                 <div class='BoardPromptsDialog__content'>
                     <textarea
                         rows={10}
@@ -114,7 +116,7 @@ const BoardPromptsDialog = (props: Props) => {
                         <div class='BoardPromptsDialog__error'>{error()}</div>
                     </Show>
                 </div>
-            </Loading>
+            </Show>
         </Dialog>
     )
 }
