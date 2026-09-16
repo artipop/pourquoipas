@@ -14,7 +14,8 @@ import Dialog from '../dialog'
 
 import {sendFlashMessage} from '../flashMessages'
 
-import {agentBindings} from './bindings'
+import {goApp} from '../../goBridge'
+
 import {invalidateBoardAgents} from './boardAgents'
 import {textToServers} from './mcpServers'
 import AgentQuickAdd from './agentQuickAdd'
@@ -49,7 +50,7 @@ type Registry = {
 // readRegistry is what the steps show back: the names already registered. The
 // plan says whether a question is answered; this says what the answer was.
 export async function readRegistry(boardId: string): Promise<Registry | null> {
-    const bindings = agentBindings()
+    const bindings = goApp()
     if (!bindings?.ListAgentWorkdirs || !bindings.ListAgents) {
         return null
     }
@@ -72,7 +73,7 @@ const STEP_DONE: SetupStepKind = 'done'
 
 const BoardSetupWizard = (props: Props) => {
     const intl = useIntl()
-    const bindings = agentBindings()
+    const bindings = goApp()
 
     const [plan, refreshPlan] = createSetupPlan(() => props.board)
     const [step, setStep] = createSignal<SetupStepKind>(STEP_WORKDIR)

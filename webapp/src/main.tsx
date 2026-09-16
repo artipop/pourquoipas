@@ -56,9 +56,7 @@ const MainApp = () => {
 // appears, not corrected after it. One binding call over loopback; a build
 // with no Go side resolves it at once.
 async function boot() {
-    // First, because everything after it may call Go: the settings below come
-    // from the install, through the bindings this puts on the page.
-    await installGoBridge()
+    installGoBridge()
 
     await hydrateUserSettings()
     initThemes()

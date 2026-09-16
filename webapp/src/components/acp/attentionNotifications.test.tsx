@@ -5,6 +5,8 @@ import '@testing-library/jest-dom'
 import {mockAppStore, wrapIntl} from '../../testUtils'
 import {AppStoreProvider, RootState} from '../../store'
 
+import {fakeGoSide} from '../../test/goSide'
+
 import {setAgentNotifications} from './attention'
 import AttentionNotifications from './attentionNotifications'
 
@@ -63,12 +65,12 @@ describe('components/acp/attentionNotifications', () => {
     })
 
     afterEach(() => {
-        delete anyWindow.go
+        fakeGoSide()
         delete anyWindow.runtime
     })
 
     it('says nothing until an agent is waiting', async () => {
-        anyWindow.go = {main: {App: attentionBindings()}}
+        fakeGoSide(attentionBindings())
 
         open()
 
@@ -78,7 +80,7 @@ describe('components/acp/attentionNotifications', () => {
     // The point of the whole thing: the question was asked in a window nobody
     // is looking at, so the notification is what carries it to the person.
     it('names the card and the agent that is waiting', async () => {
-        anyWindow.go = {main: {App: attentionBindings()}}
+        fakeGoSide(attentionBindings())
 
         open()
         await waitFor(() => expect(handlers['acp:attention']).toBeDefined())
@@ -91,7 +93,7 @@ describe('components/acp/attentionNotifications', () => {
     // An answered question is not something to be told about any more, and
     // nobody clicked anything to make that true.
     it('takes the notification back when the wait ends', async () => {
-        anyWindow.go = {main: {App: attentionBindings()}}
+        fakeGoSide(attentionBindings())
 
         open()
         await waitFor(() => expect(handlers['acp:attention']).toBeDefined())
@@ -106,7 +108,7 @@ describe('components/acp/attentionNotifications', () => {
     // with: the agent is asking inside its own CLI, and a row of buttons of ours
     // beside a copy of the question was a second interface for one exchange.
     it('says what is being asked and offers the terminal rather than an answer', async () => {
-        anyWindow.go = {main: {App: attentionBindings()}}
+        fakeGoSide(attentionBindings())
 
         open()
         await waitFor(() => expect(handlers['acp:attention']).toBeDefined())
@@ -122,7 +124,7 @@ describe('components/acp/attentionNotifications', () => {
     // would start a second CLI beside the one that is waiting.
     it('opens the terminal the agent is waiting in', async () => {
         const bindings = attentionBindings()
-        anyWindow.go = {main: {App: bindings}}
+        fakeGoSide(bindings)
 
         open()
         await waitFor(() => expect(handlers['acp:attention']).toBeDefined())
@@ -139,7 +141,7 @@ describe('components/acp/attentionNotifications', () => {
     // Waving one question away is not a standing refusal: the agent asking
     // again is the whole reason the notification exists.
     it('says it again when the same agent stops with a new question', async () => {
-        anyWindow.go = {main: {App: attentionBindings()}}
+        fakeGoSide(attentionBindings())
 
         open()
         await waitFor(() => expect(handlers['acp:attention']).toBeDefined())
@@ -159,7 +161,7 @@ describe('components/acp/attentionNotifications', () => {
     // person who has dealt with it means all of them.
     it('tells the app the wait has been seen', async () => {
         const bindings = attentionBindings()
-        anyWindow.go = {main: {App: bindings}}
+        fakeGoSide(bindings)
 
         open()
         await waitFor(() => expect(handlers['acp:attention']).toBeDefined())
@@ -175,7 +177,7 @@ describe('components/acp/attentionNotifications', () => {
     // person has just been looking at. It is the same wait, and they have been
     // told.
     it('stays quiet when the same wait is raised again', async () => {
-        anyWindow.go = {main: {App: attentionBindings()}}
+        fakeGoSide(attentionBindings())
 
         open()
         await waitFor(() => expect(handlers['acp:attention']).toBeDefined())
@@ -196,7 +198,7 @@ describe('components/acp/attentionNotifications', () => {
     // stopped again is asking a new question, and the app says so by sending the
     // wait without the acknowledgement.
     it('says it again when the terminal comes back to life', async () => {
-        anyWindow.go = {main: {App: attentionBindings()}}
+        fakeGoSide(attentionBindings())
 
         open()
         await waitFor(() => expect(handlers['acp:attention']).toBeDefined())
@@ -214,7 +216,7 @@ describe('components/acp/attentionNotifications', () => {
     // A page that opens after somebody else has dealt with the wait must not
     // start by announcing it: the list carries the acknowledgement too.
     it('starts quiet about a wait somebody has already seen', async () => {
-        anyWindow.go = {main: {App: attentionBindings([{...waitingOnCard, acked: true}])}}
+        fakeGoSide(attentionBindings([{...waitingOnCard, acked: true}]))
 
         open()
         await waitFor(() => expect(handlers['acp:attention']).toBeDefined())
@@ -223,7 +225,7 @@ describe('components/acp/attentionNotifications', () => {
     })
 
     it('interrupts nobody who turned notifications off', async () => {
-        anyWindow.go = {main: {App: attentionBindings([waitingOnCard])}}
+        fakeGoSide(attentionBindings([waitingOnCard]))
         setAgentNotifications(false)
 
         open()
@@ -237,7 +239,7 @@ describe('components/acp/attentionNotifications', () => {
     // Two agents waiting is two notifications and a line saying so — what it
     // must never look like is one notification arriving twice.
     it('counts the waits and draws each of them once', async () => {
-        anyWindow.go = {main: {App: attentionBindings()}}
+        fakeGoSide(attentionBindings())
 
         open()
         await waitFor(() => expect(handlers['acp:attention']).toBeDefined())
@@ -260,7 +262,7 @@ describe('components/acp/attentionNotifications', () => {
     // the ones working somebody else's card. What decides is the card's own
     // the assignee field (attentionAudience.ts, docs/teamwork.md).
     it('says nothing to a teammate about a card assigned to somebody else', async () => {
-        anyWindow.go = {main: {App: attentionBindings()}}
+        fakeGoSide(attentionBindings())
 
         open({
             clientConfig: {value: {teamMode: true}} as any,
@@ -275,7 +277,7 @@ describe('components/acp/attentionNotifications', () => {
     })
 
     it('tells the teammate the card is assigned to', async () => {
-        anyWindow.go = {main: {App: attentionBindings()}}
+        fakeGoSide(attentionBindings())
 
         open({
             clientConfig: {value: {teamMode: true}} as any,
@@ -290,7 +292,7 @@ describe('components/acp/attentionNotifications', () => {
     })
 
     it('says nothing in a window that is drawing a terminal', async () => {
-        anyWindow.go = {main: {App: attentionBindings([waitingOnCard])}}
+        fakeGoSide(attentionBindings([waitingOnCard]))
         const where = window.location.pathname
         window.history.replaceState({}, '', '/acp/terminal/term-1')
 
@@ -305,7 +307,7 @@ describe('components/acp/attentionNotifications', () => {
     // A page opened after the agent stopped has no event to hear: the list is
     // what it starts from.
     it('starts from what is already waiting', async () => {
-        anyWindow.go = {main: {App: attentionBindings([waitingOnCard])}}
+        fakeGoSide(attentionBindings([waitingOnCard]))
 
         open()
 

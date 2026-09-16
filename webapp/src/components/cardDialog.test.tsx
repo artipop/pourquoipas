@@ -10,6 +10,8 @@ import {TestBlockFactory} from '../test/testBlockFactory'
 import {mockAppStore, mockDOM, wrapDNDIntl} from '../testUtils'
 import {AppStoreProvider} from '../store'
 
+import {fakeGoSide} from '../test/goSide'
+
 import CardDialog from './cardDialog'
 
 vi.mock('../mutator')
@@ -23,10 +25,10 @@ vi.mock('./acp/terminalPage', () => ({
     default: (props: {terminalId?: string}) => <div data-testid='terminal'>{props.terminalId}</div>,
 }))
 
-// The desktop bindings are global, and a test left holding them decides for
+// A Go side a test installed outlives it, and a test left holding one decides for
 // every test after it whether this app has an agent integration at all.
 afterEach(() => {
-    delete (window as any).go
+    fakeGoSide()
 })
 
 const mockedUtils = vi.mocked(Utils)
@@ -49,6 +51,7 @@ describe('components/cardDialog', () => {
     card.createdBy = 'user-id-1'
 
     const state = {
+
         // One person by default, which is what an install is until somebody
         // turns team mode on: the tests about what a team offers say so
         // themselves (docs/teamwork.md).
@@ -340,8 +343,8 @@ describe('components/cardDialog', () => {
             GetCardAgent: vi.fn().mockResolvedValue('{}'),
             OpenCardTerminal: vi.fn(),
             ListAgentAccounts: vi.fn().mockResolvedValue('[]'),
-        };
-        (window as any).go = {main: {App: bindings}}
+        }
+        fakeGoSide(bindings)
 
         render(() => wrapDNDIntl(() =>
             <AppStoreProvider store={store}>
@@ -370,8 +373,8 @@ describe('components/cardDialog', () => {
             GetCardAgent: vi.fn().mockResolvedValue('{}'),
             GetCardDiff: vi.fn(),
             ListAgentAccounts: vi.fn().mockResolvedValue('[]'),
-        };
-        (window as any).go = {main: {App: bindings}}
+        }
+        fakeGoSide(bindings)
 
         const {unmount} = render(() => wrapDNDIntl(() =>
             <AppStoreProvider store={store}>
@@ -421,8 +424,8 @@ describe('components/cardDialog', () => {
             GetCardAgent: vi.fn().mockResolvedValue(JSON.stringify({folder: '/tmp/proj'})),
             OpenCardTerminal: vi.fn().mockResolvedValue(JSON.stringify({id: 'term-7'})),
             ListAgentAccounts: vi.fn().mockResolvedValue(JSON.stringify([{name: 'claude', username: 'claude'}])),
-        };
-        (window as any).go = {main: {App: bindings}}
+        }
+        fakeGoSide(bindings)
 
         const {container} = render(() => wrapDNDIntl(() =>
             <AppStoreProvider store={store}>

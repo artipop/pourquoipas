@@ -4,7 +4,8 @@ import {Board} from '../../blocks/board'
 import mutator from '../../mutator'
 import {IntlShape} from '../../intl'
 
-import {agentBindings} from './bindings'
+import {goApp} from '../../goBridge'
+
 import {Automation, BOARD_PROP_COLUMNS, BOARD_PROP_FLOWS, boardAutomationProperties, readBoardAutomation, readBoardSetup} from './automation'
 
 // Turning a board somebody has built into a template other boards can start
@@ -18,14 +19,14 @@ import {Automation, BOARD_PROP_COLUMNS, BOARD_PROP_FLOWS, boardAutomationPropert
 // two to be missing.
 
 export function isSaveAsTemplateAvailable(): boolean {
-    return Boolean(agentBindings()?.ExportBoardAutomation)
+    return Boolean(goApp()?.ExportBoardAutomation)
 }
 
 // exportAutomation reads what the board runs. A build with no agent side, or a
 // board with nothing configured, gives an empty automation rather than an
 // error: the template is still worth making for its columns alone.
 export async function exportAutomation(boardId: string): Promise<Automation> {
-    const bindings = agentBindings()
+    const bindings = goApp()
     if (!bindings?.ExportBoardAutomation) {
         return {columns: [], flows: []}
     }

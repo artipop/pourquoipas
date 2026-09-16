@@ -5,6 +5,8 @@ import '@testing-library/jest-dom'
 import {mockAppStore, wrapIntl, wrapStore} from '../../testUtils'
 import {TestBlockFactory} from '../../test/testBlockFactory'
 
+import {fakeGoSide} from '../../test/goSide'
+
 import CardTerminal from './cardTerminal'
 
 // The panel is the terminal page plus the frame around it. What the page draws
@@ -14,7 +16,6 @@ vi.mock('./terminalPage', () => ({
     default: (props: {terminalId?: string}) => <div data-testid='terminal'>{props.terminalId}</div>,
 }))
 
-const anyWindow = window as any
 const board = TestBlockFactory.createBoard()
 
 function stubBindings(overrides: Record<string, unknown> = {}) {
@@ -23,13 +24,13 @@ function stubBindings(overrides: Record<string, unknown> = {}) {
         GetCardAgent: vi.fn().mockResolvedValue('{}'),
         ...overrides,
     }
-    anyWindow.go = {main: {App: bindings}}
+    fakeGoSide(bindings)
     return bindings
 }
 
 describe('components/acp/cardTerminal', () => {
     afterEach(() => {
-        delete anyWindow.go
+        fakeGoSide()
         vi.clearAllMocks()
     })
 
@@ -388,7 +389,7 @@ describe('components/acp/cardTerminal', () => {
 // the whole row is the click, not the name inside it.
 describe('components/acp/cardTerminal rows', () => {
     afterEach(() => {
-        delete (window as any).go
+        fakeGoSide()
         vi.clearAllMocks()
     })
 

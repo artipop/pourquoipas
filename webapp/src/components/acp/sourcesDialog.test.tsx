@@ -5,9 +5,9 @@ import '@testing-library/jest-dom'
 import {Board, createBoard} from '../../blocks/board'
 import {wrapIntl} from '../../testUtils'
 
-import SourcesDialog, {ingestURL, isSourcesAvailable} from './sourcesDialog'
+import {fakeGoSide} from '../../test/goSide'
 
-const anyWindow = window as any
+import SourcesDialog, {ingestURL, isSourcesAvailable} from './sourcesDialog'
 
 const board: Board = {...createBoard(), id: 'board1'}
 
@@ -22,7 +22,7 @@ describe('components/acp/sourcesDialog', () => {
     beforeEach(() => vi.clearAllMocks())
 
     afterEach(() => {
-        delete anyWindow.go
+        fakeGoSide()
     })
 
     it('is inert without desktop bindings', () => {
@@ -37,11 +37,11 @@ describe('components/acp/sourcesDialog', () => {
     })
 
     it('shows the board its own sources, and where to feed them', async () => {
-        anyWindow.go = {main: {App: {
+        fakeGoSide({
             ListSources: vi.fn().mockResolvedValue(JSON.stringify([
                 {name: 'phone', boardId: 'board1', enabled: true, noisy: true},
             ])),
-        }}}
+        })
 
         renderDialog()
 
@@ -57,7 +57,7 @@ describe('components/acp/sourcesDialog', () => {
             name: 'kaiten', boardId: 'board1', enabled: true, plugin: 'kaiten', token: 'ingest-token',
         }))
         const SetSourceCredential = vi.fn().mockResolvedValue(undefined)
-        anyWindow.go = {main: {App: {
+        fakeGoSide({
             ListSources: vi.fn().mockResolvedValue('[]'),
             ListSourcePlugins: vi.fn().mockResolvedValue(JSON.stringify([{
                 name: 'kaiten',
@@ -70,7 +70,7 @@ describe('components/acp/sourcesDialog', () => {
             AddSource,
             SetSourceCredential,
             SourceEvents: vi.fn().mockResolvedValue('[]'),
-        }}}
+        })
 
         renderDialog()
 
@@ -103,7 +103,7 @@ describe('components/acp/sourcesDialog', () => {
     // A plugin that will not start is the failure this integration has: it has
     // no address to test with, so the dialog has to say what it is doing.
     it('says what a plugin source is doing instead of showing an address', async () => {
-        anyWindow.go = {main: {App: {
+        fakeGoSide({
             ListSources: vi.fn().mockResolvedValue(JSON.stringify([
                 {name: 'kaiten', boardId: 'board1', enabled: true, plugin: 'kaiten'},
             ])),
@@ -111,7 +111,7 @@ describe('components/acp/sourcesDialog', () => {
             SourceStatuses: vi.fn().mockResolvedValue(JSON.stringify([
                 {source: 'kaiten', state: 'error', error: 'у MCP-сервера нет инструмента list_my_cards'},
             ])),
-        }}}
+        })
 
         renderDialog()
 
@@ -127,11 +127,11 @@ describe('components/acp/sourcesDialog', () => {
         const AddSource = vi.fn().mockResolvedValue(JSON.stringify({
             name: 'phone', boardId: 'board1', enabled: true, token: 'secret-token',
         }))
-        anyWindow.go = {main: {App: {
+        fakeGoSide({
             ListSources: vi.fn().mockResolvedValue('[]'),
             AddSource,
             SourceEvents: vi.fn().mockResolvedValue('[]'),
-        }}}
+        })
 
         renderDialog()
         await userEvent.type(await screen.findByPlaceholderText(/Name of the source/), 'phone')
@@ -146,7 +146,7 @@ describe('components/acp/sourcesDialog', () => {
     // "Why did nothing happen" is the only question a source is ever asked, and
     // an item that matched no rule is the commonest answer.
     it('says what became of what a source brought', async () => {
-        anyWindow.go = {main: {App: {
+        fakeGoSide({
             ListSources: vi.fn().mockResolvedValue(JSON.stringify([
                 {name: 'phone', boardId: 'board1', enabled: true, noisy: false},
             ])),
@@ -154,7 +154,7 @@ describe('components/acp/sourcesDialog', () => {
                 {id: 2, source: 'phone', outcome: 'inbox', externalId: 'n2'},
                 {id: 1, source: 'phone', outcome: 'created', rule: 'доставка'},
             ])),
-        }}}
+        })
 
         renderDialog()
         await userEvent.click(await screen.findByText('Log'))
@@ -164,10 +164,10 @@ describe('components/acp/sourcesDialog', () => {
     })
 
     it('reports what the desktop refused', async () => {
-        anyWindow.go = {main: {App: {
+        fakeGoSide({
             ListSources: vi.fn().mockResolvedValue('[]'),
             AddSource: vi.fn().mockRejectedValue(new Error('источник "phone" уже есть')),
-        }}}
+        })
 
         renderDialog()
         await userEvent.type(await screen.findByPlaceholderText(/Name of the source/), 'phone')

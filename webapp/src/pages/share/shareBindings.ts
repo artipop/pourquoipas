@@ -1,6 +1,6 @@
 // The Wails-generated Go bindings are PascalCase methods, not constructors.
 /* eslint-disable new-cap */
-import {agentBindings} from '../../components/acp/bindings'
+import {goApp} from '../../goBridge'
 
 // What the share dialog needs from Go, beyond the board list it shares with the
 // phone (bindings/boards.ts): the send, and the way to close the window it was
@@ -18,7 +18,7 @@ export type ShareResult = {
 }
 
 export async function shareItem(boardId: string, title: string, url: string, note: string): Promise<ShareResult> {
-    const bindings = agentBindings()
+    const bindings = goApp()
     if (!bindings?.ShareItem) {
         throw new Error('отправка недоступна')
     }
@@ -33,7 +33,7 @@ export async function shareItem(boardId: string, title: string, url: string, not
 // is best-effort: the dialog has already said what happened by the time it is
 // called.
 export async function closeShare(): Promise<void> {
-    const bindings = agentBindings()
+    const bindings = goApp()
     if (!bindings?.CloseShareWindow) {
         return
     }

@@ -6,12 +6,13 @@ import Mutator from '../../mutator'
 import {wrapIntl} from '../../testUtils'
 import {Board, createBoard} from '../../blocks/board'
 
+import {fakeGoSide} from '../../test/goSide'
+
 import TemplateEditor from './templateEditor'
 import {BOARD_PROP_COLUMNS, BOARD_PROP_FLOWS, BOARD_PROP_SETUP, SUCCESS} from './automation'
 
 vi.mock('../../mutator')
 
-const anyWindow = window as any
 const mockedMutator = vi.mocked(Mutator)
 
 const template: Board = {
@@ -59,13 +60,13 @@ function stubBindings() {
         ListAgents: vi.fn().mockResolvedValue('[]'),
         ListDeployTargets: vi.fn().mockResolvedValue('[]'),
     }
-    anyWindow.go = {main: {App: bindings}}
+    fakeGoSide(bindings)
     return bindings
 }
 
 describe('components/acp/templateEditor', () => {
     afterEach(() => {
-        delete anyWindow.go
+        fakeGoSide()
         vi.clearAllMocks()
     })
 

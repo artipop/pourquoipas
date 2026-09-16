@@ -63,22 +63,20 @@ The Go code is platform-agnostic — the same files build for every OS:
   under — the standard answer to DNS rebinding.
 - `proxy.go` — a reverse proxy to the in-process server, sitting behind the
   front door on everything but `/wails/`. It injects a bootstrap `<script>` into
-  the served HTML that seeds the single-user session token into `localStorage`,
-  **tells the page there is a Go side** (see below), and wires
-  `window.openInNewBrowser` to open external links in the system browser. A
-  capture-phase click handler sends **every** absolute http(s) anchor there,
-  same-origin ones excepted. It deliberately does not defer to the inline
-  `onclick` that `Utils.htmlFromMarkdown` puts on markdown links: when that
-  handler does not run, the click is simply lost — the webview cannot navigate
-  to an outside origin either — which is what made preview links in card
-  comments dead.
+  the served HTML that seeds the single-user session token into `localStorage`
+  and **tells the page there is a Go side** (see below), and nothing else.
 
   **The bindings** are Wails' own, generated from `App` into
   `webapp/bindings` (`wails3 task generate:bindings`) and committed. The page
-  bundles `@wailsio/runtime` and calls each method by id; `goBridge.ts` loads
-  them into `window.go.main.App` when the bootstrap has set
-  `window.hasGoSide`, and in a plain browser, where nothing injects this
-  script, it loads nothing and the desktop-only UI stays inert.
+  imports them as a template's page does, over the `@wailsio/runtime` it
+  bundles, and calls each method by id; `goApp()` in `goBridge.ts` hands them
+  out when the bootstrap has set `window.hasGoSide`. The same module wires
+  `window.openInNewBrowser` to `App.OpenInBrowser`, with a capture-phase click
+  handler that sends **every** absolute http(s) anchor there, same-origin ones
+  excepted. It deliberately does not defer to the inline `onclick` that
+  `Utils.htmlFromMarkdown` puts on markdown links: when that handler does not
+  run, the click is simply lost — the webview cannot navigate to an outside
+  origin either — which is what made preview links in card comments dead.
 - `internal/acp/terminal.go`, `terminalws.go` — **the way a person works a card with
   an agent**, and the only one: the agent's own CLI running in a pty in the card's
   own directory, drawn by xterm.js in a second window of the app and wired to the pty over
@@ -112,7 +110,7 @@ The Go code is platform-agnostic — the same files build for every OS:
   `authKey` in the same file skips that. The node's state lives beside the
   settings, so later launches come up by themselves.
 - `app.go` — the bound service. Its exported methods are what the frontend
-  calls; `OpenInBrowser` is the one the bootstrap script uses.
+  calls; `OpenInBrowser` is the one every outward link ends in.
 - `mode_desktop.go` / `mode_server.go` — everything that differs between a
   window and a server: the front door, the window, and the folder picker (a
   server build has no native dialog and says so, rather than returning an empty
@@ -130,9 +128,7 @@ Builds are **native per platform** (each on its own machine/CI runner) — the
 desktop build needs cgo on macOS and Linux, for Wails itself, and cgo does not
 cross-compile with the host toolchain; `wails3 task setup:docker` builds the
 image that can, if a Mac has to produce a Linux binary. Windows is pure Go
-(SQLite from `modernc.org/sqlite`) and cross-compiles from anywhere. Nothing
-generates JS bindings: the webapp calls bound methods by name through the
-bridge above, which is what v2's `-skipbindings` meant.
+(SQLite from `modernc.org/sqlite`) and cross-compiles from anywhere.
 
 **[How a card gets worked on](docs/flows.md)** walks through the whole thing for
 somebody using the board: what happens when a card lands in a column, when a
@@ -158,23 +154,15 @@ they survive a non-empty base path.
 and committed; `@wailsio/runtime` in `webapp/package.json` is pinned to the
 Wails version in `go.mod`. `bindings_test.go` checks both.
 
-**Three globals**, the first two set by the bootstrap script in `proxy.go`:
-
-- `window.hasGoSide` — there is a Go side behind this origin. Nothing but the
-  front door injects the script, so its presence is the answer.
-- `window.openInNewBrowser` — hands a link to the system browser rather than the
-  webview. Called from `utils.ts`, `csvExporter.ts`, `archiver.ts` and the
-  sidebar user menu.
-- `window.go.main.App.*` — the generated bindings, put there by the page itself
-  (`goBridge.ts`) when `hasGoSide` is set. This is how the ACP UI reaches the
-  agent, repo, proxy and flow registries.
+**One global**, set by the bootstrap script in `proxy.go`:
+`window.hasGoSide` — there is a Go side behind this origin. Nothing but the
+front door injects the script, so its presence is the answer, and every call
+into Go asks it first (`goApp()`), which is what keeps the desktop-only UI inert
+where nothing answers. The page sets `window.openInNewBrowser` itself, because
+markup generated by `utils.ts` calls it from an inline handler.
 
 There is deliberately **no `window.webSocketBaseURL`** here, unlike v2:
 `frontdoor.go` owns the origin, so `/ws` opens from the page's own origin.
-
-**Every one of them is feature-detected at the call site**, because the same
-bundle also runs in a browser, where none of them exist. That guard is what keeps the desktop-only UI inert elsewhere, and it is
-the one thing a rewrite must not quietly drop.
 
 ## Prerequisites
 

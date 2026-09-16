@@ -12,6 +12,8 @@ import octoClient from '../../octoClient'
 
 import {createTextBlock} from '../../blocks/textBlock'
 
+import {fakeGoSide} from '../../test/goSide'
+
 import CardDetail from './cardDetail'
 
 global.fetch = FetchMock.fn
@@ -23,10 +25,10 @@ beforeEach(() => {
     FetchMock.fn.mockReset()
 })
 
-// The desktop bindings are global, and a card left holding them decides for
+// A Go side a test installed outlives it, and a card left holding one decides for
 // every test after it whether this app has an agent integration at all.
 afterEach(() => {
-    delete (window as any).go
+    fakeGoSide()
 })
 
 // This is needed to run EasyMDE in tests.
@@ -65,8 +67,8 @@ describe('components/cardDetail/CardDetail', () => {
             OpenCardTerminal: vi.fn(),
             ListAgents: vi.fn().mockResolvedValue('[]'),
             ListAgentWorkdirs: vi.fn().mockResolvedValue('[]'),
-        };
-        (window as any).go = {main: {App: bindings}}
+        }
+        fakeGoSide(bindings)
 
         const store = mockAppStore({
             users: {

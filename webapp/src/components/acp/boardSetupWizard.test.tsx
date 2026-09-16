@@ -8,14 +8,14 @@ import {wrapIntl} from '../../testUtils'
 
 import mutator from '../../mutator'
 
+import {fakeGoSide} from '../../test/goSide'
+
 import {SetupPlan, SetupStep, SetupStepKind} from './boardSetup'
 
 import BoardSetupWizard, {readRegistry} from './boardSetupWizard'
 
 vi.mock('../../mutator')
 const mockedMutator = vi.mocked(mutator)
-
-const anyWindow = window as any
 
 // One board for the whole file: its id is what the wizard reports a skip
 // under, so a fresh one per call would compare against somebody else's.
@@ -59,13 +59,13 @@ function stubBindings(overrides: Record<string, unknown> = {}) {
         SeedBoardAutomation: vi.fn().mockResolvedValue(undefined),
         ...overrides,
     }
-    anyWindow.go = {main: {App: bindings}}
+    fakeGoSide(bindings)
     return bindings
 }
 
 describe('components/acp/boardSetupWizard', () => {
     afterEach(() => {
-        delete anyWindow.go
+        fakeGoSide()
         localStorage.clear()
         vi.clearAllMocks()
     })

@@ -9,7 +9,8 @@ import Button from '../../widgets/buttons/button'
 import Switch from '../../widgets/switch'
 import {sendFlashMessage} from '../flashMessages'
 
-import {agentBindings} from './bindings'
+import {goApp} from '../../goBridge'
+
 import {agentNotificationsOn, setAgentNotifications} from './attention'
 import {isAgentsAvailable} from './agentsPanel'
 import PromptField from './promptField'
@@ -28,7 +29,7 @@ import './machineMiscPanel.scss'
 
 const MachineMiscPanel = () => {
     const intl = useIntl()
-    const bindings = agentBindings()
+    const bindings = goApp()
 
     const [prompt, setPrompt] = createSignal('')
     const [savedPrompt, setSavedPrompt] = createSignal('')

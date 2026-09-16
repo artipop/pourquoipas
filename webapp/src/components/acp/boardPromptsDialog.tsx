@@ -10,7 +10,7 @@ import Dialog from '../dialog'
 
 import {createLoader} from '../../hooks/loader'
 
-import {agentBindings} from './bindings'
+import {goApp} from '../../goBridge'
 
 import './boardPromptsDialog.scss'
 
@@ -31,7 +31,7 @@ import './boardPromptsDialog.scss'
 // said in the folder, by the AGENTS.md its CLI reads.
 
 export function isBoardPromptsAvailable(): boolean {
-    return Boolean(agentBindings()?.GetBoardPrompt)
+    return Boolean(goApp()?.GetBoardPrompt)
 }
 
 type Props = {
@@ -41,7 +41,7 @@ type Props = {
 
 const BoardPromptsDialog = (props: Props) => {
     const intl = useIntl()
-    const bindings = agentBindings()
+    const bindings = goApp()
 
     const [stored] = createLoader(async (): Promise<{text: string, error: string}> => {
         try {

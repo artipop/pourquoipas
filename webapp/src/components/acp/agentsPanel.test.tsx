@@ -4,14 +4,14 @@ import '@testing-library/jest-dom'
 
 import {chooseOption, optionsOf, wrapIntl} from '../../testUtils'
 
+import {fakeGoSide} from '../../test/goSide'
+
 import AgentsPanel, {isAgentsAvailable, keptOptions, remoteControlOf, withRemoteControl} from './agentsPanel'
 import {textToServers} from './mcpServers'
 
-const anyWindow = window as any
-
 describe('components/acp/agentsPanel', () => {
     afterEach(() => {
-        delete anyWindow.go
+        fakeGoSide()
         vi.clearAllMocks()
     })
 
@@ -28,7 +28,7 @@ describe('components/acp/agentsPanel', () => {
             UpdateAgent: vi.fn(),
             RemoveAgent: vi.fn(),
         }
-        anyWindow.go = {main: {App: bindings}}
+        fakeGoSide(bindings)
         expect(isAgentsAvailable()).toBe(true)
 
         render(() => wrapIntl(() =>
@@ -63,7 +63,7 @@ describe('components/acp/agentsPanel', () => {
             UpdateAgent: vi.fn(),
             RemoveAgent: vi.fn(),
         }
-        anyWindow.go = {main: {App: bindings}}
+        fakeGoSide(bindings)
 
         render(() => wrapIntl(() =>
             <AgentsPanel/>,
@@ -111,7 +111,7 @@ describe('components/acp/agentsPanel', () => {
             UpdateAgent: vi.fn(),
             RemoveAgent: vi.fn(),
         }
-        anyWindow.go = {main: {App: bindings}}
+        fakeGoSide(bindings)
 
         render(() => wrapIntl(() =>
             <AgentsPanel/>,
@@ -140,7 +140,7 @@ describe('components/acp/agentsPanel', () => {
             UpdateAgent: vi.fn(),
             RemoveAgent: vi.fn(),
         }
-        anyWindow.go = {main: {App: bindings}}
+        fakeGoSide(bindings)
 
         render(() => wrapIntl(() =>
             <AgentsPanel/>,
@@ -176,7 +176,7 @@ describe('components/acp/agentsPanel', () => {
             UpdateAgent: vi.fn(),
             RemoveAgent: vi.fn(),
         }
-        anyWindow.go = {main: {App: bindings}}
+        fakeGoSide(bindings)
 
         render(() => wrapIntl(() =>
             <AgentsPanel/>,
@@ -218,7 +218,7 @@ describe('components/acp/agentsPanel', () => {
             UpdateAgent: vi.fn(),
             RemoveAgent: vi.fn(),
         }
-        anyWindow.go = {main: {App: bindings}}
+        fakeGoSide(bindings)
 
         render(() => wrapIntl(() =>
             <AgentsPanel/>,
@@ -248,7 +248,7 @@ describe('components/acp/agentsPanel', () => {
             UpdateAgent: vi.fn().mockResolvedValue('{}'),
             RemoveAgent: vi.fn(),
         }
-        anyWindow.go = {main: {App: bindings}}
+        fakeGoSide(bindings)
 
         render(() => wrapIntl(() =>
             <AgentsPanel/>,
@@ -285,7 +285,7 @@ describe('components/acp/agentsPanel', () => {
             UpdateAgent: vi.fn().mockResolvedValue('{}'),
             RemoveAgent: vi.fn(),
         }
-        anyWindow.go = {main: {App: bindings}}
+        fakeGoSide(bindings)
 
         render(() => wrapIntl(() =>
             <AgentsPanel/>,
@@ -317,7 +317,7 @@ describe('components/acp/agentsPanel', () => {
             UpdateAgent: vi.fn().mockResolvedValue('{}'),
             RemoveAgent: vi.fn(),
         }
-        anyWindow.go = {main: {App: bindings}}
+        fakeGoSide(bindings)
 
         render(() => wrapIntl(() =>
             <AgentsPanel/>,
@@ -345,7 +345,7 @@ describe('components/acp/agentsPanel', () => {
             UpdateAgent: vi.fn(),
             RemoveAgent: vi.fn(),
         }
-        anyWindow.go = {main: {App: bindings}}
+        fakeGoSide(bindings)
 
         render(() => wrapIntl(() =>
             <AgentsPanel/>,
@@ -383,7 +383,7 @@ describe('components/acp/agentsPanel', () => {
             UpdateAgent: vi.fn().mockResolvedValue('{}'),
             RemoveAgent: vi.fn(),
         }
-        anyWindow.go = {main: {App: bindings}}
+        fakeGoSide(bindings)
 
         render(() => wrapIntl(() =>
             <AgentsPanel/>,
@@ -418,7 +418,7 @@ describe('components/acp/agentsPanel', () => {
             UpdateAgent: vi.fn(),
             RemoveAgent: vi.fn(),
         }
-        anyWindow.go = {main: {App: bindings}}
+        fakeGoSide(bindings)
 
         render(() => wrapIntl(() =>
             <AgentsPanel/>,

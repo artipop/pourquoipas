@@ -1,6 +1,7 @@
 import {For, Show, onSettled} from 'solid-js'
 
-import {agentBindings} from './bindings'
+import {goApp} from '../../goBridge'
+
 import {cardAgentState, refreshCardAgent} from './cardAgentState'
 
 import './caseStamp.scss'
@@ -17,7 +18,7 @@ import './caseStamp.scss'
 // run an agent on is not a case yet.
 
 export function isCaseStampAvailable(): boolean {
-    return Boolean(agentBindings()?.GetCardAgent)
+    return Boolean(goApp()?.GetCardAgent)
 }
 
 type Props = {

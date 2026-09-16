@@ -1,6 +1,7 @@
+import {fakeGoSide} from '../../test/goSide'
+
 import {onAgentEvent} from './agentEvents'
 
-const anyWindow = window as any
 const anyGlobal = global as any
 
 // A socket a test can open, drop and inspect. It stands in for the polyfill in
@@ -37,12 +38,12 @@ describe('components/acp/agentEvents', () => {
         FakeSocket.instances = []
         realWebSocket = anyGlobal.WebSocket
         anyGlobal.WebSocket = FakeSocket
-        anyWindow.go = {main: {App: {ListAgentWorkdirs: vi.fn()}}}
+        fakeGoSide({ListAgentWorkdirs: vi.fn()})
     })
 
     afterEach(() => {
         anyGlobal.WebSocket = realWebSocket
-        delete anyWindow.go
+        fakeGoSide()
     })
 
     // The whole reason this module exists: the same page has to hear about
@@ -101,7 +102,7 @@ describe('components/acp/agentEvents', () => {
     // The same bundle runs in a browser and as a plugin, where there is no
     // desktop app behind the page and therefore no socket to open.
     it('opens nothing where there are no agents to hear about', () => {
-        delete anyWindow.go
+        fakeGoSide()
 
         const off = onAgentEvent('acp:session', () => undefined)
 

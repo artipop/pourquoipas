@@ -5,9 +5,9 @@ import '@testing-library/jest-dom'
 import {wrapIntl} from '../../testUtils'
 import {Board, createBoard} from '../../blocks/board'
 
-import BoardPromptsDialog from './boardPromptsDialog'
+import {fakeGoSide} from '../../test/goSide'
 
-const anyWindow = window as any
+import BoardPromptsDialog from './boardPromptsDialog'
 
 const board: Board = {...createBoard(), id: 'board-1'}
 
@@ -16,7 +16,7 @@ function stubBindings(stored = '') {
         GetBoardPrompt: vi.fn().mockResolvedValue(stored),
         SetBoardPrompt: vi.fn().mockResolvedValue(undefined),
     }
-    anyWindow.go = {main: {App: bindings}}
+    fakeGoSide(bindings)
     return bindings
 }
 
@@ -31,7 +31,7 @@ function open() {
 
 describe('components/acp/boardPromptsDialog', () => {
     afterEach(() => {
-        delete anyWindow.go
+        fakeGoSide()
         vi.clearAllMocks()
     })
 

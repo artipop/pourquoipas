@@ -4,8 +4,9 @@ import {For, Show, createSignal} from 'solid-js'
 
 import {useIntl} from '../../intl'
 
+import {goApp} from '../../goBridge'
+
 import {Attention, ackWait} from './attention'
-import {agentBindings} from './bindings'
 
 import './attentionAnswers.scss'
 
@@ -44,7 +45,7 @@ const AttentionAnswers = (props: {target: Attention}) => {
         setBusy(optionId)
         setFailed(false)
         try {
-            await agentBindings()?.AnswerQuestion?.(questionId, optionId, '')
+            await goApp()?.AnswerQuestion?.(questionId, optionId, '')
 
             // Answered is a stronger form of seen: the wait itself ends when the
             // agent hears back, and this takes the notification down now rather

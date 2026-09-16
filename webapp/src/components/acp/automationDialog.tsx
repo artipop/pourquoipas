@@ -11,7 +11,8 @@ import Button from '../../widgets/buttons/button'
 import Dialog from '../dialog'
 import {useWholeScreen} from '../wholeScreen'
 
-import {agentBindings} from './bindings'
+import {goApp} from '../../goBridge'
+
 import AutomationEditor from './automationEditor'
 import AgentQuickAdd from './agentQuickAdd'
 import {isAgentsAvailable} from './agentsPanel'
@@ -64,7 +65,7 @@ type Props = {
 
 const AutomationDialog = (props: Props) => {
     const intl = useIntl()
-    const bindings = agentBindings()
+    const bindings = goApp()
 
     // The canvas is as wide as the board, and the sidebar is not behind this
     // dialog the way it looks: a collapsed one floats its ☰ over the main frame

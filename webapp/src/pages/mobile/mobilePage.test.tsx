@@ -4,9 +4,9 @@ import '@testing-library/jest-dom'
 
 import {TestRouter, wrapIntl} from '../../testUtils'
 
-import MobilePage from './mobilePage'
+import {fakeGoSide} from '../../test/goSide'
 
-const anyWindow = window as any
+import MobilePage from './mobilePage'
 
 // The agent event socket, kept where a test can make an agent stop and wait.
 // vi.mock is hoisted above the imports, so what it captures has to be too.
@@ -93,14 +93,14 @@ describe('pages/mobile/mobilePage', () => {
     })
 
     afterEach(() => {
-        delete anyWindow.go
+        fakeGoSide()
     })
 
     // A phone is where you find out nothing needs you, most of the time — and
     // that is the screen it opens on, because it is the only one of the four
     // that cannot wait.
     it('opens on what is waiting and says so when nothing is', async () => {
-        anyWindow.go = {main: {App: bindings()}}
+        fakeGoSide(bindings())
 
         renderPage()
 
@@ -115,7 +115,7 @@ describe('pages/mobile/mobilePage', () => {
     // its own: the options it used to draw were a second interface for one
     // exchange, and the one that could not show what the agent had drawn.
     it('says which card is waiting and offers the terminal, not an answer', async () => {
-        anyWindow.go = {main: {App: bindings([waitingOnCard])}}
+        fakeGoSide(bindings([waitingOnCard]))
 
         renderPage()
 
@@ -129,7 +129,7 @@ describe('pages/mobile/mobilePage', () => {
     // at.
     it('opens a waiting terminal in the page rather than a window', async () => {
         const app = bindings([waitingOnCard])
-        anyWindow.go = {main: {App: app}}
+        fakeGoSide(app)
 
         renderPage()
 
@@ -142,7 +142,7 @@ describe('pages/mobile/mobilePage', () => {
     // on a tab is the only thing it can learn about the frame behind it: a
     // person has to see which desktop is asking without opening its tab.
     it('tells the app around it how many things are waiting', async () => {
-        anyWindow.go = {main: {App: bindings([askedOnCard, {...askedOnCard, key: 'q:q-2', questionId: 'q-2', cardId: 'card-2'}])}}
+        fakeGoSide(bindings([askedOnCard, {...askedOnCard, key: 'q:q-2', questionId: 'q-2', cardId: 'card-2'}]))
 
         const parent = {postMessage: vi.fn()}
         const original = Object.getOwnPropertyDescriptor(window, 'parent')
@@ -163,7 +163,7 @@ describe('pages/mobile/mobilePage', () => {
     // what says so.
     it('relists the terminals when one opens or closes', async () => {
         const app = bindings([], [])
-        anyWindow.go = {main: {App: app}}
+        fakeGoSide(app)
 
         renderPage()
 
@@ -181,7 +181,7 @@ describe('pages/mobile/mobilePage', () => {
     // The count on a tab has to be right before anybody opens it: a tab that
     // only counts once you are looking at it counts nothing.
     it('counts the inbox on its tab without the tab being open', async () => {
-        anyWindow.go = {main: {App: bindings([], [], [letter])}}
+        fakeGoSide(bindings([], [], [letter]))
 
         renderPage()
 
@@ -193,7 +193,7 @@ describe('pages/mobile/mobilePage', () => {
     // it belongs on and where on it.
     it('moves a card from the inbox onto a board and into a column', async () => {
         const app = bindings([], [], [letter])
-        anyWindow.go = {main: {App: app}}
+        fakeGoSide(app)
 
         renderPage()
 
@@ -212,7 +212,7 @@ describe('pages/mobile/mobilePage', () => {
     // there is something to read the moment it is reached.
     it('lists one board cards on the cards tab', async () => {
         const app = bindings()
-        anyWindow.go = {main: {App: app}}
+        fakeGoSide(app)
 
         renderPage()
 

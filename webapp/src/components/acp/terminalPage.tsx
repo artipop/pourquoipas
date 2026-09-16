@@ -6,7 +6,7 @@ import {useParams} from '@solidjs/router'
 
 import {useIntl} from '../../intl'
 
-import {agentBindings} from './bindings'
+import {goApp} from '../../goBridge'
 
 import '@xterm/xterm/css/xterm.css'
 import './terminalPage.scss'
@@ -74,7 +74,7 @@ const TerminalPage = (props: TerminalProps = {}): JSX.Element => {
     let writeToPty: (data: string) => void = () => undefined
 
     onSettled(() => {
-        const bindings = agentBindings()
+        const bindings = goApp()
         if (!bindings?.GetTerminalInfo) {
             setError(intl.formatMessage({id: 'acp.terminal.noBindings', defaultMessage: 'The terminal is only available in the desktop app.'}))
             return

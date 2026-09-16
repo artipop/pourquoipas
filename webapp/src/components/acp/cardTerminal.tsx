@@ -9,7 +9,8 @@ import {getCard} from '../../store/cards'
 import {useAppSelector} from '../../store/hooks'
 import CompassIcon from '../../widgets/icons/compassIcon'
 
-import {agentBindings} from './bindings'
+import {goApp} from '../../goBridge'
+
 import {onAgentEvent} from './agentEvents'
 import {cardAgentState, refreshCardAgent, type CardConversation} from './cardAgentState'
 import {isCardTerminalAvailable} from './liveTerminals'
@@ -56,7 +57,7 @@ type Props = {
 
 const CardTerminal = (props: Props) => {
     const intl = useIntl()
-    const bindings = agentBindings()
+    const bindings = goApp()
     const state = cardAgentState(props.cardId)
 
     // The card as the board sees it, watched for one reason: the conversation

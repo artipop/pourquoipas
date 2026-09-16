@@ -6,6 +6,8 @@ import {chooseOption, wrapIntl} from '../../testUtils'
 import {setupReactFlowEnvironment} from '../../test/reactFlowEnvironment'
 import {Board, createBoard} from '../../blocks/board'
 
+import {fakeGoSide} from '../../test/goSide'
+
 import {isAutomationAvailable} from './bindings'
 
 import AutomationDialog from './automationDialog'
@@ -14,8 +16,6 @@ import {SUCCESS} from './automation'
 setupReactFlowEnvironment()
 
 vi.mock('../../mutator')
-
-const anyWindow = window as any
 
 const board: Board = {
     ...createBoard(),
@@ -62,13 +62,13 @@ function stubBindings(overrides: Record<string, unknown> = {}) {
         RemoveFlow: vi.fn().mockResolvedValue(undefined),
         ...overrides,
     }
-    anyWindow.go = {main: {App: bindings}}
+    fakeGoSide(bindings)
     return bindings
 }
 
 describe('components/acp/automationDialog', () => {
     afterEach(() => {
-        delete anyWindow.go
+        fakeGoSide()
         vi.clearAllMocks()
     })
 

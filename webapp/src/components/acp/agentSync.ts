@@ -2,7 +2,8 @@
 /* eslint-disable new-cap */
 import {Board} from '../../blocks/board'
 
-import {agentBindings} from './bindings'
+import {goApp} from '../../goBridge'
+
 import {invalidateBoardAgents} from './boardAgents'
 
 // Making the machine's agents usable on a board: an account each, so the board
@@ -34,7 +35,7 @@ type SyncResult = {
 // left untouched, so this can ride along with an ordinary refresh without
 // churning the board or its undo history.
 export async function syncAgentsToBoard(board: Board): Promise<SyncResult> {
-    const bindings = agentBindings()
+    const bindings = goApp()
     const result: SyncResult = {accounts: 0}
     if (!bindings?.ListAgents || !board?.id) {
         return result

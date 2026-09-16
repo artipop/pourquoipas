@@ -7,7 +7,7 @@ import {useIntl} from '../../intl'
 import {Board} from '../../blocks/board'
 import CompassIcon from '../../widgets/icons/compassIcon'
 
-import {agentBindings} from './bindings'
+import {goApp} from '../../goBridge'
 
 import './folderChoices.scss'
 
@@ -44,7 +44,7 @@ type NamedEntry = {name: string}
 
 const FolderChoices = (props: Props) => {
     const intl = useIntl()
-    const bindings = agentBindings()
+    const bindings = goApp()
 
     const [workdirs, setWorkdirs] = createSignal<NamedEntry[]>([])
     const [error, setError] = createSignal('')

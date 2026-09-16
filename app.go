@@ -92,8 +92,8 @@ func (a *App) app() *application.App {
 }
 
 // OpenInBrowser opens the given URL in the user's default system browser.
-// Called by window.openInNewBrowser and the outward-link catch-all that
-// bootstrapScript injects.
+// Called by window.openInNewBrowser and the outward-link catch-all the page
+// installs (installGoBridge).
 func (a *App) OpenInBrowser(url string) {
 	wapp := a.app()
 	if wapp == nil || url == "" {

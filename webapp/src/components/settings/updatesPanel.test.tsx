@@ -4,9 +4,9 @@ import '@testing-library/jest-dom'
 
 import {wrapIntl} from '../../testUtils'
 
-import UpdatesPanel, {isUpdatesAvailable} from './updatesPanel'
+import {fakeGoSide} from '../../test/goSide'
 
-const anyWindow = window as any
+import UpdatesPanel, {isUpdatesAvailable} from './updatesPanel'
 
 // The event socket, kept where a test can make a download happen while the
 // panel is open. vi.mock is hoisted above the imports, so what it captures has
@@ -46,7 +46,7 @@ describe('components/settings/updatesPanel', () => {
     })
 
     afterEach(() => {
-        delete anyWindow.go
+        fakeGoSide()
     })
 
     // The same bundle is served in a plain browser,
@@ -57,7 +57,7 @@ describe('components/settings/updatesPanel', () => {
     })
 
     it('names the version that is running', async () => {
-        anyWindow.go = {main: {App: bindings({})}}
+        fakeGoSide(bindings({}))
 
         open()
 
@@ -68,7 +68,7 @@ describe('components/settings/updatesPanel', () => {
     // Two editions are two installers under one app name, so this line is the
     // only place on screen that says which one is running.
     it('names the edition beside the version', async () => {
-        anyWindow.go = {main: {App: bindings({edition: 'lifetime'})}}
+        fakeGoSide(bindings({edition: 'lifetime'}))
 
         open()
 
@@ -78,7 +78,7 @@ describe('components/settings/updatesPanel', () => {
     // A build this page has never heard of still says what it is: a word we
     // cannot translate beats a blank line, and both beat "Basic".
     it('prints an edition it does not know as it came', async () => {
-        anyWindow.go = {main: {App: bindings({edition: 'team'})}}
+        fakeGoSide(bindings({edition: 'team'}))
 
         open()
 
@@ -89,7 +89,7 @@ describe('components/settings/updatesPanel', () => {
     // somebody's connection is not a thing to do quietly in the background.
     it('offers a found version rather than installing it', async () => {
         const app = bindings({status: 'available', availableVersion: '1.1.0', sizeBytes: 52428800})
-        anyWindow.go = {main: {App: app}}
+        fakeGoSide(app)
 
         open()
 
@@ -105,7 +105,7 @@ describe('components/settings/updatesPanel', () => {
     // asked for, or a person watching the panel sees nothing happen while the
     // app downloads a release behind it.
     it('follows a download that nobody started here', async () => {
-        anyWindow.go = {main: {App: bindings({})}}
+        fakeGoSide(bindings({}))
 
         open()
         await screen.findByText('Installed version 1.0.0')
@@ -127,7 +127,7 @@ describe('components/settings/updatesPanel', () => {
     // restart is a person's decision — this is the only thing that offers it.
     it('offers the restart that applies a staged update', async () => {
         const app = bindings({status: 'ready', availableVersion: '1.1.0'})
-        anyWindow.go = {main: {App: app}}
+        fakeGoSide(app)
 
         open()
 
@@ -140,7 +140,7 @@ describe('components/settings/updatesPanel', () => {
     // only to say that it happened, so a version that stops being offered does
     // not read as a check that stopped working.
     it('says which version was skipped', async () => {
-        anyWindow.go = {main: {App: bindings({status: 'up-to-date', skippedVersion: '1.1.0'})}}
+        fakeGoSide(bindings({status: 'up-to-date', skippedVersion: '1.1.0'}))
 
         open()
 
@@ -151,7 +151,7 @@ describe('components/settings/updatesPanel', () => {
     // "Not checked yet" directly above "Last checked yesterday" is the app
     // contradicting itself in two adjacent lines.
     it('says nothing about a result it does not have', async () => {
-        anyWindow.go = {main: {App: bindings({status: 'idle', lastCheckedAt: '2026-08-13T10:00:00Z'})}}
+        fakeGoSide(bindings({status: 'idle', lastCheckedAt: '2026-08-13T10:00:00Z'}))
 
         open()
 
@@ -164,11 +164,11 @@ describe('components/settings/updatesPanel', () => {
     // verbs. What a person can act on is said here, in their language; the raw
     // text stays because it is the half a bug report needs.
     it('says what went wrong in the reader\'s language, keeping the raw text', async () => {
-        anyWindow.go = {main: {App: bindings({
+        fakeGoSide(bindings({
             status: 'error',
             errorStage: 'check',
             error: 'updater: all providers failed: dial tcp: lookup updates.deffun.org: no such host',
-        })}}
+        }))
 
         open()
 
@@ -178,7 +178,7 @@ describe('components/settings/updatesPanel', () => {
 
     it('turns the automatic check off', async () => {
         const app = bindings({})
-        anyWindow.go = {main: {App: app}}
+        fakeGoSide(app)
 
         const {container} = open()
         await screen.findByText('Installed version 1.0.0')

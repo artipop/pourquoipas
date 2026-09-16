@@ -12,6 +12,8 @@ import {Archiver} from '../../archiver'
 
 import {CsvExporter} from '../../csvExporter'
 
+import {fakeGoSide} from '../../test/goSide'
+
 import ViewHeaderActionsMenu from './viewHeaderActionsMenu'
 
 vi.mock('../../archiver')
@@ -93,10 +95,9 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
     // are reachable with no board open — which is the whole point of moving
     // them, and is exactly what a regression here would undo.
     describe('the menu holds what is true of this board', () => {
-        const anyWindow = window as any
 
         beforeEach(() => {
-            anyWindow.go = {main: {App: {
+            fakeGoSide({
                 ListAgents: vi.fn(),
                 ListDeployTargets: vi.fn(),
                 ListAgentWorkdirs: vi.fn(),
@@ -104,7 +105,7 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
                 ListSources: vi.fn().mockResolvedValue('[]'),
                 ExportBoardAutomation: vi.fn(),
                 BoardSetupPlan: vi.fn().mockResolvedValue('{"steps":[]}'),
-            }}}
+            })
             render(() =>
                 wrapIntl(() =>
                     <AppStoreProvider store={mockAppStore({...state, ...withAnInbox})}>
@@ -119,7 +120,7 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
             userEvent.click(screen.getByRole('button', {name: 'View header menu'}))
         })
         afterEach(() => {
-            delete anyWindow.go
+            fakeGoSide()
         })
 
         test('the one screen that says what this board does is offered', async () => {
@@ -163,10 +164,9 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
     // where an agent works was filed under columns and routes — and a fold
     // under a canvas is a place nobody opens.
     describe('a board offers the setup steps it asks for', () => {
-        const anyWindow = window as any
 
         beforeEach(() => {
-            anyWindow.go = {main: {App: {
+            fakeGoSide({
                 ListAgents: vi.fn(),
                 ListDeployTargets: vi.fn(),
                 ListAgentWorkdirs: vi.fn(),
@@ -181,7 +181,7 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
                         {kind: 'deploy', optional: true, status: 'pending'},
                     ],
                 })),
-            }}}
+            })
             render(() =>
                 wrapIntl(() =>
                     <AppStoreProvider store={mockAppStore({...state, ...withAnInbox})}>
@@ -196,7 +196,7 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
             userEvent.click(screen.getByRole('button', {name: 'View header menu'}))
         })
         afterEach(() => {
-            delete anyWindow.go
+            fakeGoSide()
         })
 
         test('the folders and the deploy targets are each their own item', async () => {
@@ -229,13 +229,12 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
     // and about nothing else: exporting or saving as a template are questions
     // about the board, asked where the board is.
     describe('on «Входящие» the menu is the sources and nothing else', () => {
-        const anyWindow = window as any
 
         beforeEach(() => {
-            anyWindow.go = {main: {App: {
+            fakeGoSide({
                 ListSources: vi.fn().mockResolvedValue('[]'),
                 ListFlows: vi.fn(),
-            }}}
+            })
             render(() =>
                 wrapIntl(() =>
                     <AppStoreProvider store={mockAppStore({...state, ...withAnInbox})}>
@@ -250,7 +249,7 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
             userEvent.click(screen.getByRole('button', {name: 'View header menu'}))
         })
         afterEach(() => {
-            delete anyWindow.go
+            fakeGoSide()
         })
 
         test('the sources are offered here', async () => {
@@ -287,11 +286,10 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
     // source — so the door to make one has to stay on the board itself, or
     // there is no way to add a source to such a board at all.
     test('a board with no «Входящие» keeps the sources in its own menu', async () => {
-        const anyWindow = window as any
-        anyWindow.go = {main: {App: {
+        fakeGoSide({
             ListSources: vi.fn().mockResolvedValue('[]'),
             ListFlows: vi.fn(),
-        }}}
+        })
         render(() =>
             wrapIntl(() =>
                 <AppStoreProvider store={mockAppStore({...state, boards: {current: board.id}, views: {views: {}, current: activeView.id}})}>
@@ -307,7 +305,7 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
         await waitFor(() => expect(screen.getByRole('button', {name: 'Sources…'})).toBeInTheDocument())
         userEvent.click(screen.getByText('Export'))
         expect(screen.getByRole('button', {name: 'To CSV'})).toBeInTheDocument()
-        delete anyWindow.go
+        fakeGoSide()
     })
 
     test('return menu and verify call to board archive', () => {

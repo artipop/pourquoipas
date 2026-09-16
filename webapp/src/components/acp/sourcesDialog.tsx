@@ -8,7 +8,7 @@ import {useIntl} from '../../intl'
 import Button from '../../widgets/buttons/button'
 import Dialog from '../dialog'
 
-import {agentBindings} from './bindings'
+import {goApp} from '../../goBridge'
 
 import './sourcesDialog.scss'
 
@@ -75,7 +75,7 @@ export type SourceEvent = {
 }
 
 export function isSourcesAvailable(): boolean {
-    return Boolean(agentBindings()?.ListSources)
+    return Boolean(goApp()?.ListSources)
 }
 
 // ingestURL is the address to post to. encodeURIComponent, because a source is
@@ -91,7 +91,7 @@ type Props = {
 
 const SourcesDialog = (props: Props) => {
     const intl = useIntl()
-    const bindings = agentBindings()
+    const bindings = goApp()
 
     const [sources, setSources] = createSignal<Source[]>([])
     const [plugins, setPlugins] = createSignal<SourcePlugin[]>([])

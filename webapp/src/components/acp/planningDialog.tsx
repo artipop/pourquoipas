@@ -8,7 +8,8 @@ import {Board} from '../../blocks/board'
 import CompassIcon from '../../widgets/icons/compassIcon'
 import Dialog from '../dialog'
 
-import {agentBindings} from './bindings'
+import {goApp} from '../../goBridge'
+
 import {onAgentEvent} from './agentEvents'
 import AgentQuickAdd from './agentQuickAdd'
 import ConversationRow from './conversationRow'
@@ -56,7 +57,7 @@ type LiveTerminal = {
 }
 
 export function isPlanningAvailable(): boolean {
-    return Boolean(agentBindings()?.OpenPlanningTerminal)
+    return Boolean(goApp()?.OpenPlanningTerminal)
 }
 
 type Props = {
@@ -69,7 +70,7 @@ type Props = {
 
 const PlanningDialog = (props: Props) => {
     const intl = useIntl()
-    const bindings = agentBindings()
+    const bindings = goApp()
 
     const [agents, setAgents] = createSignal<NamedEntry[]>([])
     const [agentName, setAgentName] = createSignal('')

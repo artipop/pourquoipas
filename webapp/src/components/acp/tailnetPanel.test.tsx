@@ -4,9 +4,9 @@ import '@testing-library/jest-dom'
 
 import {wrapIntl} from '../../testUtils'
 
-import TailnetPanel, {isTailnetAvailable} from './tailnetPanel'
+import {fakeGoSide} from '../../test/goSide'
 
-const anyWindow = window as any
+import TailnetPanel, {isTailnetAvailable} from './tailnetPanel'
 
 const settingsPath = '/Users/x/Library/Application Support/XCIII/tailnet/settings.json'
 
@@ -31,7 +31,7 @@ describe('components/acp/tailnetPanel', () => {
     beforeEach(() => vi.clearAllMocks())
 
     afterEach(() => {
-        delete anyWindow.go
+        fakeGoSide()
     })
 
     it('is inert without desktop bindings', () => {
@@ -41,12 +41,12 @@ describe('components/acp/tailnetPanel', () => {
     // The address is the whole reason to open this panel: it is typed into a
     // phone by hand, so it has to be on screen in full.
     it('shows the address a phone opens once the board is published', async () => {
-        anyWindow.go = {main: {App: bindings({
+        fakeGoSide(bindings({
             enabled: true,
             hostname: 'board',
             status: 'on',
             url: 'https://board.tail1234.ts.net/m',
-        })}}
+        }))
 
         renderDialog()
 
@@ -58,7 +58,7 @@ describe('components/acp/tailnetPanel', () => {
     // node comes up on this call, and the panel says so while it does.
     it('publishes the board under the name that was typed', async () => {
         const app = bindings({enabled: false, hostname: '', status: 'off'})
-        anyWindow.go = {main: {App: app}}
+        fakeGoSide(app)
 
         renderDialog()
         await waitFor(() => expect(app.GetTailnetAccess).toHaveBeenCalled())
@@ -75,12 +75,12 @@ describe('components/acp/tailnetPanel', () => {
     // A first run waits for a person to follow a login URL, and a panel that did
     // not say so would look like one that had hung.
     it('offers the login link while the machine is being registered', async () => {
-        anyWindow.go = {main: {App: bindings({
+        fakeGoSide(bindings({
             enabled: true,
             hostname: 'board',
             status: 'login',
             loginUrl: 'https://login.tailscale.com/a/abcdef',
-        })}}
+        }))
 
         renderDialog()
 
@@ -92,7 +92,7 @@ describe('components/acp/tailnetPanel', () => {
     // back is the settings file.
     it('stops publishing', async () => {
         const app = bindings({enabled: true, hostname: 'board', status: 'on', url: 'https://board.tail1234.ts.net/m'})
-        anyWindow.go = {main: {App: app}}
+        fakeGoSide(app)
 
         renderDialog()
 

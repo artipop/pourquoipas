@@ -3,9 +3,9 @@ import '@testing-library/jest-dom'
 
 import {wrapIntl} from '../../testUtils'
 
-import AgentsDialog, {isAgentsDialogAvailable} from './agentsDialog'
+import {fakeGoSide} from '../../test/goSide'
 
-const anyWindow = window as any
+import AgentsDialog, {isAgentsDialogAvailable} from './agentsDialog'
 
 describe('components/acp/agentsDialog', () => {
     const bindings = () => ({
@@ -17,14 +17,14 @@ describe('components/acp/agentsDialog', () => {
     const open = () => render(() => wrapIntl(() => <AgentsDialog onClose={vi.fn()}/>))
 
     afterEach(() => {
-        delete anyWindow.go
+        fakeGoSide()
         vi.clearAllMocks()
     })
 
     // One door for one question — who works this board's cards and how that
     // agent reaches the network — and the order is the order it is asked in.
     test('lists the agents, and the proxies under them', async () => {
-        anyWindow.go = {main: {App: bindings()}}
+        fakeGoSide(bindings())
 
         open()
 
@@ -41,10 +41,10 @@ describe('components/acp/agentsDialog', () => {
     // A proxy is the second half of the question, so a build that cannot answer
     // it draws no empty half: no heading, no list.
     test('says nothing about proxies where the build has none', async () => {
-        anyWindow.go = {main: {App: {
+        fakeGoSide({
             ListAgents: vi.fn().mockResolvedValue('[]'),
             ListAgentAdapters: vi.fn().mockResolvedValue('[]'),
-        }}}
+        })
 
         open()
 
@@ -57,7 +57,7 @@ describe('components/acp/agentsDialog', () => {
     // integration at all has nothing to open here.
     test('is not offered by a build that knows no agents', () => {
         expect(isAgentsDialogAvailable()).toBe(false)
-        anyWindow.go = {main: {App: bindings()}}
+        fakeGoSide(bindings())
         expect(isAgentsDialogAvailable()).toBe(true)
     })
 })

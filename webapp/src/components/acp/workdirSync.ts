@@ -3,6 +3,7 @@
 import {Board, IPropertyTemplate, IPropertyOption} from '../../blocks/board'
 import mutator from '../../mutator'
 import {Utils, IDType} from '../../utils'
+import {goApp} from '../../goBridge'
 
 import {BOARD_PROP_BRANCH_PROPERTY, BOARD_PROP_PROJECT_PROPERTY, boardBranchProperty} from './automation'
 
@@ -185,7 +186,7 @@ export function soleWorkdirOption(board: Board): {propertyId: string, optionId: 
 // becomes every board's, and a folder that is already this board's needs
 // nothing at all.
 export async function useWorkdirHere(entry: Workdir, boardId: string): Promise<void> {
-    const bindings = (window as {go?: {main?: {App?: Record<string, (...args: unknown[]) => Promise<unknown>>}}}).go?.main?.App
+    const bindings = goApp()
     if (!bindings) {
         return
     }

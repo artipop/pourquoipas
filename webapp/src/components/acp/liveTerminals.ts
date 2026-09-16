@@ -2,7 +2,8 @@
 /* eslint-disable new-cap */
 import {Accessor, createMemo, createSignal, onSettled} from 'solid-js'
 
-import {agentBindings} from './bindings'
+import {goApp} from '../../goBridge'
+
 import {onAgentEvent} from './agentEvents'
 
 // Which cards have a terminal running on them.
@@ -34,7 +35,7 @@ let unsubscribe: (() => void) | undefined
 let unsubscribeCutOff: (() => void) | undefined
 
 async function reloadCutOff(): Promise<void> {
-    const bindings = agentBindings()
+    const bindings = goApp()
     if (!bindings?.ListCutOffConversations) {
         setCutOffByCard({})
         return
@@ -47,7 +48,7 @@ async function reloadCutOff(): Promise<void> {
 }
 
 async function reload(): Promise<void> {
-    const bindings = agentBindings()
+    const bindings = goApp()
     if (!bindings?.ListTerminals) {
         setByCard({})
         return
@@ -117,7 +118,7 @@ export function useCardCutOff(cardId: Accessor<string>): Accessor<string | undef
 }
 
 export function isCardTerminalAvailable(): boolean {
-    return Boolean(agentBindings()?.OpenCardTerminal)
+    return Boolean(goApp()?.OpenCardTerminal)
 }
 
 // openCardTerminalWindow is the way to a terminal from anywhere that has no
@@ -134,7 +135,7 @@ export function isCardTerminalAvailable(): boolean {
 // ask anything, so that question belongs to the panel beside the card, and the
 // caller opens the card rather than a CLI in a directory nobody chose.
 export async function openCardTerminalWindow(cardId: string, terminalId?: string): Promise<boolean> {
-    const bindings = agentBindings()
+    const bindings = goApp()
     let handle: {windowed?: boolean, url?: string} | null = null
     try {
         if (terminalId && bindings?.ShowTerminal) {

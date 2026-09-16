@@ -7,7 +7,7 @@ import {IAppWindow} from '../../types'
 
 import Button from '../../widgets/buttons/button'
 
-import {agentBindings} from './bindings'
+import {goApp} from '../../goBridge'
 
 import './tailnetPanel.scss'
 
@@ -34,12 +34,12 @@ type TailnetState = {
 }
 
 export function isTailnetAvailable(): boolean {
-    return Boolean(agentBindings()?.GetTailnetAccess)
+    return Boolean(goApp()?.GetTailnetAccess)
 }
 
 const TailnetPanel = () => {
     const intl = useIntl()
-    const bindings = agentBindings()
+    const bindings = goApp()
 
     const [state, setState] = createSignal<TailnetState | null>(null)
     const [hostname, setHostname] = createSignal('')

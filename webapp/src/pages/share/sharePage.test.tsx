@@ -4,9 +4,9 @@ import '@testing-library/jest-dom'
 
 import {TestRouter, wrapIntl} from '../../testUtils'
 
-import SharePage from './sharePage'
+import {fakeGoSide} from '../../test/goSide'
 
-const anyWindow = window as any
+import SharePage from './sharePage'
 
 const home = {id: 'board-home', title: 'Домашние дела', icon: '🏠'}
 const work = {id: 'board-work', title: 'Разработка', icon: '💻'}
@@ -40,14 +40,14 @@ describe('pages/share/sharePage', () => {
     })
 
     afterEach(() => {
-        delete anyWindow.go
+        fakeGoSide()
     })
 
     // The whole dialog: what another app shared is already filled in, the
     // person names a board, and the link is filed there.
     it('files the shared link on the board that was picked', async () => {
         const app = bindings()
-        anyWindow.go = {main: {App: app}}
+        fakeGoSide(app)
 
         renderShare()
 
@@ -65,7 +65,7 @@ describe('pages/share/sharePage', () => {
     // A link already in the inbox is not a failure and must not read as one:
     // the card is there, which is what the person wanted.
     it('says the link is already there rather than showing an error', async () => {
-        anyWindow.go = {main: {App: bindings({skipped: 1})}}
+        fakeGoSide(bindings({skipped: 1}))
 
         renderShare()
 
@@ -80,7 +80,7 @@ describe('pages/share/sharePage', () => {
     it('opens on the board used last time', async () => {
         localStorage.setItem('xciii.share.board', 'board-work')
         const app = bindings()
-        anyWindow.go = {main: {App: app}}
+        fakeGoSide(app)
 
         renderShare()
 
@@ -94,7 +94,7 @@ describe('pages/share/sharePage', () => {
     // shared. The dialog still has to be answerable.
     it('works on a share that is a link and nothing else', async () => {
         const app = bindings()
-        anyWindow.go = {main: {App: app}}
+        fakeGoSide(app)
 
         renderShare('?url=https%3A%2F%2Fexample.com%2Fb')
 
@@ -107,7 +107,7 @@ describe('pages/share/sharePage', () => {
     // The pipeline counts a refusal rather than throwing it, so a delivery of
     // one that failed would otherwise look exactly like success.
     it('shows a refusal that came back as a count', async () => {
-        anyWindow.go = {main: {App: bindings({failed: 1})}}
+        fakeGoSide(bindings({failed: 1}))
 
         renderShare()
 

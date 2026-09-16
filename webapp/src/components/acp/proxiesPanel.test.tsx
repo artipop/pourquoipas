@@ -4,13 +4,13 @@ import '@testing-library/jest-dom'
 
 import {wrapIntl} from '../../testUtils'
 
-import ProxiesPanel, {isProxiesAvailable} from './proxiesPanel'
+import {fakeGoSide} from '../../test/goSide'
 
-const anyWindow = window as any
+import ProxiesPanel, {isProxiesAvailable} from './proxiesPanel'
 
 describe('components/acp/proxiesPanel', () => {
     afterEach(() => {
-        delete anyWindow.go
+        fakeGoSide()
         vi.clearAllMocks()
     })
 
@@ -27,7 +27,7 @@ describe('components/acp/proxiesPanel', () => {
             UpdateProxy: vi.fn(),
             RemoveProxy: vi.fn(),
         }
-        anyWindow.go = {main: {App: bindings}}
+        fakeGoSide(bindings)
         expect(isProxiesAvailable()).toBe(true)
 
         render(() => wrapIntl(() => <ProxiesPanel/>))
@@ -59,7 +59,7 @@ describe('components/acp/proxiesPanel', () => {
             UpdateProxy: vi.fn(),
             RemoveProxy: vi.fn().mockRejectedValue(new Error('используют агенты: claude-a')),
         }
-        anyWindow.go = {main: {App: bindings}}
+        fakeGoSide(bindings)
 
         render(() => wrapIntl(() => <ProxiesPanel/>))
         await waitFor(() => expect(screen.getByText('office')).toBeInTheDocument())

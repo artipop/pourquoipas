@@ -1,9 +1,9 @@
 import {render, screen, waitFor} from '@solidjs/testing-library'
 import '@testing-library/jest-dom'
 
-import CaseStamp from './caseStamp'
+import {fakeGoSide} from '../../test/goSide'
 
-const anyWindow = window as any
+import CaseStamp from './caseStamp'
 
 function cardBindings(state: any) {
     return {GetCardAgent: vi.fn().mockResolvedValue(JSON.stringify(state))}
@@ -12,13 +12,13 @@ function cardBindings(state: any) {
 describe('components/acp/caseStamp', () => {
     beforeEach(() => {
         vi.clearAllMocks()
-        delete anyWindow.go
+        fakeGoSide()
     })
 
     // A card nobody has run an agent on is not a case yet, and a line of empty
     // labels under its title would be noise on every card on the board.
     it('says nothing about a card no agent has touched', async () => {
-        anyWindow.go = {main: {App: cardBindings({})}}
+        fakeGoSide(cardBindings({}))
 
         const {container} = render(() => <CaseStamp cardId='card-1'/>)
 
@@ -30,17 +30,13 @@ describe('components/acp/caseStamp', () => {
     // elsewhere, and stamping «branch» and «worktree» side by side read as the
     // app having created two things: the complaint this screen started from.
     it('stamps one line for where the work lives, plus the session', async () => {
-        anyWindow.go = {
-            main: {
-                App: cardBindings({
-                    session: {
-                        status: 'finished',
-                        branch: 'xciii/card-1',
-                        worktree: '/Users/someone/work/xciii-card-1',
-                    },
-                }),
+        fakeGoSide(cardBindings({
+            session: {
+                status: 'finished',
+                branch: 'xciii/card-1',
+                worktree: '/Users/someone/work/xciii-card-1',
             },
-        }
+        }))
 
         render(() => <CaseStamp cardId='card-2'/>)
 
@@ -57,18 +53,14 @@ describe('components/acp/caseStamp', () => {
     // a copy of its own and reads BRANCH off the card concludes the setting
     // did not take — which is exactly what happened.
     it('names the line worktree when the workspace is a copy, and says the base', async () => {
-        anyWindow.go = {
-            main: {
-                App: cardBindings({
-                    work: {mode: 'worktree', base: 'main', started: true, here: true},
-                    session: {
-                        status: 'finished',
-                        branch: 'b-41aa6e-cabgjc3c',
-                        worktree: '/data/worktrees/groql-backend-cabgjc3c',
-                    },
-                }),
+        fakeGoSide(cardBindings({
+            work: {mode: 'worktree', base: 'main', started: true, here: true},
+            session: {
+                status: 'finished',
+                branch: 'b-41aa6e-cabgjc3c',
+                worktree: '/data/worktrees/groql-backend-cabgjc3c',
             },
-        }
+        }))
 
         render(() => <CaseStamp cardId='card-5'/>)
 
@@ -88,13 +80,9 @@ describe('components/acp/caseStamp', () => {
     // A resumable terminal is a case still open, and it names its branch even
     // though no session is running right now.
     it('falls back to what a resumable terminal knows', async () => {
-        anyWindow.go = {
-            main: {
-                App: cardBindings({
-                    resume: {available: true, branch: 'xciii/card-9', cwd: '/tmp/wt/card-9'},
-                }),
-            },
-        }
+        fakeGoSide(cardBindings({
+            resume: {available: true, branch: 'xciii/card-9', cwd: '/tmp/wt/card-9'},
+        }))
 
         render(() => <CaseStamp cardId='card-3'/>)
 
@@ -105,13 +93,9 @@ describe('components/acp/caseStamp', () => {
     // A folder with no branch — an ordinary folder, or the board's drafts —
     // is the one case the directory itself is the fact worth stamping.
     it('stamps the folder when there is no branch', async () => {
-        anyWindow.go = {
-            main: {
-                App: cardBindings({
-                    resume: {available: true, cwd: '/Users/someone/notes'},
-                }),
-            },
-        }
+        fakeGoSide(cardBindings({
+            resume: {available: true, cwd: '/Users/someone/notes'},
+        }))
 
         render(() => <CaseStamp cardId='card-4'/>)
 

@@ -6,18 +6,18 @@ import {wrapIntl} from '../../testUtils'
 import {TestBlockFactory} from '../../test/testBlockFactory'
 import mutator from '../../mutator'
 
+import {fakeGoSide} from '../../test/goSide'
+
 import WorkdirsPanel, {isWorkdirsAvailable} from './workdirsPanel'
 
 vi.mock('../../mutator')
 const mockedMutator = vi.mocked(mutator)
 
-const anyWindow = window as any
-
 describe('components/acp/workdirsPanel', () => {
     const board = TestBlockFactory.createBoard()
 
     afterEach(() => {
-        delete anyWindow.go
+        fakeGoSide()
         vi.clearAllMocks()
     })
 
@@ -32,7 +32,7 @@ describe('components/acp/workdirsPanel', () => {
             AddAgentWorkdir: vi.fn().mockResolvedValue(JSON.stringify({name: 'beta', path: '/tmp/beta'})),
             RemoveAgentWorkdir: vi.fn().mockResolvedValue(undefined),
         }
-        anyWindow.go = {main: {App: bindings}}
+        fakeGoSide(bindings)
         expect(isWorkdirsAvailable()).toBe(true)
 
         render(() => wrapIntl(() =>
@@ -71,7 +71,7 @@ describe('components/acp/workdirsPanel', () => {
             RemoveAgentWorkdir: vi.fn(),
             SetAgentWorkdirBase: setBase,
         }
-        anyWindow.go = {main: {App: bindings}}
+        fakeGoSide(bindings)
 
         render(() => wrapIntl(() =>
             <WorkdirsPanel
@@ -109,12 +109,12 @@ describe('components/acp/workdirsPanel', () => {
             options: [{id: 'o1', value: 'alpha', color: 'propColorDefault'}],
         })
         legacyBoard.properties = {...legacyBoard.properties, projectProperty: 'projectprop'}
-        anyWindow.go = {main: {App: {
+        fakeGoSide({
             ListAgentWorkdirs: vi.fn().mockResolvedValue(JSON.stringify([{name: 'alpha', path: '/tmp/alpha'}])),
             PickDirectory: vi.fn(),
             AddAgentWorkdir: vi.fn(),
             RemoveAgentWorkdir: vi.fn(),
-        }}}
+        })
         mockedMutator.updateBoardCardProperties.mockResolvedValue()
 
         render(() => wrapIntl(() =>
@@ -137,14 +137,14 @@ describe('components/acp/workdirsPanel', () => {
     test('offers a folder that is already added instead of refusing it', async () => {
         const share = vi.fn().mockResolvedValue('{}')
         const add = vi.fn()
-        anyWindow.go = {main: {App: {
+        fakeGoSide({
             ListAgentWorkdirs: vi.fn().mockResolvedValue('[]'),
             PickDirectory: vi.fn().mockResolvedValue('/tmp/code'),
             FindAgentWorkdir: vi.fn().mockResolvedValue(JSON.stringify({name: 'code', path: '/tmp/code', boardId: 'another-board'})),
             ShareAgentWorkdir: share,
             AddAgentWorkdir: add,
             RemoveAgentWorkdir: vi.fn(),
-        }}}
+        })
 
         render(() => wrapIntl(() =>
             <WorkdirsPanel
@@ -176,7 +176,7 @@ describe('components/acp/workdirsPanel', () => {
             AddAgentWorkdir: vi.fn(),
             RemoveAgentWorkdir: vi.fn(),
         }
-        anyWindow.go = {main: {App: bindings}}
+        fakeGoSide(bindings)
 
         render(() => wrapIntl(() =>
             <WorkdirsPanel
@@ -200,7 +200,7 @@ describe('components/acp/workdirsPanel', () => {
             AddAgentWorkdir: vi.fn().mockResolvedValue(JSON.stringify({name: 'shared', path: '/tmp/shared', global: true})),
             RemoveAgentWorkdir: vi.fn().mockResolvedValue(undefined),
         }
-        anyWindow.go = {main: {App: bindings}}
+        fakeGoSide(bindings)
 
         render(() => wrapIntl(() =>
             <WorkdirsPanel
@@ -228,7 +228,7 @@ describe('components/acp/workdirsPanel', () => {
             AddAgentWorkdir: vi.fn(),
             RemoveAgentWorkdir: vi.fn(),
         }
-        anyWindow.go = {main: {App: bindings}}
+        fakeGoSide(bindings)
         mockedMutator.updateBoardCardProperties.mockResolvedValue()
 
         render(() => wrapIntl(() =>
@@ -268,7 +268,7 @@ describe('components/acp/workdirsPanel', () => {
             AddAgentWorkdir: vi.fn(),
             RemoveAgentWorkdir: vi.fn(),
         }
-        anyWindow.go = {main: {App: bindings}}
+        fakeGoSide(bindings)
         mockedMutator.updateBoardCardProperties.mockResolvedValue()
 
         render(() => wrapIntl(() =>
@@ -308,7 +308,7 @@ describe('components/acp/workdirsPanel', () => {
             AddAgentWorkdir: vi.fn(),
             RemoveAgentWorkdir: vi.fn(),
         }
-        anyWindow.go = {main: {App: bindings}}
+        fakeGoSide(bindings)
         mockedMutator.updateBoardCardProperties.mockResolvedValue()
 
         render(() => wrapIntl(() =>
@@ -348,7 +348,7 @@ describe('components/acp/workdirsPanel', () => {
             AddAgentWorkdir: vi.fn(),
             RemoveAgentWorkdir: vi.fn(),
         }
-        anyWindow.go = {main: {App: bindings}}
+        fakeGoSide(bindings)
 
         render(() => wrapIntl(() =>
             <WorkdirsPanel

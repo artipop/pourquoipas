@@ -1,3 +1,5 @@
+import {fakeGoSide} from '../../test/goSide'
+
 import {
     NO_SETUP,
     SetupPlan,
@@ -14,8 +16,6 @@ import {
     stepRequires,
 } from './boardSetup'
 
-const anyWindow = window as any
-
 function plan(steps: Array<Partial<SetupStep>>, extra: Partial<SetupPlan> = {}): SetupPlan {
     return {
         boardId: 'board-1',
@@ -28,7 +28,7 @@ function plan(steps: Array<Partial<SetupStep>>, extra: Partial<SetupPlan> = {}):
 
 describe('components/acp/boardSetup', () => {
     afterEach(() => {
-        delete anyWindow.go
+        fakeGoSide()
         localStorage.clear()
         vi.clearAllMocks()
     })
@@ -43,7 +43,7 @@ describe('components/acp/boardSetup', () => {
 
     test('the plan comes from Go, and a board with no id is not asked for one', async () => {
         const BoardSetupPlan = vi.fn().mockResolvedValue(JSON.stringify(plan([{kind: 'project'}])))
-        anyWindow.go = {main: {App: {BoardSetupPlan}}}
+        fakeGoSide({BoardSetupPlan})
 
         expect((await readSetupPlan('board-1')).steps).toHaveLength(1)
         expect(BoardSetupPlan).toHaveBeenCalledWith('board-1')
@@ -78,7 +78,7 @@ describe('components/acp/boardSetup', () => {
         expect(setupNeeded({...pending, offered: true})).toBe(true)
 
         const MarkBoardSetupOffered = vi.fn().mockResolvedValue(undefined)
-        anyWindow.go = {main: {App: {MarkBoardSetupOffered}}}
+        fakeGoSide({MarkBoardSetupOffered})
         await markSetupOffered('board-1')
         expect(MarkBoardSetupOffered).toHaveBeenCalledWith('board-1')
 
@@ -103,7 +103,7 @@ describe('components/acp/boardSetup', () => {
         expect(stepRequires(undefined, 'git')).toBe(false)
 
         const CheckBoardSetupAnswer = vi.fn().mockRejectedValue('в каталоге /tmp/notes нет git-репозитория')
-        anyWindow.go = {main: {App: {CheckBoardSetupAnswer}}}
+        fakeGoSide({CheckBoardSetupAnswer})
         await expect(checkSetupAnswer('board-1', 'project', '/tmp/notes')).rejects.toBeTruthy()
         expect(CheckBoardSetupAnswer).toHaveBeenCalledWith('board-1', 'project', '/tmp/notes')
     })

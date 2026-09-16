@@ -2,8 +2,9 @@ import {createRoot, createSignal, flush} from 'solid-js'
 
 import {BoardGroup, IPropertyTemplate} from '../../blocks/board'
 
+import {fakeGoSide} from '../../test/goSide'
+
 import {Flow} from './automation'
-import * as bindings from './bindings'
 import {flowById, flowView, routeRunsOn, useBoardFlows} from './boardFlows'
 
 const status = {
@@ -128,10 +129,10 @@ describe('the subscription behind the picker', () => {
             'board-a': JSON.stringify([{id: 'a1', name: 'Фича', nodes: [], edges: []}]),
             'board-b': JSON.stringify([{id: 'b1', name: 'Уборка', nodes: [], edges: []}]),
         }
-        vi.spyOn(bindings, 'agentBindings').mockReturnValue({
+        fakeGoSide({
             ListFlows: (id: string) => Promise.resolve(routes[id] || '[]'),
             ListCardFlows: () => Promise.resolve('{}'),
-        } as never)
+        })
 
         const [boardId, setBoardId] = createSignal('board-a')
         const seen = await createRoot(async (dispose) => {

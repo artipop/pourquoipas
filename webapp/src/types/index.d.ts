@@ -11,17 +11,8 @@ export interface IAppWindow extends Window {
     openInNewBrowser?: ((href: string) => void) | null
 
     // Set by the bootstrap the front door injects (proxy.go): there is a Go
-    // side behind this origin. Absent in a plain browser.
+    // side behind this origin, and goApp (goBridge.ts) hands out its bindings.
+    // Absent under jsdom unless a test asks for one (src/test/goSide.ts).
     hasGoSide?: boolean
-
-    // The bindings generated from the Go side's App service (webapp/bindings),
-    // put here by goBridge.ts when hasGoSide is set, so their types are Go's
-    // own. Absent in a plain browser; feature-detect before use. A test puts a
-    // fake here.
-    go?: {
-        main?: {
-            App?: typeof import('../../bindings/github.com/artipop/xciii/app')
-        }
-    }
     webkit?: {messageHandlers: {nativeApp?: {postMessage: <T>(message: T) => void}}}
 }

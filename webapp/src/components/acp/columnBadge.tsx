@@ -6,7 +6,8 @@ import {useIntl} from '../../intl'
 
 import {createLoader} from '../../hooks/loader'
 
-import {agentBindings} from './bindings'
+import {goApp} from '../../goBridge'
+
 import {invalidateBoardAgents} from './boardAgents'
 import {reloadBoardFlows} from './boardFlows'
 import {onAgentEvent} from './agentEvents'
@@ -41,7 +42,7 @@ export function invalidateBoardColumns(): void {
 }
 
 async function loadColumns(boardId: string): Promise<ColumnSpec[]> {
-    const bindings = agentBindings()
+    const bindings = goApp()
     if (!bindings?.ListBoardColumns) {
         return []
     }

@@ -9,7 +9,8 @@ import Button from '../../widgets/buttons/button'
 import CompassIcon from '../../widgets/icons/compassIcon'
 import {sendFlashMessage} from '../flashMessages'
 
-import {agentBindings} from './bindings'
+import {goApp} from '../../goBridge'
+
 import {Workdir, WORKDIR_PROPERTY_TITLE, findWorkdirProperty, syncWorkdirsToBoard, useWorkdirHere} from './workdirSync'
 
 import './workdirsPanel.scss'
@@ -40,7 +41,7 @@ export function pathParts(path: string): {head: string, tail: string} {
 }
 
 export function isWorkdirsAvailable(): boolean {
-    return Boolean(agentBindings()?.ListAgentWorkdirs)
+    return Boolean(goApp()?.ListAgentWorkdirs)
 }
 
 type Props = {
@@ -53,7 +54,7 @@ type Props = {
 
 const WorkdirsPanel = (props: Props) => {
     const intl = useIntl()
-    const bindings = agentBindings()
+    const bindings = goApp()
 
     const [workdirs, setWorkdirs] = createSignal<Workdir[]>([])
     const [orphans, setOrphans] = createSignal<Workdir[]>([])
@@ -353,14 +354,10 @@ const WorkdirsPanel = (props: Props) => {
                                                             <button
                                                                 type='button'
                                                                 class={`WorkdirsPanel__mode ${workdir.mode === mode ? 'WorkdirsPanel__mode--on' : ''}`}
-                                                                title={mode === 'worktree' ?
-                                                                    intl.formatMessage({id: 'Workdirs.mode-worktree-why', defaultMessage: 'a branch and a checkout per card — several cards of this repository at once, and your own checkout is left alone'}) :
-                                                                    intl.formatMessage({id: 'Workdirs.mode-branch-why', defaultMessage: 'a branch in the folder itself — one card at a time, and you see the work in your editor as it happens'})}
+                                                                title={mode === 'worktree' ? intl.formatMessage({id: 'Workdirs.mode-worktree-why', defaultMessage: 'a branch and a checkout per card — several cards of this repository at once, and your own checkout is left alone'}) : intl.formatMessage({id: 'Workdirs.mode-branch-why', defaultMessage: 'a branch in the folder itself — one card at a time, and you see the work in your editor as it happens'})}
                                                                 onClick={() => setMode(workdir.name, mode)}
                                                             >
-                                                                {mode === 'worktree' ?
-                                                                    intl.formatMessage({id: 'Workdirs.mode-worktree', defaultMessage: 'in a copy of its own'}) :
-                                                                    intl.formatMessage({id: 'Workdirs.mode-branch', defaultMessage: 'in the folder itself'})}
+                                                                {mode === 'worktree' ? intl.formatMessage({id: 'Workdirs.mode-worktree', defaultMessage: 'in a copy of its own'}) : intl.formatMessage({id: 'Workdirs.mode-branch', defaultMessage: 'in the folder itself'})}
                                                             </button>
                                                         )}
                                                     </For>

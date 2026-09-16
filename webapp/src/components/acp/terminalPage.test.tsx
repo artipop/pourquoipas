@@ -6,6 +6,8 @@ import {createRouter, memoryHistory} from '@solidjs/router'
 import {IntlProvider} from '../../intl'
 import '@testing-library/jest-dom'
 
+import {fakeGoSide, goSide} from '../../test/goSide'
+
 import TerminalPage from './terminalPage'
 
 // xterm draws into a real canvas and measures it, which jsdom cannot do. The
@@ -105,28 +107,24 @@ describe('components/acp/terminalPage', () => {
             observe() {}
             disconnect() {}
         }
-        ;(window as any).go = {
-            main: {
-                App: {
-                    GetTerminalInfo: vi.fn().mockResolvedValue(JSON.stringify({
-                        id: 'term-1',
-                        title: 'Фикс логина',
-                        task: 'Почини логин',
-                        cwd: '/tmp/wt/acp-fix-login',
-                        branch: 'acp/fix-login-3f2a',
-                        agent: 'clauuus',
-                        kind: 'claude',
-                        command: 'claude --continue',
-                        running: true,
-                        exitCode: 0,
-                    })),
-                },
-            },
-        }
+        fakeGoSide({
+            GetTerminalInfo: vi.fn().mockResolvedValue(JSON.stringify({
+                id: 'term-1',
+                title: 'Фикс логина',
+                task: 'Почини логин',
+                cwd: '/tmp/wt/acp-fix-login',
+                branch: 'acp/fix-login-3f2a',
+                agent: 'clauuus',
+                kind: 'claude',
+                command: 'claude --continue',
+                running: true,
+                exitCode: 0,
+            })),
+        })
     })
 
     afterEach(() => {
-        delete (window as any).go
+        fakeGoSide()
     })
 
     it('connects to its own terminal socket and reports the window size', async () => {
@@ -201,7 +199,7 @@ describe('components/acp/terminalPage', () => {
     // asking in its own interface. Nothing of ours is drawn over it — a box with
     // our buttons in it used to cover the very screen the button had led to.
     it('draws nothing over the terminal when the card is waiting', async () => {
-        (window as any).go.main.App.GetTerminalInfo = vi.fn().mockResolvedValue(JSON.stringify({
+        goSide.GetTerminalInfo = vi.fn().mockResolvedValue(JSON.stringify({
             id: 'term-1',
             cardId: 'card-9',
             cwd: '/tmp/wt/acp-fix-login',
@@ -210,8 +208,8 @@ describe('components/acp/terminalPage', () => {
             command: 'claude --continue',
             running: true,
             exitCode: 0,
-        }));
-        (window as any).go.main.App.ListAttention = vi.fn().mockResolvedValue(JSON.stringify([{
+        }))
+        goSide.ListAttention = vi.fn().mockResolvedValue(JSON.stringify([{
             key: 'q:7',
             cardId: 'card-9',
             questionId: 'q-7',

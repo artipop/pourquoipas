@@ -100,16 +100,18 @@ Three things follow.
   go.mod names and fails on any difference, which also catches a changed
   signature. The npm runtime is pinned to exactly that Wails version, by the
   same test, because the two are halves of one protocol shipped in two packages.
-- **The page still has to be told whether there is a Go side at all**, because
-  the same bundle runs in a plain browser. So the bootstrap now seeds the
-  session, sets `window.hasGoSide` and wires the outward-link catch-all, and
-  nothing else; `goBridge.ts` loads the bindings — a dynamic import, so a browser
-  without a Go side never loads the runtime, which goes looking for a webview
-  that is not there — and puts them at `window.go.main.App`. That global stays
-  the seam on purpose: every call site feature-detects through
-  `agentBindings()`, and forty test files put a fake there. Moving them to
-  `vi.mock` of the bindings module was the plan's last step and was left out
-  (`docs/deferred.md`).
+- **They are imported, as in the template**, and there is no global. The page
+  still has to be told whether a Go side answers, so the bootstrap seeds the
+  session and sets `window.hasGoSide`, and nothing else; `goApp()`
+  (`goBridge.ts`) hands out the service only when it is set, and every call
+  site asks it. The outward-link catch-all that used to be in the bootstrap is
+  the page's own now (`installGoBridge`), since the bootstrap had reached Go
+  through the global. A test does not reach the runtime at all: the setup file
+  mocks the bindings module for the whole suite (`src/test/goSideMock.ts`), and
+  a test that wants a Go side installs its methods with `fakeGoSide`. Before
+  this the bindings were put at `window.go.main.App` and forty test files wrote
+  their fakes there, which kept the call sites untouched and the old seam
+  alive.
 
 **Under `wails3 dev` the page is Vite's.** `build/config.yml` is the template's
 dev loop — the Vite dev server in the background, with HMR — and `wails3 dev`

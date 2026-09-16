@@ -7,7 +7,8 @@ import CompassIcon from '../../widgets/icons/compassIcon'
 
 import {createLoader} from '../../hooks/loader'
 
-import {agentBindings} from './bindings'
+import {goApp} from '../../goBridge'
+
 import {onAgentEvent} from './agentEvents'
 
 import './flowStrip.scss'
@@ -72,7 +73,7 @@ export type CardFlow = {
 }
 
 export function isFlowStripAvailable(): boolean {
-    return Boolean(agentBindings()?.GetCardFlow)
+    return Boolean(goApp()?.GetCardFlow)
 }
 
 // waited says how long the card has stood where it stands, in the units a
@@ -111,7 +112,7 @@ type Props = {
 
 const FlowStrip = (props: Props) => {
     const intl = useIntl()
-    const bindings = agentBindings()
+    const bindings = goApp()
     const [flow, reloadFlow] = createLoader(async (cardId: string): Promise<CardFlow | null> => {
         if (!bindings?.GetCardFlow) {
             return null

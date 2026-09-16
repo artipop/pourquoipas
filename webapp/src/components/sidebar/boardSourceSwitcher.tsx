@@ -6,7 +6,7 @@ import {useIntl} from '../../intl'
 import Menu from '../../widgets/menu'
 import MenuWrapper from '../../widgets/menuWrapper'
 import CompassIcon from '../../widgets/icons/compassIcon'
-import {agentBindings} from '../acp/bindings'
+import {goApp} from '../../goBridge'
 import {createLoader} from '../../hooks/loader'
 
 import './boardSourceSwitcher.scss'
@@ -34,7 +34,7 @@ type AttachState = {
 
 const BoardSourceSwitcher = () => {
     const intl = useIntl()
-    const bindings = agentBindings()
+    const bindings = goApp()
     const [state] = createLoader(async (): Promise<AttachState | null> => {
         if (!bindings?.GetServerAttachment) {
             return null

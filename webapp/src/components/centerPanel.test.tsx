@@ -12,6 +12,8 @@ import Mutator from '../mutator'
 import {Constants} from '../constants'
 import {UserSettings} from '../userSettings'
 
+import {fakeGoSide, goSide} from '../test/goSide'
+
 import CenterPanel from './centerPanel'
 Object.defineProperty(Constants, 'versionString', {value: '1.0.0'})
 
@@ -60,6 +62,7 @@ describe('components/centerPanel', () => {
         ],
     }
     const state = {
+
         // The header offers to share a board where there is somebody to share
         // it with, so these fixtures say the install has accounts on it
         // (docs/teamwork.md).
@@ -135,7 +138,6 @@ describe('components/centerPanel', () => {
     // The setup wizard: it opens once per board, and what it leaves unanswered
     // is what the header quietly goes on saying.
     describe('the setup a board still needs', () => {
-        const anyWindow = window as any
         const setupBoard = TestBlockFactory.createBoard()
         setupBoard.id = 'board-needing-setup'
         setupBoard.teamId = 'team-id'
@@ -145,7 +147,7 @@ describe('components/centerPanel', () => {
         // restart throws away.
         const stubPlan = (steps: Array<Record<string, unknown>>) => {
             let offered = false
-            anyWindow.go = {main: {App: {
+            fakeGoSide({
                 BoardSetupPlan: vi.fn().mockImplementation(() => Promise.resolve(JSON.stringify({
                     boardId: setupBoard.id, steps, declared: true, automated: true, offered,
                 }))),
@@ -156,7 +158,7 @@ describe('components/centerPanel', () => {
                 RecordBoardSetupStep: vi.fn().mockResolvedValue(undefined),
                 ListAgentWorkdirs: vi.fn().mockResolvedValue('[]'),
                 ListAgents: vi.fn().mockResolvedValue('[]'),
-            }}}
+            })
         }
         const renderPanel = () => render(() => wrapDNDIntl(() =>
             <AppStoreProvider store={store}>
@@ -175,7 +177,7 @@ describe('components/centerPanel', () => {
         ))
 
         afterEach(() => {
-            delete anyWindow.go
+            fakeGoSide()
             localStorage.clear()
         })
 
@@ -197,7 +199,7 @@ describe('components/centerPanel', () => {
             stubPlan([{kind: 'project', optional: false, status: 'pending'}, {kind: 'done', optional: false, status: 'done'}])
             const first = renderPanel()
             await waitFor(() => expect(screen.getByText('Set up this board: Folder')).toBeInTheDocument())
-            await waitFor(() => expect(anyWindow.go.main.App.MarkBoardSetupOffered).toHaveBeenCalledWith(setupBoard.id))
+            await waitFor(() => expect(goSide.MarkBoardSetupOffered).toHaveBeenCalledWith(setupBoard.id))
             first.unmount()
 
             localStorage.clear()

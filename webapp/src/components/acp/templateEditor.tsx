@@ -9,7 +9,8 @@ import mutator from '../../mutator'
 import Button from '../../widgets/buttons/button'
 import Dialog from '../dialog'
 
-import {agentBindings} from './bindings'
+import {goApp} from '../../goBridge'
+
 import {
     Automation,
     BoardSetup,
@@ -53,7 +54,7 @@ type Props = {
 
 const TemplateEditor = (props: Props) => {
     const intl = useIntl()
-    const bindings = agentBindings()
+    const bindings = goApp()
 
     const [title, setTitle] = createSignal(props.board.title)
     const [icon, setIcon] = createSignal(props.board.icon || '')

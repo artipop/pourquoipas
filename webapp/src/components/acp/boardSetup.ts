@@ -6,7 +6,7 @@ import {createLoader} from '../../hooks/loader'
 
 import {Board} from '../../blocks/board'
 
-import {agentBindings} from './bindings'
+import {goApp} from '../../goBridge'
 
 // What a board needs answered before its automation can run is resolved on the
 // Go side (internal/acp/setup.go) out of what the board asks for, what its
@@ -76,11 +76,11 @@ export function agentColumn(plan: SetupPlan | undefined): string {
 }
 
 export function isBoardSetupAvailable(): boolean {
-    return Boolean(agentBindings()?.BoardSetupPlan)
+    return Boolean(goApp()?.BoardSetupPlan)
 }
 
 export async function readSetupPlan(boardId: string): Promise<SetupPlan> {
-    const bindings = agentBindings()
+    const bindings = goApp()
     if (!bindings?.BoardSetupPlan || !boardId) {
         return NO_SETUP
     }
@@ -99,7 +99,7 @@ export function createSetupPlan(board: () => Board | undefined): [Accessor<Setup
 // Recording is for the answer no registry can be read for: a step deliberately
 // passed over. Everything else is answered by the registry the step fills.
 export async function recordSetupStep(boardId: string, step: SetupStepKind, status: SetupStepStatus): Promise<void> {
-    const bindings = agentBindings()
+    const bindings = goApp()
     if (!bindings?.RecordBoardSetupStep || !boardId) {
         return
     }
@@ -109,7 +109,7 @@ export async function recordSetupStep(boardId: string, step: SetupStepKind, stat
 // checkSetupAnswer asks Go whether an answer fits the step, and throws what it
 // says when it does not — the same wording the card would have got later.
 export async function checkSetupAnswer(boardId: string, step: SetupStepKind, value: string): Promise<void> {
-    const bindings = agentBindings()
+    const bindings = goApp()
     if (!bindings?.CheckBoardSetupAnswer || !boardId) {
         return
     }
@@ -144,7 +144,7 @@ export function shouldOfferSetup(plan: SetupPlan | undefined): boolean {
 // origin that does not survive a restart — which made "do not show this again"
 // last exactly one run.
 export async function markSetupOffered(boardId: string): Promise<void> {
-    const bindings = agentBindings()
+    const bindings = goApp()
     if (!bindings?.MarkBoardSetupOffered || !boardId) {
         return
     }

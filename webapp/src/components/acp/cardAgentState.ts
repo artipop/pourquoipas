@@ -2,7 +2,7 @@
 /* eslint-disable new-cap */
 import {Accessor, createSignal, Setter} from 'solid-js'
 
-import {agentBindings} from './bindings'
+import {goApp} from '../../goBridge'
 
 // What the Go side knows about the agent on a card: the session it ran, the
 // branch and worktree it left behind, and whether a terminal is open on it.
@@ -139,7 +139,7 @@ export function cardAgentState(cardId: string): Accessor<CardAgentState> {
 }
 
 export async function refreshCardAgent(cardId: string): Promise<void> {
-    const bindings = agentBindings()
+    const bindings = goApp()
     if (!bindings?.GetCardAgent) {
         return
     }

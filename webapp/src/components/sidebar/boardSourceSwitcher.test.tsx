@@ -4,27 +4,27 @@ import '@testing-library/jest-dom'
 
 import {wrapIntl} from '../../testUtils'
 
-import BoardSourceSwitcher from './boardSourceSwitcher'
+import {fakeGoSide, goSide} from '../../test/goSide'
 
-const anyWindow = window as any
+import BoardSourceSwitcher from './boardSourceSwitcher'
 
 const open = () => render(() => wrapIntl(() => <BoardSourceSwitcher/>))
 
 describe('components/sidebar/boardSourceSwitcher', () => {
     afterEach(() => {
-        delete anyWindow.go
+        fakeGoSide()
     })
 
     // A switcher with one entry is a label pretending to be a control.
     test('is not drawn while there is only this machine', async () => {
-        anyWindow.go = {main: {App: {
+        fakeGoSide({
             GetServerAttachment: vi.fn().mockResolvedValue(JSON.stringify({
                 selected: '', sources: [{id: '', title: 'Эта машина'}],
             })),
-        }}}
+        })
         const {container} = open()
 
-        await waitFor(() => expect(anyWindow.go.main.App.GetServerAttachment).toHaveBeenCalled())
+        await waitFor(() => expect(goSide.GetServerAttachment).toHaveBeenCalled())
         expect(container.querySelector('.BoardSourceSwitcher')).toBeNull()
     })
 
@@ -35,18 +35,19 @@ describe('components/sidebar/boardSourceSwitcher', () => {
     })
 
     test('shows which board the window is on and offers the other', async () => {
-        anyWindow.go = {main: {App: {
+        fakeGoSide({
             GetServerAttachment: vi.fn().mockResolvedValue(JSON.stringify({
                 selected: 'https://board.example.com',
                 sources: [{id: '', title: 'Эта машина'}, {id: 'https://board.example.com', title: 'https://board.example.com'}],
             })),
             SelectBoardSource: vi.fn().mockResolvedValue('{}'),
-        }}}
+        })
         const reload = vi.fn()
         Object.defineProperty(window, 'location', {value: {reload}, writable: true})
 
         const {container} = open()
         await waitFor(() => expect(container.querySelector('.BoardSourceSwitcher__title')).toBeTruthy())
+
         // What the window is on now is the server, so that is what the control
         // reads.
         expect(container.querySelector('.BoardSourceSwitcher__title')).toHaveTextContent('https://board.example.com')
@@ -54,7 +55,8 @@ describe('components/sidebar/boardSourceSwitcher', () => {
         await userEvent.click(container.querySelector('.BoardSourceSwitcher__current') as HTMLElement)
         await userEvent.click(screen.getByText('Эта машина'))
 
-        expect(anyWindow.go.main.App.SelectBoardSource).toHaveBeenCalledWith('')
+        expect(goSide.SelectBoardSource).toHaveBeenCalledWith('')
+
         // The page holds one board's cards, members and sockets, all fetched
         // against the board it loaded from.
         expect(reload).toHaveBeenCalled()

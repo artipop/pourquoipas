@@ -11,20 +11,19 @@ import {
     hydrateUserSettings,
     importUserSettingsBlob,
 } from './userSettings'
-
-const anyWindow = window as any
+import {fakeGoSide} from './test/goSide'
 
 describe('userSettings and the install’s own memory', () => {
     afterEach(() => {
-        delete anyWindow.go
+        fakeGoSide()
         localStorage.clear()
         vi.clearAllMocks()
     })
 
     test('hydration fills localStorage with what the install remembers', async () => {
-        anyWindow.go = {main: {App: {
+        fakeGoSide({
             GetUIPreferences: vi.fn().mockResolvedValue(JSON.stringify({language: 'de', theme: 'paper'})),
-        }}}
+        })
 
         await hydrateUserSettings()
 
@@ -36,9 +35,9 @@ describe('userSettings and the install’s own memory', () => {
     // wander into a settings file: only the keys the install deliberately
     // keeps come through.
     test('hydration takes only the keys the install keeps', async () => {
-        anyWindow.go = {main: {App: {
+        fakeGoSide({
             GetUIPreferences: vi.fn().mockResolvedValue(JSON.stringify({boardSessionId: 'stolen', language: 'ru'})),
-        }}}
+        })
 
         await hydrateUserSettings()
 
@@ -48,7 +47,7 @@ describe('userSettings and the install’s own memory', () => {
 
     test('a change is written through to the install', () => {
         const set = vi.fn().mockResolvedValue(undefined)
-        anyWindow.go = {main: {App: {SetUIPreference: set}}}
+        fakeGoSide({SetUIPreference: set})
 
         UserSettings.language = 'ru'
         UserSettings.theme = 'screen'
@@ -59,7 +58,7 @@ describe('userSettings and the install’s own memory', () => {
 
     test('forgetting a setting forgets it in the install too', () => {
         const set = vi.fn().mockResolvedValue(undefined)
-        anyWindow.go = {main: {App: {SetUIPreference: set}}}
+        fakeGoSide({SetUIPreference: set})
 
         UserSettings.language = null
 
@@ -70,7 +69,7 @@ describe('userSettings and the install’s own memory', () => {
     // keys are the library's own: neither is the install's business.
     test('keys the install does not keep are not sent', () => {
         const set = vi.fn().mockResolvedValue(undefined)
-        anyWindow.go = {main: {App: {SetUIPreference: set}}}
+        fakeGoSide({SetUIPreference: set})
 
         UserSettings.set(UserSettingKey.WelcomePageViewed, '1')
 
@@ -105,9 +104,9 @@ describe('userSettings and the install’s own memory', () => {
     // a switch. A host that refuses, or a blob that will not build, must not
     // take that down with it.
     test('keeps the setting when the install refuses it', () => {
-        anyWindow.go = {main: {App: {SetUIPreference: () => {
+        fakeGoSide({SetUIPreference: () => {
             throw new Error('no host')
-        }}}}
+        }})
 
         expect(() => UserSettings.set(UserSettingKey.CustomThemeName, 'Тёмная ночь')).not.toThrow()
         expect(UserSettings.get(UserSettingKey.CustomThemeName)).toBe('Тёмная ночь')

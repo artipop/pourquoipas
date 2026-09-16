@@ -4,9 +4,9 @@ import '@testing-library/jest-dom'
 
 import {wrapIntl} from '../../testUtils'
 
-import ServerPanel, {isServerAttachAvailable} from './serverPanel'
+import {fakeGoSide, goSide} from '../../test/goSide'
 
-const anyWindow = window as any
+import ServerPanel, {isServerAttachAvailable} from './serverPanel'
 
 function bindings(state: Record<string, unknown>) {
     return {
@@ -27,22 +27,22 @@ const open = () => render(() => wrapIntl(() => <ServerPanel/>))
 
 describe('components/acp/serverPanel', () => {
     afterEach(() => {
-        delete anyWindow.go
+        fakeGoSide()
     })
 
     // In a browser there is no Go side, so there is nothing to attach and no
     // section to draw.
     test('is not offered where there are no bindings', () => {
         expect(isServerAttachAvailable()).toBe(false)
-        anyWindow.go = {main: {App: bindings({url: '', username: '', running: ''})}}
+        fakeGoSide(bindings({url: '', username: '', running: ''}))
         expect(isServerAttachAvailable()).toBe(true)
     })
 
     test('asks for an address and a login while this desktop works its own board', async () => {
-        anyWindow.go = {main: {App: bindings({url: '', username: '', running: ''})}}
+        fakeGoSide(bindings({url: '', username: '', running: ''}))
         open()
 
-        await waitFor(() => expect(anyWindow.go.main.App.GetServerAttachment).toHaveBeenCalled())
+        await waitFor(() => expect(goSide.GetServerAttachment).toHaveBeenCalled())
         expect(screen.getByText('Server address')).toBeInTheDocument()
         expect(screen.getByText('Username')).toBeInTheDocument()
     })
@@ -50,9 +50,9 @@ describe('components/acp/serverPanel', () => {
     // The board a card lives on is decided when the app starts, so the panel
     // has to say a restart is owed rather than pretend the switch took effect.
     test('says a restart is owed once a server is named', async () => {
-        anyWindow.go = {main: {App: bindings({url: '', username: '', running: ''})}}
+        fakeGoSide(bindings({url: '', username: '', running: ''}))
         const {container} = open()
-        await waitFor(() => expect(anyWindow.go.main.App.GetServerAttachment).toHaveBeenCalled())
+        await waitFor(() => expect(goSide.GetServerAttachment).toHaveBeenCalled())
 
         await userEvent.type(screen.getByPlaceholderText('board.example.com'), 'board.example.com')
         await userEvent.click(screen.getByRole('button', {name: 'Connect'}))
@@ -62,33 +62,34 @@ describe('components/acp/serverPanel', () => {
     })
 
     test('offers the way back to this machine\'s own board', async () => {
-        anyWindow.go = {main: {App: bindings({url: 'https://board.example.com', username: 'anna', running: 'https://board.example.com'})}}
+        fakeGoSide(bindings({url: 'https://board.example.com', username: 'anna', running: 'https://board.example.com'}))
         const {container} = open()
 
         await waitFor(() => expect(screen.getByText('https://board.example.com')).toBeInTheDocument())
         expect(screen.getByText('Signed in as anna')).toBeInTheDocument()
+
         // Attached and running the same address: nothing is owed.
         expect(container.querySelector('.ServerPanel__restart')).toBeNull()
 
         await userEvent.click(screen.getByRole('button', {name: 'Work this machine\'s own board'}))
-        await waitFor(() => expect(anyWindow.go.main.App.DetachServer).toHaveBeenCalled())
+        await waitFor(() => expect(goSide.DetachServer).toHaveBeenCalled())
         expect(screen.getByText('Server address')).toBeInTheDocument()
     })
 
     // The password buys a session and is not itself worth keeping, so the field
     // must not go on holding it after the call.
     test('does not keep the password after connecting', async () => {
-        anyWindow.go = {main: {App: bindings({url: '', username: '', running: ''})}}
+        fakeGoSide(bindings({url: '', username: '', running: ''}))
         const {container} = open()
-        await waitFor(() => expect(anyWindow.go.main.App.GetServerAttachment).toHaveBeenCalled())
+        await waitFor(() => expect(goSide.GetServerAttachment).toHaveBeenCalled())
 
         await userEvent.type(screen.getByPlaceholderText('board.example.com'), 'board.example.com')
         const password = container.querySelector('input[type=password]') as HTMLInputElement
         await userEvent.type(password, 'parol123')
         await userEvent.click(screen.getByRole('button', {name: 'Connect'}))
 
-        await waitFor(() => expect(anyWindow.go.main.App.AttachServer).toHaveBeenCalled())
-        const sent = JSON.parse(anyWindow.go.main.App.AttachServer.mock.calls[0][0])
+        await waitFor(() => expect(goSide.AttachServer).toHaveBeenCalled())
+        const sent = JSON.parse(goSide.AttachServer.mock.calls[0][0])
         expect(sent.password).toBe('parol123')
     })
 })

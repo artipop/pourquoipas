@@ -10,7 +10,8 @@ import Select from '../../widgets/select'
 
 import {createLoader} from '../../hooks/loader'
 
-import {agentBindings} from './bindings'
+import {goApp} from '../../goBridge'
+
 import {AGENT_KINDS, AdapterStatus} from './agentsPanel'
 import {syncAgentsToBoard} from './agentSync'
 
@@ -39,7 +40,7 @@ type Props = {
 
 const AgentQuickAdd = (props: Props) => {
     const intl = useIntl()
-    const bindings = agentBindings()
+    const bindings = goApp()
 
     const [name, setName] = createSignal('claude')
     const [kind, setKind] = createSignal('claude')

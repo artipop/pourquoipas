@@ -4,7 +4,8 @@ import {Accessor, createMemo, createSignal, onSettled} from 'solid-js'
 
 import {UserSettings} from '../../userSettings'
 
-import {agentBindings} from './bindings'
+import {goApp} from '../../goBridge'
+
 import {onAgentEvent} from './agentEvents'
 import {openCardTerminalWindow} from './liveTerminals'
 
@@ -101,7 +102,7 @@ function apply(payload: Attention): void {
 }
 
 async function reload(): Promise<void> {
-    const bindings = agentBindings()
+    const bindings = goApp()
     if (!bindings?.ListAttention) {
         return
     }
@@ -182,7 +183,7 @@ export async function ackWait(target: Attention): Promise<void> {
     // no Go side, this is the whole of it.
     setWaiting((current) => current.map((a) => (keyOf(a) === key ? {...a, acked: true} : a)))
     try {
-        await agentBindings()?.AckAttention?.(key)
+        await goApp()?.AckAttention?.(key)
     } catch {
         // Nothing to say and nothing to undo: the notification is already gone
         // in this window, and the worst a refused ack costs is that the next

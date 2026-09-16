@@ -4,10 +4,10 @@ import '@testing-library/jest-dom'
 
 import {wrapIntl} from '../../testUtils'
 
+import {fakeGoSide} from '../../test/goSide'
+
 import AttentionAnswers from './attentionAnswers'
 import {Attention} from './attention'
-
-const anyWindow = window as any
 
 // A permission the agent's own CLI asked for through its hook: it carries its
 // own options, which is what makes it answerable anywhere.
@@ -31,10 +31,10 @@ vi.mock('./agentEvents', () => ({onAgentEvent: () => () => undefined}))
 
 describe('components/acp/attentionAnswers', () => {
     beforeEach(() => vi.clearAllMocks())
-    afterEach(() => delete anyWindow.go)
+    afterEach(() => fakeGoSide())
 
     it('offers the answers the agent offered', async () => {
-        anyWindow.go = {main: {App: {AnswerQuestion: vi.fn().mockResolvedValue(undefined)}}}
+        fakeGoSide({AnswerQuestion: vi.fn().mockResolvedValue(undefined)})
 
         render(() => wrapIntl(() => <AttentionAnswers target={permission}/>))
 
@@ -46,7 +46,7 @@ describe('components/acp/attentionAnswers', () => {
     // anybody opening the terminal it is waiting in.
     it('answers the agent from wherever the wait is shown', async () => {
         const AnswerQuestion = vi.fn().mockResolvedValue(undefined)
-        anyWindow.go = {main: {App: {AnswerQuestion, AckAttention: vi.fn().mockResolvedValue(undefined)}}}
+        fakeGoSide({AnswerQuestion, AckAttention: vi.fn().mockResolvedValue(undefined)})
 
         render(() => wrapIntl(() => <AttentionAnswers target={permission}/>))
         await userEvent.click(screen.getByText('Разрешить'))
@@ -57,7 +57,7 @@ describe('components/acp/attentionAnswers', () => {
     // A refusal has to be as reachable as an allow, and readable as the heavier
     // of the two rather than as the default.
     it('marks refusing as the heavier answer', async () => {
-        anyWindow.go = {main: {App: {AnswerQuestion: vi.fn().mockResolvedValue(undefined)}}}
+        fakeGoSide({AnswerQuestion: vi.fn().mockResolvedValue(undefined)})
 
         render(() => wrapIntl(() => <AttentionAnswers target={permission}/>))
 
@@ -69,7 +69,7 @@ describe('components/acp/attentionAnswers', () => {
     // the hook — a stage that simply went quiet. Those are answered in the
     // terminal, and a row of buttons here would be a promise this cannot keep.
     it('draws nothing for a wait that carries no question', async () => {
-        anyWindow.go = {main: {App: {}}}
+        fakeGoSide({})
         const silence: Attention = {key: 'term-1', terminalId: 'term-1', cardId: 'c', reason: 'terminal', awaiting: true}
 
         const {container} = render(() => wrapIntl(() => <AttentionAnswers target={silence}/>))
@@ -80,7 +80,7 @@ describe('components/acp/attentionAnswers', () => {
     // The agent stopped waiting — its own box was answered on the terminal's
     // screen, or it gave up. The button visibly did nothing, so it says so.
     it('says so when the agent is no longer waiting for this answer', async () => {
-        anyWindow.go = {main: {App: {AnswerQuestion: vi.fn().mockRejectedValue(new Error('уже неактуален'))}}}
+        fakeGoSide({AnswerQuestion: vi.fn().mockRejectedValue(new Error('уже неактуален'))})
 
         render(() => wrapIntl(() => <AttentionAnswers target={permission}/>))
         await userEvent.click(screen.getByText('Разрешить'))

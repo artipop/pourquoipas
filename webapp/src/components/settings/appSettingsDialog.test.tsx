@@ -8,9 +8,9 @@ import {AppStoreProvider} from '../../store'
 import {IntlProvider} from '../../intl'
 import messagesRu from '../../../i18n/ru.json'
 
-import AppSettingsDialog from './appSettingsDialog'
+import {fakeGoSide} from '../../test/goSide'
 
-const anyWindow = window as any
+import AppSettingsDialog from './appSettingsDialog'
 
 describe('components/settings/appSettingsDialog', () => {
     const store = mockAppStore({teams: {current: {id: 'team-id'}}})
@@ -33,14 +33,14 @@ describe('components/settings/appSettingsDialog', () => {
     ))
 
     afterEach(() => {
-        delete anyWindow.go
+        fakeGoSide()
         vi.clearAllMocks()
     })
 
     // The point of the move: none of this is about a board, so none of it needs
     // one open. The dialog is handed no board and asks for none.
     test('opens a machine registry without a board', async () => {
-        anyWindow.go = {main: {App: bindings()}}
+        fakeGoSide(bindings())
 
         open()
 
@@ -53,7 +53,7 @@ describe('components/settings/appSettingsDialog', () => {
     // only to a board that runs agents, so each is a door on that board's own ⋯
     // menu — bindings or no bindings.
     test('leaves the agents, their proxies and the deploy hosts to the board', async () => {
-        anyWindow.go = {main: {App: bindings()}}
+        fakeGoSide(bindings())
 
         open()
 
@@ -67,7 +67,7 @@ describe('components/settings/appSettingsDialog', () => {
     // install, and used to be edited in the dialog that opens one — which made
     // it look like part of opening it.
     test('carries the instructions a card-less conversation starts with', async () => {
-        anyWindow.go = {main: {App: bindings()}}
+        fakeGoSide(bindings())
 
         open()
         userEvent.click(screen.getByRole('button', {name: 'Other'}))
@@ -78,7 +78,7 @@ describe('components/settings/appSettingsDialog', () => {
     // Whether an agent may interrupt is a setting of the install like the rest
     // of them, and it was the last thing left in the sidebar's menu.
     test('carries whether an agent waiting may interrupt', async () => {
-        anyWindow.go = {main: {App: bindings()}}
+        fakeGoSide(bindings())
 
         open()
         userEvent.click(screen.getByRole('button', {name: 'Other'}))
@@ -89,7 +89,7 @@ describe('components/settings/appSettingsDialog', () => {
 
     // A build that cannot do a thing does not offer a section for it.
     test('leaves out what this build has no bindings for', async () => {
-        anyWindow.go = {main: {App: {GetPlanningPrompt: vi.fn().mockResolvedValue('')}}}
+        fakeGoSide({GetPlanningPrompt: vi.fn().mockResolvedValue('')})
 
         open()
 

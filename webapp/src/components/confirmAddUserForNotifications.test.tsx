@@ -7,6 +7,8 @@ import {MemberRole} from '../blocks/board'
 import {wrapDNDIntl} from '../testUtils'
 import {IUser} from '../user'
 
+import {fakeGoSide} from '../test/goSide'
+
 import ConfirmAddUserForNotifications from './confirmAddUserForNotifications'
 
 describe('/components/confirmAddUserForNotifications', () => {
@@ -67,10 +69,10 @@ describe('/components/confirmAddUserForNotifications', () => {
     // a question with no meaningful answer — and the viewer role was the one it
     // defaulted to, which is the opposite of what an agent is for.
     it('asks an agent no permission and adds it as an editor', async () => {
-        const onConfirm = vi.fn();
-        (window as any).go = {main: {App: {
+        const onConfirm = vi.fn()
+        fakeGoSide({
             ListAgentAccounts: vi.fn().mockResolvedValue(JSON.stringify([{name: 'clava', username: 'clava'}])),
-        }}}
+        })
 
         const result = render(() =>
             wrapDNDIntl(() =>
@@ -90,14 +92,14 @@ describe('/components/confirmAddUserForNotifications', () => {
         userEvent.click(result.getByTitle('Add to board'))
         await waitFor(() => expect(onConfirm).toHaveBeenCalledWith('agent-user-id', MemberRole.Editor))
 
-        delete (window as any).go
+        fakeGoSide()
     })
 
     // And a person is still asked, which is the whole reason the dialog exists.
     it('still asks a person which permission to give', async () => {
-        (window as any).go = {main: {App: {
+        fakeGoSide({
             ListAgentAccounts: vi.fn().mockResolvedValue('[]'),
-        }}}
+        })
 
         const result = render(() =>
             wrapDNDIntl(() =>
@@ -112,6 +114,6 @@ describe('/components/confirmAddUserForNotifications', () => {
         )
 
         expect(result.getByText('Permissions')).toBeInTheDocument()
-        delete (window as any).go
+        fakeGoSide()
     })
 })

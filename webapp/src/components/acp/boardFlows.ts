@@ -4,7 +4,8 @@ import {Accessor, createEffect, createSignal, onSettled} from 'solid-js'
 
 import {BoardGroup, IPropertyTemplate} from '../../blocks/board'
 
-import {agentBindings} from './bindings'
+import {goApp} from '../../goBridge'
+
 import {onAgentEvent} from './agentEvents'
 import {Flow, nodeFor} from './automation'
 
@@ -28,7 +29,7 @@ let unsubscribe: (() => void) | undefined
 let board = ''
 
 async function reload(): Promise<void> {
-    const bindings = agentBindings()
+    const bindings = goApp()
     if (!bindings || !board) {
         setFlows([])
         setCardFlows({})

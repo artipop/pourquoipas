@@ -6,7 +6,7 @@ import {useIntl} from '../../intl'
 
 import Button from '../../widgets/buttons/button'
 
-import {agentBindings} from './bindings'
+import {goApp} from '../../goBridge'
 
 import './proxiesPanel.scss'
 
@@ -32,14 +32,14 @@ function displayProxy(proxy?: string): string {
 }
 
 export function isProxiesAvailable(): boolean {
-    return Boolean(agentBindings()?.ListProxies)
+    return Boolean(goApp()?.ListProxies)
 }
 
 const emptyForm: ProxyEntry = {name: ''}
 
 const ProxiesPanel = () => {
     const intl = useIntl()
-    const bindings = agentBindings()
+    const bindings = goApp()
 
     const [proxies, setProxies] = createSignal<ProxyEntry[]>([])
     const [form, setForm] = createSignal<ProxyEntry | null>(null)

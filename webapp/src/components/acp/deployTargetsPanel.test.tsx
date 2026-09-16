@@ -4,13 +4,13 @@ import '@testing-library/jest-dom'
 
 import {wrapIntl} from '../../testUtils'
 
-import DeployTargetsPanel, {isDeployTargetsAvailable} from './deployTargetsPanel'
+import {fakeGoSide} from '../../test/goSide'
 
-const anyWindow = window as any
+import DeployTargetsPanel, {isDeployTargetsAvailable} from './deployTargetsPanel'
 
 describe('components/acp/deployTargetsPanel', () => {
     afterEach(() => {
-        delete anyWindow.go
+        fakeGoSide()
         vi.clearAllMocks()
     })
 
@@ -27,7 +27,7 @@ describe('components/acp/deployTargetsPanel', () => {
             UpdateDeployTarget: vi.fn(),
             RemoveDeployTarget: vi.fn(),
         }
-        anyWindow.go = {main: {App: bindings}}
+        fakeGoSide(bindings)
         expect(isDeployTargetsAvailable()).toBe(true)
 
         render(() => wrapIntl(() => <DeployTargetsPanel onClose={vi.fn()}/>))
@@ -72,7 +72,7 @@ describe('components/acp/deployTargetsPanel', () => {
             UpdateDeployTarget: vi.fn().mockResolvedValue('{}'),
             RemoveDeployTarget: vi.fn(),
         }
-        anyWindow.go = {main: {App: bindings}}
+        fakeGoSide(bindings)
 
         render(() => wrapIntl(() => <DeployTargetsPanel onClose={vi.fn()}/>))
         await waitFor(() => expect(screen.getByText('staging')).toBeInTheDocument())
@@ -97,7 +97,7 @@ describe('components/acp/deployTargetsPanel', () => {
             UpdateDeployTarget: vi.fn(),
             RemoveDeployTarget: vi.fn(),
         }
-        anyWindow.go = {main: {App: bindings}}
+        fakeGoSide(bindings)
 
         render(() => wrapIntl(() => <DeployTargetsPanel onClose={vi.fn()}/>))
         await waitFor(() => expect(screen.getByText('No deploy targets yet.')).toBeInTheDocument())

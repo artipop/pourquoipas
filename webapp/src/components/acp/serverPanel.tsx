@@ -5,7 +5,7 @@ import {Show, createSignal, onSettled} from 'solid-js'
 import {useIntl} from '../../intl'
 import Button from '../../widgets/buttons/button'
 
-import {agentBindings} from './bindings'
+import {goApp} from '../../goBridge'
 
 import './serverPanel.scss'
 
@@ -27,12 +27,12 @@ type AttachState = {
 }
 
 export function isServerAttachAvailable(): boolean {
-    return Boolean(agentBindings()?.GetServerAttachment)
+    return Boolean(goApp()?.GetServerAttachment)
 }
 
 const ServerPanel = () => {
     const intl = useIntl()
-    const bindings = agentBindings()
+    const bindings = goApp()
 
     const [state, setState] = createSignal<AttachState | null>(null)
     const [url, setUrl] = createSignal('')

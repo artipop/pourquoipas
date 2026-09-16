@@ -1,8 +1,8 @@
 // The Wails-generated Go bindings are PascalCase methods, not constructors.
-/* eslint-disable new-cap */
+
 import {createSignal} from 'solid-js'
 
-import {agentBindings} from './bindings'
+import {goApp} from '../../goBridge'
 
 // The machine's agents, as the board knows them, asked once for the whole page.
 //
@@ -34,7 +34,7 @@ let inflight: Promise<void> | undefined
 export const registeredAgents = () => known()?.length
 
 export function refreshRegisteredAgents(): Promise<void> {
-    const bindings = agentBindings()
+    const bindings = goApp()
     if (!bindings?.ListAgentAccounts) {
         setKnown([])
         return Promise.resolve()

@@ -3,9 +3,9 @@ import '@testing-library/jest-dom'
 
 import {wrapIntl} from '../../testUtils'
 
-import FlowStrip, {isFlowStripAvailable, waited} from './flowStrip'
+import {fakeGoSide} from '../../test/goSide'
 
-const anyWindow = window as any
+import FlowStrip, {isFlowStripAvailable, waited} from './flowStrip'
 
 const cardFlow = {
     flow: 'Feature',
@@ -26,13 +26,13 @@ function stubBindings(flow: unknown) {
         MarkCardOutcome: vi.fn().mockResolvedValue(undefined),
         AnswerCardAsk: vi.fn().mockResolvedValue(undefined),
     }
-    anyWindow.go = {main: {App: bindings}}
+    fakeGoSide(bindings)
     return bindings
 }
 
 describe('components/acp/flowStrip', () => {
     afterEach(() => {
-        delete anyWindow.go
+        fakeGoSide()
         vi.clearAllMocks()
     })
 

@@ -1,4 +1,4 @@
-import {agentBindings} from './bindings'
+import {goApp} from '../../goBridge'
 
 // What the agents are doing, as it happens: a session changed state, a terminal
 // opened or closed, a card started waiting for a person.
@@ -101,7 +101,7 @@ const disconnectIfIdle = (): void => {
 // browser build with no bridge to a desktop app — for the same reason every
 // other use of these bindings is feature-detected.
 export function onAgentEvent(event: string, handler: AgentEventHandler): () => void {
-    if (!agentBindings()) {
+    if (!goApp()) {
         return () => undefined
     }
     const existing = handlers.get(event) || new Set<AgentEventHandler>()

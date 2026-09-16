@@ -5,17 +5,17 @@ import '@testing-library/jest-dom'
 import {wrapIntl} from '../../testUtils'
 import {TestBlockFactory} from '../../test/testBlockFactory'
 
+import {fakeGoSide} from '../../test/goSide'
+
 import WorkdirsDialog from './workdirsDialog'
 
 vi.mock('../../mutator')
-
-const anyWindow = window as any
 
 describe('components/acp/workdirsDialog', () => {
     const board = TestBlockFactory.createBoard()
 
     afterEach(() => {
-        delete anyWindow.go
+        fakeGoSide()
         vi.clearAllMocks()
     })
 
@@ -31,7 +31,7 @@ describe('components/acp/workdirsDialog', () => {
             AddAgentWorkdir: vi.fn(),
             RemoveAgentWorkdir: vi.fn(),
         }
-        anyWindow.go = {main: {App: bindings}}
+        fakeGoSide(bindings)
 
         render(() => wrapIntl(() =>
             <WorkdirsDialog

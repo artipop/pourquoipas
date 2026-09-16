@@ -123,9 +123,10 @@ committed; the page calls through it over the `@wailsio/runtime` it bundles,
 pinned to go.mod's Wails (`bindings_test.go`). **Every exported method of `App`
 is callable from the page**, so wiring `main` does itself stays unexported. The
 bootstrap in `proxy.go` only seeds the session and sets `window.hasGoSide`;
-`goBridge.ts` then loads the bindings into `window.go.main.App`, which is where
-every call site feature-detects and where a test puts its fake. In a plain
-browser nothing is loaded.
+`goApp()` (`goBridge.ts`) hands out the imported service only when it is set,
+and every call site asks it. **No test reaches the runtime**: the setup file
+mocks the bindings module for the suite, and a test installs its Go side with
+`fakeGoSide` (`src/test/goSide.ts`), never a global.
 
 **Events come back over a socket, not the Wails bus** (`eventsws.go`,
 `/acp/events/ws`), because the bus only reaches windows the app owns and a page

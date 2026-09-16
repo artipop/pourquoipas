@@ -2,7 +2,7 @@
 /* eslint-disable new-cap */
 import {IUser} from '../../user'
 
-import {agentBindings} from './bindings'
+import {goApp} from '../../goBridge'
 
 // Which agents a board offers on a card. The registry is the machine's — every
 // agent registered anywhere gets an account on every board — so a machine with
@@ -46,7 +46,7 @@ export function invalidateBoardAgents(): void {
 // the desktop app: a browser or plugin build has no registry, so there are no
 // agents to tell from people.
 export function loadBoardAgents(boardId: string): Promise<BoardAgents> {
-    const bindings = agentBindings()
+    const bindings = goApp()
     if (!bindings?.BoardAgentUsers || !boardId) {
         return Promise.resolve(EMPTY)
     }

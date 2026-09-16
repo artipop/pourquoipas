@@ -1,3 +1,4 @@
+import {goApp} from './goBridge'
 import {notifySettingsChanged} from './nativeApp'
 import {Utils} from './utils'
 
@@ -67,16 +68,11 @@ const installKept = new Set<string>([
     UserSettingKey.PrefillCardFolder,
 ])
 
-// The Wails bindings, when this bundle runs in the desktop app — the same
-// bundle also runs in a plain browser, where localStorage is the whole memory
-// and these are absent.
-const preferenceBindings = () => (window as any).go?.main?.App
-
 // hydrateUserSettings fills localStorage with what the install remembers,
 // before the first render (main.tsx awaits it): the theme and the language
 // have to be right on the first paint, not a correction after it.
 export async function hydrateUserSettings(): Promise<void> {
-    const bindings = preferenceBindings()
+    const bindings = goApp()
     if (!bindings?.GetUIPreferences) {
         return
     }
@@ -108,7 +104,7 @@ export async function hydrateUserSettings(): Promise<void> {
 export async function reportLanguage(lang: string): Promise<void> {
     try {
         // eslint-disable-next-line new-cap
-        await preferenceBindings()?.UseLanguage?.(lang)
+        await goApp()?.UseLanguage?.(lang)
     } catch (e) {
         // No Go side, or a binding that threw: the templates stay in the
         // language they were installed in.
@@ -136,7 +132,7 @@ export class UserSettings {
         if (installKept.has(key)) {
             try {
                 // eslint-disable-next-line new-cap
-                preferenceBindings()?.SetUIPreference?.(key, value ?? '')?.catch?.(() => undefined)
+                goApp()?.SetUIPreference?.(key, value ?? '')?.catch?.(() => undefined)
             } catch (e) {
                 // A binding that throws on the way out rather than in its
                 // promise: the install goes without, this session keeps it.

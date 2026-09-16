@@ -3,16 +3,16 @@ import '@testing-library/jest-dom'
 import {TestBlockFactory} from '../../test/testBlockFactory'
 import mutator from '../../mutator'
 
+import {fakeGoSide} from '../../test/goSide'
+
 import {syncAgentsToBoard} from './agentSync'
 
 vi.mock('../../mutator')
 const mockedMutator = vi.mocked(mutator)
 
-const anyWindow = window as any
-
 describe('components/acp/agentSync', () => {
     afterEach(() => {
-        delete anyWindow.go
+        fakeGoSide()
         vi.clearAllMocks()
     })
 
@@ -28,7 +28,7 @@ describe('components/acp/agentSync', () => {
                 {name: 'codex-a', created: false},
             ])),
         }
-        anyWindow.go = {main: {App: bindings}}
+        fakeGoSide(bindings)
 
         expect(await syncAgentsToBoard(board)).toEqual({accounts: 1})
         expect(bindings.SyncAgentUsers).toHaveBeenCalledWith(board.id)
@@ -43,10 +43,10 @@ describe('components/acp/agentSync', () => {
     // the undo stack each time.
     test('writes nothing to a board that never had the field', async () => {
         const board = TestBlockFactory.createBoard()
-        anyWindow.go = {main: {App: {
+        fakeGoSide({
             ListAgents: vi.fn().mockResolvedValue(JSON.stringify([{name: 'claude', kind: 'claude'}])),
             SyncAgentUsers: vi.fn().mockResolvedValue('[]'),
-        }}}
+        })
 
         expect(await syncAgentsToBoard(board)).toEqual({accounts: 0})
         expect(mockedMutator.updateBoardCardProperties).not.toHaveBeenCalled()
@@ -60,7 +60,7 @@ describe('components/acp/agentSync', () => {
             ListAgents: vi.fn().mockResolvedValue('[]'),
             SyncAgentUsers: vi.fn(),
         }
-        anyWindow.go = {main: {App: bindings}}
+        fakeGoSide(bindings)
 
         expect(await syncAgentsToBoard(board)).toEqual({accounts: 0})
         expect(bindings.SyncAgentUsers).not.toHaveBeenCalled()

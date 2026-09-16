@@ -2,7 +2,7 @@
 /* eslint-disable new-cap */
 import {Accessor, createSignal, onSettled} from 'solid-js'
 
-import {agentBindings} from '../acp/bindings'
+import {goApp} from '../../goBridge'
 import {onAgentEvent} from '../acp/agentEvents'
 
 // Where the app is in replacing itself.
@@ -64,7 +64,7 @@ let consumers = 0
 let unsubscribe: (() => void) | undefined
 
 async function reload(): Promise<void> {
-    const bindings = agentBindings()
+    const bindings = goApp()
     if (!bindings?.GetUpdateState) {
         setState(unknown)
         return
@@ -114,7 +114,7 @@ export function useUpdateState(): Accessor<UpdateState> {
 // browser, where there is no Go side to ask, and by the headless server build,
 // which is not distributed as a release.
 export function isUpdatesAvailable(): boolean {
-    return Boolean(agentBindings()?.GetUpdateState)
+    return Boolean(goApp()?.GetUpdateState)
 }
 
 // updateWaiting is what the sidebar's settings button draws a dot for: a

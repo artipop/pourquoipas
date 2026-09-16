@@ -5,7 +5,7 @@ import {useIntl} from '../../intl'
 import Button from '../../widgets/buttons/button'
 import Switch from '../../widgets/switch'
 
-import {agentBindings} from '../acp/bindings'
+import {goApp} from '../../goBridge'
 
 import {UpdateState, useUpdateState} from './updates'
 
@@ -34,7 +34,7 @@ const megabytes = (bytes?: number): string => {
 
 const UpdatesPanel = () => {
     const intl = useIntl()
-    const bindings = agentBindings()
+    const bindings = goApp()
     const state = useUpdateState()
 
     const [error, setError] = createSignal('')

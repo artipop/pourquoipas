@@ -8,6 +8,8 @@ import {AppStoreProvider} from '../../store'
 
 import {TestBlockFactory} from '../../test/testBlockFactory'
 
+import {fakeGoSide} from '../../test/goSide'
+
 import NewCardButton from './newCardButton'
 
 const board = TestBlockFactory.createBoard()
@@ -106,7 +108,6 @@ describe('components/viewHeader/newCardButton', () => {
     // offered where cards are made rather than among the board's settings,
     // which is where it used to be and where nobody looking for it would go.
     describe('talking a task over with an agent', () => {
-        const anyWindow = window as any
 
         const openMenu = () => {
             render(() =>
@@ -126,16 +127,16 @@ describe('components/viewHeader/newCardButton', () => {
         }
 
         afterEach(() => {
-            delete anyWindow.go
+            fakeGoSide()
         })
 
         test('is offered beside the card templates when an agent can be opened', () => {
-            anyWindow.go = {main: {App: {
+            fakeGoSide({
                 OpenPlanningTerminal: vi.fn(),
                 ListTerminals: vi.fn().mockResolvedValue('[]'),
                 ListAgentWorkdirs: vi.fn().mockResolvedValue('[]'),
                 ListAgents: vi.fn().mockResolvedValue('[]'),
-            }}}
+            })
             openMenu()
             expect(screen.getByRole('button', {name: 'Talk it over with an agent…'})).toBeInTheDocument()
         })

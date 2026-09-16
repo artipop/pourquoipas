@@ -6,13 +6,13 @@ import {wrapIntl} from '../../testUtils'
 
 import {Board, createBoard} from '../../blocks/board'
 
+import {fakeGoSide} from '../../test/goSide'
+
 import PlanningDialog, {isPlanningAvailable} from './planningDialog'
 
 // The board the dialog was opened from: what bounds where the agent may leave
 // the cards it agrees on, and whose folders are offered.
 const board: Board = createBoard({id: 'board-1'} as any)
-
-const anyWindow = window as any
 
 function planningBindings() {
     return {
@@ -43,7 +43,7 @@ const openTerminal = {
 describe('components/acp/planningDialog', () => {
     beforeEach(() => {
         vi.clearAllMocks()
-        delete anyWindow.go
+        fakeGoSide()
     })
 
     it('is inert without desktop bindings', () => {
@@ -55,7 +55,7 @@ describe('components/acp/planningDialog', () => {
     // answer, not an option in a list: clicking it opens the terminal.
     it('skips the one agent, and a folder name starts the terminal', async () => {
         const bindings = planningBindings()
-        anyWindow.go = {main: {App: bindings}}
+        fakeGoSide(bindings)
 
         render(() => wrapIntl(() => <PlanningDialog board={board} onClose={vi.fn()}/>))
 
@@ -73,7 +73,7 @@ describe('components/acp/planningDialog', () => {
     // folder name is what Go resolves into it.
     it('offers the board’s drafts and starts in them', async () => {
         const bindings = planningBindings()
-        anyWindow.go = {main: {App: bindings}}
+        fakeGoSide(bindings)
 
         render(() => wrapIntl(() => <PlanningDialog board={board} onClose={vi.fn()}/>))
 
@@ -88,7 +88,7 @@ describe('components/acp/planningDialog', () => {
     it('asks which agent first, and the name leads back', async () => {
         const bindings = planningBindings()
         bindings.ListAgents = vi.fn().mockResolvedValue(JSON.stringify([{name: 'planner'}, {name: 'coder'}]))
-        anyWindow.go = {main: {App: bindings}}
+        fakeGoSide(bindings)
 
         render(() => wrapIntl(() => <PlanningDialog board={board} onClose={vi.fn()}/>))
 
@@ -109,7 +109,7 @@ describe('components/acp/planningDialog', () => {
     it('lists an open terminal by its name and the agent’s own recap', async () => {
         const bindings = planningBindings()
         bindings.ListTerminals = vi.fn().mockResolvedValue(JSON.stringify([openTerminal]))
-        anyWindow.go = {main: {App: bindings}}
+        fakeGoSide(bindings)
 
         render(() => wrapIntl(() => <PlanningDialog board={board} onClose={vi.fn()}/>))
 
@@ -129,7 +129,7 @@ describe('components/acp/planningDialog', () => {
         bindings.ListTerminals = vi.fn().mockResolvedValue(JSON.stringify([
             {id: 'term-8', agent: 'planner', cwd: '/data/boards/board-1', boardFolder: true, running: true},
         ]))
-        anyWindow.go = {main: {App: bindings}}
+        fakeGoSide(bindings)
 
         render(() => wrapIntl(() => <PlanningDialog board={board} onClose={vi.fn()}/>))
 
@@ -141,7 +141,7 @@ describe('components/acp/planningDialog', () => {
     it('renames a conversation in place', async () => {
         const bindings = planningBindings()
         bindings.ListTerminals = vi.fn().mockResolvedValue(JSON.stringify([openTerminal]))
-        anyWindow.go = {main: {App: bindings}}
+        fakeGoSide(bindings)
 
         render(() => wrapIntl(() => <PlanningDialog board={board} onClose={vi.fn()}/>))
 
@@ -158,7 +158,7 @@ describe('components/acp/planningDialog', () => {
     it('asks before ending a terminal, and then ends it', async () => {
         const bindings = planningBindings()
         bindings.ListTerminals = vi.fn().mockResolvedValue(JSON.stringify([openTerminal]))
-        anyWindow.go = {main: {App: bindings}}
+        fakeGoSide(bindings)
 
         render(() => wrapIntl(() => <PlanningDialog board={board} onClose={vi.fn()}/>))
 
@@ -181,7 +181,7 @@ describe('components/acp/planningDialog', () => {
     // it are still handed to the dialog below, so this fails if it goes back to
     // reading them.
     it('does not ask about the instructions it opens with', async () => {
-        anyWindow.go = {main: {App: planningBindings()}}
+        fakeGoSide(planningBindings())
 
         render(() => wrapIntl(() => <PlanningDialog board={board} onClose={vi.fn()}/>))
 
@@ -192,7 +192,7 @@ describe('components/acp/planningDialog', () => {
     it('says what went wrong instead of failing silently', async () => {
         const bindings = planningBindings()
         bindings.OpenPlanningTerminal = vi.fn().mockRejectedValue(new Error('CLI агента не установлен'))
-        anyWindow.go = {main: {App: bindings}}
+        fakeGoSide(bindings)
 
         render(() => wrapIntl(() => <PlanningDialog board={board} onClose={vi.fn()}/>))
 

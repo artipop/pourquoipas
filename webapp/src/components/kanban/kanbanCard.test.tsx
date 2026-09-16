@@ -11,6 +11,8 @@ import {IPropertyTemplate} from '../../blocks/board'
 import {TestRouter, mockAppStore, wrapDNDIntl} from '../../testUtils'
 import {AppStoreProvider} from '../../store'
 
+import {fakeGoSide} from '../../test/goSide'
+
 import KanbanCard from './kanbanCard'
 
 vi.mock('../../mutator')
@@ -48,6 +50,7 @@ describe('src/components/kanban/kanbanCard', () => {
         ],
     }
     const state = {
+
         // The card menu offers "Copy link" where somebody else can open it,
         // which is a team install (docs/teamwork.md).
         clientConfig: {
@@ -250,10 +253,9 @@ describe('src/components/kanban/kanbanCard', () => {
     // nobody is looking at. The board is where that has to be visible, and it
     // is visible on the card the agent is working — not on the board as a whole.
     test('shows that the card agent is waiting for a person', async () => {
-        const anyWindow = window as any
-        anyWindow.go = {main: {App: {ListAttention: vi.fn().mockResolvedValue(JSON.stringify([
+        fakeGoSide({ListAttention: vi.fn().mockResolvedValue(JSON.stringify([
             {key: 'q:q-1', questionId: 'q-1', cardId: card.id, agent: 'clauuus', reason: 'question', awaiting: true},
-        ]))}}}
+        ]))})
 
         render(() => wrapDNDIntl(() =>
             <AppStoreProvider store={store}>
@@ -274,7 +276,7 @@ describe('src/components/kanban/kanbanCard', () => {
         ), {wrapper: TestRouter})
 
         expect(await screen.findByTitle('clauuus is asking')).toBeInTheDocument()
-        delete anyWindow.go
+        fakeGoSide()
     })
 
     // Where the card goes next is answered in the card, on its route strip —
@@ -282,12 +284,11 @@ describe('src/components/kanban/kanbanCard', () => {
     // was a face saying two things at once: what the work is, and a decision
     // about it. The strip draws them beside the stage they are about.
     test('does not offer where the card goes next on its face', async () => {
-        const anyWindow = window as any
         const bindings = {
             ListAttention: vi.fn().mockResolvedValue('[]'),
             MarkCardOutcome: vi.fn().mockResolvedValue(undefined),
         }
-        anyWindow.go = {main: {App: bindings}}
+        fakeGoSide(bindings)
 
         render(() => wrapDNDIntl(() =>
             <AppStoreProvider store={store}>
@@ -310,12 +311,11 @@ describe('src/components/kanban/kanbanCard', () => {
         await waitFor(() => expect(bindings.ListAttention).toHaveBeenCalled())
         expect(screen.queryByRole('button', {name: /Деплой/})).toBeNull()
         expect(screen.queryByRole('button', {name: /В работе/})).toBeNull()
-        delete anyWindow.go
+        fakeGoSide()
     })
 
     test('says nothing on a card no agent is waiting on', async () => {
-        const anyWindow = window as any
-        anyWindow.go = {main: {App: {ListAttention: vi.fn().mockResolvedValue('[]')}}}
+        fakeGoSide({ListAttention: vi.fn().mockResolvedValue('[]')})
 
         render(() => wrapDNDIntl(() =>
             <AppStoreProvider store={store}>
@@ -336,20 +336,19 @@ describe('src/components/kanban/kanbanCard', () => {
         ), {wrapper: TestRouter})
 
         expect(screen.queryByRole('status')).toBeNull()
-        delete anyWindow.go
+        fakeGoSide()
     })
 
     // Getting to the CLI used to mean opening the card, finding the toolbar and
     // opening a panel. A terminal already running on a card is the board's
     // business, and the dot that says so is what opens it.
     test('opens the terminal from the board when one is running on the card', async () => {
-        const anyWindow = window as any
         const openCardTerminal = vi.fn().mockResolvedValue(JSON.stringify({id: 'term-3', windowed: true}))
-        anyWindow.go = {main: {App: {
+        fakeGoSide({
             ListAttention: vi.fn().mockResolvedValue('[]'),
             ListTerminals: vi.fn().mockResolvedValue(JSON.stringify([{id: 'term-3', cardId: card.id}])),
             OpenCardTerminal: openCardTerminal,
-        }}}
+        })
 
         render(() => wrapDNDIntl(() =>
             <AppStoreProvider store={store}>
@@ -374,15 +373,14 @@ describe('src/components/kanban/kanbanCard', () => {
         // A window of its own: the board stays where it is, which is the whole
         // point of going there from the board rather than through the card.
         expect(openCardTerminal).toHaveBeenCalledWith(card.id, '', '', true)
-        delete anyWindow.go
+        fakeGoSide()
     })
 
     // The same dot, and the same click: an agent that has stopped to ask is
     // asking in a terminal, so that is where the answer is given.
     test('opens the terminal from the dot an agent is asking on', async () => {
-        const anyWindow = window as any
         const openCardTerminal = vi.fn().mockResolvedValue(JSON.stringify({id: 'term-4', windowed: true}))
-        anyWindow.go = {main: {App: {
+        fakeGoSide({
             ListAttention: vi.fn().mockResolvedValue(JSON.stringify([{
                 key: 'q:1',
                 cardId: card.id,
@@ -392,7 +390,7 @@ describe('src/components/kanban/kanbanCard', () => {
             }])),
             ListTerminals: vi.fn().mockResolvedValue('[]'),
             OpenCardTerminal: openCardTerminal,
-        }}}
+        })
 
         render(() => wrapDNDIntl(() =>
             <AppStoreProvider store={store}>
@@ -414,6 +412,6 @@ describe('src/components/kanban/kanbanCard', () => {
 
         await userEvent.click(await screen.findByTitle('clauuus is asking'))
         expect(openCardTerminal).toHaveBeenCalledWith(card.id, '', '', true)
-        delete anyWindow.go
+        fakeGoSide()
     })
 })

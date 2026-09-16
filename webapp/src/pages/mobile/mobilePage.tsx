@@ -5,7 +5,7 @@ import {useNavigate} from '@solidjs/router'
 
 import {useIntl} from '../../intl'
 import type {IntlShape} from '../../intl'
-import {agentBindings} from '../../components/acp/bindings'
+import {goApp} from '../../goBridge'
 import {onAgentEvent} from '../../components/acp/agentEvents'
 import {attentionHeading, useAttention} from '../../components/acp/attention'
 import AttentionAnswers from '../../components/acp/attentionAnswers'
@@ -74,7 +74,7 @@ const MobilePage = () => {
     const [boards] = createLoader(() => listBoards(), [] as BindingBoard[])
 
     const [terminals, reloadTerminals] = createLoader(async (): Promise<Terminal[]> => {
-        const bindings = agentBindings()
+        const bindings = goApp()
         if (!bindings?.ListTerminals) {
             return []
         }

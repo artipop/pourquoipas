@@ -1,6 +1,6 @@
 // The Wails-generated Go bindings are PascalCase methods, not constructors.
 /* eslint-disable new-cap */
-import {agentBindings} from '../components/acp/bindings'
+import {goApp} from '../goBridge'
 
 // The board as the bindings expose it.
 //
@@ -65,17 +65,17 @@ async function readList<T>(call?: () => Promise<string>): Promise<T[]> {
 }
 
 export function listBoards(): Promise<BindingBoard[]> {
-    const bindings = agentBindings()
+    const bindings = goApp()
     return readList<BindingBoard>(bindings?.ListBoards && (() => bindings.ListBoards!()))
 }
 
 export function listInbox(): Promise<BindingCard[]> {
-    const bindings = agentBindings()
+    const bindings = goApp()
     return readList<BindingCard>(bindings?.ListInbox && (() => bindings.ListInbox!()))
 }
 
 export function listBoardCards(boardId: string): Promise<BindingCard[]> {
-    const bindings = agentBindings()
+    const bindings = goApp()
     if (!boardId) {
         return Promise.resolve([])
     }
@@ -85,7 +85,7 @@ export function listBoardCards(boardId: string): Promise<BindingCard[]> {
 // moveCardToBoard is the phone's half of the card menu's the move-to-board item, and it is the same move: the card keeps its id, so its comments
 // come with it and the source that made it still points at it.
 export async function moveCardToBoard(cardId: string, boardId: string, column: string): Promise<void> {
-    const bindings = agentBindings()
+    const bindings = goApp()
     if (!bindings?.MoveCardToBoard) {
         throw new Error('перенос недоступен')
     }
@@ -93,5 +93,5 @@ export async function moveCardToBoard(cardId: string, boardId: string, column: s
 }
 
 export function isBoardReadable(): boolean {
-    return Boolean(agentBindings()?.ListBoards)
+    return Boolean(goApp()?.ListBoards)
 }

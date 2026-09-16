@@ -6,7 +6,8 @@ import {useIntl} from '../../intl'
 
 import Dialog from '../dialog'
 
-import {agentBindings} from './bindings'
+import {goApp} from '../../goBridge'
+
 import {Attention, keyOf, useAttention} from './attention'
 import {wasMovedHere} from './movedHere'
 
@@ -93,7 +94,7 @@ const AskDialog = () => {
 
     const answer = async (value: string) => {
         const wait = target()
-        const bindings = agentBindings()
+        const bindings = goApp()
         if (!wait?.cardId || !bindings?.AnswerCardAsk || busy()) {
             return
         }

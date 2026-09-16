@@ -12,6 +12,8 @@ import client from '../../octoClient'
 
 import mutator from '../../mutator'
 
+import {fakeGoSide} from '../../test/goSide'
+
 import PersonProperty from './property'
 
 // import {IPropertyTemplate, Board} from '../blocks/board'
@@ -229,13 +231,12 @@ describe('properties/person', () => {
     // crew of its columns, and the assignee list is narrowed to that: an agent
     // this board does not name is not offered, and a person is untouched.
     test('a board that names its agents offers those and no other', async () => {
-        const anyWindow = window as any
-        anyWindow.go = {main: {App: {
+        fakeGoSide({
             BoardAgentUsers: vi.fn().mockResolvedValue(JSON.stringify({
                 board: ['username-4'],
                 all: ['username-4', 'username-5'],
             })),
-        }}}
+        })
 
         const store = mockAppStore(state)
         const renderResult = render(() => wrapIntl(() =>
@@ -261,6 +262,6 @@ describe('properties/person', () => {
         // A person is not an agent and is offered whatever the board names.
         expect(renderResult.getByText('username-1')).not.toBeNull()
 
-        delete anyWindow.go
+        fakeGoSide()
     })
 })

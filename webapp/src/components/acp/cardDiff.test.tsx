@@ -4,9 +4,9 @@ import '@testing-library/jest-dom'
 
 import {wrapIntl} from '../../testUtils'
 
-import CardDiffPanel, {CardDiffView, patchLines} from './cardDiff'
+import {fakeGoSide} from '../../test/goSide'
 
-const anyWindow = window as any
+import CardDiffPanel, {CardDiffView, patchLines} from './cardDiff'
 
 const patch = `diff --git a/auth.go b/auth.go
 index 1111111..2222222 100644
@@ -30,13 +30,13 @@ function stubBindings(overrides: Record<string, unknown> = {}) {
         OpenCardDiff: vi.fn().mockResolvedValue('http://127.0.0.1:1/acp/diff/card-1'),
         ...overrides,
     }
-    anyWindow.go = {main: {App: bindings}}
+    fakeGoSide(bindings)
     return bindings
 }
 
 describe('components/acp/cardDiff', () => {
     afterEach(() => {
-        delete anyWindow.go
+        fakeGoSide()
         vi.clearAllMocks()
     })
 

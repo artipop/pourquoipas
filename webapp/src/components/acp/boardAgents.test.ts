@@ -1,14 +1,14 @@
 import {IUser} from '../../user'
 
-import {invalidateBoardAgents, keepBoardAgents, loadBoardAgents} from './boardAgents'
+import {fakeGoSide} from '../../test/goSide'
 
-const anyWindow = window as any
+import {invalidateBoardAgents, keepBoardAgents, loadBoardAgents} from './boardAgents'
 
 const asUser = (username: string): IUser => ({username} as IUser)
 
 describe('components/acp/boardAgents', () => {
     afterEach(() => {
-        delete anyWindow.go
+        fakeGoSide()
         invalidateBoardAgents()
         vi.clearAllMocks()
     })
@@ -39,7 +39,7 @@ describe('components/acp/boardAgents', () => {
     // draws one each, and they all ask the same question.
     test('the answer is asked for once per board and shared', async () => {
         const BoardAgentUsers = vi.fn().mockResolvedValue(JSON.stringify({board: ['coc'], all: ['cl', 'coc']}))
-        anyWindow.go = {main: {App: {BoardAgentUsers}}}
+        fakeGoSide({BoardAgentUsers})
 
         const [first, second] = await Promise.all([loadBoardAgents('board-1'), loadBoardAgents('board-1')])
         expect(first).toEqual({board: ['coc'], all: ['cl', 'coc']})
@@ -55,7 +55,7 @@ describe('components/acp/boardAgents', () => {
     // A refusal narrows nothing rather than emptying the field: wrong in the
     // direction that still lets somebody assign the card.
     test('a board whose agents cannot be read offers everybody', async () => {
-        anyWindow.go = {main: {App: {BoardAgentUsers: vi.fn().mockRejectedValue('нет такой доски')}}}
+        fakeGoSide({BoardAgentUsers: vi.fn().mockRejectedValue('нет такой доски')})
         expect(await loadBoardAgents('board-1')).toEqual({board: [], all: []})
     })
 })

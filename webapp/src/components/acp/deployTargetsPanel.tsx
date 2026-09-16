@@ -6,7 +6,7 @@ import {useIntl} from '../../intl'
 
 import Button from '../../widgets/buttons/button'
 
-import {agentBindings} from './bindings'
+import {goApp} from '../../goBridge'
 
 import './deployTargetsPanel.scss'
 
@@ -34,7 +34,7 @@ export type DeployTarget = {
 }
 
 export function isDeployTargetsAvailable(): boolean {
-    return Boolean(agentBindings()?.ListDeployTargets)
+    return Boolean(goApp()?.ListDeployTargets)
 }
 
 const emptyForm: DeployTarget = {name: '', sshHost: ''}
@@ -56,7 +56,7 @@ type Props = {
 
 const DeployTargetsPanel = (props: Props) => {
     const intl = useIntl()
-    const bindings = agentBindings()
+    const bindings = goApp()
 
     const [targets, setTargets] = createSignal<DeployTarget[]>([])
     const [form, setForm] = createSignal<DeployTarget | null>(null)

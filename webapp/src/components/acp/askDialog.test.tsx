@@ -15,7 +15,7 @@ vi.mock('./attention', async () => {
     return {...real, useAttention: () => () => waits}
 })
 
-vi.mock('./bindings', () => ({agentBindings: () => ({AnswerCardAsk: answerCardAsk})}))
+vi.mock('../../goBridge', () => ({goApp: () => ({AnswerCardAsk: answerCardAsk})}))
 
 const held = (over: Partial<Attention> = {}): Attention => ({
     key: 'card:card1',

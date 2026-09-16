@@ -13,29 +13,17 @@ import (
 
 // bootstrapScript is injected into the served index.html <head>, before any app
 // JS runs. It
-//   - seeds the single-user session token into localStorage,
+//   - seeds the single-user session token into localStorage, and
 //   - tells the page there is a Go side behind this origin (window.hasGoSide),
-//     which is what makes it load the generated bindings (webapp/src/
-//     goBridge.ts), and
-//   - wires window.openInNewBrowser (a hook the webapp already calls for
-//     external links, CSV export, etc.) to the bound App.OpenInBrowser method,
-//     plus a catch-all that sends every outward link there.
+//     which is what makes goApp (webapp/src/goBridge.ts) hand out the
+//     bindings generated from App.
 //
-// The page calls Go through bindings generated from App (webapp/bindings,
-// `wails3 task generate:bindings`) over the @wailsio/runtime it bundles, so
-// there is no bridge to build here. What the page cannot find out by itself is
-// whether anything answers behind its origin: the same bundle runs in a plain
-// browser, where the bindings must stay unloaded and every desktop-only screen
-// inert. Nothing but the front door injects this script, so its presence is
-// the answer.
-//
-// The catch-all runs in the capture phase and covers *every* absolute http(s)
-// anchor, not only target=_blank ones without an inline handler: deferring to
-// an inline handler leaves the link dead wherever that handler does not run,
-// and the webview cannot navigate to an outside origin either, so the click
-// does nothing at all. Capturing first makes this the one path out. It reaches
-// App through window.go.main.App, which the page installs at boot — long before
-// anybody can click.
+// The page calls Go through those bindings over the @wailsio/runtime it
+// bundles, as a Wails template's page does, so there is no bridge to build
+// here, and sending outward links to the system browser is the page's own
+// business too (installGoBridge). What the page cannot find out by itself is
+// whether anything answers behind its origin: nothing but the front door
+// injects this script, so its presence is the answer.
 //
 // There is deliberately no window.webSocketBaseURL here, which under v2 told
 // the webapp's socket client the board server's own address. The page, the API
@@ -61,28 +49,6 @@ func bootstrapScript(sessionToken string) string {
   } catch (e) {}
 
   window.hasGoSide = true;
-
-  window.openInNewBrowser = function (href) {
-    var app = window.go && window.go.main && window.go.main.App;
-    if (href && app) {
-      app.OpenInBrowser(href);
-    }
-  };
-  document.addEventListener('click', function (e) {
-    if (e.button !== 0 || e.defaultPrevented) { return; }
-    var a = e.target && e.target.closest && e.target.closest('a[href]');
-    if (!a) { return; }
-    var href = a.href || a.getAttribute('href') || '';
-    if (!/^https?:\/\//i.test(href)) { return; }
-    // In-app navigation is same-origin and stays in the webview; anything
-    // pointing outside is for the system browser.
-    try {
-      if (new URL(href, window.location.href).origin === window.location.origin) { return; }
-    } catch (err) {}
-    e.preventDefault();
-    e.stopPropagation();
-    window.openInNewBrowser(href);
-  }, true);
 })();
 </script>`, sessionToken)
 }

@@ -8,7 +8,8 @@ import CompassIcon from '../../widgets/icons/compassIcon'
 
 import {createLoader} from '../../hooks/loader'
 
-import {agentBindings} from './bindings'
+import {goApp} from '../../goBridge'
+
 import {onAgentEvent} from './agentEvents'
 
 import './cardDiff.scss'
@@ -47,7 +48,7 @@ export type CardDiffData = {
 }
 
 export function isCardDiffAvailable(): boolean {
-    return Boolean(agentBindings()?.GetCardDiff)
+    return Boolean(goApp()?.GetCardDiff)
 }
 
 // A patch line, classified by the one character git puts in front of it. The
@@ -190,7 +191,7 @@ const FileBlock = (props: {file: DiffFile, foldAll?: number, unfoldAll?: number}
 export const CardDiffView = (props: {cardId: string}) => {
     const intl = useIntl()
     const [reading, reread] = createLoader(async (cardId: string): Promise<{diff?: CardDiffData, error: string}> => {
-        const bindings = agentBindings()
+        const bindings = goApp()
         if (!bindings?.GetCardDiff) {
             return {error: ''}
         }
@@ -358,7 +359,7 @@ const CardDiffPanel = (props: Props) => {
     const intl = useIntl()
 
     const inWindow = async () => {
-        const bindings = agentBindings()
+        const bindings = goApp()
         if (!bindings?.OpenCardDiff) {
             return
         }
@@ -376,7 +377,7 @@ const CardDiffPanel = (props: Props) => {
                 <span class='CardDiffPanel__name'>
                     {intl.formatMessage({id: 'CardDiff.title', defaultMessage: 'Changes'})}
                 </span>
-                <Show when={Boolean(agentBindings()?.OpenCardDiff)}>
+                <Show when={Boolean(goApp()?.OpenCardDiff)}>
                     <button
                         type='button'
                         class='CardDiff__button'

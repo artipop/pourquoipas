@@ -8,7 +8,8 @@ import Button from '../../widgets/buttons/button'
 import Select from '../../widgets/select'
 import {sendFlashMessage} from '../flashMessages'
 
-import {agentBindings} from './bindings'
+import {goApp} from '../../goBridge'
+
 import {ProxyEntry} from './proxiesPanel'
 import PromptField from './promptField'
 import {MCPServers, mcpServersPlaceholder, serversToText, textToServers} from './mcpServers'
@@ -141,7 +142,7 @@ export const AGENT_KINDS = [
 ]
 
 export function isAgentsAvailable(): boolean {
-    return Boolean(agentBindings()?.ListAgents)
+    return Boolean(goApp()?.ListAgents)
 }
 
 // envToText / textToEnv convert between the KEY=VALUE textarea and the env map.
@@ -230,7 +231,7 @@ const emptyForm: AgentEntry = {name: '', kind: 'claude'}
 
 const AgentsPanel = () => {
     const intl = useIntl()
-    const bindings = agentBindings()
+    const bindings = goApp()
 
     const [agents, setAgents] = createSignal<AgentEntry[]>([])
     const [proxies, setProxies] = createSignal<ProxyEntry[]>([])
