@@ -1,8 +1,6 @@
 import {Show, createSignal} from 'solid-js'
 import type {JSX} from '@solidjs/web'
 
-import cx from 'classnames'
-
 import {useIntl} from '../../intl'
 
 import {ContentBlock} from '../../blocks/contentBlock'
@@ -50,7 +48,7 @@ const TextElement = (props: Props): JSX.Element => {
     return (
         <div class='TextElement'>
             <MarkdownEditor
-                class={cx({'markdown-editor-error': isError()})}
+                class={isError() ? 'markdown-editor-error' : ''}
                 text={blockTitle()}
                 placeholderText={intl.formatMessage({id: 'ContentBlock.editText', defaultMessage: 'Edit text...'})}
                 onChange={textChangedHandler}
