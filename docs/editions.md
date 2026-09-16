@@ -44,7 +44,7 @@ workflow читает их из исходника через `sed`, тем же
 wails3 task build EDITION=lifetime      # бинарь платного издания
 wails3 task package EDITION=lifetime    # .app/инсталлятор
 go test -tags lifetime ./...            # тесты в этом издании
-go vet -tags "lifetime json1 sqlite3" . # и сборка с тегом
+go vet -tags lifetime .                 # и сборка с тегом
 ```
 
 `EDITION=base` — значение по умолчанию, и оно **не добавляет тега вовсе**: без

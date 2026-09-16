@@ -1989,10 +1989,10 @@ onto `blocks(id)` is the fix, and it cannot be added later: SQLite's
 `ALTER TABLE` has no `ADD CONSTRAINT`, so a key is written in `CREATE TABLE` or
 never. The keys are written **and enforced**: `foreign_keys` travels in the DSN
 rather than as a `PRAGMA`, being a per-connection setting — a pragma run once
-is silently off on the next connection — and the parameter's spelling depends
-on which SQLite driver the build tag chose (`sqlite_dsn_cgo.go` /
-`sqlite_dsn_pure.go`, and `internal/appschema` spells it for the driver it
-itself imports). What SQLite does not do is check rows that were already
+is silently off on the next connection — spelled for modernc
+(`sqlite_dsn.go`), whose DSN ignores a parameter it does not know, so
+`internal/appschema` takes the spelling from `sqlstore` rather than writing its
+own. What SQLite does not do is check rows that were already
 hanging when the setting went on; the one-time sweep for those is still owed
 (`docs/deferred.md`, «Одна база: хвосты плана»).
 

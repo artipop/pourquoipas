@@ -54,9 +54,8 @@ tasks:
     env:
       GOOS: windows
       # No cgo, and not as a default somebody might override: Wails needs none
-      # on Windows (WebView2 is reached from pure Go), and without it the board
-      # server's SQLite is modernc's pure-Go driver rather than mattn's
-      # (server/services/store/sqlstore/sqlite_pure.go). So the build needs no
+      # on Windows (WebView2 is reached from pure Go), and the board server's
+      # SQLite is pure Go everywhere. So the build needs no
       # MinGW, cross-compiling from a Mac or Linux is this same `go build`, and
       # Go's own linker honours -H windowsgui, which zig's did not.
       #

@@ -52,14 +52,17 @@ dev_mode:
       - "*.ts" # The frontend directory will be excluded entirely by the setting above.
     git_ignore: true
   executes:
-    - cmd: wails3 build DEV=true EXTRA_TAGS=json1,sqlite3
+    # No `frontend` tag: the page comes from Vite, so nothing is embedded. An
+    # empty EXTRA_TAGS would fall back to the default, which has it; a lone comma
+    # is a tag list go build reads as no tags.
+    - cmd: wails3 build DEV=true EXTRA_TAGS=,
       type: blocking
     # Vite with HMR, as in the Wails template. `wails3 dev` hands the app its
     # address in FRONTEND_DEVSERVER_URL, and a development build's front door
     # takes the page from it (devserver.go, proxy.go).
     - cmd: wails3 task common:dev:frontend
       type: background
-    - cmd: wails3 task run EXTRA_TAGS=json1,sqlite3
+    - cmd: wails3 task run
       type: primary
 
 # File Associations

@@ -123,13 +123,13 @@ The Go code is platform-agnostic — the same files build for every OS:
 it is waiting in — and [`mobile/`](mobile/README.md) is a small Wails app for
 iOS and Android that is one window onto it, over the tailnet door above. It is
 its own Go module because the mobile build compiles `package main` from the
-module root, and this one is a board server with cgo SQLite, git and a pty.
+module root, and this one is a board server with SQLite, git and a pty.
 
 Builds are **native per platform** (each on its own machine/CI runner) — the
 desktop build needs cgo on macOS and Linux, for Wails itself, and cgo does not
 cross-compile with the host toolchain; `wails3 task setup:docker` builds the
-image that can, if a Mac has to produce a Linux binary. Windows is pure Go
-(SQLite from `modernc.org/sqlite`) and cross-compiles from anywhere.
+image that can, if a Mac has to produce a Linux binary. Windows is pure Go and
+cross-compiles from anywhere; SQLite is `modernc.org/sqlite`, pure Go, everywhere.
 
 **[How a card gets worked on](docs/flows.md)** walks through the whole thing for
 somebody using the board: what happens when a card lands in a column, when a
@@ -176,8 +176,7 @@ There is deliberately **no `window.webSocketBaseURL`** here, unlike v2:
 - A C toolchain where the desktop build needs cgo:
   - **macOS**: Xcode Command Line Tools.
   - **Linux**: `gcc`, plus `libgtk-3-dev` and `libwebkit2gtk-4.1-dev` (Wails).
-  - **Windows**: none — the build is pure Go (`CGO_ENABLED=0`, SQLite from
-    `modernc.org/sqlite`). NSIS (`makensis`) for the installer, and the
+  - **Windows**: none — the build is pure Go (`CGO_ENABLED=0`). NSIS (`makensis`) for the installer, and the
     WebView2 runtime (bundled with modern Windows).
 - **Line endings are LF in every checkout**, whatever `core.autocrlf` says on
   the machine — `.gitattributes` pins it, because generated files are compared

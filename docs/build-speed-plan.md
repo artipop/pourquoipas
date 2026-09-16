@@ -39,7 +39,7 @@ CPU по модулям при пустом кеше (`go build -debug-actiongra
 | `tailscale.com` + `gvisor` + wireguard | ~75 | 43 %, всё ради `tsnetdoor.go` |
 | стандартная библиотека | 31 | |
 | прочие сторонние | 19 | |
-| `modernc.org/sqlite` + `libc` | 18 | в cgo-сборке больше не линкуется (пункт 2) |
+| `modernc.org/sqlite` + `libc` | 18 | с 2026-09-16 единственная SQLite, вместо C-компиляции mattn (пункт 2) |
 | линковка | 8 | на каждое изменение корневого пакета |
 | `golang.org/x/*` | 6 | |
 | наш код (`internal`, `server`, корень) | 7,5 | |
@@ -63,11 +63,9 @@ CPU по модулям при пустом кеше (`go build -debug-actiongra
 
 ### ~~2. modernc.org/sqlite в cgo-сборке~~ — сделано 2026-09-15
 
-Драйвер миграций выбирается тем же ограничением, что и драйвер базы
-(`sqliteMigrationDriver` в `sqlstore/sqlite.go` / `sqlite_pure.go`). В
-cgo-сборке десктопа modernc больше нет, в сборке без cgo нет mattn.
-Описание — `build-and-platforms.md`. От cgo миграции не зависели и до этого:
-они брали modernc всегда, и лишним он был как раз в cgo-сборке.
+Драйвер миграций стал выбираться тем же ограничением, что и драйвер базы, и в
+сборке осталась одна SQLite. С 2026-09-16 ограничения нет: SQLite везде
+modernc, и миграции тоже (`build-and-platforms.md`).
 
 ### ~~3. viper → `encoding/json`~~ — сделано иначе
 

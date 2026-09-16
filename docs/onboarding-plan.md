@@ -162,7 +162,7 @@ preferences and navigated to a route that no longer existed.
 - **A browser against a real build, from an empty data directory.** A build
   without the `production` tag uses `XCIII-dev`, so this never touches a
   real install: `wails3 task build:server DEV=true`, or `go build` with
-  `server,json1,sqlite3,frontend`. A throwaway cypress project pointed at
+  `server,frontend`. A throwaway cypress project pointed at
   `http://localhost:8080` drives it; the session token is in the bootstrap
   script the front door injects into the page.
 - **The whole path, not the entry point.** Template → wizard → first task →

@@ -155,10 +155,9 @@ tasks:
       - go build {{.BUILD_FLAGS}} -o "{{.BIN_DIR}}/{{.APP_NAME}}-server{{exeExt}}"
     vars:
       BUILD_FLAGS: '-tags server,{{.EXTRA_TAGS}}{{if ne .DEV "true"}},production -trimpath -ldflags="-w -s"{{else}}{{end}} -buildvcs=false'
-    # CGO_ENABLED is left to Go: a server needs no Wails, so cgo matters here
-    # only for which SQLite driver is linked — mattn where a C compiler is
-    # found, modernc's pure Go where it is not (sqlstore/sqlite_pure.go). Both
-    # work; forcing 1 only made a Windows host without MinGW fail to build.
+    # CGO_ENABLED is left to Go: a server needs no Wails and its SQLite is pure
+    # Go, so nothing here needs a C compiler; forcing 1 only made a Windows host
+    # without MinGW fail to build.
 
   run:server:
     summary: Builds and runs a development server (DEV=true)
@@ -176,18 +175,15 @@ tasks:
       the page built first: frontend/dist is embedded, and the image has no node.
       Pure Go on distroless/static by default.
 
-      Usage: task build:docker [TAG=xciii:latest] [CGO_ENABLED=1] [GO_IMAGE=...] [RUNTIME_IMAGE=...] [EDITION=lifetime]
-      For mattn's SQLite instead of modernc's:
-        task build:docker CGO_ENABLED=1 GO_IMAGE=golang:bookworm RUNTIME_IMAGE=gcr.io/distroless/base-debian12
+      Usage: task build:docker [TAG=xciii:latest] [GO_IMAGE=...] [RUNTIME_IMAGE=...] [EDITION=lifetime]
     deps:
       - task: build:frontend
     cmds:
       - >-
         docker build
-        --build-arg CGO_ENABLED={{.CGO_ENABLED | default "0"}}
         --build-arg GO_IMAGE={{.GO_IMAGE | default "golang:alpine"}}
         --build-arg RUNTIME_IMAGE={{.RUNTIME_IMAGE | default "gcr.io/distroless/static-debian12"}}
-        --build-arg TAGS=server,production,frontend,json1,sqlite3{{.EDITION_TAG}}
+        --build-arg TAGS=server,production,frontend{{.EDITION_TAG}}
         -t {{.TAG | default "xciii:latest"}}
         -f build/docker/Dockerfile.server .
     preconditions:

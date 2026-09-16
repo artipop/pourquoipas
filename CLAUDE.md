@@ -54,13 +54,12 @@ code builds a headless server (`-tags server`) that serves the board to a browse
 - `wails3 task generate:bindings` — run by every build when Go changed, as in
   the template; by hand after changing `App` when no build follows. They are
   committed: `bindings_test.go` and CI's regeneration fail when they fall behind.
-- Build tags travel as `EXTRA_TAGS`, default `json1,sqlite3,frontend`; Linux adds
-  `gtk3`.
-- **Which SQLite is compiled in is cgo's answer.** `sqlite3 && cgo` is
-  `mattn/go-sqlite3`; anything else is `modernc.org/sqlite`, registered under the
-  same name (`sqlstore/sqlite_pure.go`), with `SQLiteDSN` spelling the settings
-  for whichever it is. **Windows builds without cgo by default** and
-  cross-compiles from anywhere; macOS and Linux desktops need cgo for Wails itself.
+- Build tags travel as `EXTRA_TAGS`, default `frontend`; Linux adds `gtk3`.
+- **SQLite is `modernc.org/sqlite` in every build**, pure Go, registered under
+  the name `sqlite3` (`sqlstore/sqlite.go`); `SQLiteDSN` spells its settings as
+  `_pragma=…`, and a mattn spelling is silently nothing. **cgo is Wails' alone**:
+  macOS and Linux desktops need it, Windows and the server build without it and
+  cross-compile from anywhere.
 - **A packaged app is not a child of a shell.** launchd hands the `.app` a bare
   PATH and no `TERM`; `internal/userpath` restores the login shell's PATH for the
   process, and `terminalEnv` writes `TERM`/`COLORTERM` for the pty. A bug that
@@ -77,10 +76,9 @@ Tests:
 
 - `npm test` in `frontend/` — vitest under jsdom, no coverage (`npm run
   test:coverage` for it), `npm run updatesnapshot` to rewrite snapshots.
-- `go test -tags "json1 sqlite3" ./...` — on mattn, as macOS and Linux ship.
-  Without tags or cgo it runs on modernc, as Windows ships. `go vet -tags "server
-  json1 sqlite3" .` checks the headless build, which has files of its own.
-  `./...` also walks `frontend/node_modules`; that noise is cosmetic.
+- `go test ./...` — no tags needed. `go vet -tags server .` checks the headless
+  build, which has files of its own. `./...` also walks `frontend/node_modules`;
+  that noise is cosmetic.
 - Known rare flakes, only under a full `./...`: `TestPatchBoard` (`server/app`)
   and `TestASessionAsksTheCardForAToolOutsideThePolicy`. Re-run the package alone
   before blaming a change.

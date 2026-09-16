@@ -47,7 +47,7 @@ jobs:
         run: test -d frontend/dist
 
       - name: Vet
-        run: go vet -tags "json1 sqlite3" ./...
+        run: go vet ./...
 
       # The whole suite on SQLite; on the other two, the packages that talk to a
       # database. The rest is the agent integration and the page's Go side,
@@ -58,9 +58,9 @@ jobs:
           FOCALBOARD_STORE_TEST_DB_TYPE: ${{ matrix.db }}
         run: |
           if [ "${{ matrix.db }}" = "sqlite3" ]; then
-            go test -count=1 -tags "json1 sqlite3" ./...
+            go test -count=1 ./...
           else
-            go test -count=1 -tags "json1 sqlite3" \
+            go test -count=1 \
               ./server/services/store/... ./server/integrationtests/...
           fi
 

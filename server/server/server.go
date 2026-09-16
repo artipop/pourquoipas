@@ -138,8 +138,8 @@ func NewStore(config *config.Configuration, isSingleUser bool, logger mlog.Logge
 		// for ever, exactly as it did when they were separate files.
 		//
 		// A DSN rather than a PRAGMA because it has to hold for every
-		// connection, and how it is spelled depends on which driver the build
-		// chose — see sqlstore.SQLiteDSN.
+		// connection, and how it is spelled is the driver's — see
+		// sqlstore.SQLiteDSN.
 		dsn = sqlstore.SQLiteDSN(dsn)
 	}
 	sqlDB, err := sql.Open(config.DBType, dsn)

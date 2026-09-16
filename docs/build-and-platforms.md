@@ -22,10 +22,8 @@
 
 ## Теги сборки
 
-`EXTRA_TAGS` по умолчанию `json1,sqlite3,frontend`:
+`EXTRA_TAGS` по умолчанию `frontend`:
 
-- `json1`, `sqlite3` — cgo-SQLite (`mattn/go-sqlite3`), но только если cgo
-  включён; без cgo они ничего не выбирают, и SQLite — чистый Go (ниже);
 - `frontend` — `go:embed` каталога `frontend/dist`;
 - `gtk3` добавляется на Linux сам (`GTK_TAG` в `build/linux/Taskfile.yml`);
 - `server` — headless-сборка, у неё свои файлы (`window_server.go` вместо
@@ -49,27 +47,27 @@
 за это одной холодной сборкой; тег `production` сам по себе дешёвый, он
 меняет только пакеты с файлами под ним. Замеры — `build-speed-plan.md`.
 
-## Два драйвера SQLite, и выбирает их cgo
+## Одна SQLite, и cgo ей не нужен
 
-Драйвер выбирается ограничением `sqlite3 && cgo`
-(`server/services/store/sqlstore/sqlite.go`): тег и включённый cgo — это
-`mattn/go-sqlite3`, всё остальное — `modernc.org/sqlite`, чистый Go
-(`sqlite_pure.go`), зарегистрированный под тем же именем `sqlite3`, потому что
-`DBType` — одновременно и имя диалекта, и имя драйвера. DSN пишется под тот же
-выбор (`SQLiteDSN`): у двух драйверов разное написание `foreign_keys` и
-`busy_timeout`, а незнакомый параметр оба молча игнорируют.
+SQLite во всех сборках — `modernc.org/sqlite`, чистый Go
+(`server/services/store/sqlstore/sqlite.go`), зарегистрированный ещё раз под
+именем `sqlite3`, потому что `DBType` — одновременно и имя диалекта, и имя
+драйвера. Настройки соединения пишутся в DSN его написанием (`SQLiteDSN`,
+`_pragma=foreign_keys(1)`); незнакомый параметр — например, `_foreign_keys=on`
+в написании mattn — он молча игнорирует, то есть это не ошибка, а выключенная
+настройка. У golang-migrate берётся пакет `database/sqlite`: `database/sqlite3`
+построчно тот же, но импортирует mattn и притащил бы в сборку вторую SQLite.
 
-Раньше `CGO_ENABLED=0` был ловушкой: сборка с тегом `sqlite3` компилировалась
-чисто, линковала заглушку mattn (`static_mock.go` — регистрирует `sqlite3` и на
-каждый `Open` отвечает «Binary was compiled with 'CGO_ENABLED=0' […] This is a
-stub») и умирала на первом запросе. Теперь то же сочетание получает modernc.
-
-Миграции подчиняются тому же выбору. У golang-migrate два SQLite-пакета,
-построчно одинаковых: они отличаются только драйвером, который импортируют
-сбоку (`database/sqlite` — modernc, `database/sqlite3` — mattn). Какой взять,
-решает то же ограничение (`sqliteMigrationDriver` в `sqlite.go` /
-`sqlite_pure.go`), и в сборку попадает ровно одна SQLite. До 2026-09-15 миграции
-всегда брали modernc, и cgo-сборка линковала обе: 18 с CPU на холодной сборке.
+До 2026-09-16 драйвер выбирало ограничение `sqlite3 && cgo`: на macOS и Linux
+был `mattn/go-sqlite3`, на Windows и в сборках без cgo — modernc. Два драйвера
+значили два написания DSN, которые уже однажды разошлись молча (ключи были
+выключены, `docs/fork-shrink-removed.md`), и платформы, проверенные на разных
+SQLite. Cgo на macOS и Linux всё равно нужен Wails, так что mattn ничего не
+экономил. Замер перед переходом — наборы на modernc не медленнее: `sqlstore`
+1,8 с против 3,6 с на mattn, `integrationtests` 10 с против 12 с,
+`boardadapter` 13,9 с против 16,1 с (macOS/arm64, `-count=1`). Session
+extension, на которую рассчитывает `icloud-sync.md`, в modernc собрана
+(`SQLITE_ENABLE_SESSION`), и её функции доступны из Go без cgo.
 
 Без cgo не собирается только десктоп на macOS и Linux — из-за самого Wails (у
 `wails/v3/pkg/mac` исключены все файлы, GTK на Linux), и падает он честно. На
@@ -92,20 +90,20 @@ bookworm — и кросс-образ вместе с ним — на 4.8. Сн�
 `GTK_TAG=`.
 
 **Windows.** `wails3 task windows:build` даёт PE32+ x86-64 **без cgo**:
-`CGO_ENABLED=0` задан в `build/windows/Taskfile.yml` жёстко, SQLite — modernc.
+`CGO_ENABLED=0` задан в `build/windows/Taskfile.yml` жёстко.
 Ни MinGW, ни кросс-образа не нужно — и на самой Windows, и с мака, где это
 тот же `go build` с `GOOS=windows`, а внутренний линкер Go честно ставит
 GUI-подсистему.
 
 Headless-сборка (`wails3 task build:server`) под Windows тоже без cgo:
-`build:server` оставляет `CGO_ENABLED` на усмотрение Go, а без C-компилятора
-это 0 и modernc. На Wails v3.0.0-beta.2, с которой проект начинался, она не
+`build:server` оставляет `CGO_ENABLED` на усмотрение Go, и ему C-компилятор не
+нужен ни при каком значении. На Wails v3.0.0-beta.2, с которой проект начинался, она не
 компилировалась вовсе — `webview_window_windows_nonclient.go` был помечен
 только `windows`, без `!server`; апстрим исправил это в beta.4. Проверено на
 beta.22: сервер стартует, прогоняет миграции на новой базе и отдаёт страницу.
 
 Сборки с cgo под Windows больше нет вовсе — ни через MinGW, ни через
-кросс-образ, — потому что cgo там нужен был одной SQLite. У того пути было две
+кросс-образ, — потому что cgo там был нужен одной SQLite. У того пути было две
 грабли, и они — причина не возвращать его без нужды:
 
 - build-скрипт кросс-образа экспортировал `CGO_CFLAGS="-w"`, из-за чего zig
@@ -173,8 +171,7 @@ beta.22: сервер стартует, прогоняет миграции на
 `wails3 task build:docker` — образ серверного режима по шаблону Wails
 (`build/docker/Dockerfile.server`): сначала собирается страница (`frontend/dist`
 вшивается тегом `frontend`, node в образе нет), потом чистый Go без cgo на
-`distroless/static`. `CGO_ENABLED=1` с glibc-образами даёт mattn вместо
-modernc. `run:docker` запускает его с данными в томе `xciii-data`.
+`distroless/static`. `run:docker` запускает его с данными в томе `xciii-data`.
 
 Настраивается окружением при `docker run`:
 

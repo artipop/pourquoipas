@@ -7,9 +7,8 @@ vars:
   # by `wails3 build GOOS=...` (or the GOOS env var) for cross-compilation. The
   # tasks below dispatch to the matching platform Taskfile via this variable.
   GOOS: '{{.GOOS | default OS}}'
-  # Tags every build of this module needs: json1/sqlite3 for the cgo SQLite
-  # driver the in-process board server runs on, frontend for the go:embed
-  # of frontend/dist. Wails' own tasks append `production` (and
+  # Tags every build of this module needs: frontend, for the go:embed of
+  # frontend/dist. SQLite takes none — it is pure Go in every build. Wails' own tasks append `production` (and
   # `server` for the server build) to whatever stands here.
   # BASE_TAGS exists so the Linux Taskfile can add its GTK tag without a var
   # redefining itself, which Task resolves to nothing.
@@ -22,7 +21,7 @@ vars:
   # keeps the default build byte-for-byte what it was.
   EDITION: '{{.EDITION | default "base"}}'
   EDITION_TAG: '{{if eq .EDITION "base"}}{{else}},{{.EDITION}}{{end}}'
-  BASE_TAGS: '{{.EXTRA_TAGS | default "json1,sqlite3,frontend"}}{{.EDITION_TAG}}'
+  BASE_TAGS: '{{.EXTRA_TAGS | default "frontend"}}{{.EDITION_TAG}}'
   EXTRA_TAGS: '{{.BASE_TAGS}}'
   # The port `wails3 dev` chose for Vite (common:dev:frontend), as in the
   # template.
@@ -117,7 +116,7 @@ tasks:
     env:
       FOCALBOARD_STORE_TEST_DB_TYPE: '{{.DB}}'
     cmds:
-      - go test -count=1 -tags "json1,sqlite3" ./server/services/store/... ./server/integrationtests/...
+      - go test -count=1 ./server/services/store/... ./server/integrationtests/...
 
   test:db:all:
     summary: Runs that suite against all three vendors in turn

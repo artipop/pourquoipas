@@ -14,14 +14,6 @@ require (
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674
 	github.com/krolaw/zipstream v0.0.0-20180621105154-0a2661891f94
 	github.com/lib/pq v1.10.9
-	// v2.0.3 is a tag mattn/go-sqlite3's author retracted in practice: the module
-	// never declared a /v2 path, so Go treats it as +incompatible, the code behind
-	// it is from 2019 — older than everything on the live v1.14.x line — and
-	// +incompatible sorts above v1.14.x, so it is what "latest" resolves to. It
-	// used to arrive through mattermost/server/public and needed a `replace` to
-	// hold it down; with that dependency gone this repository is the only thing
-	// requiring the driver, so an explicit version is enough.
-	github.com/mattn/go-sqlite3 v1.14.49
 	github.com/modelcontextprotocol/go-sdk v1.6.1
 	github.com/pkg/errors v0.9.1
 	github.com/rivo/uniseg v0.4.7
