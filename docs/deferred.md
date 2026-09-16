@@ -671,11 +671,12 @@ QA. Тогда стадия берёт работника не из крю ко�
 
 - `internal/acp` не компилируется — хелперы `git` и `write` лежат в
   `terminal_test.go` под `//go:build !windows`, а зовут их и другие файлы;
-- тесты `uisettings` в корневом пакете изолируют каталог данных через `HOME` и
-  `XDG_CONFIG_HOME`, а `os.UserConfigDir()` на Windows читает `%AppData%` — так
-  что они **пишут в настоящий** `%AppData%\XCIII-dev\ui-settings.json`, и
-  дев-сборка потом открывается с тем, что туда положил тест. Пока это не
-  исправлено, корневой пакет на Windows запускать не стоит;
+- ~~тесты `uisettings` пишут в настоящий `%AppData%`~~ — починено 2026-09-16:
+  каталог установки подменяет `isolateAppData` (`datadir_test.go`), и он
+  называет все три платформы сразу. До этого тесты изолировали только `HOME` и
+  `XDG_CONFIG_HOME`, а `os.UserConfigDir()` на Windows читает `%AppData%`: тест
+  про предел размера положил 100 КиБ нулей под ключ `themes` в настоящий
+  `ui-settings.json` дев-сборки, и она потом читала их обратно;
 - `internal/dokku`, `internal/secrets`, `internal/userpath`,
   `TestGetFilePath` в `server/app` — unix-пути, права на файл, launchd,
   разделитель пути.

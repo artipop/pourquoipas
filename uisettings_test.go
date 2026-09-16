@@ -12,9 +12,7 @@ import (
 // localStorage is keyed to a loopback origin with a random port, so anything
 // left there is gone by the next launch.
 func TestUIPreferencesSurviveInTheAppsOwnData(t *testing.T) {
-	home := t.TempDir()
-	t.Setenv("HOME", home)
-	t.Setenv("XDG_CONFIG_HOME", filepath.Join(home, ".config"))
+	isolateAppData(t)
 
 	app := &App{}
 	if prefs, err := app.GetUIPreferences(); err != nil || prefs != "{}" {
@@ -57,9 +55,7 @@ func TestUIPreferencesSurviveInTheAppsOwnData(t *testing.T) {
 // The first release of this file kept only the language, in a field of its
 // own. It reads back as the preference it since became.
 func TestUISettingsFoldTheOldLanguageField(t *testing.T) {
-	home := t.TempDir()
-	t.Setenv("HOME", home)
-	t.Setenv("XDG_CONFIG_HOME", filepath.Join(home, ".config"))
+	isolateAppData(t)
 
 	dir, err := appDataDir("", 0o755)
 	if err != nil {
@@ -86,9 +82,7 @@ func TestUISettingsFoldTheOldLanguageField(t *testing.T) {
 // The caps are a backstop, not a schema: a runaway key or value must not grow
 // the settings file without bound.
 func TestUIPreferenceRefusesTheUnreasonable(t *testing.T) {
-	home := t.TempDir()
-	t.Setenv("HOME", home)
-	t.Setenv("XDG_CONFIG_HOME", filepath.Join(home, ".config"))
+	isolateAppData(t)
 
 	app := &App{}
 	if err := app.SetUIPreference("", "x"); err == nil {
@@ -114,9 +108,7 @@ func TestUIPreferenceRefusesTheUnreasonable(t *testing.T) {
 // and that answer must not turn into a setting: storing it would pin the app to
 // whatever it happened to say and stop it following the system.
 func TestTheLanguageThePageResolvedIsNotAPreference(t *testing.T) {
-	home := t.TempDir()
-	t.Setenv("HOME", home)
-	t.Setenv("XDG_CONFIG_HOME", filepath.Join(home, ".config"))
+	isolateAppData(t)
 	activeLanguage = ""
 	t.Cleanup(func() { activeLanguage = "" })
 
@@ -174,12 +166,7 @@ func TestTheLanguageThePageResolvedIsNotAPreference(t *testing.T) {
 // the templates into English and the page's report put them back — the second
 // time inside the call the first render waits for.
 func TestARestartKeepsTheTemplatesInTheLanguageThePageLastAskedFor(t *testing.T) {
-	home := t.TempDir()
-	t.Setenv("HOME", home)
-	t.Setenv("XDG_CONFIG_HOME", filepath.Join(home, ".config"))
-	// os.UserConfigDir reads this one on Windows; without it the test writes
-	// into the real install's settings there.
-	t.Setenv("APPDATA", filepath.Join(home, "AppData"))
+	isolateAppData(t)
 	activeLanguage = ""
 	t.Cleanup(func() { activeLanguage = "" })
 
