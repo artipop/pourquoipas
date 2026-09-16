@@ -8,7 +8,7 @@ server running **in-process** — no spawned server process, no Node.js of our
 own — and the same code builds a **headless server** (`-tags server`) that serves
 the whole thing to a browser.
 
-Everything a build needs is in this repository: `webapp/` is the frontend, its
+Everything a build needs is in this repository: `frontend/` is the frontend, its
 own npm project built with Vite, and `server/` is the board server, a fork of
 Mattermost's Focalboard with our own patches (`GetUserByUsername` and two
 single-user endpoint fixes). It is one Go module — `server/` is a directory in
@@ -33,15 +33,16 @@ The Go code is platform-agnostic — the same files build for every OS:
 - `datadir_production.go` / `datadir_dev.go` — which install that is.
   A packaged build (`-tags production`, which every one of them carries) uses
   `XCIII`; `wails3 dev` builds without the tag and uses `XCIII-dev`, including
-  as the keychain service name. One product, two installs, so what is tried out
+  as the keychain service name, and a single-instance lock of its own, so the
+  dev window opens while the installed app runs. One product, two installs, so what is tried out
   in development is not in the app afterwards.
-- `frontend_embed.go` / `frontend_disk.go` — the webapp `pack` is compiled into the
-  binary with `go:embed` (release builds, `-tags frontend`) straight from
-  `webapp/pack`, where the `build:frontend` task leaves it.
-  At startup `resolveWebPath` extracts
-  the embedded pack to `<dataDir>/web` and points the server there (the server
-  templates `index.html` on read, so it needs files on disk). Without the tag
-  (`go build ./...`, tests) it falls back to on-disk `pack`.
+- `frontend_embed.go` / `frontend_disk.go` — the page's bundle is compiled into
+  the binary with `go:embed` (release builds, `-tags frontend`) straight from
+  `frontend/dist`, where the `build:frontend` task leaves it, as in the Wails
+  template. At startup `resolveWebPath` extracts the embedded bundle to
+  `<dataDir>/web` and points the server there (the server templates
+  `index.html` on read, so it needs files on disk). Without the tag
+  (`go build ./...`, tests) it falls back to `frontend/dist` on disk.
 - `frontdoor.go` — **the origin everything is served under**: `/wails/` goes to
   the Wails runtime, everything else to the board. In a desktop build the front
   door is a loopback listener of ours on a random port, handed to Wails as an
@@ -63,25 +64,20 @@ The Go code is platform-agnostic — the same files build for every OS:
   under — the standard answer to DNS rebinding.
 - `proxy.go` — a reverse proxy to the in-process server, sitting behind the
   front door on everything but `/wails/`. It injects a bootstrap `<script>` into
-  the served HTML that seeds the single-user session token into `localStorage`,
-  **builds the bridge the webapp calls through** (see below), and wires
-  `window.openInNewBrowser` to open external links in the system browser. A
-  capture-phase click handler sends **every** absolute http(s) anchor there,
-  same-origin ones excepted. It deliberately does not defer to the inline
-  `onclick` that `Utils.htmlFromMarkdown` puts on markdown links: when that
-  handler does not run, the click is simply lost — the webview cannot navigate
-  to an outside origin either — which is what made preview links in card
-  comments dead.
+  the served HTML that seeds the single-user session token into `localStorage`
+  and **tells the page there is a Go side** (see below), and nothing else.
 
-  **The bridge** is what replaces v2's generated bindings. v3 injects nothing
-  into the page: it serves `/wails/runtime.js` and the page loads it. So the
-  bootstrap imports that module once and builds `window.go.main.App` (every
-  property read becomes `Call.ByName('main.App.<name>', …)`, the fully qualified
-  name of a method on the bound `App` service) and `window.runtime.EventsOn`
-  (`Events.On`, unwrapping the event object v3 passes where v2 passed the
-  payload). The webapp therefore sees exactly the surface it saw under v2 —
-  the migration needed no change in `webapp/` at all — and stays inert in
-  browser and plugin builds, where nothing injects this script.
+  **The bindings** are Wails' own, generated from `App` into
+  `frontend/bindings` (`wails3 task generate:bindings`) and committed. The page
+  imports them as a template's page does, over the `@wailsio/runtime` it
+  bundles, and calls each method by id; `goApp()` in `goBridge.ts` hands them
+  out when the bootstrap has set `window.hasGoSide`. The same module wires
+  `window.openInNewBrowser` to `App.OpenInBrowser`, with a capture-phase click
+  handler that sends **every** absolute http(s) anchor there, same-origin ones
+  excepted. It deliberately does not defer to the inline `onclick` that
+  `Utils.htmlFromMarkdown` puts on markdown links: when that handler does not
+  run, the click is simply lost — the webview cannot navigate to an outside
+  origin either — which is what made preview links in card comments dead.
 - `internal/acp/terminal.go`, `terminalws.go` — **the way a person works a card with
   an agent**, and the only one: the agent's own CLI running in a pty in the card's
   own directory, drawn by xterm.js in a second window of the app and wired to the pty over
@@ -115,27 +111,25 @@ The Go code is platform-agnostic — the same files build for every OS:
   `authKey` in the same file skips that. The node's state lives beside the
   settings, so later launches come up by themselves.
 - `app.go` — the bound service. Its exported methods are what the frontend
-  calls; `OpenInBrowser` is the one the bootstrap script uses.
+  calls; `OpenInBrowser` is the one every outward link ends in.
 - `mode_desktop.go` / `mode_server.go` — everything that differs between a
   window and a server: the front door, the window, and the folder picker (a
   server build has no native dialog and says so, rather than returning an empty
   path the UI would read as a cancellation).
 - `main.go` — wires it all together and runs the app.
 
-**On a phone**, the board is the same board: `webapp/src/pages/mobile` is the
+**On a phone**, the board is the same board: `frontend/src/pages/mobile` is the
 `/m` route — what is waiting for a person, answered in place, and the terminals
 it is waiting in — and [`mobile/`](mobile/README.md) is a small Wails app for
 iOS and Android that is one window onto it, over the tailnet door above. It is
 its own Go module because the mobile build compiles `package main` from the
-module root, and this one is a board server with cgo SQLite, git and a pty.
+module root, and this one is a board server with SQLite, git and a pty.
 
 Builds are **native per platform** (each on its own machine/CI runner) — the
 desktop build needs cgo on macOS and Linux, for Wails itself, and cgo does not
 cross-compile with the host toolchain; `wails3 task setup:docker` builds the
-image that can, if a Mac has to produce a Linux binary. Windows is pure Go
-(SQLite from `modernc.org/sqlite`) and cross-compiles from anywhere. Nothing
-generates JS bindings: the webapp calls bound methods by name through the
-bridge above, which is what v2's `-skipbindings` meant.
+image that can, if a Mac has to produce a Linux binary. Windows is pure Go and
+cross-compiles from anywhere; SQLite is `modernc.org/sqlite`, pure Go, everywhere.
 
 **[How a card gets worked on](docs/flows.md)** walks through the whole thing for
 somebody using the board: what happens when a card lands in a column, when a
@@ -144,38 +138,34 @@ the template ships, and what to look at when nothing happens.
 
 ## What this app requires of the frontend
 
-The desktop app serves and embeds `webapp`, and knows nothing about what it is
+The desktop app serves and embeds `frontend`, and knows nothing about what it is
 written in. There is no React here, and none of the migration off React-only
 libraries touched this module. What the two halves *do* agree on is worth
 writing down, because it is the whole of what a port to another framework has to
-keep — `webapp/src/types/index.d.ts` declares the shape, and this is the
+keep — `frontend/src/types/index.d.ts` declares the shape, and this is the
 contract behind it.
 
-**The build output.** `build:frontend` must leave `webapp/pack/index.html` plus
-everything under `webapp/pack/static/`, which is copied to `pack/` here and
-compiled in with `go:embed`. `index.html` must still carry the Go template
+**The build output.** `build:frontend` must leave `frontend/dist/index.html`,
+Vite's output under `frontend/dist/assets/` and what `public/` holds at the root
+of `frontend/dist`, all compiled in with `go:embed`. The board server serves a
+path naming a file of the bundle as that file and every other path as the page
+(`server/web/webserver.go`), as a Wails asset server does. `index.html` must still carry the Go template
 `{{.BaseURL}}`, and asset URLs referenced from JS and CSS must stay relative so
 they survive a non-empty base path.
 
-**Three globals**, built by the bootstrap script in `proxy.go` — v3 injects
-nothing, so the script imports `/wails/runtime.js` and rebuilds the surface the
-webapp already knows:
+**The bindings.** `frontend/bindings` is generated from the bound `App` service
+and committed; `@wailsio/runtime` in `frontend/package.json` is pinned to the
+Wails version in `go.mod`. `bindings_test.go` checks both.
 
-- `window.go.main.App.*` — a Proxy turning every property read into
-  `Call.ByName('main.App.<name>', …)`. This is how the ACP UI reaches the agent,
-  repo, proxy and flow registries.
-- `window.runtime.EventsOn` — wraps `Events.On`, unwrapping the event object v3
-  passes where v2 passed the payload.
-- `window.openInNewBrowser` — hands a link to the system browser rather than the
-  webview. Called from `utils.ts`, `csvExporter.ts`, `archiver.ts` and the
-  sidebar user menu.
+**One global**, set by the bootstrap script in `proxy.go`:
+`window.hasGoSide` — there is a Go side behind this origin. Nothing but the
+front door injects the script, so its presence is the answer, and every call
+into Go asks it first (`goApp()`), which is what keeps the desktop-only UI inert
+where nothing answers. The page sets `window.openInNewBrowser` itself, because
+markup generated by `utils.ts` calls it from an inline handler.
 
 There is deliberately **no `window.webSocketBaseURL`** here, unlike v2:
 `frontdoor.go` owns the origin, so `/ws` opens from the page's own origin.
-
-**Every one of them is feature-detected at the call site**, because the same
-bundle also runs in a browser, where none of them exist. That guard is what keeps the desktop-only UI inert elsewhere, and it is
-the one thing a rewrite must not quietly drop.
 
 ## Prerequisites
 
@@ -186,8 +176,7 @@ the one thing a rewrite must not quietly drop.
 - A C toolchain where the desktop build needs cgo:
   - **macOS**: Xcode Command Line Tools.
   - **Linux**: `gcc`, plus `libgtk-3-dev` and `libwebkit2gtk-4.1-dev` (Wails).
-  - **Windows**: none — the build is pure Go (`CGO_ENABLED=0`, SQLite from
-    `modernc.org/sqlite`). NSIS (`makensis`) for the installer, and the
+  - **Windows**: none — the build is pure Go (`CGO_ENABLED=0`). NSIS (`makensis`) for the installer, and the
     WebView2 runtime (bundled with modern Windows).
 - **Line endings are LF in every checkout**, whatever `core.autocrlf` says on
   the machine — `.gitattributes` pins it, because generated files are compared
@@ -374,23 +363,19 @@ From this repository:
 wails3 dev
 ```
 
-`build/config.yml` declares the dev loop: Go edits rebuild and restart the app,
-and `cd webapp && npm run watchdev` runs alongside it, keeping
-`webapp/pack` current with `vite build --watch`. Needs webapp deps — run
-`npm ci` in `webapp/` once if `webapp/node_modules` is missing. The watcher's
-own directory is excluded from the Go watch list, so a TS edit rebuilds the
-bundle without restarting the app.
+`build/config.yml` declares the dev loop, the one `wails3 init` writes: Go
+edits rebuild and restart the app, and the Vite dev server runs alongside it
+(`wails3 task common:dev:frontend`), so a TS edit reaches the window by HMR
+without a rebuild. Needs the frontend deps — run `npm ci` in `frontend/` once if
+`frontend/node_modules` is missing. `frontend/` is excluded from the Go watch list,
+so a TS edit never restarts the app.
 
-A dev build leaves the `frontend` tag out, so nothing is embedded and the Go
-side serves the on-disk bundle (`diskWebPath` finds `webapp/pack`).
-The page still goes through the front door and `proxy.go` exactly as in a
-release build, which is why nothing here needs to know the board server's port
-or the session token — both stay random per launch.
-
-There is deliberately no Vite dev server in the loop: pointing the webview at
-it would buy HMR but would mean re-implementing the bootstrap script in
-`vite.config.ts`, and the page would no longer be the page a release build
-serves.
+The window still opens on the front door, not on Vite: a development build
+takes the page and its modules from the address `wails3 dev` hands it
+(`FRONTEND_DEVSERVER_URL`), injects the bootstrap into it, and keeps `/api` and
+`/ws` for the board (`devserver.go`, `proxy.go`). That is why nothing here needs
+to know the board server's port or the session token — both stay random per
+launch — and why Vite's own config has no proxy in it.
 
 To run it manually instead:
 
@@ -405,8 +390,8 @@ devtools:
 wails3 task build:server && SERVER_PORT=8099 bin/XCIII-server
 ```
 
-For pure webapp/CSS iteration the browser loop is still faster than the webview:
-run the server build above, then `cd webapp && npm run dev` for HMR at
+For pure frontend/CSS iteration the browser loop is still faster than the webview:
+run the server build above, then `cd frontend && npm run dev` for HMR at
 http://localhost:5173.
 
 ## Cut a release
@@ -427,7 +412,7 @@ and how to dry-run the workflow without publishing anything.
 
 ## Build release installers by hand
 
-From the repo root, per platform. The build produces `webapp/pack` itself and
+From the repo root, per platform. The build produces `frontend/dist` itself and
 embeds it, so the artifacts are single-binary:
 
 ```
@@ -499,7 +484,7 @@ window-position autosave.
 - [docs/release.md](docs/release.md) — cutting a release: the version, the signing
   key updates are verified against, what the workflow builds where, and how to
   run it without publishing.
-- [docs/webapp.md](docs/webapp.md) — the page: the store that replaced Redux, what
+- [docs/frontend.md](docs/frontend.md) — the page: the store that replaced Redux, what
   each React library was replaced by, and how its tests are written.
 - [docs/local-and-shared-state.md](docs/local-and-shared-state.md) — which of the
   things this app stores belong to the machine and which to the board. A note to

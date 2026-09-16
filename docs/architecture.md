@@ -40,12 +40,12 @@ server `/wails/` and both sockets
 require a live board session (`requireSession`), read off a cookie the page
 writes beside the token it already keeps: the Wails runtime makes its own
 fetches, and a browser lets nobody set a header on a WebSocket handshake.
-**The runtime module itself is the one exception** (`openToEverybody`): it is a
-script with no authority, and every capability it offers goes through the POST
-beside it, which stays guarded. Refusing it refused the login page the ability
-to *become* a logged-in one — a browser caches a rejected dynamic import, and
-logging in navigates without reloading, so one bad moment outlived the session
-it was about.
+**Nothing under that guard is open to everybody.** The runtime module was, for
+a while (`openToEverybody`): the page imported `/wails/runtime.js` before
+anybody had logged in, a browser caches a rejected dynamic import, and logging
+in navigates without reloading, so refusing it left a login page unable to
+*become* a logged-in one. The page now bundles the runtime with the generated
+bindings (below), so the exception protected nothing and went with the import.
 
 The API's synthesizers for the `single-user` id (`api/users.go`,
 `api/teams.go`) are gated on single-user mode: unguarded, they answer every
@@ -69,15 +69,63 @@ because fetching the page is how a caller gets the token. Settings live in
 `<dataDir>/tailnet/settings.json` and the feature is off until that file says
 otherwise.
 
-## The page talks to Go through a shim, not through generated bindings
+## The page talks to Go through generated bindings
 
-v3 injects nothing into the page: it serves `/wails/runtime.js` and the page loads
-it. So the bootstrap script in `proxy.go` imports that module and rebuilds the
-surface the webapp knows: `window.go.main.App` is a Proxy turning every property
-read into `Call.ByName('main.App.<name>', …)` — the fully qualified name of a method
-on the bound `App` service — and `window.runtime.EventsOn` wraps `Events.On`,
-unwrapping the event object v3 passes. No bindings are generated; adding a method to
-`App` is all it takes to make it callable.
+The page calls the bound `App` service through bindings Wails generates from it,
+as in a project `wails3 init` writes: `frontend/bindings/…/app.ts`, one function
+per exported method, each a `Call.ByID` over the `@wailsio/runtime` package the
+page bundles. `wails3 task generate:bindings` writes them, and `build:frontend`
+runs it whenever Go changed, as the template does — against the headless build
+with cgo off — `App` is the same service in both builds, the output is
+identical, and that is the combination that type-checks on any machine.
+
+They replaced a shim, and the reason is the types. The bootstrap in `proxy.go`
+used to import `/wails/runtime.js` and build `window.go.main.App` as a Proxy
+turning every property read into `Call.ByName('main.App.<name>')`, with the
+methods' types written by hand beside it in `IAppWindow`. That hand-written list
+drifted from Go silently — a renamed method or a changed argument was found out
+at runtime — and the first compile against the generated types found a method
+the page was calling that the list did not have (`ListCutOffConversations`).
+Now the types are Go's own.
+
+Three things follow.
+
+- **Every exported method of `App` is callable from the page**, the way it
+  always was, and now it is also in a file somebody reads. Wiring that `main`
+  does itself — `setApplication`, `setOrigin` — is unexported for that reason:
+  exported, it was a setter any page could call, and it dragged three packages
+  of Wails' own models into the page's bindings.
+- **They are committed**, so building or testing the page needs no Go. What that
+  costs is that they can fall behind: `bindings_test.go` fails on a method added
+  or removed without regenerating, and CI regenerates them with the Wails that
+  go.mod names and fails on any difference, which also catches a changed
+  signature. The npm runtime is pinned to exactly that Wails version, by the
+  same test, because the two are halves of one protocol shipped in two packages.
+- **They are imported, as in the template**, and there is no global. The page
+  still has to be told whether a Go side answers, so the bootstrap seeds the
+  session and sets `window.hasGoSide`, and nothing else; `goApp()`
+  (`goBridge.ts`) hands out the service only when it is set, and every call
+  site asks it. The outward-link catch-all that used to be in the bootstrap is
+  the page's own now (`installGoBridge`), since the bootstrap had reached Go
+  through the global. A test does not reach the runtime at all: the setup file
+  mocks the bindings module for the whole suite (`src/test/goSideMock.ts`), and
+  a test that wants a Go side installs its methods with `fakeGoSide`. Before
+  this the bindings were put at `window.go.main.App` and forty test files wrote
+  their fakes there, which kept the call sites untouched and the old seam
+  alive.
+
+**Under `wails3 dev` the page is Vite's.** `build/config.yml` is the template's
+dev loop — the Vite dev server in the background, with HMR — and `wails3 dev`
+hands the app its address in `FRONTEND_DEVSERVER_URL`. A development build's
+front door takes the page and every module from there (`devserver.go`,
+`newServerProxy`), injects the bootstrap into Vite's HTML exactly as into the
+board server's, and leaves `/api/v0` and `/ws` to the board. Vite's HMR client
+connects back to the page's own origin, which is the front door, and goes down
+the same proxy as an ordinary upgrade. Before this the dev loop rebuilt the
+bundle with `vite build --watch` and served it off disk, which cost a rebuild per
+edit and made a class of bug of its own — the window read the bundle in the middle
+of a rebuild and opened white. A release build never listens to the variable:
+the page it serves is the one it embeds.
 
 **Events do not come back that way, though.** The Wails bus delivers an event by
 running JS in the windows the application owns, so a page served through the tailnet
@@ -141,7 +189,7 @@ cleanup, a write is staged until the microtask drains, `onMount`/`batch`/
 the move nearly shipped, and what is still owed.
 
 One dependency is Solid 1 only — `@dnd-kit/solid` — and runs on a compat layer
-in `webapp/solid1/`, pointed at that package alone by importer path. Applied
+in `frontend/solid1/`, pointed at that package alone by importer path. Applied
 globally it rewrites what `@solidjs/web` itself imports, which builds the Solid 2
 renderer on Solid 1 semantics; that is the whole reason it is scoped.
 `@dschz/solid-flow` was on it too, until its 1.0 line shipped for Solid 2.
@@ -788,7 +836,7 @@ three words, plus a corner that had to be published over the no-board screen to
 stay reachable. The way to say something is broken went the same way and for the
 same reason — where to say it is looked for once, and it is looked for where the
 manual is — so the corner is gone rather than reduced, and `topBar.tsx` with it.
-**A theme is a config, and the config is Mattermost's** (`webapp/src/theme/`,
+**A theme is a config, and the config is Mattermost's** (`frontend/src/theme/`,
 `docs/themes.md`). The keys are the ones its documentation names, so a theme
 written for another product is pasted into the field and worn, and one written
 here goes back. That is the whole reason for borrowing a format rather than
@@ -1941,10 +1989,10 @@ onto `blocks(id)` is the fix, and it cannot be added later: SQLite's
 `ALTER TABLE` has no `ADD CONSTRAINT`, so a key is written in `CREATE TABLE` or
 never. The keys are written **and enforced**: `foreign_keys` travels in the DSN
 rather than as a `PRAGMA`, being a per-connection setting — a pragma run once
-is silently off on the next connection — and the parameter's spelling depends
-on which SQLite driver the build tag chose (`sqlite_dsn_cgo.go` /
-`sqlite_dsn_pure.go`, and `internal/appschema` spells it for the driver it
-itself imports). What SQLite does not do is check rows that were already
+is silently off on the next connection — spelled for modernc
+(`sqlite_dsn.go`), whose DSN ignores a parameter it does not know, so
+`internal/appschema` takes the spelling from `sqlstore` rather than writing its
+own. What SQLite does not do is check rows that were already
 hanging when the setting went on; the one-time sweep for those is still owed
 (`docs/deferred.md`, «Одна база: хвосты плана»).
 

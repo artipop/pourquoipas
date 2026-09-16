@@ -1,7 +1,6 @@
 package boardadapter
 
 import (
-	"database/sql"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -34,14 +33,7 @@ func newTestApp(t *testing.T) *app.App {
 func newTestAppWith(t *testing.T, backends ...notify.Backend) *app.App {
 	t.Helper()
 	dir := t.TempDir()
-	dsn := filepath.Join(dir, "board.db") + "?_busy_timeout=5000&_journal_mode=WAL"
-	if db, err := sql.Open("sqlite3", dsn); err != nil {
-		// The sqlite driver is registered by a build tag; without it there is
-		// no store to import into (`go test -tags "json1 sqlite3"`).
-		t.Skipf("no sqlite driver in this build: %v", err)
-	} else {
-		db.Close()
-	}
+	dsn := filepath.Join(dir, "board.db")
 
 	logger, err := mlog.NewLogger()
 	if err != nil {

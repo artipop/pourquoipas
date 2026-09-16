@@ -580,7 +580,7 @@ tailnet-двери всё это уже есть, и её пропуск — с�
 существовать — карточка стоит в колонке, и автоматика срабатывает на смену
 свойства, — но читают пришедшее не там, а в виде. Столбец непрочитанного
 посреди работы — ровно то, вместо чего вид и заведён. Опция, которой нет ни в
-`visibleOptionIds`, ни в `hiddenOptionIds`, рисуется (`webapp/src/
+`visibleOptionIds`, ни в `hiddenOptionIds`, рисуется (`frontend/src/
 boardUtils.ts`), поэтому спрятать — значит назвать её в `hiddenOptionIds` и
 убрать из `visibleOptionIds`: в шаблонах это записано прямо, на уже
 существующих досках делает `arrangeKanbans` при заведении инбокса.
@@ -813,7 +813,7 @@ Secret Service на Linux). Запасная — файл `<dataDir>/secrets.jso
 
 ## 19. UI
 
-По образцу остальных реестров: `webapp/src/components/acp/sourcesDialog.tsx` из
+По образцу остальных реестров: `frontend/src/components/acp/sourcesDialog.tsx` из
 меню вида «Входящие» (на доске без «Входящих» — из меню доски: иначе первый
 источник заводить негде), локальные сигналы, feature-detect биндингов, вызовы
 `ListSources`/`AddSource`/`UpdateSource`/`RemoveSource`/`SetSourceCredential`. Слайс

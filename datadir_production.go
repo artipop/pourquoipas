@@ -13,6 +13,10 @@ package main
 // has it. Nothing new has to be remembered or passed in.
 const appDirName = "XCIII"
 
+// singleInstanceID is the lock a second launch looks for; the share extension
+// relies on landing in the running app through it (main.go).
+const singleInstanceID = "io.deffun.xciii"
+
 // appIsDev says this build is the one you get from `wails3 dev`. It is only
 // ever used to say so out loud at startup, so that "why is my board empty"
 // answers itself.

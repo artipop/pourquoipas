@@ -150,8 +150,7 @@ func (s *SQLStore) migrationDriver(db *sql.DB) (database.Driver, error) {
 
 	switch s.dbType {
 	case model.SqliteDBType:
-		// Picked by the same build constraint as the driver itself
-		// (sqlite.go, sqlite_pure.go).
+		// The half that imports the driver this build links (sqlite.go).
 		return sqliteMigrationDriver(db, table)
 	case model.PostgresDBType:
 		return postgres.WithInstance(db, &postgres.Config{

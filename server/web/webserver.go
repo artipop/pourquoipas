@@ -89,9 +89,17 @@ func (ws *Server) AddRoutes(rs RoutedService) {
 	rs.RegisterRoutes(ws.Router())
 }
 
+// registerRoutes serves the page the way a Wails asset server does: a path
+// naming a file of the bundle gets that file — Vite's hashed output under
+// /assets, whatever public/ put at the root — and every other path is the
+// page itself, so a route the page owns survives a reload.
 func (ws *Server) registerRoutes() {
-	ws.Router().Handle("/static/", http.StripPrefix(ws.basePrefix+"/static/", http.FileServer(http.Dir(filepath.Join(ws.rootPath, "static")))))
+	files := http.StripPrefix(ws.basePrefix, http.FileServer(http.Dir(ws.rootPath)))
 	ws.Router().HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if ws.bundleFile(r.URL.Path) {
+			files.ServeHTTP(w, r)
+			return
+		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		indexTemplate, err := template.New("index").ParseFiles(path.Join(ws.rootPath, "index.html"))
 		if err != nil {
@@ -106,6 +114,18 @@ func (ws *Server) registerRoutes() {
 			return
 		}
 	})
+}
+
+// bundleFile says whether urlPath names a regular file of the bundle other
+// than index.html, which is a template and never served as it lies on disk.
+// path.Clean on a rooted path cannot climb above the root.
+func (ws *Server) bundleFile(urlPath string) bool {
+	clean := path.Clean("/" + strings.TrimPrefix(urlPath, ws.basePrefix))
+	if clean == "/" || clean == "/index.html" {
+		return false
+	}
+	info, err := os.Stat(filepath.Join(ws.rootPath, filepath.FromSlash(clean)))
+	return err == nil && info.Mode().IsRegular()
 }
 
 // Start runs the web server and start listening for connections.

@@ -1,0 +1,50 @@
+import type {JSX} from '@solidjs/web'
+
+import {FormattedMessage} from '../../../intl'
+
+import {useMeasurePunchouts} from '../../tutorial_tour_tip/hooks'
+
+import './shareBoard.scss'
+import {Utils} from '../../../utils'
+import shareBoard from '../../../assets/share.gif'
+
+import {BoardTourSteps, TOUR_BOARD} from '../index'
+import TourTipRenderer from '../tourTipRenderer/tourTipRenderer'
+
+const ShareBoardTourStep = (): JSX.Element | null => {
+    const title = (
+        <FormattedMessage
+            id='OnboardingTour.ShareBoard.Title'
+            defaultMessage='Share the board'
+        />
+    )
+    const screen = (
+        <FormattedMessage
+            id='OnboardingTour.ShareBoard.Body'
+            defaultMessage='Publish the board as a link — you can show it around without making anybody an account.'
+        />
+    )
+
+    const punchout = useMeasurePunchouts(['.ShareBoardButton > button'])
+
+    if (!BoardTourSteps.SHARE_BOARD) {
+        return null
+    }
+
+    return (
+        <TourTipRenderer
+            requireCard={false}
+            category={TOUR_BOARD}
+            step={BoardTourSteps.SHARE_BOARD}
+            screen={screen}
+            title={title}
+            punchout={punchout()}
+            classname='ShareBoardTourStep'
+            placement={'bottom-end'}
+            imageURL={Utils.buildURL(shareBoard, true)}
+            hideBackdrop={true}
+        />
+    )
+}
+
+export default ShareBoardTourStep

@@ -417,7 +417,7 @@ func (w *Writer) EnsureInbox(ctx context.Context, boardID, propertyName, optionN
 // by (id, insert_at) in milliseconds — two patches of the same block in a row
 // are two rows in the same millisecond, and the second one loses.
 //
-// A group named in neither list is drawn (webapp/src/boardUtils.ts walks the
+// A group named in neither list is drawn (frontend/src/boardUtils.ts walks the
 // visible ones and then the rest), so hiding is naming it in hiddenOptionIds —
 // and taking it out of visibleOptionIds, where a board arranged by the
 // front-column version still has it.

@@ -1,6 +1,10 @@
 package web
 
 import (
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -95,5 +99,52 @@ func Test_NewServer(t *testing.T) {
 				require.Equal(t, test.expectedServerAddr, ws.Server.Addr, "server address not matching!")
 			}
 		})
+	}
+}
+
+// The page is served the way a Wails asset server serves one: a file of the
+// bundle by its own path — Vite's hashed output under /assets, what public/
+// put at the root — and every other path as the page, because a route the page
+// owns has to survive a reload. index.html is a template (BaseURL) and must
+// never go out as it lies on disk, and nothing outside the bundle is reachable.
+func TestTheBundleIsServedFromItsRootAndEveryOtherPathIsThePage(t *testing.T) {
+	root := t.TempDir()
+	write := func(name, body string) {
+		t.Helper()
+		full := filepath.Join(root, filepath.FromSlash(name))
+		require.NoError(t, os.MkdirAll(filepath.Dir(full), 0o755))
+		require.NoError(t, os.WriteFile(full, []byte(body), 0o600))
+	}
+	write("index.html", `<html>{{.BaseURL}}page</html>`)
+	write("assets/index-abc.js", "console.log(1)")
+	write("favicon.svg", "<svg/>")
+	secret := filepath.Join(filepath.Dir(root), "outside.txt")
+	require.NoError(t, os.WriteFile(secret, []byte("secret"), 0o600))
+	t.Cleanup(func() { _ = os.Remove(secret) })
+
+	ws := NewServer(root, "http://localhost/base", -1, false, true, &mlog.Logger{})
+	ws.registerRoutes()
+	get := func(target string) (int, string) {
+		rec := httptest.NewRecorder()
+		ws.Handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, target, nil))
+		return rec.Code, rec.Body.String()
+	}
+
+	code, body := get("/assets/index-abc.js")
+	require.Equal(t, http.StatusOK, code)
+	require.Equal(t, "console.log(1)", body)
+
+	_, body = get("/favicon.svg?v=1")
+	require.Equal(t, "<svg/>", body)
+
+	for _, page := range []string{"/", "/index.html", "/team/board/view", "/assets", "/assets/missing.js"} {
+		code, body = get(page)
+		require.Equal(t, http.StatusOK, code, page)
+		require.Equal(t, "<html>/basepage</html>", body, page)
+	}
+
+	for _, escape := range []string{"/../outside.txt", "/assets/../../outside.txt", "/%2e%2e/outside.txt"} {
+		_, body = get(escape)
+		require.NotContains(t, body, "secret", escape)
 	}
 }

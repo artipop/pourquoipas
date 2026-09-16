@@ -1,0 +1,144 @@
+// The Wails-generated Go bindings are PascalCase methods, not constructors.
+/* eslint-disable new-cap */
+import {Accessor, Show, createMemo, onSettled} from 'solid-js'
+
+import {useIntl} from '../../intl'
+
+import {createLoader} from '../../hooks/loader'
+
+import {goApp} from '../../goBridge'
+
+import {invalidateBoardAgents} from './boardAgents'
+import {reloadBoardFlows} from './boardFlows'
+import {onAgentEvent} from './agentEvents'
+import {ColumnSpec, specFor} from './automation'
+
+import './columnBadge.scss'
+
+// What a column does, said on the column itself. Without this the whole
+// mechanism is invisible on the board: you have to open a dialog to learn that
+// cards dropped here are picked up by an agent.
+
+// A board's columns are asked for once and shared by every header on it. The
+// list is small and changes only when somebody edits it, so a module-level
+// cache beats a request per column.
+const cache = new Map<string, ColumnSpec[]>()
+const listeners = new Set<() => void>()
+
+// invalidateBoardColumns drops the cache — after an edit, or when a session
+// starts or ends and the "2/2" may have changed.
+export function invalidateBoardColumns(): void {
+    cache.clear()
+    listeners.forEach((notify) => notify())
+
+    // The crew of a column is read by the card's assignee list too, and it is
+    // the same edit that moves both. One call site, one meaning: the board's
+    // automation may have changed.
+    invalidateBoardAgents()
+
+    // And the routes: a route added, renamed or deleted changes what the view
+    // header offers to draw the board by.
+    reloadBoardFlows()
+}
+
+async function loadColumns(boardId: string): Promise<ColumnSpec[]> {
+    const bindings = goApp()
+    if (!bindings?.ListBoardColumns) {
+        return []
+    }
+    const cached = cache.get(boardId)
+    if (cached) {
+        return cached
+    }
+    const specs: ColumnSpec[] = JSON.parse(await bindings.ListBoardColumns(boardId)) || []
+    cache.set(boardId, specs)
+    return specs
+}
+
+// useBoardColumns gives a component the board's column settings, reloading them
+// whenever anything invalidates the cache.
+export function useBoardColumns(boardId: string): Accessor<ColumnSpec[]> {
+    const [specs, again] = createLoader(() => loadColumns(boardId).catch(() => [] as ColumnSpec[]), [] as ColumnSpec[])
+
+    onSettled(() => {
+        listeners.add(again)
+
+        // A session starting or ending changes what the badge counts.
+        const off = onAgentEvent('acp:session', () => {
+            cache.clear()
+            again()
+        })
+        return () => {
+            listeners.delete(again)
+            off?.()
+        }
+    })
+
+    return specs
+}
+
+type Props = {
+    boardId: string
+    optionId: string
+    columnName: string
+}
+
+// actionIcon is a one-glyph answer to "what happens here".
+function actionIcon(action: string): string {
+    switch (action) {
+    case 'agent':
+        return '🤖'
+    case 'deploy':
+        return '🚀'
+    case 'test':
+        return '🔍'
+    default:
+        return ''
+    }
+}
+
+const ColumnBadge = (props: Props) => {
+    const intl = useIntl()
+    const specs = useBoardColumns(props.boardId)
+    const spec = createMemo(() => specFor(specs(), {optionId: props.optionId, name: props.columnName}))
+
+    const crew = () => spec()?.agents || []
+    const limit = () => spec()?.maxRunning || 0
+    const title = () => [
+        actionTitle(intl, spec()!.action),
+        crew().length > 0 ? intl.formatMessage({id: 'ColumnBadge.crew', defaultMessage: 'Worked by: {crew}'}, {crew: crew().join(', ')}) : '',
+        limit() > 0 ? intl.formatMessage({id: 'ColumnBadge.limit', defaultMessage: 'At once: {limit}'}, {limit: limit()}) : '',
+    ].filter(Boolean).join('\n')
+
+    return (
+        <Show when={spec() && spec()!.action !== 'none'}>
+            <span
+                class='ColumnBadge'
+                title={title()}
+            >
+                <span class='ColumnBadge__icon'>{actionIcon(spec()!.action)}</span>
+                <Show when={crew().length > 0}>
+                    <span class='ColumnBadge__crew'>{crew().length === 1 ? crew()[0] : crew().length}</span>
+                </Show>
+                <Show when={limit() > 0}>
+                    <span class='ColumnBadge__limit'>{limit()}</span>
+                </Show>
+            </span>
+        </Show>
+    )
+}
+
+function actionTitle(intl: {formatMessage: (d: {id: string, defaultMessage: string}) => string}, action: string): string {
+    switch (action) {
+    case 'agent':
+        return intl.formatMessage({id: 'ColumnBadge.action-agent', defaultMessage: 'An agent works on cards dropped here'})
+    case 'deploy':
+        return intl.formatMessage({id: 'ColumnBadge.action-deploy', defaultMessage: 'A card dropped here is deployed'})
+    case 'test':
+        return intl.formatMessage({id: 'ColumnBadge.action-test', defaultMessage: 'A card dropped here is tested'})
+    default:
+        return ''
+    }
+}
+
+export default ColumnBadge

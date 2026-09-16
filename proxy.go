@@ -12,29 +12,18 @@ import (
 )
 
 // bootstrapScript is injected into the served index.html <head>, before any app
-// JS runs. It mirrors the init scripts of linux/main.go:
-//   - seeds the single-user session token into localStorage,
-//   - builds the bridge the webapp expects — window.go.main.App and
-//     window.runtime — on top of the v3 runtime, and
-//   - wires window.openInNewBrowser (a hook the webapp already calls for
-//     external links, CSV export, etc.) to the bound App.OpenInBrowser method,
-//     plus a catch-all that sends every outward link there.
+// JS runs. It
+//   - seeds the single-user session token into localStorage, and
+//   - tells the page there is a Go side behind this origin (window.hasGoSide),
+//     which is what makes goApp (frontend/src/goBridge.ts) hand out the
+//     bindings generated from App.
 //
-// The bridge is what replaces v2's generated bindings. v3 injects nothing into
-// the page: it serves /wails/runtime.js and the page loads it. So the shim
-// imports that module once and turns every property read on
-// window.go.main.App into Call.ByName('main.App.<name>', …) — the fully
-// qualified name of a method on the bound App service — and window.runtime
-// .EventsOn into Events.On, unwrapping the event object the v3 runtime passes
-// (v2 handed the payload itself). The webapp therefore sees the same surface it
-// saw under v2, feature detection included, and stays inert in browser and
-// plugin builds where nothing injects this script at all.
-//
-// The catch-all runs in the capture phase and covers *every* absolute http(s)
-// anchor, not only target=_blank ones without an inline handler: deferring to
-// an inline handler leaves the link dead wherever that handler does not run,
-// and the webview cannot navigate to an outside origin either, so the click
-// does nothing at all. Capturing first makes this the one path out.
+// The page calls Go through those bindings over the @wailsio/runtime it
+// bundles, as a Wails template's page does, so there is no bridge to build
+// here, and sending outward links to the system browser is the page's own
+// business too (installGoBridge). What the page cannot find out by itself is
+// whether anything answers behind its origin: nothing but the front door
+// injects this script, so its presence is the answer.
 //
 // There is deliberately no window.webSocketBaseURL here, which under v2 told
 // the webapp's socket client the board server's own address. The page, the API
@@ -59,113 +48,95 @@ func bootstrapScript(sessionToken string) string {
     }
   } catch (e) {}
 
-  // One import of the v3 runtime, kept for the life of the page — but a failed
-  // one is not kept. A dynamic import that rejects would otherwise be the
-  // page's answer for ever: the module map caches the failure, and logging in
-  // navigates without reloading, so every bound call after it would fail with
-  // an error about the *module* rather than about the session.
-  var runtimePromise = null;
-  function wailsRuntime() {
-    if (!runtimePromise) {
-      runtimePromise = import('/wails/runtime.js').catch(function (err) {
-        runtimePromise = null;
-        throw err;
-      });
-    }
-    return runtimePromise;
-  }
-
-  // Anything read off the App object is a bound method; 'then' is excluded so
-  // the object is never mistaken for a promise by an accidental await.
-  var app = new Proxy({}, {
-    get: function (_target, name) {
-      if (typeof name !== 'string' || name === 'then') { return undefined; }
-      return function () {
-        var args = Array.prototype.slice.call(arguments);
-        return wailsRuntime().then(function (rt) {
-          return rt.Call.ByName('main.App.' + name, ...args);
-        });
-      };
-    },
-    has: function (_target, name) { return typeof name === 'string' && name !== 'then'; },
-  });
-  window.go = {main: {App: app}};
-  window.runtime = {
-    EventsOn: function (event, callback) {
-      var off = null;
-      var cancelled = false;
-      wailsRuntime().then(function (rt) {
-        if (cancelled) { return; }
-        off = rt.Events.On(event, function (e) { callback(e && e.data); });
-      });
-      return function () {
-        cancelled = true;
-        if (off) { off(); off = null; }
-      };
-    },
-  };
-
-  window.openInNewBrowser = function (href) {
-    if (href && window.go && window.go.main && window.go.main.App) {
-      window.go.main.App.OpenInBrowser(href);
-    }
-  };
-  document.addEventListener('click', function (e) {
-    if (e.button !== 0 || e.defaultPrevented) { return; }
-    var a = e.target && e.target.closest && e.target.closest('a[href]');
-    if (!a) { return; }
-    var href = a.href || a.getAttribute('href') || '';
-    if (!/^https?:\/\//i.test(href)) { return; }
-    // In-app navigation is same-origin and stays in the webview; anything
-    // pointing outside is for the system browser.
-    try {
-      if (new URL(href, window.location.href).origin === window.location.origin) { return; }
-    } catch (err) {}
-    e.preventDefault();
-    e.stopPropagation();
-    window.openInNewBrowser(href);
-  }, true);
+  window.hasGoSide = true;
 })();
 </script>`, sessionToken)
 }
 
 // newServerProxy builds what the front door puts behind everything that is not
-// /wails/ or /acp/: the page, and the board the page talks to. Unattached those
-// are the same thing.
+// /wails/ or /acp/: the page, and the board the page talks to. In a release
+// build and unattached those are the same thing.
 //
-// Attached they come apart, and the split is the point: **the page is not
-// fetched from the server.** webapp/pack is embedded in this binary, so
-// proxying somebody's HTML would ask the network for a file already on this
-// disk — and it would be *their* page, while the bootstrap injected into it
-// assumes one this desktop's Go side matches.
+// Two things pull them apart, and the split is the same both times: the data
+// the page asks for lives under two prefixes, /api/v0 (with /files inside it)
+// and /ws, and everything else is the page.
 //
-// What lives on the server is the data, and the page asks for it under two
-// prefixes: /api/v0 (with /files inside it) and /ws. Everything else stays
-// local. The page never knows which is which — every path it builds is relative
-// to window.location.origin, and that is the front door either way.
+// Attached, **the page is not fetched from the server.** frontend/dist is
+// embedded in this binary, so proxying somebody's HTML would ask the network
+// for a file already on this disk — and it would be *their* page, while the
+// bootstrap injected into it assumes one this desktop's Go side matches.
+//
+// With a Vite dev server (devServer, a development build under `wails3 dev`),
+// the page and every module it imports come from Vite, and so does the socket
+// its HMR client opens — against the page's own origin, which is this door, so
+// it goes down the same proxy as an ordinary upgrade. The board keeps the data.
+//
+// The page never knows which is which — every path it builds is relative to
+// window.location.origin, and that is the front door either way. It gets the
+// bootstrap either way too, since that is what seeds the session.
 //
 // token is asked per response rather than baked in: the session for a hosted
 // board is not known until somebody logs in. Which board is behind it can
 // change while the app runs, which is what boardRouter below is for.
-func newServerProxy(port int, attached string, token func() string) (http.Handler, error) {
+func newServerProxy(port int, attached, devServer string, token func() string) (http.Handler, error) {
 	local, err := url.Parse(fmt.Sprintf("http://localhost:%d", port))
 	if err != nil {
 		return nil, err
 	}
-	page := httputil.NewSingleHostReverseProxy(local)
-	pageDirector := page.Director
+	pageOrigin := local
+	if devServer != "" {
+		if pageOrigin, err = url.Parse(devServer); err != nil {
+			return nil, fmt.Errorf("dev server %q: %w", devServer, err)
+		}
+	}
+	page := pageProxy(pageOrigin, token)
+
+	if attached == "" && devServer == "" {
+		return page, nil
+	}
+
+	var data http.Handler = localProxy(local)
+	if attached != "" {
+		if data, err = attachedProxy(attached); err != nil {
+			return nil, err
+		}
+	}
+
+	mux := http.NewServeMux()
+	mux.Handle("/api/v0/", data)
+	mux.Handle("/ws", data)
+	mux.Handle("/", page)
+	return mux, nil
+}
+
+// pageProxy serves the page from origin with the bootstrap injected.
+func pageProxy(origin *url.URL, token func() string) *httputil.ReverseProxy {
+	page := localProxy(origin)
+	director := page.Director
 	page.Director = func(req *http.Request) {
-		pageDirector(req)
-		req.Host = local.Host
+		director(req)
 		// Ask upstream for uncompressed HTML so we can inject the bootstrap script.
 		req.Header.Del("Accept-Encoding")
 	}
 	page.ModifyResponse = injectBootstrap(token)
+	return page
+}
 
-	if attached == "" {
-		return page, nil
+// localProxy forwards to a process of this machine: the board server, or Vite.
+// Host is rewritten to the one it listens under — Vite refuses a Host it does
+// not know, which is its own guard against DNS rebinding.
+func localProxy(origin *url.URL) *httputil.ReverseProxy {
+	proxy := httputil.NewSingleHostReverseProxy(origin)
+	director := proxy.Director
+	proxy.Director = func(req *http.Request) {
+		director(req)
+		req.Host = origin.Host
 	}
+	return proxy
+}
 
+// attachedProxy forwards the data to a hosted board this desktop logged in to.
+func attachedProxy(attached string) (*httputil.ReverseProxy, error) {
 	remote, err := url.Parse(attached)
 	if err != nil {
 		return nil, fmt.Errorf("attached server %q: %w", attached, err)
@@ -174,9 +145,9 @@ func newServerProxy(port int, attached string, token func() string) (http.Handle
 	dataDirector := data.Director
 	data.Director = func(req *http.Request) {
 		dataDirector(req)
-		// Load-bearing, unlike the local one above: the far side's own
-		// hostGuard checks the Host it was published under and would refuse a
-		// loopback name. Do not "simplify" this away.
+		// Load-bearing: the far side's own hostGuard checks the Host it was
+		// published under and would refuse a loopback name. Do not "simplify"
+		// this away.
 		req.Host = remote.Host
 		// Our loopback origin is not who is calling upstream, and saying so is
 		// a lie a guard added there later would believe. Sec-Fetch-* is the
@@ -190,12 +161,7 @@ func newServerProxy(port int, attached string, token func() string) (http.Handle
 		// authenticates by the Authorization header the page sends.
 		stripCookie(req, sessionCookie)
 	}
-
-	mux := http.NewServeMux()
-	mux.Handle("/api/v0/", data)
-	mux.Handle("/ws", data)
-	mux.Handle("/", page)
-	return mux, nil
+	return data, nil
 }
 
 // injectBootstrap puts the shim into the served HTML, right after <head>, so
@@ -238,14 +204,15 @@ func stripCookie(req *http.Request, name string) {
 // talks to can change without rebuilding the door. A switch is a rebuild and a
 // reload: everything the page holds came from the board it loaded against.
 type boardRouter struct {
-	port  int
-	token func() string
+	port      int
+	devServer string
+	token     func() string
 
 	current atomic.Pointer[http.Handler]
 }
 
-func newBoardRouter(port int, attached string, token func() string) (*boardRouter, error) {
-	r := &boardRouter{port: port, token: token}
+func newBoardRouter(port int, attached, devServer string, token func() string) (*boardRouter, error) {
+	r := &boardRouter{port: port, devServer: devServer, token: token}
 	if err := r.point(attached); err != nil {
 		return nil, err
 	}
@@ -255,7 +222,7 @@ func newBoardRouter(port int, attached string, token func() string) (*boardRoute
 // point aims the router at a board: a server's origin, or empty for the one
 // this process serves.
 func (r *boardRouter) point(attached string) error {
-	next, err := newServerProxy(r.port, attached, r.token)
+	next, err := newServerProxy(r.port, attached, r.devServer, r.token)
 	if err != nil {
 		return err
 	}

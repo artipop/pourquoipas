@@ -22,7 +22,7 @@ name: Release
 # Nothing here reimplements the build. The Taskfiles already know how to build
 # and package this app on each platform, and the third-party Wails actions on
 # the Marketplace are all v2: they know nothing about build/config.yml or about
-# a frontend directory called webapp/. Every build step below is `wails3 task …`
+# the headless server build. Every build step below is `wails3 task …`
 # with the runner set up around it.
 #
 # Every job is native to its platform, and that is not a preference: the board
@@ -94,9 +94,9 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version-file: webapp/.nvmrc
+          node-version-file: frontend/.nvmrc
           cache: npm
-          cache-dependency-path: webapp/package-lock.json
+          cache-dependency-path: frontend/package-lock.json
 
       - name: Install the Wails CLI
         run: go install github.com/wailsapp/wails/v3/cmd/wails3@${{ env.WAILS_VERSION }}
@@ -117,8 +117,8 @@ jobs:
 
       # The release builds nothing with cypress; its binary is a download per
       # install.
-      - name: Install the webapp dependencies
-        working-directory: webapp
+      - name: Install the frontend dependencies
+        working-directory: frontend
         run: npm ci
         env:
           CYPRESS_INSTALL_BINARY: 0

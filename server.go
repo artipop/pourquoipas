@@ -10,6 +10,7 @@ import (
 	"path"
 	"path/filepath"
 
+	"github.com/artipop/xciii/server/model"
 	"github.com/artipop/xciii/server/server"
 	"github.com/artipop/xciii/server/services/config"
 	"github.com/artipop/xciii/server/services/notify"
@@ -40,9 +41,9 @@ func dataDir() (string, error) { return appDataDir("server", 0o750) }
 
 // resolveWebPath returns a real on-disk directory the board server can
 // serve the webapp from (it templates index.html on read, so it needs files on
-// disk, not an fs.FS). Release builds (`-tags frontend`) compile the webapp
-// `pack` into the binary; it is extracted once per launch under the data dir.
-// Dev builds have nothing embedded and fall back to on-disk pack.
+// disk, not an fs.FS). Release builds (`-tags frontend`) compile
+// `frontend/dist` into the binary; it is extracted once per launch under the
+// data dir. Dev builds have nothing embedded and fall back to the one on disk.
 func resolveWebPath(logger mlog.LoggerIFace) string {
 	if src, ok := embeddedFrontend(); ok {
 		dir, err := extractFrontend(src)
@@ -54,7 +55,7 @@ func resolveWebPath(logger mlog.LoggerIFace) string {
 	return diskWebPath()
 }
 
-// extractFrontend writes the embedded pack tree into <dataDir>/web, replacing
+// extractFrontend writes the embedded bundle into <dataDir>/web, replacing
 // any previous extraction, and returns that directory.
 func extractFrontend(src fs.FS) (string, error) {
 	data, err := dataDir()
@@ -97,8 +98,8 @@ func extractFrontend(src fs.FS) (string, error) {
 	return dst, nil
 }
 
-// diskWebPath resolves the webapp `pack` for dev/unpackaged runs: the bundle
-// next to the executable, else `webapp/pack` relative to the working dir
+// diskWebPath resolves the page's bundle for dev/unpackaged runs: a `dist`
+// next to the executable, else `frontend/dist` relative to the working dir
 // (`wails dev` runs from the module root).
 func diskWebPath() string {
 	if executable, err := os.Executable(); err == nil {
@@ -106,16 +107,17 @@ func diskWebPath() string {
 		if err != nil {
 			executableDir = filepath.Dir(executable)
 		}
-		if next := path.Join(executableDir, "pack"); dirExists(next) {
+		if next := path.Join(executableDir, "dist"); dirExists(next) {
 			return next
 		}
 	}
-	// webapp/pack exists only in a source checkout, and there it is the bundle
-	// the dev watcher keeps rebuilding — the same one a release build embeds.
-	if cand := filepath.Join("webapp", "pack"); dirExists(cand) {
+	// frontend/dist exists only in a source checkout, and there it is the bundle
+	// the last `build:frontend` left — the same one a release build embeds.
+	// Under `wails3 dev` it is not asked at all: the page comes from Vite.
+	if cand := filepath.Join("frontend", "dist"); dirExists(cand) {
 		return cand
 	}
-	return "./pack"
+	return "./dist"
 }
 
 func dirExists(p string) bool {
@@ -136,6 +138,23 @@ func newServerLogger() mlog.LoggerIFace {
 type board struct {
 	srv *server.Server
 	db  *sql.DB
+	// dbType is which database that is — "sqlite3" on every desktop, and on a
+	// server whatever boardDatabase was told.
+	dbType string
+}
+
+// appTablesSupported says whether this application's own tables — the agents',
+// the sources' — can be worked on the board's database. Their queries are
+// written in SQLite's dialect (? placeholders, ON CONFLICT upserts), which MySQL
+// does not speak and Postgres only half does, so on a server that keeps its
+// boards in either, the two subsystems are switched off with this as the reason
+// rather than failing at their first write. docs/deferred.md carries what it
+// would take.
+func appTablesSupported(dbType string) error {
+	if dbType != model.SqliteDBType {
+		return fmt.Errorf("the agent and source tables are written in SQLite's dialect and do not run on %s yet (docs/deferred.md)", dbType)
+	}
+	return nil
 }
 
 // runServerWithLogger starts the board server in-process (single-user
@@ -148,11 +167,16 @@ func runServerWithLogger(logger mlog.LoggerIFace, port int, sessionToken string,
 		return board{}, fmt.Errorf("resolving data dir: %w", err)
 	}
 
+	dbType, dsn, err := boardDatabase(data)
+	if err != nil {
+		return board{}, err
+	}
+
 	cfg := &config.Configuration{
 		ServerRoot:         fmt.Sprintf("http://localhost:%d", port),
 		Port:               port,
-		DBType:             "sqlite3",
-		DBConfigString:     path.Join(data, "xciii.db"),
+		DBType:             dbType,
+		DBConfigString:     dsn,
 		UseSSL:             false,
 		SecureCookie:       true,
 		WebPath:            resolveWebPath(logger),
@@ -192,5 +216,5 @@ func runServerWithLogger(logger mlog.LoggerIFace, port int, sessionToken string,
 	if err := srv.Start(); err != nil {
 		return board{}, fmt.Errorf("starting server: %w", err)
 	}
-	return board{srv: srv, db: handle}, nil
+	return board{srv: srv, db: handle, dbType: dbType}, nil
 }

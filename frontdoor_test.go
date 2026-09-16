@@ -218,11 +218,10 @@ func TestTheGuardRefusesARequestWithNoSession(t *testing.T) {
 	}
 }
 
-// The runtime module is the one thing behind the guard a page without a session
-// must still be able to fetch: it carries no authority, and refusing it left a
-// login page unable to become a logged-in one — the browser caches a rejected
-// dynamic import, and logging in does not reload the page.
-func TestTheRuntimeModuleIsServedToAPageWithNoSessionYet(t *testing.T) {
+// Nothing under /wails/ is served to a page with no session. The runtime module
+// was the exception while the page imported it before a login; the page bundles
+// the runtime now, so an exception there would be a hole nothing uses.
+func TestNothingOfTheRuntimeIsServedToAPageWithNoSession(t *testing.T) {
 	guarded := requireSession(teapot(), boardSessionGuard(sessionsOf{}))
 
 	for _, tc := range []struct {
@@ -231,7 +230,7 @@ func TestTheRuntimeModuleIsServedToAPageWithNoSessionYet(t *testing.T) {
 		path   string
 		want   int
 	}{
-		{"the runtime module", http.MethodGet, "/wails/runtime.js", http.StatusTeapot},
+		{"the runtime module", http.MethodGet, "/wails/runtime.js", http.StatusUnauthorized},
 		{"a call made through it", http.MethodPost, "/wails/runtime", http.StatusUnauthorized},
 		{"anything else under it", http.MethodGet, "/wails/events", http.StatusUnauthorized},
 	} {

@@ -40,14 +40,14 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      # webapp/pack is what go:embed reads under the `frontend` tag. These jobs
+      # frontend/dist is what go:embed reads under the `frontend` tag. These jobs
       # do not build the page, so the directory only has to exist — a committed
       # .gitkeep holds it open, and this is here as the reminder of why.
       - name: Check the embed directory is there
-        run: test -d webapp/pack
+        run: test -d frontend/dist
 
       - name: Vet
-        run: go vet -tags "json1 sqlite3" ./...
+        run: go vet ./...
 
       # The whole suite on SQLite; on the other two, the packages that talk to a
       # database. The rest is the agent integration and the page's Go side,
@@ -58,14 +58,36 @@ jobs:
           FOCALBOARD_STORE_TEST_DB_TYPE: ${{ matrix.db }}
         run: |
           if [ "${{ matrix.db }}" = "sqlite3" ]; then
-            go test -count=1 -tags "json1 sqlite3" ./...
+            go test -count=1 ./...
           else
-            go test -count=1 -tags "json1 sqlite3" \
+            go test -count=1 \
               ./server/services/store/... ./server/integrationtests/...
           fi
 
-  webapp:
-    name: webapp
+  # The page calls Go through bindings generated from App and committed
+  # (frontend/bindings). bindings_test.go catches a method added or removed; this
+  # regenerates them with the version of Wails go.mod names and fails on any
+  # difference, which is what also catches a changed signature.
+  bindings:
+    name: bindings
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Install the Wails CLI go.mod names
+        run: go install "github.com/wailsapp/wails/v3/cmd/wails3@$(go list -m -f '{{.Version}}' github.com/wailsapp/wails/v3)"
+      - name: Regenerate the bindings
+        run: wails3 task common:generate:bindings
+      - name: They are what was committed
+        run: |
+          git status --porcelain -- frontend/bindings
+          test -z "$(git status --porcelain -- frontend/bindings)"
+
+  frontend:
+    name: frontend
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -73,11 +95,11 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: webapp/package-lock.json
+          cache-dependency-path: frontend/package-lock.json
       # Nothing here runs cypress; its binary is a download per install.
       - run: npm ci
-        working-directory: webapp
+        working-directory: frontend
         env:
           CYPRESS_INSTALL_BINARY: 0
       - run: npm test
-        working-directory: webapp
+        working-directory: frontend

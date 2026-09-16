@@ -127,7 +127,7 @@ func getTestConfig() (*config.Configuration, error) {
 		Port:              port,
 		DBType:            dbType,
 		DBConfigString:    connectionString,
-		WebPath:           "./pack",
+		WebPath:           "./dist",
 		FilesDriver:       "local",
 		FilesPath:         "./files",
 		LoggingCfgJSON:    logging,

@@ -20,9 +20,11 @@ import (
 // errACPDisabled is returned by bindings when the integration is off.
 var errACPDisabled = errors.New("интеграция агента выключена (см. конфиг acp)")
 
-// App is the bound service: its exported methods are what the frontend calls
-// by name (main.App.<Method>). It contains no logic of its own; ACP calls
-// delegate to the manager.
+// App is the bound service: every exported method is callable from the page,
+// through the bindings `wails3 task generate:bindings` writes into
+// frontend/bindings. Wiring that main does itself stays unexported for that
+// reason — an exported setter here is one the page can call. It contains no
+// logic of its own; ACP calls delegate to the manager.
 type App struct {
 	mu      sync.RWMutex
 	wapp    *application.App
@@ -61,17 +63,17 @@ func NewApp(emitter *wailsEmitter) *App {
 	return &App{emitter: emitter}
 }
 
-// SetApplication hands over the running application, the way to reach the
+// setApplication hands over the running application, the way to reach the
 // runtime in v3. It is set once, before Run.
-func (a *App) SetApplication(wapp *application.App) {
+func (a *App) setApplication(wapp *application.App) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	a.wapp = wapp
 }
 
-// SetOrigin records the address the front door serves the app under, which is
+// setOrigin records the address the front door serves the app under, which is
 // what a second window has to be pointed at.
-func (a *App) SetOrigin(url string) {
+func (a *App) setOrigin(url string) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	a.origin = url
@@ -90,8 +92,8 @@ func (a *App) app() *application.App {
 }
 
 // OpenInBrowser opens the given URL in the user's default system browser.
-// Bound to JS and invoked by the target=_blank click handler injected in
-// bootstrapScript.
+// Called by window.openInNewBrowser and the outward-link catch-all the page
+// installs (installGoBridge).
 func (a *App) OpenInBrowser(url string) {
 	wapp := a.app()
 	if wapp == nil || url == "" {

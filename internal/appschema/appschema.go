@@ -17,8 +17,8 @@ import (
 	"strings"
 	"text/template"
 
-	// Also the driver: sqlstore registers "sqlite3" as whichever SQLite the
-	// build chose, and importing one here as well would register it twice.
+	// Also the driver: sqlstore registers "sqlite3", and importing one here as
+	// well would register it twice.
 	"github.com/artipop/xciii/server/services/store/sqlstore"
 )
 
@@ -120,13 +120,11 @@ func SQLite() (string, error) {
 
 // OpenEnforcing is Open with the foreign keys enforced.
 //
-// The DSN comes from sqlstore because the driver does: the spelling and the
-// import are chosen by the same build constraint, beside each other. This
-// package once imported mattn itself, unconditionally, and spelled the DSN by
-// hand — because sqlstore's spelling followed the tag while the driver open
-// here did not, a build without `-tags sqlite3` handed mattn modernc's
-// `_pragma=foreign_keys(1)`, the keys were off, and three cascade tests failed
-// for a reason that had nothing to do with the constraints they were testing.
+// The DSN comes from sqlstore because the driver does, and the spelling
+// belongs beside the import. This package once imported a second driver itself
+// and spelled the DSN by hand; the two spellings disagreed, the keys were off,
+// and three cascade tests failed for a reason that had nothing to do with the
+// constraints they were testing.
 //
 // The pragma is verified rather than assumed, because that mismatch was silent:
 // a DSN parameter a driver does not recognise is not an error, it is nothing.

@@ -180,12 +180,12 @@ Mattermost. Доставку и писателя очереди вынесли �
 для имён, собранных на лету:
 
 ```
-cd webapp && npx purgecss --css pack/static/index-XXXX.css \
-  --content 'src/**/*.tsx' 'src/**/*.ts' '../webapp/index.html' --rejected
+cd frontend && npx purgecss --css dist/assets/index-XXXX.css \
+  --content 'src/**/*.tsx' 'src/**/*.ts' '../frontend/index.html' --rejected
 ```
 
-Ловушки: имя css-файла брать из `pack/index.html`, а не по маске — после
-watch-сборок в `pack/static` бывают файлы прошлых прогонов; без safelist он
+Ловушки: имя css-файла брать из `dist/index.html`, а не по маске — в
+`dist/assets` бывают файлы прошлых прогонов; без safelist он
 врёт (`icon-*`, `propColor*`, `Foo__${kind}` собираются на лету). Удалять по
 списку тоже не механически: имена сидят в перечислениях через запятую и во
 вложенных правилах.
@@ -216,7 +216,7 @@ watch-сборок в `pack/static` бывают файлы прошлых пр�
   `resolvedLanguage`). Правку когда-то откатывали, подозревая белое окно на
   macOS, которое оказалось не из-за неё. Убедиться, что окно не пустое, и что
   второй запуск не пишет в лог переустановку шаблонов.
-- **modernc вместо mattn на живой доске** — скорость и поведение WAL
-  ([sql-plan.md](sql-plan.md), пункт 3): дев-сборка с
-  `EXTRA_TAGS=json1,frontend` несколько дней. Если всё в порядке, mattn
-  уходит из графа целиком.
+- **modernc на живой доске** (2026-09-16: mattn убран, SQLite везде modernc,
+  [build-and-platforms.md](build-and-platforms.md)). Тесты на нём быстрее, но
+  живую доску с сотнями карточек никто не гонял: пожить на дев-сборке и
+  посмотреть, не тормозит ли перетаскивание и открытие доски.

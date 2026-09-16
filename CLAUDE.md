@@ -25,29 +25,41 @@ code builds a headless server (`-tags server`) that serves the board to a browse
   `docs/fork-shrink-removed.md` is the ledger of what went and how to bring it
   back. A removal is one commit with its tests, mocks and doc edits. Login,
   public sharing and multi-team are kept on purpose.
-- `webapp/` — its own npm project, built with Vite, rewritten from React to
-  **SolidJS**. Upstream and this repository's early history are React and are no
-  recipe any more; `docs/webapp.md` describes the page as it is.
+- `frontend/` — its own npm project, laid out as `wails3 init` lays one out
+  (bindings in `frontend/bindings`, the bundle in `frontend/dist`), built with
+  Vite, rewritten from React to **SolidJS**. Upstream and this repository's early history are React and are no
+  recipe any more; `docs/frontend.md` describes the page as it is.
 - `mobile/` — the phone app, a **second Go module on purpose** (see below).
 - README.md, "What this app requires of the frontend": the output layout
-  `go:embed` expects and the three feature-detected globals the page consumes.
+  `go:embed` expects and the one global the page consumes.
 
 ## Build & run
 
 `docs/build-and-platforms.md` has the details and the traps already paid for.
 
-- `wails3 dev` — the dev loop; needs `npm ci` in `webapp/` once. A dev build (no
-  `frontend` tag) serves `webapp/pack` off disk, kept current by the watcher in
-  `build/config.yml`.
+- `wails3 dev` — the dev loop, the template's: Vite with HMR beside the app;
+  the frontend's dependencies install themselves (`install:frontend:deps`). A dev
+  build is its own install — data dir, keychain service and single-instance
+  lock (`datadir_dev.go`) — or its window hands itself to a running XCIII and
+  exits silently. A development build's front door takes the
+  page from Vite (`FRONTEND_DEVSERVER_URL`, `devserver.go`) and injects the
+  bootstrap into it as into any page; `/api` and `/ws` stay the board's.
 - `wails3 task build` / `package` (`darwin:package:dmg`, `windows:package`,
-  `linux:package`) / `build:server`. `EDITION=lifetime` on any of them.
-- Build tags travel as `EXTRA_TAGS`, default `json1,sqlite3,frontend`; Linux adds
-  `gtk3`.
-- **Which SQLite is compiled in is cgo's answer.** `sqlite3 && cgo` is
-  `mattn/go-sqlite3`; anything else is `modernc.org/sqlite`, registered under the
-  same name (`sqlstore/sqlite_pure.go`), with `SQLiteDSN` spelling the settings
-  for whichever it is. **Windows builds without cgo by default** and
-  cross-compiles from anywhere; macOS and Linux desktops need cgo for Wails itself.
+  `linux:package`) / `build:server` / `build:docker`. `EDITION=lifetime` on any
+  of them.
+- **A server's database is the environment's** (`database_server.go`):
+  `XCIII_DB_TYPE` (`sqlite3`, `postgres`, `mysql`) and `XCIII_DB_DSN`. A desktop
+  is always SQLite. On the other two the board runs and the agents and sources
+  are off, because their SQL is SQLite's (`appTablesSupported`).
+- `wails3 task generate:bindings` — run by every build when Go changed, as in
+  the template; by hand after changing `App` when no build follows. They are
+  committed: `bindings_test.go` and CI's regeneration fail when they fall behind.
+- Build tags travel as `EXTRA_TAGS`, default `frontend`; Linux adds `gtk3`.
+- **SQLite is `modernc.org/sqlite` in every build**, pure Go, registered under
+  the name `sqlite3` (`sqlstore/sqlite.go`); `SQLiteDSN` spells its settings as
+  `_pragma=…`, and a mattn spelling is silently nothing. **cgo is Wails' alone**:
+  macOS and Linux desktops need it, Windows and the server build without it and
+  cross-compile from anywhere.
 - **A packaged app is not a child of a shell.** launchd hands the `.app` a bare
   PATH and no `TERM`; `internal/userpath` restores the login shell's PATH for the
   process, and `terminalEnv` writes `TERM`/`COLORTERM` for the pty. A bug that
@@ -56,18 +68,17 @@ code builds a headless server (`-tags server`) that serves the board to a browse
   (autoprefixer in `vite.config.ts`, targets in `browserslist`). WebKit there
   does not know unprefixed `user-select`. Never write prefixes by hand — stylelint
   forbids it.
-- **`webapp/pack` must never stop existing**: `go mod tidy` resolves the
+- **`frontend/dist` must never stop existing**: `go mod tidy` resolves the
   `go:embed all:` pattern in parallel with the frontend build, so a committed
-  `.gitkeep` holds it and Vite clears around it (`emptyPack`).
+  `.gitkeep` holds it and Vite clears around it (`emptyDist`).
 
 Tests:
 
-- `npm test` in `webapp/` — vitest under jsdom, no coverage (`npm run
+- `npm test` in `frontend/` — vitest under jsdom, no coverage (`npm run
   test:coverage` for it), `npm run updatesnapshot` to rewrite snapshots.
-- `go test -tags "json1 sqlite3" ./...` — on mattn, as macOS and Linux ship.
-  Without tags or cgo it runs on modernc, as Windows ships. `go vet -tags "server
-  json1 sqlite3" .` checks the headless build, which has files of its own.
-  `./...` also walks `webapp/node_modules`; that noise is cosmetic.
+- `go test ./...` — no tags needed. `go vet -tags server .` checks the headless
+  build, which has files of its own. `./...` also walks `frontend/node_modules`;
+  that noise is cosmetic.
 - Known rare flakes, only under a full `./...`: `TestPatchBoard` (`server/app`)
   and `TestASessionAsksTheCardForAToolOutsideThePolicy`. Re-run the package alone
   before blaming a change.
@@ -99,19 +110,26 @@ answers a WebSocket upgrade with 501**.
 - **Who is asked is the build** (`identity.go` + `identity_desktop.go`/
   `identity_server.go`, `docs/teamwork.md`): a desktop is one person with a
   single-user token; a hosted server is a team with `/login` open, and there
-  `/wails/` and both sockets require a session (`requireSession`) — except the
-  runtime module itself (`openToEverybody`). A desktop joins a server by logging
-  in (`attach.go`) and keeps its agents.
+  `/wails/` and both sockets require a session (`requireSession`), with no
+  exception: the page bundles the Wails runtime, so nothing it needs before a
+  login is behind the guard. A desktop joins a server by logging in
+  (`attach.go`) and keeps its agents.
 - `tsnetdoor.go` is the only supported way off the machine: the same front door
   published as a node of the user's tailnet (`tsnet`, `ListenTLS`), gated by
   `WhoIs` in front of *everything*, page included, because the page hands out the
   board's session token. It gets a front door built for its own authority.
 
-### The page talks to Go through a shim, not through generated bindings
+### The page talks to Go through generated bindings
 
-The bootstrap script in `proxy.go` loads `/wails/runtime.js` and rebuilds
-`window.go.main.App` as a Proxy over `Call.ByName('main.App.<name>')`. No bindings
-are generated: **adding a method to `App` makes it callable.**
+`frontend/bindings` is generated from `App` (`wails3 task generate:bindings`) and
+committed; the page calls through it over the `@wailsio/runtime` it bundles,
+pinned to go.mod's Wails (`bindings_test.go`). **Every exported method of `App`
+is callable from the page**, so wiring `main` does itself stays unexported. The
+bootstrap in `proxy.go` only seeds the session and sets `window.hasGoSide`;
+`goApp()` (`goBridge.ts`) hands out the imported service only when it is set,
+and every call site asks it. **No test reaches the runtime**: the setup file
+mocks the bindings module for the suite, and a test installs its Go side with
+`fakeGoSide` (`src/test/goSide.ts`), never a global.
 
 **Events come back over a socket, not the Wails bus** (`eventsws.go`,
 `/acp/events/ws`), because the bus only reaches windows the app owns and a page
@@ -145,7 +163,7 @@ is a board server with cgo SQLite; the phone app is a window per machine onto
   inside runs once with the falsy value, `value()!.field` throws, and the whole
   page stops updating. Reads from Go go through `createLoader`
   (`hooks/loader.ts`); `docs/solid2.md` has the measurements.
-- **`@dnd-kit/solid` is Solid 1 only** and runs on `webapp/solid1/`, a compat
+- **`@dnd-kit/solid` is Solid 1 only** and runs on `frontend/solid1/`, a compat
   layer pointed at that package alone by importer path. Applied globally it
   rewrites what `@solidjs/web` itself imports. It goes when dnd-kit ships Solid 2.
 - State is `src/store`: `createAppStore(deps, initialState)`, per-domain action
@@ -252,7 +270,7 @@ server.
   machine registries offered from a board's ⋯ menu on its setup plan; UI prefs
   are kept by the install in `<dataDir>/ui-settings.json` (`installKept` in
   `userSettings.ts`), hydrated into localStorage before first paint.
-- **A theme is a Mattermost theme config** (`webapp/src/theme/`,
+- **A theme is a Mattermost theme config** (`frontend/src/theme/`,
   `docs/themes.md`), shipped as pairs (light/dark) with `themeMode` choosing the
   half; `_tokens.scss` is the first paint and a test holds it equal to the
   shipped configs.
@@ -430,7 +448,7 @@ per driver.
   **Everything said to an agent is English** — prompts, MCP instructions, tool
   descriptions, schema fields; what a person wrote passes through as data, and
   answers meant for a person ask for the conversation's language.
-- **User-facing text is plain documentation**, in `webapp/i18n/*.json`,
+- **User-facing text is plain documentation**, in `frontend/i18n/*.json`,
   component defaults, `site/` and `docs/guide/`: name the thing, say what it
   does, say what to do. No aphorisms, mirrored halves, metaphors where a plain
   verb exists, or headings that make statements. Product vocabulary (маршрут,
@@ -450,7 +468,7 @@ per driver.
 - **A feature a person uses is not finished until `docs/guide/` says how**
   (Russian, by screen or task; a VitePress site, `docs/guide-site.md`). New pages
   get a sidebar line in `.vitepress/config.mjs`. Quote the screen from
-  `webapp/i18n/ru.json`, never from memory. `docs/guide/en/` mirrors it page for
+  `frontend/i18n/ru.json`, never from memory. `docs/guide/en/` mirrors it page for
   page and quotes `en.json`; names the app gives stay Russian there too.
 - Commit messages: a plain subject saying what changed, a body saying why — the
   reasoning, the rejected alternative, what was verified. No emoji.

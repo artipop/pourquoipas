@@ -44,12 +44,19 @@ func appDataDir(name string, perm os.FileMode) (string, error) {
 // openAgentStore hands the agent integration the board's database. Both
 // subsystems keep their tables there rather than in files of their own — see
 // CLAUDE.md, "One database" — and neither creates anything: the schema is the
-// migration's.
+// migration's. On a database their queries are not written for they are off
+// (appTablesSupported).
 func openAgentStore(brd board, dir string) (*acp.Store, error) {
+	if err := appTablesSupported(brd.dbType); err != nil {
+		return nil, err
+	}
 	return acp.NewStore(brd.db), nil
 }
 
 func openSourceStore(brd board, dir string) (*sources.Store, error) {
+	if err := appTablesSupported(brd.dbType); err != nil {
+		return nil, err
+	}
 	return sources.NewStore(brd.db), nil
 }
 
@@ -69,16 +76,6 @@ func tailnetDataDir() (string, error) { return appDataDir("tailnet", 0o700) }
 // works on, and the session for it is in the credential store beside it.
 func attachDataDir() (string, error) { return appDataDir("server", 0o700) }
 
-// ignoreViteDevServer removes the variable `wails3 dev` sets to point the app at
-// a Vite dev server. This app never has one: the page is the board webapp,
-// served by the in-process board server behind the front door, in a dev build
-// exactly as in a release build. Left set, Wails' own preRun waits ten times for
-// a server that will never answer and then kills the app with "unable to connect
-// to frontend server", which is a confusing way to say "there isn't one".
-func ignoreViteDevServer() {
-	_ = os.Unsetenv("FRONTEND_DEVSERVER_URL")
-}
-
 func main() {
 	// An update in progress re-execs this binary as its own helper: wait for
 	// the old process to go, rename the new bundle into place, launch it, exit.
@@ -97,8 +94,6 @@ func main() {
 	// (hook.go), and it is here for the same reason: it is a short-lived process
 	// that must not open a database or take a port on its way to one HTTP call.
 	maybeRunHook(os.Args[1:])
-
-	ignoreViteDevServer()
 
 	// Before anything can be spawned: a packaged app is started by launchd and
 	// gets its PATH, which has none of what this app runs for the user — npx,
@@ -216,7 +211,12 @@ func main() {
 	if attach.selected() != "" {
 		log.Printf("showing %s: the page is served that board", attach.selected())
 	}
-	router, err := newBoardRouter(port, attach.selected(), pageToken)
+	// Under `wails3 dev` the page itself comes from Vite (devserver.go).
+	devServer := viteDevServer()
+	if devServer != "" {
+		log.Printf("development build: the page comes from Vite at %s", devServer)
+	}
+	router, err := newBoardRouter(port, attach.selected(), devServer, pageToken)
 	if err != nil {
 		log.Fatalf("failed to create the server proxy: %v", err)
 	}
@@ -443,9 +443,8 @@ func main() {
 		_ = srv.Shutdown()
 	}
 
-	// The bound methods live on App, and the webapp calls them by their fully
-	// qualified names (main.App.<Method>) rather than through generated
-	// bindings — exactly what the v2 build's -skipbindings meant.
+	// The bound methods live on App, and the webapp calls them through the
+	// bindings generated from it (frontend/bindings).
 	wapp := application.New(application.Options{
 		Name:        "XCIII",
 		Description: "Boards with coding agents",
@@ -469,7 +468,7 @@ func main() {
 		// launched the second process — macOS delivers it as an Apple Event and
 		// not in argv — and passes it here in Args.
 		SingleInstance: &application.SingleInstanceOptions{
-			UniqueID: "io.deffun.xciii",
+			UniqueID: singleInstanceID,
 			OnSecondInstanceLaunch: func(data application.SecondInstanceData) {
 				if req, ok := shareURLFrom(data.Args); ok {
 					app.openShare(req)
@@ -487,8 +486,8 @@ func main() {
 	// Both App and the emitter (acp.UIEmitter) reach the runtime through the
 	// application instance rather than through a context, so there is no
 	// startup hook to wait for before an event can be delivered.
-	app.SetApplication(wapp)
-	app.SetOrigin(front.url())
+	app.setApplication(wapp)
+	app.setOrigin(front.url())
 	if mgr != nil {
 		// Where an agent's board tools call back to. Known only now: the front
 		// door picks its port when it binds.

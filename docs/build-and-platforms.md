@@ -12,6 +12,8 @@
 | Бинарь для этой платформы | `wails3 task build` |
 | `.app` / инсталлятор | `wails3 task package`, `darwin:package:dmg`, `windows:package`, `linux:package` |
 | Headless-сервер | `wails3 task build:server` |
+| Docker-образ сервера | `wails3 task build:docker`, `run:docker` |
+| Привязки к Go после правки `App` (сборка делает это сама) | `wails3 task generate:bindings` |
 | Кросс-образ для Linux и macOS | `wails3 task setup:docker` |
 | Платное издание | к любой из них — `EDITION=lifetime` |
 
@@ -20,16 +22,17 @@
 
 ## Теги сборки
 
-`EXTRA_TAGS` по умолчанию `json1,sqlite3,frontend`:
+`EXTRA_TAGS` по умолчанию `frontend`:
 
-- `json1`, `sqlite3` — cgo-SQLite (`mattn/go-sqlite3`), но только если cgo
-  включён; без cgo они ничего не выбирают, и SQLite — чистый Go (ниже);
-- `frontend` — `go:embed` каталога `webapp/pack`;
+- `frontend` — `go:embed` каталога `frontend/dist`;
 - `gtk3` добавляется на Linux сам (`GTK_TAG` в `build/linux/Taskfile.yml`);
 - `server` — headless-сборка, у неё свои файлы (`window_server.go` вместо
   `window_desktop.go`);
-- `production` — релизная сборка; без него каталог данных `XCIII-dev`, поэтому
-  дев-сборка никогда не трогает настоящую установку;
+- `production` — релизная сборка; без него каталог данных `XCIII-dev` и свой
+  замок единственного экземпляра (`singleInstanceID`), поэтому дев-сборка
+  никогда не трогает настоящую установку. С общим замком окно из `wails3 dev`
+  при запущенном XCIII отдавало запуск ему и молча выходило — в терминале
+  оставался только адрес Vite;
 - `lifetime` — платное издание: лишние шаблоны досок и свой фид обновлений.
   Добавляется через `EDITION=lifetime`, а не руками: `EDITION=base` (по
   умолчанию) не добавляет тега вовсе. См. [editions.md](editions.md).
@@ -44,27 +47,27 @@
 за это одной холодной сборкой; тег `production` сам по себе дешёвый, он
 меняет только пакеты с файлами под ним. Замеры — `build-speed-plan.md`.
 
-## Два драйвера SQLite, и выбирает их cgo
+## Одна SQLite, и cgo ей не нужен
 
-Драйвер выбирается ограничением `sqlite3 && cgo`
-(`server/services/store/sqlstore/sqlite.go`): тег и включённый cgo — это
-`mattn/go-sqlite3`, всё остальное — `modernc.org/sqlite`, чистый Go
-(`sqlite_pure.go`), зарегистрированный под тем же именем `sqlite3`, потому что
-`DBType` — одновременно и имя диалекта, и имя драйвера. DSN пишется под тот же
-выбор (`SQLiteDSN`): у двух драйверов разное написание `foreign_keys` и
-`busy_timeout`, а незнакомый параметр оба молча игнорируют.
+SQLite во всех сборках — `modernc.org/sqlite`, чистый Go
+(`server/services/store/sqlstore/sqlite.go`), зарегистрированный ещё раз под
+именем `sqlite3`, потому что `DBType` — одновременно и имя диалекта, и имя
+драйвера. Настройки соединения пишутся в DSN его написанием (`SQLiteDSN`,
+`_pragma=foreign_keys(1)`); незнакомый параметр — например, `_foreign_keys=on`
+в написании mattn — он молча игнорирует, то есть это не ошибка, а выключенная
+настройка. У golang-migrate берётся пакет `database/sqlite`: `database/sqlite3`
+построчно тот же, но импортирует mattn и притащил бы в сборку вторую SQLite.
 
-Раньше `CGO_ENABLED=0` был ловушкой: сборка с тегом `sqlite3` компилировалась
-чисто, линковала заглушку mattn (`static_mock.go` — регистрирует `sqlite3` и на
-каждый `Open` отвечает «Binary was compiled with 'CGO_ENABLED=0' […] This is a
-stub») и умирала на первом запросе. Теперь то же сочетание получает modernc.
-
-Миграции подчиняются тому же выбору. У golang-migrate два SQLite-пакета,
-построчно одинаковых: они отличаются только драйвером, который импортируют
-сбоку (`database/sqlite` — modernc, `database/sqlite3` — mattn). Какой взять,
-решает то же ограничение (`sqliteMigrationDriver` в `sqlite.go` /
-`sqlite_pure.go`), и в сборку попадает ровно одна SQLite. До 2026-09-15 миграции
-всегда брали modernc, и cgo-сборка линковала обе: 18 с CPU на холодной сборке.
+До 2026-09-16 драйвер выбирало ограничение `sqlite3 && cgo`: на macOS и Linux
+был `mattn/go-sqlite3`, на Windows и в сборках без cgo — modernc. Два драйвера
+значили два написания DSN, которые уже однажды разошлись молча (ключи были
+выключены, `docs/fork-shrink-removed.md`), и платформы, проверенные на разных
+SQLite. Cgo на macOS и Linux всё равно нужен Wails, так что mattn ничего не
+экономил. Замер перед переходом — наборы на modernc не медленнее: `sqlstore`
+1,8 с против 3,6 с на mattn, `integrationtests` 10 с против 12 с,
+`boardadapter` 13,9 с против 16,1 с (macOS/arm64, `-count=1`). Session
+extension, на которую рассчитывает `icloud-sync.md`, в modernc собрана
+(`SQLITE_ENABLE_SESSION`), и её функции доступны из Go без cgo.
 
 Без cgo не собирается только десктоп на macOS и Linux — из-за самого Wails (у
 `wails/v3/pkg/mac` исключены все файлы, GTK на Linux), и падает он честно. На
@@ -87,20 +90,20 @@ bookworm — и кросс-образ вместе с ним — на 4.8. Сн�
 `GTK_TAG=`.
 
 **Windows.** `wails3 task windows:build` даёт PE32+ x86-64 **без cgo**:
-`CGO_ENABLED=0` задан в `build/windows/Taskfile.yml` жёстко, SQLite — modernc.
+`CGO_ENABLED=0` задан в `build/windows/Taskfile.yml` жёстко.
 Ни MinGW, ни кросс-образа не нужно — и на самой Windows, и с мака, где это
 тот же `go build` с `GOOS=windows`, а внутренний линкер Go честно ставит
 GUI-подсистему.
 
 Headless-сборка (`wails3 task build:server`) под Windows тоже без cgo:
-`build:server` оставляет `CGO_ENABLED` на усмотрение Go, а без C-компилятора
-это 0 и modernc. На Wails v3.0.0-beta.2, с которой проект начинался, она не
+`build:server` оставляет `CGO_ENABLED` на усмотрение Go, и ему C-компилятор не
+нужен ни при каком значении. На Wails v3.0.0-beta.2, с которой проект начинался, она не
 компилировалась вовсе — `webview_window_windows_nonclient.go` был помечен
 только `windows`, без `!server`; апстрим исправил это в beta.4. Проверено на
 beta.22: сервер стартует, прогоняет миграции на новой базе и отдаёт страницу.
 
 Сборки с cgo под Windows больше нет вовсе — ни через MinGW, ни через
-кросс-образ, — потому что cgo там нужен был одной SQLite. У того пути было две
+кросс-образ, — потому что cgo там был нужен одной SQLite. У того пути было две
 грабли, и они — причина не возвращать его без нужды:
 
 - build-скрипт кросс-образа экспортировал `CGO_CFLAGS="-w"`, из-за чего zig
@@ -123,24 +126,71 @@ beta.22: сервер стартует, прогоняет миграции на
 Бинарники кросс-собираются, пакеты — нет: AppImage зовёт `ldd`, NSIS — это
 `makensis`, ни того ни другого на маке нет.
 
-## `webapp/pack` не должен исчезать ни на секунду
+## `frontend/dist` не должен исчезать ни на секунду
 
 `go mod tidy` резолвит шаблон `go:embed all:` под всеми тегами и идёт
 параллельно со сборкой фронтенда. Каталог держит открытым закоммиченный
-`.gitkeep`; Vite чистит *вокруг* него, а не удаляет его (`emptyPack` в
+`.gitkeep`; Vite чистит *вокруг* него, а не удаляет его (`emptyDist` в
 `vite.config.ts`). Чистит именно сборка, а не Taskfile: там это был
 `rm -rf`, а у shell-интерпретатора Task на Windows нет `rm`.
 
 Контракт сборки, который обязан выполняться, чем бы фронтенд ни собирался:
 
-- на выходе `webapp/pack/index.html` и `pack/static/*`;
+- на выходе `frontend/dist/index.html`, собранное в `frontend/dist/assets/*` и содержимое `public/` в корне `dist`;
 - в `index.html` есть Go-шаблон `{{.BaseURL}}`;
 - ссылки на ассеты из JS и CSS — относительные;
-- работают `npm run pack`, `watchdev`, `deveditor`;
-- `go build -tags frontend` встраивает `webapp/pack`, headless-сборка отдаёт
+- работают `npm run build`, `dev`, `deveditor`;
+- `go build -tags frontend` встраивает `frontend/dist`, headless-сборка отдаёт
   страницу, `/api` и `/ws`;
-- три глобала из README («What this app requires of the frontend») — каждый с
-  feature-detection на месте вызова, потому что тот же бандл ездит в браузер.
+- глобал `window.hasGoSide` из README («What this app requires of the
+  frontend»): вызов в Go сначала спрашивает его (`goApp()`);
+- `frontend/bindings` совпадает с тем, что генерирует `wails3 task
+  generate:bindings`, а `@wailsio/runtime` — ровно та версия Wails, что в
+  `go.mod` (`bindings_test.go`, джоб `bindings` в CI).
+
+## Разработка: страница из Vite
+
+`wails3 dev` — шаблонный цикл Wails: Vite с HMR в фоне
+(`common:dev:frontend`, порт `VITE_PORT`, по умолчанию 9245), приложение —
+основным процессом. Адрес Vite приложение получает в `FRONTEND_DEVSERVER_URL`,
+и dev-сборка берёт оттуда страницу и модули через front door, вставляя в HTML
+тот же bootstrap, что и в релизе; `/api/v0` и `/ws` остаются доске
+(`devserver.go`, `proxy.go`). HMR-сокет Vite открывается на origin страницы —
+то есть на front door — и проходит тем же прокси. Релизная сборка
+переменную не читает.
+
+Переменную приложение не сбрасывает: preRun самого Wails по ней ждёт, пока Vite
+ответит, прежде чем открыть окно, — это ровно то ожидание, которое здесь и
+нужно. Но `localhost` в ней заменяется на `127.0.0.1`, и Vite запускается там
+же (`--host 127.0.0.1`): `wails3 dev` всегда пишет `localhost`, Node на Windows
+вешает его на `::1`, а на машине, где IPv6-loopback отказывает, Wails пять
+секунд ждал уже поднятый Vite и ронял приложение (`devserver.go`).
+
+## Сервер в контейнере и его база
+
+`wails3 task build:docker` — образ серверного режима по шаблону Wails
+(`build/docker/Dockerfile.server`): сначала собирается страница (`frontend/dist`
+вшивается тегом `frontend`, node в образе нет), потом чистый Go без cgo на
+`distroless/static`. `run:docker` запускает его с данными в томе `xciii-data`.
+
+Настраивается окружением при `docker run`:
+
+- `WAILS_SERVER_HOST`/`WAILS_SERVER_PORT` (или `SERVER_HOST`/`SERVER_PORT`) —
+  где слушает front door; в образе `0.0.0.0:8080`;
+- `XCIII_DB_TYPE` — `sqlite3` (по умолчанию), `postgres` или `mysql`, и
+  `XCIII_DB_DSN` — строка подключения в синтаксисе драйвера; для SQLite это
+  путь, по умолчанию файл в каталоге данных (`database_server.go`);
+- `/data` — каталог установки (`XDG_CONFIG_HOME`): база SQLite, файлы,
+  настройки. Без тома каждый перезапуск — новая установка.
+
+На Postgres и MySQL работает доска; агенты и источники выключены и пишут в лог
+почему (`appTablesSupported`): их SQL написан на диалекте SQLite. Что нужно,
+чтобы это изменить, — в [deferred.md](deferred.md), «Одна база: хвосты плана».
+Десктоп всегда на SQLite и ничего из этого не читает.
+
+Образ — это доска. Агентам нужны CLI (claude, codex, git, node), которых в
+distroless нет, так что серверу с агентами нужен `RUNTIME_IMAGE`, который их
+несёт.
 
 ## Запакованное приложение — не потомок оболочки
 
@@ -157,8 +207,8 @@ codex CLI, так что «найти бинарь и запустить его 
 
 Способ проверки — и его собственные ловушки — в [verifying.md](verifying.md).
 
-Курлом по front door на обеих сборках: страница отдаётся,
-`/wails/runtime.js` отдаётся, `Call.ByName('main.App.…')` возвращает данные
+Курлом по front door на обеих сборках: страница отдаётся, вызов привязки
+(`POST /wails/runtime` с id метода из `frontend/bindings`) возвращает данные
 настоящих реестров, `/ws` отвечает `101 Switching Protocols` с того же origin,
 кросс-origin вызов биндинга получает `403`. В десктопной сборке WebKit-процесс
 держит живое соединение с front door — страница загружена по HTTP, а не по

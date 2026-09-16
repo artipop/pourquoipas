@@ -39,7 +39,7 @@
 лежит в записи доски или в блоке карточки.
 
 Блок собственного типа тоже не годится, и это проверено, а не предположено:
-`contentsFromBlocks` (`webapp/src/store/contents.ts:24-34`) считает содержимым
+`contentsFromBlocks` (`frontend/src/store/contents.ts:24-34`) считает содержимым
 карточки всё, что не `board`/`view`/`comment`, а `BlockType2IDType`
 (`server/model/blocktype.go:59`) чужих типов не знает.
 
