@@ -6,7 +6,8 @@
 чинить», и не хватает только рук. Работа с планом на несколько шагов живёт в
 своих документах: [card-deps.md](card-deps.md),
 [onboarding-plan.md](onboarding-plan.md), [cloud-runners.md](cloud-runners.md),
-[build-speed-plan.md](build-speed-plan.md), [sql-dialects.md](sql-dialects.md).
+[build-speed-plan.md](build-speed-plan.md), [sql-dialects.md](sql-dialects.md),
+[localisation-plan.md](localisation-plan.md).
 
 Сверено 2026-09-15. Пункты про страницу помечены «после Solid 2»: переезд идёт
 параллельно, и правки компонентов до его конца легли бы на те же файлы.
