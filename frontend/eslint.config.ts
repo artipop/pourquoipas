@@ -26,10 +26,10 @@ const mattermostBaseTestOverride = mattermostBase.overrides.
 export default [
     {
 
-        // Flat config replaces .eslintignore. `pack` and `coverage` are build output
+        // Flat config replaces .eslintignore. `dist` and `coverage` are build output
         // that the eslintrc setup never reached because it only ran with --ext ts,tsx.
         // `bindings` is generated from the Go side (`wails3 task generate:bindings`).
-        ignores: ['node_modules/', 'bindings/', 'pack/', 'coverage/'],
+        ignores: ['node_modules/', 'bindings/', 'dist/', 'coverage/'],
     },
     {
         files: ['**/*.ts', '**/*.tsx'],

@@ -13,7 +13,7 @@ import {solid1Compat} from './solid1/plugin'
 
 const root = path.dirname(fileURLToPath(import.meta.url))
 const staticDir = path.join(root, 'static')
-const outDir = path.join(root, 'pack')
+const outDir = path.join(root, 'dist')
 
 const mimeTypes: Record<string, string> = {
     '.gif': 'image/gif',
@@ -38,11 +38,11 @@ function appHtml(): Plugin {
     }
 }
 
-// `static/` is served from `/static` in dev and copied to `pack/static` on build
-// — the same contract the Go server expects (it mounts pack/static at /static).
-// Assets imported from TypeScript are emitted into pack/static by Vite itself,
+// `static/` is served from `/static` in dev and copied to `dist/static` on build
+// — the same contract the Go server expects (it mounts dist/static at /static).
+// Assets imported from TypeScript are emitted into dist/static by Vite itself,
 // hashed, so the copy leaves them out: copied again unhashed they were ~4 MB of
-// duplicates in pack/ and in the binary.
+// duplicates in dist/ and in the binary.
 function appStatic(): Plugin {
     const imported = new Set<string>()
     return {
@@ -60,6 +60,15 @@ function appStatic(): Plugin {
         },
         configureServer(server: ViteDevServer) {
             server.middlewares.use('/static', ((req, res, next) => {
+                // An asset a module imports is asked for as `?import` (or
+                // `?url`, `?raw`), and the answer Vite owes is a JavaScript
+                // module naming the file. Answered here with the file itself,
+                // the browser refuses a gif as a module script and the page
+                // never renders.
+                if ((/[?&](import|url|raw|inline)(&|=|$)/).test(req.url || '')) {
+                    next()
+                    return
+                }
                 const rel = decodeURIComponent((req.url || '').split('?')[0])
                 const file = path.join(staticDir, rel)
                 if (!file.startsWith(staticDir) || !existsSync(file)) {
@@ -82,14 +91,14 @@ function appStatic(): Plugin {
     }
 }
 
-// Empties pack/ before a build, around its .gitkeep — Vite's own emptyOutDir,
+// Empties dist/ before a build, around its .gitkeep — Vite's own emptyOutDir,
 // minus the one file it would take with it (see build.emptyOutDir below).
 // Clearing is what keeps a renamed asset from surviving a rebuild, and it is
 // the build's job rather than the Taskfile's: the Taskfile did it with
 // rm/mkdir/touch, which Task's shell does not have on Windows.
-function emptyPack(): Plugin {
+function emptyDist(): Plugin {
     return {
-        name: 'xciii-empty-pack',
+        name: 'xciii-empty-dist',
         apply: 'build',
         buildStart() {
             mkdirSync(outDir, {recursive: true})
@@ -110,7 +119,7 @@ export default defineConfig(({mode}) => {
         base: '/',
 
         // Handled by appStatic: Vite would copy publicDir to the output
-        // root, but these files have to land in pack/static.
+        // root, but these files have to land in dist/static.
         publicDir: false,
 
         plugins: [
@@ -128,17 +137,17 @@ export default defineConfig(({mode}) => {
             solid(),
             appHtml(),
             appStatic(),
-            emptyPack(),
+            emptyDist(),
         ],
 
         build: {
             outDir,
             assetsDir: 'static',
 
-            // pack/ holds a committed .gitkeep that keeps the directory
+            // dist/ holds a committed .gitkeep that keeps the directory
             // embeddable for `go mod tidy`, which resolves `go:embed all:`
             // under every tag and runs in parallel with this build. Vite's own
-            // emptying would delete it and reopen that race, so emptyPack()
+            // emptying would delete it and reopen that race, so emptyDist()
             // above clears around it instead.
             emptyOutDir: false,
             target: 'es2019',
@@ -160,6 +169,7 @@ export default defineConfig(({mode}) => {
         },
 
         css: {
+
             // The desktop app is a WKWebView, and it does not know the
             // unprefixed `user-select` at all — measured, in the real engine:
             // CSS.supports('user-select','none') is false there and
@@ -189,5 +199,15 @@ export default defineConfig(({mode}) => {
         // client connects back to that origin, and the door passes the upgrade
         // through. So there is no proxy to configure here — the door is it.
         server: {},
+
+        // The dev server pre-bundles dependencies with esbuild, which knows
+        // nothing of solid1Compat: a Solid 1 package bundled there resolves
+        // `solid-js/web` against Solid 2, which does not publish it, and Vite
+        // dies at startup. Left out, the package is served module by module
+        // through the plugins like the page's own code (vitest inlines it for
+        // the same reason).
+        optimizeDeps: {
+            exclude: ['@dnd-kit/solid'],
+        },
     }
 })

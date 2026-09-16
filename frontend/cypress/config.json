@@ -4,7 +4,7 @@
     "dbtype": "sqlite3",
     "dbconfig": "file::memory:?cache=shared&_busy_timeout=5000",
     "useSSL": false,
-    "webpath": "../pack",
+    "webpath": "../dist",
     "filespath": "../../files",
     "telemetry": false,
     "webhook_update": [],

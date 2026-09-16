@@ -444,7 +444,7 @@ func main() {
 	}
 
 	// The bound methods live on App, and the webapp calls them through the
-	// bindings generated from it (webapp/bindings).
+	// bindings generated from it (frontend/bindings).
 	wapp := application.New(application.Options{
 		Name:        "XCIII",
 		Description: "Boards with coding agents",

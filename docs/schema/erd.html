@@ -450,7 +450,7 @@ erDiagram
       <section class="group" id="g1">
         <p class="eyebrow">3 таблиц</p>
         <h2>История доски</h2>
-        <div class="prose"><p>Каждая правка дописывает строку. Механизм апстрима: undo этого продукта живёт на странице (<code>webapp/src/undomanager.ts</code>), экрана истории нет. <code>insert_at</code> — часть первичного ключа, и приходит он из Go (<code>utils.NextInsertAt</code>), а не из часов базы: внутри транзакции часы базы отдают всем строкам один и тот же момент.</p></div>
+        <div class="prose"><p>Каждая правка дописывает строку. Механизм апстрима: undo этого продукта живёт на странице (<code>frontend/src/undomanager.ts</code>), экрана истории нет. <code>insert_at</code> — часть первичного ключа, и приходит он из Go (<code>utils.NextInsertAt</code>), а не из часов базы: внутри транзакции часы базы отдают всем строкам один и тот же момент.</p></div>
         <figure class="plate">
           <pre class="mermaid">%%{init: {&#x27;theme&#x27;:&#x27;base&#x27;,&#x27;themeVariables&#x27;:{&#x27;fontFamily&#x27;:&#x27;ui-monospace, SFMono-Regular, Menlo, Consolas, monospace&#x27;,&#x27;fontSize&#x27;:&#x27;13px&#x27;,&#x27;primaryColor&#x27;:&#x27;#ffffff&#x27;,&#x27;primaryTextColor&#x27;:&#x27;#14171d&#x27;,&#x27;primaryBorderColor&#x27;:&#x27;#aab3bf&#x27;,&#x27;secondaryColor&#x27;:&#x27;#f4f6f8&#x27;,&#x27;tertiaryColor&#x27;:&#x27;#ffffff&#x27;,&#x27;lineColor&#x27;:&#x27;#7c8493&#x27;,&#x27;textColor&#x27;:&#x27;#14171d&#x27;,&#x27;nodeBorder&#x27;:&#x27;#aab3bf&#x27;,&#x27;mainBkg&#x27;:&#x27;#ffffff&#x27;,&#x27;attributeBackgroundColorOdd&#x27;:&#x27;#ffffff&#x27;,&#x27;attributeBackgroundColorEven&#x27;:&#x27;#f4f6f8&#x27;}}}%%
 erDiagram

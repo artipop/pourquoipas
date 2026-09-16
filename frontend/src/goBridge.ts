@@ -3,7 +3,7 @@ import * as App from '../bindings/github.com/artipop/xciii/app'
 import type {IAppWindow} from './types'
 
 // The App service as `wails3 task generate:bindings` writes it into
-// webapp/bindings, imported the way the Wails template imports a service.
+// frontend/bindings, imported the way the Wails template imports a service.
 export type GoApp = typeof App
 
 // goApp is the Go side's App service, or undefined when nothing answers behind

@@ -99,7 +99,7 @@ func TestTheBootstrapTellsThePageThereIsAGoSide(t *testing.T) {
 // the page stays here.
 //
 // The page is not fetched from the server because it is already on this disk —
-// webapp/pack is embedded in this binary — and because it is *ours*: the
+// frontend/dist is embedded in this binary — and because it is *ours*: the
 // bindings that page was built with call this desktop's App by id, so a server
 // on another version would hand back one this desktop does not match.
 func TestAttachedTheDataGoesAcrossAndThePageStaysHere(t *testing.T) {

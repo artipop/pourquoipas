@@ -70,9 +70,9 @@ npm run preview    # посмотреть собранное
 
 ## Дизайн
 
-Токены в начале `styles.css` — те же, что в `webapp/src/styles/_tokens.scss`:
+Токены в начале `styles.css` — те же, что в `frontend/src/styles/_tokens.scss`:
 тёмная тема — экран, светлая — бумага; машина говорит разрядкой в верхнем
 регистре, человек — прозой. Тему выбирает встроенный скрипт в `<head>`, до
 первой отрисовки: `app.js` — модуль и выполнился бы уже после неё. Шрифты
-(`fonts/`) скопированы из `webapp/node_modules/@fontsource-variable`, только
+(`fonts/`) скопированы из `frontend/node_modules/@fontsource-variable`, только
 latin и cyrillic.

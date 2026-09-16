@@ -1,17 +1,17 @@
 .task
 bin
-# The webapp bundle go:embed compiles in — Vite's output, not a source tree.
+# The page's bundle go:embed compiles in — Vite's output, not a source tree.
 # The .gitkeep stays tracked so the directory always exists and stays
 # embeddable for `go mod tidy`, which checks the pattern under every tag.
-**/pack/*
-!**/pack/.gitkeep
+frontend/dist/*
+!frontend/dist/.gitkeep
 # `go build .` with no -o leaves a binary named after this directory. Anchored
 # to the root: unanchored it also swallowed site/xciii, a page of the landing.
 /xciii
 # `go build ./tools/...` does the same for the schema generator, and drops it in
 # the module root rather than beside its package.
 /schemagen
-# The webapp is its own npm project. So are the landing and the guide site.
+# The frontend is its own npm project. So are the landing and the guide site.
 node_modules
 # VitePress' own working directory, for both guides (docs/guide, the XCIII one,
 # and docs/guide-xxvi). They build into site/dist instead, so a `dist` here only
@@ -20,8 +20,8 @@ docs/guide*/.vitepress/cache
 docs/guide*/.vitepress/dist
 coverage
 .eslintcache
-webapp/cypress/videos
-webapp/cypress/screenshots
+frontend/cypress/videos
+frontend/cypress/screenshots
 build/linux/appimage/build
 build/windows/nsis/MicrosoftEdgeWebview2Setup.exe
 # The macOS icon catalog `common:generate:icons` compiles from appicon.icon,

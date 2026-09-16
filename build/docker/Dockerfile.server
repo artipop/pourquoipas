@@ -1,6 +1,6 @@
 # The headless server (`-tags server`, Wails' server mode) in a container: the
 # Wails template's Dockerfile, adapted to this tree. Built by
-# `wails3 task build:docker`, which builds the page first — webapp/pack is
+# `wails3 task build:docker`, which builds the page first — frontend/dist is
 # embedded by the `frontend` tag, and the image carries no node.
 #
 # Defaults produce a pure-Go binary (CGO_ENABLED=0, SQLite from modernc) on a
@@ -29,7 +29,7 @@ ARG CGO_ENABLED=0
 # Build stage
 FROM ${GO_IMAGE} AS builder
 ARG CGO_ENABLED
-# server,production is the release server; frontend embeds webapp/pack;
+# server,production is the release server; frontend embeds frontend/dist;
 # json1,sqlite3 pick mattn's SQLite when cgo is on and nothing when it is off.
 # The Taskfile adds the edition's tag (EDITION=lifetime).
 ARG TAGS=server,production,frontend,json1,sqlite3
@@ -49,8 +49,8 @@ RUN go mod download
 
 COPY . .
 
-RUN test -f webapp/pack/index.html || \
-    (echo "webapp/pack is not built: use wails3 task build:docker, which builds it first" >&2 && exit 1)
+RUN test -f frontend/dist/index.html || \
+    (echo "frontend/dist is not built: use wails3 task build:docker, which builds it first" >&2 && exit 1)
 
 RUN CGO_ENABLED=${CGO_ENABLED} go build -tags ${TAGS} -trimpath -buildvcs=false -ldflags="-s -w" -o server .
 

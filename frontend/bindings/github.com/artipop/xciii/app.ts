@@ -4,7 +4,7 @@
 /**
  * App is the bound service: every exported method is callable from the page,
  * through the bindings `wails3 task generate:bindings` writes into
- * webapp/bindings. Wiring that main does itself stays unexported for that
+ * frontend/bindings. Wiring that main does itself stays unexported for that
  * reason — an exported setter here is one the page can call. It contains no
  * logic of its own; ACP calls delegate to the manager.
  * @module
@@ -628,8 +628,8 @@ export function OpenCardTerminal(cardID: string, workdirName: string, agentName:
 
 /**
  * OpenInBrowser opens the given URL in the user's default system browser.
- * Called by window.openInNewBrowser and the outward-link catch-all that
- * bootstrapScript injects.
+ * Called by window.openInNewBrowser and the outward-link catch-all the page
+ * installs (installGoBridge).
  */
 export function OpenInBrowser(url: string): $CancellablePromise<void> {
     return $Call.ByID(2149156246, url);

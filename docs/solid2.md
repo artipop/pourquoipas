@@ -16,9 +16,9 @@ Solid 2 and is what the canvas runs on. What that cost is one API change —
 the imperative getters are gone, so a node's measured size is read off
 `useSolidFlow().internalNodes[id]` rather than `getInternalNode(id)`.
 
-dnd-kit works anyway, behind `webapp/solid1/` — a re-creation of the Solid 1
+dnd-kit works anyway, behind `frontend/solid1/` — a re-creation of the Solid 1
 surface on top of Solid 2, pointed at **that package only**, by importer
-path, from `solid1Compat()` in `vite.config.ts`. `webapp/solid1/README.md` is
+path, from `solid1Compat()` in `vite.config.ts`. `frontend/solid1/README.md` is
 the detail, including the two traps: applied globally the shim rewrites what
 `@solidjs/web` itself imports and the Solid 2 renderer ends up built on Solid 1
 effect semantics; and `storePath`, which looks like the ready-made answer for
@@ -29,7 +29,7 @@ A dnd-kit probe under the shim renders byte-for-byte what the same probe
 renders on Solid 1. That, rather than the build passing, is why the shim is
 trusted.
 
-**The peer ranges do not agree, so `webapp/.npmrc` sets
+**The peer ranges do not agree, so `frontend/.npmrc` sets
 `legacy-peer-deps=true`.** `@dnd-kit/solid` still declares solid-js 1, and
 `@solidjs/vite-plugin` next declares an older jest-dom; a plain `npm ci`
 refuses the lockfile with ERESOLVE. The move was built and tested in a

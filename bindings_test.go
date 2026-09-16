@@ -10,7 +10,7 @@ import (
 
 // generatedApp is the binding module `wails3 task generate:bindings` writes for
 // App.
-const generatedApp = "webapp/bindings/github.com/artipop/xciii/app.ts"
+const generatedApp = "frontend/bindings/github.com/artipop/xciii/app.ts"
 
 // The page calls App through bindings generated from it, and they are committed
 // so that building or testing the page needs no Go. What that costs is that they
@@ -63,7 +63,7 @@ func TestThePagesWailsRuntimeIsTheGoModulesVersion(t *testing.T) {
 	}
 	goVersion := string(m[1])
 
-	raw, err := os.ReadFile("webapp/package.json")
+	raw, err := os.ReadFile("frontend/package.json")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -74,6 +74,6 @@ func TestThePagesWailsRuntimeIsTheGoModulesVersion(t *testing.T) {
 		t.Fatal(err)
 	}
 	if got := pkg.Dependencies["@wailsio/runtime"]; got != goVersion {
-		t.Errorf("webapp/package.json has @wailsio/runtime %q, go.mod has Wails %q — pin the npm package to exactly the Go module's version", got, goVersion)
+		t.Errorf("frontend/package.json has @wailsio/runtime %q, go.mod has Wails %q — pin the npm package to exactly the Go module's version", got, goVersion)
 	}
 }

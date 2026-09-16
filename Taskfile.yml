@@ -9,7 +9,7 @@ vars:
   GOOS: '{{.GOOS | default OS}}'
   # Tags every build of this module needs: json1/sqlite3 for the cgo SQLite
   # driver the in-process board server runs on, frontend for the go:embed
-  # of the staged webapp pack. Wails' own tasks append `production` (and
+  # of frontend/dist. Wails' own tasks append `production` (and
   # `server` for the server build) to whatever stands here.
   # BASE_TAGS exists so the Linux Taskfile can add its GTK tag without a var
   # redefining itself, which Task resolves to nothing.
@@ -63,7 +63,7 @@ tasks:
       - wails3 dev -config ./build/config.yml
 
   generate:bindings:
-    summary: Regenerates webapp/bindings from the App service
+    summary: Generates bindings for the frontend
     cmds:
       - task: common:generate:bindings
 

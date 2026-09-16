@@ -22,7 +22,7 @@ var errACPDisabled = errors.New("интеграция агента выключ�
 
 // App is the bound service: every exported method is callable from the page,
 // through the bindings `wails3 task generate:bindings` writes into
-// webapp/bindings. Wiring that main does itself stays unexported for that
+// frontend/bindings. Wiring that main does itself stays unexported for that
 // reason — an exported setter here is one the page can call. It contains no
 // logic of its own; ACP calls delegate to the manager.
 type App struct {

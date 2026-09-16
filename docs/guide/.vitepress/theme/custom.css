@@ -1,5 +1,5 @@
 /* The guide speaks the product's design language: the values below are the
-   tokens from webapp/src/styles/_tokens.scss, the same ones the landing page
+   tokens from frontend/src/styles/_tokens.scss, the same ones the landing page
    carries in site/styles.css — dark is the screen, light is the paper, and the
    machine speaks in tracked caps while a person speaks in prose.
 

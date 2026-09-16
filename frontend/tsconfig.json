@@ -33,6 +33,6 @@
         ".git",
         "**/node_modules/*",
         "dist",
-        "pack"
+        "dist"
     ]
 }

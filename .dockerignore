@@ -1,6 +1,6 @@
-# The build context of build/docker/Dockerfile.server. webapp/pack stays: it is
+# The build context of build/docker/Dockerfile.server. frontend/dist stays: it is
 # what the `frontend` tag embeds, built before the image by `build:docker`.
 .git
 bin
 **/node_modules
-webapp/coverage
+frontend/coverage

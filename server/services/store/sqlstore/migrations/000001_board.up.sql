@@ -51,7 +51,7 @@ CREATE INDEX `idx_boards_channel_id` ON `boards` (`channel_id`);
 
 -- Every version of every board, one row per edit, never pruned. The
 -- upstream's audit and undo mechanism; this product's undo is in the page
--- (webapp/src/undomanager.ts) and there is no history screen, so whether
+-- (frontend/src/undomanager.ts) and there is no history screen, so whether
 -- to keep these three tables at all is a decision worth taking on its
 -- own rather than inside a collapse.
 --   channel_id: A remnant of the Mattermost plugin. Nothing writes it.
@@ -178,7 +178,7 @@ CREATE TABLE `boards` (`id` varchar(36) NOT NULL, `insert_at` datetime(6) NOT NU
 
 -- Every version of every board, one row per edit, never pruned. The
 -- upstream's audit and undo mechanism; this product's undo is in the page
--- (webapp/src/undomanager.ts) and there is no history screen, so whether
+-- (frontend/src/undomanager.ts) and there is no history screen, so whether
 -- to keep these three tables at all is a decision worth taking on its
 -- own rather than inside a collapse.
 --   channel_id: A remnant of the Mattermost plugin. Nothing writes it.
@@ -307,7 +307,7 @@ CREATE INDEX "idx_boards_channel_id" ON "boards" ("channel_id");
 
 -- Every version of every board, one row per edit, never pruned. The
 -- upstream's audit and undo mechanism; this product's undo is in the page
--- (webapp/src/undomanager.ts) and there is no history screen, so whether
+-- (frontend/src/undomanager.ts) and there is no history screen, so whether
 -- to keep these three tables at all is a decision worth taking on its
 -- own rather than inside a collapse.
 --   channel_id: A remnant of the Mattermost plugin. Nothing writes it.

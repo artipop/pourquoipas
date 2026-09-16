@@ -39,11 +39,8 @@ dev_mode:
     dir:
       - .git
       - node_modules
-      - pack
+      - frontend
       - bin
-      # The page is Vite's business in a dev build (below): a TS edit reaches
-      # the window by HMR and must not trigger a Go rebuild and a restart.
-      - webapp
     file:
       - .DS_Store
       - .gitignore

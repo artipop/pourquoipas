@@ -15,7 +15,7 @@ import (
 // JS runs. It
 //   - seeds the single-user session token into localStorage, and
 //   - tells the page there is a Go side behind this origin (window.hasGoSide),
-//     which is what makes goApp (webapp/src/goBridge.ts) hand out the
+//     which is what makes goApp (frontend/src/goBridge.ts) hand out the
 //     bindings generated from App.
 //
 // The page calls Go through those bindings over the @wailsio/runtime it
@@ -61,7 +61,7 @@ func bootstrapScript(sessionToken string) string {
 // the page asks for lives under two prefixes, /api/v0 (with /files inside it)
 // and /ws, and everything else is the page.
 //
-// Attached, **the page is not fetched from the server.** webapp/pack is
+// Attached, **the page is not fetched from the server.** frontend/dist is
 // embedded in this binary, so proxying somebody's HTML would ask the network
 // for a file already on this disk — and it would be *their* page, while the
 // bootstrap injected into it assumes one this desktop's Go side matches.

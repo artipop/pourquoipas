@@ -40,11 +40,11 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      # webapp/pack is what go:embed reads under the `frontend` tag. These jobs
+      # frontend/dist is what go:embed reads under the `frontend` tag. These jobs
       # do not build the page, so the directory only has to exist — a committed
       # .gitkeep holds it open, and this is here as the reminder of why.
       - name: Check the embed directory is there
-        run: test -d webapp/pack
+        run: test -d frontend/dist
 
       - name: Vet
         run: go vet -tags "json1 sqlite3" ./...
@@ -65,7 +65,7 @@ jobs:
           fi
 
   # The page calls Go through bindings generated from App and committed
-  # (webapp/bindings). bindings_test.go catches a method added or removed; this
+  # (frontend/bindings). bindings_test.go catches a method added or removed; this
   # regenerates them with the version of Wails go.mod names and fails on any
   # difference, which is what also catches a changed signature.
   bindings:
@@ -83,11 +83,11 @@ jobs:
         run: wails3 task common:generate:bindings
       - name: They are what was committed
         run: |
-          git status --porcelain -- webapp/bindings
-          test -z "$(git status --porcelain -- webapp/bindings)"
+          git status --porcelain -- frontend/bindings
+          test -z "$(git status --porcelain -- frontend/bindings)"
 
-  webapp:
-    name: webapp
+  frontend:
+    name: frontend
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -95,11 +95,11 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: webapp/package-lock.json
+          cache-dependency-path: frontend/package-lock.json
       # Nothing here runs cypress; its binary is a download per install.
       - run: npm ci
-        working-directory: webapp
+        working-directory: frontend
         env:
           CYPRESS_INSTALL_BINARY: 0
       - run: npm test
-        working-directory: webapp
+        working-directory: frontend

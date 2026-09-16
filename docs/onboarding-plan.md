@@ -72,7 +72,7 @@ Gone already (the fork shrink, `docs/fork-shrink-removed.md`): `pages/welcome/`,
 `static/boards-welcome*.png` with the other unreferenced upstream images.
 
 Left, all of it page code, so after the Solid 2 migration or coordinated with
-it: `webapp/src/components/onboardingTour/` (twelve steps and their tests), the
+it: `frontend/src/components/onboardingTour/` (twelve steps and their tests), the
 gifs they import from `static/`, and the old preferences
 (`onboardingTourStarted`, `onboardingTourStep`, `tourCategory`), which
 `centerPanel.tsx`, `boardsSwitcher.tsx` and `boardTemplateSelector.tsx` still
@@ -170,7 +170,7 @@ preferences and navigated to a route that no longer existed.
   the top would
   have been caught by walking one step further than the change itself.
 - **`docs/guide/`** gets its page in the same change, per the repository's
-  rule, and every string it quotes is checked against `webapp/i18n/ru.json`.
+  rule, and every string it quotes is checked against `frontend/i18n/ru.json`.
 
 ## Open questions
 

@@ -72,10 +72,11 @@ otherwise.
 ## The page talks to Go through generated bindings
 
 The page calls the bound `App` service through bindings Wails generates from it,
-as in a project `wails3 init` writes: `webapp/bindings/…/app.ts`, one function
+as in a project `wails3 init` writes: `frontend/bindings/…/app.ts`, one function
 per exported method, each a `Call.ByID` over the `@wailsio/runtime` package the
-page bundles. `wails3 task generate:bindings` writes them, against the headless
-build with cgo off — `App` is the same service in both builds, the output is
+page bundles. `wails3 task generate:bindings` writes them, and `build:frontend`
+runs it whenever Go changed, as the template does — against the headless build
+with cgo off — `App` is the same service in both builds, the output is
 identical, and that is the combination that type-checks on any machine.
 
 They replaced a shim, and the reason is the types. The bootstrap in `proxy.go`
@@ -122,7 +123,7 @@ board server's, and leaves `/api/v0` and `/ws` to the board. Vite's HMR client
 connects back to the page's own origin, which is the front door, and goes down
 the same proxy as an ordinary upgrade. Before this the dev loop rebuilt the
 bundle with `vite build --watch` and served it off disk, which cost a rebuild per
-edit and made a class of bug of its own — the window read `pack/` in the middle
+edit and made a class of bug of its own — the window read the bundle in the middle
 of a rebuild and opened white. A release build never listens to the variable:
 the page it serves is the one it embeds.
 
@@ -188,7 +189,7 @@ cleanup, a write is staged until the microtask drains, `onMount`/`batch`/
 the move nearly shipped, and what is still owed.
 
 One dependency is Solid 1 only — `@dnd-kit/solid` — and runs on a compat layer
-in `webapp/solid1/`, pointed at that package alone by importer path. Applied
+in `frontend/solid1/`, pointed at that package alone by importer path. Applied
 globally it rewrites what `@solidjs/web` itself imports, which builds the Solid 2
 renderer on Solid 1 semantics; that is the whole reason it is scoped.
 `@dschz/solid-flow` was on it too, until its 1.0 line shipped for Solid 2.
@@ -835,7 +836,7 @@ three words, plus a corner that had to be published over the no-board screen to
 stay reachable. The way to say something is broken went the same way and for the
 same reason — where to say it is looked for once, and it is looked for where the
 manual is — so the corner is gone rather than reduced, and `topBar.tsx` with it.
-**A theme is a config, and the config is Mattermost's** (`webapp/src/theme/`,
+**A theme is a config, and the config is Mattermost's** (`frontend/src/theme/`,
 `docs/themes.md`). The keys are the ones its documentation names, so a theme
 written for another product is pasted into the field and worn, and one written
 here goes back. That is the whole reason for borrowing a format rather than

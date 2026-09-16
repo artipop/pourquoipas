@@ -1,7 +1,7 @@
 //go:build !frontend
 
 // Package main, default (no `frontend` tag): nothing is embedded, so the server
-// serves the webapp from on-disk pack (dev flow — `wails dev`). This keeps
+// serves the page from frontend/dist on disk. This keeps
 // `go build ./...` and tests working without a staged frontend bundle.
 package main
 

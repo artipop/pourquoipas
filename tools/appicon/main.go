@@ -6,7 +6,7 @@
 // darwin/icons.icns and windows/icon.ico come from
 // `wails3 task common:generate:icons`, which reads appicon.png and
 // appicon.icon; run that after this. The webapp's favicon
-// (webapp/static/favicon.svg) draws the same shape by hand.
+// (frontend/static/favicon.svg) draws the same shape by hand.
 //
 // Two images it deliberately does not draw, though the script it replaces did.
 // The disk image's own icon is rendered by create:dmg:icon from the built
@@ -18,7 +18,7 @@
 // the mark is only rounded rectangles — a signed distance field with a
 // one-pixel anti-aliasing band draws them exactly — and an SVG rasteriser would
 // be a dependency for three rectangles. The geometry is the same as
-// webapp/src/widgets/icons/appLogo.tsx and build/appicon.icon: three board
+// frontend/src/widgets/icons/appLogo.tsx and build/appicon.icon: three board
 // columns, tallest first.
 //
 // It was a Python script, the last Python in the tree. The port draws the same
@@ -43,7 +43,7 @@ var (
 	white = rgb{0xFF, 0xFF, 0xFF}
 
 	// The amber the board keeps for "an agent is asking" (--warning-rgb in
-	// webapp/src/styles/_tokens.scss), in both of its values: the paper theme's
+	// frontend/src/styles/_tokens.scss), in both of its values: the paper theme's
 	// on a light menu bar, the screen theme's on a dark one.
 	amberOnLight = rgb{0xA8, 0x70, 0x14}
 	amberOnDark  = rgb{0xFF, 0xB4, 0x4C}

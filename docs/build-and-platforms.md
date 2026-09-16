@@ -13,7 +13,7 @@
 | `.app` / инсталлятор | `wails3 task package`, `darwin:package:dmg`, `windows:package`, `linux:package` |
 | Headless-сервер | `wails3 task build:server` |
 | Docker-образ сервера | `wails3 task build:docker`, `run:docker` |
-| Привязки к Go после правки `App` | `wails3 task generate:bindings` |
+| Привязки к Go после правки `App` (сборка делает это сама) | `wails3 task generate:bindings` |
 | Кросс-образ для Linux и macOS | `wails3 task setup:docker` |
 | Платное издание | к любой из них — `EDITION=lifetime` |
 
@@ -26,7 +26,7 @@
 
 - `json1`, `sqlite3` — cgo-SQLite (`mattn/go-sqlite3`), но только если cgo
   включён; без cgo они ничего не выбирают, и SQLite — чистый Go (ниже);
-- `frontend` — `go:embed` каталога `webapp/pack`;
+- `frontend` — `go:embed` каталога `frontend/dist`;
 - `gtk3` добавляется на Linux сам (`GTK_TAG` в `build/linux/Taskfile.yml`);
 - `server` — headless-сборка, у неё свои файлы (`window_server.go` вместо
   `window_desktop.go`);
@@ -125,25 +125,25 @@ beta.22: сервер стартует, прогоняет миграции на
 Бинарники кросс-собираются, пакеты — нет: AppImage зовёт `ldd`, NSIS — это
 `makensis`, ни того ни другого на маке нет.
 
-## `webapp/pack` не должен исчезать ни на секунду
+## `frontend/dist` не должен исчезать ни на секунду
 
 `go mod tidy` резолвит шаблон `go:embed all:` под всеми тегами и идёт
 параллельно со сборкой фронтенда. Каталог держит открытым закоммиченный
-`.gitkeep`; Vite чистит *вокруг* него, а не удаляет его (`emptyPack` в
+`.gitkeep`; Vite чистит *вокруг* него, а не удаляет его (`emptyDist` в
 `vite.config.ts`). Чистит именно сборка, а не Taskfile: там это был
 `rm -rf`, а у shell-интерпретатора Task на Windows нет `rm`.
 
 Контракт сборки, который обязан выполняться, чем бы фронтенд ни собирался:
 
-- на выходе `webapp/pack/index.html` и `pack/static/*`;
+- на выходе `frontend/dist/index.html` и `frontend/dist/static/*`;
 - в `index.html` есть Go-шаблон `{{.BaseURL}}`;
 - ссылки на ассеты из JS и CSS — относительные;
-- работают `npm run pack`, `dev`, `deveditor`;
-- `go build -tags frontend` встраивает `webapp/pack`, headless-сборка отдаёт
+- работают `npm run build`, `dev`, `deveditor`;
+- `go build -tags frontend` встраивает `frontend/dist`, headless-сборка отдаёт
   страницу, `/api` и `/ws`;
-- три глобала из README («What this app requires of the frontend») — каждый с
-  feature-detection на месте вызова, потому что тот же бандл ездит в браузер;
-- `webapp/bindings` совпадает с тем, что генерирует `wails3 task
+- глобал `window.hasGoSide` из README («What this app requires of the
+  frontend»): вызов в Go сначала спрашивает его (`goApp()`);
+- `frontend/bindings` совпадает с тем, что генерирует `wails3 task
   generate:bindings`, а `@wailsio/runtime` — ровно та версия Wails, что в
   `go.mod` (`bindings_test.go`, джоб `bindings` в CI).
 
@@ -168,7 +168,7 @@ beta.22: сервер стартует, прогоняет миграции на
 ## Сервер в контейнере и его база
 
 `wails3 task build:docker` — образ серверного режима по шаблону Wails
-(`build/docker/Dockerfile.server`): сначала собирается страница (`webapp/pack`
+(`build/docker/Dockerfile.server`): сначала собирается страница (`frontend/dist`
 вшивается тегом `frontend`, node в образе нет), потом чистый Go без cgo на
 `distroless/static`. `CGO_ENABLED=1` с glibc-образами даёт mattn вместо
 modernc. `run:docker` запускает его с данными в томе `xciii-data`.
@@ -208,7 +208,7 @@ codex CLI, так что «найти бинарь и запустить его 
 Способ проверки — и его собственные ловушки — в [verifying.md](verifying.md).
 
 Курлом по front door на обеих сборках: страница отдаётся, вызов привязки
-(`POST /wails/runtime` с id метода из `webapp/bindings`) возвращает данные
+(`POST /wails/runtime` с id метода из `frontend/bindings`) возвращает данные
 настоящих реестров, `/ws` отвечает `101 Switching Protocols` с того же origin,
 кросс-origin вызов биндинга получает `403`. В десктопной сборке WebKit-процесс
 держит живое соединение с front door — страница загружена по HTTP, а не по

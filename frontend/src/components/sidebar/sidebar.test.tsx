@@ -6,7 +6,7 @@ import {TestRouter, mockAppStore, mockMatchMedia, wrapIntl} from '../../testUtil
 import {AppStoreProvider} from '../../store'
 
 import {TestBlockFactory} from '../../test/testBlockFactory'
-import octoClient from '../../../../webapp/src/octoClient'
+import octoClient from '../../../../frontend/src/octoClient'
 import {CategoryBoards} from '../../store/sidebar'
 
 import {useWholeScreen} from '../wholeScreen'

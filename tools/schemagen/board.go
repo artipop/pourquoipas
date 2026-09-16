@@ -214,7 +214,7 @@ func boardsHistory() Table {
 		Name: "boards_history",
 		Why: "Every version of every board, one row per edit, never pruned. The\n" +
 			"upstream's audit and undo mechanism; this product's undo is in the page\n" +
-			"(webapp/src/undomanager.ts) and there is no history screen, so whether\n" +
+			"(frontend/src/undomanager.ts) and there is no history screen, so whether\n" +
 			"to keep these three tables at all is a decision worth taking on its\n" +
 			"own rather than inside a collapse.",
 		Columns: boardColumns(),
