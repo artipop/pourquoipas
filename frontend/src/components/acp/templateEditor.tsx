@@ -10,6 +10,7 @@ import Button from '../../widgets/buttons/button'
 import Dialog from '../dialog'
 
 import {goApp} from '../../goBridge'
+import {aiEnabled} from '../../aiSwitch'
 
 import {
     Automation,
@@ -177,7 +178,7 @@ const TemplateEditor = (props: Props) => {
                         </span>
                         <span>{columnLine().join(' · ') || '—'}</span>
                     </div>
-                    <For each={automation.flows}>
+                    <For each={aiEnabled() ? automation.flows : []}>
                         {(flow) => (
                             <div class='TemplateEditor__carriesRow'>
                                 <span class='TemplateEditor__carriesLabel'>{flow.name}</span>
@@ -185,64 +186,70 @@ const TemplateEditor = (props: Props) => {
                             </div>
                         )}
                     </For>
-                    <div class='TemplateEditor__hint'>
-                        {intl.formatMessage({id: 'TemplateEditor.carries-hint', defaultMessage: 'Columns and routes are changed on a board, in its ⋯ menu, and come back here when the board is saved as a template again.'})}
-                    </div>
-                </div>
-
-                <div class='TemplateEditor__setup'>
-                    <div class='TemplateEditor__sectionTitle'>
-                        {intl.formatMessage({id: 'TemplateEditor.setup', defaultMessage: 'What to ask when a board is made from this'})}
-                    </div>
-                    <Show
-                        when={setup()}
-                        fallback={
-                            <div class='TemplateEditor__hint'>
-                                {intl.formatMessage({id: 'TemplateEditor.setup-implied', defaultMessage: 'Worked out from the automation above: a template that deploys asks where to, one that tests asks for a browser. Name the steps yourself if that is not what you want.'})}
-                                <Button onClick={() => setSetup({steps: impliedSetupSteps(automation, defs())})}>
-                                    {intl.formatMessage({id: 'TemplateEditor.setup-declare', defaultMessage: 'Name the steps'})}
-                                </Button>
-                            </div>
-                        }
-                    >
-                        <For each={defs()}>
-                            {(def) => (
-                                <div class='TemplateEditor__step'>
-                                    <label class='TemplateEditor__stepOn'>
-                                        <input
-                                            type='checkbox'
-                                            checked={Boolean(stepAt(def.kind))}
-                                            disabled={def.kind === 'done'}
-                                            onChange={(e) => setStep(def.kind, e.currentTarget.checked ? {} : null)}
-                                        />
-                                        {stepTitle(intl, def.kind)}
-                                    </label>
-                                    <Show when={stepAt(def.kind) && def.kind !== 'done'}>
-                                        <input
-                                            class='TemplateEditor__stepHint'
-                                            value={stepAt(def.kind)?.hint || ''}
-                                            placeholder={intl.formatMessage({id: 'TemplateEditor.step-hint', defaultMessage: 'A line of your own beside the question'})}
-                                            onInput={(e) => setStep(def.kind, {hint: e.currentTarget.value})}
-                                        />
-                                        <Show when={def.optional}>
-                                            <label class='TemplateEditor__stepRequired'>
-                                                <input
-                                                    type='checkbox'
-                                                    checked={Boolean(stepAt(def.kind)?.required)}
-                                                    onChange={(e) => setStep(def.kind, {required: e.currentTarget.checked})}
-                                                />
-                                                {intl.formatMessage({id: 'TemplateEditor.step-required', defaultMessage: 'cannot be skipped'})}
-                                            </label>
-                                        </Show>
-                                    </Show>
-                                </div>
-                            )}
-                        </For>
-                        <Button onClick={() => setSetup(undefined)}>
-                            {intl.formatMessage({id: 'TemplateEditor.setup-auto', defaultMessage: 'Work them out from the automation again'})}
-                        </Button>
+                    <Show when={aiEnabled()}>
+                        <div class='TemplateEditor__hint'>
+                            {intl.formatMessage({id: 'TemplateEditor.carries-hint', defaultMessage: 'Columns and routes are changed on a board, in its ⋯ menu, and come back here when the board is saved as a template again.'})}
+                        </div>
                     </Show>
                 </div>
+
+                {/* Routes and setup questions are the agents'; with the AI
+                    switched off a template is its columns and its name. */}
+                <Show when={aiEnabled()}>
+                    <div class='TemplateEditor__setup'>
+                        <div class='TemplateEditor__sectionTitle'>
+                            {intl.formatMessage({id: 'TemplateEditor.setup', defaultMessage: 'What to ask when a board is made from this'})}
+                        </div>
+                        <Show
+                            when={setup()}
+                            fallback={
+                                <div class='TemplateEditor__hint'>
+                                    {intl.formatMessage({id: 'TemplateEditor.setup-implied', defaultMessage: 'Worked out from the automation above: a template that deploys asks where to, one that tests asks for a browser. Name the steps yourself if that is not what you want.'})}
+                                    <Button onClick={() => setSetup({steps: impliedSetupSteps(automation, defs())})}>
+                                        {intl.formatMessage({id: 'TemplateEditor.setup-declare', defaultMessage: 'Name the steps'})}
+                                    </Button>
+                                </div>
+                            }
+                        >
+                            <For each={defs()}>
+                                {(def) => (
+                                    <div class='TemplateEditor__step'>
+                                        <label class='TemplateEditor__stepOn'>
+                                            <input
+                                                type='checkbox'
+                                                checked={Boolean(stepAt(def.kind))}
+                                                disabled={def.kind === 'done'}
+                                                onChange={(e) => setStep(def.kind, e.currentTarget.checked ? {} : null)}
+                                            />
+                                            {stepTitle(intl, def.kind)}
+                                        </label>
+                                        <Show when={stepAt(def.kind) && def.kind !== 'done'}>
+                                            <input
+                                                class='TemplateEditor__stepHint'
+                                                value={stepAt(def.kind)?.hint || ''}
+                                                placeholder={intl.formatMessage({id: 'TemplateEditor.step-hint', defaultMessage: 'A line of your own beside the question'})}
+                                                onInput={(e) => setStep(def.kind, {hint: e.currentTarget.value})}
+                                            />
+                                            <Show when={def.optional}>
+                                                <label class='TemplateEditor__stepRequired'>
+                                                    <input
+                                                        type='checkbox'
+                                                        checked={Boolean(stepAt(def.kind)?.required)}
+                                                        onChange={(e) => setStep(def.kind, {required: e.currentTarget.checked})}
+                                                    />
+                                                    {intl.formatMessage({id: 'TemplateEditor.step-required', defaultMessage: 'cannot be skipped'})}
+                                                </label>
+                                            </Show>
+                                        </Show>
+                                    </div>
+                                )}
+                            </For>
+                            <Button onClick={() => setSetup(undefined)}>
+                                {intl.formatMessage({id: 'TemplateEditor.setup-auto', defaultMessage: 'Work them out from the automation again'})}
+                            </Button>
+                        </Show>
+                    </div>
+                </Show>
 
                 <div class='TemplateEditor__actions'>
                     <Button

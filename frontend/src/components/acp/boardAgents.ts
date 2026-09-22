@@ -3,6 +3,7 @@
 import {IUser} from '../../user'
 
 import {goApp} from '../../goBridge'
+import {aiEnabled} from '../../aiSwitch'
 
 // Which agents a board offers on a card. The registry is the machine's — every
 // agent registered anywhere gets an account on every board — so a machine with
@@ -74,6 +75,12 @@ export function loadBoardAgents(boardId: string): Promise<BoardAgents> {
 // agent stays when this board names it. Matching is by username, which is what
 // the board holds and what Go folded both lists to.
 export function keepBoardAgents(users: IUser[], agents: BoardAgents): IUser[] {
+    // With the AI switched off an agent is nobody to assign a card to: the
+    // field offers people and nothing else.
+    if (!aiEnabled()) {
+        const isAgent = new Set(agents.all)
+        return users.filter((user) => !isAgent.has(user.username))
+    }
     if (agents.board.length === 0 || agents.all.length === 0) {
         return users
     }

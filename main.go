@@ -392,6 +392,9 @@ func main() {
 			mgr = acp.NewManager(acpCfg, filepath.Join(dir, "config.json"), store, seam.writer, emitter, nil)
 			// Lets the UI open a console on a card without moving it.
 			mgr.SetBoardReader(seam.reader)
+			// The app-wide AI switch, read on every start rather than once:
+			// it is flipped from the settings while the app runs.
+			mgr.SetSwitchedOff(func() bool { return !aiEnabled() })
 			// Where the GitHub token for pull-request polling comes from. It
 			// was `githubToken` in config.json, which is a credential in a
 			// settings file people edit by hand and paste into issues.

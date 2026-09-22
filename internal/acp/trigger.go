@@ -5,6 +5,9 @@ import (
 	"fmt"
 )
 
+// errSwitchedOff is what a start refused by the switch says.
+var errSwitchedOff = errors.New("ИИ в приложении выключен")
+
 // triggerLoop consumes normalized card-move events and applies the trigger
 // policy: enter the trigger column → start a session (idempotently); leave it
 // while a session is live → cancel.
@@ -24,6 +27,9 @@ func (m *Manager) triggerLoop(ch <-chan CardMoved) {
 }
 
 func (m *Manager) handleEvent(ev CardMoved) {
+	if m.aiSwitchedOff() {
+		return
+	}
 	// A board may ship its own columns and routes (the template does); take
 	// them once, before anything asks what this column does.
 	m.seedFromBoard(ev.BoardID)

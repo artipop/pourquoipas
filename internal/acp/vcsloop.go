@@ -47,6 +47,9 @@ func (m *Manager) vcsLoop() {
 // PollVCS asks every watcher about every branch somebody is waiting on, and
 // delivers what is new to the flow engine.
 func (m *Manager) PollVCS() {
+	if m.aiSwitchedOff() {
+		return
+	}
 	targets := m.FlowTargets()
 	if len(targets) == 0 || len(m.watchers) == 0 {
 		return

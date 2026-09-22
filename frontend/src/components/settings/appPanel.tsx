@@ -6,6 +6,9 @@ import {Constants} from '../../constants'
 import {useAppStore} from '../../store/hooks'
 import CheckIcon from '../../widgets/icons/check'
 import Select, {SelectOption} from '../../widgets/select'
+import Switch from '../../widgets/switch'
+import {aiEnabled, setAIEnabled} from '../../aiSwitch'
+import {goApp} from '../../goBridge'
 import {
     activeThemeHalf,
     customThemes,
@@ -71,6 +74,10 @@ import './appPanel.scss'
 // The last row of the theme list, which is not a theme: it makes one. A value
 // no id can be, since a theme somebody brought is `custom-theme` or `custom:N`.
 const NEW_THEME = '+new'
+
+// The switch means something only where the app can run agents at all: a
+// browser build has no Go side and nothing to switch off.
+const hasAgentSide = (): boolean => Boolean(goApp()?.ListAgents)
 
 const AppPanel = () => {
     const intl = useIntl()
@@ -430,6 +437,34 @@ const AppPanel = () => {
                     </div>
                 </section>
 
+                {/* The one switch for everything the app does with agents
+                    (aiSwitch.ts). Here rather than among the agent settings,
+                    because switched off there are none of those to be among. */}
+                <Show when={hasAgentSide()}>
+                    <section class='AppPanel__group'>
+                        <h4 class='AppPanel__groupTitle'>
+                            {intl.formatMessage({id: 'Settings.ai', defaultMessage: 'AI agents'})}
+                        </h4>
+                        <div class='AppPanel__action'>
+                            <div class='AppPanel__actionText'>
+                                <span class='AppPanel__actionName'>
+                                    {intl.formatMessage({id: 'Settings.ai-enabled', defaultMessage: 'Agents work on the cards'})}
+                                </span>
+                                <span class='AppPanel__actionHint'>
+                                    {intl.formatMessage({
+                                        id: 'Settings.ai-enabled-hint',
+                                        defaultMessage: 'When this is off, the app is a plain kanban board: no agents, routes, terminals or agent settings, and cards moved between columns start nothing. The routes and agents already set up are kept and come back when this is turned on again.',
+                                    })}
+                                </span>
+                            </div>
+                            <Switch
+                                isOn={aiEnabled()}
+                                onChanged={setAIEnabled}
+                            />
+                        </div>
+                    </section>
+                </Show>
+
                 <section class='AppPanel__group'>
                     <h4 class='AppPanel__groupTitle'>
                         {intl.formatMessage({id: 'Settings.help', defaultMessage: 'Help'})}
@@ -440,9 +475,12 @@ const AppPanel = () => {
                                 {intl.formatMessage({id: 'Settings.help-page', defaultMessage: 'The guide'})}
                             </span>
                             <span class='AppPanel__actionHint'>
-                                {intl.formatMessage({
+                                {aiEnabled() ? intl.formatMessage({
                                     id: 'Settings.help-hint',
                                     defaultMessage: 'How the board, its columns and its routes work, screen by screen.',
+                                }) : intl.formatMessage({
+                                    id: 'Settings.help-hint-plain',
+                                    defaultMessage: 'How the board and its columns work, screen by screen.',
                                 })}
                             </span>
                         </div>

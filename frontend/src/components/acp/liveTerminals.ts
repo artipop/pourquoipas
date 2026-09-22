@@ -3,6 +3,7 @@
 import {Accessor, createMemo, createSignal, onSettled} from 'solid-js'
 
 import {goApp} from '../../goBridge'
+import {aiEnabled} from '../../aiSwitch'
 
 import {onAgentEvent} from './agentEvents'
 
@@ -118,7 +119,7 @@ export function useCardCutOff(cardId: Accessor<string>): Accessor<string | undef
 }
 
 export function isCardTerminalAvailable(): boolean {
-    return Boolean(goApp()?.OpenCardTerminal)
+    return aiEnabled() && Boolean(goApp()?.OpenCardTerminal)
 }
 
 // openCardTerminalWindow is the way to a terminal from anywhere that has no

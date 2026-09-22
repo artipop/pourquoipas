@@ -22,6 +22,7 @@ import {getCurrentBoardTemplates} from '../../store/cards'
 import BoardPermissionGate from '../permissions/boardPermissionGate'
 
 import {movedHere} from '../acp/movedHere'
+import {withoutAgentProperties} from '../acp/agentProperties'
 
 import KanbanCard from './kanbanCard'
 import KanbanColumn from './kanbanColumn'
@@ -68,9 +69,9 @@ const Kanban = (props: Props) => {
     )
 
     const visiblePropertyTemplates = () => {
-        return props.board.cardProperties.filter(
+        return withoutAgentProperties(props.board, props.board.cardProperties.filter(
             (template: IPropertyTemplate) => props.activeView.fields.visiblePropertyIds.includes(template.id),
-        )
+        ))
     }
     const isManualSort = () => props.activeView.fields.sortOptions.length === 0
     const visibleBadges = () => props.activeView.fields.visiblePropertyIds.includes(Constants.badgesColumnId)

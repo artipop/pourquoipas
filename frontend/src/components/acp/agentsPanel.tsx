@@ -9,6 +9,7 @@ import Select from '../../widgets/select'
 import {sendFlashMessage} from '../flashMessages'
 
 import {goApp} from '../../goBridge'
+import {aiEnabled} from '../../aiSwitch'
 
 import {ProxyEntry} from './proxiesPanel'
 import PromptField from './promptField'
@@ -142,7 +143,7 @@ export const AGENT_KINDS = [
 ]
 
 export function isAgentsAvailable(): boolean {
-    return Boolean(goApp()?.ListAgents)
+    return aiEnabled() && Boolean(goApp()?.ListAgents)
 }
 
 // envToText / textToEnv convert between the KEY=VALUE textarea and the env map.

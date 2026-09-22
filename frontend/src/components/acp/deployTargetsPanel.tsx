@@ -7,6 +7,7 @@ import {useIntl} from '../../intl'
 import Button from '../../widgets/buttons/button'
 
 import {goApp} from '../../goBridge'
+import {aiEnabled} from '../../aiSwitch'
 
 import './deployTargetsPanel.scss'
 
@@ -34,7 +35,7 @@ export type DeployTarget = {
 }
 
 export function isDeployTargetsAvailable(): boolean {
-    return Boolean(goApp()?.ListDeployTargets)
+    return aiEnabled() && Boolean(goApp()?.ListDeployTargets)
 }
 
 const emptyForm: DeployTarget = {name: '', sshHost: ''}

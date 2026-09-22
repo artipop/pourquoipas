@@ -129,11 +129,17 @@ func initAlerts(wapp *application.App, app *App, mgr *acp.Manager) func() {
 
 // refresh redraws the menu bar and says whatever is newly worth saying.
 func (c *alertController) refresh() {
-	waiting := c.mgr.Attention()
+	// With the AI switched off nothing is anybody's to be told about: the tray
+	// keeps its way in and its way out, and loses the dot.
+	on := aiEnabled()
+	var waiting []acp.Attention
+	if on {
+		waiting = c.mgr.Attention()
+	}
 
 	// Read before the lock: both of these can block — one on a file, the other
 	// on the main thread — and neither has anything to do with what is told.
-	announce := agentNotificationsEnabled() && !c.appFocused()
+	announce := on && agentNotificationsEnabled() && !c.appFocused()
 
 	c.mu.Lock()
 	defer c.mu.Unlock()

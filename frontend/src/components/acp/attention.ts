@@ -5,6 +5,7 @@ import {Accessor, createMemo, createSignal, onSettled} from 'solid-js'
 import {UserSettings} from '../../userSettings'
 
 import {goApp} from '../../goBridge'
+import {aiEnabled} from '../../aiSwitch'
 
 import {onAgentEvent} from './agentEvents'
 import {openCardTerminalWindow} from './liveTerminals'
@@ -142,11 +143,17 @@ function subscribe(): () => void {
     }
 }
 
+// With the AI switched off nothing waits for a person as far as the screen is
+// concerned: no dot on a card, no notification, no question. A stage already
+// running when the switch was turned goes on in Go, and its wait is back the
+// moment the switch is.
+const shown: Accessor<Attention[]> = () => (aiEnabled() ? waiting() : [])
+
 // useAttention gives a component everything waiting for a person, oldest wait
 // first, and keeps it current for as long as the component lives.
 export function useAttention(): Accessor<Attention[]> {
     onSettled(() => subscribe())
-    return waiting
+    return shown
 }
 
 // useCardAttention is the same thing asked about one card — what a card on the
@@ -158,7 +165,7 @@ export function useCardAttention(cardId: Accessor<string>): Accessor<Attention |
     // agent stopped in it, and clicking opens it — and a card the route handed
     // to a person has no CLI running at all, so drawing it there would be a
     // button that lies twice over.
-    return createMemo(() => waiting().find((a) => a.cardId === cardId() && a.reason !== 'card'))
+    return createMemo(() => shown().find((a) => a.cardId === cardId() && a.reason !== 'card'))
 }
 
 // openWait goes to where the agent is asking, which is the only thing to do

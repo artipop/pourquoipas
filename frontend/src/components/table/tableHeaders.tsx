@@ -13,6 +13,8 @@ import propsRegistry from '../../properties'
 
 import './table.scss'
 
+import {withoutAgentProperties} from '../acp/agentProperties'
+
 import TableHeader from './tableHeader'
 import {useColumnResize} from './tableColumnResizeContext'
 
@@ -88,7 +90,7 @@ const TableHeaders = (props: Props): JSX.Element => {
     }
 
     const visiblePropertyTemplates = () =>
-        props.activeView.fields.visiblePropertyIds.map((id) => props.board.cardProperties.find((t) => t.id === id)).filter((i) => i) as IPropertyTemplate[]
+        withoutAgentProperties(props.board, props.activeView.fields.visiblePropertyIds.map((id) => props.board.cardProperties.find((t) => t.id === id)).filter((i) => i) as IPropertyTemplate[])
 
     const onDropToColumn = async (template: IPropertyTemplate, container: IPropertyTemplate) => {
         Utils.log(`ondrop. Source column: ${template.name}, dest column: ${container.name}`)

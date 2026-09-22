@@ -1,6 +1,7 @@
 import {For, Show, onSettled} from 'solid-js'
 
 import {goApp} from '../../goBridge'
+import {aiEnabled} from '../../aiSwitch'
 
 import {cardAgentState, refreshCardAgent} from './cardAgentState'
 
@@ -18,7 +19,7 @@ import './caseStamp.scss'
 // run an agent on is not a case yet.
 
 export function isCaseStampAvailable(): boolean {
-    return Boolean(goApp()?.GetCardAgent)
+    return aiEnabled() && Boolean(goApp()?.GetCardAgent)
 }
 
 type Props = {

@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -457,6 +458,30 @@ func TestABranchInTheFolderItselfHoldsItUntilTheCardIsDone(t *testing.T) {
 	}
 	if sessions, _, _ := m.store.SessionsForCard("cardB"); len(sessions) != 0 {
 		t.Errorf("second card must not get a session, got %d", len(sessions))
+	}
+}
+
+// With the AI switched off the board is a kanban and nothing else: a card
+// dragged into the agent's column is only moved. Switching it back on makes the
+// next move start work as before.
+func TestACardMovedWhileTheAIIsOffStartsNothing(t *testing.T) {
+	m, _, events, _ := testManager(t, fakeClaudeHappy, nil)
+	var off atomic.Bool
+	off.Store(true)
+	m.SetSwitchedOff(off.Load)
+
+	events.ch <- moveEvent("card-off", "opt-backlog", "opt-agent")
+
+	// Events are handled in order, so once the move made after switching back
+	// on has its session, the one before it has certainly been looked at.
+	off.Store(false)
+	events.ch <- moveEvent("card-on", "opt-backlog", "opt-agent")
+	waitFor(t, 15*time.Second, "the move after switching on starts a session", func() bool {
+		sessions, _, err := m.store.SessionsForCard("card-on")
+		return err == nil && len(sessions) == 1
+	})
+	if sessions, _, err := m.store.SessionsForCard("card-off"); err != nil || len(sessions) != 0 {
+		t.Fatalf("a card moved with the AI off got %d sessions (err=%v)", len(sessions), err)
 	}
 }
 

@@ -9,6 +9,7 @@ import {goApp} from '../../goBridge'
 import {onAgentEvent} from '../../components/acp/agentEvents'
 import {attentionHeading, useAttention} from '../../components/acp/attention'
 import AttentionAnswers from '../../components/acp/attentionAnswers'
+import {aiEnabled} from '../../aiSwitch'
 
 import {BindingBoard, BindingCard, listBoards, listInbox} from '../../bindings/boards'
 import {createLoader} from '../../hooks/loader'
@@ -46,6 +47,9 @@ import './mobilePage.scss'
 
 type Tab = 'inbox' | 'cards' | 'waiting' | 'terminals'
 
+// The tabs that are about agents, and are not drawn with the AI switched off.
+const agentTabs: Tab[] = ['waiting', 'terminals']
+
 type Terminal = {
     id: string
     cardId?: string
@@ -64,7 +68,11 @@ const MobilePage = () => {
     const intl = useIntl()
     const navigate = useNavigate()
     const waiting = useAttention()
-    const [tab, setTab] = createSignal<Tab>('waiting')
+    const [picked, setTab] = createSignal<Tab>(aiEnabled() ? 'waiting' : 'inbox')
+
+    // With the AI switched off the phone is the inbox and the cards: the two
+    // agent tabs are not drawn, and one that was open gives way to the inbox.
+    const tab = (): Tab => (aiEnabled() || !agentTabs.includes(picked()) ? picked() : 'inbox')
 
     // The inbox and the boards are read here rather than inside the tab that
     // shows them, because the number on a tab has to be right before anybody
@@ -268,12 +276,13 @@ const MobilePage = () => {
 // Each carries how many are behind it, so a tab that is not open can still say
 // that it wants attention.
 function tabs(intl: IntlShape, inbox: number, waiting: number, terminals: number) {
-    return [
+    const all = [
         {id: 'inbox' as Tab, name: intl.formatMessage({id: 'Mobile.inbox', defaultMessage: 'Inbox'}), count: inbox},
         {id: 'cards' as Tab, name: intl.formatMessage({id: 'Mobile.cards', defaultMessage: 'Cards'}), count: 0},
         {id: 'waiting' as Tab, name: intl.formatMessage({id: 'Mobile.waiting-tab', defaultMessage: 'Waiting'}), count: waiting},
         {id: 'terminals' as Tab, name: intl.formatMessage({id: 'Mobile.terminals', defaultMessage: 'Terminals'}), count: terminals},
     ]
+    return aiEnabled() ? all : all.filter((entry) => !agentTabs.includes(entry.id))
 }
 
 export default MobilePage

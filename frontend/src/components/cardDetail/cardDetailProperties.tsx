@@ -28,6 +28,7 @@ import {PropertyType} from '../../properties/types'
 import {boardBranchProperty} from '../acp/automation'
 import {cardAgentState} from '../acp/cardAgentState'
 import {findWorkdirProperty} from '../acp/workdirSync'
+import {withoutAgentProperties} from '../acp/agentProperties'
 
 type Props = {
     board: Board
@@ -180,7 +181,7 @@ const CardDetailProperties = (props: Props) => {
 
     return (
         <div class='octo-propertylist CardDetailProperties'>
-            <For each={props.board.cardProperties}>
+            <For each={withoutAgentProperties(props.board, props.board.cardProperties)}>
                 {(propertyTemplate: IPropertyTemplate) => (
                     <>
                         <div

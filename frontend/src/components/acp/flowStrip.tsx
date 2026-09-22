@@ -8,6 +8,7 @@ import CompassIcon from '../../widgets/icons/compassIcon'
 import {createLoader} from '../../hooks/loader'
 
 import {goApp} from '../../goBridge'
+import {aiEnabled} from '../../aiSwitch'
 
 import {onAgentEvent} from './agentEvents'
 
@@ -73,7 +74,7 @@ export type CardFlow = {
 }
 
 export function isFlowStripAvailable(): boolean {
-    return Boolean(goApp()?.GetCardFlow)
+    return aiEnabled() && Boolean(goApp()?.GetCardFlow)
 }
 
 // waited says how long the card has stood where it stands, in the units a
