@@ -85,6 +85,34 @@ describe('components/sidebarBoardItem', () => {
         expect(container).toMatchSnapshot()
     })
 
+    // The inbox board's one view is called what the board is called, so the
+    // open board lists no views under it; any other board does.
+    test('the inbox board lists no views under itself', () => {
+        const renderItem = (on: typeof board) => render(wrapRBDNDDroppable(wrapIntl(() =>
+            <AppStoreProvider store={mockAppStore(state)}>
+                <TestRouter>
+                    <SidebarBoardItem
+                        index={0}
+                        categoryBoards={categoryBoards1}
+                        board={on}
+                        allCategories={allCategoryBoards}
+                        isActive={true}
+                        showBoard={vi.fn()}
+                        showView={vi.fn()}
+                        onDeleteRequest={vi.fn()}
+                    />
+                </TestRouter>
+            </AppStoreProvider>,
+        )))
+
+        const plain = renderItem(board)
+        expect(plain.container.querySelectorAll('.sidebar-view-item')).toHaveLength(1)
+        plain.unmount()
+
+        const inbox = renderItem({...board, properties: {xciiiInbox: true}} as unknown as typeof board)
+        expect(inbox.container.querySelectorAll('.sidebar-view-item')).toHaveLength(0)
+    })
+
     test('renders default icon if no custom icon set', () => {
         const store = mockAppStore(state)
         const noIconBoard = {...board, icon: ''}

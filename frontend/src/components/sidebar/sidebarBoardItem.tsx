@@ -32,6 +32,7 @@ import GalleryIcon from '../../widgets/icons/gallery'
 import CalendarIcon from '../../widgets/icons/calendar'
 
 import {getCurrentTeam} from '../../store/teams'
+import {isInboxBoard} from '../acp/inboxView'
 import {Permission} from '../../constants'
 import DuplicateIcon from '../../widgets/icons/duplicate'
 import {Utils} from '../../utils'
@@ -306,7 +307,10 @@ const SidebarBoardItem = (props: Props) => {
                     </MenuWrapper>
                 </div>
             </div>
-            <Show when={props.isActive && !isDragging() && !props.hideViews}>
+            {/* The inbox board has the one view it was made with, called what
+                the board is called: listing it underneath says the board's
+                name a second time and offers nothing to switch to. */}
+            <Show when={props.isActive && !isDragging() && !props.hideViews && !isInboxBoard(props.board)}>
                 <For each={boardViews()}>
                     {(view: BoardView) => (
                         <div
