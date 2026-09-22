@@ -26,9 +26,11 @@ const board = TestBlockFactory.createBoard()
 const activeView = TestBlockFactory.createBoardView(board)
 const card = TestBlockFactory.createCard(board)
 
-// The board a source already feeds: it has the inbox view, so that is where the
-// question about sources is asked and the board's own menu says nothing of it.
-const inboxView = TestBlockFactory.createBoardView(board)
+// The inbox is a board of its own, marked as such by the app, and its menu is
+// where the question about sources is asked; every other board's says nothing
+// of it.
+const inboxBoard = {...TestBlockFactory.createBoard(), id: 'board-inbox', properties: {xciiiInbox: true}} as unknown as typeof board
+const inboxView = TestBlockFactory.createBoardView(inboxBoard)
 inboxView.id = 'view-inbox'
 inboxView.title = 'Входящие'
 const withAnInbox = {
@@ -151,9 +153,9 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
             }
         })
 
-        // Where cards come from is a question about the inbox view, and that is
-        // where it is answered now. On the board itself it was one more thing
-        // to walk past.
+        // Where cards come from is a question about the inbox, and that is
+        // where it is answered. On a board of work it was one more thing to
+        // walk past.
         test('and neither are the sources of a board', () => {
             expect(screen.queryByRole('button', {name: 'Sources…'})).toBeNull()
         })
@@ -225,9 +227,9 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
         })
     })
 
-    // the inbox view is the screen about what arrives, so its menu is about that
-    // and about nothing else: exporting or saving as a template are questions
-    // about the board, asked where the board is.
+    // The inbox is the screen about what arrives, so its menu is about that and
+    // about nothing else: it runs no routes, and exporting it or saving it as a
+    // template is not what an inbox is for.
     describe('on «Входящие» the menu is the sources and nothing else', () => {
 
         beforeEach(() => {
@@ -239,7 +241,7 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
                 wrapIntl(() =>
                     <AppStoreProvider store={mockAppStore({...state, ...withAnInbox})}>
                         <ViewHeaderActionsMenu
-                            board={board}
+                            board={inboxBoard}
                             activeView={inboxView}
                             cards={[card]}
                         />
@@ -272,7 +274,7 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
             wrapIntl(() =>
                 <AppStoreProvider store={mockAppStore({...state, ...withAnInbox})}>
                     <ViewHeaderActionsMenu
-                        board={board}
+                        board={inboxBoard}
                         activeView={inboxView}
                         cards={[card]}
                     />
@@ -280,32 +282,6 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
             ),
         )
         expect(screen.queryByRole('button', {name: 'View header menu'})).toBeNull()
-    })
-
-    // A board made empty has no the inbox view — the view arrives with the first
-    // source — so the door to make one has to stay on the board itself, or
-    // there is no way to add a source to such a board at all.
-    test('a board with no «Входящие» keeps the sources in its own menu', async () => {
-        fakeGoSide({
-            ListSources: vi.fn().mockResolvedValue('[]'),
-            ListFlows: vi.fn(),
-        })
-        render(() =>
-            wrapIntl(() =>
-                <AppStoreProvider store={mockAppStore({...state, boards: {current: board.id}, views: {views: {}, current: activeView.id}})}>
-                    <ViewHeaderActionsMenu
-                        board={board}
-                        activeView={activeView}
-                        cards={[card]}
-                    />
-                </AppStoreProvider>,
-            ),
-        )
-        userEvent.click(screen.getByRole('button', {name: 'View header menu'}))
-        await waitFor(() => expect(screen.getByRole('button', {name: 'Sources…'})).toBeInTheDocument())
-        userEvent.click(screen.getByText('Export'))
-        expect(screen.getByRole('button', {name: 'To CSV'})).toBeInTheDocument()
-        fakeGoSide()
     })
 
     test('return menu and verify call to board archive', () => {

@@ -27,6 +27,7 @@ import CreateNewFolder from '../../widgets/icons/newFolder'
 import CreateCategory from '../createCategory/createCategory'
 import {useAppSelector} from '../../store/hooks'
 import {useRouteMatch} from '../../hooks/routerMatch'
+import {isInboxBoard} from '../acp/inboxView'
 import {
     getOnboardingTourCategory,
     getOnboardingTourStep,
@@ -188,6 +189,13 @@ const SidebarCategory = (props: Props) => {
 
         // hide if board doesn't belong to current category
         if (!categoryBoardMetadata) {
+            return false
+        }
+
+        // The inbox is pinned above every category (SidebarInboxItem), so a
+        // category never lists it. It stays in the category's metadata: the
+        // server reorders a category only when given every board it holds.
+        if (props.boards.some((board) => board.id === boardID && isInboxBoard(board))) {
             return false
         }
 

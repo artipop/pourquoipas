@@ -124,6 +124,8 @@ exports[`components/sidebarSidebar > a board in no category is filed under the d
     <div
       class="octo-sidebar-list"
     >
+      
+      <!---->
       <div>
         <div
           class="SidebarCategory"
@@ -265,6 +267,7 @@ exports[`components/sidebarSidebar > a board in no category is filed under the d
           </div>
         </div>
       </div>
+      <!---->
     </div>
     <div
       class="octo-spacer"
@@ -427,6 +430,8 @@ exports[`components/sidebarSidebar > dont show hidden boards 1`] = `
     <div
       class="octo-sidebar-list"
     >
+      
+      <!---->
       <div>
         <div
           class="SidebarCategory"
@@ -502,6 +507,7 @@ exports[`components/sidebarSidebar > dont show hidden boards 1`] = `
           </div>
         </div>
       </div>
+      <!---->
     </div>
     <div
       class="octo-spacer"
@@ -664,6 +670,8 @@ exports[`components/sidebarSidebar > shouldnt do any category assignment is boar
     <div
       class="octo-sidebar-list"
     >
+      
+      <!---->
       <div>
         <div
           class="SidebarCategory"
@@ -908,6 +916,7 @@ exports[`components/sidebarSidebar > shouldnt do any category assignment is boar
           </div>
         </div>
       </div>
+      <!---->
     </div>
     <div
       class="octo-spacer"
@@ -1126,6 +1135,8 @@ exports[`components/sidebarSidebar > sidebar hidden 1`] = `
     <div
       class="octo-sidebar-list"
     >
+      
+      <!---->
       <div>
         <div
           class="SidebarCategory"
@@ -1229,6 +1240,7 @@ exports[`components/sidebarSidebar > sidebar hidden 1`] = `
           </div>
         </div>
       </div>
+      <!---->
     </div>
     <div
       class="octo-spacer"
@@ -1447,6 +1459,8 @@ exports[`components/sidebarSidebar > some categories hidden 1`] = `
     <div
       class="octo-sidebar-list"
     >
+      
+      <!---->
       <div>
         <div
           class="SidebarCategory"
@@ -1616,6 +1630,7 @@ exports[`components/sidebarSidebar > some categories hidden 1`] = `
           </div>
         </div>
       </div>
+      <!---->
     </div>
     <div
       class="octo-spacer"

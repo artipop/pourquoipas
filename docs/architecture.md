@@ -759,12 +759,9 @@ is a member of an open template, so a template board being deleted reaches no
 client, while the replacement arrives as a new board on the team — the picker
 drew both languages at once.
 
-**Four names sit in those English files in Russian** (`appGivenNames`), and are
-never translated either way: «Входящие»
-and «Мои задачи», which the inbox column and view are *found* by title
-(`InboxViewTitle`, `MineColumnTitle`, `sources.DefaultInbox`) — a translated
-board would grow a second Russian pair at the first arrival — and «Исход» with
-«прошло»/«не прошло», the outcome the engine writes for every stage
+**Three names sit in those English files in Russian** (`appGivenNames`), and
+are never translated either way: «Исход» with «прошло»/«не прошло», the outcome
+the engine writes for every stage
 (`OutcomePassed`/`OutcomeFailed`) and the value a route's conditional edges
 compare against. They are the app's own field on somebody else's board, and the
 fix is for the engine to write those options by id rather than by name;
@@ -1306,56 +1303,47 @@ names a path on that machine.
 
 The system's «Поделиться» is a source too (`internal/sources/share.go`,
 `share.go`, `pages/share/`): the share extension in the .app opens
-`xciii://share?url=…`, a small window asks which board, and the link goes down
-the same pipeline. It is the one entry allowed to name its own board
-(`PickBoard`), because a person is looking at the dialog when it happens.
+`xciii://share?url=…`, a small window asks which board — the inbox, offered
+first and already picked, or another — and the link goes down the same
+pipeline. It is the one entry allowed to name a board other than the inbox
+(`PickBoard`), because a person is looking at the dialog when it happens. On a
+board with columns the card stands in the first one (`boardmodel.IntakeColumn`),
+since a card in no column is on the board and on no kanban.
 
-**Everything a source brings lands in «Входящие» unless a rule says otherwise**,
-and that is the one column the app will put on a board itself
-(`boardadapter.Writer.EnsureColumn`, add-only). The templates carry it, but a
-template only ever reaches a board that does not exist yet — `importTemplates`
-replaces the *template* board and never one made from it — so a column that
-shipped only in a template would exist for every board except the ones people
-already have. For the same reason nothing here assumes what the column property
-is called: `ColumnProperty` asks the board, because "Status" and «Статус» are
-each right for exactly half the boards there are.
+**Everything a source brings lands on one board, «Входящие»**
+(`boardadapter.EnsureInboxBoard`). The app makes it at launch — it is also
+where a person writes down what they have not decided about yet, so it cannot
+wait for the first source — and finds it by a board property it gives it
+(`xciiiInbox`), never by title: a person may rename it. A source names no
+board, and a rule decides only whether an item is claimed, never where it goes.
+Collect first, decide later: a card leaves the inbox when a person carries it
+to the board it belongs to.
 
-Where a person meets the inbox, though, is **a view of the board and not a
-column of it** (`boardadapter.Writer.EnsureInbox`): a kanban filtered to that
-column and grouped by who brought the card — a column per source — called
-«Входящие», which the sidebar lists under the board beside its other views. Its
-columns are facts about the past rather than places, so a card cannot be dragged
-between them (`columnsAreFacts` in `kanban.tsx`). That is where somebody looks for a part of a board, and it keeps
-what nobody has read yet out of the middle of the work — which is also why the
-column itself is hidden from the kanban (`arrangeKanbans`, and
-`hiddenOptionIds` in the templates). The column has to exist, since a card
-stands in one and the automation fires on a change of it; it just is not where
-anybody reads. A board with no source
-gets neither the column nor the view, because nothing arrives on it.
+It used to be the other way round — an inbox column and view on every board a
+source fed, with the source naming its board and a rule naming a column. That
+made the source decide where a thing belongs before anybody had looked at it,
+which is the decision an inbox exists to put off (`docs/decisions.md`).
+
+The inbox board has **no column property**. Nothing on it is a stage and nothing
+moves between columns: a card is read, then carried away or deleted. Its one
+view is a kanban grouped by who brought the card — a column per source — and
+those columns are facts about the past rather than places, so a card cannot be
+dragged between them (`columnsAreFacts` in `kanban.tsx`). The person's own cards
+form a column too, headed «Мои задачи» rather than by their username
+(`kanbanColumnHeader.tsx`, on the inbox board only), because what those cards
+are says more than who typed them. The sidebar pins it above every category
+(`SidebarInboxItem`), as a row with no views under it and no board menu; a
+category never lists it, though the server still files it in one, since it
+reorders a category only when given every board it holds.
 
 So the inbox is the screen about **where cards come from**, and that is where
-the sources are set up: «Источники…» is on that view's ⋯ menu and nowhere else,
-and that menu holds nothing besides — exporting or saving as a template are
-questions about the board, asked where the board is (`viewHeaderActionsMenu.tsx`,
-`isInboxView`). One door stays open on the board itself: a board that has no
-«Входящие» yet is offered them there, or the only way to make an inbox would be
-a screen that exists once you have one.
+the sources are set up: «Источники…» is on the inbox board's ⋯ menu and nowhere
+else, and that menu holds nothing besides (`viewHeaderActionsMenu.tsx`,
+`isInboxBoard`, which reads the mark).
 
-A person's own card made on that screen lands in a **second** column,
-«Мои задачи» — everything else there arrived, and a task somebody typed is not
-something nobody has read. It is a column rather than a group of the view
-because what has to be kept apart is what the *automation* sees; the view is
-grouped by author, where "made by me" is already its own column — and that
-column is headed «Мои задачи» rather than by the viewer's username
-(`kanbanColumnHeader.tsx`, on the inbox view only), because what those cards
-are says more than who typed them. The mechanism is the view's filter and
-nothing else: it admits both columns, «Мои задачи» first, and the first value
-of an "includes" clause is what a card made in that view becomes
-(`CardFilter.propertyThatMeetsFilterClause`). On the board's own kanban the
-column is hidden exactly as «Входящие» is: it stood at the kanban's front for
-one template version, and that reading was reverted — a person's unprocessed
-tasks are the inbox's business, and the board of work stays as it was. A card
-leaves either column through its own dialog, by changing the column property.
+The inbox is this machine's board. A desktop attached to a server still files
+into its own inbox (`sourcesByBoard.InboxBoard`): the sources are this
+machine's registry. Only the share dialog may pick a server's board.
 
 The inbox is **grouped by what brought the card**, and that needs no property of
 ours: a source has a board account, exactly as an agent does and for the same
@@ -1364,8 +1352,8 @@ by its source and the board groups by "created by" out of the box. What a person
 typed stays theirs. The account is named after the source rather than prefixed,
 because the board shows the username wherever it names an author.
 
-A card can then be carried onto another board — from the card's own menu, or
-from «Входящие» on a phone — and that is a **real move** — same card id, so comments come with it and everything outside
+A card is then carried onto another board — from the card's own menu, or from
+«Входящие» on a phone — and that is a **real move** — same card id, so comments come with it and everything outside
 the board that remembers the card by id still finds it. It lives in the server
 module (`app.MoveCardToBoard`, `POST /cards/{cardID}/move`) because moving a
 card is the board's own operation, not ours, and because it cannot be built out

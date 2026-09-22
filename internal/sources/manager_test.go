@@ -19,18 +19,12 @@ type fakeBoard struct {
 	created  []CardSpec
 	boards   []string
 	comments []string
-	moves    []string // "cardID:property:column"
-	ensured  []string // "boardID:property:column"
 	nextID   int
 	failNext error
 
-	// asked counts how often the board was asked what its columns are called:
+	// asked counts how often the board was asked which board is the inbox:
 	// once per batch is the whole point of the delivery scope.
 	asked int
-	// property is what the board answers when asked what its columns are. The
-	// Russian name is the point: a board of this app's own says the status property, and
-	// the pipeline used to assume "Status" and miss every column.
-	property string
 }
 
 func (f *fakeBoard) CreateCard(_ context.Context, boardID string, spec CardSpec) (string, error) {
@@ -54,28 +48,11 @@ func (f *fakeBoard) AddComment(_ context.Context, cardID, text string) error {
 	return nil
 }
 
-func (f *fakeBoard) MoveCardByOptionName(_ context.Context, cardID, property, column string) error {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	f.moves = append(f.moves, cardID+":"+property+":"+column)
-	return nil
-}
-
-func (f *fakeBoard) ColumnProperty(_ context.Context, _ string) (string, error) {
+func (f *fakeBoard) InboxBoard(_ context.Context) (string, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.asked++
-	if f.property == "" {
-		return "Статус", nil
-	}
-	return f.property, nil
-}
-
-func (f *fakeBoard) EnsureInbox(_ context.Context, boardID, property, column string) (string, error) {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	f.ensured = append(f.ensured, boardID+":"+property+":"+column)
-	return "option-" + column, nil
+	return "inbox", nil
 }
 
 // The readers a test uses. Snapshots rather than the slices themselves, so a
@@ -98,22 +75,10 @@ func (f *fakeBoard) commentLines() []string {
 	return append([]string(nil), f.comments...)
 }
 
-func (f *fakeBoard) moveLines() []string {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	return append([]string(nil), f.moves...)
-}
-
-func (f *fakeBoard) propertyAsks() int {
+func (f *fakeBoard) inboxAsks() int {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	return f.asked
-}
-
-func (f *fakeBoard) ensuredLines() []string {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	return append([]string(nil), f.ensured...)
 }
 
 func (f *fakeBoard) refuseOnce(err error) {
@@ -135,11 +100,11 @@ func testManager(t *testing.T, entry SourceEntry) (*Manager, *fakeBoard, *Store)
 
 func phoneSource() SourceEntry {
 	return SourceEntry{
-		Name: "телефон", BoardID: "board1", Enabled: true, Noisy: true,
+		Name: "телефон", Enabled: true, Noisy: true,
 		Rules: []Rule{{
-			Name: "доставка",
-			When: Match{Props: map[string]string{"app": "delivery"}},
-			Then: ActionCard, Column: "Сегодня",
+			Name:  "доставка",
+			When:  Match{Props: map[string]string{"app": "delivery"}},
+			Then:  ActionCard,
 			Props: map[string]string{"Ссылка": "{{.URL}}"},
 		}},
 	}
@@ -151,7 +116,7 @@ func deliveryItem() Item {
 		Props: map[string]string{"app": "delivery"}}
 }
 
-func TestAnItemBecomesACardInTheColumnItsRuleNames(t *testing.T) {
+func TestAnItemBecomesACardOnTheInbox(t *testing.T) {
 	m, board, _ := testManager(t, phoneSource())
 
 	res, err := m.Deliver(context.Background(), "телефон", []Item{deliveryItem()})
@@ -164,8 +129,8 @@ func TestAnItemBecomesACardInTheColumnItsRuleNames(t *testing.T) {
 	if len(board.cards()) != 1 || board.cards()[0].Title != "Доставка завтра" {
 		t.Fatalf("created: %+v", board.cards())
 	}
-	if board.boardIDs()[0] != "board1" {
-		t.Fatalf("the card went to the wrong board: %q", board.boardIDs()[0])
+	if board.boardIDs()[0] != "inbox" {
+		t.Fatalf("every source writes to the inbox, the card went to %q", board.boardIDs()[0])
 	}
 	// The way back to the original is a property; where it came from is not —
 	// the card is authored by the source, which is the board's own answer and
@@ -176,13 +141,6 @@ func TestAnItemBecomesACardInTheColumnItsRuleNames(t *testing.T) {
 	}
 	if board.cards()[0].Source != "телефон" {
 		t.Fatalf("the card should be authored by its source: %+v", board.cards()[0])
-	}
-	// The move is what the automation sees: a card created straight into a
-	// working column would start nothing, because the trigger fires on a change.
-	// The property is the board's own answer, not a constant: this board calls
-	// its columns the status property, and a source that assumed "Status" moved nothing.
-	if len(board.moveLines()) != 1 || board.moveLines()[0] != "card1:Статус:Сегодня" {
-		t.Fatalf("moves: %+v", board.moveLines())
 	}
 }
 
@@ -264,64 +222,13 @@ func TestOnAQuietSourceWhatMatchedNothingGoesToTheInbox(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.Created != 1 || len(board.moveLines()) != 1 {
-		t.Fatalf("result: %+v, moves: %+v", res, board.moveLines())
+	if res.Created != 1 || len(board.boardIDs()) != 1 || board.boardIDs()[0] != "inbox" {
+		t.Fatalf("it should have gone to the inbox: %+v, boards: %+v", res, board.boardIDs())
 	}
-	if board.moveLines()[0] != "card1:Статус:Входящие" {
-		t.Fatalf("it should have gone to the inbox: %+v", board.moveLines())
-	}
-	// The inbox is made first — the column and the view of it. A board from
-	// before the inbox existed has neither, and the move would have had
-	// nowhere to land.
-	if len(board.ensuredLines()) != 1 || board.ensuredLines()[0] != "board1:Статус:Входящие" {
-		t.Fatalf("the inbox should have been ensured: %+v", board.ensuredLines())
-	}
-}
-
-// A rule decides whether the item was claimed, not whether it is shown. One
-// that names no column used to leave the card with its column property unset —
-// standing outside every column of the board, where only somebody who thought
-// to look for it would ever find it.
-func TestARuleThatNamesNoColumnStillFilesTheCard(t *testing.T) {
-	entry := phoneSource()
-	entry.Rules[0].Column = ""
-	m, board, _ := testManager(t, entry)
-
-	res, err := m.Deliver(context.Background(), "телефон", []Item{{
-		ExternalID: "n1", Title: "Доставка", Props: map[string]string{"app": "delivery"},
-	}})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if res.Created != 1 {
-		t.Fatalf("result: %+v", res)
-	}
-	if len(board.moveLines()) != 1 || board.moveLines()[0] != "card1:Статус:Входящие" {
-		t.Fatalf("it should have gone to the inbox: %+v", board.moveLines())
-	}
-	// The rule did claim it, so the event says the rule created a card. Where
-	// it stands and who asked for it are separate answers.
+	// The log tells a card no rule claimed from one a rule made.
 	events, err := m.Events("телефон", 10)
-	if err != nil || len(events) != 1 || events[0].Outcome != OutcomeCreated {
+	if err != nil || len(events) != 1 || events[0].Outcome != OutcomeInbox {
 		t.Fatalf("events: %+v, %v", events, err)
-	}
-}
-
-// A source may pin the property its columns live in, and then the board is not
-// asked. This is the only way a board whose columns are not what it groups by
-// can be fed at all.
-func TestAPinnedColumnPropertyWinsOverTheBoard(t *testing.T) {
-	entry := phoneSource()
-	entry.Property = "Этап"
-	m, board, _ := testManager(t, entry)
-
-	if _, err := m.Deliver(context.Background(), "телефон", []Item{{
-		ExternalID: "n1", Title: "Доставка", Props: map[string]string{"app": "delivery"},
-	}}); err != nil {
-		t.Fatal(err)
-	}
-	if len(board.moveLines()) != 1 || board.moveLines()[0] != "card1:Этап:Сегодня" {
-		t.Fatalf("moves: %+v", board.moveLines())
 	}
 }
 
@@ -362,22 +269,6 @@ func TestASourceThatIsOffAcceptsNothing(t *testing.T) {
 	}
 }
 
-func TestASourceIsOfferedOnlyOnItsOwnBoard(t *testing.T) {
-	m := NewManager(Config{Sources: []SourceEntry{
-		{Name: "телефон", BoardID: "board1", Enabled: true},
-		{Name: "почта", BoardID: "board2", Enabled: true},
-		{Name: "общий", Global: true, Enabled: true},
-	}}, "", nil, nil, nil)
-
-	got := m.SourcesForBoard("board1")
-	if len(got) != 2 || got[0].Name != "телефон" || got[1].Name != "общий" {
-		t.Fatalf("board1 sees its own and the global one: %+v", got)
-	}
-	if len(m.SourcesForBoard("")) != 3 {
-		t.Fatal("no board at all asks for the whole registry")
-	}
-}
-
 func TestRemovingASourceForgetsWhatItBrought(t *testing.T) {
 	m, board, store := testManager(t, phoneSource())
 	ctx := context.Background()
@@ -406,9 +297,9 @@ func TestRemovingASourceForgetsWhatItBrought(t *testing.T) {
 	}
 }
 
-// A batch is one poll, and a board does not rename its columns halfway through
-// it. Asking once is not only cheaper — it is four board reads per card that a
-// source bringing fifty cards no longer does.
+// A batch is one poll, and the inbox does not move halfway through it. Asking
+// once is a board read per card that a source bringing fifty cards no longer
+// does.
 func TestABatchAsksTheBoardOnce(t *testing.T) {
 	entry := phoneSource()
 	entry.Noisy = false
@@ -426,37 +317,8 @@ func TestABatchAsksTheBoardOnce(t *testing.T) {
 	if res.Created != 3 {
 		t.Fatalf("result: %+v", res)
 	}
-	// Three cards, three moves — and one look at what the board calls its
-	// columns and one making sure of the inbox.
-	if len(board.moveLines()) != 3 {
-		t.Fatalf("moves: %+v", board.moveLines())
-	}
-	if got := board.ensuredLines(); len(got) != 1 {
-		t.Fatalf("инбокс должен заводиться раз на партию: %+v", got)
-	}
-	if got := board.propertyAsks(); got != 1 {
-		t.Fatalf("свойство колонок должно спрашиваться раз на партию, спросили %d раз", got)
-	}
-}
-
-// A rule that names an agent and no properties of its own: RenderProps answers
-// nil for such a rule, and writing the agent into a nil map is a panic rather
-// than a lost field.
-func TestARuleMayNameAnAgentAndNoPropertiesAtAll(t *testing.T) {
-	entry := SourceEntry{
-		Name: "телефон", BoardID: "board1", Enabled: true, Noisy: true,
-		Rules: []Rule{{Name: "всё", Then: ActionCard, Column: "Сегодня", Agent: "claude"}},
-	}
-	m, board, _ := testManager(t, entry)
-
-	if _, err := m.Deliver(context.Background(), "телефон", []Item{deliveryItem()}); err != nil {
-		t.Fatal(err)
-	}
-	if len(board.cards()) != 1 {
-		t.Fatalf("created: %+v", board.cards())
-	}
-	if board.cards()[0].Properties["Agent"] != "claude" {
-		t.Fatalf("properties: %+v", board.cards()[0].Properties)
+	if got := board.inboxAsks(); got != 1 {
+		t.Fatalf("the inbox should be asked for once per batch, asked %d times", got)
 	}
 }
 

@@ -54,9 +54,6 @@ var textFields = map[string]bool{
 // rather than by id, so translating one would make the app stop recognising its
 // own field:
 //
-//   - «Входящие» and «Мои задачи» — the inbox column and the view are found by
-//     title (InboxViewTitle, MineColumnTitle, sources.DefaultInbox), so a
-//     translated board would grow a second Russian pair at the first arrival;
 //   - «Исход» with «прошло» and «не прошло» — the outcome the engine writes for
 //     every stage (acp.OutcomePassed/OutcomeFailed) and the value a route's
 //     conditional edges compare against.
@@ -65,11 +62,9 @@ var textFields = map[string]bool{
 // language, which is a wart with a name: the fix is for the engine to write
 // those options by id, and it is owed rather than done (docs/deferred.md).
 var appGivenNames = map[string]bool{
-	"Входящие":   true,
-	"Мои задачи": true,
-	"Исход":      true,
-	"прошло":     true,
-	"не прошло":  true,
+	"Исход":     true,
+	"прошло":    true,
+	"не прошло": true,
 }
 
 // templateCatalogue is the words for one language, or nil when the templates

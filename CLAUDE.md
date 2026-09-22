@@ -256,9 +256,9 @@ server.
   `templates/i18n/*.json` keyed by the English string
   (`TestEveryTemplateStringIsTranslated`). Language is `ui-settings.json`;
   switching reinstalls (`App.retemplate`); the page reports the system locale via
-  `UseLanguage` and awaits it before the first render. **Four names stay Russian
-  in the files** (`appGivenNames`: the inbox view and column names, «Исход» and
-  its values), because something finds them by title.
+  `UseLanguage` and awaits it before the first render. **Three names stay
+  Russian in the files** (`appGivenNames`: «Исход» and its two values), because
+  the engine finds them by title.
 - **What an agent is told first is two texts** (`promptLead`,
   `boardprompts.go`): the board's `prompt`, then the agent's own. A third layer
   per (board, agent) was built and removed; do not bring it back.
@@ -334,18 +334,21 @@ over HTTP on the front door (`/acp/board/mcp`, `boardapi.go`).
 `internal/acp`** — it must work with no agents at all.
 
 - A source is a **plugin process** speaking JSON-RPC over stdio
-  (`sources/protocol`), which never sees the board; rules and columns are ours.
+  (`sources/protocol`), which never sees the board; rules and boards are ours.
   `ingest.go` is the token-guarded route for scripts and webhooks. **An MCP
   server is a plugin with no code**: a manifest maps a tool's rows to items
   (`mcpsource.go`); shipped manifests re-invoke this binary, user manifests in
   `<dataDir>/sources/manifests/` win by name.
+- **The inbox is one board**, made by the app at launch
+  (`boardadapter.EnsureInboxBoard`) and found by its `xciiiInbox` mark, never by
+  title. Every source writes there and names no board; a person carries each
+  card on to where it belongs. It has no column property — its one view is a
+  kanban grouped by author, and each source has a board account
+  (`EnsureSourceUser`). Sources are configured only from its ⋯ menu.
 - The OS share sheet is a source (`share.go`, `pages/share/`), the one allowed to
-  pick its board.
-- Arrivals land in the inbox column, the one column the app adds to a board
-  itself (`EnsureColumn`, add-only; the column property is asked of the board,
-  never assumed by name). People meet it as **a view** (`EnsureInbox`), grouped
-  by author — each source has a board account (`EnsureSourceUser`). Sources are
-  configured only from that view's ⋯ menu.
+  pick another board (`PickBoard`); the dialog offers the inbox first. A card a
+  source puts on a board with columns stands in the first one
+  (`boardmodel.IntakeColumn`).
 - A card is carried to another board as a **real move** keeping its id
   (`app.MoveCardToBoard`); `insertBlock` cannot do it because it keys on
   `id AND board_id`. Properties travel by name.

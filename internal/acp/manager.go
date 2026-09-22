@@ -21,14 +21,10 @@ import (
 // Manager owns all agent sessions: it consumes board events, enforces limits
 // and policies, and reports results back to the board and the UI.
 type Manager struct {
-	cfg   Config
-	cfgMu sync.RWMutex // guards the UI-mutable parts of cfg (Workdirs, Agents, BoardPrompts)
-	// registryProbes answer for registries another package owns — see
-	// SetRegistryProbe. Guarded by cfgMu, since they are read where the config
-	// is.
-	registryProbes map[string]func() bool
-	cfgPath        string // where registry edits are persisted; empty in tests
-	store          *Store
+	cfg     Config
+	cfgMu   sync.RWMutex // guards the UI-mutable parts of cfg (Workdirs, Agents, BoardPrompts)
+	cfgPath string       // where registry edits are persisted; empty in tests
+	store   *Store
 	// vault is where a credential this app presents to somebody else is kept —
 	// today the GitHub token for pull-request polling. Nil until SetSecrets,
 	// and nil for good on a build with no store; both read as "no token".

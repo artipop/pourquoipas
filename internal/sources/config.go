@@ -26,13 +26,6 @@ const (
 // Actions lists every accepted action, in the order the UI offers them.
 var Actions = []string{ActionCard, ActionComment, ActionDrop}
 
-// DefaultInbox is the column an item lands in when no rule sent it anywhere
-// else. There is no matching default for the *property* those columns belong
-// to: that one is asked of the board (BoardWriter.ColumnProperty), because a
-// constant here was "Status" while every board this app ships says the status property,
-// and the mismatch filed nothing anywhere.
-const DefaultInbox = "Входящие"
-
 // Match is what a rule looks at. An empty Match matches everything, which is
 // how a catch-all rule is written; every field given must match, so a rule with
 // two fields is an "and".
@@ -55,30 +48,18 @@ type Rule struct {
 	When Match  `json:"when"`
 	Then string `json:"then"`
 
-	// Column is where the card goes once it exists. Empty leaves the card
-	// standing where nothing happens to it, which is what a source that only
-	// files things away wants.
-	Column string `json:"column,omitempty"`
 	// Props are card properties, as Go templates over the item: a link property
 	// mapped to {{.URL}}, say.
 	Props map[string]string `json:"props,omitempty"`
-	Agent string            `json:"agent,omitempty"`
 }
 
-// SourceEntry is one source. Like a project (internal/acp), it belongs to the
-// board it was created on and is offered nowhere else: a phone throwing
-// household notifications has no business in the list of a board about code.
+// SourceEntry is one source. Every source writes to the one inbox board, so an
+// entry names no board: where a card belongs is decided by the person who reads
+// it there, not by the source that brought it.
 type SourceEntry struct {
 	Name    string `json:"name"`
 	Plugin  string `json:"plugin,omitempty"`
-	BoardID string `json:"boardId,omitempty"`
-	Global  bool   `json:"global,omitempty"`
 	Enabled bool   `json:"enabled"`
-
-	// Property is the card property whose options are columns, and Inbox is
-	// where an unmatched item goes.
-	Property string `json:"property,omitempty"`
-	Inbox    string `json:"inbox,omitempty"`
 
 	// Noisy inverts the default for what matched no rule: a stream of
 	// notifications is mostly noise, so there a rule is a subscription and
@@ -90,13 +71,12 @@ type SourceEntry struct {
 	// Update says what a changed item does to the card it already has.
 	Update string `json:"update,omitempty"` // comment (default) | ignore
 
-	// PickBoard lets an item name the board it goes to (Item.BoardID), instead
-	// of every card of this source landing on BoardID above. It is off by
-	// default and has to be asked for, because "the registry decides the board"
-	// is what keeps a plugin — code somebody else wrote — from writing wherever
-	// it likes. It is on for the share sheet, where a person is looking at the
-	// dialog and the board is the question being asked; there BoardID is only
-	// what the dialog offers first.
+	// PickBoard lets an item name the board it goes to (Item.BoardID) instead
+	// of the inbox. It is off by default and has to be asked for, because
+	// "every source writes to the inbox" is what keeps a plugin — code somebody
+	// else wrote — from writing wherever it likes. It is on for the share sheet,
+	// where a person is looking at the dialog and the board is the question
+	// being asked.
 	PickBoard bool `json:"pickBoard,omitempty"`
 
 	Config          map[string]string `json:"config,omitempty"`
@@ -149,29 +129,6 @@ const (
 	UpdateComment = "comment"
 	UpdateIgnore  = "ignore"
 )
-
-// OfferedOn reports whether this board may see the source. It mirrors
-// WorkdirEntry.OfferedOn: an empty board id asks for the whole registry.
-func (s SourceEntry) OfferedOn(boardID string) bool {
-	if boardID == "" || s.Global {
-		return true
-	}
-	return s.BoardID == boardID
-}
-
-// PinnedProperty is the column property this source was told to write to, or
-// empty to let the board answer for itself.
-func (s SourceEntry) PinnedProperty() string {
-	return strings.TrimSpace(s.Property)
-}
-
-// InboxOr is the column an unmatched item lands in.
-func (s SourceEntry) InboxOr() string {
-	if c := strings.TrimSpace(s.Inbox); c != "" {
-		return c
-	}
-	return DefaultInbox
-}
 
 // Field is one setting a plugin needs, as its manifest declares it. The form a
 // person fills in is built from these, which is the whole reason a manifest
@@ -374,19 +331,10 @@ func (s SourceEntry) Validate() (SourceEntry, error) {
 		return s, fmt.Errorf("у источника нет имени")
 	}
 	s.Plugin = strings.TrimSpace(s.Plugin)
-	s.Property = strings.TrimSpace(s.Property)
-	s.Inbox = strings.TrimSpace(s.Inbox)
 	s.Update = strings.TrimSpace(s.Update)
 	if s.Update != "" && s.Update != UpdateComment && s.Update != UpdateIgnore {
 		return s, fmt.Errorf("источник %q: непонятная политика обновления %q (%s или %s)",
 			s.Name, s.Update, UpdateComment, UpdateIgnore)
-	}
-	// A board is required even of a global source. Global says where the entry
-	// is *offered* — in every board's dialog rather than one — and the pipeline
-	// still has to write the card somewhere: an entry with no board reached
-	// CreateCard with an empty id and failed on every item it ever took.
-	if s.BoardID == "" {
-		return s, fmt.Errorf("источник %q не привязан к доске", s.Name)
 	}
 	rules := make([]Rule, 0, len(s.Rules))
 	for i, r := range s.Rules {
@@ -412,7 +360,6 @@ func (r Rule) Validate() (Rule, error) {
 	if r.Then != ActionCard && r.Then != ActionComment && r.Then != ActionDrop {
 		return r, fmt.Errorf("непонятное действие %q (%s)", r.Then, strings.Join(Actions, ", "))
 	}
-	r.Column = strings.TrimSpace(r.Column)
 	for _, expr := range []string{r.When.Title, r.When.Body} {
 		if err := checkRegexp(expr); err != nil {
 			return r, err

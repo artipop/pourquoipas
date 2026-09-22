@@ -18,33 +18,18 @@ import './sharePage.scss'
 // because a link is easier to find again when it says what it was for, and both
 // have sensible answers already filled in.
 
-// lastBoardKey remembers the board picked last time. Most links a person sends
-// themselves go to the same place, and the dialog exists to be dismissed in two
-// seconds — one of which would otherwise go on finding the same board again.
-const lastBoardKey = 'xciii.share.board'
-
-function rememberBoard(id: string): void {
-    try {
-        localStorage.setItem(lastBoardKey, id)
-    } catch {
-        // Private browsing, or a webview with storage turned off. The dialog
-        // works without a memory; it just asks again.
-    }
-}
-
-function recalledBoard(): string {
-    try {
-        return localStorage.getItem(lastBoardKey) || ''
-    } catch {
-        return ''
-    }
+// The inbox first, then the rest in the order Go lists them: collect first and
+// decide later is the point of an inbox, so a link sent to oneself goes there
+// unless the person already knows where it belongs.
+export function inboxFirst(boards: BindingBoard[]): BindingBoard[] {
+    return [...boards.filter((b) => b.inbox), ...boards.filter((b) => !b.inbox)]
 }
 
 const SharePage: Component = () => {
     const intl = useIntl()
     const [params] = useSearchParams()
 
-    const [boards] = createLoader(() => listBoards(), undefined as BindingBoard[] | undefined)
+    const [boards] = createLoader(async () => inboxFirst(await listBoards()), undefined as BindingBoard[] | undefined)
     const [target, setTarget] = createSignal('')
     const [title, setTitle] = createSignal('')
     const [note, setNote] = createSignal('')
@@ -62,16 +47,17 @@ const SharePage: Component = () => {
         setNote(String(params.text || ''))
     })
 
-    // Preselected once the boards are known: the one used last time if it is
-    // still there, otherwise the first. A dialog that opens with nothing
-    // selected asks two questions instead of one.
+    // Preselected once the boards are known: the first, which is the inbox. A
+    // dialog that opens with nothing selected asks two questions instead of
+    // one. Not the board picked last time: that would pull every later link
+    // away from the inbox after a single exception.
     createEffect(() => [target(), boards()] as const, ([chosen, available]) => {
         if (chosen || !available?.length) {
             return
         }
-        const remembered = available.find((board) => board.id === recalledBoard())
-        setTarget(remembered?.id || available[0].id)
+        setTarget(available[0].id)
     })
+    const toInbox = () => Boolean(boards()?.find((board) => board.id === target())?.inbox)
 
     const send = async () => {
         const boardId = target()
@@ -82,7 +68,6 @@ const SharePage: Component = () => {
         setError('')
         try {
             const result = await shareItem(boardId, title(), url(), note())
-            rememberBoard(boardId)
             if (result.failed) {
                 // The pipeline counts a refusal rather than throwing it, so a
                 // batch of one that failed would otherwise look like success.
@@ -111,18 +96,38 @@ const SharePage: Component = () => {
                 fallback={
                     <div class='SharePage__done'>
                         <Show
-                            when={done() === 'created'}
+                            when={toInbox()}
                             fallback={
-                                <FormattedMessage
-                                    id='Share.already'
-                                    defaultMessage='It is already in the inbox.'
-                                />
+                                <Show
+                                    when={done() === 'created'}
+                                    fallback={
+                                        <FormattedMessage
+                                            id='Share.already-board'
+                                            defaultMessage='It is already on the board.'
+                                        />
+                                    }
+                                >
+                                    <FormattedMessage
+                                        id='Share.created-board'
+                                        defaultMessage='Filed on the board.'
+                                    />
+                                </Show>
                             }
                         >
-                            <FormattedMessage
-                                id='Share.created'
-                                defaultMessage='Filed in the inbox.'
-                            />
+                            <Show
+                                when={done() === 'created'}
+                                fallback={
+                                    <FormattedMessage
+                                        id='Share.already'
+                                        defaultMessage='It is already in the inbox.'
+                                    />
+                                }
+                            >
+                                <FormattedMessage
+                                    id='Share.created'
+                                    defaultMessage='Filed in the inbox.'
+                                />
+                            </Show>
                         </Show>
                     </div>
                 }

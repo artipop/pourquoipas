@@ -186,9 +186,8 @@ const CenterPanel = (props: Props) => {
         props.showCard(cardId)
     }
 
-    // What a new card is born with: the view's own filter (which is what puts a
-    // card made in the inbox view into the my-tasks column), the group it was dropped into,
-    // and the board's folder when the board has only one.
+    // What a new card is born with: the view's own filter, the group it was
+    // dropped into, and the board's folder when the board has only one.
     const newCardProperties = (groupByOptionId?: string): Record<string, string> => {
         const {activeView, board, groupByProperty} = props
 

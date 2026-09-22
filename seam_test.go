@@ -34,23 +34,8 @@ func (b *oneBoard) AddComment(_ context.Context, cardID, text string) error {
 	return nil
 }
 
-func (b *oneBoard) MoveCardByOptionName(_ context.Context, cardID, _, _ string) error {
-	b.wrote[cardID] = "moved"
-	return nil
-}
-
-func (b *oneBoard) ColumnProperty(_ context.Context, boardID string) (string, error) {
-	if boardID != b.boardID {
-		return "", fmt.Errorf("no board %s here", boardID)
-	}
-	return "Статус", nil
-}
-
-func (b *oneBoard) EnsureInbox(_ context.Context, boardID, _, _ string) (string, error) {
-	if boardID != b.boardID {
-		return "", fmt.Errorf("no board %s here", boardID)
-	}
-	return "opt-inbox", nil
+func (b *oneBoard) InboxBoard(context.Context) (string, error) {
+	return b.boardID, nil
 }
 
 func (b *oneBoard) CardBySourceItem(_ context.Context, boardID, _, _ string) (string, string, bool, error) {
@@ -60,8 +45,9 @@ func (b *oneBoard) CardBySourceItem(_ context.Context, boardID, _, _ string) (st
 	return b.boardID + "-card", "v1", true, nil
 }
 
-// A source belongs to a board and a board belongs to this machine or to the
-// server, so where a source writes is not a question anybody has to answer.
+// The share dialog may pick a board, and a board belongs to this machine or to
+// the server, so where the card is written is not a question anybody has to
+// answer.
 func TestASourceWritesToTheBoardItNames(t *testing.T) {
 	local, remote := newOneBoard("board-here"), newOneBoard("board-there")
 	w := newSourcesByBoard(local, remote, func(id string) bool { return id == "board-there" })
@@ -85,7 +71,7 @@ func TestASourceWritesToTheBoardItNames(t *testing.T) {
 	}
 }
 
-// The two writes keyed by a card alone go to the board the card is on. The
+// A write keyed by a card alone goes to the board the card is on. The
 // pipeline only ever learns a card id by creating the card or by finding it,
 // and both name the board — so it is remembered rather than asked for.
 func TestACommentFollowsTheCardToItsOwnBoard(t *testing.T) {
@@ -103,12 +89,17 @@ func TestACommentFollowsTheCardToItsOwnBoard(t *testing.T) {
 	if remote.wrote[cardID] != "commented" {
 		t.Errorf("the comment did not follow the card to the server: %v", remote.wrote)
 	}
+}
 
-	if err := w.MoveCardByOptionName(ctx, cardID, "Статус", "Готово"); err != nil {
-		t.Fatal(err)
-	}
-	if remote.wrote[cardID] != "moved" {
-		t.Errorf("the move did not follow the card to the server: %v", remote.wrote)
+// The inbox is this machine's even while a server is attached: the sources are
+// this machine's registry, and nothing they bring goes to a server unasked.
+func TestTheInboxIsThisMachinesBoard(t *testing.T) {
+	local, remote := newOneBoard("board-here"), newOneBoard("board-there")
+	w := newSourcesByBoard(local, remote, func(id string) bool { return id == "board-there" })
+
+	got, err := w.InboxBoard(context.Background())
+	if err != nil || got != "board-here" {
+		t.Fatalf("inbox: %q, %v", got, err)
 	}
 }
 

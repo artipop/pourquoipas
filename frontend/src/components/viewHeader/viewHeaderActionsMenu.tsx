@@ -12,8 +12,6 @@ import OptionsIcon from '../../widgets/icons/options'
 import Menu from '../../widgets/menu'
 import MenuWrapper from '../../widgets/menuWrapper'
 import {Utils} from '../../utils'
-import {useAppSelector} from '../../store/hooks'
-import {getCurrentBoardViews} from '../../store/views'
 
 import ModalWrapper from '../modalWrapper'
 import {sendFlashMessage} from '../flashMessages'
@@ -27,7 +25,7 @@ import {createSetupPlan, isBoardSetupAvailable} from '../acp/boardSetup'
 import SourcesDialog, {isSourcesAvailable} from '../acp/sourcesDialog'
 import TemplateEditor from '../acp/templateEditor'
 import {isSaveAsTemplateAvailable, saveBoardAsTemplate} from '../acp/saveAsTemplate'
-import {isInboxView} from '../acp/inboxView'
+import {isInboxBoard} from '../acp/inboxView'
 
 // What this menu holds is what is true of *this board*, and only that. The
 // registries it used to open — agents, where to deploy, how to reach the
@@ -37,19 +35,11 @@ import {isInboxView} from '../acp/inboxView'
 // is offered by the board's own title while it is unanswered, and by the screen
 // below afterwards.
 //
-// And what is true of *this view* is the rest of the sorting. the inbox view is the
-// one view about where cards come from, so it is the one that offers
-// the sources dialog — and offers nothing else: exporting the inbox, saving it as a
-// template or editing the board's routes are questions about the board, asked
-// from the screen the board is on. Everywhere else the menu is the board's, and
-// sources are not in it: hunting for the setting that feeds the inbox anywhere
-// but on the inbox is what this fixes.
-//
-// With one door left open. A board made empty has no the inbox view — the view
-// arrives with the first source, and a board nothing arrives on is not given
-// one — so on a board that has none the sources stay in the board's own menu.
-// Otherwise the only way to make an inbox would be through a screen that only
-// exists once you have.
+// The inbox board is the one board about where cards come from, so its menu
+// offers the sources dialog — and nothing else: it runs no routes, and exporting
+// it or saving it as a template is not what an inbox is for. Every other board's
+// menu is the board's, and sources are not in it: the inbox always exists (the
+// app makes it at launch), so there is no board that needs a second door.
 
 // the save-as-template item is parked rather than deleted, and this is the one
 // line that parks it. A board set up the way somebody wants it is still the
@@ -121,9 +111,8 @@ const ViewHeaderActionsMenu = (props: Props) => {
         }
     }
 
-    const views = useAppSelector(getCurrentBoardViews)
-    const onInbox = () => isInboxView(props.activeView)
-    const offerSources = () => isSourcesAvailable() && (onInbox() || !views().some(isInboxView))
+    const onInbox = () => isInboxBoard(props.board)
+    const offerSources = () => isSourcesAvailable() && onInbox()
 
     return (
         <ModalWrapper>
@@ -301,7 +290,6 @@ const ViewHeaderActionsMenu = (props: Props) => {
             </Show>
             <Show when={showSources()}>
                 <SourcesDialog
-                    board={props.board}
                     onClose={() => setShowSources(false)}
                 />
             </Show>

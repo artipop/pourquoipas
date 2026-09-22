@@ -117,9 +117,10 @@ type sourceBoard interface {
 	sources.BoardItems
 }
 
-// sourcesByBoard sends a source's writes to the board it names. A source entry
-// belongs to a board (SourceEntry.BoardID) and a board belongs to this machine
-// or to a server, so nobody has to decide where it writes.
+// sourcesByBoard sends a source's writes to the board they are for. Almost
+// every card goes to the inbox, which is this machine's; the share dialog may
+// pick any board the page lists, and a board belongs to this machine or to a
+// server, so nobody has to decide where it writes.
 type sourcesByBoard struct {
 	local  sourceBoard
 	remote sourceBoard
@@ -170,12 +171,10 @@ func (s *sourcesByBoard) CreateCard(ctx context.Context, boardID string, spec so
 	return cardID, err
 }
 
-func (s *sourcesByBoard) ColumnProperty(ctx context.Context, boardID string) (string, error) {
-	return s.pick(boardID).ColumnProperty(ctx, boardID)
-}
-
-func (s *sourcesByBoard) EnsureInbox(ctx context.Context, boardID, propertyName, optionName string) (string, error) {
-	return s.pick(boardID).EnsureInbox(ctx, boardID, propertyName, optionName)
+// InboxBoard is always this machine's: the sources are this machine's registry,
+// and what they bring is read here before it is carried anywhere.
+func (s *sourcesByBoard) InboxBoard(ctx context.Context) (string, error) {
+	return s.local.InboxBoard(ctx)
 }
 
 func (s *sourcesByBoard) CardBySourceItem(ctx context.Context, boardID, source, externalID string) (string, string, bool, error) {
@@ -188,10 +187,6 @@ func (s *sourcesByBoard) CardBySourceItem(ctx context.Context, boardID, source, 
 
 func (s *sourcesByBoard) AddComment(ctx context.Context, cardID, text string) error {
 	return s.forCard(cardID).AddComment(ctx, cardID, text)
-}
-
-func (s *sourcesByBoard) MoveCardByOptionName(ctx context.Context, cardID, propertyName, optionName string) error {
-	return s.forCard(cardID).MoveCardByOptionName(ctx, cardID, propertyName, optionName)
 }
 
 // onServerBoard answers whether a board is the attached server's, by asking it.

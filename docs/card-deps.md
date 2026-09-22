@@ -82,7 +82,7 @@
 - Тип свойства `relation` в вебаппе (`frontend/src/properties/relation/`,
   регистрация в `properties/index.tsx`), значение — массив id карточек.
 - Два свойства, оба **добавлением и только когда понадобились** — правило из
-  `docs/deferred.md`, по которому живут «Входящие» и «Папки»: «Зависит от»
+  `docs/deferred.md`, по которому живут поле ссылки и «Папки»: «Зависит от»
   (много) и «Часть задачи» (одна ссылка на родителя).
 - Доска помнит их id — `BoardPropDependsOn` / `BoardPropParent` рядом с
   `BoardPropBranch` в `boardseed.go`, читаются через `boardProp`. По id и

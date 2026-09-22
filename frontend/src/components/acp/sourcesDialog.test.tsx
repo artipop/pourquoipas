@@ -2,18 +2,14 @@ import {render, screen, waitFor} from '@solidjs/testing-library'
 import userEvent from '@testing-library/user-event'
 import '@testing-library/jest-dom'
 
-import {Board, createBoard} from '../../blocks/board'
 import {wrapIntl} from '../../testUtils'
 
 import {fakeGoSide} from '../../test/goSide'
 
 import SourcesDialog, {ingestURL, isSourcesAvailable} from './sourcesDialog'
 
-const board: Board = {...createBoard(), id: 'board1'}
-
 const renderDialog = () => render(() => wrapIntl(() => (
     <SourcesDialog
-        board={board}
         onClose={() => undefined}
     />
 )))
@@ -36,10 +32,10 @@ describe('components/acp/sourcesDialog', () => {
             toBe('http://127.0.0.1:9000/sources/ingest/%D1%82%D0%B5%D0%BB%D0%B5%D1%84%D0%BE%D0%BD')
     })
 
-    it('shows the board its own sources, and where to feed them', async () => {
+    it('shows every source, and where to feed it', async () => {
         fakeGoSide({
             ListSources: vi.fn().mockResolvedValue(JSON.stringify([
-                {name: 'phone', boardId: 'board1', enabled: true, noisy: true},
+                {name: 'phone', enabled: true, noisy: true},
             ])),
         })
 
@@ -54,7 +50,7 @@ describe('components/acp/sourcesDialog', () => {
     // is not shown at all — a plugin fetches, nobody feeds it.
     it('makes a source out of a plugin, with the form its manifest asks for', async () => {
         const AddSource = vi.fn().mockResolvedValue(JSON.stringify({
-            name: 'kaiten', boardId: 'board1', enabled: true, plugin: 'kaiten', token: 'ingest-token',
+            name: 'kaiten', enabled: true, plugin: 'kaiten', token: 'ingest-token',
         }))
         const SetSourceCredential = vi.fn().mockResolvedValue(undefined)
         fakeGoSide({
@@ -105,7 +101,7 @@ describe('components/acp/sourcesDialog', () => {
     it('says what a plugin source is doing instead of showing an address', async () => {
         fakeGoSide({
             ListSources: vi.fn().mockResolvedValue(JSON.stringify([
-                {name: 'kaiten', boardId: 'board1', enabled: true, plugin: 'kaiten'},
+                {name: 'kaiten', enabled: true, plugin: 'kaiten'},
             ])),
             ListSourcePlugins: vi.fn().mockResolvedValue('[]'),
             SourceStatuses: vi.fn().mockResolvedValue(JSON.stringify([
@@ -125,7 +121,7 @@ describe('components/acp/sourcesDialog', () => {
     // source nothing can ever send to.
     it('shows the token once, when the source is created', async () => {
         const AddSource = vi.fn().mockResolvedValue(JSON.stringify({
-            name: 'phone', boardId: 'board1', enabled: true, token: 'secret-token',
+            name: 'phone', enabled: true, token: 'secret-token',
         }))
         fakeGoSide({
             ListSources: vi.fn().mockResolvedValue('[]'),
@@ -139,7 +135,9 @@ describe('components/acp/sourcesDialog', () => {
 
         expect(await screen.findByText('secret-token')).toBeInTheDocument()
         const sent = JSON.parse(AddSource.mock.calls[0][0])
-        expect(sent.boardId).toBe('board1')
+
+        // Every source writes to the inbox, so an entry names no board.
+        expect(sent.boardId).toBeUndefined()
         expect(sent.noisy).toBe(true)
     })
 
@@ -148,7 +146,7 @@ describe('components/acp/sourcesDialog', () => {
     it('says what became of what a source brought', async () => {
         fakeGoSide({
             ListSources: vi.fn().mockResolvedValue(JSON.stringify([
-                {name: 'phone', boardId: 'board1', enabled: true, noisy: false},
+                {name: 'phone', enabled: true, noisy: false},
             ])),
             SourceEvents: vi.fn().mockResolvedValue(JSON.stringify([
                 {id: 2, source: 'phone', outcome: 'inbox', externalId: 'n2'},

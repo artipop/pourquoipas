@@ -2,6 +2,7 @@ package boardclient
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -26,64 +27,16 @@ var (
 
 func NewSourceWriter(c *Client) *SourceWriter { return &SourceWriter{c} }
 
-// ColumnProperty is asked rather than assumed: ours say the status property, upstream
-// boards say "Status", and a constant is wrong for one of them.
-func (w *SourceWriter) ColumnProperty(_ context.Context, boardID string) (string, error) {
-	board, schema, err := w.board(boardID)
-	if err != nil {
-		return "", err
-	}
-	views, resp := w.api.GetBlocksOfType(boardID, model.TypeView)
-	if err := failed(resp, "read views of board %s", boardID); err != nil {
-		return "", err
-	}
-	name, ok := boardmodel.ColumnPropertyName(board, schema, views)
-	if !ok {
-		return "", fmt.Errorf("на доске %s нет свойства-колонок", boardID)
-	}
-	return name, nil
+// InboxBoard is refused over HTTP: the inbox is the board of the machine the
+// sources run on, and a server's board is only ever the one the share dialog
+// picked (sourcesByBoard asks the local board).
+func (w *SourceWriter) InboxBoard(context.Context) (string, error) {
+	return "", errors.New("«Входящие» — доска этой машины, а не сервера")
 }
 
-// EnsureInbox makes the column a source's cards land in — and not the view,
-// which is where this stops short of the in-process writer. The view exists for
-// boards that predate the inbox; a hosted server imports the templates itself
-// and there is no release, so that is a set with nothing in it.
-func (w *SourceWriter) EnsureInbox(ctx context.Context, boardID, propertyName, optionName string) (string, error) {
-	return w.ensureColumn(ctx, boardID, propertyName, optionName)
-}
-
-// ensureColumn returns the id of the named option, adding it if the board has
-// none. Add-only: a removed option is a card that lost its column.
-func (w *SourceWriter) ensureColumn(_ context.Context, boardID, propertyName, optionName string) (string, error) {
-	board, schema, err := w.board(boardID)
-	if err != nil {
-		return "", err
-	}
-	if _, optionID, ok := boardmodel.FindSelectOption(schema, propertyName, optionName); ok {
-		return optionID, nil
-	}
-	prop, ok := boardmodel.FindCardProperty(board.CardProperties, propertyName)
-	if !ok {
-		// The property itself is not invented: a board with no column property
-		// has no columns to file anything into, and guessing one would put the
-		// card somewhere nobody looks.
-		return "", fmt.Errorf("на доске %s нет свойства %q", boardID, propertyName)
-	}
-	optionID := utils.NewID(utils.IDTypeBlock)
-	options, _ := prop["options"].([]any)
-	prop["options"] = append(options, map[string]any{
-		"id": optionID, "value": optionName, "color": "propColorGray",
-	})
-	patch := &model.BoardPatch{UpdatedCardProperties: []map[string]any{prop}}
-	if _, resp := w.api.PatchBoard(boardID, patch); resp != nil && resp.Error != nil {
-		return "", fmt.Errorf("add column %q to board %s: %w", optionName, boardID, resp.Error)
-	}
-	return optionID, nil
-}
-
-// CreateCard puts a card a source brought on the board. Silent, like every
-// write here: the trigger fires on a *change* of the column property, so a card
-// created into a working column would start nothing anyway.
+// CreateCard puts a card a source brought on the board, in its first column.
+// Silent, like every write here: the trigger fires on a *change* of the column
+// property, so the card starts nothing.
 func (w *SourceWriter) CreateCard(ctx context.Context, boardID string, spec sources.CardSpec) (string, error) {
 	board, schema, err := w.board(boardID)
 	if err != nil {
@@ -93,6 +46,15 @@ func (w *SourceWriter) CreateCard(ctx context.Context, boardID string, spec sour
 	properties := boardmodel.CardProperties(schema, spec.Properties)
 	if properties == nil {
 		properties = map[string]any{}
+	}
+	views, resp := w.api.GetBlocksOfType(boardID, model.TypeView)
+	if err := failed(resp, "read views of board %s", boardID); err != nil {
+		return "", err
+	}
+	if propID, optionID, ok := boardmodel.IntakeColumn(board, schema, views); ok {
+		if _, taken := properties[propID]; !taken {
+			properties[propID] = optionID
+		}
 	}
 	// The link is the pipeline's own doing rather than a rule's, so it is not
 	// looked up among the properties above: the board's url property is found

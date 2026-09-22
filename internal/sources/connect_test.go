@@ -56,7 +56,7 @@ func connectManager(t *testing.T, provider *httptest.Server) (*Manager, secrets.
 	vault := secrets.NewFileStore(filepath.Join(dir, "secrets.json"))
 	m := NewManager(Config{
 		Sources: []SourceEntry{{
-			Name: "почта", Plugin: "почта-плагин", BoardID: "board1", Enabled: true,
+			Name: "почта", Plugin: "почта-плагин", Enabled: true,
 		}},
 		Plugins: []Manifest{{
 			Name: "почта-плагин", Command: "/bin/true",
@@ -215,7 +215,7 @@ func TestConnectingWhatDoesNotNeedConnectingIsRefused(t *testing.T) {
 		t.Fatal(err)
 	}
 	if _, err := m.AddSource(SourceEntry{
-		Name: "локальный", Plugin: "простой", BoardID: "board1", Enabled: true,
+		Name: "локальный", Plugin: "простой", Enabled: true,
 	}); err != nil {
 		t.Fatal(err)
 	}

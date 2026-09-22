@@ -210,36 +210,6 @@ func TestFindCardProperty(t *testing.T) {
 	}
 }
 
-// The inbox column has to exist — a card stands in a column, and the automation
-// fires on a change of one — but it is not where anybody reads what arrived, so
-// it is taken off the kanban. A group named in neither list is drawn, so hiding
-// it means naming it in the hidden one and taking it out of the visible one.
-func TestHidingAColumnFromTheKanban(t *testing.T) {
-	visible, wasVisible := withoutOption([]any{"opt-inbox", "opt-todo"}, "opt-inbox")
-	if !wasVisible || len(visible) != 1 || visible[0] != "opt-todo" {
-		t.Fatalf("visible: %+v, was there: %v", visible, wasVisible)
-	}
-
-	hidden, wasHidden := withOption([]any{}, "opt-inbox")
-	if wasHidden || len(hidden) != 1 || hidden[0] != "opt-inbox" {
-		t.Fatalf("hidden: %+v, was there: %v", hidden, wasHidden)
-	}
-
-	// Already hidden: the lists come back untouched, which is what keeps the
-	// check from writing to every board on every delivery.
-	if _, wasVisible := withoutOption([]any{"opt-todo"}, "opt-inbox"); wasVisible {
-		t.Fatal("a column that is not visible was not taken out of anything")
-	}
-	if again, wasHidden := withOption(hidden, "opt-inbox"); !wasHidden || len(again) != 1 {
-		t.Fatalf("hiding twice: %+v, was there: %v", again, wasHidden)
-	}
-
-	// A view that has never been touched has no lists at all.
-	if list, found := withoutOption(nil, "opt-inbox"); found || len(list) != 0 {
-		t.Fatalf("empty view: %+v, found %v", list, found)
-	}
-}
-
 // The link a source brought is filed by what the property *is*, not by what it
 // is called: the app used to write a property literally named the link property, so an
 // English board — or one whose owner renamed the field — lost every link
@@ -262,35 +232,5 @@ func TestTheLinkPropertyIsFoundByTypeWhateverItIsCalled(t *testing.T) {
 	// rather than quietly drop what it was given.
 	if _, ok := boardmodel.PropertyOfType(testBoard(), schema, "url"); ok {
 		t.Fatal("a board without a url property must not answer with one")
-	}
-}
-
-// The inbox view is told from the board's other views by what it shows, not by
-// what it is called: a person may rename a view, and matching the inbox view by
-// title meant the next arriving card quietly built a second inbox beside it.
-func TestTheInboxViewIsFoundByWhatItFilters(t *testing.T) {
-	filtered := &model.Block{Type: model.TypeView, Title: "Что пришло", Fields: map[string]any{
-		"filter": map[string]any{"operation": "and", "filters": []any{map[string]any{
-			"propertyId": "prop-status",
-			"condition":  "includes",
-			"values":     []any{"opt-inbox"},
-		}}},
-	}}
-	if !isInboxView(filtered, "prop-status", "opt-inbox") {
-		t.Fatal("a renamed inbox must still be the inbox")
-	}
-	if isInboxView(filtered, "prop-status", "opt-agent") {
-		t.Fatal("a view filtered to another column is another view")
-	}
-
-	// A view whose filter somebody edited is still found by its title, so the
-	// one this app made is never duplicated either way.
-	byTitle := &model.Block{Type: model.TypeView, Title: InboxViewTitle, Fields: map[string]any{}}
-	if !isInboxView(byTitle, "prop-status", "opt-inbox") {
-		t.Fatal("the title is the fallback and has to work")
-	}
-	plain := &model.Block{Type: model.TypeView, Title: "Доска", Fields: map[string]any{}}
-	if isInboxView(plain, "prop-status", "opt-inbox") {
-		t.Fatal("an ordinary view is not the inbox")
 	}
 }

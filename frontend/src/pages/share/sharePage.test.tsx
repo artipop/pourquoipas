@@ -10,10 +10,12 @@ import SharePage from './sharePage'
 
 const home = {id: 'board-home', title: 'Домашние дела', icon: '🏠'}
 const work = {id: 'board-work', title: 'Разработка', icon: '💻'}
+const inbox = {id: 'board-inbox', title: 'Входящие', icon: '📥', inbox: true}
 
 function bindings(result: object = {created: 1}) {
     return {
-        ListBoards: vi.fn().mockResolvedValue(JSON.stringify([home, work])),
+        // The inbox listed last, as Go's alphabetical order may well put it.
+        ListBoards: vi.fn().mockResolvedValue(JSON.stringify([home, work, inbox])),
         ShareItem: vi.fn().mockResolvedValue(JSON.stringify(result)),
         CloseShareWindow: vi.fn().mockResolvedValue(undefined),
     }
@@ -44,7 +46,8 @@ describe('pages/share/sharePage', () => {
     })
 
     // The whole dialog: what another app shared is already filled in, the
-    // person names a board, and the link is filed there.
+    // person names a board, and the link is filed there — and the dialog says
+    // the board, not the inbox, since that is not where it went.
     it('files the shared link on the board that was picked', async () => {
         const app = bindings()
         fakeGoSide(app)
@@ -59,7 +62,7 @@ describe('pages/share/sharePage', () => {
 
         await waitFor(() => expect(app.ShareItem).toHaveBeenCalledWith(
             'board-work', 'Статья', 'https://example.com/a', ''))
-        expect(await screen.findByText('Filed in the inbox.')).toBeInTheDocument()
+        expect(await screen.findByText('Filed on the board.')).toBeInTheDocument()
     })
 
     // A link already in the inbox is not a failure and must not read as one:
@@ -74,20 +77,23 @@ describe('pages/share/sharePage', () => {
         expect(await screen.findByText('It is already in the inbox.')).toBeInTheDocument()
     })
 
-    // Most links a person sends themselves go to the same board, and the dialog
-    // exists to be dismissed in two seconds — one of which would otherwise go on
-    // finding that board again.
-    it('opens on the board used last time', async () => {
-        localStorage.setItem('xciii.share.board', 'board-work')
+    // Collect first, decide later: the inbox is offered first and picked
+    // already, so a link a person has not thought about yet is two taps.
+    it('opens on the inbox, offered first', async () => {
         const app = bindings()
         fakeGoSide(app)
 
         renderShare()
 
-        await save()
+        await screen.findByRole('button', {name: /Домашние дела/})
+        const boards = screen.getAllByRole('button', {name: /Входящие|Домашние дела|Разработка/})
+        expect(boards[0]).toHaveTextContent('Входящие')
+        expect(boards[0]).toHaveAttribute('aria-pressed', 'true')
 
+        await userEvent.click(screen.getByRole('button', {name: 'Save'}))
         await waitFor(() => expect(app.ShareItem).toHaveBeenCalledWith(
-            'board-work', expect.anything(), expect.anything(), expect.anything()))
+            'board-inbox', expect.anything(), expect.anything(), expect.anything()))
+        expect(await screen.findByText('Filed in the inbox.')).toBeInTheDocument()
     })
 
     // Nothing came with a title — a bare link, which is most of what gets
@@ -101,7 +107,7 @@ describe('pages/share/sharePage', () => {
         await save()
 
         await waitFor(() => expect(app.ShareItem).toHaveBeenCalledWith(
-            'board-home', '', 'https://example.com/b', ''))
+            'board-inbox', '', 'https://example.com/b', ''))
     })
 
     // The pipeline counts a refusal rather than throwing it, so a delivery of

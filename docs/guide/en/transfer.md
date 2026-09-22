@@ -17,8 +17,9 @@ archive, which is then imported here; each card opens the instructions.
 
 Everything configured on the board itself: columns and their actions; routes
 and conditions on transitions; the agent instruction; the setup wizard's
-questions; cards, attachments, members and views, the inbox included; each
-card's position on its route.
+questions; cards, attachments, members and views; each card's position on its
+route. The inbox is this machine's board; on the new machine the app creates
+one.
 
 A board opened on the new machine looks and behaves the same.
 
@@ -35,7 +36,7 @@ SSH keys, tokens and environment variables are not valid on another computer.
 | Access from a phone | "Settings" → [Access from a phone](./settings/index.md#access-from-a-phone) |
 | Project folders | the board's ⋯ menu → "Folders…" |
 | Theme and language | "Settings" → "The app itself" |
-| Sources — the token is issued anew | the board's setup wizard, or [Sources](./inbox/sources.md) |
+| Sources — the token is issued anew | [Sources…](./inbox/sources.md) in the inbox board's menu |
 
 The setup wizard asks only for what is missing; it can be walked again any
 time: ⋯ → "Columns and routes…" → "Walk the setup again…".

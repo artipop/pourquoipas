@@ -1,25 +1,22 @@
-import {BoardView} from '../../blocks/boardView'
+import {Board} from '../../blocks/board'
 
-// Which of a board's views is the inbox view.
+// Which board is the inbox.
 //
-// By title, and by title on purpose: it is the same key the Go side uses to
-// decide whether the view is already there (boardadapter.InboxViewTitle), and a
-// second, cleverer answer here would drift from it — a marker field neither the
-// board server nor an exported archive knows about. Renaming the view detaches
-// both halves at once, which is the bargain that was already struck; what must
-// not happen is the page and the writer disagreeing about which view this is.
+// The inbox is one board the app makes (boardadapter.EnsureInboxBoard) and
+// marks with a board property, and it is found by that mark — never by its
+// title, which a person may change, and never by a view's title, which a person
+// may give to a view of any board.
+export const InboxBoardProperty = 'xciiiInbox'
 
-export const InboxViewTitle = 'Входящие'
-
-// What the inbox's own-tasks column is called — the name the Go side gives the
-// board column a card made with the create button lands in (boardadapter
-// .MineColumnTitle). The inbox view is grouped by author, so the person's own
-// cards form a column headed by their username; that column *is* their
-// unprocessed tasks, and it is headed by this name rather than by the "you" name.
-// A given name, not a translation: the column on the board says the my-tasks column
-// whatever the UI language, so its face on the inbox does too.
+// What the person's own column on the inbox is headed. The inbox view is
+// grouped by author, so the cards a person typed there form a column headed by
+// their username; that column *is* their unprocessed tasks, and it is headed by
+// this name rather than by the "you" name. A given name, not a translation, like
+// the inbox's own.
 export const MineColumnTitle = 'Мои задачи'
 
-export function isInboxView(view?: BoardView): boolean {
-    return (view?.title ?? '').trim().toLowerCase() === InboxViewTitle.toLowerCase()
+export function isInboxBoard(board?: Board): boolean {
+    // The mark is a JSON boolean, which the board's property type does not
+    // describe: it was written for strings.
+    return (board?.properties as Record<string, unknown> | undefined)?.[InboxBoardProperty] === true
 }
