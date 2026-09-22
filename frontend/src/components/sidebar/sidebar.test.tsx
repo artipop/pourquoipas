@@ -100,6 +100,41 @@ describe('components/sidebarSidebar', () => {
         expect(showSidebar).toBeDefined()
     })
 
+    // The inbox is where everything arrives, so the list starts with it whatever
+    // the categories say — and a category never lists it a second time, even
+    // though the server still files it in one.
+    test('the inbox is pinned above every category', () => {
+        const inbox = {...TestBlockFactory.createBoard(), id: 'inbox', title: 'Входящие', properties: {xciiiInbox: true}} as unknown as typeof board
+        const category = {...categoryAttribute1, boardMetadata: [{boardID: board.id, hidden: false}, {boardID: inbox.id, hidden: false}]}
+        const store = mockAppStore({
+            teams: {current: {id: 'team-id'}},
+            boards: {
+                current: board.id,
+                boards: {[board.id]: board, [inbox.id]: inbox},
+                myBoardMemberships: {[board.id]: board, [inbox.id]: inbox},
+            },
+            cards: {cards: {}, current: ''},
+            views: {views: []},
+            users: {me: {id: 'user_id_1', props: {}}},
+            sidebar: {categoryAttributes: [category], hiddenBoardIDs: []},
+        }, {client: mockedOctoClient as any})
+
+        const {container} = render(() => wrapIntl(() =>
+            <AppStoreProvider store={store}>
+                <TestRouter>
+                    <Sidebar onBoardTemplateSelectorOpen={vi.fn()}/>
+                </TestRouter>
+            </AppStoreProvider>,
+        ))
+
+        const list = container.querySelector('.octo-sidebar-list')!
+        expect(list.firstElementChild).toHaveClass('SidebarInboxItem')
+        expect(list.firstElementChild).toHaveTextContent('Входящие')
+        const titles = Array.from(list.querySelectorAll('.SidebarBoardItem .octo-sidebar-title')).map((t) => t.textContent)
+        expect(titles.filter((t) => t === 'Входящие')).toHaveLength(1)
+        expect(titles).toContain(board.title)
+    })
+
     // The route editor takes the whole window, and the sidebar is not behind a
     // dialog the way it looks: `.mainFrame` is a stacking context, so a
     // collapsed sidebar's ☰ — which floats over the board on purpose — landed

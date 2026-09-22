@@ -1,6 +1,7 @@
 import {For, Show, createEffect, createSignal, onSettled} from 'solid-js'
 
 import {useDragDropMonitor} from '@dnd-kit/solid'
+import {useNavigate} from '@solidjs/router'
 import {isSortable} from '@dnd-kit/dom/sortable'
 
 import AddIcon from '../../widgets/icons/add'
@@ -47,10 +48,15 @@ import mutator from '../../mutator'
 
 import {Board} from '../../blocks/board'
 
+import {isInboxBoard} from '../acp/inboxView'
+
+import {useRouteMatch} from '../../hooks/routerMatch'
+
 import SidebarCategory, {CategoryBoardsDroppableData} from './sidebarCategory'
 import SidebarSettingsButton from './sidebarSettingsButton'
 import BoardSourceSwitcher from './boardSourceSwitcher'
 import SidebarUserMenu from './sidebarUserMenu'
+import SidebarInboxItem from './sidebarInboxItem'
 
 type Props = {
     activeBoardId?: string
@@ -283,6 +289,17 @@ const Sidebar = (props: Props) => {
             websocketClient.removeOnChange(onCategoryReorderHandler, 'categoryOrder')
         }
     })
+
+    const navigate = useNavigate()
+    const match = useRouteMatch()
+    const inbox = () => boards().find((board) => isInboxBoard(board))
+    const showInbox = (boardId: string) => {
+        if (boardId === props.activeBoardId && props.onBoardTemplateSelectorClose) {
+            props.onBoardTemplateSelectorClose()
+        }
+        Utils.showBoard(boardId, match(), navigate)
+        hideSidebar()
+    }
 
     const hideSidebar = () => {
         if (!userHidden()) {
@@ -545,6 +562,15 @@ const Sidebar = (props: Props) => {
                     <BoardsSwitcher/>
 
                     <div class='octo-sidebar-list'>
+                        <Show when={inbox()}>
+                            {(board) => (
+                                <SidebarInboxItem
+                                    board={board()}
+                                    isActive={board().id === props.activeBoardId}
+                                    onClick={showInbox}
+                                />
+                            )}
+                        </Show>
                         <For each={sidebarCategories()}>
                             {(category, index) => (
                                 <SidebarCategory

@@ -1331,8 +1331,10 @@ those columns are facts about the past rather than places, so a card cannot be
 dragged between them (`columnsAreFacts` in `kanban.tsx`). The person's own cards
 form a column too, headed «Мои задачи» rather than by their username
 (`kanbanColumnHeader.tsx`, on the inbox board only), because what those cards
-are says more than who typed them. The sidebar lists no views under it
-(`sidebarBoardItem.tsx`): its one view is called what the board is called.
+are says more than who typed them. The sidebar pins it above every category
+(`SidebarInboxItem`), as a row with no views under it and no board menu; a
+category never lists it, though the server still files it in one, since it
+reorders a category only when given every board it holds.
 
 So the inbox is the screen about **where cards come from**, and that is where
 the sources are set up: «Источники…» is on the inbox board's ⋯ menu and nowhere

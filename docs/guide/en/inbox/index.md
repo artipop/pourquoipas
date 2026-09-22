@@ -6,10 +6,10 @@ inbox board. How to connect sources is on [the next page](./sources.md).
 
 ## Where it is
 
-The inbox is a **board of its own** in the sidebar. The app creates it at the
-first launch, and there is one for all sources: no source puts cards straight
-on a working board. (The app names the board **Входящие**; the name is not
-translated.)
+The inbox is a **board of its own**, always first in the sidebar, above the
+other boards. The app creates it at the first launch, and there is one for all
+sources: no source puts cards straight on a working board. (The app names the
+board **Входящие**; the name is not translated.)
 
 You can rename the board — the app still recognises it.
 
