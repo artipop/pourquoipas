@@ -324,9 +324,9 @@ describe('src/components/kanban/kanbanColumnHeader', () => {
     // The inbox's columns say who brought the card; what the person themselves
     // brought is their unprocessed tasks, so their own column is headed by what
     // the cards are — the my-tasks column — and everybody else's by who they are.
-    describe('a person group on the inbox view', () => {
-        const inboxView = TestBlockFactory.createBoardView(board)
-        inboxView.title = 'Входящие'
+    describe('a person group on the inbox', () => {
+        const inboxBoard = {...board, properties: {xciiiInbox: true}} as unknown as typeof board
+        const inboxView = TestBlockFactory.createBoardView(inboxBoard)
         const byAuthor = {id: 'author-prop', name: 'Автор', type: 'createdBy', options: []} as unknown as IPropertyTemplate
         const meUser = {id: 'single-user', username: 'Вы'}
         const sourceUser = {id: 'kaiten', username: 'kaiten'}
@@ -338,10 +338,10 @@ describe('src/components/kanban/kanbanColumnHeader', () => {
             },
         } as never)
 
-        const renderHeader = (view: typeof inboxView, groupID: string) => render(() => wrapDNDIntl(() =>
+        const renderHeader = (on: typeof board, view: typeof inboxView, groupID: string) => render(() => wrapDNDIntl(() =>
             <AppStoreProvider store={storeWithUsers}>
                 <KanbanColumnHeader
-                    board={board}
+                    board={on}
                     activeView={view}
                     group={{
                         option: {id: groupID, value: '', color: ''},
@@ -361,12 +361,12 @@ describe('src/components/kanban/kanbanColumnHeader', () => {
         ))
 
         test('the viewer\'s own column is headed «Мои задачи»', () => {
-            renderHeader(inboxView, 'single-user')
+            renderHeader(inboxBoard, inboxView, 'single-user')
             expect(screen.getByText('Мои задачи')).toBeInTheDocument()
         })
 
         test('a source\'s column is headed by the source', () => {
-            renderHeader(inboxView, 'kaiten')
+            renderHeader(inboxBoard, inboxView, 'kaiten')
             expect(screen.getByText('kaiten')).toBeInTheDocument()
         })
 
@@ -374,7 +374,7 @@ describe('src/components/kanban/kanbanColumnHeader', () => {
         // and cannot know the language of the page: the name comes from the
         // catalogue (the "you" name / "You"), and the id it stands for is never printed.
         test('outside the inbox the viewer stays themselves', () => {
-            renderHeader(activeView, 'single-user')
+            renderHeader(board, activeView, 'single-user')
             expect(screen.getByText('You')).toBeInTheDocument()
             expect(screen.queryByText('Мои задачи')).toBeNull()
             expect(screen.queryByText('single-user')).toBeNull()

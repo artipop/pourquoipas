@@ -40,7 +40,7 @@ func agentManifest() Manifest {
 
 func agentEntry() SourceEntry {
 	return SourceEntry{
-		Name: "kaiten", Plugin: "kaiten", BoardID: "board1", Enabled: true,
+		Name: "kaiten", Plugin: "kaiten", Enabled: true,
 		Config: map[string]string{"boardId": "77"},
 	}
 }

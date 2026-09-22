@@ -124,7 +124,7 @@ func TestNothing(t *testing.T) {}
 
 func mcpEntry() SourceEntry {
 	return SourceEntry{
-		Name: "kaiten", Plugin: "fake", BoardID: "board1", Enabled: true,
+		Name: "kaiten", Plugin: "fake", Enabled: true,
 		Config: map[string]string{"boardId": "77"},
 	}
 }

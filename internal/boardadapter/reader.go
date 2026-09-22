@@ -45,7 +45,7 @@ func (w *Writer) Boards(ctx context.Context) ([]BoardSummary, error) {
 		if board.IsTemplate {
 			continue
 		}
-		summary := BoardSummary{ID: board.ID, Title: board.Title, Icon: board.Icon}
+		summary := BoardSummary{ID: board.ID, Title: board.Title, Icon: board.Icon, Inbox: IsInboxBoard(board)}
 		if property, columns, err := w.columnsOf(board); err == nil {
 			summary.Property = property
 			summary.Columns = columns

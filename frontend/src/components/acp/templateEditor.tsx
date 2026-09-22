@@ -275,8 +275,6 @@ export function stepTitle(intl: IntlShape, kind: string): string {
         return intl.formatMessage({id: 'TemplateEditor.step-deploy', defaultMessage: 'Somewhere to deploy to'})
     case 'browser':
         return intl.formatMessage({id: 'TemplateEditor.step-browser', defaultMessage: 'A browser for test runs'})
-    case 'source':
-        return intl.formatMessage({id: 'TemplateEditor.step-source', defaultMessage: 'Somewhere cards arrive from'})
     default:
         return intl.formatMessage({id: 'TemplateEditor.step-done', defaultMessage: 'How to use it (asks nothing)'})
     }

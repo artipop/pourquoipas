@@ -19,6 +19,9 @@ type BoardSummary struct {
 	ID    string `json:"id"`
 	Title string `json:"title"`
 	Icon  string `json:"icon,omitempty"`
+	// Inbox marks the board everything a source brings lands on: the phone
+	// lists it as the inbox and the share dialog offers it first.
+	Inbox bool `json:"inbox,omitempty"`
 
 	// Property is what this board calls the property its columns live in, and
 	// Columns are the options of it, in the board's own order.

@@ -523,53 +523,6 @@ describe('components/centerPanel', () => {
             expect(mockedMutator.performAsUndoGroup).toHaveBeenCalledTimes(1)
         })
 
-        // the create button on the inbox view writes a task of one's own, and it must not
-        // look like something that arrived: the view admits two columns and
-        // names the my-tasks column first, and the first value of an "includes" clause
-        // is what a card made in that view becomes. That is the whole
-        // mechanism, and this is the test that would notice it going.
-        test('a card made on «Входящие» stands in «Мои задачи», not among what arrived', async () => {
-            const inboxBoard = {...board, cardProperties: board.cardProperties.map((p) => ({...p, options: [...p.options]}))}
-            const status = inboxBoard.cardProperties[0]
-            status.options = [
-                {id: 'opt-mine', value: 'Мои задачи', color: 'propColorPurple'},
-                {id: 'opt-inbox', value: 'Входящие', color: 'propColorGray'},
-            ]
-            const inbox = TestBlockFactory.createBoardView(inboxBoard)
-            inbox.id = 'view-inbox'
-            inbox.title = 'Входящие'
-            inbox.fields.viewType = 'board'
-            inbox.fields.groupById = 'author'
-            inbox.fields.filter = {
-                operation: 'and',
-                filters: [{propertyId: status.id, condition: 'includes', values: ['opt-mine', 'opt-inbox']}],
-            }
-            const author: IPropertyTemplate = {id: 'author', name: 'Автор', type: 'createdBy', options: []}
-            mockedMutator.performAsUndoGroup.mockImplementation(async (actions) => actions())
-            mockedMutator.insertBlock.mockResolvedValue({id: 'made-here'} as any)
-
-            const {container} = render(() => wrapDNDIntl(() =>
-                <AppStoreProvider store={store}>
-                    <TestRouter>
-                        <CenterPanel
-                            cards={[]}
-                            views={[inbox]}
-                            board={inboxBoard}
-                            activeView={inbox}
-                            readonly={false}
-                            showCard={vi.fn()}
-                            groupByProperty={author}
-                        />
-                    </TestRouter>
-                </AppStoreProvider>,
-            ))
-            userEvent.click(container.querySelector('.ButtonWithMenu')!)
-
-            await waitFor(() => expect(mockedMutator.insertBlock).toHaveBeenCalled())
-            const made = mockedMutator.insertBlock.mock.calls[0][1] as {fields: {properties: Record<string, string>}}
-            expect(made.fields.properties[status.id]).toBe('opt-mine')
-        })
-
         // A board with one folder has one answer to «where does the agent
         // work», so asking it on every card is asking a question with no second
         // option. The value is an ordinary one on the card, so it stays visible

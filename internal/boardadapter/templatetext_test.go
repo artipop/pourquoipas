@@ -47,9 +47,8 @@ func TestACatalogueSaysNothingTheTemplatesDoNot(t *testing.T) {
 }
 
 // What the app matches on by name is not a person's word to change: translating
-// «Входящие» would have the next arriving card make a second inbox beside the
-// translated one, and translating «прошло» would leave the engine writing an
-// outcome the board has no option for.
+// «прошло» would leave the engine writing an outcome the board has no option
+// for.
 func TestTheNamesTheAppMatchesOnAreNeverTranslated(t *testing.T) {
 	for lang, cat := range catalogues(t) {
 		for name := range appGivenNames {

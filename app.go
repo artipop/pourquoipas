@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -13,7 +12,6 @@ import (
 
 	"github.com/artipop/xciii/internal/acp"
 	"github.com/artipop/xciii/internal/boardadapter"
-	"github.com/artipop/xciii/internal/boardmodel"
 	"github.com/artipop/xciii/internal/sources"
 )
 
@@ -1423,13 +1421,13 @@ func (a *App) DeleteCardConversation(cardID, nodeID string) error {
 // could not be started at all — no data directory, an unreadable registry.
 var errSourcesDisabled = errors.New("источники недоступны")
 
-// ListSources returns the source registry as JSON, as one board sees it: its
-// own sources and the ones marked global. An empty boardID asks for all.
-func (a *App) ListSources(boardID string) (string, error) {
+// ListSources returns the source registry as JSON. It is one list and not a
+// board's: every source writes to the one inbox.
+func (a *App) ListSources() (string, error) {
 	if a.sources == nil {
 		return "[]", nil
 	}
-	out, err := json.Marshal(a.sources.SourcesForBoard(boardID))
+	out, err := json.Marshal(a.sources.Sources())
 	if err != nil {
 		return "", err
 	}
@@ -1623,54 +1621,33 @@ func (a *App) ListBoardCards(boardID string) (string, error) {
 	return string(out), nil
 }
 
-// ListInbox returns what has arrived and nobody has looked at yet: the cards
-// standing in the inbox column of every board that has a source.
-//
-// Which column that is comes from the registry rather than from a name, which
-// is the same answer the pipeline gives when it files a card. A board with no
-// source therefore contributes nothing — it has no inbox, because nothing
-// arrives on it.
+// ListInbox returns what has arrived and nobody has looked at yet: the cards on
+// the inbox board, newest first. The board is found by the mark the app gave
+// it, never by its title. Empty, not an error, where there is no inbox yet —
+// nothing has arrived.
 func (a *App) ListInbox() (string, error) {
-	if a.board == nil || a.sources == nil {
+	if a.board == nil {
 		return "[]", nil
 	}
-	inboxes := map[string]map[string]bool{} // board id → lowercased column names
-	for _, source := range a.sources.Sources() {
-		if source.BoardID == "" {
-			continue
-		}
-		columns, ok := inboxes[source.BoardID]
-		if !ok {
-			columns = map[string]bool{}
-			inboxes[source.BoardID] = columns
-		}
-		columns[strings.ToLower(source.InboxOr())] = true
-	}
-	if len(inboxes) == 0 {
-		return "[]", nil
-	}
-
-	waiting := make([]boardmodel.CardSummary, 0, 8)
-	for boardID, columns := range inboxes {
-		cards, err := a.board.BoardCards(context.Background(), boardID)
-		if err != nil {
-			// One board that cannot be read must not cost the others: the
-			// inbox is the screen a person opens to find out what arrived, and
-			// half of it is worth more than an error.
-			continue
-		}
-		for _, card := range cards {
-			if columns[strings.ToLower(card.Column)] {
-				waiting = append(waiting, card)
-			}
-		}
-	}
-	sort.SliceStable(waiting, func(i, j int) bool { return waiting[i].UpdateAt > waiting[j].UpdateAt })
-	out, err := json.Marshal(waiting)
+	boards, err := a.board.Boards(context.Background())
 	if err != nil {
 		return "", err
 	}
-	return string(out), nil
+	for _, board := range boards {
+		if !board.Inbox {
+			continue
+		}
+		cards, err := a.board.BoardCards(context.Background(), board.ID)
+		if err != nil {
+			return "", err
+		}
+		out, err := json.Marshal(cards)
+		if err != nil {
+			return "", err
+		}
+		return string(out), nil
+	}
+	return "[]", nil
 }
 
 // MoveCardToBoard carries a card to another board and, when a column is named,
@@ -1688,31 +1665,28 @@ func (a *App) MoveCardToBoard(cardID, boardID, column string) error {
 // The share sheet.
 //
 // What the system hands over when somebody presses the share dialog in another app
-// is a link and a title, and the only question left is which board. The dialog
-// that asks it is a page of ours (/share), so this is all it needs from Go:
-// the boards to offer are ListBoards above, and this is the send.
+// is a link and a title, and the only question left is which board — the inbox,
+// unless the person already knows. The dialog that asks it is a page of ours
+// (/share), so this is all it needs from Go: the boards to offer are ListBoards
+// above, and this is the send.
 //
 // It goes through the sources pipeline rather than writing a card directly,
-// because everything the inbox does is there already — the column, the view,
-// the author, the record that keeps a repeat from becoming a second card — and
-// because the phone's the inbox view only lists boards that have a source.
+// because everything a source's card gets is there already — the author, the
+// link, the record that keeps a repeat from becoming a second card.
 
-// ShareItem files a shared link on the board the person picked, and reports
-// what came of it in the same shape a delivery does, so the dialog can tell
-// created from already there.
+// ShareItem files a shared link on the board the person picked, or in the
+// inbox when boardID is empty, and reports what came of it in the same shape a
+// delivery does, so the dialog can tell created from already there.
 func (a *App) ShareItem(boardID, title, url, note string) (string, error) {
 	if a.sources == nil {
 		return "", errors.New("источники недоступны")
-	}
-	if strings.TrimSpace(boardID) == "" {
-		return "", errors.New("не сказано, на какую доску")
 	}
 	if strings.TrimSpace(title) == "" && strings.TrimSpace(url) == "" {
 		return "", errors.New("нечего сохранять: ни ссылки, ни заголовка")
 	}
 	// Registered on first use: a person who shares a link has not been asked to
 	// set up a source, and should not have to be.
-	entry, err := a.sources.EnsureSource(sources.ShareSource(boardID))
+	entry, err := a.sources.EnsureSource(sources.ShareSource())
 	if err != nil {
 		return "", err
 	}

@@ -14,7 +14,7 @@ import {goApp} from '../../goBridge'
 // renders it; it works nothing out for itself, because a second opinion here
 // would be a second answer to drift from the first.
 
-export type SetupStepKind = 'name' | 'project' | 'agent' | 'deploy' | 'browser' | 'source' | 'done'
+export type SetupStepKind = 'name' | 'project' | 'agent' | 'deploy' | 'browser' | 'done'
 export type SetupStepStatus = 'pending' | 'done' | 'skipped'
 
 export type SetupStep = {

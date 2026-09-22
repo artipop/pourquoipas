@@ -69,7 +69,7 @@ func readShippedTemplate(file string) ([]byte, error) {
 // theirs until this number moves, and then it is replaced.
 //
 // What each past bump changed is in the log, not here.
-const TemplateVersion = 20
+const TemplateVersion = 21
 
 // TemplateMarkerProperty is the board property each template carries its slug
 // in. Ids are regenerated on import and titles are the user's to change, so the

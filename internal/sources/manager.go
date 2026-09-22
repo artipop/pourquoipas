@@ -81,18 +81,6 @@ func (m *Manager) Sources() []SourceEntry {
 	return append([]SourceEntry(nil), m.cfg.Sources...)
 }
 
-// SourcesForBoard is the registry as one board sees it: its own sources and the
-// ones marked global.
-func (m *Manager) SourcesForBoard(boardID string) []SourceEntry {
-	out := make([]SourceEntry, 0, 4)
-	for _, s := range m.Sources() {
-		if s.OfferedOn(boardID) {
-			out = append(out, s)
-		}
-	}
-	return out
-}
-
 // Source returns one entry by name.
 func (m *Manager) Source(name string) (SourceEntry, bool) {
 	m.mu.RLock()
@@ -120,7 +108,7 @@ func (m *Manager) AddSource(entry SourceEntry) (SourceEntry, error) {
 	}
 	// Outside the lock on purpose: this one writes to the board, and holding
 	// the registry while waiting on board I/O would stall every reader of it.
-	m.ensureInbox(valid)
+	m.ensureInbox()
 	// A source with a plugin is a process, and it starts now rather than at the
 	// next launch: "add the source, then restart the app" is not a feature that
 	// works. Does nothing for an ingest source, which has no process.
@@ -152,7 +140,7 @@ func (m *Manager) EnsureSource(entry SourceEntry) (SourceEntry, error) {
 		}
 		return SourceEntry{}, err
 	}
-	m.ensureInbox(valid)
+	m.ensureInbox()
 	return valid, nil
 }
 
@@ -166,33 +154,21 @@ func (m *Manager) insertEntry(valid SourceEntry) error {
 	return m.persistLocked()
 }
 
-// ensureInbox puts the source's inbox column on its board as soon as the source
-// exists, so somebody who has just registered one can see where its cards will
-// land instead of finding out when the first item arrives.
+// ensureInbox makes the inbox board exist as soon as there is a source, so
+// somebody who has just registered one can see where its cards will land
+// instead of finding out when the first item arrives.
 //
-// It is best-effort: a board that refuses the column is a board that takes its
-// cards without one, and refusing to register the source over it would be a
-// worse answer than a line in the log. The pipeline ensures the column again
-// before it writes, which is what actually has to succeed.
-func (m *Manager) ensureInbox(entry SourceEntry) {
+// Best-effort: a board that could not be made now is made again by the first
+// delivery, which is what actually has to succeed, and refusing to register
+// the source over it would be a worse answer than a line in the log.
+func (m *Manager) ensureInbox() {
 	if m.writer == nil {
 		return
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), boardWriteTimeout)
 	defer cancel()
-	property := entry.PinnedProperty()
-	if property == "" {
-		found, err := m.writer.ColumnProperty(ctx, entry.BoardID)
-		if err != nil {
-			m.log.Warn("sources: не удалось узнать свойство колонок",
-				"source", entry.Name, "board", entry.BoardID, "err", err)
-			return
-		}
-		property = found
-	}
-	if _, err := m.writer.EnsureInbox(ctx, entry.BoardID, property, entry.InboxOr()); err != nil {
-		m.log.Warn("sources: не удалось завести «Входящие»",
-			"source", entry.Name, "board", entry.BoardID, "err", err)
+	if _, err := m.writer.InboxBoard(ctx); err != nil {
+		m.log.Warn("sources: не удалось завести доску «Входящие»", "err", err)
 	}
 }
 
@@ -205,7 +181,7 @@ func (m *Manager) UpdateSource(entry SourceEntry) (SourceEntry, error) {
 	if err := m.replaceEntry(valid); err != nil {
 		return SourceEntry{}, err
 	}
-	m.ensureInbox(valid)
+	m.ensureInbox()
 	// The entry it was running under is gone: whatever changed — the interval,
 	// the config a plugin is started with, whether it is enabled at all — takes
 	// effect now.
@@ -331,22 +307,32 @@ func (m *Manager) Deliver(ctx context.Context, sourceName string, items []Item) 
 	return res, nil
 }
 
-// delivery is what stays true for the length of one batch: a batch is one poll,
-// and a board does not rename its columns or lose its inbox halfway through it.
-// Without this a source bringing fifty cards asked the board fifty times what
-// its column property is called and made sure of the same inbox fifty times —
-// four board reads per card, every one of them the same answer.
+// delivery is what stays true for the length of one batch: which board is the
+// inbox, asked once rather than once per item.
 type delivery struct {
-	property map[string]string // board id → what it calls its columns
-	ensured  map[string]bool   // board id + "\x00" + column → the inbox is there
+	inbox string
 }
 
-func newDelivery() *delivery {
-	return &delivery{property: map[string]string{}, ensured: map[string]bool{}}
+func newDelivery() *delivery { return &delivery{} }
+
+// inboxBoard is the inbox's id, asked of the board the first time a batch
+// needs it.
+func (m *Manager) inboxBoard(ctx context.Context, d *delivery) (string, error) {
+	if d.inbox != "" {
+		return d.inbox, nil
+	}
+	bctx, cancel := context.WithTimeout(ctx, boardWriteTimeout)
+	defer cancel()
+	id, err := m.writer.InboxBoard(bctx)
+	if err != nil {
+		return "", fmt.Errorf("доска «Входящие»: %w", err)
+	}
+	d.inbox = id
+	return id, nil
 }
 
 func (m *Manager) deliverOne(ctx context.Context, d *delivery, entry SourceEntry, it Item, res *Result) error {
-	state, cardID, err := m.stateOf(ctx, entry, it)
+	state, cardID, err := m.stateOf(ctx, d, entry, it)
 	if err != nil {
 		return err
 	}
@@ -407,7 +393,6 @@ func (m *Manager) createCard(ctx context.Context, d *delivery, entry SourceEntry
 	}
 
 	spec := CardFor(rule, it)
-	column := strings.TrimSpace(rule.Column)
 	outcome := OutcomeCreated
 	if !matched {
 		// Nothing claimed it, and this source is not noisy: it goes to the
@@ -416,14 +401,6 @@ func (m *Manager) createCard(ctx context.Context, d *delivery, entry SourceEntry
 		spec = CardFor(Rule{}, it)
 		outcome = OutcomeInbox
 	}
-	if column == "" {
-		// A rule that names no column means the inbox as well. Leaving the
-		// column property unset would put the card outside every column of the
-		// board — visible only to somebody who thought to look there — and that
-		// is the same loss the inbox exists to prevent. What the rule decides is
-		// whether the item was claimed, not whether it is shown.
-		column = entry.InboxOr()
-	}
 	// Where the card came from is not a property: the card is authored by the
 	// source, which is the board's own answer and the one the inbox groups by,
 	// and a property saying it again would be a second answer to one question.
@@ -431,16 +408,8 @@ func (m *Manager) createCard(ctx context.Context, d *delivery, entry SourceEntry
 	// side puts wherever that board keeps a link — this package knows no
 	// property names of its own.
 	spec.Source = entry.Name
-	if rule.Agent != "" {
-		// RenderProps answers nil for a rule with no properties of its own, and
-		// a nil map is not something to write into.
-		if spec.Properties == nil {
-			spec.Properties = map[string]string{}
-		}
-		setIfAbsent(spec.Properties, "Agent", rule.Agent)
-	}
 
-	boardID, err := boardFor(entry, it)
+	boardID, err := m.boardFor(ctx, d, entry, it)
 	if err != nil {
 		return err
 	}
@@ -451,83 +420,33 @@ func (m *Manager) createCard(ctx context.Context, d *delivery, entry SourceEntry
 	if err != nil {
 		return fmt.Errorf("создание карточки: %w", err)
 	}
-	// Remembered before the move: the card exists, and losing track of it here
-	// would create a second one on the next delivery.
+	// Remembered at once: the card exists, and losing track of it here would
+	// create a second one on the next delivery.
 	if err := m.remember(entry.Name, it, cardID); err != nil {
 		return err
 	}
 	res.Created++
 	m.record(EventRecord{Source: entry.Name, ExternalID: it.ExternalID,
 		Rule: rule.Name, Outcome: outcome, CardID: cardID})
-
-	property, err := m.columnProperty(wctx, d, entry, boardID)
-	if err != nil {
-		return err
-	}
-	// The inbox is made if the board has not got it. A board made before the
-	// inbox shipped has neither the column nor the view, and a template only
-	// ever reaches a board that does not exist yet — so without this the very
-	// item the inbox exists for would be the one that fails to land. Once per
-	// board per batch: see the comment on delivery.
-	if key := boardID + "\x00" + column; !d.ensured[key] {
-		if _, err := m.writer.EnsureInbox(wctx, boardID, property, column); err != nil {
-			return fmt.Errorf("колонка %q на доске %s: %w", column, boardID, err)
-		}
-		d.ensured[key] = true
-	}
-	// The move, not the creation, is what the automation sees: the trigger
-	// fires on a change of the column property, and a card created straight
-	// into a working column starts nothing.
-	if err := m.writer.MoveCardByOptionName(wctx, cardID, property, column); err != nil {
-		return fmt.Errorf("перенос карточки %s в колонку %q: %w", cardID, column, err)
-	}
 	return nil
 }
 
-// boardFor is where one item's card goes: the source's own board, or the board
-// the item names when the entry allows an item to name one.
+// boardFor is where one item's card goes: the inbox, or the board the item
+// names when the entry allows an item to name one.
 //
 // A board named by an item that may not name one is refused rather than
-// ignored. Ignoring it would write the card to the source's board and report
-// success, and the person who picked a board would find their card on another
-// one — which is the failure this whole subsystem is meant not to have.
-func boardFor(entry SourceEntry, it Item) (string, error) {
+// ignored. Ignoring it would write the card to the inbox and report success,
+// and the person who picked a board would find their card somewhere else —
+// which is the failure this whole subsystem is meant not to have.
+func (m *Manager) boardFor(ctx context.Context, d *delivery, entry SourceEntry, it Item) (string, error) {
 	chosen := strings.TrimSpace(it.BoardID)
 	if chosen == "" {
-		return entry.BoardID, nil
+		return m.inboxBoard(ctx, d)
 	}
 	if !entry.PickBoard {
 		return "", fmt.Errorf("источник %q не выбирает доску, а элемент назвал %q", entry.Name, chosen)
 	}
 	return chosen, nil
-}
-
-// columnProperty is the property this source's columns live in: what the entry
-// pins, or what the board itself says. Asking the board is the default because
-// no constant can be right for both a board that calls it the status property and one that
-// calls it "Status".
-func (m *Manager) columnProperty(ctx context.Context, d *delivery, entry SourceEntry, boardID string) (string, error) {
-	if pinned := entry.PinnedProperty(); pinned != "" {
-		return pinned, nil
-	}
-	if known, ok := d.property[boardID]; ok {
-		return known, nil
-	}
-	property, err := m.writer.ColumnProperty(ctx, boardID)
-	if err != nil {
-		return "", fmt.Errorf("свойство колонок доски %s: %w", boardID, err)
-	}
-	d.property[boardID] = property
-	return property, nil
-}
-
-func setIfAbsent(props map[string]string, name, value string) {
-	for k := range props {
-		if strings.EqualFold(k, name) {
-			return
-		}
-	}
-	props[name] = value
 }
 
 // stateOf answers whether this item has been brought before, and onto which
@@ -537,7 +456,7 @@ func setIfAbsent(props map[string]string, name, value string) {
 //
 // The board's answer is written into the table, so it is asked once per item
 // and not once per poll.
-func (m *Manager) stateOf(ctx context.Context, entry SourceEntry, it Item) (ItemState, string, error) {
+func (m *Manager) stateOf(ctx context.Context, d *delivery, entry SourceEntry, it Item) (ItemState, string, error) {
 	if m.store != nil {
 		state, cardID, err := m.store.StateOf(entry.Name, it.ExternalID, it.Version)
 		if err != nil {
@@ -550,11 +469,15 @@ func (m *Manager) stateOf(ctx context.Context, entry SourceEntry, it Item) (Item
 	m.mu.RLock()
 	items := m.items
 	m.mu.RUnlock()
-	if items == nil || entry.BoardID == "" || it.ExternalID == "" {
+	if items == nil || it.ExternalID == "" {
 		return ItemNew, "", nil
 	}
+	boardID, err := m.boardFor(ctx, d, entry, it)
+	if err != nil {
+		return ItemNew, "", err
+	}
 	bctx, cancel := context.WithTimeout(ctx, boardWriteTimeout)
-	cardID, version, ok, err := items.CardBySourceItem(bctx, entry.BoardID, entry.Name, it.ExternalID)
+	cardID, version, ok, err := items.CardBySourceItem(bctx, boardID, entry.Name, it.ExternalID)
 	cancel()
 	if err != nil {
 		// The board could not be asked, so this machine does not know. Treating

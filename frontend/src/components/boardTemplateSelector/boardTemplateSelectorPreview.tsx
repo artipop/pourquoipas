@@ -39,10 +39,9 @@ const BoardTemplateSelectorPreview = (props: Props) => {
 
                     // The view the template was made with, which is the one a
                     // board made from it opens on — not the one whose title
-                    // sorts first. Every template carries the inbox view as well
-                    // now, and it sorts before every template's own first view,
-                    // so the preview of every template was an empty inbox and
-                    // said nothing about the template.
+                    // sorts first. Templates used to carry an inbox view that
+                    // sorted before their own, and the preview of every one of
+                    // them was an empty inbox that said nothing about it.
                     const views = blocks.filter((b) => b.type === 'view') as BoardView[]
                     if (views.length > 0) {
                         setActiveView(oldestView(views))

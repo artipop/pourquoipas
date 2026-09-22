@@ -43,15 +43,15 @@ the «⋯» menu in the board header, right of the view tabs. See
 ## Views
 
 Under the board on the left are its views: kanban, table, calendar, gallery.
-The **Входящие** view is created by the board itself once something starts
-arriving from outside — see [the Inbox section](./inbox/index.md). (The app
-names that view in Russian, and the name is not translated.)
+
+Everything that arrives from outside goes not to a working board but to a
+board of its own, **Входящие** — see [the Inbox section](./inbox/index.md). (The
+app names that board in Russian, and the name is not translated.)
 
 The view header has the view's name, **"Route"**, **"Filter"**, **"Sort"** and
 search. These are settings of the view, not of the board: each view has its own.
 When they do not fit the window the bar scrolls sideways. The ⋯ menu belongs to
-the view too: on Входящие it holds **"Sources"** and nothing else, while
-exporting and the board's settings are in the menus of the other views.
+the view too; on the Входящие board it holds **"Sources…"** and nothing else.
 
 Clicking the view's name opens a menu: the board's views, **"Rename view"**,
 **"Duplicate view"**, **"Delete view"** and **"Add view"**. Renaming opens a

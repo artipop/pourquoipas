@@ -7,17 +7,17 @@ import (
 	"github.com/artipop/xciii/server/app"
 	"github.com/artipop/xciii/server/model"
 
-	"github.com/artipop/xciii/internal/boardmodel"
 	"github.com/artipop/xciii/server/utils"
+
+	"github.com/artipop/xciii/internal/sources"
 )
 
-// The inbox is two columns and a view, and none of the three can be checked
-// without a board: the option ids are made on the way in, the view is a block,
-// and where a column ends up on the kanban is a list on another block. So this
-// runs the real board server and looks at what a person would see.
+// The inbox is a board the app makes, found by a mark on it, and a view on it —
+// none of which can be checked without a board server. So this runs the real
+// one and looks at what a person would see.
 
-// boardWithAKanban is the board a source arrives on: a column property and one
-// kanban grouped by it, which is what every board of ours has.
+// boardWithAKanban is a board of work, the kind the share dialog may pick: a
+// column property and one kanban grouped by it.
 func boardWithAKanban(t *testing.T, a *app.App) *model.Board {
 	t.Helper()
 	board, err := a.CreateBoard(&model.Board{
@@ -77,159 +77,143 @@ func viewsByTitle(t *testing.T, w *Writer, boardID string) map[string]*model.Blo
 	return out
 }
 
-func optionID(t *testing.T, a *app.App, boardID, name string) string {
+func boardByID(t *testing.T, a *app.App, id string) *model.Board {
 	t.Helper()
-	board, err := a.GetBoard(boardID)
+	board, err := a.GetBoard(id)
 	if err != nil {
 		t.Fatal(err)
 	}
+	return board
+}
+
+// There is one inbox. Asked for twice it is the same board, and the second
+// asking makes nothing — two inboxes would be two places to look, which is the
+// thing an inbox is for not having.
+func TestTheInboxIsOneBoardMadeOnce(t *testing.T) {
+	a := newTestApp(t)
+
+	first, err := EnsureInboxBoard(a, "ru")
+	if err != nil {
+		t.Fatal(err)
+	}
+	again, err := NewWriter(a).InboxBoard(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if first != again {
+		t.Fatalf("a second inbox was made: %s and %s", first, again)
+	}
+	if !IsInboxBoard(boardByID(t, a, first)) {
+		t.Fatal("the inbox does not carry the mark it is found by")
+	}
+}
+
+// The inbox is read as a kanban with a column per source: what a person asks of
+// it is what the mail brought and what the tracker did. So its one view groups
+// by the card's author, and the board has no column property of its own —
+// nothing on it is a stage.
+func TestTheInboxGroupsByWhoBroughtTheCard(t *testing.T) {
+	a := newTestApp(t)
+	id, err := EnsureInboxBoard(a, "ru")
+	if err != nil {
+		t.Fatal(err)
+	}
+	board := boardByID(t, a, id)
 	schema, err := model.ParsePropertySchema(board)
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, id, ok := boardmodel.FindSelectOption(schema, "Статус", name)
+	for _, def := range schema {
+		if def.Type == "select" {
+			t.Fatalf("the inbox should have no columns, it has %q", def.Name)
+		}
+	}
+
+	views := viewsByTitle(t, NewWriter(a), id)
+	if len(views) != 1 {
+		t.Fatalf("the inbox should have one view, it has %d", len(views))
+	}
+	view, ok := views[InboxViewTitle]
 	if !ok {
-		t.Fatalf("колонки «%s» на доске нет", name)
+		t.Fatalf("no view called %q", InboxViewTitle)
 	}
-	return id
+	groupBy, _ := view.Fields["groupById"].(string)
+	if def, ok := schema[groupBy]; !ok || def.Type != "createdBy" {
+		t.Fatalf("the view groups by %q, not by the author", groupBy)
+	}
+	// In the person's language: a field called "Author" on a Russian board is
+	// a field somebody forgot to translate.
+	if schema[groupBy].Name != "Автор" {
+		t.Fatalf("the author field is called %q", schema[groupBy].Name)
+	}
 }
 
-func ids(t *testing.T, raw any) []string {
-	t.Helper()
-	list, _ := raw.([]any)
-	out := make([]string, 0, len(list))
-	for _, item := range list {
-		id, _ := item.(string)
-		out = append(out, id)
-	}
-	return out
-}
-
-// A board that has just got its first source has an inbox: what arrives stands
-// in one column and is read in a view of its own, and what the person types
-// there stands in another — so that the create button on the inbox does not look like
-// something that arrived and nobody has read.
-func TestTheInboxIsTwoColumnsAndAViewShowingBoth(t *testing.T) {
+// The mark is the answer, not the title: a person may call the inbox anything,
+// and the next arrival must not make a second one beside the renamed board.
+func TestARenamedInboxIsStillTheInbox(t *testing.T) {
 	a := newTestApp(t)
-	board := boardWithAKanban(t, a)
-	w := NewWriter(a)
-
-	inboxID, err := w.EnsureInbox(t.Context(), board.ID, "Статус", "Входящие")
+	id, err := EnsureInboxBoard(a, "ru")
 	if err != nil {
 		t.Fatal(err)
 	}
-	mineID := optionID(t, a, board.ID, MineColumnTitle)
-
-	inbox, ok := viewsByTitle(t, w, board.ID)[InboxViewTitle]
-	if !ok {
-		t.Fatal("вида «Входящие» нет")
+	title := "Всё подряд"
+	if _, err := a.PatchBoard(&model.BoardPatch{Title: &title}, id, model.SingleUser); err != nil {
+		t.Fatal(err)
 	}
-	filter, _ := inbox.Fields["filter"].(map[string]any)
-	clauses, _ := filter["filters"].([]any)
-	if len(clauses) != 1 {
-		t.Fatalf("фильтр вида: %+v", filter)
-	}
-	clause, _ := clauses[0].(map[string]any)
-	values := ids(t, clause["values"])
-	// the my-tasks column first: the first value of the clause is what a card made in
-	// this view becomes, and that is the whole mechanism behind the button.
-	if len(values) != 2 || values[0] != mineID || values[1] != inboxID {
-		t.Fatalf("фильтр пропускает %v, ожидалось [%s %s]", values, mineID, inboxID)
+	again, err := EnsureInboxBoard(a, "ru")
+	if err != nil || again != id {
+		t.Fatalf("the renamed inbox was not found: %q, %v", again, err)
 	}
 }
 
-// Both inbox columns are taken off the board's own kanban: what arrived and
-// what the person typed are read on the inbox view, and the board of work
-// stays the board of work. the my-tasks column stood at the kanban's front for one
-// version, and that was not what was asked for.
-func TestBothInboxColumnsAreHiddenFromTheKanban(t *testing.T) {
+// The phone and the share dialog tell the inbox from the other boards by the
+// list itself, since neither may look at a board's properties.
+func TestTheBoardListSaysWhichBoardIsTheInbox(t *testing.T) {
 	a := newTestApp(t)
-	board := boardWithAKanban(t, a)
-	w := NewWriter(a)
-
-	inboxID, err := w.EnsureInbox(t.Context(), board.ID, "Статус", "Входящие")
+	work := boardWithAKanban(t, a)
+	inbox, err := EnsureInboxBoard(a, "ru")
 	if err != nil {
 		t.Fatal(err)
 	}
-	mineID := optionID(t, a, board.ID, MineColumnTitle)
-
-	kanban := viewsByTitle(t, w, board.ID)["Дела"]
-	visible := ids(t, kanban.Fields["visibleOptionIds"])
-	hidden := ids(t, kanban.Fields["hiddenOptionIds"])
-	if len(visible) != 2 {
-		t.Fatalf("колонки канбана: %v", visible)
-	}
-	if len(hidden) != 2 || hidden[0] != inboxID || hidden[1] != mineID {
-		t.Fatalf("скрытые колонки: %v", hidden)
-	}
-
-	// The second source on the same board runs all of this again, and finds
-	// everything already answered: nothing is added twice and nothing moves.
-	if _, err := w.EnsureInbox(t.Context(), board.ID, "Статус", "Входящие"); err != nil {
+	boards, err := NewWriter(a).Boards(t.Context())
+	if err != nil {
 		t.Fatal(err)
 	}
-	after := viewsByTitle(t, w, board.ID)
-	if len(after) != 2 {
-		t.Fatalf("видов стало %d", len(after))
+	marked := map[string]bool{}
+	for _, b := range boards {
+		marked[b.ID] = b.Inbox
 	}
-	if got := ids(t, after["Дела"].Fields["hiddenOptionIds"]); len(got) != 2 {
-		t.Fatalf("скрытые колонки после второго источника: %v", got)
+	if !marked[inbox] || marked[work.ID] {
+		t.Fatalf("inbox marks: %v", marked)
 	}
 }
 
-// An install that predates the my-tasks column has an inbox filtered to what arrived,
-// and the person's own card would have vanished the moment it was made. The
-// view is brought up to date rather than replaced: it is in the sidebar, and a
-// second the inbox view beside it is worse than either.
-func TestAnOlderInboxLearnsAboutOwnTasks(t *testing.T) {
+// A card a source brings to a board with columns stands in the first of them —
+// outside every column it would be on the board and on no kanban. On the inbox
+// there are no columns and the card stands in none.
+func TestASourcesCardStandsInTheFirstColumn(t *testing.T) {
 	a := newTestApp(t)
-	board := boardWithAKanban(t, a)
-	w := NewWriter(a)
+	work := boardWithAKanban(t, a)
+	w := NewSourceWriter(a)
 
-	inboxID, err := w.EnsureColumn(t.Context(), board.ID, "Статус", "Входящие")
+	cardID, err := w.CreateCard(t.Context(), work.ID, sources.CardSpec{Title: "Статья", Source: "Поделиться"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	now := utils.GetMillis()
-	old := &model.Block{
-		ID:       utils.NewID(utils.IDTypeView),
-		BoardID:  board.ID,
-		ParentID: board.ID,
-		Type:     model.TypeView,
-		Title:    InboxViewTitle,
-		Fields: map[string]any{
-			"viewType": "board",
-			"filter": map[string]any{
-				"operation": "and",
-				"filters": []any{map[string]any{
-					"propertyId": "prop-status",
-					"condition":  "includes",
-					"values":     []any{inboxID},
-				}},
-			},
-		},
-		CreatedBy: model.SingleUser,
-		CreateAt:  now,
-		UpdateAt:  now,
-	}
-	if _, err := a.InsertBlocksAndNotify([]*model.Block{old}, model.SingleUser, false); err != nil {
+	card, err := w.cardBlock(cardID)
+	if err != nil {
 		t.Fatal(err)
 	}
-	time.Sleep(2 * time.Millisecond)
+	props, _ := card.Fields["properties"].(map[string]any)
+	if props["prop-status"] != "opt-todo" {
+		t.Fatalf("the card stands in %v, not in the first column", props["prop-status"])
+	}
 
-	if _, err := w.EnsureInbox(t.Context(), board.ID, "Статус", "Входящие"); err != nil {
+	inbox, err := w.InboxBoard(t.Context())
+	if err != nil {
 		t.Fatal(err)
 	}
-	mineID := optionID(t, a, board.ID, MineColumnTitle)
-
-	views := viewsByTitle(t, w, board.ID)
-	if len(views) != 2 {
-		t.Fatalf("видов стало %d, ожидался тот же вид", len(views))
-	}
-	filter, _ := views[InboxViewTitle].Fields["filter"].(map[string]any)
-	clauses, _ := filter["filters"].([]any)
-	clause, _ := clauses[0].(map[string]any)
-	if values := ids(t, clause["values"]); len(values) != 2 || values[0] != mineID {
-		t.Fatalf("фильтр старого вида: %v", values)
+	if _, err := w.CreateCard(t.Context(), inbox, sources.CardSpec{Title: "Письмо", Source: "почта"}); err != nil {
+		t.Fatalf("a card on the inbox: %v", err)
 	}
 }

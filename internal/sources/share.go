@@ -14,8 +14,9 @@ import (
 // a second card. That is the whole reason it is a source and not a third way
 // into the board.
 //
-// The one thing it does differently is name its board, because a person is
-// looking at the dialog when it happens — see SourceEntry.PickBoard.
+// The one thing it does differently is that it may name a board other than the
+// inbox, because a person is looking at the dialog when it happens — see
+// SourceEntry.PickBoard.
 
 // ShareSourceName is what the share sheet is called on the board and in the
 // registry. A person's own word rather than "share": it is what they will read
@@ -23,17 +24,13 @@ import (
 const ShareSourceName = "Поделиться"
 
 // ShareSource is the registry entry the share sheet delivers under, made the
-// first time anything is shared. BoardID is the board the dialog offered first
-// and nothing more — every item names its own.
+// first time anything is shared.
 //
-// It carries no rules, so nothing is claimed and everything lands in
-// the inbox view, which is what a link somebody sent to themselves is: something to
-// look at, not something with a place already decided.
-func ShareSource(boardID string) SourceEntry {
+// It carries no rules, so nothing is claimed and what is shared to the inbox is
+// something to look at later, not something with a place already decided.
+func ShareSource() SourceEntry {
 	return SourceEntry{
 		Name:      ShareSourceName,
-		BoardID:   boardID,
-		Global:    true,
 		Enabled:   true,
 		PickBoard: true,
 		// A share that is repeated is a person sharing again, and a comment on
@@ -45,9 +42,9 @@ func ShareSource(boardID string) SourceEntry {
 // ShareItem is what the dialog sends: a link, what it was called, and whatever
 // the person typed before pressing the button.
 //
-// A shared link identifies itself by the link and the board it went to, so
-// sharing the same page to that board again is the same item and the pipeline
-// skips it — the card is already in the inbox, and a second one saying the same
+// A shared link identifies itself by the link and the board it went to (empty
+// for the inbox), so sharing the same page to that board again is the same item
+// and the pipeline skips it — the card is already there, and a second one saying the same
 // thing is what makes an inbox worth ignoring. The dialog reports that back
 // rather than swallowing it, since a button that appears to do nothing is worse
 // than one that says the thing is already there. Sharing to *another* board is

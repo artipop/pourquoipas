@@ -22,15 +22,7 @@ func (b *recordingBoard) CreateCard(_ context.Context, _ string, spec sources.Ca
 	return "card1", nil
 }
 func (b *recordingBoard) AddComment(context.Context, string, string) error { return nil }
-func (b *recordingBoard) MoveCardByOptionName(context.Context, string, string, string) error {
-	return nil
-}
-func (b *recordingBoard) ColumnProperty(context.Context, string) (string, error) {
-	return "Статус", nil
-}
-func (b *recordingBoard) EnsureInbox(_ context.Context, _, _, column string) (string, error) {
-	return "option-" + column, nil
-}
+func (b *recordingBoard) InboxBoard(context.Context) (string, error)       { return "inbox", nil }
 
 const testToken = "test-token"
 
@@ -45,7 +37,7 @@ func ingestRoutes(t *testing.T) (*sourceRoutes, *recordingBoard) {
 
 	board := &recordingBoard{}
 	cfg := sources.Config{Sources: []sources.SourceEntry{{
-		Name: "телефон", BoardID: "board1", Enabled: true, Noisy: true,
+		Name: "телефон", Enabled: true, Noisy: true,
 		TokenHash: sources.HashToken(testToken),
 		Rules:     []sources.Rule{{Then: sources.ActionCard}},
 	}}}

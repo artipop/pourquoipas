@@ -27,9 +27,10 @@ type Item struct {
 	Body       string    `json:"body,omitempty"`
 	URL        string    `json:"url,omitempty"`
 	At         time.Time `json:"at,omitempty"`
-	// BoardID overrides the source's own board, and is refused unless the entry
-	// allows it (SourceEntry.PickBoard) — a plugin must not choose where it
-	// writes. It is for the share sheet, where the board is the question asked.
+	// BoardID sends the card to a board other than the inbox, and is refused
+	// unless the entry allows it (SourceEntry.PickBoard) — a plugin must not
+	// choose where it writes. It is for the share sheet, where the board is the
+	// question asked.
 	BoardID string            `json:"boardId,omitempty"`
 	Props   map[string]string `json:"props,omitempty"`
 	Labels  []string          `json:"labels,omitempty"`
@@ -89,14 +90,11 @@ type BoardItems interface {
 // purpose: a source describes what it found, and the cards are this side's
 // business (docs/sources.md, §8).
 type BoardWriter interface {
+	// CreateCard puts a card on a board: in its first column on a board that
+	// has columns, and in none on the inbox, which has none.
 	CreateCard(ctx context.Context, boardID string, spec CardSpec) (string, error)
 	AddComment(ctx context.Context, cardID, text string) error
-	MoveCardByOptionName(ctx context.Context, cardID, propertyName, optionName string) error
-
-	// ColumnProperty is asked rather than assumed: ours say the status property, upstream
-	// boards say "Status", and a constant is wrong for one of them.
-	ColumnProperty(ctx context.Context, boardID string) (string, error)
-	// EnsureInbox makes the inbox column and its view exist, for a board that
-	// predates them — a template only ever reaches a board that does not exist.
-	EnsureInbox(ctx context.Context, boardID, propertyName, optionName string) (string, error)
+	// InboxBoard is the one board every source writes to, made if it is not
+	// there yet.
+	InboxBoard(ctx context.Context) (string, error)
 }

@@ -97,9 +97,9 @@ func runnerManager(t *testing.T, entry SourceEntry, fake *fakePlugin) (*Manager,
 
 func pluginSource() SourceEntry {
 	return SourceEntry{
-		Name: "телефон", Plugin: "телефон-плагин", BoardID: "board1",
+		Name: "телефон", Plugin: "телефон-плагин",
 		Enabled: true, Noisy: true, IntervalSeconds: 1,
-		Rules: []Rule{{Then: ActionCard, Column: "Сегодня"}},
+		Rules: []Rule{{Then: ActionCard}},
 	}
 }
 
@@ -383,7 +383,7 @@ func waitFor(t *testing.T, cond func() bool) {
 func TestASourceAddedWhileRunningStartsWithoutARestart(t *testing.T) {
 	fake := &fakePlugin{caps: plugin.Capabilities{Poll: true}}
 	m, _ := runnerManager(t, SourceEntry{
-		Name: "уже был", Plugin: "телефон-плагин", BoardID: "board1", Enabled: true,
+		Name: "уже был", Plugin: "телефон-плагин", Enabled: true,
 		IntervalSeconds: 60,
 	}, fake)
 

@@ -16,6 +16,10 @@ export type BindingBoard = {
     title: string
     icon?: string
 
+    // The board everything a source brings lands on: the phone lists its cards
+    // as the inbox, and the share dialog offers it first.
+    inbox?: boolean
+
     // What this board calls the property its columns live in, and the columns
     // themselves in the board's own order, each with the colour the board gave
     // it. They come with the board because the two questions are always asked

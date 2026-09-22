@@ -231,9 +231,9 @@ There is deliberately **no `window.webSocketBaseURL`** here, unlike v2:
   ⋯ menu holds nothing else but export and *«Сохранить как шаблон…»*: it used to
   be the only door to all of the above, which made machine settings look like a
   property of whichever board happened to be open. A setting that belongs to one
-  *screen* goes with it: what feeds a board is asked on «Входящие», whose ⋯ menu
-  offers *«Источники…»* and nothing besides — with the board's own menu keeping
-  that door only while the board has no inbox to open it from.
+  *screen* goes with it: what feeds the inbox is asked on «Входящие», the one
+  board every source writes to, whose ⋯ menu offers *«Источники…»* and nothing
+  besides.
   Registering an agent or a folder does not require going there — the card's
   terminal and the column's crew list both offer the short form (a name and a
   kind) where the choice is being made, and the full form stays in the

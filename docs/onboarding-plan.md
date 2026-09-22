@@ -123,7 +123,7 @@ Tie each hint to its moment rather than to a position in a script:
 |---|---|
 | An agent asks its first question | the amber dot, and that the options *are* the answer — on the card or from the notification |
 | A terminal opens for the first time | the agent's own CLI in this card's worktree, and it survives the window closing |
-| A card first arrives in «Входящие» | something outside the board brought this in; it is a view, not a place |
+| A card first arrives in «Входящие» | something outside brought this in; it waits here until you move it to the board it belongs on |
 | A route first sends a card back on failure | why that arrow points backwards |
 
 Each is independent, shown once, drawn with `tutorial_tour_tip/`.

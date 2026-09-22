@@ -2,7 +2,6 @@
 /* eslint-disable new-cap */
 import {For, Show, createSignal, onSettled} from 'solid-js'
 
-import {Board} from '../../blocks/board'
 import {useIntl} from '../../intl'
 
 import Button from '../../widgets/buttons/button'
@@ -12,9 +11,9 @@ import {goApp} from '../../goBridge'
 
 import './sourcesDialog.scss'
 
-// Where the cards on this board come from besides a person typing them: a
-// phone, a script, a service. A source belongs to the board it was created on,
-// so this dialog only ever shows and creates that board's own.
+// What brings cards into the inbox besides a person typing them: a phone, a
+// script, a service. Every source writes to the one inbox board, so this dialog
+// is opened from there and shows the whole registry.
 //
 // The address a source is fed on is this page's own origin — the front door
 // serves both — so it is composed here rather than asked for. Which door you
@@ -25,19 +24,13 @@ export type SourceRule = {
     name?: string
     when: {title?: string, body?: string, labels?: string[], props?: {[key: string]: string}}
     then: string
-    column?: string
     props?: {[key: string]: string}
-    agent?: string
 }
 
 export type Source = {
     name: string
     plugin?: string
-    boardId?: string
-    global?: boolean
     enabled: boolean
-    property?: string
-    inbox?: string
     noisy?: boolean
     update?: string
     rules?: SourceRule[]
@@ -85,7 +78,6 @@ export function ingestURL(origin: string, name: string): string {
 }
 
 type Props = {
-    board: Board
     onClose: () => void
 }
 
@@ -124,7 +116,7 @@ const SourcesDialog = (props: Props) => {
             return
         }
         try {
-            setSources(JSON.parse(await bindings.ListSources(props.board.id)) || [])
+            setSources(JSON.parse(await bindings.ListSources()) || [])
             if (bindings.ListSourcePlugins) {
                 setPlugins(JSON.parse(await bindings.ListSourcePlugins()) || [])
             }
@@ -164,15 +156,14 @@ const SourcesDialog = (props: Props) => {
         try {
             const created = JSON.parse(await bindings.AddSource(JSON.stringify({
                 name: title,
-                boardId: props.board.id,
                 enabled: true,
                 noisy: noisy(),
                 plugin: plugin() || undefined,
                 config: plugin() ? config() : undefined,
 
-                // A source with no rule at all would file everything in the
-                // inbox, which is the safe half of the two defaults and the one
-                // to start from.
+                // A source with no rule at all files everything in the inbox,
+                // which is the safe half of the two defaults and the one to
+                // start from.
                 rules: [],
             })))
 
@@ -271,7 +262,7 @@ const SourcesDialog = (props: Props) => {
                 <span>
                     {intl.formatMessage({
                         id: 'Sources.subtitle',
-                        defaultMessage: 'What turns into cards on this board on its own: a notification from your phone, a script, a service. Anything that can make an HTTP request can send records in.',
+                        defaultMessage: 'What turns into cards in the inbox on its own: a notification from your phone, a script, a service. Anything that can make an HTTP request can send records in.',
                     })}
                 </span>
             }
@@ -280,7 +271,7 @@ const SourcesDialog = (props: Props) => {
             <div class='SourcesDialog__content'>
                 <Show when={sources().length === 0}>
                     <p class='SourcesDialog__hint'>
-                        {intl.formatMessage({id: 'Sources.empty', defaultMessage: 'This board has no sources yet.'})}
+                        {intl.formatMessage({id: 'Sources.empty', defaultMessage: 'There are no sources yet.'})}
                     </p>
                 </Show>
 
@@ -290,7 +281,7 @@ const SourcesDialog = (props: Props) => {
                             <div class='SourcesDialog__sourceHead'>
                                 <span class='SourcesDialog__sourceName'>{source.name}</span>
                                 <span class='SourcesDialog__sourceMode'>
-                                    {source.noisy ? intl.formatMessage({id: 'Sources.mode-noisy', defaultMessage: 'only what a rule matches'}) : intl.formatMessage({id: 'Sources.mode-quiet', defaultMessage: 'everything, unmatched to the inbox'})}
+                                    {source.noisy ? intl.formatMessage({id: 'Sources.mode-noisy', defaultMessage: 'only what a rule matches'}) : intl.formatMessage({id: 'Sources.mode-quiet', defaultMessage: 'everything'})}
                                 </span>
                                 <Button
                                     disabled={busy()}

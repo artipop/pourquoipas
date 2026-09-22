@@ -7,9 +7,9 @@ import (
 )
 
 // The board is the question the share dialog asks, so the item carries the
-// answer — every other source has its board decided for it by the registry.
+// answer — every other source writes to the inbox.
 func TestASharedLinkGoesToTheBoardItNames(t *testing.T) {
-	m, board, _ := testManager(t, ShareSource("board1"))
+	m, board, _ := testManager(t, ShareSource())
 
 	res, err := m.Deliver(context.Background(), ShareSourceName,
 		[]Item{ShareItem("board2", "Статья", "https://example.com/a", "почитать")})
@@ -21,11 +21,6 @@ func TestASharedLinkGoesToTheBoardItNames(t *testing.T) {
 	}
 	if len(board.boardIDs()) != 1 || board.boardIDs()[0] != "board2" {
 		t.Fatalf("the card went to the wrong board: %+v", board.boardIDs())
-	}
-	// A shared link is nobody's task yet: it lands in the inbox, like anything
-	// else that matched no rule.
-	if len(board.moveLines()) != 1 || board.moveLines()[0] != "card1:Статус:Входящие" {
-		t.Fatalf("moves: %+v", board.moveLines())
 	}
 	if board.cards()[0].Source != ShareSourceName {
 		t.Fatalf("a shared card is authored by the share sheet: %+v", board.cards()[0])
@@ -42,9 +37,9 @@ func TestASharedLinkGoesToTheBoardItNames(t *testing.T) {
 	}
 }
 
-// The registry deciding the board is what keeps a plugin — code somebody else
+// Every source writing to the inbox is what keeps a plugin — code somebody else
 // wrote — from writing wherever it likes, so an item that names a board it may
-// not name is refused rather than quietly written to the source's own board.
+// not name is refused rather than quietly written to the inbox.
 func TestOnlyASourceThatMayPickABoardMayNameOne(t *testing.T) {
 	m, board, _ := testManager(t, phoneSource())
 
@@ -63,11 +58,26 @@ func TestOnlyASourceThatMayPickABoardMayNameOne(t *testing.T) {
 	}
 }
 
+// Shared with no board named, a link goes to the inbox like anything else that
+// arrived: the dialog offers the inbox first, and that is the answer most of
+// the time.
+func TestALinkSharedToNoBoardGoesToTheInbox(t *testing.T) {
+	m, board, _ := testManager(t, ShareSource())
+
+	if _, err := m.Deliver(context.Background(), ShareSourceName,
+		[]Item{ShareItem("", "Статья", "https://example.com/a", "")}); err != nil {
+		t.Fatal(err)
+	}
+	if len(board.boardIDs()) != 1 || board.boardIDs()[0] != "inbox" {
+		t.Fatalf("boards: %+v", board.boardIDs())
+	}
+}
+
 // Sharing the same page to the same board again is the same thing, and the
 // card for it is already in the inbox. The delivery says so — a second card
 // saying what the first one says is what makes an inbox worth ignoring.
 func TestTheSameLinkSharedTwiceIsOneCard(t *testing.T) {
-	m, board, _ := testManager(t, ShareSource("board1"))
+	m, board, _ := testManager(t, ShareSource())
 
 	for i := 0; i < 2; i++ {
 		if _, err := m.Deliver(context.Background(), ShareSourceName,
@@ -98,23 +108,23 @@ func TestTheShareSourceIsMadeOnceAndThenLeftAlone(t *testing.T) {
 	m, _, _ := testManager(t, SourceEntry{})
 	m.cfg.Sources = nil
 
-	if _, err := m.EnsureSource(ShareSource("board1")); err != nil {
+	if _, err := m.EnsureSource(ShareSource()); err != nil {
 		t.Fatal(err)
 	}
-	mine, err := m.EnsureSource(ShareSource("board1"))
+	mine, err := m.EnsureSource(ShareSource())
 	if err != nil {
 		t.Fatal(err)
 	}
-	mine.Inbox = "Прочитать"
+	mine.Update = UpdateIgnore
 	if _, err := m.UpdateSource(mine); err != nil {
 		t.Fatal(err)
 	}
 
-	again, err := m.EnsureSource(ShareSource("board9"))
+	again, err := m.EnsureSource(ShareSource())
 	if err != nil {
 		t.Fatal(err)
 	}
-	if again.Inbox != "Прочитать" {
+	if again.Update != UpdateIgnore {
 		t.Fatalf("the person's own entry was overwritten: %+v", again)
 	}
 	if len(m.Sources()) != 1 {
@@ -125,7 +135,7 @@ func TestTheShareSourceIsMadeOnceAndThenLeftAlone(t *testing.T) {
 // A share with no link at all — a selection of text — still has to become a
 // card, and identify itself by what it says.
 func TestASharedSelectionWithNoLinkStillBecomesACard(t *testing.T) {
-	m, board, _ := testManager(t, ShareSource("board1"))
+	m, board, _ := testManager(t, ShareSource())
 
 	it := ShareItem("board1", "", "", "кусок текста")
 	if it.ExternalID == "" {

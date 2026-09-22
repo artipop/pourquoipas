@@ -298,6 +298,35 @@ func ColumnPropertyName(board *model.Board, schema model.PropSchema, views []*mo
 	return "", false
 }
 
+// IntakeColumn is where a card created from outside stands on a board that has
+// columns: the first option of the board's column property, which is the
+// column a person reads first. Not ok for a board with no columns — the inbox
+// among them — where a card stands in none.
+func IntakeColumn(board *model.Board, schema model.PropSchema, views []*model.Block) (propID, optionID string, ok bool) {
+	name, found := ColumnPropertyName(board, schema, views)
+	if !found {
+		return "", "", false
+	}
+	for id, def := range schema {
+		if def.Type != "select" || def.Name != name {
+			continue
+		}
+		prop, ok := FindCardProperty(board.CardProperties, name)
+		if !ok {
+			return "", "", false
+		}
+		options, _ := prop["options"].([]any)
+		for _, raw := range options {
+			if option, ok := raw.(map[string]any); ok {
+				if optionID, _ := option["id"].(string); optionID != "" {
+					return id, optionID, true
+				}
+			}
+		}
+	}
+	return "", "", false
+}
+
 // ColumnOptions is the board's own columns as acp.Column: the property the
 // board recorded for itself, and failing that the one a person reads as the
 // columns. Empty when the board has no such property — a board of notes need

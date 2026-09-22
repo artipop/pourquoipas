@@ -502,13 +502,10 @@ export function ListFlows(boardID: string): $CancellablePromise<string> {
 }
 
 /**
- * ListInbox returns what has arrived and nobody has looked at yet: the cards
- * standing in the inbox column of every board that has a source.
- * 
- * Which column that is comes from the registry rather than from a name, which
- * is the same answer the pipeline gives when it files a card. A board with no
- * source therefore contributes nothing — it has no inbox, because nothing
- * arrives on it.
+ * ListInbox returns what has arrived and nobody has looked at yet: the cards on
+ * the inbox board, newest first. The board is found by the mark the app gave
+ * it, never by its title. Empty, not an error, where there is no inbox yet —
+ * nothing has arrived.
  */
 export function ListInbox(): $CancellablePromise<string> {
     return $Call.ByID(1719333143);
@@ -540,11 +537,11 @@ export function ListSourcePlugins(): $CancellablePromise<string> {
 }
 
 /**
- * ListSources returns the source registry as JSON, as one board sees it: its
- * own sources and the ones marked global. An empty boardID asks for all.
+ * ListSources returns the source registry as JSON. It is one list and not a
+ * board's: every source writes to the one inbox.
  */
-export function ListSources(boardID: string): $CancellablePromise<string> {
-    return $Call.ByID(1086867365, boardID);
+export function ListSources(): $CancellablePromise<string> {
+    return $Call.ByID(1086867365);
 }
 
 /**
@@ -888,9 +885,9 @@ export function ShareAgentWorkdir(name: string): $CancellablePromise<string> {
 }
 
 /**
- * ShareItem files a shared link on the board the person picked, and reports
- * what came of it in the same shape a delivery does, so the dialog can tell
- * created from already there.
+ * ShareItem files a shared link on the board the person picked, or in the
+ * inbox when boardID is empty, and reports what came of it in the same shape a
+ * delivery does, so the dialog can tell created from already there.
  */
 export function ShareItem(boardID: string, title: string, url: string, note: string): $CancellablePromise<string> {
     return $Call.ByID(772008079, boardID, title, url, note);

@@ -148,10 +148,14 @@ in English, and translated on the way in from a catalogue of words beside them
 string the file carries, so a template is one board rather than a copy per
 language, and a string nobody has translated stays as the file wrote it.
 Switching the language in the settings reinstalls them — the boards a person
-already made are theirs and are untouched. Four names are deliberately
-left as they are, because this app finds them by name and not by id: «Входящие»,
-«Мои задачи» and the outcome field «Исход» with «прошло»/«не прошло»
-(`appGivenNames`, and «[Четыре имени](deferred.md)» in the deferred work).
+already made are theirs and are untouched. Three names are deliberately
+left as they are, because this app finds them by name and not by id: the
+outcome field «Исход» with «прошло»/«не прошло» (`appGivenNames`, and «[Три
+имени](deferred.md)» in the deferred work).
+
+No template carries an inbox: everything a source brings lands on the one
+inbox board the app makes itself (`EnsureInboxBoard`), not on a board made from
+a template.
 
 Content is also the smallest demonstration of setup following the flow: its
 routes are "Through a brief" (Brief → Draft → Proofreading, failures to

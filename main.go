@@ -191,6 +191,15 @@ func main() {
 			log.Printf("templates: %v", err)
 		}
 	}
+	// The inbox is a board this app makes and keeps, there from the first
+	// launch: it is where everything a source brings lands, and where a person
+	// writes down what they have not decided about yet — so it cannot wait for
+	// the first source. Made here, where the UI language is known, so its field
+	// names are the person's. Failing costs nothing yet: the first arrival makes
+	// it again.
+	if _, err := boardadapter.EnsureInboxBoard(srv.App(), uiLanguage()); err != nil {
+		log.Printf("inbox: %v", err)
+	}
 
 	// Which board the page is served is the attachment's answer: this
 	// process's own, or a hosted server this desktop logged in to (attach.go).
@@ -310,10 +319,6 @@ func main() {
 		// they have to be stopped before the app goes.
 		sourcePlugins *sources.Manager
 	)
-	// Whether this machine has any source at all, for the board setup wizard:
-	// its step set is closed and lives in internal/acp, which cannot import
-	// this registry, so the answer is handed over as a function below.
-	sourcesReady := func() bool { return false }
 	if dir, err := sourcesDataDir(); err != nil {
 		log.Printf("sources: disabled, no data dir: %v", err)
 	} else if cfg, err := sources.LoadConfig(filepath.Join(dir, "sources.json")); err != nil {
@@ -322,9 +327,8 @@ func main() {
 		log.Printf("sources: disabled, store error: %v", err)
 		sourceStore = nil
 	} else {
-		// A source belongs to a board (SourceEntry.BoardID) and a board belongs
-		// to this machine or to the server, so where a source writes is not a
-		// question anybody has to answer: it writes to the board it names.
+		// Every source writes to the inbox, which is this machine's board; only
+		// the share dialog may pick another, and that one may be the server's.
 		sourceWriter := newSourcesByBoard(seam.sourceWriter, nil, nil)
 		if attached != nil {
 			sourceWriter = newSourcesByBoard(seam.sourceWriter, attached.sourceWriter, onServerBoard(attached.meta))
@@ -337,7 +341,6 @@ func main() {
 		sourceMgr.SetBoardItems(sourceWriter)
 		ingest.SetManager(sourceMgr)
 		app.sources = sourceMgr
-		sourcesReady = func() bool { return len(sourceMgr.Sources()) > 0 }
 		// Manifests are a directory rather than something compiled in: a source
 		// is a plugin, and with MCP a manifest is the whole adapter, so adding a
 		// service somebody else already wrote a server for is a JSON file. A bad
@@ -390,9 +393,6 @@ func main() {
 			// Lets the UI give agents board accounts, so cards can be
 			// assigned to them in a person property.
 			mgr.SetBoardUsers(seam.users)
-			// Lets a board that asks to be asked about sources see the
-			// question as already answered when this machine has one.
-			mgr.SetRegistryProbe("sources", sourcesReady)
 			if err := mgr.Start(context.Background(), seam.events); err != nil {
 				log.Printf("acp: disabled, start error: %v", err)
 				mgr = nil

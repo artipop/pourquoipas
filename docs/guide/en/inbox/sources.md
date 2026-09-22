@@ -1,27 +1,24 @@
 # Sources
 
-Sources are set up in the menu of the [inbox](./index.md) view: ⋯ in the header
-→ **"Sources"**. There is nothing else in that menu: exporting and the board's
-settings are in the menus of the other views.
-
-If the board has no inbox yet (it was created empty), **"Sources"** stays in the
-board's own menu. The view appears with the first source, and the setting moves
-into it.
+Sources are set up in the menu of the [inbox](./index.md) board: ⋯ in the
+header → **"Sources…"**. There is nothing else in that menu, and sources are
+nowhere else: all of them put cards in the inbox.
 
 There are three ways.
 
 ## Share (macOS)
 
-Sends a link to the board from any app.
+Sends a link from any app to the inbox or to a board you pick.
 
 1. Press **Share** (in Safari or another app) and pick **XCIII**.
 2. In the **"Save to a board"** window the title is already filled in; add a
-   note if you want and pick a board.
-3. Press **"Save"** — the card goes to the chosen board's inbox.
+   note if you want. The **Входящие** board is first and already picked; if you
+   already know where the link belongs, pick another board.
+3. Press **"Save"** — the card goes to the inbox, or to the first column of the
+   board you picked.
 
 Useful to know:
 
-- the board you picked last time is offered first;
 - the same link to the same board does not create a second card; to another
   board it does;
 - if XCIII is not in the Share menu: start the app at least once and enable the

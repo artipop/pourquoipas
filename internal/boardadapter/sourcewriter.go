@@ -41,12 +41,10 @@ type CardSpec = sources.CardSpec
 // CreateCard creates a card on the board and returns its id.
 //
 // It is written with disableNotify=true like every other write here, so the
-// card arrives without waking the agent trigger. That is not a limitation to
-// work around: the trigger only fires on a *change* of the column property, so
-// a card created straight into a working column would start nothing anyway.
-// Whoever wants the automation creates the card where nothing happens and then
-// moves it with MoveCardByOptionName, which is a real move with a real previous
-// state — the same thing the flow engine does.
+// card arrives without waking the agent trigger — which only fires on a
+// *change* of the column property anyway. On a board with columns the card
+// stands in the first one (boardmodel.IntakeColumn): a card outside every column is on the
+// board and on no kanban. The inbox board has none.
 func (w *SourceWriter) CreateCard(ctx context.Context, boardID string, spec CardSpec) (string, error) {
 	board, err := w.app.GetBoard(boardID)
 	if err != nil {
@@ -75,6 +73,13 @@ func (w *SourceWriter) CreateCard(ctx context.Context, boardID string, spec Card
 	if properties == nil {
 		properties = map[string]any{}
 	}
+	if views, err := w.boardViews(boardID); err == nil {
+		if propID, optionID, ok := boardmodel.IntakeColumn(board, schema, views); ok {
+			if _, taken := properties[propID]; !taken {
+				properties[propID] = optionID
+			}
+		}
+	}
 
 	// The link is the pipeline's own doing rather than a rule's, so it is not
 	// looked up by name among the properties above: the board's url property is
@@ -96,9 +101,9 @@ func (w *SourceWriter) CreateCard(ctx context.Context, boardID string, spec Card
 		// and Block2Card refuses to read such a field back at all — so a card
 		// created this way could never be touched again. Both cases are the
 		// ordinary one for a notification, which has no body and, on a board
-		// without the link property, no property this card can hold either; and both
-		// failures land on the move into the inbox, where nothing about them
-		// explains itself.
+		// without the link property, no property this card can hold either;
+		// and the failure lands on the first later write, where nothing about
+		// it explains itself.
 		ContentOrder: []string{},
 		Properties:   properties,
 	}
