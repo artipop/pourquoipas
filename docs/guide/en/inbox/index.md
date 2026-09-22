@@ -35,6 +35,7 @@ inbox.
   with its history. Delete a card you do not need.
 - **On a phone**: `/m`, the Inbox tab. A card is moved to a board and a column
   in two taps.
+- **By an agent**: sorting can be left to an agent — [Sorting the inbox](./sorting.md).
 
 ## If nothing arrives
 

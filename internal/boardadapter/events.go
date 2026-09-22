@@ -251,6 +251,11 @@ func (b *EventsBackend) cardBody(boardID string, card *model.Block) string {
 	if a == nil {
 		return ""
 	}
+	return cardText(a, boardID, card)
+}
+
+// cardText is cardBody for whoever holds the app rather than the backend.
+func cardText(a *app.App, boardID string, card *model.Block) string {
 	blocks, err := a.GetBlocks(boardID, card.ID, string(model.TypeText))
 	if err != nil || len(blocks) == 0 {
 		return ""

@@ -1376,6 +1376,16 @@ of what was there: `insertBlock` keys its update on `id AND board_id`, so
 re-inserting a block under a new board updates nothing and says it worked.
 Properties travel by **name**, since the two boards share nothing else.
 
+The same carrying can be left to an agent (`internal/inboxsort`,
+`docs/sources.md` §29), switched on from the inbox's ⋯ menu. It decides by each
+board's title and **description** — asked with the name when a board is made —
+and by a **summary of the board's cards** that the agent writes itself and this
+machine keeps (`board_summary`), rewritten when the cards change. A card it
+files stands in the board's first column **without notifying**, unlike the
+person's move above: the sorter picked a board, not a column's automation.
+Every decision, moved or left, is a row of `inbox_sort`. Like the sources, the
+package imports neither the board nor the agents; `main.go` hands both in.
+
 ## A terminal is where the work happens, watched or not
 
 `internal/acp/terminal.go` + `terminalws.go` run the agent's **own CLI** in a pty in

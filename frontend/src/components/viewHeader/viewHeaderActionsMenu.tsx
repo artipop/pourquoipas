@@ -23,6 +23,7 @@ import AgentsDialog, {isAgentsDialogAvailable} from '../acp/agentsDialog'
 import BoardSetupWizard from '../acp/boardSetupWizard'
 import {createSetupPlan, isBoardSetupAvailable} from '../acp/boardSetup'
 import SourcesDialog, {isSourcesAvailable} from '../acp/sourcesDialog'
+import InboxSortingDialog, {isInboxSortingAvailable} from '../acp/inboxSortingDialog'
 import TemplateEditor from '../acp/templateEditor'
 import {isSaveAsTemplateAvailable, saveBoardAsTemplate} from '../acp/saveAsTemplate'
 import {isInboxBoard} from '../acp/inboxView'
@@ -36,8 +37,9 @@ import {isInboxBoard} from '../acp/inboxView'
 // below afterwards.
 //
 // The inbox board is the one board about where cards come from, so its menu
-// offers the sources dialog — and nothing else: it runs no routes, and exporting
-// it or saving it as a template is not what an inbox is for. Every other board's
+// offers the sources dialog and the sorting that carries their cards on — and
+// nothing else: it runs no routes, and exporting it or saving it as a template
+// is not what an inbox is for. Every other board's
 // menu is the board's, and sources are not in it: the inbox always exists (the
 // app makes it at launch), so there is no board that needs a second door.
 
@@ -84,6 +86,7 @@ const ViewHeaderActionsMenu = (props: Props) => {
     const intl = useIntl()
     const [showWorkflows, setShowWorkflows] = createSignal(false)
     const [showSources, setShowSources] = createSignal(false)
+    const [showSorting, setShowSorting] = createSignal(false)
     const [showWorkdirs, setShowWorkdirs] = createSignal(false)
     const [showDeploys, setShowDeploys] = createSignal(false)
     const [showAgents, setShowAgents] = createSignal(false)
@@ -113,12 +116,13 @@ const ViewHeaderActionsMenu = (props: Props) => {
 
     const onInbox = () => isInboxBoard(props.board)
     const offerSources = () => isSourcesAvailable() && onInbox()
+    const offerSorting = () => isInboxSortingAvailable() && onInbox()
 
     return (
         <ModalWrapper>
             {/* On the inbox with no sources to offer, the menu would be an empty
                 one: a button that opens nothing is worse than no button. */}
-            <Show when={!onInbox() || offerSources()}>
+            <Show when={!onInbox() || offerSources() || offerSorting()}>
                 <MenuWrapper
                     label={intl.formatMessage({id: 'ViewHeader.view-header-menu', defaultMessage: 'View header menu'})}
                     menu={
@@ -198,6 +202,16 @@ const ViewHeaderActionsMenu = (props: Props) => {
                                     id='sources'
                                     name={intl.formatMessage({id: 'ViewHeader.sources', defaultMessage: 'Sources…'})}
                                     onClick={() => setShowSources(true)}
+                                />
+                            </Show>
+
+                            {/* Where what the sources bring goes next — the
+                                other half of the inbox, so beside them. */}
+                            <Show when={offerSorting()}>
+                                <Menu.Text
+                                    id='inboxSorting'
+                                    name={intl.formatMessage({id: 'ViewHeader.inbox-sorting', defaultMessage: 'Sorting the inbox…'})}
+                                    onClick={() => setShowSorting(true)}
                                 />
                             </Show>
 
@@ -291,6 +305,11 @@ const ViewHeaderActionsMenu = (props: Props) => {
             <Show when={showSources()}>
                 <SourcesDialog
                     onClose={() => setShowSources(false)}
+                />
+            </Show>
+            <Show when={showSorting()}>
+                <InboxSortingDialog
+                    onClose={() => setShowSorting(false)}
                 />
             </Show>
             <Show when={template()}>

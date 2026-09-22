@@ -22,6 +22,11 @@ description"** (the button with an eye). A field opens under the title. While
 the description is visible the same button reads **"Hide description"**. Hiding
 does not delete the text — it stays on the board.
 
+The description is also asked when a board is made, on the **"Name"** step, in
+the **"Description"** field. The agent that sorts the inbox reads it to decide
+which cards to move to this board — see [Sorting the inbox](./inbox/sorting.md).
+The field may be left empty.
+
 ## The board menu: «⋯» in the list on the left
 
 Hover over a board in the list on the left — «⋯» appears on the right. In the

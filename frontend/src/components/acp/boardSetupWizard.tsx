@@ -145,10 +145,20 @@ const BoardSetupWizard = (props: Props) => {
     const [boards] = createLoader(() => listBoards().catch(() => []), [] as Array<{id: string, title: string}>)
     const nameTaken = () => titleTaken(boards(), boardName(), props.board.id)
 
+    // And what it is for, asked with the name: a sentence here is what the
+    // inbox sorter reads to decide which cards belong on this board
+    // (internal/inboxsort), and the moment the board is made is the one moment
+    // somebody knows the answer without having to think back.
+    const [boardDescription, setBoardDescription] = createSignal(props.board.description || '')
+
     const renameBoard = () => run(async () => {
         const wanted = boardName().trim()
         if (wanted && wanted !== props.board.title) {
             await mutator.changeBoardTitle(props.board.id, props.board.title, wanted)
+        }
+        const described = boardDescription().trim()
+        if (described !== (props.board.description || '').trim()) {
+            await mutator.changeBoardDescription(props.board.id, props.board.id, props.board.description, described)
         }
     }, STEP_NAME)
 
@@ -381,6 +391,20 @@ const BoardSetupWizard = (props: Props) => {
                             {intl.formatMessage({id: 'BoardSetup.name-taken', defaultMessage: 'Another board is already called that — boards are told apart by their names.'})}
                         </p>
                     </Show>
+                    <label class='BoardSetupWizard__field'>
+                        {intl.formatMessage({id: 'BoardSetup.description-label', defaultMessage: 'Description'})}
+                        <textarea
+                            class='BoardSetupWizard__description'
+                            rows={3}
+                            value={boardDescription()}
+                            disabled={busy()}
+                            placeholder={intl.formatMessage({id: 'BoardSetup.description-placeholder', defaultMessage: 'What cards belong on this board: topics, projects, places'})}
+                            onInput={(e) => setBoardDescription(e.currentTarget.value)}
+                        />
+                    </label>
+                    <p class='BoardSetupWizard__hint'>
+                        {intl.formatMessage({id: 'BoardSetup.description-why', defaultMessage: 'The agent that sorts the inbox reads the description to decide which cards to move to this board. You can leave it empty and add it later in the inbox sorting settings.'})}
+                    </p>
                 </div>
             )
         case STEP_WORKDIR:

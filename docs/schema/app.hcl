@@ -1659,5 +1659,81 @@ table "source_event" {
     expr = "`outcome` IN ('created', 'commented', 'inbox', 'dropped', 'failed', 'skipped')"
   }
 }
+table "board_summary" {
+  column "board_id" {
+    null = false
+    type = varchar(36)
+  }
+  column "summary" {
+    null = false
+    type = text
+  }
+  column "card_count" {
+    null = false
+    type = bigint
+  }
+  column "fingerprint" {
+    null = false
+    type = varchar(64)
+  }
+  column "updated_at" {
+    null = false
+    type = bigint
+  }
+  primary_key {
+    columns = [column.board_id]
+  }
+  foreign_key "board_summary_board" {
+    columns     = [column.board_id]
+    ref_columns = [table.board_ref.column.board_id]
+    on_delete   = CASCADE
+  }
+}
+table "inbox_sort" {
+  column "id" {
+    null = false
+    type = varchar(36)
+  }
+  column "card_id" {
+    null = true
+    type = varchar(36)
+  }
+  column "card_title" {
+    null = true
+    type = text
+  }
+  column "board_id" {
+    null = true
+    type = varchar(36)
+  }
+  column "outcome" {
+    null = false
+    type = varchar(16)
+  }
+  column "reason" {
+    null = true
+    type = text
+  }
+  column "created_at" {
+    null = false
+    type = bigint
+  }
+  primary_key {
+    columns = [column.id]
+  }
+  foreign_key "inbox_sort_card" {
+    columns     = [column.card_id]
+    ref_columns = [table.card_ref.column.card_id]
+    on_delete   = SET_NULL
+  }
+  foreign_key "inbox_sort_board" {
+    columns     = [column.board_id]
+    ref_columns = [table.board_ref.column.board_id]
+    on_delete   = SET_NULL
+  }
+  check "inbox_sort_outcome" {
+    expr = "`outcome` IN ('moved', 'kept', 'failed')"
+  }
+}
 schema {
 }

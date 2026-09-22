@@ -77,6 +77,13 @@
             font-family: var(--font-mono);
             font-size: 12px;
         }
+
+        // The description is a person's sentence, not a JSON block.
+        textarea.BoardSetupWizard__description {
+            font-family: inherit;
+            font-size: 14px;
+            resize: vertical;
+        }
     }
 
     .BoardSetupWizard__path {

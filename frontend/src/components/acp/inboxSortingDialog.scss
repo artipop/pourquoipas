@@ -1,0 +1,136 @@
+@import '../../styles/typography';
+@import '../../styles/field';
+
+.InboxSortingDialog {
+    .InboxSortingDialog__content {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        padding: 0 24px 24px;
+        min-width: 560px;
+        max-width: 720px;
+    }
+
+    .InboxSortingDialog__section {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+
+        h3 {
+            @include label;
+
+            margin: 0;
+            font-weight: 600;
+        }
+    }
+
+    .InboxSortingDialog__field {
+        @include label;
+
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+
+        select,
+        textarea {
+            @include field;
+
+            resize: vertical;
+        }
+    }
+
+    .InboxSortingDialog__check {
+        @include prose;
+
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .InboxSortingDialog__actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .InboxSortingDialog__hint {
+        @include prose;
+
+        margin: 0;
+        font-size: var(--text-small);
+        opacity: 0.7;
+    }
+
+    .InboxSortingDialog__notice {
+        @include prose;
+
+        margin: 0;
+    }
+
+    .InboxSortingDialog__error {
+        @include prose;
+
+        margin: 0;
+        color: rgb(var(--error-text-rgb));
+    }
+
+    .InboxSortingDialog__board {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding: 10px 12px;
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-sm);
+        background: rgb(var(--surface-rgb));
+    }
+
+    .InboxSortingDialog__boardTitle {
+        @include prose;
+
+        font-weight: 600;
+    }
+
+    .InboxSortingDialog__summary {
+        @include prose;
+
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        font-size: var(--text-small);
+    }
+
+    .InboxSortingDialog__label {
+        @include label;
+
+        opacity: 0.7;
+    }
+
+    .InboxSortingDialog__log {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .InboxSortingDialog__decision {
+        @include prose;
+
+        font-size: var(--text-small);
+    }
+
+    .InboxSortingDialog__decisionCard {
+        font-weight: 600;
+    }
+
+    .InboxSortingDialog__decision--failed {
+        opacity: 0.8;
+    }
+
+    .InboxSortingDialog__reason {
+        display: block;
+        opacity: 0.7;
+    }
+}

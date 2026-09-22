@@ -526,6 +526,37 @@ erDiagram
     }
 ```
 
+## Разбор входящих
+
+Что агент прочёл о досках и куда он разнёс карточки. `board_summary`
+переписывается, когда меняются карточки доски; `inbox_sort` — журнал
+решений, и оба его ключа `SET NULL`: решение переживает и карточку,
+и доску.
+
+```mermaid
+erDiagram
+    board_ref ||--o{ board_summary : "board_id CASCADE"
+    board_ref ||--o{ inbox_sort : "board_id SET NULL"
+    card_ref ||--o{ inbox_sort : "card_id SET NULL"
+
+    board_summary {
+        id board_id PK, FK
+        text summary
+        int card_count
+        name_64 fingerprint "A hash of the cards the summary was written from. A different one means the summary is about cards the board…"
+        millis updated_at
+    }
+    inbox_sort {
+        id id PK
+        id card_id FK "nullable"
+        text card_title "What the card was called, so the log still reads once it is gone."
+        id board_id FK "Where it went. NULL for a card left in the inbox."
+        name_16 outcome "moved | kept | failed"
+        text reason "nullable"
+        millis created_at
+    }
+```
+
 ## Защёлки
 
 Не сущности, а ответы «это уже сделано»: событие обработано, шаг

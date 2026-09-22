@@ -50,6 +50,10 @@ type Manager struct {
 	// where an inbound ingest token lives: that one is only ever checked, so it
 	// is a hash on the entry itself.
 	secrets secrets.Store
+	// arrived is told about every card this pipeline puts in the inbox — the
+	// inbox sorter's queue (internal/inboxsort), handed over by the app so this
+	// package names nothing of it. Nil is nobody listening.
+	arrived func(cardID string)
 }
 
 // NewManager builds a manager over a loaded registry. writer may be nil, which
@@ -68,6 +72,15 @@ func (m *Manager) SetBoardItems(b BoardItems) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.items = b
+}
+
+// SetArrivals names who is told when a card lands in the inbox. Not a card the
+// share dialog put on a board somebody picked: that one has arrived where it
+// belongs.
+func (m *Manager) SetArrivals(f func(cardID string)) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.arrived = f
 }
 
 // boardWriteTimeout bounds one card write, so a stuck board cannot hold an
@@ -428,6 +441,14 @@ func (m *Manager) createCard(ctx context.Context, d *delivery, entry SourceEntry
 	res.Created++
 	m.record(EventRecord{Source: entry.Name, ExternalID: it.ExternalID,
 		Rule: rule.Name, Outcome: outcome, CardID: cardID})
+	if strings.TrimSpace(it.BoardID) == "" {
+		m.mu.RLock()
+		arrived := m.arrived
+		m.mu.RUnlock()
+		if arrived != nil {
+			arrived(cardID)
+		}
+	}
 	return nil
 }
 
