@@ -35,7 +35,6 @@ func TestFrontDoorSendsWailsToWailsAndTheRestToTheBoard(t *testing.T) {
 	for path, want := range map[string]string{
 		"/wails/runtime.js":     "wails",
 		"/wails/runtime":        "wails",
-		"/acp/terminal/abc/ws":  "acp",
 		"/acp/events/ws":        "acp",
 		"/sources/ingest/phone": "ingest",
 		"/":                     "board",
@@ -75,8 +74,8 @@ func TestFrontDoorRefusesCrossOriginRuntimeCalls(t *testing.T) {
 
 // The door listens on the whole loopback, so the page can be opened as
 // 127.0.0.1 while published as localhost; the host guard lets that in, and a
-// runtime that then refused every binding call left the page with no terminal,
-// no settings and no word of why. But a door published on every interface
+// runtime that then refused every binding call left the page with no settings
+// and no word of why. But a door published on every interface
 // accepts any Host, and taking any Origin with it would hand the bindings to
 // every site — the loopback allowance is for a loopback door only.
 func TestFrontDoorTakesTheOtherLoopbackNameButNoOtherSite(t *testing.T) {
@@ -112,7 +111,7 @@ func TestFrontDoorTakesTheOtherLoopbackNameButNoOtherSite(t *testing.T) {
 func TestFrontDoorAcceptsItsOwnOriginOverTLS(t *testing.T) {
 	door := newFrontDoor(named("wails"), named("acp"), named("ingest"), named("board"), "board.tail1234.ts.net", nil)
 
-	for _, path := range []string{"/wails/runtime", "/acp/events/ws", "/acp/terminal/abc/ws"} {
+	for _, path := range []string{"/wails/runtime", "/acp/events/ws"} {
 		req := httptest.NewRequest(http.MethodGet, path, nil)
 		req.Host = "board.tail1234.ts.net"
 		req.Header.Set("Origin", "https://board.tail1234.ts.net")

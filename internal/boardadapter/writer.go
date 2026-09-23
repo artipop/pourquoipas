@@ -254,6 +254,45 @@ func (w *Writer) SetCardFields(ctx context.Context, cardID string, fields map[st
 	return w.patchCard(cardID, &model.CardPatch{UpdatedProperties: properties}, true)
 }
 
+// AddCardProperty adds a text property to the card's board, unless one of that
+// name is already there.
+func (w *Writer) AddCardProperty(ctx context.Context, cardID, name string) error {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return fmt.Errorf("у поля должно быть название")
+	}
+	card, err := w.cardBlock(cardID)
+	if err != nil {
+		return err
+	}
+	board, err := w.app.GetBoard(card.BoardID)
+	if err != nil {
+		return fmt.Errorf("get board %s: %w", card.BoardID, err)
+	}
+	schema, err := model.ParsePropertySchema(board)
+	if err != nil {
+		return err
+	}
+	if _, _, ok := boardmodel.FindPropertyByName(schema, name); ok {
+		return nil
+	}
+	patch := &model.BoardPatch{UpdatedCardProperties: []map[string]any{textProperty(name)}}
+	if _, err := w.app.PatchBoard(patch, card.BoardID, model.SingleUser); err != nil {
+		return fmt.Errorf("add the property %q to board %s: %w", name, card.BoardID, err)
+	}
+	return nil
+}
+
+// textProperty is a new text property of the board's cards.
+func textProperty(name string) map[string]any {
+	return map[string]any{
+		"id":      utils.NewID(utils.IDTypeBlock),
+		"name":    name,
+		"type":    "text",
+		"options": []any{},
+	}
+}
+
 // patchCard applies a card patch as a block patch. app.PatchCard would do the
 // same and then convert the result back into a Card, which fails for a card
 // whose contentOrder is not a list — and a write that landed must not be
@@ -485,4 +524,15 @@ func appendContentOrder(fields map[string]any, blockID string) []any {
 		order = append(order, existing...)
 	}
 	return append(order, blockID)
+}
+
+// patchCardFields writes our own keys on a card, silently.
+func (w *Writer) patchCardFields(cardID string, patch *model.BlockPatch) error {
+	if _, err := w.cardBlock(cardID); err != nil {
+		return err
+	}
+	return boardmodel.RetryOnceInTheSameMillisecond(func() error {
+		_, err := w.app.PatchBlockAndNotify(cardID, patch, model.SingleUser, true)
+		return err
+	})
 }

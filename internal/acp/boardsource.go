@@ -3,7 +3,6 @@ package acp
 import (
 	"context"
 	"sync"
-	"time"
 )
 
 // Where a board lives. The six fields the manager used to hold became the first
@@ -17,27 +16,12 @@ import (
 type BoardSource struct {
 	// ID names the source: empty is the board this process serves, and a
 	// server's origin is its own name.
-	ID        string
-	Writer    BoardWriter
-	Reader    BoardReader
-	Users     BoardUsers
-	Meta      BoardMeta
-	CardState BoardCardState
-	Events    BoardEvents
-	// Lease is where a claim on a route event is made. Nil for the board this
-	// process serves, where the claim is this machine's own store: there is one
-	// candidate, and it is this process.
-	Lease BoardLease
-}
-
-// BoardLease is the one question that cannot be answered locally once a board is
-// shared: may this install take this route event. Every attached desktop hears
-// the same card move and each has its own database, so the claim is made on the
-// board's own side. The window is what it always was — a claim old enough to be
-// swept stops standing, so a machine that dies costs that stage and not the
-// card.
-type BoardLease interface {
-	ClaimStage(ctx context.Context, token string, window time.Duration) (bool, error)
+	ID     string
+	Writer BoardWriter
+	Reader BoardReader
+	Users  BoardUsers
+	Meta   BoardMeta
+	Events BoardEvents
 }
 
 // boardRouting is what a manager remembers so it does not ask twice.
@@ -74,11 +58,10 @@ func (m *Manager) AddBoardSource(src BoardSource) {
 // primary is the source the setters configured.
 func (m *Manager) primary() BoardSource {
 	return BoardSource{
-		Writer:    m.writer,
-		Reader:    m.reader,
-		Users:     m.users,
-		Meta:      m.meta,
-		CardState: m.cards,
+		Writer: m.writer,
+		Reader: m.reader,
+		Users:  m.users,
+		Meta:   m.meta,
 	}
 }
 
@@ -201,22 +184,10 @@ func (m *Manager) forgetCardRoute(cardID string) {
 	delete(m.routing.ofCard, cardID)
 }
 
-// claimStage takes a route event for this install. The claim is made wherever
-// the card's board keeps its own, so that of several desktops hearing one move
-// exactly one acts.
+// claimStage takes a card move for this install, so the burst of patches one
+// drag produces starts one session and not four.
 func (m *Manager) claimStage(cardID, token string) bool {
 	window := m.cfg.IdempotencyWindow()
-	if lease := m.forCard(cardID).Lease; lease != nil {
-		fresh, err := lease.ClaimStage(context.Background(), token, window)
-		if err != nil {
-			// A claim that could not be made is not a claim: acting anyway is
-			// how two machines run one stage, which is the thing this exists to
-			// prevent.
-			m.log.Error("acp: cannot claim a stage on the board", "card", cardID, "err", err)
-			return false
-		}
-		return fresh
-	}
 	fresh, err := m.store.ClaimIdempotency(token, "", window)
 	if err != nil {
 		m.log.Error("acp: idempotency check failed", "err", err)

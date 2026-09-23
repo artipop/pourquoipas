@@ -11,17 +11,11 @@ import (
 // for the phone at once — the page that drew the notification is not the only
 // one that drew it — and survives a reload.
 //
-// It is dropped by the CLI drawing something that is *not* the redraw our own
-// looking provoked (workedAt): going to look at an agent resizes its terminal,
-// a TUI repaints when resized, and counting that as work made every wait come
-// back a minute after somebody checked it. An agent that revives, does a turn
-// and stops again is asking something new, which is worth saying.
-//
 // A wait that ends takes its ack with it (emitAttentionRecord clears on Awaiting
 // false), so nothing is left behind to suppress the next one.
 
 // ackedWaits is the acknowledgements, keyed by Attention.Key and holding when
-// the person made them — the time is what workedAt is compared against.
+// the person made them.
 type ackedWaits struct {
 	mu sync.Mutex
 	at map[string]time.Time
@@ -35,17 +29,6 @@ func (m *Manager) AckAttention(key string) {
 	if m == nil || key == "" {
 		return
 	}
-	// A card the route handed to a person is the one wait that *ends* on being
-	// seen: nothing is running, so there is nothing to go on waiting for. An
-	// agent's wait is the opposite and keeps standing (cardwait.go).
-	if cardID := m.cardWaitKey(key); cardID != "" {
-		if a, ok := m.forgetCardWait(cardID); ok {
-			a.Awaiting = false
-			m.emitAttentionRecord(a)
-		}
-		return
-	}
-
 	m.acked.mu.Lock()
 	if m.acked.at == nil {
 		m.acked.at = map[string]time.Time{}
@@ -76,29 +59,8 @@ func (m *Manager) clearAck(key string) {
 	m.acked.mu.Unlock()
 }
 
-// clearAckIfWorked drops the acknowledgement when the CLI has drawn something
-// since it. That is the whole of "the terminal came back to life": a redraw we
-// provoked by opening the window does not count, which is what workedAt is for.
-func (m *Manager) clearAckIfWorked(key string, worked time.Time) {
-	m.acked.mu.Lock()
-	defer m.acked.mu.Unlock()
-	if at, ok := m.acked.at[key]; ok && worked.After(at) {
-		delete(m.acked.at, key)
-	}
-}
-
-// waitByKey finds the live wait a key names, in either of the two places one
-// can be: a stage that has gone quiet, or a question an agent is holding a turn
-// open on.
+// waitByKey finds the live question a key names.
 func (m *Manager) waitByKey(key string) (Attention, bool) {
-	m.stageMu.Lock()
-	for _, a := range m.stageWaiting {
-		if a.withKey().Key == key {
-			m.stageMu.Unlock()
-			return a, true
-		}
-	}
-	m.stageMu.Unlock()
 	for _, q := range m.Questions() {
 		if a := q.attention(); a.withKey().Key == key {
 			return a, true

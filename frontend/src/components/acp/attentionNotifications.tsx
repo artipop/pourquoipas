@@ -1,4 +1,4 @@
-import {For, Show, createMemo, createSignal} from 'solid-js'
+import {For, Show, createMemo} from 'solid-js'
 
 import {useIntl} from '../../intl'
 
@@ -19,7 +19,6 @@ import {
     agentNotificationsOn,
     attentionHeading,
     keyOf,
-    openWait,
     useAttention,
 } from './attention'
 import AttentionAnswers from './attentionAnswers'
@@ -37,11 +36,9 @@ import './attentionNotifications.scss'
 // button for that, but a button is only seen by somebody already looking at the
 // board — so the wait says itself, here.
 //
-// It says it and does not answer it. The agent is asking inside its own CLI, in
-// the card's terminal, and that is where the answer belongs — a copy of the
-// question with our own buttons under it is a second interface for one
-// exchange, and the one that cannot show what the agent has already drawn. So
-// this carries what is being asked and one way to act on it: open the terminal.
+// It carries the question and its answers: the agent's turn is open until
+// somebody answers, and the person being interrupted is the person who can
+// (attentionAnswers.tsx).
 //
 // It is a setting because it interrupts: a person who would rather find out by
 // looking turns it off, and the card keeps its button.
@@ -53,34 +50,19 @@ const stackLimit = 3
 // Being told is a thing that happens once, and what remembers that is the Go
 // side (attention.ts, internal/acp/attentionack.go) — not a list kept here.
 //
-// It was kept here, keyed by the wait and when it was raised, and that was the
-// spam: a stage's wait is the CLI drawing nothing, opening the terminal to look
-// at it makes the CLI redraw, so the wait ended and was raised again forty-five
-// seconds later under a timestamp this page had never dismissed. Going to look
-// at an agent guaranteed a fresh notification about it a minute afterwards, for
-// as long as the agent stood there. A list in one page was wrong twice over
-// besides: the board's window, a second window and the phone each drew their own
-// copy, and a reload brought back everything a person had already dealt with.
+// A list kept in one page was wrong twice over: the board's window, a second
+// window and the phone each drew their own copy, and a reload brought back
+// everything a person had already dealt with.
 
-// terminalScreen is a window that draws one terminal and nothing else — the
-// desktop app's own, and the terminals screen on a phone.
+// phoneWaits is the phone's own waiting screen, which lists the same waits with
+// the same answers: the stack over it would say everything twice.
 //
-// The stack is outside the router, so it follows a person wherever they are in
-// the app — and a terminal window is the app too. It belongs to the window with
-// the board in it: drawn in a terminal window it announces the same wait twice,
-// and the copy drawn over the terminal it is *about* covers the question with a
-// box saying there is one (the reason nothing of ours is drawn on that screen —
-// terminalPage.tsx).
-//
-// Read once rather than watched: a window opened on a terminal stays on it, and
-// the board's window never navigates there — the button opens a window of its
-// own.
-const terminalScreen = (): boolean => (/^\/(acp|m)\/terminal\//).test(window.location.pathname)
+// Read once rather than watched: a window opened there stays there.
+const phoneWaits = (): boolean => (/^\/m\/waiting/).test(window.location.pathname)
 
 const AttentionNotifications = () => {
     const intl = useIntl()
     const waiting = useAttention()
-    const [busy, setBusy] = createSignal('')
 
     // Whose wait this is. On an install of one person the question does not
     // arise; in a team a box saying "an agent is waiting" about somebody else's
@@ -104,7 +86,7 @@ const AttentionNotifications = () => {
     // wait drawn twice is the notification a person cannot tell from a second
     // agent asking the same thing.
     const pending = createMemo(() => {
-        if (!agentNotificationsOn() || terminalScreen()) {
+        if (!agentNotificationsOn() || phoneWaits()) {
             return []
         }
         const byKey = new Map<string, Attention>()
@@ -121,19 +103,6 @@ const AttentionNotifications = () => {
     })
     const shown = createMemo(() => pending().slice(0, stackLimit))
     const hidden = createMemo(() => Math.max(0, pending().length - stackLimit))
-
-    // Going to the terminal is the whole of what this offers, and it counts as
-    // having been told: somebody now looking at the agent does not need a box
-    // saying it is there.
-    const open = async (target: Attention) => {
-        setBusy(keyOf(target))
-        try {
-            await openWait(target)
-            await ackWait(target)
-        } finally {
-            setBusy('')
-        }
-    }
 
     return (
         <Show when={shown().length > 0}>
@@ -170,28 +139,13 @@ const AttentionNotifications = () => {
                                         <span class='AttentionNotifications__question'>{target.text}</span>
                                     </Show>
 
-                                    {/* A question the agent's CLI asked through its
-                                        permission hook can be answered here — the
-                                        CLI's own box is on its screen at the same
-                                        time, so this is a second place to answer
-                                        rather than the only one (attentionAnswers). */}
+                                    {/* The answer belongs where the question is
+                                        read: the agent is holding its turn open
+                                        on it (attentionAnswers.tsx). A card the
+                                        route handed to a person carries no
+                                        answers — its ✕ is the whole of it
+                                        (internal/acp/cardwait.go). */}
                                     <AttentionAnswers target={target}/>
-
-                                    {/* A card the route handed to a person has
-                                        nothing to open: nothing is running on
-                                        it, and the card is on the board where
-                                        this is being read. Its ✕ is the whole
-                                        of the answer (internal/acp/cardwait.go). */}
-                                    <Show when={target.reason !== 'card'}>
-                                        <button
-                                            type='button'
-                                            class='AttentionNotifications__action'
-                                            disabled={busy() === keyOf(target)}
-                                            onClick={() => open(target)}
-                                        >
-                                            {intl.formatMessage({id: 'Attention.open', defaultMessage: 'Open the terminal'})}
-                                        </button>
-                                    </Show>
                                 </div>
                                 <button
                                     type='button'

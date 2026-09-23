@@ -184,7 +184,7 @@ func TestTestSessionTakesTheBrowserFromTheColumn(t *testing.T) {
 	m.cfg.Workdirs = []WorkdirEntry{{Name: "webapp", Path: project, BoardID: "board1"}}
 	ev := CardMoved{CardID: "cardQA", BoardID: "board1", Title: "Проверить",
 		Props: map[string]string{"branch": "feat/x"}, OptionNames: []string{"webapp"}}
-	column := ColumnSpec{Property: "Статус", Column: "QA", Action: FlowActionTest,
+	column := ColumnSpec{Property: "Статус", Column: "QA", Action: ColumnActionTest,
 		MCPServers: MCPServerSet{"playwright": {Command: "npx"}}}
 
 	s, err := m.startSession(ev, startOptions{test: true, column: column})
@@ -209,14 +209,14 @@ func TestTestColumnRouting(t *testing.T) {
 	m := agentManager(t, "")
 	m.cfg.Columns = []ColumnSpec{
 		{BoardID: "board1", PropertyID: "p", OptionID: "opt-test",
-			Property: m.cfg.TriggerProperty, Column: TemplateTestColumn, Action: FlowActionTest},
+			Property: m.cfg.TriggerProperty, Column: TemplateTestColumn, Action: ColumnActionTest},
 	}
 
 	col := func(optionID string) Column {
 		return Column{PropertyID: "p", PropertyName: m.cfg.TriggerProperty, OptionID: optionID, Name: TemplateTestColumn}
 	}
 	spec, ok := m.columnFor("board1", col("opt-test"))
-	if !ok || spec.Action != FlowActionTest {
+	if !ok || spec.Action != ColumnActionTest {
 		t.Fatalf("the test column was not matched by its option: %+v, %v", spec, ok)
 	}
 	// Another option is another column, whatever it happens to be called.
@@ -226,7 +226,7 @@ func TestTestColumnRouting(t *testing.T) {
 
 	// An empty name is not a column: it must not match every unnamed one.
 	m.cfg.Columns = []ColumnSpec{
-		{Property: m.cfg.TriggerProperty, Column: "", Action: FlowActionTest},
+		{Property: m.cfg.TriggerProperty, Column: "", Action: ColumnActionTest},
 	}
 	if _, ok := m.columnFor("board1", Column{PropertyName: m.cfg.TriggerProperty}); ok {
 		t.Fatal("an empty column name must not become a trigger")

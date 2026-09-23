@@ -6,12 +6,10 @@ import (
 	"errors"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 
 	"github.com/artipop/xciii/internal/acp"
-	"github.com/artipop/xciii/internal/boardadapter"
 	"github.com/artipop/xciii/internal/inboxsort"
 	"github.com/artipop/xciii/internal/sources"
 )
@@ -507,134 +505,6 @@ func (a *App) RemoveDeployTarget(name string) error {
 	return a.mgr.RemoveDeploy(name)
 }
 
-// ListFlows returns the routes a board may use as JSON — its own, plus any tied
-// to no board in particular — each a graph of nodes (a column) and edges (an
-// event and where it leads).
-//
-// It reads the board first (SeedBoard), because the registry is filled lazily —
-// by a card being moved, by an edit, by the automation editor opening — and the
-// question this answers is asked by a screen that is opened before any of that
-// happens. A board carrying three routes of its own answered "none" until
-// somebody touched it, and the route picker above the kanban then drew nothing
-// on exactly the boards it is for. Idempotent and once per board per run.
-func (a *App) ListFlows(boardID string) (string, error) {
-	if a.mgr == nil {
-		return "[]", nil
-	}
-	a.mgr.SeedBoard(boardID)
-	out, err := json.Marshal(a.mgr.BoardFlows(boardID))
-	if err != nil {
-		return "", err
-	}
-	return string(out), nil
-}
-
-// BoardSetupPlan returns what this board needs answered before its automation
-// can run: which steps, in which order, which of them may be skipped and which
-// are already answered by this machine. It is one answer to one question — the
-// wizard walks it and the board menu reads it to know which registries are
-// worth opening at all.
-func (a *App) BoardSetupPlan(boardID string) (string, error) {
-	if a.mgr == nil {
-		return "", errACPDisabled
-	}
-	out, err := json.Marshal(a.mgr.SetupPlanFor(boardID))
-	if err != nil {
-		return "", err
-	}
-	return string(out), nil
-}
-
-// MarkBoardSetupOffered remembers that the setup wizard has opened itself for
-// this board. It is stored beside the rest of the board's setup rather than in
-// the page: the desktop app serves itself on a fresh port every launch, so the
-// page's own storage is a fresh one too.
-func (a *App) MarkBoardSetupOffered(boardID string) error {
-	if a.mgr == nil {
-		return errACPDisabled
-	}
-	return a.mgr.MarkSetupOffered(boardID)
-}
-
-// CheckBoardSetupAnswer says whether an answer fits the step it answers on this
-// board — a folder under git for a board that publishes a branch or waits for
-// one, and any requirement a step grows later. Called before the answer is
-// filed, so the question can refuse it where it was asked.
-func (a *App) CheckBoardSetupAnswer(boardID, step, value string) error {
-	if a.mgr == nil {
-		return errACPDisabled
-	}
-	return a.mgr.CheckSetupAnswer(boardID, step, value)
-}
-
-// SetBoardTestAgent answers the wizard's QA step: which agent tests this board,
-// and what it drives a browser with — a JSON-encoded mcpServers block, the same
-// one the agents dialog takes. The agent is also written into the board's test
-// column as its crew, so the column runs the agent the browser was given to.
-func (a *App) SetBoardTestAgent(boardID, agentName, serversJSON string) error {
-	if a.mgr == nil {
-		return errACPDisabled
-	}
-	var servers acp.MCPServerSet
-	if strings.TrimSpace(serversJSON) != "" {
-		if err := json.Unmarshal([]byte(serversJSON), &servers); err != nil {
-			return err
-		}
-	}
-	return a.mgr.SetTestAgent(boardID, agentName, servers)
-}
-
-// SetBoardWorkAgent answers the wizard's agent step: the agents chosen become
-// the crew of this board's agent columns, which is the only place that choice
-// can be recorded — the registry is the machine's and says nothing about who
-// works which board. An empty list takes the crew off again.
-func (a *App) SetBoardWorkAgent(boardID, namesJSON string) error {
-	if a.mgr == nil {
-		return errACPDisabled
-	}
-	var names []string
-	if strings.TrimSpace(namesJSON) != "" {
-		if err := json.Unmarshal([]byte(namesJSON), &names); err != nil {
-			return err
-		}
-	}
-	return a.mgr.SetWorkAgents(boardID, names)
-}
-
-// BoardAgentUsers says which of this machine's agents this board names, and
-// which agents there are at all — as board usernames, because that is what a
-// person property holds. The page needs both to narrow the assignee list: an
-// agent the board does not name is dropped, and anybody who is not an agent is
-// left alone. A board that names nobody narrows nothing, or a board nobody has
-// crewed would have no agent to assign at all.
-func (a *App) BoardAgentUsers(boardID string) (string, error) {
-	answer := struct {
-		Board []string `json:"board"`
-		All   []string `json:"all"`
-	}{Board: []string{}, All: []string{}}
-	if a.mgr == nil {
-		out, err := json.Marshal(answer)
-		return string(out), err
-	}
-	for _, name := range a.mgr.BoardAgentNames(boardID) {
-		answer.Board = append(answer.Board, acp.AgentUsername(name))
-	}
-	for _, user := range a.mgr.AgentUsers() {
-		answer.All = append(answer.All, user.Username)
-	}
-	out, err := json.Marshal(answer)
-	return string(out), err
-}
-
-// RecordBoardSetupStep remembers what was done with a step — skipping above
-// all, which is the one answer no registry can be read for.
-func (a *App) RecordBoardSetupStep(boardID, step, status string) error {
-	if a.mgr == nil {
-		return errACPDisabled
-	}
-	return a.mgr.RecordSetupStep(boardID, step, status)
-}
-
 // ListSetupSteps returns the closed set of setup steps this build can carry
 // out, so a board can only ask for one that exists.
 func (a *App) ListSetupSteps() (string, error) {
@@ -645,96 +515,10 @@ func (a *App) ListSetupSteps() (string, error) {
 	return string(out), nil
 }
 
-// ListFlowTriggers returns the closed set of edge triggers the engine
-// implements, so the editor can only offer transitions that actually work.
-func (a *App) ListFlowTriggers() (string, error) {
-	out, err := json.Marshal(acp.FlowTriggers)
-	if err != nil {
-		return "", err
-	}
-	return string(out), nil
-}
-
-// ListFlowTemplates returns the routes a fresh install is seeded with, rebuilt
-// from the current column names. An install whose registry predates them (or
-// whose routes were deleted) can add the ones it is missing from the editor
-// instead of retyping a graph.
-func (a *App) ListFlowTemplates() (string, error) {
-	if a.mgr == nil {
-		return "[]", nil
-	}
-	// In the language the templates were installed in: these routes stand on
-	// that board's columns, and a route naming "In progress" on a Russian
-	// board is a route with nowhere to run.
-	flows := a.mgr.FlowTemplates()
-	word := boardadapter.TemplateWords(uiLanguage())
-	for i := range flows {
-		flows[i].Name = word(flows[i].Name)
-		flows[i].Property = word(flows[i].Property)
-		for j := range flows[i].Nodes {
-			flows[i].Nodes[j].Column = word(flows[i].Nodes[j].Column)
-		}
-		for j := range flows[i].Edges {
-			if cond := flows[i].Edges[j].If; cond != nil {
-				cond.Property = word(cond.Property)
-				cond.Value = word(cond.Value)
-			}
-		}
-	}
-	out, err := json.Marshal(flows)
-	if err != nil {
-		return "", err
-	}
-	return string(out), nil
-}
-
-// AddFlow registers a route from a JSON-encoded FlowEntry and returns it.
-func (a *App) AddFlow(entryJSON string) (string, error) {
-	if a.mgr == nil {
-		return "", errACPDisabled
-	}
-	var entry acp.FlowEntry
-	if err := json.Unmarshal([]byte(entryJSON), &entry); err != nil {
-		return "", err
-	}
-	saved, err := a.mgr.AddFlow(entry)
-	if err != nil {
-		return "", err
-	}
-	out, _ := json.Marshal(saved)
-	return string(out), nil
-}
-
-// UpdateFlow replaces an existing route (matched by name) and returns it.
-func (a *App) UpdateFlow(entryJSON string) (string, error) {
-	if a.mgr == nil {
-		return "", errACPDisabled
-	}
-	var entry acp.FlowEntry
-	if err := json.Unmarshal([]byte(entryJSON), &entry); err != nil {
-		return "", err
-	}
-	saved, err := a.mgr.UpdateFlow(entry)
-	if err != nil {
-		return "", err
-	}
-	out, _ := json.Marshal(saved)
-	return string(out), nil
-}
-
-// RemoveFlow deletes a board's route by id. Cards standing on it simply stop
-// moving by themselves.
-func (a *App) RemoveFlow(boardID, flowID string) error {
-	if a.mgr == nil {
-		return errACPDisabled
-	}
-	return a.mgr.RemoveFlow(boardID, flowID)
-}
-
-// ExportBoardAutomation returns what a board runs — its columns and its routes
-// — in the shape a template carries them in its own properties. It is how a
-// board somebody has built by hand becomes a template: the registry is Go's, so
-// only this side can read it out.
+// ExportBoardAutomation returns what a board runs — its columns — in the shape
+// a template carries them in its own properties. It is how a board somebody has
+// built by hand becomes a template: the registry is Go's, so only this side can
+// read it out.
 func (a *App) ExportBoardAutomation(boardID string) (string, error) {
 	if a.mgr == nil {
 		return "", errACPDisabled
@@ -785,66 +569,8 @@ func (a *App) RemoveBoardColumn(boardID, optionID, column string) error {
 	return a.mgr.RemoveColumn(boardID, optionID, column)
 }
 
-// GetCardFlow describes where a card stands on its route: the stages, the one
-// it is on, what that stage waits for. Returns "null" for a card with no route.
-func (a *App) GetCardFlow(cardID string) (string, error) {
-	if a.mgr == nil {
-		return "null", nil
-	}
-	flow, err := a.mgr.CardFlowFor(cardID)
-	if err != nil {
-		return "", err
-	}
-	out, err := json.Marshal(flow)
-	if err != nil {
-		return "", err
-	}
-	return string(out), nil
-}
-
-// ListCardFlows is which route each card of a board is on, in one call: a view
-// filtered by route asks it of every card it draws.
-func (a *App) ListCardFlows(boardID string) (string, error) {
-	if a.mgr == nil {
-		return "{}", nil
-	}
-	// The board is read first for the reason ListFlows reads it: which route a
-	// card is on is answered against the registry, and the registry is filled
-	// lazily.
-	a.mgr.SeedBoard(boardID)
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	out, err := json.Marshal(a.mgr.CardFlowsForBoard(ctx, boardID))
-	if err != nil {
-		return "", err
-	}
-	return string(out), nil
-}
-
-// MarkCardOutcome is the card's own «прошло»/«не прошло» — the two buttons on a
-// stage where nobody works and nothing runs, and the way a review says no.
-func (a *App) MarkCardOutcome(cardID, value string) error {
-	if a.mgr == nil {
-		return nil
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	return a.mgr.MarkCardOutcome(ctx, cardID, value)
-}
-
-// AnswerCardAsk is a person answering the question a transition is holding the
-// card at. The last answer lets the card across.
-func (a *App) AnswerCardAsk(cardID, questionID, value string) error {
-	if a.mgr == nil {
-		return errACPDisabled
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	return a.mgr.AnswerCardAsk(ctx, cardID, questionID, value)
-}
-
-// SeedBoardAutomation takes the columns and routes a board carries of its own
-// into the registry now, rather than waiting for the first card to be moved.
+// SeedBoardAutomation takes the columns a board carries of its own into the
+// registry now, rather than waiting for the first card to be moved.
 // The setup wizard calls it, so what the board can do is visible as soon as it
 // is configured. Idempotent: anything already registered is left alone.
 func (a *App) SeedBoardAutomation(boardID string) error {
@@ -853,23 +579,6 @@ func (a *App) SeedBoardAutomation(boardID string) error {
 	}
 	a.mgr.SeedBoard(boardID)
 	return nil
-}
-
-// GetBoardFlowOverview returns where the board's cards stand on each route:
-// per stage, how many are there, how many are working and how many wait.
-func (a *App) GetBoardFlowOverview(boardID string) (string, error) {
-	if a.mgr == nil {
-		return "[]", nil
-	}
-	overview, err := a.mgr.BoardFlowOverview(boardID)
-	if err != nil {
-		return "", err
-	}
-	out, err := json.Marshal(overview)
-	if err != nil {
-		return "", err
-	}
-	return string(out), nil
 }
 
 // SetAgentWorkdirMode records how a folder that is a repository is worked in
@@ -1031,7 +740,7 @@ func (a *App) SetBoardPrompt(boardID, text string) error {
 	return a.mgr.SetBoardPrompt(boardID, text)
 }
 
-// GetPlanningPrompt returns the instructions a planning terminal is opened
+// GetPlanningPrompt returns the instructions a planning conversation opens
 // with, falling back to the default when the config has none.
 func (a *App) GetPlanningPrompt() (string, error) {
 	if a.mgr == nil {
@@ -1040,7 +749,7 @@ func (a *App) GetPlanningPrompt() (string, error) {
 	return a.mgr.PlanningPrompt(), nil
 }
 
-// SetPlanningPrompt stores the instructions a planning terminal is opened with.
+// SetPlanningPrompt stores the instructions a planning conversation opens with.
 func (a *App) SetPlanningPrompt(text string) error {
 	if a.mgr == nil {
 		return errACPDisabled
@@ -1063,113 +772,65 @@ func (a *App) StartCardDeploy(cardID, branch string) (string, error) {
 	return s.ID, nil
 }
 
-// ---- terminal windows ----
+// ---- planning ----
 
-// A terminal is the agent's own CLI in a window of ours: the same folder,
-// worktree, branch and environment a session would get, with a human at the
-// keyboard instead of a prompt loop. These bindings start one and hand back
-// where to draw it; the drawing is xterm.js on a WebSocket (terminalws.go).
+// A planning conversation is talking a task over with an agent before a card
+// exists (internal/acp/planning.go). The reply streams in as acp:chunk events
+// and each turn's end is an acp:planning event; these calls start one, speak in
+// it and end it.
 
-// terminalHandle is what the UI needs to show a terminal: which one, and where.
-type terminalHandle struct {
-	acp.TerminalInfo
-	// URL is the page that draws it. A desktop build has already opened a
-	// window there by the time this is returned; a server build has no windows,
-	// so the browser opens a tab itself.
-	URL string `json:"url"`
-	// Windowed says which of those two happened.
-	Windowed bool `json:"windowed"`
-}
-
-// OpenCardTerminal opens (or focuses) the agent CLI for a card and returns the
-// terminal as JSON. workdirName/agentName may be empty, in which case the card
-// decides exactly as it does for a session.
-//
-// window says whether it gets a window of its own. The card draws the terminal
-// inside itself now — the panel its chevron opens is the terminal — so a window
-// would be a second view of the same pty opening behind the one being looked
-// at. It is still what the ⤢ beside the panel asks for, and a screen of its own
-// is worth having.
-func (a *App) OpenCardTerminal(cardID, workdirName, agentName string, window bool) (string, error) {
+// StartPlanning opens a planning conversation on a board and returns it as
+// JSON. folderName may be empty for the board's drafts folder, agentName when
+// only one agent is registered.
+func (a *App) StartPlanning(boardID, folderName, agentName string) (string, error) {
 	if a.mgr == nil {
 		return "", errACPDisabled
 	}
-	t, err := a.mgr.StartCardTerminal(cardID, workdirName, agentName)
+	info, err := a.mgr.StartPlanning(boardID, folderName, agentName)
 	if err != nil {
 		return "", err
 	}
-	if !window {
-		return terminalHandleJSON(a.terminalURL(t), false, t)
-	}
-	return a.terminalWindow(t)
-}
-
-// OpenCardTalk opens the card's own conversation rather than the work on it —
-// the wording, the plan, the brief. A door of its own rather than a flag on the
-// one above, because which of the two a person wants is the thing the app kept
-// having to guess (nodeTalk).
-func (a *App) OpenCardTalk(cardID, workdirName, agentName string, window bool) (string, error) {
-	if a.mgr == nil {
-		return "", errACPDisabled
-	}
-	t, err := a.mgr.StartCardTalk(cardID, workdirName, agentName)
-	if err != nil {
-		return "", err
-	}
-	if !window {
-		return terminalHandleJSON(a.terminalURL(t), false, t)
-	}
-	return a.terminalWindow(t)
-}
-
-// OpenPlanningTerminal opens the CLI with no card behind it — the terminal half
-// of "Plan a task". boardID is the board the dialog was opened from: the
-// conversation has no card, but it may leave cards, and that is the only board
-// it may leave them on.
-func (a *App) OpenPlanningTerminal(workdirName, agentName, boardID string) (string, error) {
-	if a.mgr == nil {
-		return "", errACPDisabled
-	}
-	t, err := a.mgr.StartPlanningTerminal(workdirName, agentName, boardID)
-	if err != nil {
-		return "", err
-	}
-	return a.terminalWindow(t)
-}
-
-// terminalWindow opens the window for a terminal session and describes it.
-func (a *App) terminalWindow(t *acp.TerminalSession) (string, error) {
-	url := a.terminalURL(t)
-	windowed := false
-	if wapp := a.app(); wapp != nil {
-		windowed = openTerminalWindow(wapp, t.Info(), url)
-	}
-	return terminalHandleJSON(url, windowed, t)
-}
-
-// terminalURL is the page that draws a terminal, wherever it is drawn.
-func (a *App) terminalURL(t *acp.TerminalSession) string {
-	return a.originURL() + "acp/terminal/" + t.Info().ID
-}
-
-func terminalHandleJSON(url string, windowed bool, t *acp.TerminalSession) (string, error) {
-	out, err := json.Marshal(terminalHandle{TerminalInfo: t.Info(), URL: url, Windowed: windowed})
+	out, err := json.Marshal(info)
 	if err != nil {
 		return "", err
 	}
 	return string(out), nil
 }
 
-// GetTerminalInfo describes a live terminal, for the page that draws it.
-func (a *App) GetTerminalInfo(terminalID string) (string, error) {
+// SayToPlanning is a person's message: the conversation's next turn.
+func (a *App) SayToPlanning(id, text string) error {
 	if a.mgr == nil {
-		return "", errACPDisabled
+		return errACPDisabled
 	}
-	t := a.mgr.Terminal(terminalID)
-	if t == nil {
-		return "", errors.New("терминал не активен")
+	return a.mgr.SayToPlanning(id, text)
+}
+
+// StopPlanningReply interrupts the reply being written; the conversation stays.
+func (a *App) StopPlanningReply(id string) error {
+	if a.mgr == nil {
+		return errACPDisabled
 	}
-	out, err := json.Marshal(t.Info())
+	a.mgr.StopPlanningTurn(id)
+	return nil
+}
+
+// EndPlanning ends a planning conversation and the agent process with it.
+func (a *App) EndPlanning(id string) error {
+	if a.mgr == nil {
+		return errACPDisabled
+	}
+	a.mgr.EndPlanning(id)
+	return nil
+}
+
+// ListPlanning returns the planning conversations open on a board as JSON,
+// with what was said in each: a dialog closed and opened again finds its
+// conversation where it left it.
+func (a *App) ListPlanning(boardID string) (string, error) {
+	if a.mgr == nil {
+		return "[]", nil
+	}
+	out, err := json.Marshal(a.mgr.Planning(boardID))
 	if err != nil {
 		return "", err
 	}
@@ -1177,13 +838,12 @@ func (a *App) GetTerminalInfo(terminalID string) (string, error) {
 }
 
 // GetCardAgent is everything a card shows about its agent in one call: the
-// terminal it already has running or could continue, and the state of the
-// automation's own session — the branch it works on, so the card can offer to
-// deploy it, and whether something is running, so it can be cancelled.
+// state of the automation's own session — the branch it works on, so the card
+// can offer to deploy it, and whether something is running, so it can be
+// cancelled — and the question it is waiting on, if any.
 //
-// There is no transcript here. A session reports itself in the card's comments,
-// and a conversation with an agent happens in a terminal window.
-// JSON: {"running":{…}|null,"resume":{…},"session":{…}}.
+// There is no transcript here: a stage reports itself in the card's comments.
+// JSON: {"session":{…},"question":{…}?,…}.
 func (a *App) GetCardAgent(cardID string) (string, error) {
 	if a.mgr == nil {
 		return "{}", nil
@@ -1193,7 +853,6 @@ func (a *App) GetCardAgent(cardID string) (string, error) {
 		return "", err
 	}
 	payload := map[string]any{
-		"resume":  a.mgr.TerminalHistoryForCard(cardID),
 		"session": session,
 	}
 	// An agent waiting on an answer is the one thing on a card that is
@@ -1201,23 +860,10 @@ func (a *App) GetCardAgent(cardID string) (string, error) {
 	if q := a.mgr.QuestionForCard(cardID); q != nil {
 		payload["question"] = q
 	}
-	if live := a.mgr.TerminalForCard(cardID); live != nil {
-		payload["running"] = live.Info()
-	}
 	// Why nothing is happening, for a card outside any route — the route strip
 	// says the same thing for cards on one.
 	if stall, ok := a.mgr.CardStall(cardID); ok {
 		payload["stall"] = stall
-	}
-	// The card's conversations, one per stage of its route: what the terminal
-	// panel lists, with the current stage's being the one it opens.
-	if conversations := a.mgr.CardConversations(cardID); len(conversations) > 0 {
-		payload["conversations"] = conversations
-	}
-	// Where a conversation on this card would run. The panel asks the person
-	// before starting a folderless one, and this is how it knows to ask.
-	if folder, ok := a.mgr.CardFolder(cardID); ok {
-		payload["folder"] = folder
 	}
 	// Where the card's work is — one answer, merged from the claim on this
 	// machine and what the card itself carries (acp.CardWork). The stamp names
@@ -1248,39 +894,6 @@ func (a *App) GetCardAgent(cardID string) (string, error) {
 	return string(out), nil
 }
 
-// ListTerminals returns every terminal currently running as JSON, newest first.
-// A window can be closed while its CLI keeps working, and a planning terminal
-// has no card to be found through, so this is how the UI offers it back.
-func (a *App) ListTerminals() (string, error) {
-	if a.mgr == nil {
-		return "[]", nil
-	}
-	out, err := json.Marshal(a.mgr.LiveTerminals())
-	if err != nil {
-		return "", err
-	}
-	return string(out), nil
-}
-
-// ListCutOffConversations returns, as a JSON object of card id → reason, the
-// cards whose conversation stopped without a verdict: the CLI was closed, or
-// the app was, and the stage was never reported. The board draws a paused
-// terminal button on each of them, so that work nobody picked back up is
-// visible from the board rather than only from inside the card.
-//
-// One call for the page, indexed by card, exactly as ListTerminals is: a board
-// has as many cards as it likes.
-func (a *App) ListCutOffConversations() (string, error) {
-	if a.mgr == nil {
-		return "{}", nil
-	}
-	out, err := json.Marshal(a.mgr.CutOffConversations())
-	if err != nil {
-		return "", err
-	}
-	return string(out), nil
-}
-
 // AnswerQuestion hands an agent the answer it is waiting for: an option it
 // offered, or text typed instead. Both empty means no — the agent hears a
 // refusal and carries on without what it asked for.
@@ -1295,8 +908,9 @@ func (a *App) AnswerQuestion(questionID, optionID, text string) error {
 	return a.mgr.AnswerQuestion(questionID, ans)
 }
 
-// ListAttention returns everything waiting for a person as JSON: the terminals
-// whose agent has gone quiet, oldest wait first. The page keeps itself current
+// ListAttention returns everything waiting for a person as JSON: the questions
+// agents are holding a turn open on, and the cards a route handed to a person,
+// oldest wait first. The page keeps itself current
 // from acp:attention events; this is what a page that opened later starts from.
 func (a *App) ListAttention() (string, error) {
 	if a.mgr == nil {
@@ -1310,28 +924,14 @@ func (a *App) ListAttention() (string, error) {
 }
 
 // AckAttention says a person has seen this wait, so it stops being announced.
-// The wait itself stands — the card keeps its amber button until the agent is
-// answered — and the announcement comes back if the agent does something and
-// stops again (internal/acp/attentionack.go).
+// The wait itself stands — the card keeps its mark until the agent is answered
+// (internal/acp/attentionack.go).
 func (a *App) AckAttention(key string) error {
 	if a.mgr == nil {
 		return errACPDisabled
 	}
 	a.mgr.AckAttention(key)
 	return nil
-}
-
-// ShowTerminal reopens the window of a terminal that is already running and
-// returns it as JSON, the same shape OpenCardTerminal returns.
-func (a *App) ShowTerminal(terminalID string) (string, error) {
-	if a.mgr == nil {
-		return "", errACPDisabled
-	}
-	t := a.mgr.Terminal(terminalID)
-	if t == nil {
-		return "", errors.New("терминал уже завершён")
-	}
-	return a.terminalWindow(t)
 }
 
 // GetCardDiff is the card's work read off the disk: the branch, what it was cut
@@ -1353,8 +953,7 @@ func (a *App) GetCardDiff(cardID string) (string, error) {
 	return string(out), nil
 }
 
-// OpenCardDiff gives the diff a window of its own, the way a terminal gets one:
-// reading a review is the thing a panel beside the card is least able to be,
+// OpenCardDiff gives the diff a window of its own: reading a review is the thing a panel beside the card is least able to be,
 // and the card is open behind it anyway. Answers with the address, so a build
 // with no windows — a browser, a phone — can still go there itself.
 func (a *App) OpenCardDiff(cardID string) (string, error) {
@@ -1379,46 +978,6 @@ func (a *App) cardDiffTitle(cardID string) string {
 		return title
 	}
 	return cardID
-}
-
-// CloseTerminal ends a terminal session and everything its CLI started.
-func (a *App) CloseTerminal(terminalID string) error {
-	if a.mgr == nil {
-		return errACPDisabled
-	}
-	return a.mgr.CloseTerminal(terminalID)
-}
-
-// RenameTerminal is a person calling a conversation what it is to them. The
-// title a terminal starts with says which card it is on, and a list of open
-// terminals is read by what each one is about.
-func (a *App) RenameTerminal(terminalID, title string) error {
-	if a.mgr == nil {
-		return errACPDisabled
-	}
-	return a.mgr.RenameTerminal(terminalID, title)
-}
-
-// AskTerminalName asks the agent to name the conversation it is having. The
-// request is typed into that conversation and the answer comes back through the
-// board tools, so the row in the list says what is going on in it rather than
-// who is talking and where.
-func (a *App) AskTerminalName(terminalID string) error {
-	if a.mgr == nil {
-		return errACPDisabled
-	}
-	return a.mgr.AskTerminalName(terminalID)
-}
-
-// DeleteCardConversation throws away one conversation of a card: the CLI in it
-// ends and the record goes with it, so the next one starts on a blank screen.
-// It is how the card's own conversation is closed for good — everything else
-// about a terminal is kept, which is what makes continue possible.
-func (a *App) DeleteCardConversation(cardID, nodeID string) error {
-	if a.mgr == nil {
-		return errACPDisabled
-	}
-	return a.mgr.DeleteCardConversation(cardID, nodeID)
 }
 
 // errSourcesDisabled is returned by the source bindings when the subsystem

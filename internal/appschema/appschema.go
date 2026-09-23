@@ -80,7 +80,7 @@ func Open(path string) (*sql.DB, error) {
 
 func alreadyMade(db *sql.DB) (bool, error) {
 	var name string
-	err := db.QueryRow(`SELECT name FROM sqlite_master WHERE type='table' AND name='conversation'`).Scan(&name)
+	err := db.QueryRow(`SELECT name FROM sqlite_master WHERE type='table' AND name='agent_session'`).Scan(&name)
 	switch {
 	case err == sql.ErrNoRows:
 		return false, nil

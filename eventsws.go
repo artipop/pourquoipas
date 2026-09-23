@@ -1,15 +1,13 @@
 package main
 
 import (
-	"encoding/json"
 	"log"
 	"net/http"
 	"sync"
 	"time"
 
+	"encoding/json"
 	"github.com/gorilla/websocket"
-
-	"github.com/artipop/xciii/internal/acp"
 )
 
 // The agent events a page listens to — a session changed state, a terminal
@@ -38,22 +36,15 @@ func newEventRoutes() *eventRoutes {
 	return &eventRoutes{subs: map[chan []byte]struct{}{}}
 }
 
-// newACPSockets is the /acp/ half of the front door: the sockets, and only the
-// sockets. The pages around them (/acp/terminal/{id}) are webapp routes the
-// board serves like any other.
-// boardTools is not a socket but belongs to the same subtree: it is the other
-// end of the MCP server an agent runs, and it is authenticated by a grant token
-// rather than by the origin the request came from (boardapi.go).
-func newACPSockets(terminals, events, boardTools, hook, lease http.Handler) http.Handler {
+// newACPSockets is the /acp/ half of the front door: the event socket, and the
+// board tools beside it. boardTools is not a socket but belongs to the same
+// subtree: it is the other end of the MCP server an agent runs, and it is
+// authenticated by a grant token rather than by the origin the request came
+// from (boardapi.go).
+func newACPSockets(events, boardTools http.Handler) http.Handler {
 	mux := http.NewServeMux()
-	mux.Handle("/acp/terminal/{id}/ws", terminals)
 	mux.Handle("/acp/events/ws", events)
 	mux.Handle("/acp/board/", boardTools)
-	mux.Handle(acp.HookPath, hook)
-	// Not a socket and not a tool: the claim a desktop attached to this board
-	// makes on a route event (lease.go). Here because everything under /acp/ is
-	// this application's own rather than the board's.
-	mux.Handle(LeasePath, lease)
 	return mux
 }
 

@@ -22,16 +22,11 @@ import (
 // the card; what the *page* shows is the switcher's separate question, because
 // a page holds one board's cards, members and sockets and cannot hold two.
 type boardSeam struct {
-	writer    acp.BoardWriter
-	cardState acp.BoardCardState
-	reader    acp.BoardReader
-	meta      acp.BoardMeta
-	users     acp.BoardUsers
-	events    acp.BoardEvents
-	// lease is where a claim on a route event is made. Nil for the board this
-	// process serves: there is one candidate there and it is this process.
-	lease acp.BoardLease
-
+	writer acp.BoardWriter
+	reader acp.BoardReader
+	meta   acp.BoardMeta
+	users  acp.BoardUsers
+	events acp.BoardEvents
 	// lists is the board as the phone at /m and the share dialog read it.
 	lists boardLists
 	// sourceWriter is the board as internal/sources writes to it.
@@ -56,7 +51,6 @@ func localSeam(events *boardadapter.EventsBackend, a *app.App) boardSeam {
 	return boardSeam{
 		sourceWriter:  boardadapter.NewSourceWriter(a),
 		writer:        writer,
-		cardState:     writer,
 		reader:        events,
 		meta:          events,
 		users:         events,
@@ -67,14 +61,12 @@ func localSeam(events *boardadapter.EventsBackend, a *app.App) boardSeam {
 }
 
 // remoteSeam is a board on a server this desktop has logged in to. One object
-// answers all six, because over HTTP there is nothing to split them by.
+// answers every part, because over HTTP there is nothing to split them by.
 func remoteSeam(serverURL, token string, log mlog.LoggerIFace) (boardSeam, *boardclient.Client) {
 	client := boardclient.New(serverURL, token, model.GlobalTeamID, log)
 	return boardSeam{
 		sourceWriter: boardclient.NewSourceWriter(client),
-		lease:        client,
 		writer:       client,
-		cardState:    client,
 		reader:       client,
 		meta:         client,
 		users:        client,

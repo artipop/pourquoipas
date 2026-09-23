@@ -15,7 +15,6 @@ import (
 
 	"github.com/artipop/xciii/internal/dokku"
 	"github.com/artipop/xciii/internal/secrets"
-	"github.com/artipop/xciii/internal/vcs"
 )
 
 // Manager owns all agent sessions: it consumes board events, enforces limits
@@ -36,7 +35,6 @@ type Manager struct {
 	// cards is where a card's own route position is kept — on the card, so it
 	// travels with it. Optional; without it the position lives in this
 	// machine's store alone and stays behind when the board moves.
-	cards BoardCardState
 	// routing is how a board or a card is matched to the source it lives on,
 	// once there is more than one (boardsource.go). Empty and unused on every
 	// install that works its own board.
@@ -48,29 +46,13 @@ type Manager struct {
 	mu     sync.Mutex
 	active map[string]*Session // session ID → session
 	byCard map[string]*Session // card ID → live (non-terminal) session
-	// terminals are the agent CLIs a human has open in a window. They share the
-	// lock but nothing else with sessions: a terminal is a person working, not
-	// an agent being driven (terminal.go).
-	terminals map[string]*TerminalSession // terminal ID → terminal session
-	// terminalQuiet overrides how long a CLI must be silent before it counts as
-	// waiting for a person (terminalQuietFor). Only a test sets it: the real
-	// threshold is a human one and would make the suite wait it out.
-	terminalQuiet time.Duration
-	// hookSettle overrides how long a permission box is given to finish drawing
-	// before the CLI's output counts as somebody answering it
-	// (hookAskSettle, withdrawWhenAnsweredOnScreen). Only a test sets it, and
-	// for the same reason.
-	hookSettle time.Duration
-
-	// The stages of routes that are running in a terminal (stageterminal.go):
-	// what each is waiting to be told through finish_work, and which of them
-	// have gone quiet and want a person. Their own lock, for the same reason
-	// questions have one — a report arrives on an HTTP handler and must not
-	// queue behind a session starting.
-	stageMu      sync.Mutex
-	stageWaits   map[string]stageWait // terminal ID → the running stage finish_work answers to
-	stageWaiting map[string]Attention // terminal ID → the wait it is showing
-	cardWaits    map[string]Attention // card ID → the route handing it to a person (cardwait.go)
+	// planning are the conversations of the planning dialog (planning.go).
+	planning map[string]*planningChat
+	// Waits the route raises on cards where nothing runs (cardwait.go). Their
+	// own lock, for the same reason questions have one: an ack arrives on a
+	// click and must not queue behind a session starting.
+	stageMu   sync.Mutex
+	cardWaits map[string]Attention // card ID → the route handing it to a person (cardwait.go)
 	// changesWriteFailed keeps the "no card_changes table" warning to one line
 	// a run — see saveCardChanges.
 	changesWriteFailed sync.Once
@@ -114,8 +96,6 @@ type Manager struct {
 	optionsMu    sync.Mutex
 	optionsCache map[string][]AgentOption
 
-	watchers []vcs.Watcher // folder watchers feeding the flow engine
-
 	sem chan struct{}
 	// rootCtx is the running manager's, and it is nil until Start. What reads
 	// the board is not always behind Start any more — resolving a card's folder
@@ -145,11 +125,6 @@ func (m *Manager) SetBoardReader(r BoardReader) { m.reader = r }
 // its column's crew.
 func (m *Manager) SetBoardUsers(u BoardUsers) { m.users = u }
 
-// SetBoardCardState supplies the per-card store on the board. Optional: without
-// it a card's place on its route is remembered only here, and an exported board
-// arrives elsewhere with every card back at the start of its route.
-func (m *Manager) SetBoardCardState(c BoardCardState) { m.cards = c }
-
 // NewManager wires the manager. cfgPath is where folder-registry edits are
 // persisted (may be empty in tests). Call Start to begin consuming events.
 func NewManager(cfg Config, cfgPath string, st *Store, w BoardWriter, ui UIEmitter, log *slog.Logger) *Manager {
@@ -176,10 +151,6 @@ func NewManager(cfg Config, cfgPath string, st *Store, w BoardWriter, ui UIEmitt
 		byCard:  make(map[string]*Session),
 		sem:     make(chan struct{}, maxConc),
 	}
-	// After the struct, because the GitHub watcher asks for a token and the
-	// token comes off the manager's own secret store (SetSecrets, which the
-	// caller may not have called yet — an absent token is the ordinary case).
-	m.watchers = m.defaultWatchers()
 	return m
 }
 
@@ -187,14 +158,6 @@ func NewManager(cfg Config, cfgPath string, st *Store, w BoardWriter, ui UIEmitt
 // still arrive through the environment, and most folders need none at all.
 func (m *Manager) SetSecrets(v secrets.Store) {
 	m.vault = v
-	// The GitHub watcher took its token when it was built, which was before
-	// this. Rebuild the default set so the token is the one just supplied —
-	// unless a test has replaced the watchers, in which case they are theirs.
-	if len(m.watchers) == 2 {
-		if _, ok := m.watchers[1].(*vcs.GitHub); ok {
-			m.watchers = m.defaultWatchers()
-		}
-	}
 }
 
 // SetSwitchedOff supplies the app-wide AI switch. While it answers true
@@ -267,13 +230,6 @@ func (m *Manager) Start(ctx context.Context, events BoardEvents) error {
 	}
 	m.wg.Add(1)
 	go m.triggerLoop(ch)
-
-	// Folder polling only matters once some card waits on a branch, but the
-	// loop itself is cheap: it does nothing at all until FlowTargets is non-empty.
-	if m.cfg.VCSPoll() > 0 && len(m.watchers) > 0 {
-		m.wg.Add(1)
-		go m.vcsLoop()
-	}
 	return nil
 }
 
@@ -304,9 +260,6 @@ type startOptions struct {
 	// folderName picks a folder explicitly, for a console opened on a card
 	// that does not say which one it is about.
 	folderName string
-	// flowID/flowNodeID tie the session to the stage of a route that started
-	// it, so its outcome can move the card on.
-	flowID, flowNodeID string
 	// agentCrew/deployOverride let a flow node name the agents or the deploy
 	// target for its stage only, overriding the column's own. The target is an
 	// id, because a name is what somebody renames (contradiction 8).
@@ -405,10 +358,8 @@ func (m *Manager) startSession(ev CardMoved, opts startOptions) (*Session, error
 	// Asked before anything is resolved: a card somebody took for themselves is
 	// theirs, and there is no point working out which folder an agent would
 	// not be using. Deploy and test are unaffected — that is machine work, not
-	// the assignee's. Somebody who wants to work the card *with* an agent opens
-	// a terminal on it, which is not a session and not vetoed here; somebody
-	// who wants an agent to work it assigns the agent, which humanAssignee
-	// reads as the opposite answer.
+	// the assignee's. Somebody who wants an agent to work it assigns the agent,
+	// which humanAssignee reads as the opposite answer.
 	if !opts.deploy && !opts.test {
 		m.cfgMu.RLock()
 		known := append([]AgentEntry(nil), m.cfg.Agents...)
@@ -537,13 +488,7 @@ func (m *Manager) startSession(ev CardMoved, opts startOptions) (*Session, error
 		outputs = stageOutputs(opts.declaredWrites(), m.boardCardProperties(ev.BoardID))
 	}
 	stage := joinPrompts(opts.prompt(), inputs, outputs)
-	// Whether the agent will be handed the board's tools at all, which is what
-	// decides whether the task may tell it to end the stage with finish_work:
-	// a stage that runs as an ACP session takes no board server, and telling it
-	// to call a tool it does not have is a turn spent looking for one. The same
-	// test runSession makes before it opens a terminal at all.
-	prompt := composePrompt(ev, agent, systemPrompt, stage, worktreeAvailable,
-		deploy == nil && test == nil && stageRunsInTerminal(agent))
+	prompt := composePrompt(ev, agent, systemPrompt, stage, worktreeAvailable)
 	switch {
 	case deploy != nil:
 		prompt = composeDeployPrompt(ev, agent, systemPrompt, deployPrompt, stage, *deploy, deployBranch)
@@ -575,9 +520,7 @@ func (m *Manager) startSession(ev CardMoved, opts startOptions) (*Session, error
 		ColumnName:   opts.column.Column,
 		Test:         test,
 		Artifacts:    artifacts,
-		FlowID:       opts.flowID,
-		FlowNodeID:   opts.flowNodeID,
-		NodeID:       firstNonEmpty(opts.flowNodeID, ev.ToColumn.OptionID, opts.column.OptionID, nodeNone),
+		NodeID:       firstNonEmpty(ev.ToColumn.OptionID, opts.column.OptionID),
 		Writes:       opts.declaredWrites(),
 		RunIn:        opts.runIn,
 		StageMCP:     opts.stageMCP(),
@@ -588,9 +531,7 @@ func (m *Manager) startSession(ev CardMoved, opts startOptions) (*Session, error
 	}
 	// What the column hands its agent, on the same terms the agent's own
 	// servers travel on: wiring a server to a stage is consent to use it, and a
-	// card-triggered run has no console to ask in. A stage that runs as a
-	// terminal takes them through the CLI's config file instead (startTerminal),
-	// where the CLI's own permission prompt is the answer.
+	// card-triggered run has no console to ask in.
 	for _, srv := range stageMCPSpecs(s.StageMCP) {
 		s.extraMCP = append(s.extraMCP, srv)
 		s.allowToolPrefix("mcp__" + srv.Name + "__")
@@ -721,13 +662,6 @@ func (m *Manager) planningAgent(name string) (AgentEntry, error) {
 	return AgentEntry{}, fmt.Errorf("агент %q не найден в реестре", name)
 }
 
-// composeTaskPrompt asks for the conversation to be boiled down to a card. The
-// shape is fixed because the UI splits the answer on the first line.
-const composeTaskPrompt = `Оформи то, о чём мы договорились, как задачу для трекера.
-Ответь ровно в таком виде, без markdown-заголовков и без вступления:
-первая строка — краткий заголовок задачи (до 80 символов),
-далее с новой строки — описание: что нужно сделать, где в коде и как проверить.`
-
 // session looks up a live session by id.
 func (m *Manager) session(sessionID string) *Session {
 	m.mu.Lock()
@@ -738,8 +672,7 @@ func (m *Manager) session(sessionID string) *Session {
 // CardSessions returns persisted sessions and events for a card (UI hydration).
 // CardAgentState is what a card shows about the agent working it: whether a
 // session of the automation is running, and which branch the card's work is on.
-// It is deliberately small — the transcript of a session is its comments, and
-// the conversation with an agent happens in a terminal.
+// It is deliberately small — what a session did is the comment it wrote.
 type CardAgentState struct {
 	SessionID string `json:"sessionId,omitempty"`
 	Status    string `json:"status,omitempty"`
@@ -790,9 +723,6 @@ func (m *Manager) Shutdown(grace time.Duration) {
 	if m.stop != nil {
 		m.stop()
 	}
-	// A terminal is a child process holding a pty; nothing waits for it, and
-	// leaving it behind would outlive the window it was opened in.
-	m.shutdownTerminals()
 	done := make(chan struct{})
 	go func() {
 		m.wg.Wait()
@@ -853,6 +783,12 @@ func (m *Manager) setStatus(s *Session, status SessionStatus) {
 }
 
 func (m *Manager) persistStatus(s *Session, status SessionStatus, errText string) {
+	// A session with no card behind it has no row: nothing is recorded against
+	// a conversation that belongs to no card (planning.go, inboxrun.go).
+	if s.Planning {
+		m.emitSession(s, errText)
+		return
+	}
 	if err := m.store.SetSessionStatus(s.ID, status, errText); err != nil {
 		m.log.Warn("acp: failed to persist status", "session", s.ID, "status", status, "err", err)
 	}
@@ -949,14 +885,10 @@ func resolveArgv0(argv []string) []string {
 	return out
 }
 
-// planningPrompt is what a planning terminal is opened with: the board's system
-// prompt, the agent's own, the planning instructions a person can edit, and the
-// one fact nobody should have to type — which folder the CLI is standing in.
-//
-// It reaches the CLI as the terminal's task text, pasted by the button on the
-// terminal page, rather than as an argv flag: what a CLI is told at startup is
-// its own business (terminalCommand says why), and this is the same road a
-// card's task already travels.
+// planningPrompt is what a planning conversation opens with, ahead of the
+// person's first message: the board's system prompt, the agent's own, the
+// planning instructions a person can edit, and the one fact nobody should have
+// to type — which folder the agent is standing in.
 func planningPrompt(systemPrompt, planning string, agent AgentEntry, workdir WorkdirEntry) string {
 	b := []byte(promptLead(systemPrompt, agent))
 	if p := strings.TrimSpace(planning); p == "" {
@@ -1074,7 +1006,7 @@ func propertyShape(name string, fields []CardProperty) string {
 // and what the agent carries (promptLead), what the stage wants said
 // (stagePrompt — the column's instructions, or its route node's), then the
 // card task.
-func composePrompt(ev CardMoved, agent AgentEntry, systemPrompt, stagePrompt string, useWorktree, endsWithFinishWork bool) string {
+func composePrompt(ev CardMoved, agent AgentEntry, systemPrompt, stagePrompt string, useWorktree bool) string {
 	b := []byte(promptLead(systemPrompt, agent))
 	if p := strings.TrimSpace(stagePrompt); p != "" {
 		b = fmt.Appendf(b, "%s\n\n", p)
@@ -1088,30 +1020,8 @@ func composePrompt(ev CardMoved, agent AgentEntry, systemPrompt, stagePrompt str
 	} else {
 		b = fmt.Appendf(b, "\nWork in the current directory — it is the person's own working folder. Do not switch branches, do not commit and do not push: leave the changes uncommitted for review.")
 	}
-	if endsWithFinishWork {
-		b = fmt.Appendf(b, "\n\n%s", finishWorkBrief)
-	}
 	return string(b)
 }
-
-// finishWorkBrief is how the stage ends, said in the task itself.
-//
-// It was said only by the board's MCP server, in the instructions that come
-// with its tools — and a CLI is free not to load them. Measured: Claude Code
-// deferred the whole board server, so `finish_work` reached the agent as a name
-// in a list and nothing else; the agent did the work, wrote a summary in the
-// terminal and stopped, and the card stood on the stage with nobody able to say
-// it was over. The same route had run to the end the day before, which is what
-// makes this worth saying twice: whether the tools arrive loaded is not ours to
-// decide, and the task text is the one thing that always arrives.
-//
-// Deliberately not naming how to load a tool: that is each CLI's own business,
-// and a sentence about ToolSearch would be wrong everywhere else.
-const finishWorkBrief = `How this stage ends: by you saying so, not by the CLI exiting. ` +
-	`Call the board tool ` + "`finish_work`" + ` — done or not done, and one line about what you did — ` +
-	`the moment the work is finished, or when you find you cannot finish it. ` +
-	`It is on the board's MCP server; if it is not among the tools you have loaded, look it up before you finish. ` +
-	`Nothing else can end this stage: until you call it the card stands where it is and nobody is told.`
 
 // composeDeployPrompt builds the task text of a deploy session: the same brief
 // an ordinary task gets, then the deploy instructions, then the concrete

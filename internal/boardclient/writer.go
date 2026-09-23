@@ -155,6 +155,37 @@ func (c *Client) SetCardFields(_ context.Context, cardID string, fields map[stri
 	return c.patchCard(cardID, &model.CardPatch{UpdatedProperties: properties}, true)
 }
 
+// AddCardProperty adds a text property to the card's board, unless one of that
+// name is already there.
+func (c *Client) AddCardProperty(_ context.Context, cardID, name string) error {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return fmt.Errorf("у поля должно быть название")
+	}
+	boardID, err := c.boardOfCard(cardID)
+	if err != nil {
+		return err
+	}
+	_, schema, err := c.board(boardID)
+	if err != nil {
+		return err
+	}
+	if _, _, ok := boardmodel.FindPropertyByName(schema, name); ok {
+		return nil
+	}
+	prop := map[string]any{
+		"id":      utils.NewID(utils.IDTypeBlock),
+		"name":    name,
+		"type":    "text",
+		"options": []any{},
+	}
+	patch := &model.BoardPatch{UpdatedCardProperties: []map[string]any{prop}}
+	if _, resp := c.api.PatchBoard(boardID, patch); resp != nil && resp.Error != nil {
+		return fmt.Errorf("add the property %q to board %s: %w", name, boardID, resp.Error)
+	}
+	return nil
+}
+
 // AttachFile puts a file on the card and adds the block that shows it. The type
 // and id prefix follow the file's kind as the in-process adapter's do: a card
 // must not look different for having been written from here.

@@ -39,20 +39,21 @@ func (m *Manager) reportTestRun(s *Session, finalText string, turnErr error) {
 	// route is a column somebody works by hand.
 }
 
-// testOutcome maps a verdict onto the event the card's route moves on. No
-// verdict at all counts as "could not be checked" rather than as a failure —
-// the run says nothing about the application.
+// testOutcome is what the card is told the test amounted to. No verdict at all
+// counts as a failure to check rather than as a failure of the application, and
+// the difference is in the words: the card says what happened, and a person
+// reads it.
 func testOutcome(res TestResult, resErr error) (string, string) {
 	if resErr != nil {
-		return TriggerBlocked, "тест не дал вердикта"
+		return OutcomeFailure, "тест не дал вердикта"
 	}
 	switch res.Verdict {
 	case VerdictPass:
-		return TriggerSuccess, "тест пройден"
+		return OutcomeSuccess, "тест пройден"
 	case VerdictFail:
-		return TriggerFailure, "тест не пройден"
+		return OutcomeFailure, "тест не пройден"
 	default:
-		return TriggerBlocked, "протестировать не удалось"
+		return OutcomeFailure, "протестировать не удалось"
 	}
 }
 

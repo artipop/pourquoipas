@@ -295,8 +295,6 @@ exports[`components/centerPanel > return centerPanel and > click on card to show
             
             <!---->
           </div>
-          <!---->
-          
           <div
             class="octo-spacer"
           />
@@ -365,8 +363,6 @@ exports[`components/centerPanel > return centerPanel and > click on card to show
             
             <!---->
           </div>
-          <!---->
-          
           <div
             class="octo-spacer"
           />
@@ -397,9 +393,6 @@ exports[`components/centerPanel > return centerPanel and > click on card to show
           </button>
           <!---->
         </div>
-        <div
-          class="octo-board-divider"
-        />
         <div
           class="octo-board-header-cell KanbanColumnHeader"
           style="opacity: 1;"
@@ -438,8 +431,6 @@ exports[`components/centerPanel > return centerPanel and > click on card to show
             
             <!---->
           </div>
-          <!---->
-          
           <div
             class="octo-spacer"
           />
@@ -616,9 +607,6 @@ exports[`components/centerPanel > return centerPanel and > click on card to show
             <!---->
           </button>
         </div>
-        <div
-          class="octo-board-divider"
-        />
         <div
           class="octo-board-column"
         >
@@ -9040,8 +9028,6 @@ exports[`components/centerPanel > should match snapshot for Kanban 1`] = `
             
             <!---->
           </div>
-          <!---->
-          
           <div
             class="octo-spacer"
           />
@@ -9110,8 +9096,6 @@ exports[`components/centerPanel > should match snapshot for Kanban 1`] = `
             
             <!---->
           </div>
-          <!---->
-          
           <div
             class="octo-spacer"
           />
@@ -9142,9 +9126,6 @@ exports[`components/centerPanel > should match snapshot for Kanban 1`] = `
           </button>
           <!---->
         </div>
-        <div
-          class="octo-board-divider"
-        />
         <div
           class="octo-board-header-cell KanbanColumnHeader"
           style="opacity: 1;"
@@ -9183,8 +9164,6 @@ exports[`components/centerPanel > should match snapshot for Kanban 1`] = `
             
             <!---->
           </div>
-          <!---->
-          
           <div
             class="octo-spacer"
           />
@@ -9318,9 +9297,6 @@ exports[`components/centerPanel > should match snapshot for Kanban 1`] = `
             <!---->
           </button>
         </div>
-        <div
-          class="octo-board-divider"
-        />
         <div
           class="octo-board-column"
         >
@@ -9643,8 +9619,6 @@ exports[`components/centerPanel > should match snapshot for Kanban, not shared 1
             
             <!---->
           </div>
-          <!---->
-          
           <div
             class="octo-spacer"
           />
@@ -9713,8 +9687,6 @@ exports[`components/centerPanel > should match snapshot for Kanban, not shared 1
             
             <!---->
           </div>
-          <!---->
-          
           <div
             class="octo-spacer"
           />
@@ -9745,9 +9717,6 @@ exports[`components/centerPanel > should match snapshot for Kanban, not shared 1
           </button>
           <!---->
         </div>
-        <div
-          class="octo-board-divider"
-        />
         <div
           class="octo-board-header-cell KanbanColumnHeader"
           style="opacity: 1;"
@@ -9786,8 +9755,6 @@ exports[`components/centerPanel > should match snapshot for Kanban, not shared 1
             
             <!---->
           </div>
-          <!---->
-          
           <div
             class="octo-spacer"
           />
@@ -9921,9 +9888,6 @@ exports[`components/centerPanel > should match snapshot for Kanban, not shared 1
             <!---->
           </button>
         </div>
-        <div
-          class="octo-board-divider"
-        />
         <div
           class="octo-board-column"
         >

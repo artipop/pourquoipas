@@ -28,7 +28,7 @@ const migrationsDir = "server/services/store/sqlstore/migrations"
 //
 // 000001 is the board's own — the fork's tables as this product has them,
 // corrections included. 000002 is what this application adds beside them:
-// the registries, the conversations, where a card stands on its route. They
+// the registries, the sessions, where a card stands on its route. They
 // are two files because they are two subjects, and one file of forty tables
 // is one a reviewer scrolls rather than reads.
 //
@@ -173,7 +173,7 @@ const boardHeader = header + `--
 
 const appHeader = header + `--
 -- What this application adds beside the board: the machine's registries, the
--- conversations and sessions, where a card stands on its route. Every foreign
+-- sessions, where a card stands on its route. Every foreign
 -- key here points at a table the migration before it made.
 `
 

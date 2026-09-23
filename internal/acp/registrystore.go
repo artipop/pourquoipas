@@ -171,14 +171,13 @@ func (s *Store) DeleteProxy(id string) error {
 // and none of it is joined on — it is configuration, and the shape a person
 // pastes from a server's README has to survive being stored.
 type agentSettings struct {
-	Env             map[string]string `json:"env,omitempty"`
-	Args            []string          `json:"args,omitempty"`
-	CLIArgs         []string          `json:"cliArgs,omitempty"`
-	Options         map[string]string `json:"options,omitempty"`
-	AutoAllowTools  []string          `json:"autoAllowTools,omitempty"`
-	Command         []string          `json:"command,omitempty"`
-	TerminalCommand []string          `json:"terminalCommand,omitempty"`
-	MCPServers      MCPServerSet      `json:"mcpServers,omitempty"`
+	Env            map[string]string `json:"env,omitempty"`
+	Args           []string          `json:"args,omitempty"`
+	CLIArgs        []string          `json:"cliArgs,omitempty"`
+	Options        map[string]string `json:"options,omitempty"`
+	AutoAllowTools []string          `json:"autoAllowTools,omitempty"`
+	Command        []string          `json:"command,omitempty"`
+	MCPServers     MCPServerSet      `json:"mcpServers,omitempty"`
 	// ProxyName is kept for one version so an entry written before proxies had
 	// ids can still find its configuration; proxy_id is what is read.
 	ProxyName string `json:"proxyName,omitempty"`
@@ -205,8 +204,8 @@ func (s *Store) SaveAgent(e AgentEntry, proxyID, userID string) (AgentEntry, err
 	settings, err := json.Marshal(agentSettings{
 		Env: e.Env, Args: e.Args, CLIArgs: e.CLIArgs, Options: e.Options,
 		AutoAllowTools: e.AutoAllowTools, Command: e.Command,
-		TerminalCommand: e.TerminalCommand, MCPServers: e.MCPServers,
-		ProxyName: e.ProxyName,
+		MCPServers: e.MCPServers,
+		ProxyName:  e.ProxyName,
 	})
 	if e.ProxyID != "" {
 		e.ProxyName = ""
@@ -250,7 +249,7 @@ func (s *Store) Agents() ([]AgentEntry, error) {
 				return nil, err
 			}
 			e.Env, e.Args, e.CLIArgs, e.Options = st.Env, st.Args, st.CLIArgs, st.Options
-			e.AutoAllowTools, e.Command, e.TerminalCommand = st.AutoAllowTools, st.Command, st.TerminalCommand
+			e.AutoAllowTools, e.Command = st.AutoAllowTools, st.Command
 			e.MCPServers, e.ProxyName = st.MCPServers, st.ProxyName
 		}
 		// The key column wins over the name kept in the settings blob: the name

@@ -103,7 +103,6 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
                 ListAgents: vi.fn(),
                 ListDeployTargets: vi.fn(),
                 ListAgentWorkdirs: vi.fn(),
-                ListFlows: vi.fn(),
                 ListSources: vi.fn().mockResolvedValue('[]'),
                 ExportBoardAutomation: vi.fn(),
                 BoardSetupPlan: vi.fn().mockResolvedValue('{"steps":[]}'),
@@ -123,10 +122,6 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
         })
         afterEach(() => {
             fakeGoSide()
-        })
-
-        test('the one screen that says what this board does is offered', async () => {
-            await waitFor(() => expect(screen.getByRole('button', {name: 'Columns and routes…'})).toBeInTheDocument())
         })
 
         // Making a template is a rare, deliberate act and no longer stands in
@@ -172,7 +167,6 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
                 ListAgents: vi.fn(),
                 ListDeployTargets: vi.fn(),
                 ListAgentWorkdirs: vi.fn(),
-                ListFlows: vi.fn(),
                 ListSources: vi.fn().mockResolvedValue('[]'),
                 ExportBoardAutomation: vi.fn(),
                 GetBoardPrompt: vi.fn().mockResolvedValue(''),
@@ -235,7 +229,6 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
         beforeEach(() => {
             fakeGoSide({
                 ListSources: vi.fn().mockResolvedValue('[]'),
-                ListFlows: vi.fn(),
             })
             render(() =>
                 wrapIntl(() =>

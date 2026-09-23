@@ -15,7 +15,6 @@ import {Utils} from '../../utils'
 
 import ModalWrapper from '../modalWrapper'
 import {sendFlashMessage} from '../flashMessages'
-import {isAutomationAvailable} from '../acp/bindings'
 import WorkdirsDialog from '../acp/workdirsDialog'
 import BoardPromptsDialog, {isBoardPromptsAvailable} from '../acp/boardPromptsDialog'
 import DeployTargetsDialog from '../acp/deployTargetsDialog'
@@ -80,11 +79,9 @@ function onExportCsvTrigger(board: Board, activeView: BoardView, cards: Card[], 
 // The route canvas (solid-flow, xyflow, d3) rides with this dialog and with
 // nothing else on the board, so it arrives when the dialog is opened. Whether
 // to offer it at all is asked of bindings.ts, which costs nothing to import.
-const AutomationDialog = lazy(() => import('../acp/automationDialog'))
 
 const ViewHeaderActionsMenu = (props: Props) => {
     const intl = useIntl()
-    const [showWorkflows, setShowWorkflows] = createSignal(false)
     const [showSources, setShowSources] = createSignal(false)
     const [showSorting, setShowSorting] = createSignal(false)
     const [showWorkdirs, setShowWorkdirs] = createSignal(false)
@@ -128,14 +125,6 @@ const ViewHeaderActionsMenu = (props: Props) => {
                     menu={
                         <Menu position='left'>
                             <Show when={!onInbox()}>
-                                <Show when={isAutomationAvailable()}>
-                                    <Menu.Text
-                                        id='workflows'
-                                        name={intl.formatMessage({id: 'ViewHeader.automation', defaultMessage: 'Columns and routes…'})}
-                                        onClick={() => setShowWorkflows(true)}
-                                    />
-                                </Show>
-
                                 {/* What the board's agents are told first. Its
                                     own item for the same reason the folders
                                     have one: it was a fold at the bottom of the
@@ -256,14 +245,6 @@ const ViewHeaderActionsMenu = (props: Props) => {
                 >
                     <IconButton icon={<OptionsIcon/>}/>
                 </MenuWrapper>
-            </Show>
-            <Show when={showWorkflows()}>
-                <Loading fallback={null}>
-                    <AutomationDialog
-                        board={props.board}
-                        onClose={() => setShowWorkflows(false)}
-                    />
-                </Loading>
             </Show>
             <Show when={showWorkdirs()}>
                 <WorkdirsDialog

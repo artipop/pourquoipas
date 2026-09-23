@@ -21,7 +21,6 @@ import {
     boardAutomationProperties,
     boardColumns,
     columnProperty,
-    columnsOf,
     impliedSetupSteps,
     readBoardAutomation,
     readBoardSetup,
@@ -178,23 +177,15 @@ const TemplateEditor = (props: Props) => {
                         </span>
                         <span>{columnLine().join(' · ') || '—'}</span>
                     </div>
-                    <For each={aiEnabled() ? automation.flows : []}>
-                        {(flow) => (
-                            <div class='TemplateEditor__carriesRow'>
-                                <span class='TemplateEditor__carriesLabel'>{flow.name}</span>
-                                <span>{columnsOf(flow, columns()).map((c) => c.name).join(' › ') || '—'}</span>
-                            </div>
-                        )}
-                    </For>
                     <Show when={aiEnabled()}>
                         <div class='TemplateEditor__hint'>
-                            {intl.formatMessage({id: 'TemplateEditor.carries-hint', defaultMessage: 'Columns and routes are changed on a board, in its ⋯ menu, and come back here when the board is saved as a template again.'})}
+                            {intl.formatMessage({id: 'TemplateEditor.carries-hint', defaultMessage: 'Columns are changed on the board itself, and come back here when the board is saved as a template again.'})}
                         </div>
                     </Show>
                 </div>
 
-                {/* Routes and setup questions are the agents'; with the AI
-                    switched off a template is its columns and its name. */}
+                {/* The setup questions are the agents'; with the AI switched
+                    off a template is its columns and its name. */}
                 <Show when={aiEnabled()}>
                     <div class='TemplateEditor__setup'>
                         <div class='TemplateEditor__sectionTitle'>

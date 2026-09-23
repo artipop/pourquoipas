@@ -29,10 +29,9 @@ import './askDialog.scss'
 // leaves the question exactly where it was, on the strip and in the
 // notification. This is a second door onto one question, not a second question.
 //
-// Nothing is drawn on a terminal screen, for the reason the notification stack
-// is not: that window is one terminal and a box of ours over it covers what it
-// is about.
-const terminalScreen = (): boolean => (/^\/(acp|m)\/terminal\//).test(window.location.pathname)
+// Nothing is drawn on the phone's waiting screen, for the reason the
+// notification stack is not drawn there: it says the same thing twice.
+const phoneWaits = (): boolean => (/^\/m\/waiting/).test(window.location.pathname)
 
 // asked is the wait this dialog is for: a card the route is holding, with
 // answers to offer. A handover with no options is a card parked on a stage
@@ -70,8 +69,8 @@ const AskDialog = () => {
     //
     // The claim is made in the apply half, not the tracked one, because asking
     // wasMovedHere consumes its answer and a compute may be re-run.
-    createEffect(() => [terminalScreen(), claimed(), waiting()] as const, ([onTerminal, held, list]) => {
-        if (onTerminal || held) {
+    createEffect(() => [phoneWaits(), claimed(), waiting()] as const, ([onWaits, held, list]) => {
+        if (onWaits || held) {
             return
         }
         const mine = list.find((a) => asked(a) && a.cardId && wasMovedHere(a.cardId))

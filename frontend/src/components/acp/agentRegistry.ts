@@ -29,7 +29,7 @@ export type AgentAccount = {
 const [known, setKnown] = createSignal<AgentAccount[] | undefined>(undefined)
 let inflight: Promise<void> | undefined
 
-// undefined until Go has answered: nothing is drawn on a guess, so a terminal
+// undefined until Go has answered: nothing is drawn on a guess, so a button
 // button neither flashes into being nor offers what cannot be opened.
 export const registeredAgents = () => known()?.length
 

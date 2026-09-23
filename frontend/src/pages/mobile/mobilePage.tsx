@@ -1,11 +1,9 @@
 // The Wails-generated Go bindings are PascalCase methods, not constructors.
 /* eslint-disable new-cap */
 import {For, Show, createEffect, createSignal, onSettled} from 'solid-js'
-import {useNavigate} from '@solidjs/router'
 
 import {useIntl} from '../../intl'
 import type {IntlShape} from '../../intl'
-import {goApp} from '../../goBridge'
 import {onAgentEvent} from '../../components/acp/agentEvents'
 import {attentionHeading, useAttention} from '../../components/acp/attention'
 import AttentionAnswers from '../../components/acp/attentionAnswers'
@@ -30,13 +28,11 @@ import './mobilePage.scss'
 //                 board from here, which is the whole point of an inbox;
 //   the cards screen  — one board's cards as a list, to find out where something got
 //                 to without walking to the desk;
-//   the waiting screen      — what is asking for a person. A permission the CLI asked for
-//                 through its hook is answered here, which on a phone is the
-//                 whole point; anything else the agent draws inside its own
-//                 interface, so the screen carries you there instead;
-//   the terminals screen — which are alive, so the one that went quiet can be typed in.
+//   the waiting screen      — what is asking for a person, answered here: the
+//                 agent is holding its turn open on the question, and a phone
+//                 is where a person is when they are not at the desk.
 //
-// the waiting screen is what opens, because it is the only one of the four that cannot
+// the waiting screen is what opens, because it is the only one of the three that cannot
 // wait; the others say how many are there on their own button.
 //
 // It needs nothing from the board's own API: everything on it comes from the
@@ -45,28 +41,13 @@ import './mobilePage.scss'
 // bindings/boards.ts. What it does need besides is the event socket, since the
 // Wails bus does not leave the machine — see components/acp/agentEvents.
 
-type Tab = 'inbox' | 'cards' | 'waiting' | 'terminals'
+type Tab = 'inbox' | 'cards' | 'waiting'
 
-// The tabs that are about agents, and are not drawn with the AI switched off.
-const agentTabs: Tab[] = ['waiting', 'terminals']
-
-type Terminal = {
-    id: string
-    cardId?: string
-    title?: string
-
-    // What the agent said this conversation is doing (describe_conversation).
-    // On a phone it matters more than anywhere else: the screen fits three rows,
-    // and «claude» three times over says nothing about which one to open.
-    summary?: string
-    agent: string
-    branch?: string
-    running: boolean
-}
+// The tab that is about agents, and is not drawn with the AI switched off.
+const agentTabs: Tab[] = ['waiting']
 
 const MobilePage = () => {
     const intl = useIntl()
-    const navigate = useNavigate()
     const waiting = useAttention()
     const [picked, setTab] = createSignal<Tab>(aiEnabled() ? 'waiting' : 'inbox')
 
@@ -80,19 +61,6 @@ const MobilePage = () => {
     // nothing. The boards are read once and lent to both tabs that need them.
     const [inbox, reloadInbox] = createLoader(() => listInbox(), [] as BindingCard[])
     const [boards] = createLoader(() => listBoards(), [] as BindingBoard[])
-
-    const [terminals, reloadTerminals] = createLoader(async (): Promise<Terminal[]> => {
-        const bindings = goApp()
-        if (!bindings?.ListTerminals) {
-            return []
-        }
-        try {
-            return JSON.parse(await bindings.ListTerminals()) || []
-        } catch {
-            // An app that cannot say what is running says nothing.
-            return []
-        }
-    }, [] as Terminal[])
 
     // The phone app shows one machine per tab, each tab a frame holding that
     // machine's board (mobile/frontend/index.html), and puts the number waiting
@@ -114,24 +82,9 @@ const MobilePage = () => {
         }
     })
 
-    onSettled(() => {
-        const off = onAgentEvent('acp:terminal', () => reloadTerminals())
-
-        // A card being written is a card that may have arrived, so the event
-        // that redraws a board also asks the inbox to look again.
-        const offSession = onAgentEvent('acp:session', () => {
-            reloadTerminals()
-            reloadInbox()
-        })
-        return () => {
-            off()
-            offSession()
-        }
-    })
-
-    // A terminal that exists is reached by its address alone — no binding call,
-    // and no window opening on a desktop nobody is sitting at.
-    const openTerminal = (terminalId: string) => navigate(`/m/terminal/${terminalId}`)
+    // A card being written is a card that may have arrived, so the event that
+    // redraws a board also asks the inbox to look again.
+    onSettled(() => onAgentEvent('acp:session', () => reloadInbox()))
 
     return (
         <div class='MobilePage'>
@@ -179,63 +132,12 @@ const MobilePage = () => {
                                         <p class='MobilePage__question'>{target.text}</p>
                                     </Show>
 
-                                    {/* A permission the CLI asked for through
-                                        its hook is answered here, which on a
-                                        phone is the whole point: the terminal
-                                        is reachable but nobody wants to read a
-                                        TUI on it (attentionAnswers). */}
+                                    {/* Answered here, which on a phone is the
+                                        whole point: the agent is waiting on it
+                                        and the person is not at the desk
+                                        (attentionAnswers). */}
                                     <AttentionAnswers target={target}/>
-
-                                    {/* Everything else the agent asks is asked
-                                        inside its own interface, so all this
-                                        screen does is get you there. */}
-                                    <Show when={target.terminalId}>
-                                        <button
-                                            type='button'
-                                            class='MobilePage__action'
-                                            onClick={() => openTerminal(target.terminalId as string)}
-                                        >
-                                            {intl.formatMessage({id: 'Attention.open', defaultMessage: 'Open the terminal'})}
-                                        </button>
-                                    </Show>
                                 </article>
-                            )}
-                        </For>
-                    </Show>
-                </section>
-            </Show>
-
-            <Show when={tab() === 'terminals'}>
-                <section class='MobilePage__section'>
-                    <h2 class='MobilePage__heading'>
-                        {intl.formatMessage({id: 'Mobile.terminals', defaultMessage: 'Terminals'})}
-                    </h2>
-                    <Show
-                        when={terminals().length > 0}
-                        fallback={
-                            <p class='MobilePage__empty'>
-                                {intl.formatMessage({id: 'Mobile.no-terminals', defaultMessage: 'No terminal is running.'})}
-                            </p>
-                        }
-                    >
-                        <For each={terminals()}>
-                            {(terminal) => (
-                                <button
-                                    type='button'
-                                    class='MobilePage__terminal'
-                                    onClick={() => openTerminal(terminal.id)}
-                                >
-                                    <span class='MobilePage__who'>{terminal.agent}</span>
-                                    <span class='MobilePage__card'>
-                                        {terminal.title || intl.formatMessage({id: 'Mobile.planning', defaultMessage: 'Planning'})}
-                                    </span>
-                                    <Show when={terminal.summary}>
-                                        <span class='MobilePage__terminalSummary'>{terminal.summary}</span>
-                                    </Show>
-                                    <Show when={terminal.branch}>
-                                        <code class='MobilePage__branch'>{terminal.branch}</code>
-                                    </Show>
-                                </button>
                             )}
                         </For>
                     </Show>
@@ -249,7 +151,7 @@ const MobilePage = () => {
                 a tap landing on one that was just replaced is a tap lost. */}
             <nav class='MobilePage__tabs'>
                 <For
-                    each={tabs(intl, inbox().length, waiting().length, terminals().length)}
+                    each={tabs(intl, inbox().length, waiting().length)}
                     keyed={false}
                 >
                     {(entry) => (
@@ -272,15 +174,13 @@ const MobilePage = () => {
 }
 
 // tabs is the bar, in the order things happen: something arrives, it becomes a
-// card, an agent asks about it, and a terminal is where you answer by hand.
-// Each carries how many are behind it, so a tab that is not open can still say
-// that it wants attention.
-function tabs(intl: IntlShape, inbox: number, waiting: number, terminals: number) {
+// card, an agent asks about it. Each carries how many are behind it, so a tab
+// that is not open can still say that it wants attention.
+function tabs(intl: IntlShape, inbox: number, waiting: number) {
     const all = [
         {id: 'inbox' as Tab, name: intl.formatMessage({id: 'Mobile.inbox', defaultMessage: 'Inbox'}), count: inbox},
         {id: 'cards' as Tab, name: intl.formatMessage({id: 'Mobile.cards', defaultMessage: 'Cards'}), count: 0},
         {id: 'waiting' as Tab, name: intl.formatMessage({id: 'Mobile.waiting-tab', defaultMessage: 'Waiting'}), count: waiting},
-        {id: 'terminals' as Tab, name: intl.formatMessage({id: 'Mobile.terminals', defaultMessage: 'Terminals'}), count: terminals},
     ]
     return aiEnabled() ? all : all.filter((entry) => !agentTabs.includes(entry.id))
 }

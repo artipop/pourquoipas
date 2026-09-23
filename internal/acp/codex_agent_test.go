@@ -3,6 +3,7 @@ package acp
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -79,6 +80,9 @@ func TestCodexModelIsChosenOverTheProtocol(t *testing.T) {
 // A wrapper command in front of the CLI (proxychains and friends) plus per-agent
 // proxy settings: both must survive all the way to the spawned process.
 func TestCodexAgentWrapperCommandAndProxy(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("the wrapper stands in for proxychains with /bin/sh, which Windows has not got")
+	}
 	script := writeFakeAgent(t, fakeCodexProxy)
 	m, writer, events, _ := testManager(t, fakeClaudeHappy, func(c *Config) {
 		c.Proxies = []ProxyEntry{{

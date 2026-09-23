@@ -148,3 +148,33 @@ func failed(resp *client.Response, what string, args ...any) error {
 	}
 	return nil
 }
+
+// cardBlock reads one card block, refusing anything that is not a card: every
+// write of ours names a card, and a block id that is something else is a
+// mistake worth saying out loud.
+func (c *Client) cardBlock(cardID string) (*model.Block, error) {
+	boardID, err := c.boardOfCard(cardID)
+	if err != nil {
+		return nil, err
+	}
+	block, resp := c.api.GetBlockByID(boardID, cardID)
+	if err := failed(resp, "read card %s", cardID); err != nil {
+		return nil, err
+	}
+	if block == nil || block.Type != model.TypeCard {
+		return nil, fmt.Errorf("block %s is not a card", cardID)
+	}
+	return block, nil
+}
+
+// patchCardFields writes our own keys on a card, silently.
+func (c *Client) patchCardFields(cardID string, patch *model.BlockPatch) error {
+	boardID, err := c.boardOfCard(cardID)
+	if err != nil {
+		return err
+	}
+	return boardmodel.RetryOnceInTheSameMillisecond(func() error {
+		_, resp := c.api.PatchBlock(boardID, cardID, patch, true)
+		return failed(resp, "patch card %s", cardID)
+	})
+}

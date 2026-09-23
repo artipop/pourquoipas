@@ -19,7 +19,7 @@ func TestRenamingAnAgentKeepsTheCrewsItIsOn(t *testing.T) {
 	spec, err := m.SaveColumn(ColumnSpec{
 		BoardID: "board1", OptionID: "opt-work", PropertyID: "prop",
 		Property: "Статус", Column: "В работе",
-		Action: FlowActionAgent, AgentIDs: []string{agent.ID},
+		Action: ColumnActionAgent, AgentIDs: []string{agent.ID},
 	})
 	if err != nil {
 		t.Fatal(err)

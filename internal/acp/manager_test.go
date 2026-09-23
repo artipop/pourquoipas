@@ -21,16 +21,17 @@ func testLogger() *slog.Logger {
 
 // fakeWriter records board writes.
 type fakeWriter struct {
-	mu          sync.Mutex
-	comments    map[string][]string // cardID → comments
-	moves       []cardMove          // moves by column name, in order
-	attachments []attachment
-	created     []NewCard                    // cards asked for through the board tools
-	texts       map[string]map[string]string // cardID → property id → text written
-	fields      map[string]map[string]string // cardID → property name → value (SetCardFields)
-	edits       map[string]CardEdit          // changes asked for through the board tools
-	createErr   error
-	editErr     error
+	mu              sync.Mutex
+	comments        map[string][]string // cardID → comments
+	moves           []cardMove          // moves by column name, in order
+	attachments     []attachment
+	created         []NewCard                    // cards asked for through the board tools
+	texts           map[string]map[string]string // cardID → property id → text written
+	fields          map[string]map[string]string // cardID → property name → value (SetCardFields)
+	edits           map[string]CardEdit          // changes asked for through the board tools
+	addedProperties []string                     // properties an agent asked the board to grow
+	createErr       error
+	editErr         error
 }
 
 // cardMove is one MoveCardByOptionName call.
@@ -123,6 +124,14 @@ func (w *fakeWriter) SetCardText(ctx context.Context, cardID, propertyID, value 
 		w.texts[cardID] = map[string]string{}
 	}
 	w.texts[cardID][propertyID] = value
+	return nil
+}
+
+// AddCardProperty records the properties an agent asked the board to grow.
+func (w *fakeWriter) AddCardProperty(_ context.Context, cardID, name string) error {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	w.addedProperties = append(w.addedProperties, name)
 	return nil
 }
 
@@ -271,11 +280,11 @@ func testManagerWithEmitter(t *testing.T, scenario string, mutate func(*Config))
 	// matched by name any more. The ids
 	// are the ones moveEvent sends.
 	cfg.Columns = []ColumnSpec{
-		workColumn(cfg.TriggerProperty, FlowActionAgent),
+		workColumn(cfg.TriggerProperty, ColumnActionAgent),
 		{BoardID: "board1", PropertyID: "p1", OptionID: "opt-deploy",
-			Property: cfg.TriggerProperty, Column: TemplateDeployColumn, Action: FlowActionDeploy},
+			Property: cfg.TriggerProperty, Column: TemplateDeployColumn, Action: ColumnActionDeploy},
 		{BoardID: "board1", PropertyID: "p1", OptionID: "opt-test",
-			Property: cfg.TriggerProperty, Column: TemplateTestColumn, Action: FlowActionTest},
+			Property: cfg.TriggerProperty, Column: TemplateTestColumn, Action: ColumnActionTest},
 	}
 	if mutate != nil {
 		mutate(&cfg)
@@ -471,6 +480,14 @@ func TestACardMovedWhileTheAIIsOffStartsNothing(t *testing.T) {
 	m.SetSwitchedOff(off.Load)
 
 	events.ch <- moveEvent("card-off", "opt-backlog", "opt-agent")
+
+	// The switch is read when an event is handled, not when it is sent, so the
+	// first move has to be off the queue before the switch goes back on — or
+	// this is a race that passes wherever the loop happens to be quick.
+	waitFor(t, 5*time.Second, "the move with the AI off to be taken", func() bool {
+		return len(events.ch) == 0
+	})
+	time.Sleep(100 * time.Millisecond)
 
 	// Events are handled in order, so once the move made after switching back
 	// on has its session, the one before it has certainly been looked at.
@@ -832,21 +849,12 @@ func TestTheClientTellsAgentsItCanShowAForm(t *testing.T) {
 
 // registerFixtures puts what a fixture built in code through the doors the
 // product uses, so the ids come from where they come from in production: the
-// store mints a registry entry's, validateFlow mints a route's. Nothing in the
-// product hands these out for a config that skipped a save, and it should not:
-// a second place ids are born is the thing the id work was removing.
+// store mints a registry entry's. Nothing in the product hands these out for a
+// config that skipped a save, and it should not.
 func registerFixtures(t *testing.T, m *Manager) {
 	t.Helper()
 	m.cfgMu.Lock()
 	err := m.persistConfigLocked()
-	for i := range m.cfg.Flows {
-		f, ferr := validateFlow(m.cfg.Flows[i], m.cfg.Workdirs, m.cfg.Agents, m.cfg.Deploys)
-		if ferr != nil {
-			m.cfgMu.Unlock()
-			t.Fatalf("fixture route %q is not valid: %v", m.cfg.Flows[i].Name, ferr)
-		}
-		m.cfg.Flows[i] = f
-	}
 	m.cfgMu.Unlock()
 	if err != nil {
 		t.Fatal(err)

@@ -11,26 +11,14 @@ package acp
 // moment they do. A card that failed to start three times carried three
 // comments saying so, from an account named SINGLE-USER, above the one comment
 // worth reading. The state now lives in one record per card, replaced by a
-// newer reason and deleted by any progress, and the strip (or the terminal
-// panel, for a card outside any route) draws it while it is true.
+// newer reason and deleted by any progress, and the route strip draws it while
+// it is true.
 
 // stallCard records why nothing started and nudges every open view of the
 // card. nodeID is the stage the reason belongs to, empty for a standalone
 // trigger column.
 func (m *Manager) stallCard(cardID, nodeID, reason string) {
-	m.stallCardKind(cardID, nodeID, "", reason)
-}
-
-// stallCardConversation is the one reason a person can act on where they are
-// standing: the card's conversation stopped without a verdict. It is drawn on
-// the card's own terminal button as well as on the route strip, because unlike
-// every other reason recorded here it has somewhere to go — that terminal.
-func (m *Manager) stallCardConversation(cardID, nodeID, reason string) {
-	m.stallCardKind(cardID, nodeID, StallKindConversation, reason)
-}
-
-func (m *Manager) stallCardKind(cardID, nodeID, kind, reason string) {
-	if err := m.store.SetStall(StallRecord{CardID: cardID, NodeID: nodeID, Kind: kind, Reason: reason}); err != nil {
+	if err := m.store.SetStall(StallRecord{CardID: cardID, NodeID: nodeID, Reason: reason}); err != nil {
 		m.log.Warn("acp: cannot record why the card stalled", "card", cardID, "err", err)
 		return
 	}
@@ -54,13 +42,6 @@ func (m *Manager) stallCardSoft(cardID, nodeID, reason string) {
 // session starts, a stage is entered, the card leaves the column — so a
 // recorded reason is always the current one.
 func (m *Manager) clearStall(cardID string) {
-	// A card that makes progress is a card nobody is being kept waiting on
-	// either: the moments that end a stall are exactly the moments that end
-	// «эта карточка за вами» (cardwait.go).
-	if a, ok := m.forgetCardWait(cardID); ok {
-		a.Awaiting = false
-		m.emitAttentionRecord(a)
-	}
 	changed, err := m.store.ClearStall(cardID)
 	if err != nil {
 		m.log.Warn("acp: cannot clear the stall record", "card", cardID, "err", err)
@@ -78,18 +59,6 @@ func (m *Manager) emitStall(cardID, reason string) {
 		"cardId": cardID,
 		"stall":  reason,
 	})
-}
-
-// CutOffConversations is every card whose conversation stopped without a
-// verdict, as card id → reason. The board asks once and draws the answer on
-// each of its cards, exactly as it does for the terminals that are running.
-func (m *Manager) CutOffConversations() map[string]string {
-	out, err := m.store.StallsOfKind(StallKindConversation)
-	if err != nil {
-		m.log.Warn("acp: cannot read which conversations were cut off", "err", err)
-		return map[string]string{}
-	}
-	return out
 }
 
 // CardStall is the card's recorded reason, for the surfaces that draw it.

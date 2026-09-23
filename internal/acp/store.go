@@ -148,71 +148,9 @@ func (s *Store) ClaimVCSEvent(workspaceID, branch, kind, marker string) (bool, e
 	return true, nil
 }
 
-// FlowState is where a card currently stands on its route.
-//
-// It lives on the card itself (BoardCardState) and is mirrored into the table
-// below, which is this machine's index: the VCS watcher asks "which cards are
-// parked and on what branch" every poll, and that is a question about all the
-// cards at once. The card is the truth — it is what an export carries and an
-// import renumbers — and the table is refilled from it.
-type FlowState struct {
-	CardID  string `json:"cardId"`
-	BoardID string `json:"boardId"`
-	// FlowID is the route, by its id: the name is what somebody renames, and
-	// renaming a route used to lose the place of every card on it.
-	FlowID string `json:"flowId"`
-	// Flow is what the route used to be recorded as, on the card and in this
-	// machine's index. Read once and folded into FlowID (flowStateFlowID);
-	// never written back.
-	Flow        string    `json:"flow,omitempty"`
-	NodeID      string    `json:"nodeId"`
-	Branch      string    `json:"branch"`
-	WorkdirPath string    `json:"workdirPath"`
-	EnteredAt   time.Time `json:"enteredAt"`
-	// Visited are the stages the card has already left, which is what "done"
-	// means on a route with a loop — the graph cannot say it, only the card's
-	// own history can. Kept here rather than derived from flow_event so that it
-	// travels with the card; flow_event stays as this machine's journal and is
-	// still what answers for a card that predates this.
-	Visited []string `json:"visited,omitempty"`
-
-	// Ask is the transition this card is held at: where it was going and on
-	// what, with the question nobody has answered yet. The card has not
-	// entered the next stage, so NodeID above is still the stage it is
-	// leaving. See cardask.go.
-	Ask *FlowAsk `json:"ask,omitempty"`
-
-	// WorkMode is how a person said this card's work should be arranged, when
-	// a transition asked. Kept on the card because the answer outlives the
-	// working copy: a folded worktree remade for a later stage is made the
-	// same way. The checkout, once it exists, is the fact — this is the
-	// intent, and ClaimWorkspace states the precedence between them.
-	WorkMode string `json:"workMode,omitempty"`
-}
-
-// FlowEventRecord is one transition, kept as the card's route history.
-type FlowEventRecord struct {
-	ID       string `json:"id"`
-	CardID   string `json:"cardId"`
-	FlowID   string `json:"flowId"`
-	FromNode string `json:"fromNode"`
-	ToNode   string `json:"toNode"`
-	On       string `json:"on"`
-	Detail   string `json:"detail"`
-	// Said is the agent's own closing words on the transition that raised this
-	// event — what the reviewer reported, in full where Detail is a label. It
-	// is what a conversation resumed on a return is told instead of its task.
-	Said      string    `json:"said,omitempty"`
-	CreatedAt time.Time `json:"createdAt"`
-}
-
-// Everything below is keyed on a card or a board and points at card_ref and
-// board_ref rather than at the board's own tables: a key reaches only inside its
-// own database, and a desktop attached to a hosted board has no row for a remote
-// card. See tools/schemagen for the chain.
-//
-// ensureRefs runs before every write that names one — an upsert rather than a
-// read, because this is the path a card takes through a route.
+// Every write that names a card or a board makes the row its foreign key points
+// at first — an upsert rather than a read, because a card this side has never
+// heard of is the ordinary case on the first write about it.
 
 // LocalSource is the board this process serves, written as NULL: "no source
 // named" is what a machine that never attached to anything says.
@@ -235,9 +173,7 @@ func (s *Store) ensureBoardRef(boardID string, local bool) error {
 	return err
 }
 
-// ensureCardRef makes the row a card key can point at. boardID may be empty:
-// three writers know a card and not its board, and it is filled in by whichever
-// does.
+// ensureCardRef makes the row a card key can point at, and the board's with it.
 func (s *Store) ensureCardRef(cardID, boardID string) error {
 	if cardID == "" {
 		return nil
@@ -258,148 +194,28 @@ func (s *Store) ensureRefs(cardID, boardID string) error {
 	return s.ensureCardRef(cardID, boardID)
 }
 
-// SaveFlowState records where the card is now, replacing any previous position.
-func (s *Store) SaveFlowState(st FlowState) error {
-	if st.EnteredAt.IsZero() {
-		st.EnteredAt = time.Now()
-	}
-	if err := s.ensureRefs(st.CardID, st.BoardID); err != nil {
-		return err
-	}
-	_, err := s.exec(`INSERT INTO flow_state (card_id, board_id, flow_id, node_id, branch, workdir_path, entered_at)
-		VALUES (?,?,?,?,?,?,?)
-		ON CONFLICT(card_id) DO UPDATE SET
-			board_id=excluded.board_id, flow_id=excluded.flow_id, node_id=excluded.node_id,
-			branch=excluded.branch, workdir_path=excluded.workdir_path, entered_at=excluded.entered_at`,
-		st.CardID, nullable(st.BoardID), st.FlowID, st.NodeID, st.Branch, st.WorkdirPath, st.EnteredAt.UnixMilli())
-	return err
-}
-
-// FlowStateForCard returns the card's position, if it is on a route at all.
-func (s *Store) FlowStateForCard(cardID string) (FlowState, bool, error) {
-	row := s.queryRow(`SELECT card_id, COALESCE(board_id,''), COALESCE(flow_id,''), node_id, COALESCE(branch,''), COALESCE(workdir_path,''), entered_at
-		FROM flow_state WHERE card_id=?`, cardID)
-	st, err := scanFlowState(row)
-	if err == sql.ErrNoRows {
-		return FlowState{}, false, nil
-	}
-	if err != nil {
-		return FlowState{}, false, err
-	}
-	return st, true, nil
-}
-
-// FlowStates returns every card currently on a route — the input the VCS
-// watcher builds its poll targets from.
-func (s *Store) FlowStates() ([]FlowState, error) {
-	rows, err := s.query(`SELECT card_id, COALESCE(board_id,''), COALESCE(flow_id,''), node_id, COALESCE(branch,''), COALESCE(workdir_path,''), entered_at FROM flow_state`)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var out []FlowState
-	for rows.Next() {
-		st, err := scanFlowState(rows)
-		if err != nil {
-			return nil, err
-		}
-		out = append(out, st)
-	}
-	return out, rows.Err()
-}
-
-// ClearFlowState forgets a card's position (it left its route).
-func (s *Store) ClearFlowState(cardID string) error {
-	_, err := s.exec(`DELETE FROM flow_state WHERE card_id=?`, cardID)
-	return err
-}
-
-// AppendFlowEvent records one transition.
-func (s *Store) AppendFlowEvent(r FlowEventRecord) error {
-	if err := s.ensureCardRef(r.CardID, ""); err != nil {
-		return err
-	}
-	_, err := s.exec(`INSERT INTO flow_event (id, card_id, flow_id, from_node, to_node, on_kind, detail, said, created_at)
-		VALUES (?,?,?,?,?,?,?,?,?)`,
-		newID(), r.CardID, r.FlowID, r.FromNode, r.ToNode, r.On, r.Detail, r.Said, time.Now().UnixMilli())
-	return err
-}
-
-// FlowEvents returns a card's route history, oldest first.
-func (s *Store) FlowEvents(cardID string) ([]FlowEventRecord, error) {
-	rows, err := s.query(`SELECT id, card_id, COALESCE(flow_id,''), COALESCE(from_node,''), to_node, on_kind, COALESCE(detail,''), COALESCE(said,''), created_at
-		FROM flow_event WHERE card_id=? ORDER BY id`, cardID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var out []FlowEventRecord
-	for rows.Next() {
-		var r FlowEventRecord
-		var created int64
-		if err := rows.Scan(&r.ID, &r.CardID, &r.FlowID, &r.FromNode, &r.ToNode, &r.On, &r.Detail, &r.Said, &created); err != nil {
-			return nil, err
-		}
-		r.CreatedAt = time.UnixMilli(created)
-		out = append(out, r)
-	}
-	return out, rows.Err()
-}
-
 // StallRecord is why nothing is happening on a card that was asked to do
-// something: a stage that could not start, a route that has nowhere to go. One
-// per card — a newer reason replaces the old one, and any progress deletes it.
+// something: a folder another card holds, a column with no free place, an
+// agent that could not start. One per card — a newer reason replaces the old
+// one, and any progress deletes it.
 type StallRecord struct {
-	CardID string `json:"cardId"`
-	NodeID string `json:"nodeId,omitempty"`
-	// Kind says what the reason is *about*, because one of them has somewhere
-	// to go and the rest do not. See StallKindConversation.
-	Kind      string    `json:"kind,omitempty"`
+	CardID    string    `json:"cardId"`
+	NodeID    string    `json:"nodeId,omitempty"`
 	Reason    string    `json:"reason"`
 	CreatedAt time.Time `json:"createdAt"`
 }
-
-// StallKindConversation marks the one stall a person can act on directly: the
-// card's own conversation stopped without a verdict — the CLI was closed, or
-// the app was. Everything else recorded here is about the machinery around the
-// card — a column with no free place, a folder another card holds, a route with
-// no edge for what arrived — and none of those is opened by opening a terminal.
-//
-// It is a field rather than a reading of the reason, because the reason is a
-// sentence for a person and nothing may branch on one.
-const StallKindConversation = "conversation"
 
 // SetStall records the reason, replacing whatever was there.
 func (s *Store) SetStall(r StallRecord) error {
 	if err := s.ensureCardRef(r.CardID, ""); err != nil {
 		return err
 	}
-	_, err := s.exec(`INSERT INTO card_stall (card_id, node_id, kind, reason, created_at)
-		VALUES (?,?,?,?,?)
+	_, err := s.exec(`INSERT INTO card_stall (card_id, node_id, reason, created_at)
+		VALUES (?,?,?,?)
 		ON CONFLICT(card_id) DO UPDATE SET
-			node_id=excluded.node_id, kind=excluded.kind, reason=excluded.reason, created_at=excluded.created_at`,
-		r.CardID, r.NodeID, r.Kind, r.Reason, time.Now().UnixMilli())
+			node_id=excluded.node_id, reason=excluded.reason, created_at=excluded.created_at`,
+		r.CardID, r.NodeID, r.Reason, time.Now().UnixMilli())
 	return err
-}
-
-// StallsOfKind is every card standing still for one kind of reason, as card id
-// → reason. One query rather than one per card, for the same reason
-// LiveTerminals is one call: the board draws this on every card it has.
-func (s *Store) StallsOfKind(kind string) (map[string]string, error) {
-	rows, err := s.query(`SELECT card_id, reason FROM card_stall WHERE kind=?`, kind)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	out := map[string]string{}
-	for rows.Next() {
-		var cardID, reason string
-		if err := rows.Scan(&cardID, &reason); err != nil {
-			return nil, err
-		}
-		out[cardID] = reason
-	}
-	return out, rows.Err()
 }
 
 // ClearStall forgets the reason and reports whether there was one — the caller
@@ -415,10 +231,10 @@ func (s *Store) ClearStall(cardID string) (bool, error) {
 
 // Stall returns the card's recorded reason, if it has one.
 func (s *Store) Stall(cardID string) (StallRecord, bool, error) {
-	row := s.queryRow(`SELECT card_id, COALESCE(node_id,''), COALESCE(kind,''), reason, created_at FROM card_stall WHERE card_id=?`, cardID)
+	row := s.queryRow(`SELECT card_id, COALESCE(node_id,''), reason, created_at FROM card_stall WHERE card_id=?`, cardID)
 	var r StallRecord
 	var created int64
-	err := row.Scan(&r.CardID, &r.NodeID, &r.Kind, &r.Reason, &created)
+	err := row.Scan(&r.CardID, &r.NodeID, &r.Reason, &created)
 	if err == sql.ErrNoRows {
 		return StallRecord{}, false, nil
 	}
@@ -515,16 +331,6 @@ func (s *Store) CardChangesForBoard(boardID string) (map[string]CardChangesRecor
 
 // scanner is satisfied by both *sql.Row and *sql.Rows.
 type scanner interface{ Scan(dest ...any) error }
-
-func scanFlowState(row scanner) (FlowState, error) {
-	var st FlowState
-	var entered int64
-	if err := row.Scan(&st.CardID, &st.BoardID, &st.FlowID, &st.NodeID, &st.Branch, &st.WorkdirPath, &entered); err != nil {
-		return FlowState{}, err
-	}
-	st.EnteredAt = time.UnixMilli(entered)
-	return st, nil
-}
 
 // InsertSession stores a new session row.
 func (s *Store) InsertSession(r SessionRecord) error {
@@ -685,7 +491,6 @@ type QueuedStage struct {
 	CardID    string    `json:"cardId"`
 	BoardID   string    `json:"boardId"`
 	ColumnKey string    `json:"columnKey"`
-	FlowID    string    `json:"flowId,omitempty"`
 	NodeID    string    `json:"nodeId,omitempty"`
 	QueuedAt  time.Time `json:"queuedAt"`
 }
@@ -697,9 +502,9 @@ func (s *Store) EnqueueStage(q QueuedStage) (bool, error) {
 	if err := s.ensureRefs(q.CardID, q.BoardID); err != nil {
 		return false, err
 	}
-	res, err := s.exec(`INSERT INTO stage_queue (card_id, board_id, column_key, flow_id, node_id, queued_at)
-		VALUES (?,?,?,?,?,?) ON CONFLICT(card_id) DO NOTHING`,
-		q.CardID, nullable(q.BoardID), q.ColumnKey, q.FlowID, q.NodeID, time.Now().UnixMilli())
+	res, err := s.exec(`INSERT INTO stage_queue (card_id, board_id, column_key, node_id, queued_at)
+		VALUES (?,?,?,?,?) ON CONFLICT(card_id) DO NOTHING`,
+		q.CardID, nullable(q.BoardID), q.ColumnKey, q.NodeID, time.Now().UnixMilli())
 	if err != nil {
 		return false, err
 	}
@@ -709,11 +514,11 @@ func (s *Store) EnqueueStage(q QueuedStage) (bool, error) {
 
 // NextQueuedStage is the card that has waited longest for this column.
 func (s *Store) NextQueuedStage(columnKey string) (QueuedStage, bool, error) {
-	row := s.queryRow(`SELECT card_id, COALESCE(board_id,''), column_key, COALESCE(flow_id,''), COALESCE(node_id,''), queued_at
+	row := s.queryRow(`SELECT card_id, COALESCE(board_id,''), column_key, COALESCE(node_id,''), queued_at
 		FROM stage_queue WHERE column_key=? ORDER BY queued_at LIMIT 1`, columnKey)
 	var q QueuedStage
 	var at int64
-	err := row.Scan(&q.CardID, &q.BoardID, &q.ColumnKey, &q.FlowID, &q.NodeID, &at)
+	err := row.Scan(&q.CardID, &q.BoardID, &q.ColumnKey, &q.NodeID, &at)
 	if err == sql.ErrNoRows {
 		return QueuedStage{}, false, nil
 	}
@@ -722,6 +527,16 @@ func (s *Store) NextQueuedStage(columnKey string) (QueuedStage, bool, error) {
 	}
 	q.QueuedAt = time.UnixMilli(at)
 	return q, true, nil
+}
+
+// StageQueued reports whether this card is waiting for a place in a column.
+func (s *Store) StageQueued(cardID string) (bool, error) {
+	var one int
+	err := s.queryRow(`SELECT 1 FROM stage_queue WHERE card_id=?`, cardID).Scan(&one)
+	if err == sql.ErrNoRows {
+		return false, nil
+	}
+	return err == nil, err
 }
 
 // DequeueStage forgets a waiting card — it started, or it left the column.
@@ -745,160 +560,6 @@ func (s *Store) LatestBranchForCard(cardID string) (string, error) {
 		return "", err
 	}
 	return branch, nil
-}
-
-// TerminalRecord mirrors one terminal_session row: a CLI a human opened on a
-// card. It is kept after the CLI exits, which is what makes a terminal
-// resumable — the next one on that card goes back to the same directory and
-// branch, and asks the CLI to continue the conversation it left there.
-type TerminalRecord struct {
-	ID     string `json:"id"`
-	CardID string `json:"cardId,omitempty"`
-	// NodeID is the node this conversation belongs to: the option id of the
-	// card's column, or nodeNone for a card that has no column at all.
-	NodeID string `json:"nodeId,omitempty"`
-	// ColumnName is what the node was called when the conversation was held,
-	// frozen on purpose: past columns are facts about the past, and the board
-	// no longer remembers an option somebody deleted.
-	ColumnName  string `json:"columnName,omitempty"`
-	BoardID     string `json:"boardId,omitempty"`
-	Title       string `json:"title,omitempty"`
-	WorkdirPath string `json:"workdirPath,omitempty"`
-	Cwd         string `json:"cwd"`
-	Branch      string `json:"branch,omitempty"`
-	Agent       string `json:"agent,omitempty"`
-	Kind        string `json:"kind,omitempty"`
-	// Summary is the agent's own line about the conversation, kept so it comes
-	// back with the conversation it describes.
-	Summary   string     `json:"summary,omitempty"`
-	StartedAt time.Time  `json:"startedAt"`
-	EndedAt   *time.Time `json:"endedAt,omitempty"`
-	ExitCode  int        `json:"exitCode"`
-}
-
-// InsertTerminal records a terminal session as it starts.
-func (s *Store) InsertTerminal(r TerminalRecord) error {
-	if err := s.ensureRefs(r.CardID, r.BoardID); err != nil {
-		return err
-	}
-	_, err := s.exec(`INSERT INTO conversation
-		(id, card_id, node_id, column_name, board_id, title, workdir_path, cwd, branch, agent, kind, summary, started_at)
-		VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-		r.ID, nullable(r.CardID), r.NodeID, r.ColumnName, nullable(r.BoardID), r.Title, r.WorkdirPath, r.Cwd, r.Branch, r.Agent, r.Kind,
-		r.Summary, r.StartedAt.UnixMilli())
-	return err
-}
-
-// RenameTerminal records what a person called a conversation, so the name comes
-// back when the conversation is resumed.
-func (s *Store) RenameTerminal(id, title string) error {
-	_, err := s.exec(`UPDATE conversation SET title=? WHERE id=?`, title, id)
-	return err
-}
-
-// SetTerminalSummary records what the agent said the conversation is about.
-func (s *Store) SetTerminalSummary(id, summary string) error {
-	_, err := s.exec(`UPDATE conversation SET summary=? WHERE id=?`, summary, id)
-	return err
-}
-
-// DeleteTerminalsForCardNode forgets one conversation of a card — every record
-// of it, not only the latest, because what the next terminal there would resume
-// is whichever record is newest. This is what a person deleting a conversation
-// asks for: the CLI is ended beside it, and the next one starts fresh.
-func (s *Store) DeleteTerminalsForCardNode(cardID, nodeID string) error {
-	_, err := s.exec(`DELETE FROM conversation WHERE card_id=? AND node_id=?`, cardID, nodeID)
-	return err
-}
-
-// FinishTerminal records how a terminal session ended.
-func (s *Store) FinishTerminal(id string, endedAt time.Time, exitCode int) error {
-	_, err := s.exec(`UPDATE conversation SET ended_at=?, exit_code=? WHERE id=?`,
-		endedAt.UnixMilli(), exitCode, id)
-	return err
-}
-
-// terminalColumns reads a conversation back. The COALESCEs are where a column
-// that means "there is none" — a planning conversation's card, a CLI that has
-// not exited — meets Go, which spells absence with a zero value here. NULL is
-// what the database has to hold, because a foreign key cannot point at ”.
-const terminalColumns = `id, COALESCE(card_id,''), node_id, COALESCE(column_name,''), COALESCE(board_id,''),
-	COALESCE(title,''), COALESCE(workdir_path,''), COALESCE(cwd,''), COALESCE(branch,''),
-	COALESCE(agent,''), COALESCE(kind,''), COALESCE(summary,''), started_at, ended_at, COALESCE(exit_code,0)`
-
-// LastTerminalForCardNode is the most recent conversation on one node of the
-// card — the one a new terminal there continues.
-func (s *Store) LastTerminalForCardNode(cardID, nodeID string) (TerminalRecord, bool, error) {
-	return s.lastTerminal(cardID, nodeID)
-}
-
-func (s *Store) lastTerminal(cardID, nodeID string) (TerminalRecord, bool, error) {
-	row := s.queryRow(`SELECT `+terminalColumns+`
-		FROM conversation WHERE card_id=? AND node_id=? ORDER BY started_at DESC LIMIT 1`, cardID, nodeID)
-	rec, err := scanTerminal(row)
-	if err == sql.ErrNoRows {
-		return TerminalRecord{}, false, nil
-	}
-	if err != nil {
-		return TerminalRecord{}, false, err
-	}
-	return rec, true, nil
-}
-
-// LastTerminalForCard is the card's most recent conversation on any stage —
-// what "this card has been worked in a terminal" means.
-func (s *Store) LastTerminalForCard(cardID string) (TerminalRecord, bool, error) {
-	row := s.queryRow(`SELECT `+terminalColumns+`
-		FROM conversation WHERE card_id=? ORDER BY started_at DESC LIMIT 1`, cardID)
-	rec, err := scanTerminal(row)
-	if err == sql.ErrNoRows {
-		return TerminalRecord{}, false, nil
-	}
-	if err != nil {
-		return TerminalRecord{}, false, err
-	}
-	return rec, true, nil
-}
-
-// TerminalsForCard is the card's conversations, one per stage — the latest
-// record of each. Newest first, which is the order a person left them in.
-func (s *Store) TerminalsForCard(cardID string) ([]TerminalRecord, error) {
-	rows, err := s.query(`SELECT `+terminalColumns+` FROM conversation c
-		WHERE c.card_id=? AND c.started_at = (
-			SELECT MAX(started_at) FROM conversation t2
-			WHERE t2.card_id = c.card_id AND t2.node_id = c.node_id)
-		ORDER BY started_at DESC`, cardID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var out []TerminalRecord
-	for rows.Next() {
-		rec, err := scanTerminal(rows)
-		if err != nil {
-			return nil, err
-		}
-		out = append(out, rec)
-	}
-	return out, rows.Err()
-}
-
-func scanTerminal(row scanner) (TerminalRecord, error) {
-	var (
-		rec     TerminalRecord
-		started int64
-		ended   sql.NullInt64
-	)
-	if err := row.Scan(&rec.ID, &rec.CardID, &rec.NodeID, &rec.ColumnName, &rec.BoardID, &rec.Title, &rec.WorkdirPath, &rec.Cwd,
-		&rec.Branch, &rec.Agent, &rec.Kind, &rec.Summary, &started, &ended, &rec.ExitCode); err != nil {
-		return TerminalRecord{}, err
-	}
-	rec.StartedAt = time.UnixMilli(started)
-	if ended.Valid {
-		t := time.UnixMilli(ended.Int64)
-		rec.EndedAt = &t
-	}
-	return rec, nil
 }
 
 // Checkout is the git state of one owner's work in one workspace: which branch

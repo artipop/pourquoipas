@@ -5,7 +5,7 @@ import {createIntl} from '../../intl'
 import {fakeGoSide} from '../../test/goSide'
 
 import {saveBoardAsTemplate, isSaveAsTemplateAvailable} from './saveAsTemplate'
-import {BOARD_PROP_COLUMNS, BOARD_PROP_FLOWS, BOARD_PROP_SETUP} from './automation'
+import {BOARD_PROP_COLUMNS, BOARD_PROP_SETUP} from './automation'
 
 vi.mock('../../mutator')
 
@@ -24,14 +24,13 @@ describe('components/acp/saveAsTemplate', () => {
         expect(isSaveAsTemplateAvailable()).toBe(true)
     })
 
-    // Half of what a board does lives in the registry rather than on the board,
-    // so a copy made without it is a template with the columns drawn and
-    // nothing happening in them.
+    // What a board does lives in the registry rather than on the board, so a
+    // copy made without it is a template with the columns drawn and nothing
+    // happening in them.
     test('the copy carries the automation the original runs', async () => {
         fakeGoSide({
             ExportBoardAutomation: vi.fn().mockResolvedValue(JSON.stringify({
                 columns: [{optionId: 'opt-work', property: 'Статус', column: 'В работе', action: 'agent'}],
-                flows: [{name: 'Фича', nodes: [], edges: []}],
             })),
         })
         const board: Board = {
@@ -51,7 +50,6 @@ describe('components/acp/saveAsTemplate', () => {
         // copy arrives as "New board template", which says nothing about it.
         expect(saved.title).toBe('Работа')
         expect(JSON.parse(saved.properties[BOARD_PROP_COLUMNS] as string)[0].column).toBe('В работе')
-        expect(JSON.parse(saved.properties[BOARD_PROP_FLOWS] as string)[0].name).toBe('Фича')
 
         // What the board itself declared it needs asking travels with it.
         expect(JSON.parse(saved.properties[BOARD_PROP_SETUP] as string).steps).toEqual([{kind: 'project'}])
@@ -69,7 +67,6 @@ describe('components/acp/saveAsTemplate', () => {
             id: 'board-1',
             properties: {
                 [BOARD_PROP_COLUMNS]: JSON.stringify([{optionId: 'opt-work', property: 'Статус', column: 'В работе', action: 'agent'}]),
-                [BOARD_PROP_FLOWS]: JSON.stringify([{name: 'Фича', nodes: [], edges: []}]),
             } as Board['properties'],
         }
         const copy: Board = {...createBoard(), id: 'template-1', isTemplate: true}
@@ -78,6 +75,5 @@ describe('components/acp/saveAsTemplate', () => {
         const saved = await saveBoardAsTemplate(board, intl)
 
         expect(JSON.parse(saved.properties[BOARD_PROP_COLUMNS] as string)[0].column).toBe('В работе')
-        expect(JSON.parse(saved.properties[BOARD_PROP_FLOWS] as string)[0].name).toBe('Фича')
     })
 })

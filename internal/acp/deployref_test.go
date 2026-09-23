@@ -21,7 +21,7 @@ func TestRenamingADeployTargetKeepsWhatPointsAtIt(t *testing.T) {
 	spec, err := m.SaveColumn(ColumnSpec{
 		BoardID: "board1", OptionID: "opt-deploy", PropertyID: "prop",
 		Property: "Статус", Column: "Публикация",
-		Action: FlowActionDeploy, DeployID: target.ID,
+		Action: ColumnActionDeploy, DeployID: target.ID,
 	})
 	if err != nil {
 		t.Fatal(err)

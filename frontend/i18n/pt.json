@@ -1,6 +1,5 @@
 {
   "AdminBadge.SystemAdmin": "Administrador",
-  "AppBar.Tooltip": "Alternar quadros vinculados",
   "Attachment.Attachment-title": "Anexo",
   "AttachmentBlock.DeleteAction": "Apagar",
   "AttachmentBlock.addElement": "Adicionar {type}",
@@ -21,7 +20,6 @@
   "BoardMember.schemeCommenter": "Comentador",
   "BoardMember.schemeEditor": "Editor",
   "BoardMember.schemeNone": "Nenhum",
-  "BoardMember.unlinkChannel": "Desvincular",
   "BoardPage.syncFailed": "O Board pode ter sido apagado ou o acesso revogado.",
   "BoardTemplateSelector.add-template": "Criar novo modelo",
   "BoardTemplateSelector.create-empty-board": "Criar um board vazio",
@@ -54,8 +52,6 @@
   "CardActionsMenu.duplicate": "Duplicar",
   "CardBadges.title-comments": "Comentários",
   "CardDetail.Attach": "Anexar",
-  "CardDetail.Follow": "Seguir",
-  "CardDetail.Following": "Seguindo",
   "CardDetail.add-content": "Adicionar conteúdo",
   "CardDetail.add-icon": "Adicionar ícone",
   "CardDetail.add-property": "+ Adicionar uma propriedade",
@@ -69,7 +65,6 @@
   "CenterPanel.Share": "Compartilhar",
   "Comment.delete": "Apagar",
   "CommentsList.send": "Enviar",
-  "ConfirmPerson.empty": "Vazio",
   "ConfirmPerson.search": "Procurar...",
   "ConfirmationDialog.cancel-action": "Cancelar",
   "ConfirmationDialog.confirm-action": "Confirmar",
@@ -87,8 +82,5 @@
   "DateRange.today": "Hoje",
   "DeleteBoardDialog.confirm-cancel": "Cancelar",
   "DeleteBoardDialog.confirm-delete": "Apagar",
-  "EditableDayPicker.today": "Hoje",
-  "shareBoard.members-select-group": "Membros",
-  "shareBoard.unknown-channel-display-name": "Canal desconhecido",
   "tutorial_tip.ok": "Próximo"
 }

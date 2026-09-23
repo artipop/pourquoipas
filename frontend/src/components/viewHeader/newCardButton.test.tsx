@@ -132,8 +132,8 @@ describe('components/viewHeader/newCardButton', () => {
 
         test('is offered beside the card templates when an agent can be opened', () => {
             fakeGoSide({
-                OpenPlanningTerminal: vi.fn(),
-                ListTerminals: vi.fn().mockResolvedValue('[]'),
+                StartPlanning: vi.fn(),
+                ListPlanning: vi.fn().mockResolvedValue('[]'),
                 ListAgentWorkdirs: vi.fn().mockResolvedValue('[]'),
                 ListAgents: vi.fn().mockResolvedValue('[]'),
             })
@@ -141,7 +141,7 @@ describe('components/viewHeader/newCardButton', () => {
             expect(screen.getByRole('button', {name: 'Talk it over with an agent…'})).toBeInTheDocument()
         })
 
-        // A browser build has no CLI to open, and an entry that cannot do
+        // A browser build has no agent to talk to, and an entry that cannot do
         // anything is worse than no entry.
         test('is absent where there is no agent to open', () => {
             openMenu()

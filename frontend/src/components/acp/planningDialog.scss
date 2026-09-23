@@ -8,9 +8,8 @@
         flex-direction: column;
         gap: 16px;
         padding: 0 24px 24px;
-        // Width is pinned: a terminal's row carries a folder name and a line of
-        // the agent's own prose, and without this the dialog grows to whatever
-        // the longest of them happens to be.
+        // Width is pinned: a conversation is prose, and without this the
+        // dialog grows to whatever the longest line in it happens to be.
         width: min(720px, 86vw);
         min-width: 0;
 
@@ -46,7 +45,10 @@
         color: rgba(var(--center-channel-color-rgb), 0.56);
     }
 
-    .PlanningDialog__terminals {
+    // The conversations already open: one line each — who is talking and
+    // where — because that is all a conversation with no name has to be picked
+    // out by.
+    .PlanningDialog__chats {
         display: flex;
         flex-direction: column;
         gap: 6px;
@@ -55,11 +57,9 @@
         list-style: none;
     }
 
-    // A row, not a button: the name opens it, the icons act on it, and the two
-    // lines under the name are what makes the list readable at all.
-    .PlanningDialog__terminal {
+    .PlanningDialog__chat {
         display: flex;
-        align-items: flex-start;
+        align-items: center;
         gap: 8px;
         padding: 8px 10px;
         border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
@@ -71,16 +71,8 @@
         }
     }
 
-    .PlanningDialog__terminalMain {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
+    .PlanningDialog__chatName {
         flex: 1 1 auto;
-        min-width: 0;
-    }
-
-    .PlanningDialog__terminalName {
-        align-self: flex-start;
         border: 0;
         background: transparent;
         padding: 0;
@@ -89,7 +81,6 @@
         color: rgb(var(--center-channel-color-rgb));
         text-align: left;
         cursor: pointer;
-        max-width: 100%;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -97,43 +88,6 @@
         &:hover {
             color: rgb(var(--link-color-rgb));
         }
-    }
-
-    .PlanningDialog__terminalRename {
-        font: inherit;
-        font-weight: 600;
-        width: 100%;
-        border: 1px solid rgb(var(--button-bg-rgb));
-        border-radius: var(--radius-md);
-        background: rgb(var(--center-channel-bg-rgb));
-        color: rgb(var(--center-channel-color-rgb));
-        padding: 2px 6px;
-    }
-
-    // The agent's own line. Clamped to two: it is a recap, and a row that grows
-    // with it stops being a row.
-    .PlanningDialog__terminalSummary {
-        font-size: var(--text-small);
-        color: rgba(var(--center-channel-color-rgb), 0.72);
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-    }
-
-    .PlanningDialog__terminalMeta {
-        font-size: var(--text-small);
-        color: rgba(var(--center-channel-color-rgb), 0.48);
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    .PlanningDialog__terminalActions {
-        display: flex;
-        align-items: center;
-        gap: 2px;
-        flex: 0 0 auto;
     }
 
     .PlanningDialog__iconButton {
@@ -159,7 +113,7 @@
         }
     }
 
-    .PlanningDialog__terminalConfirm {
+    .PlanningDialog__confirm {
         display: flex;
         align-items: center;
         gap: 8px;
@@ -188,10 +142,119 @@
         color: rgba(var(--center-channel-color-rgb), 0.64);
     }
 
-    // The stepped pick, in the card terminal's own shapes (cardTerminal.scss is
-    // the original): the ask, name-chips as answers, the answered agent as the
-    // quiet way back. The folder answers are FolderChoices, shared with the
-    // panel beside a card so the same question cannot drift into two shapes.
+    // The conversation itself: what was said, what is being said, and the box
+    // to say the next thing in. The transcript scrolls and the box does not, so
+    // the place a person types stays where they left it.
+    .PlanningDialog__conversation {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        min-height: 0;
+    }
+
+    .PlanningDialog__conversationHead {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+    }
+
+    .PlanningDialog__meta {
+        font-size: var(--text-small);
+        color: rgba(var(--center-channel-color-rgb), 0.48);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .PlanningDialog__transcript {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        max-height: min(46vh, 420px);
+        overflow-y: auto;
+        padding-right: 4px;
+    }
+
+    // What a person said is their own words and reads as a message; what the
+    // agent said is prose and reads as text on the page. Whitespace is kept:
+    // an agent writes lists and code.
+    .PlanningDialog__message {
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        font-size: 14px;
+    }
+
+    .PlanningDialog__message--person {
+        align-self: flex-end;
+        max-width: 80%;
+        padding: 8px 12px;
+        border-radius: var(--radius-lg);
+        background: rgba(var(--center-channel-color-rgb), 0.08);
+    }
+
+    .PlanningDialog__message--agent {
+        color: rgb(var(--center-channel-color-rgb));
+    }
+
+    .PlanningDialog__thinking {
+        font-size: var(--text-small);
+        color: rgba(var(--center-channel-color-rgb), 0.56);
+    }
+
+    // The agent's own question, where it was asked. It carries its answers
+    // (attentionAnswers.tsx), which is what makes it a question rather than a
+    // notice.
+    .PlanningDialog__question {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding: 8px 10px;
+        border: 1px solid rgb(var(--warning-rgb));
+        border-radius: var(--radius-lg);
+        font-size: 14px;
+    }
+
+    .PlanningDialog__compose {
+        display: flex;
+        align-items: flex-end;
+        gap: 8px;
+    }
+
+    .PlanningDialog__input {
+        flex: 1 1 auto;
+        resize: vertical;
+        font: inherit;
+        padding: 8px 10px;
+        border: 1px solid rgba(var(--center-channel-color-rgb), 0.24);
+        border-radius: var(--radius-md);
+        background: rgb(var(--center-channel-bg-rgb));
+        color: rgb(var(--center-channel-color-rgb));
+
+        &:focus {
+            border-color: rgb(var(--button-bg-rgb));
+            outline: none;
+        }
+    }
+
+    .PlanningDialog__send {
+        flex: 0 0 auto;
+        border: 0;
+        border-radius: var(--radius-md);
+        background: rgb(var(--button-bg-rgb));
+        color: rgb(var(--button-color-rgb));
+        font: inherit;
+        padding: 8px 16px;
+        cursor: pointer;
+
+        &:disabled {
+            opacity: 0.5;
+            cursor: default;
+        }
+    }
+
+    // The stepped pick: the ask, name-chips as answers, the answered agent as
+    // the quiet way back. The folder answers are FolderChoices.
     .PlanningDialog__ask {
         font-size: 14px;
     }

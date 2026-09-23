@@ -34,13 +34,14 @@ const askedOnCard = {
 }
 
 const waitingOnCard = {
-    key: 'term-1',
-    terminalId: 'term-1',
+    key: 'q:q-2',
+    questionId: 'q-2',
     cardId: 'card-1',
     title: 'Починить логин',
     agent: 'clauuus',
-    reason: 'terminal',
-    text: 'агент ждёт ответа в терминале',
+    reason: 'question',
+    text: 'Переписать форму целиком?',
+    options: [{id: 'yes', label: 'Да'}],
     awaiting: true,
     since: '2026-08-06T10:00:00Z',
 }
@@ -61,12 +62,10 @@ const work = {
     columns: [{value: 'Входящие', color: 'propColorGray'}, {value: 'В работе', color: 'propColorYellow'}],
 }
 
-function bindings(waiting: any[] = [], terminals: any[] = [], inbox: any[] = []) {
+function bindings(waiting: any[] = [], inbox: any[] = []) {
     return {
         ListAttention: vi.fn().mockResolvedValue(JSON.stringify(waiting)),
-        ListTerminals: vi.fn().mockResolvedValue(JSON.stringify(terminals)),
         AnswerQuestion: vi.fn().mockResolvedValue(undefined),
-        ShowTerminal: vi.fn().mockResolvedValue(JSON.stringify({id: 'term-1', windowed: false})),
         ListInbox: vi.fn().mockResolvedValue(JSON.stringify(inbox)),
         ListBoards: vi.fn().mockResolvedValue(JSON.stringify([{id: 'board-home', title: 'Домашние дела'}, work])),
         ListBoardCards: vi.fn().mockResolvedValue(JSON.stringify([
@@ -97,7 +96,7 @@ describe('pages/mobile/mobilePage', () => {
     })
 
     // A phone is where you find out nothing needs you, most of the time — and
-    // that is the screen it opens on, because it is the only one of the four
+    // that is the screen it opens on, because it is the only one of the three
     // that cannot wait.
     it('opens on what is waiting and says so when nothing is', async () => {
         fakeGoSide(bindings())
@@ -105,37 +104,22 @@ describe('pages/mobile/mobilePage', () => {
         renderPage()
 
         expect(await screen.findByText('Nothing is waiting. The agents are working.')).toBeInTheDocument()
-
-        await openTab(/Terminals/)
-        expect(screen.getByText('No terminal is running.')).toBeInTheDocument()
     })
 
-    // The agent is asking inside its own CLI, so this screen says which card is
-    // waiting and takes you there. It deliberately does not offer an answer of
-    // its own: the options it used to draw were a second interface for one
-    // exchange, and the one that could not show what the agent had drawn.
-    it('says which card is waiting and offers the terminal, not an answer', async () => {
-        fakeGoSide(bindings([waitingOnCard]))
-
-        renderPage()
-
-        expect(await screen.findByText('Починить логин')).toBeInTheDocument()
-        expect(screen.getByText('агент ждёт ответа в терминале')).toBeInTheDocument()
-        expect(screen.getByText('Open the terminal')).toBeInTheDocument()
-    })
-
-    // A CLI is answered by typing in it, so the phone goes to the terminal — by
-    // address, without asking Go to open a window on a desktop nobody is sitting
-    // at.
-    it('opens a waiting terminal in the page rather than a window', async () => {
+    // Which card is waiting, what is being asked, and the answers with it: the
+    // agent holds its turn open until somebody answers, and a phone is where a
+    // person is when they are not at the desk.
+    it('says which card is waiting and answers it', async () => {
         const app = bindings([waitingOnCard])
         fakeGoSide(app)
 
         renderPage()
 
-        await userEvent.click(await screen.findByText('Open the terminal'))
+        expect(await screen.findByText('Починить логин')).toBeInTheDocument()
+        expect(screen.getByText('Переписать форму целиком?')).toBeInTheDocument()
 
-        expect(app.ShowTerminal).not.toHaveBeenCalled()
+        await userEvent.click(await screen.findByRole('button', {name: 'Да'}))
+        await waitFor(() => expect(app.AnswerQuestion).toHaveBeenCalledWith('q-2', 'yes', ''))
     })
 
     // The phone app puts one tab per machine around this page, and the number
@@ -159,29 +143,10 @@ describe('pages/mobile/mobilePage', () => {
         }
     })
 
-    // What is running changes while the phone is in a pocket, and the socket is
-    // what says so.
-    it('relists the terminals when one opens or closes', async () => {
-        const app = bindings([], [])
-        fakeGoSide(app)
-
-        renderPage()
-
-        await waitFor(() => expect(handlers['acp:terminal']).toBeDefined())
-        app.ListTerminals.mockResolvedValue(JSON.stringify([
-            {id: 'term-9', agent: 'clauuus', title: 'Починить логин', branch: 'card/login', running: true},
-        ]))
-        handlers['acp:terminal']()
-
-        await openTab(/Terminals/)
-        expect(await screen.findByText('Починить логин')).toBeInTheDocument()
-        expect(screen.getByText('card/login')).toBeInTheDocument()
-    })
-
     // The count on a tab has to be right before anybody opens it: a tab that
     // only counts once you are looking at it counts nothing.
     it('counts the inbox on its tab without the tab being open', async () => {
-        fakeGoSide(bindings([], [], [letter]))
+        fakeGoSide(bindings([], [letter]))
 
         renderPage()
 
@@ -192,7 +157,7 @@ describe('pages/mobile/mobilePage', () => {
     // What the inbox is for: a letter arrived, and the person says which board
     // it belongs on and where on it.
     it('moves a card from the inbox onto a board and into a column', async () => {
-        const app = bindings([], [], [letter])
+        const app = bindings([], [letter])
         fakeGoSide(app)
 
         renderPage()

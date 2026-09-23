@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"path/filepath"
+	"slices"
 	"testing"
 )
 
@@ -22,7 +23,6 @@ func setupManager(t *testing.T, props map[string]any) *Manager {
 
 	m := NewManager(DefaultConfig(dir), "", store, newFakeWriter(), &fakeEmitter{}, nil)
 	m.cfg.Columns = nil
-	m.cfg.Flows = nil
 	m.rootCtx = context.Background()
 	m.SetBoardMeta(&fakeBoardMeta{props: props})
 	return m
@@ -102,7 +102,7 @@ func TestEveryBoardIsAskedItsNameFirst(t *testing.T) {
 			BoardPropSetup: BoardSetup{Steps: []BoardSetupStep{{Kind: SetupStepAgent}, {Kind: SetupStepDone}}},
 		})),
 		"a board that only carries automation": setupManager(t, boardProps(t, BoardAutomation{
-			Columns: []ColumnSpec{{PropertyID: "p", OptionID: "o1", Property: "Статус", Column: "В работе", Action: FlowActionAgent}},
+			Columns: []ColumnSpec{{PropertyID: "p", OptionID: "o1", Property: "Статус", Column: "В работе", Action: ColumnActionAgent}},
 		})),
 		"a board with nothing at all": setupManager(t, nil),
 	}
@@ -162,15 +162,7 @@ func TestABoardThatSaysNothingIsAskedWhatItsAutomationNeeds(t *testing.T) {
 	m := setupManager(t, boardProps(t, BoardAutomation{
 		Columns: []ColumnSpec{{
 			PropertyID: "p", OptionID: "opt-work", Property: "Статус",
-			Column: "Агент готовит", Action: FlowActionAgent,
-		}},
-		Flows: []FlowEntry{{
-			Name: "Дело с подготовкой", Property: "Статус",
-			Nodes: []FlowNode{
-				{ID: "agent", Column: "Агент готовит", OptionID: "opt-work"},
-				{ID: "done", Column: "Готово", OptionID: "opt-done", Action: FlowActionNone},
-			},
-			Edges: []FlowEdge{{From: "agent", To: "done", On: TriggerSuccess}},
+			Column: "Агент готовит", Action: ColumnActionAgent,
 		}},
 	}))
 
@@ -179,7 +171,7 @@ func TestABoardThatSaysNothingIsAskedWhatItsAutomationNeeds(t *testing.T) {
 		t.Error("the plan claims the board asked for these steps")
 	}
 	if !plan.Automated {
-		t.Error("a board carrying columns and routes is not marked as automated")
+		t.Error("a board carrying columns is not marked as automated")
 	}
 	if want := []string{SetupStepName, SetupStepWorkdir, SetupStepAgent, SetupStepDone}; !equal(kinds(plan), want) {
 		t.Fatalf("steps %v, expected %v", kinds(plan), want)
@@ -198,8 +190,8 @@ func TestABoardIsAskedForWhatItGrewAfterItWasMade(t *testing.T) {
 			{Kind: SetupStepDone},
 		}},
 		BoardPropColumns: []ColumnSpec{
-			{PropertyID: "p", OptionID: "o1", Property: "Статус", Column: "Агент готовит", Action: FlowActionAgent},
-			{PropertyID: "p", OptionID: "o2", Property: "Статус", Column: "Выложить", Action: FlowActionDeploy},
+			{PropertyID: "p", OptionID: "o1", Property: "Статус", Column: "Агент готовит", Action: ColumnActionAgent},
+			{PropertyID: "p", OptionID: "o2", Property: "Статус", Column: "Выложить", Action: ColumnActionDeploy},
 		},
 	}))
 
@@ -235,7 +227,7 @@ func TestABoardStopsAskingForWhatItNoLongerDoes(t *testing.T) {
 			{Kind: SetupStepDone},
 		}},
 		BoardPropColumns: []ColumnSpec{
-			{PropertyID: "p", OptionID: "o1", Property: "Статус", Column: "В работе", Action: FlowActionAgent},
+			{PropertyID: "p", OptionID: "o1", Property: "Статус", Column: "В работе", Action: ColumnActionAgent},
 		},
 	}))
 
@@ -249,9 +241,9 @@ func TestABoardStopsAskingForWhatItNoLongerDoes(t *testing.T) {
 func TestABoardThatDeploysAndTestsIsAskedForBoth(t *testing.T) {
 	m := setupManager(t, boardProps(t, BoardAutomation{
 		Columns: []ColumnSpec{
-			{PropertyID: "p", OptionID: "o1", Property: "Status", Column: "In Progress", Action: FlowActionAgent},
-			{PropertyID: "p", OptionID: "o2", Property: "Status", Column: "Deploy", Action: FlowActionDeploy},
-			{PropertyID: "p", OptionID: "o3", Property: "Status", Column: "To Test", Action: FlowActionTest},
+			{PropertyID: "p", OptionID: "o1", Property: "Status", Column: "In Progress", Action: ColumnActionAgent},
+			{PropertyID: "p", OptionID: "o2", Property: "Status", Column: "Deploy", Action: ColumnActionDeploy},
+			{PropertyID: "p", OptionID: "o3", Property: "Status", Column: "To Test", Action: ColumnActionTest},
 		},
 	}))
 
@@ -395,15 +387,7 @@ func TestGitIsAskedForByWhatTheBoardDoes(t *testing.T) {
 	chores := setupManager(t, boardProps(t, BoardAutomation{
 		Columns: []ColumnSpec{{
 			PropertyID: "p", OptionID: "o1", Property: "Статус",
-			Column: "Агент готовит", Action: FlowActionAgent,
-		}},
-		Flows: []FlowEntry{{
-			Name: "Дело", Property: "Статус",
-			Nodes: []FlowNode{
-				{ID: "agent", Column: "Агент готовит", OptionID: "o1"},
-				{ID: "done", Column: "Готово", OptionID: "o2", Action: FlowActionNone},
-			},
-			Edges: []FlowEdge{{From: "agent", To: "done", On: TriggerSuccess}},
+			Column: "Агент готовит", Action: ColumnActionAgent,
 		}},
 	}))
 	if got := requirementsOf(chores.SetupPlanFor("board1"), SetupStepWorkdir); len(got) != 0 {
@@ -413,30 +397,14 @@ func TestGitIsAskedForByWhatTheBoardDoes(t *testing.T) {
 	// The same board with a stage that publishes.
 	deploying := setupManager(t, boardProps(t, BoardAutomation{
 		Columns: []ColumnSpec{
-			{PropertyID: "p", OptionID: "o1", Property: "Status", Column: "In Progress", Action: FlowActionAgent},
-			{PropertyID: "p", OptionID: "o2", Property: "Status", Column: "Deploy", Action: FlowActionDeploy},
+			{PropertyID: "p", OptionID: "o1", Property: "Status", Column: "In Progress", Action: ColumnActionAgent},
+			{PropertyID: "p", OptionID: "o2", Property: "Status", Column: "Deploy", Action: ColumnActionDeploy},
 		},
 	}))
-	if got := requirementsOf(deploying.SetupPlanFor("board1"), SetupStepWorkdir); !containsString(got, SetupRequiresGit) {
+	if got := requirementsOf(deploying.SetupPlanFor("board1"), SetupStepWorkdir); !slices.Contains(got, SetupRequiresGit) {
 		t.Errorf("a board that publishes asks for %v", got)
 	}
 
-	// And so does one that only waits for a branch: the watcher has nothing to
-	// poll without git, so the transition would never fire.
-	waiting := setupManager(t, boardProps(t, BoardAutomation{
-		Columns: []ColumnSpec{{PropertyID: "p", OptionID: "o1", Property: "Status", Column: "In Progress", Action: FlowActionAgent}},
-		Flows: []FlowEntry{{
-			Name: "Review only", Property: "Status",
-			Nodes: []FlowNode{
-				{ID: "agent", Column: "In Progress", OptionID: "o1"},
-				{ID: "done", Column: "Done", OptionID: "o2", Action: FlowActionNone},
-			},
-			Edges: []FlowEdge{{From: "agent", To: "done", On: TriggerBranchMerged}},
-		}},
-	}))
-	if got := requirementsOf(waiting.SetupPlanFor("board1"), SetupStepWorkdir); !containsString(got, SetupRequiresGit) {
-		t.Errorf("a board that waits for a branch asks for %v", got)
-	}
 }
 
 func requirementsOf(plan SetupPlan, kind string) []string {
@@ -454,7 +422,7 @@ func TestAnAnswerIsCheckedAgainstWhatItsStepRequires(t *testing.T) {
 	plain := t.TempDir()
 
 	chores := setupManager(t, boardProps(t, BoardAutomation{
-		Columns: []ColumnSpec{{PropertyID: "p", OptionID: "o1", Property: "Статус", Column: "Агент готовит", Action: FlowActionAgent}},
+		Columns: []ColumnSpec{{PropertyID: "p", OptionID: "o1", Property: "Статус", Column: "Агент готовит", Action: ColumnActionAgent}},
 	}))
 	if err := chores.CheckSetupAnswer("board1", SetupStepWorkdir, plain); err != nil {
 		t.Errorf("an ordinary folder was refused: %v", err)
@@ -462,8 +430,8 @@ func TestAnAnswerIsCheckedAgainstWhatItsStepRequires(t *testing.T) {
 
 	deploying := setupManager(t, boardProps(t, BoardAutomation{
 		Columns: []ColumnSpec{
-			{PropertyID: "p", OptionID: "o1", Property: "Status", Column: "In Progress", Action: FlowActionAgent},
-			{PropertyID: "p", OptionID: "o2", Property: "Status", Column: "Deploy", Action: FlowActionDeploy},
+			{PropertyID: "p", OptionID: "o1", Property: "Status", Column: "In Progress", Action: ColumnActionAgent},
+			{PropertyID: "p", OptionID: "o2", Property: "Status", Column: "Deploy", Action: ColumnActionDeploy},
 		},
 	}))
 	if err := deploying.CheckSetupAnswer("board1", SetupStepWorkdir, plain); err == nil {
@@ -492,14 +460,14 @@ func TestABoardIsNotAskedForWhatOnlyTheMachineHas(t *testing.T) {
 	chores := setupManager(t, boardProps(t, BoardAutomation{
 		Columns: []ColumnSpec{{
 			PropertyID: "p", OptionID: "o1", Property: "Статус",
-			Column: "Агент разбирается", Action: FlowActionAgent,
+			Column: "Агент разбирается", Action: ColumnActionAgent,
 		}},
 	}))
 	// The legacy entries: no board id, so every board sees them at run time.
 	chores.cfg.Columns = []ColumnSpec{
-		{Property: "Status", Column: "In Progress", Action: FlowActionAgent},
-		{Property: "Status", Column: "Deploy", Action: FlowActionDeploy},
-		{Property: "Status", Column: "To Test", Action: FlowActionTest},
+		{Property: "Status", Column: "In Progress", Action: ColumnActionAgent},
+		{Property: "Status", Column: "Deploy", Action: ColumnActionDeploy},
+		{Property: "Status", Column: "To Test", Action: ColumnActionTest},
 	}
 
 	plan := chores.SetupPlanFor("board1")
@@ -519,7 +487,7 @@ func TestABoardIsNotAskedForWhatOnlyTheMachineHas(t *testing.T) {
 	// has to be set up for.
 	plain := setupManager(t, nil)
 	plain.cfg.Columns = chores.cfg.Columns
-	if got := requirementsOf(plain.SetupPlanFor("board2"), SetupStepWorkdir); !containsString(got, SetupRequiresGit) {
+	if got := requirementsOf(plain.SetupPlanFor("board2"), SetupStepWorkdir); !slices.Contains(got, SetupRequiresGit) {
 		t.Errorf("a board run by the machine's own columns asks for %v", got)
 	}
 }
@@ -538,7 +506,6 @@ func TestTheOfferIsRememberedAcrossRestarts(t *testing.T) {
 	manager := func(store *Store) *Manager {
 		m := NewManager(DefaultConfig(dir), "", store, newFakeWriter(), &fakeEmitter{}, nil)
 		m.cfg.Columns = nil
-		m.cfg.Flows = nil
 		m.rootCtx = context.Background()
 		m.SetBoardMeta(&fakeBoardMeta{})
 		return m
@@ -575,8 +542,8 @@ func TestTheOfferIsRememberedAcrossRestarts(t *testing.T) {
 func TestTheQAAnswerPutsTheBrowserOnTheStageThatTests(t *testing.T) {
 	m := setupManager(t, boardProps(t, BoardAutomation{
 		Columns: []ColumnSpec{
-			{PropertyID: "p", OptionID: "o1", Property: "Статус", Column: "В работе", Action: FlowActionAgent},
-			{PropertyID: "p", OptionID: "o3", Property: "Статус", Column: "QA", Action: FlowActionTest},
+			{PropertyID: "p", OptionID: "o1", Property: "Статус", Column: "В работе", Action: ColumnActionAgent},
+			{PropertyID: "p", OptionID: "o3", Property: "Статус", Column: "QA", Action: ColumnActionTest},
 		},
 	}))
 	m.cfg.Agents = []AgentEntry{{ID: newID(), Name: "клаус", Kind: "claude"}, {ID: newID(), Name: "тестер", Kind: "claude"}}
@@ -596,14 +563,14 @@ func TestTheQAAnswerPutsTheBrowserOnTheStageThatTests(t *testing.T) {
 
 	for _, c := range m.BoardColumns("board1") {
 		switch c.Action {
-		case FlowActionTest:
+		case ColumnActionTest:
 			if _, ok := c.MCPServers["playwright"]; !ok {
 				t.Errorf("the stage that tests was not given the browser: %+v", c.MCPServers)
 			}
 			if names := m.crewNames(c.AgentIDs); len(names) != 1 || names[0] != "тестер" {
 				t.Errorf("the test column's crew is %v, so the browser and the worker can part ways", names)
 			}
-		case FlowActionAgent:
+		case ColumnActionAgent:
 			if len(c.AgentIDs) > 0 {
 				t.Errorf("answering the QA question crewed the column that works the card: %v", m.crewNames(c.AgentIDs))
 			}
@@ -631,8 +598,8 @@ func TestTheQAAnswerPutsTheBrowserOnTheStageThatTests(t *testing.T) {
 func TestTheAgentAnswerCrewsTheStagesThatWorkTheCard(t *testing.T) {
 	m := setupManager(t, boardProps(t, BoardAutomation{
 		Columns: []ColumnSpec{
-			{PropertyID: "p", OptionID: "o1", Property: "Статус", Column: "В работе", Action: FlowActionAgent},
-			{PropertyID: "p", OptionID: "o3", Property: "Статус", Column: "QA", Action: FlowActionTest},
+			{PropertyID: "p", OptionID: "o1", Property: "Статус", Column: "В работе", Action: ColumnActionAgent},
+			{PropertyID: "p", OptionID: "o3", Property: "Статус", Column: "QA", Action: ColumnActionTest},
 		},
 	}))
 	m.cfg.Agents = []AgentEntry{{ID: newID(), Name: "клаус", Kind: "claude"}, {ID: newID(), Name: "тестер", Kind: "claude"}}
@@ -650,12 +617,12 @@ func TestTheAgentAnswerCrewsTheStagesThatWorkTheCard(t *testing.T) {
 	var crew []string
 	for _, c := range m.BoardColumns("board1") {
 		switch c.Action {
-		case FlowActionAgent:
+		case ColumnActionAgent:
 			crew = c.AgentIDs
 			if names := m.crewNames(c.AgentIDs); len(names) != 1 || names[0] != "клаус" {
 				t.Errorf("the column that works a card is crewed %v", names)
 			}
-		case FlowActionTest:
+		case ColumnActionTest:
 			if len(c.AgentIDs) > 0 {
 				t.Errorf("answering who works the cards also crewed the column that tests: %v", m.crewNames(c.AgentIDs))
 			}
@@ -684,11 +651,7 @@ func TestTheAgentAnswerCrewsTheStagesThatWorkTheCard(t *testing.T) {
 // unticked and nothing would happen.
 func TestTheAgentAnswerCanTakeTheCrewOff(t *testing.T) {
 	m := setupManager(t, boardProps(t, BoardAutomation{
-		Columns: []ColumnSpec{{PropertyID: "p", OptionID: "o1", Property: "Статус", Column: "В работе", Action: FlowActionAgent}},
-		Flows: []FlowEntry{{
-			Name: "Фича", Property: "Статус",
-			Nodes: []FlowNode{{ID: "work", Column: "В работе", OptionID: "o1", Action: FlowActionAgent, AgentName: "клаус"}},
-		}},
+		Columns: []ColumnSpec{{PropertyID: "p", OptionID: "o1", Property: "Статус", Column: "В работе", Action: ColumnActionAgent}},
 	}))
 	m.cfg.Agents = []AgentEntry{{ID: newID(), Name: "клаус", Kind: "claude"}, {ID: newID(), Name: "тестер", Kind: "claude"}}
 
@@ -703,20 +666,11 @@ func TestTheAgentAnswerCanTakeTheCrewOff(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, c := range m.BoardColumns("board1") {
-		if c.Action == FlowActionAgent && len(c.Agents) != 0 {
+		if c.Action == ColumnActionAgent && len(c.Agents) != 0 {
 			t.Errorf("the column kept a crew after it was taken off: %v", c.Agents)
 		}
 	}
 
-	// The stage's older single-agent field goes too, or Crew() would answer
-	// with the name the person has just removed.
-	for _, f := range m.BoardFlows("board1") {
-		for _, n := range f.Nodes {
-			if len(n.Crew()) != 0 {
-				t.Errorf("the stage kept a crew after it was taken off: %v", n.Crew())
-			}
-		}
-	}
 	if got := m.BoardAgentNames("board1"); len(got) != 0 {
 		t.Errorf("a board with no crew anywhere still names agents: %v", got)
 	}
@@ -729,17 +683,13 @@ func TestTheAgentAnswerCanTakeTheCrewOff(t *testing.T) {
 func TestABoardNamesTheAgentsItPutsToWork(t *testing.T) {
 	m := setupManager(t, boardProps(t, BoardAutomation{
 		Columns: []ColumnSpec{
-			{PropertyID: "p", OptionID: "o1", Property: "Статус", Column: "В работе", Action: FlowActionAgent, Agents: []string{"клаус"}},
-			{PropertyID: "p", OptionID: "o3", Property: "Статус", Column: "QA", Action: FlowActionTest, Agents: []string{"тестер"}},
+			{PropertyID: "p", OptionID: "o1", Property: "Статус", Column: "В работе", Action: ColumnActionAgent, Agents: []string{"клаус"}},
+			{PropertyID: "p", OptionID: "o3", Property: "Статус", Column: "QA", Action: ColumnActionTest, Agents: []string{"тестер"}},
 		},
-		Flows: []FlowEntry{{
-			Name: "Фича", Property: "Статус",
-			Nodes: []FlowNode{{ID: "review", Column: "Ревью", OptionID: "o2", Action: FlowActionAgent, AgentNames: []string{"ревьюер", "клаус"}}},
-		}},
 	}))
 
 	got := m.BoardAgentNames("board1")
-	want := map[string]bool{"клаус": true, "тестер": true, "ревьюер": true}
+	want := map[string]bool{"клаус": true, "тестер": true}
 	if len(got) != len(want) {
 		t.Fatalf("the board names %v", got)
 	}
@@ -750,38 +700,6 @@ func TestABoardNamesTheAgentsItPutsToWork(t *testing.T) {
 	}
 }
 
-// A stage that tests on one route alone, over a column that does something
-// else: the answer follows the stage there too, since that column would never
-// have been found by its action.
-func TestTheQAAnswerFollowsATestStageOfARoute(t *testing.T) {
-	m := setupManager(t, boardProps(t, BoardAutomation{
-		Columns: []ColumnSpec{{PropertyID: "p", OptionID: "o1", Property: "Статус", Column: "Проверка", Action: FlowActionNone}},
-		Flows: []FlowEntry{{
-			Name: "Фича", Property: "Статус",
-			Nodes: []FlowNode{{ID: "check", Column: "Проверка", OptionID: "o1", Action: FlowActionTest}},
-		}},
-	}))
-	m.cfg.Agents = []AgentEntry{{ID: newID(), Name: "тестер", Kind: "claude"}}
-
-	if err := m.SetTestAgent("board1", "тестер", MCPServerSet{"playwright": {Command: "npx"}}); err != nil {
-		t.Fatal(err)
-	}
-	flows := m.BoardFlows("board1")
-	if len(flows) != 1 || len(flows[0].Nodes) != 1 {
-		t.Fatalf("flows: %+v", flows)
-	}
-	node := flows[0].Nodes[0]
-	if _, ok := node.MCPServers["playwright"]; !ok {
-		t.Errorf("the stage that tests was not given the browser: %+v", node.MCPServers)
-	}
-	if names := m.crewNames(node.Crew()); len(names) != 1 || names[0] != "тестер" {
-		t.Errorf("the stage's crew is %v", names)
-	}
-	if len(m.Agents()[0].MCPServers) > 0 {
-		t.Error("the agent was edited even though the stage could hold the answer")
-	}
-}
-
 // A board with nothing that tests yet — the wizard walked from the menu before
 // the column exists — has nowhere board-shaped to put the answer, so it goes on
 // the agent as it always did. And the wizard knows about a browser and nothing
@@ -789,7 +707,7 @@ func TestTheQAAnswerFollowsATestStageOfARoute(t *testing.T) {
 // agent already set up loses its model, its environment and its own prompt.
 func TestTheQAAnswerKeepsTheRestOfTheAgent(t *testing.T) {
 	m := setupManager(t, boardProps(t, BoardAutomation{
-		Columns: []ColumnSpec{{PropertyID: "p", OptionID: "o1", Property: "Статус", Column: "В работе", Action: FlowActionAgent}},
+		Columns: []ColumnSpec{{PropertyID: "p", OptionID: "o1", Property: "Статус", Column: "В работе", Action: ColumnActionAgent}},
 	}))
 	m.cfg.Agents = []AgentEntry{{
 		Name: "тестер", Kind: "claude", Model: "opus",
@@ -823,8 +741,8 @@ func TestTheQAAnswerRefusesAnAgentNobodyRegistered(t *testing.T) {
 func TestThePlanNamesTheColumnThatTests(t *testing.T) {
 	m := setupManager(t, boardProps(t, BoardAutomation{
 		Columns: []ColumnSpec{
-			{PropertyID: "p", OptionID: "o1", Property: "Статус", Column: "В работе", Action: FlowActionAgent},
-			{PropertyID: "p", OptionID: "o3", Property: "Статус", Column: "QA", Action: FlowActionTest},
+			{PropertyID: "p", OptionID: "o1", Property: "Статус", Column: "В работе", Action: ColumnActionAgent},
+			{PropertyID: "p", OptionID: "o3", Property: "Статус", Column: "QA", Action: ColumnActionTest},
 		},
 	}))
 

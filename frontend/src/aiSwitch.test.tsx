@@ -7,8 +7,7 @@ import {fakeGoSide} from './test/goSide'
 import {TestBlockFactory} from './test/testBlockFactory'
 import {UserSettingKey} from './userSettings'
 import {aiEnabled, setAIEnabled} from './aiSwitch'
-import {isAutomationAvailable} from './components/acp/bindings'
-import {isCardTerminalAvailable} from './components/acp/liveTerminals'
+import {isPlanningAvailable} from './components/acp/planningDialog'
 import {NO_SETUP, withoutAgents} from './components/acp/boardSetup'
 import {withoutAgentProperties} from './components/acp/agentProperties'
 import {BOARD_PROP_OUTCOME_PROPERTY, BOARD_PROP_PROJECT_PROPERTY} from './components/acp/automation'
@@ -38,17 +37,15 @@ describe('the AI switch', () => {
         expect(SetUIPreference).toHaveBeenCalledWith(UserSettingKey.AIEnabled, 'false')
     })
 
-    // Off, the app is a kanban board: the routes editor and the card's
-    // terminal are not offered even though the build has them.
+    // Off, the app is a kanban board: talking a task over with an agent is not
+    // offered even though the build has it.
     test('switched off, nothing about agents is offered', () => {
-        fakeGoSide({ListFlows: vi.fn(), OpenCardTerminal: vi.fn(), SetUIPreference: vi.fn().mockResolvedValue(undefined)})
-        expect(isAutomationAvailable()).toBe(true)
-        expect(isCardTerminalAvailable()).toBe(true)
+        fakeGoSide({StartPlanning: vi.fn(), SetUIPreference: vi.fn().mockResolvedValue(undefined)})
+        expect(isPlanningAvailable()).toBe(true)
 
         setAIEnabled(false)
 
-        expect(isAutomationAvailable()).toBe(false)
-        expect(isCardTerminalAvailable()).toBe(false)
+        expect(isPlanningAvailable()).toBe(false)
     })
 
     // The board's name is a question about the board; the rest of the setup is

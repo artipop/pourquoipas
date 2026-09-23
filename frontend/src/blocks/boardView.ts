@@ -17,11 +17,6 @@ type BoardViewFields = {
     viewType: IViewType
     groupById?: string
 
-    // The route the board is drawn by, by the route's own id. Empty is the
-    // whole board — every column, every card. It belongs to the view rather
-    // than to the browser, exactly as calendarSpan does.
-    flowId?: string
-
     // Week or month, for a calendar. It belongs to the view rather than to the
     // browser: it is a thing about this calendar, so it should be the same
     // calendar on the next screen and after a restart.
@@ -51,7 +46,6 @@ function createBoardView(block?: Block): BoardView {
         fields: {
             viewType: block?.fields.viewType || 'board',
             groupById: block?.fields.groupById,
-            flowId: block?.fields.flowId,
             calendarSpan: block?.fields.calendarSpan,
             dateDisplayPropertyId: block?.fields.dateDisplayPropertyId,
             sortOptions: block?.fields.sortOptions?.map((o: ISortOption) => ({...o})) || [],

@@ -33,10 +33,8 @@ import {OnboardingBoardTitle} from '../cardDetail/cardDetail'
 import AddViewTourStep from '../onboardingTour/addView/add_view'
 import {getCurrentCard} from '../../store/cards'
 import BoardPermissionGate from '../permissions/boardPermissionGate'
-import type {Flow} from '../acp/automation'
 
 import NewCardButton from './newCardButton'
-import ViewHeaderFlowMenu from './viewHeaderFlowMenu'
 import ViewHeaderDisplayByMenu from './viewHeaderDisplayByMenu'
 import ViewHeaderSortMenu from './viewHeaderSortMenu'
 import ViewHeaderActionsMenu from './viewHeaderActionsMenu'
@@ -53,7 +51,6 @@ type Props = {
 
     // The routes this board may be drawn by. Read by whoever owns the board's
     // subscription, so the picker and the columns are narrowed from one list.
-    flows: Flow[]
     groupByProperty?: IPropertyTemplate
     addCard: () => void
     addCardFromTemplate: (cardTemplateId: string) => void
@@ -215,15 +212,6 @@ const ViewHeader = (props: Props) => {
                     />
                 </Show>
                 */}
-
-                {/* Route */}
-
-                <Show when={props.activeView.fields.viewType === 'board'}>
-                    <ViewHeaderFlowMenu
-                        activeView={props.activeView}
-                        flows={props.flows}
-                    />
-                </Show>
 
                 {/* Display by */}
 

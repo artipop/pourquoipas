@@ -101,11 +101,6 @@ func main() {
 	// session; it must come first, before the board server or a window exists.
 	maybeRunMCP(os.Args[1:])
 
-	// `xciii hook …` is this binary answering an agent CLI's permission hook
-	// (hook.go), and it is here for the same reason: it is a short-lived process
-	// that must not open a database or take a port on its way to one HTTP call.
-	maybeRunHook(os.Args[1:])
-
 	// Before anything can be spawned: a packaged app is started by launchd and
 	// gets its PATH, which has none of what this app runs for the user — npx,
 	// node, the agent CLIs, a source plugin. See internal/userpath.
@@ -242,21 +237,15 @@ func main() {
 	}
 	handler := http.Handler(router)
 
-	// The terminal sockets live on the front door beside the board. The routes
-	// are created before the manager exists — the manager needs the board
-	// server, which needs the port the front door is already listening on — and
-	// are given it below.
-	terminals := newTerminalRoutes()
-	// The UI event socket beside them: what the agents are doing, sent to every
-	// page rather than only to the windows this application owns.
+	// The UI event socket lives on the front door beside the board: what the
+	// agents are doing, sent to every page rather than only to the windows this
+	// application owns. It is created before the manager exists — the manager
+	// needs the board server, which needs the port the front door is already
+	// listening on — and is given it below.
 	uiEvents := newEventRoutes()
 	// The board tools an agent calls back through, on the same subtree.
 	boardTools := newBoardToolRoutes()
-	// The claim a desktop attached to this board makes on one of its route
-	// events. Its store arrives with the rest of the agent integration below;
-	// until then it answers that agents are off, which is true.
-	leases := newLeaseRoutes(boardSessionGuard(srv.App()))
-	acpSockets := newACPSockets(terminals, uiEvents, boardTools.Handler(), boardTools.HookHandler(), leases)
+	acpSockets := newACPSockets(uiEvents, boardTools.Handler())
 	// The ingest endpoint, on the same terms: it is a route on the front door,
 	// and it is handed its manager once the board exists.
 	ingest := newSourceRoutes()
@@ -410,7 +399,6 @@ func main() {
 		if err != nil {
 			log.Printf("acp: disabled, store error: %v", err)
 		} else {
-			leases.SetStore(store)
 			mgr = acp.NewManager(acpCfg, filepath.Join(dir, "config.json"), store, seam.writer, emitter, nil)
 			// Lets the UI open a console on a card without moving it.
 			mgr.SetBoardReader(seam.reader)
@@ -422,9 +410,6 @@ func main() {
 			// settings file people edit by hand and paste into issues.
 			mgr.SetSecrets(vault)
 			mgr.SetBoardMeta(seam.meta)
-			// Keeps a card's place on its route on the card, so it travels
-			// with the board rather than staying on this machine.
-			mgr.SetBoardCardState(seam.cardState)
 			// Lets the UI give agents board accounts, so cards can be
 			// assigned to them in a person property.
 			mgr.SetBoardUsers(seam.users)
@@ -438,12 +423,10 @@ func main() {
 				if attached != nil {
 					mgr.AddBoardSource(acp.BoardSource{
 						ID: attach.target(), Writer: attached.writer, Reader: attached.reader,
-						Users: attached.users, Meta: attached.meta, CardState: attached.cardState,
-						Events: attached.events, Lease: attached.lease,
+						Users: attached.users, Meta: attached.meta, Events: attached.events,
 					})
 				}
 				app.mgr = mgr
-				terminals.SetManager(mgr)
 				boardTools.SetManager(mgr)
 				// A source may be read by an agent rather than by a mapping —
 				// the service's MCP server plus one tool of ours to file

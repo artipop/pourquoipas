@@ -1,5 +1,4 @@
 {
-  "AppBar.Tooltip": "Chuyển sang các bảng đã liên kết",
   "Attachment.Attachment-title": "Đính kèm",
   "AttachmentBlock.DeleteAction": "xóa",
   "BoardComponent.add-a-group": "+ Thêm nhóm",
@@ -14,7 +13,6 @@
   "BoardMember.schemeEditor": "Người soạn thảo",
   "BoardMember.schemeNone": "Không",
   "BoardMember.schemeViewer": "Người xem",
-  "BoardMember.unlinkChannel": "Gỡ liên kết",
   "Calculations.Options.average.displayName": "Trung bình",
   "Calculations.Options.average.label": "Trung bình",
   "TableComponent.add-icon": "Thêm icon",
@@ -23,8 +21,6 @@
   "TableHeaderMenu.delete": "Xóa",
   "share-board.publish": "Công khai",
   "share-board.share": "Chia sẻ",
-  "shareBoard.channels-select-group": "Kênh",
-  "shareBoard.members-select-group": "Thành viên",
   "tutorial_tip.finish_tour": "Xong",
   "tutorial_tip.got_it": "Đã hiểu",
   "tutorial_tip.ok": "Tiếp theo"

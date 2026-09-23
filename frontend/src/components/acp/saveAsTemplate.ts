@@ -6,7 +6,7 @@ import {IntlShape} from '../../intl'
 
 import {goApp} from '../../goBridge'
 
-import {Automation, BOARD_PROP_COLUMNS, BOARD_PROP_FLOWS, boardAutomationProperties, readBoardAutomation, readBoardSetup} from './automation'
+import {Automation, BOARD_PROP_COLUMNS, boardAutomationProperties, readBoardAutomation, readBoardSetup} from './automation'
 
 // Turning a board somebody has built into a template other boards can start
 // from. The board part of it is Focalboard's own duplicate-as-template; what
@@ -28,10 +28,10 @@ export function isSaveAsTemplateAvailable(): boolean {
 export async function exportAutomation(boardId: string): Promise<Automation> {
     const bindings = goApp()
     if (!bindings?.ExportBoardAutomation) {
-        return {columns: [], flows: []}
+        return {columns: []}
     }
     const raw = JSON.parse(await bindings.ExportBoardAutomation(boardId)) || {}
-    return {columns: raw[BOARD_PROP_COLUMNS] || [], flows: raw[BOARD_PROP_FLOWS] || []}
+    return {columns: raw[BOARD_PROP_COLUMNS] || []}
 }
 
 // saveBoardAsTemplate copies the board as a template and gives the copy the
@@ -47,7 +47,7 @@ export async function saveBoardAsTemplate(board: Board, intl: IntlShape): Promis
     // template was being made for — the copy carries the board's own keys,
     // because duplicateBoard copies the properties too.
     const carried = readBoardAutomation(board)
-    const automation = registry.columns.length > 0 || registry.flows.length > 0 ? registry : carried
+    const automation = registry.columns.length > 0 ? registry : carried
 
     const copied = await mutator.duplicateBoard(
         board.id,

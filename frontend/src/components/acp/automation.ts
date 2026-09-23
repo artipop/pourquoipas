@@ -14,133 +14,6 @@ import {MCPServers} from './mcpServers'
 // whether it is pointed at the registry (a live board) or at a template's own
 // properties, and both containers hand it these shapes.
 
-export type FlowNode = {
-    id: string
-    column: string
-
-    // The option the stage stands on, so renaming the column on the board
-    // changes nothing. Empty in a route written before columns had ids.
-    optionId?: string
-
-    // Empty means "whatever the column does"; 'none' means the stage runs
-    // nothing and waits for an event.
-    action: string
-
-    // The crew for this stage, by registry id: renaming an agent used to empty
-    // the crew of every stage on every board.
-    agentIds?: string[]
-
-    // The deploy target this stage publishes to, by the registry entry's id.
-    // It used to be the entry's name, and renaming a target then unpinned every
-    // stage that sent work to it.
-    deployId?: string
-
-    // The stage's own instructions, said to whoever works it here — overriding
-    // the column's (ColumnSpec.prompt). Empty inherits.
-    prompt?: string
-
-    // The stage's declared outputs and inputs, overriding the column's. A write
-    // is what makes a transition on a property deterministic: the edge that
-    // reads it can point at the stage that must produce it.
-    writes?: PropertyWrite[]
-    reads?: string[]
-
-    // The tools this stage hands its agent, overriding the column's whole set.
-    // Empty inherits.
-    mcpServers?: MCPServers
-
-    // Where the stage works: 'owner' — the card's own workspace, so it sees the
-    // card's branch; 'workdir' — the folder itself. Empty is the default for
-    // what the stage does (Go's FlowNode.RunsIn).
-    runIn?: string
-
-    // Where the stage was left on the canvas. Absent means "lay it out for me".
-    x?: number
-    y?: number
-}
-
-// ENTRY_NODE is the stage a card comes from when it comes from off the route —
-// the backlog, a source, a hand from anywhere the route does not pass through.
-// Every route has this way in, transition 0, and it is where a question asked
-// once on the way in is declared. Go's acp.EntryNode.
-export const ENTRY_NODE = '@entry'
-
-export type FlowEdge = {
-
-    // A stage id, or ENTRY_NODE for the way onto the route.
-    from: string
-    to: string
-
-    // Empty on the way onto the route, which waits for no event: what fires it
-    // is the card arriving, which is the move itself.
-    on: string
-
-    // A condition makes the transition ask about the card: several conditional
-    // edges may share one (from, on) — the first that holds wins — and an edge
-    // without one is the fallback. For the card.changed trigger the condition
-    // is the event itself: which option firing it means.
-    if?: EdgeCond
-
-    // What a person is asked before the card is let across. The card waits
-    // where it is until every question has an answer — see EdgeAsk.
-    ask?: EdgeAsk[]
-}
-
-// EdgeAsk is one question the arrow asks. It is on the arrow and not on the
-// stage because one stage is entered in more than one way and the answers
-// differ: the way into work from the backlog is where somebody decides how the
-// work will be arranged, and the same card coming back from a review has that
-// decided already.
-export type EdgeAsk = {
-
-    // The question's own id, minted by Go on save. Empty on one just added.
-    id?: string
-
-    // ASK_WORKMODE, ASK_WORKDIR or ASK_PROPERTY.
-    kind: string
-
-    // The board select the answer is written to, by name, for ASK_PROPERTY.
-    property?: string
-
-    // What is asked, in the board's own words. Empty takes the built-in
-    // wording, which the editor shows as the placeholder.
-    text?: string
-}
-
-// EdgeCond is exactly one of two questions: does the card's select property
-// carry this value, or did the agent's closing words contain this text.
-export type EdgeCond = {
-    property?: string
-    value?: string
-    commentContains?: string
-}
-
-export type Flow = {
-
-    // The route's own id, given by Go. It is what an edit is matched on, so a
-    // route read from the board must be sent back with it — renaming one used
-    // to lose the place of every card standing on it.
-    id?: string
-    name: string
-    boardId?: string
-
-    // The folder this route is tied to, by registry id.
-    workspaceId?: string
-    property?: string
-    nodes: FlowNode[]
-    edges: FlowEdge[]
-}
-
-// FlowTrigger is one transition kind the engine implements. The list comes from
-// Go, so the editor can never offer a transition that does nothing.
-export type FlowTrigger = {
-    kind: string
-    source: string
-    label: string
-}
-
-// ColumnSpec is what happens in one column — said once for the board, rather
-// than repeated in every route that passes through it.
 export type ColumnSpec = {
     boardId?: string
     propertyId?: string
@@ -153,17 +26,16 @@ export type ColumnSpec = {
     maxRunning?: number
 
     // What working in this column means, said to the agent: the reviewer's
-    // brief on the review column, the builder's on the in-progress column. A route node may override
-    // it for its stage alone (FlowNode.prompt).
+    // brief on the review column, the builder's on the in-progress column.
     prompt?: string
 
-    // The column's declared outputs and inputs — see FlowNode.writes/reads.
+    // What working here is expected to put on the card, and what it is handed
+    // off the card on the way in.
     writes?: PropertyWrite[]
     reads?: string[]
 
     // The tools working in this column comes with, handed to whichever agent
-    // works here on top of the servers that agent carries of its own. A route
-    // node may replace the whole set for its stage (FlowNode.mcpServers).
+    // works here on top of the servers that agent carries of its own.
     mcpServers?: MCPServers
 }
 
@@ -175,11 +47,10 @@ export type PropertyWrite = {
     required?: boolean
 }
 
-// Automation is a board's whole answer: what its columns do and where its
-// routes lead. It is what the editor edits and what a template carries.
+// Automation is a board's whole answer: what its columns do. It is what a
+// template carries and what the board keeps in its own properties.
 export type Automation = {
     columns: ColumnSpec[]
-    flows: Flow[]
 }
 
 // The two outcome triggers are a stage's own outputs and are drawn as such;
@@ -279,12 +150,6 @@ export function automationProperty(board: Board, automation?: Automation): IProp
             return found
         }
     }
-    for (const flow of automation?.flows || []) {
-        const found = properties.find((p) => flow.property && p.name === flow.property)
-        if (found) {
-            return found
-        }
-    }
     return properties[0]
 }
 
@@ -330,129 +195,20 @@ export function sameColumn(a: ColumnSpec, b: ColumnSpec): boolean {
     return a.column.toLowerCase() === b.column.toLowerCase()
 }
 
-// nodeFor is the stage a column stands as in a route, if the route goes through
-// it at all.
-export function nodeFor(flow: Flow | undefined, column: BoardColumn): FlowNode | undefined {
-    if (!flow) {
-        return undefined
-    }
-    return flow.nodes.find((n) => n.optionId && n.optionId === column.optionId) ||
-        flow.nodes.find((n) => !n.optionId && n.column.toLowerCase() === column.name.toLowerCase())
-}
-
-// nodeId is what a column is called inside a route. The option's own id is used
-// so the same column keeps the same stage across edits — the engine records the
-// stage a card stands on, and a regenerated id would lose it.
-export function nodeId(column: BoardColumn): string {
-    return column.optionId || column.name
-}
-
-// withColumn puts a column on the route, if it is not on it already. A stage
-// added this way overrides nothing: it does whatever its column does.
-export function withColumn(flow: Flow, column: BoardColumn, at?: {x: number, y: number}): Flow {
-    if (nodeFor(flow, column)) {
-        return flow
-    }
-    const node: FlowNode = {
-        id: nodeId(column),
-        column: column.name,
-        optionId: column.optionId,
-        action: '',
-        ...(at || {}),
-    }
-    return {...flow, nodes: [...flow.nodes, node]}
-}
-
-// withoutColumn takes a stage off the route, and its transitions with it: an
-// edge to nowhere is exactly what the engine refuses to save.
-export function withoutColumn(flow: Flow, id: string): Flow {
-    return {
-        ...flow,
-        nodes: flow.nodes.filter((n) => n.id !== id),
-        edges: flow.edges.filter((e) => e.from !== id && e.to !== id),
-    }
-}
-
-// withNode changes one stage of a route.
-export function withNode(flow: Flow, id: string, patch: Partial<FlowNode>): Flow {
-    return {...flow, nodes: flow.nodes.map((n) => (n.id === id ? {...n, ...patch} : n))}
-}
-
-// Edges are addressed by their index in the flow: with conditions, several may
-// share one (from, on), so the pair stops being an identity.
-
-// edgeTarget is the stage an event leads to unconditionally, or '' when the
-// graph says nothing — the fallback edge, in engine terms.
-export function edgeTarget(edges: FlowEdge[], from: string, on: string): string {
-    return edges.find((e) => e.from === from && e.on === on && !e.if)?.to || ''
-}
-
-// outgoing is everything a stage leads to, with the index each edge is edited
-// by — outcomes first, which is the order a person reads them in.
-export function outgoing(edges: FlowEdge[], from: string): Array<{edge: FlowEdge, index: number}> {
-    const rank = (on: string) => {
-        const at = OUTCOMES.indexOf(on)
-        return at < 0 ? OUTCOMES.length : at
-    }
-    return edges.
-        map((edge, index) => ({edge, index})).
-        filter(({edge}) => edge.from === from).
-        sort((a, b) => (rank(a.edge.on) - rank(b.edge.on)) || (a.index - b.index))
-}
-
-// withEdge changes one transition of a route.
-export function withEdge(flow: Flow, index: number, patch: Partial<FlowEdge>): Flow {
-    return {...flow, edges: flow.edges.map((e, i) => (i === index ? {...e, ...patch} : e))}
-}
-
-// withoutEdge removes one transition.
-export function withoutEdge(flow: Flow, index: number): Flow {
-    return {...flow, edges: flow.edges.filter((_, i) => i !== index)}
-}
-
-// condIsComplete says the condition can actually decide something — the engine
-// refuses half-filled ones, so the editor keeps them out of what it saves.
-export function condIsComplete(cond: EdgeCond | undefined): boolean {
-    if (!cond) {
-        return true
-    }
-    if (cond.commentContains) {
-        return !cond.property && !cond.value
-    }
-    return Boolean(cond.property && cond.value)
-}
-
-// columnsOf lists the columns a route goes through, in the board's own order —
-// the route reads the way the board does.
-export function columnsOf(flow: Flow | undefined, columns: BoardColumn[]): BoardColumn[] {
-    return columns.filter((c) => Boolean(nodeFor(flow, c)))
-}
-
-// AutomationChanges is what has to be written to make the registry look like
-// the draft. Routes are keyed by name, so a renamed route is a new one and the
-// old is dropped — which is also what happens to the cards that named it.
+// AutomationChanges is what a save has to send: the columns that changed, and
+// the ones that stopped being configured at all.
 export type AutomationChanges = {
     savedColumns: ColumnSpec[]
     removedColumns: ColumnSpec[]
-    addedFlows: Flow[]
-    updatedFlows: Flow[]
-    removedFlows: Flow[]
 }
 
 export function automationChanges(before: Automation, after: Automation): AutomationChanges {
-    const sameFlowName = (a: Flow, b: Flow) => a.name.trim().toLowerCase() === b.name.trim().toLowerCase()
     return {
         savedColumns: after.columns.filter((c) => {
             const was = before.columns.find((b) => sameColumn(b, c))
             return !was || JSON.stringify(was) !== JSON.stringify(c)
         }),
         removedColumns: before.columns.filter((c) => !after.columns.some((n) => sameColumn(n, c))),
-        addedFlows: after.flows.filter((f) => !before.flows.some((b) => sameFlowName(b, f))),
-        updatedFlows: after.flows.filter((f) => {
-            const was = before.flows.find((b) => sameFlowName(b, f))
-            return Boolean(was) && JSON.stringify(was) !== JSON.stringify(f)
-        }),
-        removedFlows: before.flows.filter((f) => !after.flows.some((n) => sameFlowName(n, f))),
     }
 }
 
@@ -467,7 +223,6 @@ export function automationChanges(before: Automation, after: Automation): Automa
 export const KEY_PREFIX = 'app'
 
 export const BOARD_PROP_COLUMNS = 'columns'
-export const BOARD_PROP_FLOWS = 'flows'
 export const BOARD_PROP_SETUP = 'setup'
 
 // What this board's agents are told first. Nothing here writes it — the page
@@ -558,7 +313,6 @@ function readProperty<T>(board: Board, key: string, fallback: T): T {
 export function readBoardAutomation(board: Board): Automation {
     return {
         columns: readProperty<ColumnSpec[]>(board, BOARD_PROP_COLUMNS, []),
-        flows: readProperty<Flow[]>(board, BOARD_PROP_FLOWS, []),
     }
 }
 
@@ -578,7 +332,6 @@ export function boardAutomationProperties(
     const properties = {...(board.properties || {})}
 
     properties[BOARD_PROP_COLUMNS] = JSON.stringify(automation.columns)
-    properties[BOARD_PROP_FLOWS] = JSON.stringify(automation.flows)
     if (setup) {
         properties[BOARD_PROP_SETUP] = JSON.stringify(setup)
     } else {
@@ -596,13 +349,6 @@ export function impliedSetupSteps(automation: Automation, defs: SetupStepDef[]):
     for (const column of automation.columns) {
         actions.add(column.action)
     }
-    for (const flow of automation.flows) {
-        for (const node of flow.nodes) {
-            if (node.action) {
-                actions.add(node.action)
-            }
-        }
-    }
     const wanted = (kind: string) => {
         switch (kind) {
         case 'deploy':
@@ -619,115 +365,6 @@ export function impliedSetupSteps(automation: Automation, defs: SetupStepDef[]):
 // routeOptionMissing says the board has no option a card could name this route
 // with. A route nothing can be put on is the commonest way an editor's work
 // disappears: the graph saves, the cards never take it.
-export function routeOptionMissing(board: Board, flow: Flow): boolean {
-    const name = flow.name.trim().toLowerCase()
-    if (!name) {
-        return false
-    }
-    return !selectProperties(board).some((p) =>
-        (p.options || []).some((o) => o.value.trim().toLowerCase() === name))
-}
-
-// resolvedWrites is what a stage actually leaves on the card: its own list, or
-// the column's — the inheritance the route itself knows nothing about, spelled
-// once so the canvas, the reads and the condition pickers cannot disagree.
-export function resolvedWrites(node: FlowNode, specs: ColumnSpec[]): PropertyWrite[] {
-    if (node.writes?.length) {
-        return node.writes
-    }
-    return specForNode(node, specs)?.writes || []
-}
-
-// specForNode is the column a stage stands on — the option first, across the
-// whole list, and only then the name. The two passes must not be merged into
-// one `find`: a board that has both a spec bound to the option and an older one
-// carrying only the column's name would then be answered by whichever came
-// first, which is the order somebody edited things in. That is specFor's rule,
-// said again for a node — specFor takes a BoardColumn, which a route has not.
-export function specForNode(node: FlowNode, specs: ColumnSpec[]): ColumnSpec | undefined {
-    return (node.optionId ? specs.find((c) => c.optionId === node.optionId) : undefined) ||
-        specs.find((c) => c.column.toLowerCase() === node.column.toLowerCase())
-}
-
-// UpstreamWrite is one property a stage will find on the card when it starts,
-// and the stage that put it there — which is the half that makes the answer
-// readable: «Превью · пишет «Деплой»».
-export type UpstreamWrite = {
-    property: string
-    from: string
-}
-
-// upstreamWrites is every property the stages ahead of this one declare. It is
-// what a stage's reads fall back to (Go's FlowEntry.UpstreamWrites, kept in step
-// with it), so declaring a write once carries the value on by itself.
-//
-// Walked backwards over the incoming edges with a visited set, because a route
-// has cycles on purpose: a failed check sends the card back to the agent. A
-// stage never reads its own output back.
-export function upstreamWrites(flow: Flow, from: string, specs: ColumnSpec[]): UpstreamWrite[] {
-    const nodes = new Map(flow.nodes.map((n) => [n.id, n]))
-    const seen = new Set([from])
-    const taken = new Set<string>()
-    const out: UpstreamWrite[] = []
-    const queue = [from]
-    while (queue.length > 0) {
-        const at = queue.shift() as string
-        for (const edge of flow.edges) {
-            if (edge.to !== at || seen.has(edge.from)) {
-                continue
-            }
-            seen.add(edge.from)
-            queue.push(edge.from)
-            const node = nodes.get(edge.from)
-            if (!node) {
-                continue
-            }
-            for (const w of resolvedWrites(node, specs)) {
-                const key = w.property.trim().toLowerCase()
-                if (!key || taken.has(key)) {
-                    continue
-                }
-                taken.add(key)
-                out.push({property: w.property, from: node.column})
-            }
-        }
-    }
-    return out
-}
-
-// unwrittenConditions is the dataflow check: every conditional edge of the
-// route whose property no stage of the route declares as a write. Not an
-// error — an approved option may be a person's own click — but worth a sentence, since
-// an edge waiting on a property nothing produces is a route that quietly never
-// moves. The column property itself is exempt: moving between columns is what
-// the route does, not a value somebody writes.
-export function unwrittenConditions(flow: Flow, specs: ColumnSpec[], columnPropertyName?: string): string[] {
-    const written = new Set<string>()
-    for (const node of flow.nodes) {
-        for (const w of resolvedWrites(node, specs)) {
-            written.add(w.property.toLowerCase())
-        }
-    }
-    const out = new Set<string>()
-    for (const edge of flow.edges) {
-        const property = edge.if?.property
-        if (!property || property.toLowerCase() === columnPropertyName?.toLowerCase()) {
-            continue
-        }
-        if (!written.has(property.toLowerCase())) {
-            out.add(property)
-        }
-    }
-    return [...out]
-}
-
-// actionLabel names what happens in a column, in the reader's language.
-//
-// Here rather than in the editor that draws it, because the template summary
-// wants the same sentence: importing it from automationEditor pulled the route
-// canvas — solid-flow, xyflow and d3 — into the board's first chunk for four
-// strings. The IntlShape is a type, so this module still carries no imports of
-// its own into a bundle.
 export function actionLabel(intl: IntlShape, action: string): string {
     switch (action) {
     case 'agent':

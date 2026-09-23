@@ -48,12 +48,11 @@ func (m *Manager) columnByKey(key string) (ColumnSpec, bool) {
 // full. Nothing is said on the card: the route strip already reports that a
 // queued card is waiting for a free place, which is this state told live rather
 // than as a comment that outlives it.
-func (m *Manager) enqueueStage(ev CardMoved, spec ColumnSpec, flowID, nodeID string) {
+func (m *Manager) enqueueStage(ev CardMoved, spec ColumnSpec, nodeID string) {
 	fresh, err := m.store.EnqueueStage(QueuedStage{
 		CardID:    ev.CardID,
 		BoardID:   ev.BoardID,
 		ColumnKey: spec.Key(),
-		FlowID:    flowID,
 		NodeID:    nodeID,
 	})
 	if err != nil {
@@ -105,31 +104,13 @@ func (m *Manager) drainColumn(key string) {
 		return
 	}
 
-	opts := startOptions{column: spec, flowID: q.FlowID, flowNodeID: q.NodeID}
-	action := spec.Action
-	if q.FlowID != "" {
-		if flow, found := m.FlowByID(q.FlowID); found {
-			if node, found := flow.Node(q.NodeID); found {
-				opts.deployOverride = node.DeployID
-				// Crew(), not AgentName: validateFlow folds the legacy
-				// singular field away, so reading it here meant a card that
-				// queued at a crewed stage lost that crew when it finally
-				// started and fell back to the column's.
-				if crew := node.Crew(); len(crew) > 0 {
-					opts.agentCrew = crew
-				}
-				if node.Action != "" {
-					action = node.Action
-				}
-			}
-		}
-	}
-	switch action {
-	case FlowActionDeploy:
+	opts := startOptions{column: spec}
+	switch spec.Action {
+	case ColumnActionDeploy:
 		opts.deploy = true
-	case FlowActionTest:
+	case ColumnActionTest:
 		opts.test = true
-	case FlowActionNone, "":
+	case ColumnActionNone, "":
 		m.dequeueStage(q.CardID)
 		return
 	}
@@ -149,10 +130,20 @@ func (m *Manager) drainColumn(key string) {
 	if err != nil {
 		m.log.Warn("acp: queued stage not started", "card", q.CardID, "column", spec.Column, "err", err)
 		m.stallCard(q.CardID, q.NodeID, fmt.Sprintf("стадия «%s» не запустилась: %v", spec.Column, err))
-		if q.FlowID != "" {
-			m.advanceFlow(q.CardID, TriggerFailure, "шаг не удалось запустить")
-		}
 		return
 	}
 	m.log.Info("acp: queued stage started", "session", s.ID, "card", q.CardID, "column", spec.Column)
+}
+
+// cardIsQueued reports that the card is waiting for a place in its column.
+func (m *Manager) cardIsQueued(cardID string) bool {
+	if m.store == nil || cardID == "" {
+		return false
+	}
+	queued, err := m.store.StageQueued(cardID)
+	if err != nil {
+		m.log.Warn("acp: cannot read the card's place in the queue", "card", cardID, "err", err)
+		return false
+	}
+	return queued
 }

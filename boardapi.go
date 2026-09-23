@@ -2,9 +2,7 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"strings"
 	"sync"
@@ -25,8 +23,8 @@ import (
 // agent run's grant (acp/boardtools.go), and the board it names is the only
 // board these calls can touch.
 
-// boardToolRoutes serves the tools. Like the terminal sockets, it is built
-// before the manager exists and is given it afterwards.
+// boardToolRoutes serves the tools. Like the event socket, it is built before
+// the manager exists and is given it afterwards.
 type boardToolRoutes struct {
 	mu  sync.RWMutex
 	mgr *acp.Manager
@@ -68,45 +66,6 @@ func (b *boardToolRoutes) Handler() http.Handler {
 	return mux
 }
 
-// HookHandler is where an agent's own CLI asks for permission when it has no
-// protocol to ask through (internal/acp/toolhook.go). It lives here rather than
-// beside the tools because it authenticates the same way and with the same
-// token — one grant per run, naming the board, the card and the terminal — and
-// splitting that check across two files is how the two would drift.
-//
-// It answers 200 with a decision, or 200 with an empty one. A refusal a caller
-// could mistake for "denied" is the one answer that must never be sent: the
-// hook turns anything it cannot read into silence, and silence leaves the CLI's
-// own prompt standing (hook.go).
-func (b *boardToolRoutes) HookHandler() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
-			http.Error(w, "only POST", http.StatusMethodNotAllowed)
-			return
-		}
-		mgr := b.manager()
-		if mgr == nil {
-			http.Error(w, "агенты выключены", http.StatusServiceUnavailable)
-			return
-		}
-		var ask acp.ToolAsk
-		if err := json.NewDecoder(io.LimitReader(r.Body, 1<<20)).Decode(&ask); err != nil {
-			http.Error(w, "не разобрать запрос", http.StatusBadRequest)
-			return
-		}
-		// r.Context() is the hook's own connection: a CLI that gave up waiting
-		// closes it, and the question on the card goes with it rather than
-		// standing there about a decision already made on the terminal's screen.
-		decision, err := mgr.AskToolPermission(r.Context(), bearer(r), ask)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusForbidden)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(decision)
-	})
-}
-
 // grantedBoard is the manager seen through one grant: every call is already
 // bound to the board the token names, so nothing below takes a board id.
 type grantedBoard struct {
@@ -124,27 +83,6 @@ func (g *grantedBoard) Columns(_ context.Context) ([]boardmcp.Column, error) {
 	out := make([]boardmcp.Column, 0, len(columns))
 	for _, c := range columns {
 		out = append(out, boardmcp.Column{Name: c.Name, Action: c.Action, Agents: c.Agents})
-	}
-	return out, nil
-}
-
-func (g *grantedBoard) Flows(_ context.Context) ([]boardmcp.Flow, error) {
-	flows, err := g.mgr.BoardToolFlows(g.token)
-	if err != nil {
-		return nil, err
-	}
-	out := make([]boardmcp.Flow, 0, len(flows))
-	for _, f := range flows {
-		stages := make([]boardmcp.FlowStage, 0, len(f.Stages))
-		for _, s := range f.Stages {
-			stages = append(stages, boardmcp.FlowStage{
-				Column:  s.Column,
-				Action:  s.Action,
-				Crew:    s.Crew,
-				Waiting: s.Waiting,
-			})
-		}
-		out = append(out, boardmcp.Flow{Name: f.Name, Stages: stages})
 	}
 	return out, nil
 }
@@ -194,25 +132,17 @@ func (g *grantedBoard) UpdateCard(ctx context.Context, change boardmcp.CardChang
 	})
 }
 
+func (g *grantedBoard) SetFields(ctx context.Context, cardID string, fields map[string]string) error {
+	return g.mgr.SetFieldsFromTools(ctx, g.token, cardID, fields)
+}
+
 func (g *grantedBoard) Comment(ctx context.Context, cardID, text string) error {
 	return g.mgr.CommentFromTools(ctx, g.token, cardID, text)
 }
 
-// Describe is about the conversation rather than the board, and the grant is
-// what knows which conversation that is.
-func (g *grantedBoard) Describe(_ context.Context, text string) error {
-	return g.mgr.DescribeTerminalFromTools(g.token, text)
-}
-
-// Name is what the conversation is called in the list of open terminals — the
-// same field a person renames by hand, filled in by the agent when it is asked.
-func (g *grantedBoard) Name(_ context.Context, title string) error {
-	return g.mgr.NameTerminalFromTools(g.token, title)
-}
-
-// Finish ends the stage of a route this conversation is, which the grant is
-// what knows — the same way Describe does. The fields land on the card first:
-// they are what the route's own edges may read.
+// Finish ends the stage of a route this conversation is, which is what the
+// grant knows. The fields land on the card first: they are what the route's own
+// edges may read.
 func (g *grantedBoard) Finish(_ context.Context, ok bool, summary string, fields map[string]string) error {
 	return g.mgr.FinishWorkFromTools(g.token, ok, summary, fields)
 }
@@ -225,9 +155,6 @@ func cardInfo(c acp.BoardToolCard) boardmcp.CardInfo {
 		Options: c.Options,
 		Body:    c.Body,
 		Mine:    c.Mine,
-		Flow:    c.Flow,
-		Stage:   c.Stage,
-		Waiting: c.Waiting,
 		Running: c.Running,
 		Queued:  c.Queued,
 	}

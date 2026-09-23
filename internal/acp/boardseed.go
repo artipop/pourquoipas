@@ -31,7 +31,7 @@ import (
 //
 // The prefix is the app's, not the agent integration's, because a route does
 // not presuppose an agent: of the twelve triggers an edge can wait on, nine
-// come from git, GitHub or the board itself, and a FlowActionNone stage runs
+// come from git, GitHub or the board itself, and a ColumnActionNone stage runs
 // nothing at all. A board can carry a working route with no agent in it.
 // The keys this application keeps on a board, in the board's own `properties`
 // map. Bare names on purpose: the map is shared with the board server's own
@@ -119,9 +119,9 @@ const OutcomePropertyTitle = "Исход"
 // the stall's business.
 func OutcomeValue(trigger string) string {
 	switch trigger {
-	case TriggerSuccess:
+	case OutcomeSuccess:
 		return OutcomePassed
-	case TriggerFailure, TriggerBlocked:
+	case OutcomeFailure:
 		return OutcomeFailed
 	default:
 		return ""
@@ -255,36 +255,24 @@ func (m *Manager) seedFromBoard(boardID string) {
 		return
 	}
 
-	columns, flows, err := parseBoardAutomation(props)
+	columns, err := parseBoardAutomation(props)
 	if err != nil {
 		m.log.Warn("acp: the board's own settings are unreadable", "board", boardID, "err", err)
 		return
 	}
-	// A route written before transition 0 existed has no way in, and the board
-	// is where routes live — so this is where such a route is brought up to
-	// date, before anything reads it and in time for the write-back below.
-	if added := addEntryTransitions(flows); added > 0 {
-		m.log.Info("acp: routes given a way in", "board", boardID, "count", added)
-	}
-
 	// Bind whatever still knows only a column's name to the option it means,
 	// before anything reads it. Asked of the board rather than inferred, and
 	// only where something needs binding: a board whose automation already
 	// carries ids costs nothing (contradiction 5).
-	m.bindToBoardOptions(boardID, columns, flows)
+	m.bindToBoardOptions(boardID, columns)
 	added, unusableColumns := m.adoptColumns(boardID, columns)
 	if added > 0 {
 		m.log.Info("acp: columns taken from the board itself", "board", boardID, "count", added)
 	}
-	added, unusableFlows := m.adoptFlows(boardID, flows)
-	if added > 0 {
-		m.log.Info("acp: routes taken from the board itself", "board", boardID, "count", added)
-	}
-	m.rememberUnadopted(boardID, unusableColumns, unusableFlows)
+	m.rememberUnadopted(boardID, unusableColumns)
 	if m.adoptPrompt(boardID, boardPromptFrom(props)) {
 		m.log.Info("acp: the board's own instructions taken from the board itself", "board", boardID)
 	}
-	m.indexBoardCardFlows(boardID)
 
 	// The board is the store, so what the registry ended up with for this board
 	// goes straight back onto it — which also settles the difference between
@@ -304,20 +292,14 @@ func (m *Manager) seedFromBoard(boardID string) {
 // parseBoardAutomation reads the two properties a template writes. They arrive
 // as whatever the board store decoded them into, so they are re-encoded and
 // read back into the real types rather than picked apart by hand.
-func parseBoardAutomation(props map[string]any) ([]ColumnSpec, []FlowEntry, error) {
+func parseBoardAutomation(props map[string]any) ([]ColumnSpec, error) {
 	var columns []ColumnSpec
 	if raw, ok := boardProp(props, BoardPropColumns); ok {
 		if err := reinterpret(raw, &columns); err != nil {
-			return nil, nil, fmt.Errorf("%s: %w", BoardPropColumns, err)
+			return nil, fmt.Errorf("%s: %w", BoardPropColumns, err)
 		}
 	}
-	var flows []FlowEntry
-	if raw, ok := boardProp(props, BoardPropFlows); ok {
-		if err := reinterpret(raw, &flows); err != nil {
-			return nil, nil, fmt.Errorf("%s: %w", BoardPropFlows, err)
-		}
-	}
-	return columns, flows, nil
+	return columns, nil
 }
 
 func reinterpret(from any, into any) error {
@@ -403,63 +385,12 @@ func (m *Manager) adoptColumns(boardID string, columns []ColumnSpec) (int, []Col
 	return added, unusable
 }
 
-// adoptFlows registers the board's routes under its own id, skipping names the
-// board already has. Like adoptColumns it hands back what it could not use
-// rather than dropping it.
-func (m *Manager) adoptFlows(boardID string, flows []FlowEntry) (int, []FlowEntry) {
-	if len(flows) == 0 {
-		return 0, nil
-	}
-	m.cfgMu.Lock()
-	defer m.cfgMu.Unlock()
-
-	added := 0
-	var unusable []FlowEntry
-	for _, f := range flows {
-		f.BoardID = boardID
-		bindFlowRefs(&f, m.cfg.Agents, m.cfg.Deploys)
-		bindFlowWorkspace(&f, m.cfg.Workdirs)
-		valid, err := validateFlow(f, m.cfg.Workdirs, m.cfg.Agents, m.cfg.Deploys)
-		if err != nil {
-			m.log.Warn("acp: the board offers a route that cannot be used", "board", boardID, "flow", f.Name, "err", err)
-			unusable = append(unusable, f)
-			continue
-		}
-		known := false
-		for i, existing := range m.cfg.Flows {
-			// By name as well as by id: a board that predates route ids carries
-			// none, so validateFlow has just minted a fresh one and an id
-			// comparison would import the same route again on every read.
-			if sameFlow(existing, valid) || flowNameTaken(existing, valid) {
-				known = true
-				if bindFlowRefs(&m.cfg.Flows[i], m.cfg.Agents, m.cfg.Deploys) {
-					added++
-				}
-				bindFlowWorkspace(&m.cfg.Flows[i], m.cfg.Workdirs)
-				break
-			}
-		}
-		if known {
-			continue
-		}
-		m.cfg.Flows = append(m.cfg.Flows, valid)
-		added++
-	}
-	if added > 0 {
-		if err := m.persistConfigLocked(); err != nil {
-			m.log.Warn("acp: cannot persist the board's routes", "board", boardID, "err", err)
-		}
-	}
-	return added, unusable
-}
-
 // unadopted is a board's own automation that this machine could not take into
 // the registry. It is not an error state: an imported board names agents and
 // deploy targets that were registered on the machine it came from, and the
 // person is about to register them here.
 type unadopted struct {
 	Columns []ColumnSpec
-	Flows   []FlowEntry
 }
 
 // rememberUnadopted records what a board carries and this machine could not
@@ -468,59 +399,17 @@ type unadopted struct {
 // and what never reached the registry would simply cease to exist — which is
 // what happened to every column of a freshly imported board the first time it
 // was opened.
-func (m *Manager) rememberUnadopted(boardID string, columns []ColumnSpec, flows []FlowEntry) {
+func (m *Manager) rememberUnadopted(boardID string, columns []ColumnSpec) {
 	m.cfgMu.Lock()
 	defer m.cfgMu.Unlock()
-	if len(columns) == 0 && len(flows) == 0 {
+	if len(columns) == 0 {
 		delete(m.boardUnadopted, boardID)
 		return
 	}
 	if m.boardUnadopted == nil {
 		m.boardUnadopted = make(map[string]unadopted)
 	}
-	m.boardUnadopted[boardID] = unadopted{Columns: columns, Flows: flows}
-}
-
-// indexBoardCardFlows refills this machine's flow_state table from the cards of
-// one board. The table is an index, not a store: the VCS watcher reads it whole
-// on every poll to learn which branches to watch, and a board this machine has
-// never seen — imported, or moved along by somebody else — would otherwise have
-// its parked cards waiting on a branch nobody is watching.
-//
-// Read-only towards the board, and add-only towards the table: a card the board
-// says nothing about keeps whatever this machine remembered, because the answer
-// "the board has no opinion" and the answer "the board says the card is off its
-// route" arrive here identically, and only the latter is a reason to forget.
-func (m *Manager) indexBoardCardFlows(boardID string) {
-	if m.cards == nil || m.store == nil {
-		return
-	}
-	parent := m.rootCtx
-	if parent == nil {
-		parent = context.Background()
-	}
-	ctx, cancel := context.WithTimeout(parent, 30*time.Second)
-	states, err := m.forBoard(boardID).CardState.BoardCardFlows(ctx, boardID)
-	cancel()
-	if err != nil {
-		m.log.Warn("acp: cannot read where the board's cards stand on their routes", "board", boardID, "err", err)
-		return
-	}
-	indexed := 0
-	for _, st := range states {
-		known, ok, err := m.store.FlowStateForCard(st.CardID)
-		if err == nil && ok && known.NodeID == st.NodeID && known.FlowID == st.FlowID {
-			continue
-		}
-		if err := m.store.SaveFlowState(st); err != nil {
-			m.log.Warn("acp: cannot index where a card stands", "card", st.CardID, "err", err)
-			continue
-		}
-		indexed++
-	}
-	if indexed > 0 {
-		m.log.Info("acp: cards on a route taken from the board itself", "board", boardID, "count", indexed)
-	}
+	m.boardUnadopted[boardID] = unadopted{Columns: columns}
 }
 
 // hasUnadopted reports whether the board still carries something this machine
@@ -542,18 +431,11 @@ func (m *Manager) hasUnadopted(boardID string) bool {
 // ids) and gives the copy a new board id, so a spec that names the option still
 // finds it and one that named the board would point at the original.
 func (m *Manager) BoardAutomation(boardID string) BoardAutomation {
-	columns, flows := m.boardOwnAutomation(boardID)
-	out := BoardAutomation{
-		Columns: make([]ColumnSpec, 0, len(columns)),
-		Flows:   make([]FlowEntry, 0, len(flows)),
-	}
+	columns := m.boardOwnAutomation(boardID)
+	out := BoardAutomation{Columns: make([]ColumnSpec, 0, len(columns))}
 	for _, c := range columns {
 		c.BoardID = ""
 		out.Columns = append(out.Columns, c)
-	}
-	for _, f := range flows {
-		f.BoardID = ""
-		out.Flows = append(out.Flows, f)
 	}
 	return out
 }
@@ -571,7 +453,7 @@ func (m *Manager) persistBoardLocked(boardID string) {
 	if boardID == "" || m.meta == nil {
 		return
 	}
-	columns, flows := boardOwn(m.cfg, boardID)
+	columns := boardOwn(m.cfg, boardID)
 
 	// What this machine could not take into the registry goes back exactly as
 	// it came. A write-back is the registry's answer for the board, and the
@@ -580,15 +462,14 @@ func (m *Manager) persistBoardLocked(boardID string) {
 	// would be one machine erasing what another machine set up.
 	if kept, ok := m.boardUnadopted[boardID]; ok {
 		columns = append(columns, kept.Columns...)
-		flows = append(flows, kept.Flows...)
 	}
 
-	// Written as `null` rather than left out when a board's last route is
-	// deleted: an absent property is one the board never had, and patching
-	// with an absent value is how a deletion turns into "no change at all".
+	// Written as `null` rather than left out when a board's last configured
+	// column is deleted: an absent property is one the board never had, and
+	// patching with an absent value is how a deletion turns into "no change at
+	// all".
 	props := map[string]any{
 		BoardPropColumns: columns,
-		BoardPropFlows:   flows,
 		BoardPropPrompt:  m.cfg.BoardPrompts[boardID],
 	}
 	// Which field the columns are on, taken from the columns themselves. Only
@@ -626,28 +507,21 @@ func (m *Manager) saveBoardsLocked(boards ...string) error {
 }
 
 // boardOwn is what one board owns, out of the whole registry.
-func boardOwn(cfg Config, boardID string) ([]ColumnSpec, []FlowEntry) {
+func boardOwn(cfg Config, boardID string) []ColumnSpec {
 	columns := make([]ColumnSpec, 0, len(cfg.Columns))
 	for _, c := range cfg.Columns {
 		if c.BoardID == boardID {
 			columns = append(columns, c)
 		}
 	}
-	flows := make([]FlowEntry, 0, len(cfg.Flows))
-	for _, f := range cfg.Flows {
-		if f.BoardID == boardID {
-			flows = append(flows, f)
-		}
-	}
-	return columns, flows
+	return columns
 }
 
-// BoardAutomation is what a board carries: the columns it runs and the routes
-// across it. Exported so a test — and "save this board as a template" —
-// speaks the same shape the template does.
+// BoardAutomation is what a board carries: the columns it runs. Exported so a
+// test — and "save this board as a template" — speaks the same shape the
+// template does.
 type BoardAutomation struct {
 	Columns []ColumnSpec `json:"columns,omitempty"`
-	Flows   []FlowEntry  `json:"flows,omitempty"`
 }
 
 // columnPropertyOf is the property this board's columns are values of, read off
@@ -668,19 +542,14 @@ func columnPropertyOf(columns []ColumnSpec) string {
 	return found
 }
 
-// bindToBoardOptions resolves the columns and stages that carry a name and no
-// option id. What it cannot resolve is left alone: a stage naming a column the
-// board has not got is a stage nothing will ever stand on, and saying so is the
-// editor's business rather than a silent rewrite here.
-func (m *Manager) bindToBoardOptions(boardID string, columns []ColumnSpec, flows []FlowEntry) {
+// bindToBoardOptions resolves the columns that carry a name and no option id.
+// What it cannot resolve is left alone: a spec naming a column the board has
+// not got describes nothing, and saying so is the editor's business rather than
+// a silent rewrite here.
+func (m *Manager) bindToBoardOptions(boardID string, columns []ColumnSpec) {
 	needs := false
 	for _, c := range columns {
 		needs = needs || c.OptionID == ""
-	}
-	for _, f := range flows {
-		for _, n := range f.Nodes {
-			needs = needs || n.OptionID == ""
-		}
 	}
 	if !needs || m.meta == nil {
 		return
@@ -699,8 +568,5 @@ func (m *Manager) bindToBoardOptions(boardID string, columns []ColumnSpec, flows
 	}
 	for i := range columns {
 		bindColumnOption(&columns[i], boardID, options)
-	}
-	for i := range flows {
-		bindStageOptions(&flows[i], options)
 	}
 }

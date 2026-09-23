@@ -1,0 +1,197 @@
+package acp
+
+import (
+	"context"
+	"fmt"
+	"os/exec"
+	"path/filepath"
+	"strings"
+	"time"
+)
+
+// How a stage says what became of it.
+//
+// A stage is an ACP session, and its turn ending is what ends it. What the turn
+// cannot say by ending is the verdict and the values a route branches on, so
+// those come through the board tools: finish_work with done or not done and the
+// stage's declared outputs, and the card's own tools for the rest. The result a
+// person reads is a comment the agent writes itself (comment_card) — one, with
+// what matters — rather than the transcript of its turn pasted onto the card.
+
+// stageReport is what an agent hands back through finish_work: whether the work
+// is done, and one line about it.
+type stageReport struct {
+	ok      bool
+	summary string
+}
+
+// resultBrief is how a stage with the board's tools is told to report, said in
+// the task itself: whether the tools arrive loaded is the agent's business, and
+// the task text is the one thing that always arrives.
+const resultBrief = `When the work is finished, report it on the card through the board's tools:
+
+1. Post the result as ONE comment with ` + "`comment_card`" + `: only what matters — what was done or decided, and what a person has to know or do next. Not a log of your steps.
+2. If the task calls for it, put values into the card's fields with ` + "`update_card`" + ` (` + "`list_card_fields`" + ` lists them).
+3. Call ` + "`finish_work`" + ` — done or not done, and one line — to end the stage. When you cannot finish, say why in the comment and call it with done set to false.`
+
+// boardToolsBrief is what a session handed the board's tools is told about
+// reporting through them: a stage its result; a conversation with no card
+// behind it nothing, since it has no stage to end and its own instructions say
+// what the tools are for.
+func (m *Manager) boardToolsBrief(s *Session) string {
+	if s.CardID == "" {
+		return ""
+	}
+	return resultBrief
+}
+
+// setReport records the verdict finish_work delivered. The first one stands:
+// a stage is reported once.
+func (s *Session) setReport(r stageReport) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.report != nil {
+		return false
+	}
+	s.report = &r
+	return true
+}
+
+func (s *Session) stageReport() (stageReport, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.report == nil {
+		return stageReport{}, false
+	}
+	return *s.report, true
+}
+
+// markCommented records that the agent wrote on its own card, which is what
+// keeps this side from writing a second comment after it (commentFirstTurn).
+func (s *Session) markCommented() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.commented = true
+}
+
+func (s *Session) hasCommented() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.commented
+}
+
+// FinishWorkFromTools is the agent saying the stage is over, and how.
+//
+// fields are the stage's outputs, written onto the card **before the report is
+// accepted**, for two reasons. The route advances when the turn ends and its
+// edges read the card as it is then, so a value an edge branches on has to be
+// standing first. And a write the board refuses comes back as this call's own
+// error, to the one party that can fix it: the agent.
+func (m *Manager) FinishWorkFromTools(token string, ok bool, summary string, fields map[string]string) error {
+	g, found := m.boardGrant(token)
+	if !found {
+		return fmt.Errorf("нет доступа к доске")
+	}
+	s := m.session(g.SessionID)
+	if s == nil || s.CardID == "" {
+		return fmt.Errorf("этот разговор — не стадия маршрута: сказать здесь «работа закончена» некому, переложите карточку через move_card")
+	}
+	for _, w := range s.Writes {
+		if !w.Required {
+			continue
+		}
+		if strings.TrimSpace(fieldValue(fields, w.Property)) == "" {
+			return fmt.Errorf("стадия обязана записать свойство %q — передай его в properties (что оно принимает, покажет list_card_fields)", w.Property)
+		}
+	}
+	if len(fields) > 0 {
+		if g.Property != "" {
+			if _, taken := fieldsHave(fields, g.Property); taken {
+				return fmt.Errorf("колонка (%s) меняется не здесь: карточку двигает сам исход работы, либо move_card", g.Property)
+			}
+		}
+		if m.writer == nil {
+			return fmt.Errorf("доска недоступна")
+		}
+		ctx, cancel := context.WithTimeout(m.rootCtx, 10*time.Second)
+		defer cancel()
+		if err := m.forCard(s.CardID).Writer.SetCardFields(ctx, s.CardID, fields); err != nil {
+			return err
+		}
+	}
+	if !s.setReport(stageReport{ok: ok, summary: strings.TrimSpace(summary)}) {
+		return fmt.Errorf("об окончании работы уже сказано")
+	}
+	return nil
+}
+
+// missingWrites names the required outputs a stage ended without delivering.
+func missingWrites(s *Session) []string {
+	if _, reported := s.stageReport(); reported {
+		// finish_work refuses a report without them, so a report means they
+		// were written.
+		return nil
+	}
+	var out []string
+	for _, w := range s.Writes {
+		if w.Required {
+			out = append(out, w.Property)
+		}
+	}
+	return out
+}
+
+// fieldValue reads a field the way a person named the property: ignoring case.
+func fieldValue(fields map[string]string, property string) string {
+	v, _ := fieldsHave(fields, property)
+	return v
+}
+
+func fieldsHave(fields map[string]string, property string) (string, bool) {
+	for k, v := range fields {
+		if strings.EqualFold(k, property) {
+			return v, true
+		}
+	}
+	return "", false
+}
+
+// joinPrompts is texts separated by blank lines, empties dropped.
+func joinPrompts(parts ...string) string {
+	var out []string
+	for _, p := range parts {
+		if p = strings.TrimSpace(p); p != "" {
+			out = append(out, p)
+		}
+	}
+	return strings.Join(out, "\n\n")
+}
+
+// boardFolder is the board's drafts folder: the board's own directory under the
+// app's data, where a conversation with no folder of its own runs — and where
+// what an agent leaves for one card is on hand for the next. Named by the
+// board's id and nothing else, so it needs no state at all.
+func (m *Manager) boardFolder(boardID string) string {
+	if boardID == "" {
+		return ""
+	}
+	return filepath.Join(filepath.Dir(m.cfg.WorktreeDir), "boards", boardID)
+}
+
+// gitLines runs git in dir and returns its non-empty output lines, nil on any
+// failure: every caller treats "git could not say" as "nothing to say".
+func gitLines(ctx context.Context, dir string, args ...string) []string {
+	cmd := exec.CommandContext(ctx, "git", args...)
+	cmd.Dir = dir
+	out, err := cmd.Output()
+	if err != nil {
+		return nil
+	}
+	var lines []string
+	for _, line := range strings.Split(string(out), "\n") {
+		if line = strings.TrimSpace(line); line != "" {
+			lines = append(lines, line)
+		}
+	}
+	return lines
+}

@@ -125,7 +125,11 @@ exports[`src/components/workspace > return workspace and showcard 1`] = `
       </div>
       <div
         class="octo-sidebar-list"
-      />
+      >
+        
+        <!---->
+        <!---->
+      </div>
       <div
         class="octo-spacer"
       />
@@ -453,8 +457,6 @@ exports[`src/components/workspace > return workspace and showcard 1`] = `
                 
                 <!---->
               </div>
-              <!---->
-              
               <div
                 class="octo-spacer"
               />
@@ -520,8 +522,6 @@ exports[`src/components/workspace > return workspace and showcard 1`] = `
                 
                 <!---->
               </div>
-              <!---->
-              
               <div
                 class="octo-spacer"
               />
@@ -974,8 +974,6 @@ exports[`src/components/workspace > return workspace readonly and showcard 1`] =
                 
                 <!---->
               </div>
-              <!---->
-              
               <div
                 class="octo-spacer"
               />
@@ -1020,8 +1018,6 @@ exports[`src/components/workspace > return workspace readonly and showcard 1`] =
                 
                 <!---->
               </div>
-              <!---->
-              
               <div
                 class="octo-spacer"
               />
@@ -1321,6 +1317,8 @@ exports[`src/components/workspace > should match snapshot 1`] = `
       <div
         class="octo-sidebar-list"
       >
+        
+        <!---->
         <div>
           <div
             class="SidebarCategory"
@@ -1387,6 +1385,7 @@ exports[`src/components/workspace > should match snapshot 1`] = `
             </div>
           </div>
         </div>
+        <!---->
       </div>
       <div
         class="octo-spacer"
@@ -1715,8 +1714,6 @@ exports[`src/components/workspace > should match snapshot 1`] = `
                 
                 <!---->
               </div>
-              <!---->
-              
               <div
                 class="octo-spacer"
               />
@@ -1782,8 +1779,6 @@ exports[`src/components/workspace > should match snapshot 1`] = `
                 
                 <!---->
               </div>
-              <!---->
-              
               <div
                 class="octo-spacer"
               />
@@ -2236,8 +2231,6 @@ exports[`src/components/workspace > should match snapshot with readonly 1`] = `
                 
                 <!---->
               </div>
-              <!---->
-              
               <div
                 class="octo-spacer"
               />
@@ -2282,8 +2275,6 @@ exports[`src/components/workspace > should match snapshot with readonly 1`] = `
                 
                 <!---->
               </div>
-              <!---->
-              
               <div
                 class="octo-spacer"
               />

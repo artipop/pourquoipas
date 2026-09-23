@@ -1,12 +1,15 @@
 package acp
 
-import "strings"
+import (
+	"slices"
+	"strings"
+)
 
 // Binding a board's automation to registry ids.
 //
-// This is for data the app does not insert: columns and routes live in the
-// board's JSON, written by a template, by another machine, or by an older
-// version, so there is no write that could have handed out an id. Everything
+// This is for data the app does not insert: a board's columns live in its own
+// JSON, written by a template, by another machine, or by an older version, so
+// there is no write that could have handed out an id. Everything
 // here runs once, where a board is read (boardseed.go), and what it resolves is
 // written back to the board.
 //
@@ -29,28 +32,6 @@ func bindColumnRefs(c *ColumnSpec, agents []AgentEntry, deploys []DeployEntry) b
 	ids, kept, folded := bindCrew(c.AgentIDs, c.Agents, agents)
 	c.AgentIDs, c.Agents = ids, kept
 	changed = changed || folded
-	return changed
-}
-
-// bindFlowRefs folds a route's legacy name references into ids, stage by stage.
-func bindFlowRefs(f *FlowEntry, agents []AgentEntry, deploys []DeployEntry) bool {
-	changed := false
-	for i := range f.Nodes {
-		n := &f.Nodes[i]
-		if id, ok := bindDeploy(n.DeployID, n.DeployName, deploys); ok {
-			n.DeployID, n.DeployName = id, ""
-			changed = true
-		}
-		// The singular field is folded into the plural one first, so a stage
-		// written either way arrives here as one list to bind.
-		names := n.AgentNames
-		if n.AgentName != "" {
-			names = append(append([]string(nil), names...), n.AgentName)
-		}
-		ids, kept, folded := bindCrew(n.AgentIDs, names, agents)
-		n.AgentIDs, n.AgentNames, n.AgentName = ids, kept, ""
-		changed = changed || folded
-	}
 	return changed
 }
 
@@ -116,7 +97,7 @@ func bindCrew(ids, names []string, agents []AgentEntry) (bound, kept []string, c
 			kept = append(kept, name)
 			continue
 		}
-		if !containsString(bound, a.ID) {
+		if !slices.Contains(bound, a.ID) {
 			bound = append(bound, a.ID)
 		}
 		changed = true
@@ -143,19 +124,6 @@ func (m *Manager) crewNames(ids []string) []string {
 		}
 	}
 	return out
-}
-
-// bindFlowWorkspace folds a route's legacy folder name into the registry id.
-func bindFlowWorkspace(f *FlowEntry, workdirs []WorkdirEntry) bool {
-	if strings.TrimSpace(f.WorkspaceID) != "" || strings.TrimSpace(f.WorkdirName) == "" {
-		return false
-	}
-	w, ok := workdirNamed(workdirs, f.WorkdirName)
-	if !ok {
-		return false
-	}
-	f.WorkspaceID, f.WorkdirName = w.ID, ""
-	return true
 }
 
 func workdirNamed(workdirs []WorkdirEntry, name string) (WorkdirEntry, bool) {
@@ -255,21 +223,6 @@ func bindColumnOption(c *ColumnSpec, boardID string, options []Column) bool {
 	}
 	c.BoardID, c.PropertyID, c.OptionID = boardID, opt.PropertyID, opt.OptionID
 	return true
-}
-
-// bindStageOptions is the same for every stage of a route.
-func bindStageOptions(f *FlowEntry, options []Column) bool {
-	changed := false
-	for i := range f.Nodes {
-		if f.Nodes[i].OptionID != "" {
-			continue
-		}
-		if opt, ok := optionNamed(options, f.Nodes[i].Column); ok {
-			f.Nodes[i].OptionID = opt.OptionID
-			changed = true
-		}
-	}
-	return changed
 }
 
 // optionNamed is the last place a column is found by its name, and it exists

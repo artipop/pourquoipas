@@ -208,25 +208,15 @@ func (m *Manager) QuestionForCard(cardID string) *Question {
 // card waiting to be answered is a card waiting for a person, and the board
 // shows those in one place.
 func (m *Manager) emitQuestion(q Question, open bool) {
-	m.emitAttentionRecord(Attention{
-		CardID:     q.CardID,
-		BoardID:    q.BoardID,
-		Title:      q.CardTitle,
-		Agent:      q.Agent,
-		Reason:     AttentionQuestion,
-		Tool:       q.Tool,
-		QuestionID: q.ID,
-		Text:       q.Text,
-		Options:    q.Options,
-		FreeText:   q.FreeText,
-		Awaiting:   open,
-		Since:      q.AskedAt.Format(time.RFC3339),
-	})
+	a := q.attention()
+	a.Awaiting = open
+	m.emitAttentionRecord(a)
 }
 
 // attention describes an open question the way the board wants it.
 func (q Question) attention() Attention {
 	return Attention{
+		SessionID:  q.SessionID,
 		CardID:     q.CardID,
 		BoardID:    q.BoardID,
 		Title:      q.CardTitle,

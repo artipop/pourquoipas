@@ -30,12 +30,10 @@ import {useHasCurrentBoardPermissions} from '../hooks/permissions'
 
 import BoardPermissionGate from './permissions/boardPermissionGate'
 
-import CardTerminal, {isCardTerminalAvailable} from './acp/cardTerminal'
 import CardDiffPanel, {isCardDiffAvailable} from './acp/cardDiff'
 import CardComments from './cardDetail/cardComments'
 import {cardAgentState, refreshCardAgent} from './acp/cardAgentState'
 import {onAgentEvent} from './acp/agentEvents'
-import {refreshRegisteredAgents, registeredAgents} from './acp/agentRegistry'
 
 import CardDetail from './cardDetail/cardDetail'
 import Dialog from './dialog'
@@ -67,19 +65,13 @@ const CardDialog = (props: Props): JSX.Element => {
 
     const [showConfirmationDialogBox, setShowConfirmationDialogBox] = createSignal<boolean>(false)
 
-    // What the panel beside the card is showing, and '' for no panel. One panel
-    // with two things in it rather than two panels: the terminal and the
-    // comments are the same question asked of two readers — what to tell the
-    // agent about this card, and what to tell the person who comes to it later
-    // (docs/teamwork.md).
-    //
-    // The changes are the third thing in it, and they belong here for the same
-    // reason: reading what an agent did is about the card and is not part of
-    // it. A route can park a card on a stage where nothing runs and a person
-    // decides, and until this existed there was nowhere to decide from.
-    const [side, setSide] = createSignal<'' | 'terminal' | 'comments' | 'diff'>('')
-    const showTerminal = () => side() === 'terminal'
-    const toggleSide = (which: 'terminal' | 'comments' | 'diff') => setSide(side() === which ? '' : which)
+    // What the panel beside the card is showing, and '' for no panel. The
+    // comments are what an agent reported and what people said back
+    // (docs/teamwork.md); the changes are what the work amounts to. Both are
+    // about the card without being part of it, which is why neither is in its
+    // body.
+    const [side, setSide] = createSignal<'' | 'comments' | 'diff'>('')
+    const toggleSide = (which: 'comments' | 'diff') => setSide(side() === which ? '' : which)
     const makeTemplateClicked = async () => {
         const currentCard = card()
         if (!currentCard) {
@@ -249,37 +241,20 @@ const CardDialog = (props: Props): JSX.Element => {
         )
     }
 
-    // The terminal is a panel beside the card, and this is what opens it. It
-    // sits in the dialog's own toolbar rather than in the card's body: the card
-    // is what a person wrote, and the machinery for working it belongs to the
-    // frame around it.
+    // What the card knows about its agent: the branch the work is on, and how
+    // much that work amounts to — which is what the changes button is drawn on.
     const agentState = cardAgentState(props.cardId)
     onSettled(() => {
-        if (isCardTerminalAvailable()) {
-            refreshRegisteredAgents()
-        }
-        if (!isCardTerminalAvailable() && !isCardDiffAvailable()) {
+        if (!isCardDiffAvailable()) {
             return undefined
         }
         refreshCardAgent(props.cardId)
 
         // The work moves while the dialog is open — an agent commits, a stage
-        // ends — and both the terminal rows and the changes count come from the
-        // one call above. A session event is the cheapest thing that means
-        // "look again".
-        const offSession = onAgentEvent('acp:session', () => refreshCardAgent(props.cardId))
-        const offTerminal = onAgentEvent('acp:terminal', () => refreshCardAgent(props.cardId))
-        return () => {
-            offSession()
-            offTerminal()
-        }
+        // ends — and a session event is the cheapest thing that means "look
+        // again".
+        return onAgentEvent('acp:session', () => refreshCardAgent(props.cardId))
     })
-
-    // A card already worked keeps its terminal button whatever the registry
-    // says today — the worktree is still there to go back to. Everything else
-    // waits for there to be an agent to run at all.
-    const offersTerminal = () => isCardTerminalAvailable() && Boolean(card()) && !props.readonly &&
-        Boolean(agentState().running || agentState().resume?.available || (registeredAgents() || 0) > 0)
 
     // Comments are a conversation between people, so they are drawn where there
     // is a second person to have one with: an install of one person has them
@@ -325,20 +300,6 @@ const CardDialog = (props: Props): JSX.Element => {
         </Show>
     )
 
-    const terminalBtn = (): JSX.Element => (
-        <Show when={offersTerminal()}>
-            <Button
-                icon={<CompassIcon icon='console'/>}
-                class='cardFollowBtn cardFollowBtn--attach'
-                emphasis='gray'
-                size='medium'
-                onClick={() => toggleSide('terminal')}
-            >
-                {intl.formatMessage({id: 'CardDialog.terminal', defaultMessage: 'Terminal'})}
-            </Button>
-        </Show>
-    )
-
     return (
         <>
             <Dialog
@@ -346,7 +307,7 @@ const CardDialog = (props: Props): JSX.Element => {
                 class='cardDialog'
                 onClose={props.onClose}
                 toolsMenu={!props.readonly && menu()}
-                toolbar={<>{terminalBtn()}{diffBtn()}{commentsBtn()}{attachBtn()}</>}
+                toolbar={<>{diffBtn()}{commentsBtn()}{attachBtn()}</>}
             >
                 <Show when={isTemplate()}>
                     <div class='banner'>
@@ -357,8 +318,8 @@ const CardDialog = (props: Props): JSX.Element => {
                     </div>
                 </Show>
 
-                {/* Two panels: the card on one side, the terminal on the
-                    other. The card scrolls on its own so the terminal keeps
+                {/* Two panels: the card on one side, what is said about it on
+                    the other. The card scrolls on its own so the panel keeps
                     the dialog's full height rather than travelling with the
                     card's own content. */}
                 <div class='cardDialog__body'>
@@ -390,7 +351,7 @@ const CardDialog = (props: Props): JSX.Element => {
                         </Show>
                     </div>
 
-                    <Show when={(showTerminal() && offersTerminal()) || side() === 'comments' || side() === 'diff'}>
+                    <Show when={side() === 'comments' || side() === 'diff'}>
                         <div class='cardDialog__side'>
                             <Show when={side() === 'comments'}>
                                 <CardComments
@@ -404,13 +365,6 @@ const CardDialog = (props: Props): JSX.Element => {
                             <Show when={side() === 'diff'}>
                                 <CardDiffPanel
                                     cardId={props.cardId}
-                                    onClose={() => setSide('')}
-                                />
-                            </Show>
-                            <Show when={showTerminal()}>
-                                <CardTerminal
-                                    cardId={props.cardId}
-                                    board={props.board}
                                     onClose={() => setSide('')}
                                 />
                             </Show>

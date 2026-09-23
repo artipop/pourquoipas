@@ -129,14 +129,6 @@ type AgentEntry struct {
 	// carried (the ACP switch, the model) have to be spelled out.
 	Command []string `json:"command,omitempty"`
 
-	// TerminalCommand is the argv a *terminal* window runs for this agent —
-	// the interactive CLI rather than the ACP adapter. It is normally left
-	// empty: the kind's table knows that `claude` is the terminal half of
-	// `claude-agent-acp`. Set it to wrap the CLI (`proxychains4 -q claude`), to
-	// pass flags of its own, or to give the generic "acp" kind a terminal at
-	// all, since nothing else can know what its CLI is called.
-	TerminalCommand []string `json:"terminalCommand,omitempty"`
-
 	// MCPServers are the agent's own, in the shape every MCP client uses, so an
 	// entry can be pasted from a server's README. This is how @playwright/mcp
 	// plugs in without the app depending on Node: the user wires it, we pass it
@@ -498,47 +490,6 @@ type acpAdapter struct {
 	modelArgs   func(model string) []string
 	modelEnv    string
 	modelConfig string
-	// cliBin is the *interactive* CLI of the same agent — what a terminal
-	// session runs. For an ACP-native kind it is the same binary as bin, which
-	// speaks ACP only when asked to; for claude and codex it is not, since bin
-	// there is a vendor adapter that has no terminal UI at all.
-	cliBin string
-	// cliResumeArgs continue the conversation the last terminal left in this
-	// directory, which is what makes a card's terminal resumable: the worktree
-	// is per card, so "the last conversation here" is that card's. A kind with
-	// no such flag simply starts fresh.
-	cliResumeArgs []string
-	// cliMCPArgs hand the interactive CLI a file of MCP servers. A session gets
-	// its servers over the protocol (session/new has a field for them), but a
-	// terminal is the vendor CLI itself and has to be told in its own spelling
-	// — which is why this is a column of the same table that already knows
-	// which binary the terminal runs. A kind that leaves it empty simply runs
-	// without our tools; that is better than guessing a flag and failing to
-	// open the terminal at all.
-	cliMCPArgs func(configPath string) []string
-	// cliPromptArgs give the CLI the first message of the conversation on its
-	// own command line, which is how a stage of a route hands its card's task
-	// to a terminal (stageterminal.go). Typing it in instead means writing to a
-	// pty whose CLI is not listening yet — and the one it might be showing is
-	// "do you trust the files in this folder?", which must not be answered with
-	// a task. A kind that leaves this empty has the task pasted once its CLI
-	// has settled, which is the same answer a resumed conversation gets.
-	//
-	// **It carries its own end-of-options marker**, because the task is a
-	// positional argument and everything before it on that command line is
-	// flags. `--mcp-config <configs...>` is variadic, so `claude --mcp-config
-	// f.json "fix the login"` reads the card's task as a second config file and
-	// dies with "MCP config file not found: fix the login" — the terminal opened
-	// and shut in the same breath, and every card of that board stalled saying
-	// the agent had not reported. Whatever this returns goes last, so the
-	// separator belongs to the kind that knows how its own parser spells one.
-	cliPromptArgs func(prompt string) []string
-	// cliHookArgs register a command the CLI runs when it needs a person, so a
-	// stage is not noticed by silence alone (toolhook.go). A column rather than
-	// a branch, because every vendor spells hooks differently; a kind that
-	// leaves it empty keeps the timer. The argument is a shell command line,
-	// which is what both CLIs with hooks accept.
-	cliHookArgs func(hookCmd string) []string
 	// dropEnv names variables the process must not inherit from ours.
 	dropEnv []string
 	// mode is the session mode to select after session/new, when the agent's
@@ -561,37 +512,12 @@ var acpNative = map[string]acpAdapter{
 		npmPackage: "@agentclientprotocol/claude-agent-acp",
 		// The adapter takes no flags at all: it is an ACP agent and nothing else.
 		modelEnv: "ANTHROPIC_MODEL",
-		// The adapter embeds the CLI but is not it: a terminal runs `claude`,
-		// which has to be installed for that (and only that).
-		cliBin:        "claude",
-		cliResumeArgs: []string{"--continue"},
-		cliMCPArgs:    func(path string) []string { return []string{"--mcp-config", path} },
-		// `claude -- "…"` opens the TUI with that as the first message, which is
-		// exactly what a stage needs: the CLI is interactive from the first
-		// frame and the task is already in it. The `--` is not decoration —
-		// commander's `--mcp-config` is variadic and eats the next argument.
-		cliPromptArgs: func(prompt string) []string { return []string{"--", prompt} },
-		// `--settings` takes a JSON *string* as well as a path, so the hook is
-		// registered on the command line and nothing is written into the folder
-		// the agent works in — a settings file of ours in somebody's repository
-		// would be ours to clean up and theirs to find in `git status`.
-		//
-		// PermissionRequest is the event that carries the tool call and takes a
-		// decision back. Notification is not registered: its two types are
-		// "permission_prompt", which arrives second and says what
-		// PermissionRequest already said, and "idle_prompt", which is Claude
-		// Code's own quiet timer at 60 seconds — no better than the 45 this is
-		// meant to improve on. docs/attention-hooks.md has the measurements.
-		cliHookArgs: claudeHookArgs,
 		// Claude Code refuses to start inside another Claude Code session, and
 		// the desktop app may well have been launched from one: `wails3 dev` is
 		// started from a terminal, and that terminal is sometimes a CLI's own.
 		// The rest of the list is that same launch described from the other
-		// side. CLAUDE_CODE_CHILD_SESSION is the one that matters most: it turns
-		// transcript saving *off*, so a CLI that inherits it leaves no
-		// conversation behind and the next `--continue` in that directory prints
-		// "No conversation found to continue" and exits 1 — a terminal that
-		// refuses to open, on a card whose conversation looked resumable.
+		// side; CLAUDE_CODE_CHILD_SESSION, inherited, turns transcript saving
+		// off.
 		//
 		// Only the markers of the outer session are dropped, never the whole
 		// CLAUDE_CODE_* family: CLAUDE_CODE_USE_BEDROCK and its like are the
@@ -614,15 +540,6 @@ var acpNative = map[string]acpAdapter{
 		// It takes no flags either: the model is a session config option, asked
 		// for over the protocol once the session exists.
 		modelConfig: "model",
-		cliBin:      "codex",
-		// `codex resume --last` picks up the newest conversation of this
-		// directory, the same rule as claude's --continue.
-		cliResumeArgs: []string{"resume", "--last"},
-		// `codex "…"` starts the TUI on that message. No separator: nothing can
-		// precede the prompt here — this kind is handed no MCP config, and CLI
-		// arguments are refused for it (validateCLIArgs) — and clap's own `--`
-		// is not something to write down without a CLI to try it on.
-		cliPromptArgs: func(prompt string) []string { return []string{prompt} },
 		// It starts read-only, which is not what a card asked for: a session
 		// that may not edit anything would spend its turn saying so.
 		mode: "agent",
@@ -685,13 +602,6 @@ type Config struct {
 	// so it travels with it. This is the working copy; every edit is written
 	// through by persistBoardLocked.
 	Columns []ColumnSpec `json:"-"`
-
-	// Flows is the registry of named routes across the board: which column
-	// follows which, and on what event. A card without a matching flow still
-	// gets whatever its column does — a flow adds the transitions, not the
-	// behaviour. See flows.go.
-	// Not in the file: `flows` on the board. See Columns.
-	Flows []FlowEntry `json:"-"`
 
 	// BoardPrompts is that instruction, per board: the text prepended to every
 	// prompt a session of that board is given, before the agent's own system
@@ -776,9 +686,9 @@ const (
 	// DefaultTriggerProperty is the select property the columns live on.
 	DefaultTriggerProperty = "Status"
 	// DefaultTriggerColumn is what a board made from a template calls the column
-	// an agent works in. Kept as the one name the fixtures and the templates
-	// share; the templates' own names are in flowtemplates.go.
-	DefaultTriggerColumn = TemplateWorkColumn
+	// an agent works in — the one column whose name the fixtures and the
+	// shipped templates share.
+	DefaultTriggerColumn = "In progress"
 )
 
 // DefaultConfig returns the defaults written on first run. dataDir is the ACP
@@ -793,7 +703,6 @@ func DefaultConfig(dataDir string) Config {
 		Proxies:                  []ProxyEntry{},
 		Deploys:                  []DeployEntry{},
 		Columns:                  []ColumnSpec{},
-		Flows:                    []FlowEntry{},
 		DeployPrompt:             DefaultDeployPrompt,
 		TestPrompt:               DefaultTestPrompt,
 		PlanningPrompt:           DefaultPlanningPrompt,

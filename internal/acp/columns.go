@@ -163,10 +163,10 @@ func validateColumn(c ColumnSpec, agents []AgentEntry, deploys []DeployEntry) (C
 	}
 	c.Action = strings.TrimSpace(c.Action)
 	if c.Action == "" {
-		c.Action = FlowActionNone
+		c.Action = ColumnActionNone
 	}
 	switch c.Action {
-	case FlowActionNone, FlowActionAgent, FlowActionDeploy, FlowActionTest:
+	case ColumnActionNone, ColumnActionAgent, ColumnActionDeploy, ColumnActionTest:
 	default:
 		return ColumnSpec{}, fmt.Errorf("неизвестное действие %q у колонки %q", c.Action, c.Column)
 	}

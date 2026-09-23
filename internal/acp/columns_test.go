@@ -15,11 +15,11 @@ func TestColumnIsItsOptionAndSurvivesARename(t *testing.T) {
 	m := agentManager(t, "")
 	m.cfg.Columns = []ColumnSpec{{
 		BoardID: "board1", PropertyID: "prop-status", OptionID: "opt-totest",
-		Property: "Status", Column: "To Test", Action: FlowActionTest,
+		Property: "Status", Column: "To Test", Action: ColumnActionTest,
 	}}
 
 	renamed := Column{PropertyID: "prop-status", PropertyName: "Этап", OptionID: "opt-totest", Name: "На проверку"}
-	if spec, ok := m.columnFor("board1", renamed); !ok || spec.Action != FlowActionTest {
+	if spec, ok := m.columnFor("board1", renamed); !ok || spec.Action != ColumnActionTest {
 		t.Fatalf("a renamed column lost its settings: %+v, %v", spec, ok)
 	}
 
@@ -41,7 +41,7 @@ func TestColumnIsItsOptionAndSurvivesARename(t *testing.T) {
 // bound to the option that name means when the board is read, once, and after
 // that the name decides nothing.
 func TestAColumnKnownOnlyByNameIsBoundToItsOption(t *testing.T) {
-	spec := ColumnSpec{Property: "Статус", Column: "На проверку", Action: FlowActionTest}
+	spec := ColumnSpec{Property: "Статус", Column: "На проверку", Action: ColumnActionTest}
 	options := []Column{
 		{PropertyID: "p", PropertyName: "Статус", OptionID: "opt-work", Name: "В работе"},
 		{PropertyID: "p", PropertyName: "Статус", OptionID: "opt-test", Name: "на проверку"},
@@ -66,15 +66,15 @@ func TestAColumnKnownOnlyByNameIsBoundToItsOption(t *testing.T) {
 func TestColumnPrefersTheBoardsOwnSpec(t *testing.T) {
 	m := agentManager(t, "")
 	m.cfg.Columns = []ColumnSpec{
-		{PropertyID: "p", OptionID: "opt-deploy", Property: "Status", Column: "Deploy", Action: FlowActionDeploy},
-		{BoardID: "board2", PropertyID: "p", OptionID: "opt-deploy", Property: "Status", Column: "Deploy", Action: FlowActionNone},
+		{PropertyID: "p", OptionID: "opt-deploy", Property: "Status", Column: "Deploy", Action: ColumnActionDeploy},
+		{BoardID: "board2", PropertyID: "p", OptionID: "opt-deploy", Property: "Status", Column: "Deploy", Action: ColumnActionNone},
 	}
 	moved := Column{PropertyID: "p", PropertyName: "Status", OptionID: "opt-deploy", Name: "Deploy"}
 
-	if spec, _ := m.columnFor("board2", moved); spec.Action != FlowActionNone {
+	if spec, _ := m.columnFor("board2", moved); spec.Action != ColumnActionNone {
 		t.Fatalf("board2 should use its own spec: %+v", spec)
 	}
-	if spec, _ := m.columnFor("board9", moved); spec.Action != FlowActionDeploy {
+	if spec, _ := m.columnFor("board9", moved); spec.Action != ColumnActionDeploy {
 		t.Fatalf("another board should fall back to the shared spec: %+v", spec)
 	}
 }
@@ -91,7 +91,7 @@ func TestSaveColumnValidatesAndReplaces(t *testing.T) {
 
 	claude := crewIDs(t, m, "claude-1")[0]
 	spec := ColumnSpec{BoardID: "board1", PropertyID: "p", OptionID: "opt-work", Property: "Status",
-		Column: "In Progress", Action: FlowActionAgent, AgentIDs: []string{claude, claude, " "}, MaxRunning: 2}
+		Column: "In Progress", Action: ColumnActionAgent, AgentIDs: []string{claude, claude, " "}, MaxRunning: 2}
 	saved, err := m.SaveColumn(spec)
 	if err != nil {
 		t.Fatal(err)
@@ -166,7 +166,7 @@ func TestCrewTakesTheFreeAgent(t *testing.T) {
 // place and says so, and starts by itself when somebody finishes.
 func TestColumnLimitQueuesTheCard(t *testing.T) {
 	m, writer, events, _ := testManager(t, fakeClaudeHang, func(c *Config) {
-		spec := workColumn(c.TriggerProperty, FlowActionAgent)
+		spec := workColumn(c.TriggerProperty, ColumnActionAgent)
 		spec.MaxRunning = 1
 		c.Columns = []ColumnSpec{spec}
 	})
@@ -201,51 +201,6 @@ func TestColumnLimitQueuesTheCard(t *testing.T) {
 	})
 	if _, ok, _ := m.store.NextQueuedStage(m.cfg.Columns[0].Key()); ok {
 		t.Fatal("a started card must leave the queue")
-	}
-}
-
-// What the card shows about itself: the route, where it stands on it, and what
-// it is waiting for.
-func TestCardFlowDescribesWhereTheCardStands(t *testing.T) {
-	m, _, events, project := flowManager(t, fakeClaudeHappy, sampleFlow())
-
-	events.ch <- flowEvent("cardF", project, "Backlog", "To Agent")
-	waitFor(t, 20*time.Second, "the card reaches Review", func() bool {
-		st, ok, _ := m.store.FlowStateForCard("cardF")
-		return ok && st.NodeID == "review"
-	})
-
-	flow, err := m.CardFlowFor("cardF")
-	if err != nil || flow == nil {
-		t.Fatalf("card flow: %+v, %v", flow, err)
-	}
-	if flow.Flow != "feature" || flow.CurrentID != "review" {
-		t.Fatalf("card flow: %+v", flow)
-	}
-	if flow.Branch != flowTestBranch {
-		t.Fatalf("the strip should name the branch being watched: %+v", flow)
-	}
-
-	var current, done int
-	for _, s := range flow.Stages {
-		if s.Current {
-			current++
-		}
-		if s.Done {
-			done++
-		}
-	}
-	if current != 1 || done == 0 {
-		t.Fatalf("stages: %+v", flow.Stages)
-	}
-	// The stage waits for the branch to be merged, and says so in words.
-	if len(flow.WaitingFor) == 0 {
-		t.Fatalf("the card does not say what it waits for: %+v", flow)
-	}
-
-	// A card that is on no route says nothing at all, rather than erroring.
-	if got, err := m.CardFlowFor("cardNobodyKnows"); got != nil || err != nil {
-		t.Fatalf("a card with no route: %+v, %v", got, err)
 	}
 }
 
@@ -307,26 +262,17 @@ func (f *fakeBoardMeta) IsBoardTemplate(context.Context, string) (bool, error) {
 	return f.template, nil
 }
 
-// A board made from the template works before anything is configured: it brings
-// the columns it runs and the routes across it, and they are taken once.
+// A board made from the template works before anything is configured: it
+// brings the columns it runs, and they are taken once.
 func TestBoardBringsItsOwnAutomation(t *testing.T) {
 	m := agentManager(t, "")
 	m.cfg.Columns = nil
-	m.cfg.Flows = nil
 	m.rootCtx = context.Background()
 
 	automation, err := json.Marshal(BoardAutomation{
 		Columns: []ColumnSpec{{
 			PropertyID: "p", OptionID: "opt-work", Property: "Status",
-			Column: "In Progress", Action: FlowActionAgent, MaxRunning: 2,
-		}},
-		Flows: []FlowEntry{{
-			Name: "Feature", Property: "Status",
-			Nodes: []FlowNode{
-				{ID: "work", Column: "In Progress", OptionID: "opt-work"},
-				{ID: "review", Column: "In Review", OptionID: "opt-review", Action: FlowActionNone},
-			},
-			Edges: []FlowEdge{{From: "work", To: "review", On: TriggerSuccess}},
+			Column: "In Progress", Action: ColumnActionAgent, MaxRunning: 2,
 		}},
 	})
 	if err != nil {
@@ -342,13 +288,8 @@ func TestBoardBringsItsOwnAutomation(t *testing.T) {
 	if len(m.cfg.Columns) != 1 || m.cfg.Columns[0].BoardID != "board1" || m.cfg.Columns[0].MaxRunning != 2 {
 		t.Fatalf("columns not taken from the board: %+v", m.cfg.Columns)
 	}
-	if len(m.cfg.Flows) != 1 || m.cfg.Flows[0].BoardID != "board1" {
-		t.Fatalf("routes not taken from the board: %+v", m.cfg.Flows)
-	}
-
-	// The stage inherits its column, which is the whole point of shipping both.
 	spec, ok := m.columnFor("board1", Column{PropertyID: "p", PropertyName: "Status", OptionID: "opt-work", Name: "In Progress"})
-	if !ok || spec.Action != FlowActionAgent {
+	if !ok || spec.Action != ColumnActionAgent {
 		t.Fatalf("column: %+v, %v", spec, ok)
 	}
 
@@ -361,64 +302,17 @@ func TestBoardBringsItsOwnAutomation(t *testing.T) {
 	if len(m.cfg.Columns) != 1 || m.cfg.Columns[0].MaxRunning != 5 {
 		t.Fatalf("a second import overwrote what the user changed: %+v", m.cfg.Columns)
 	}
-	if len(m.cfg.Flows) != 1 {
-		t.Fatalf("routes duplicated on a second import: %+v", m.cfg.Flows)
+	// Another board does not see this one's columns.
+	if got := m.BoardColumns("board2"); len(got) != 0 {
+		t.Fatalf("board2 sees board1's columns: %+v", got)
 	}
-
-	// Another board does not see this one's routes.
-	if got := m.BoardFlows("board2"); len(got) != 0 {
-		t.Fatalf("board2 sees board1's routes: %+v", got)
-	}
-	if got := m.BoardFlows("board1"); len(got) != 1 {
-		t.Fatalf("board1 lost its own routes: %+v", got)
-	}
-}
-
-// The map the workflow view draws: where the board's cards actually are.
-func TestBoardFlowOverviewCountsWhereTheCardsAre(t *testing.T) {
-	m, _, events, project := flowManager(t, fakeClaudeHang, sampleFlow())
-
-	events.ch <- flowEvent("cardOverview", project, "Backlog", "To Agent")
-	waitFor(t, 20*time.Second, "the card is working on the first stage", func() bool {
-		st, ok, _ := m.store.FlowStateForCard("cardOverview")
-		return ok && st.NodeID == "work"
-	})
-
-	overview, err := m.BoardFlowOverview("board1")
-	if err != nil || len(overview) != 1 {
-		t.Fatalf("overview: %+v, %v", overview, err)
-	}
-	if overview[0].Flow != "feature" || overview[0].Cards != 1 {
-		t.Fatalf("overview: %+v", overview[0])
-	}
-	var work FlowStageCount
-	for _, s := range overview[0].Stages {
-		if s.NodeID == "work" {
-			work = s
-		}
-	}
-	if work.Cards != 1 {
-		t.Fatalf("the card is not counted on its stage: %+v", overview[0].Stages)
-	}
-	waitFor(t, 10*time.Second, "the session shows as running", func() bool {
-		o, _ := m.BoardFlowOverview("board1")
-		for _, s := range o[0].Stages {
-			if s.NodeID == "work" && s.Running == 1 {
-				return true
-			}
-		}
-		return false
-	})
-
-	// A board that has no such route is told nothing rather than everything.
-	if got, err := m.BoardFlowOverview("другая-доска"); err != nil || len(got) != 1 || got[0].Cards != 0 {
-		t.Fatalf("another board sees this one's cards: %+v, %v", got, err)
+	if got := m.BoardColumns("board1"); len(got) != 1 {
+		t.Fatalf("board1 lost its own columns: %+v", got)
 	}
 }
 
 // Assigning yourself is how you say "this one is mine". An agent picking the
-// same card up would do the work twice and — on a route — move the card on the
-// moment it decided it was done.
+// same card up would do the work twice.
 func TestCardAssignedToAPersonIsLeftAlone(t *testing.T) {
 	m, writer, events, _ := testManager(t, fakeClaudeHappy, func(c *Config) {
 		c.Agents = []AgentEntry{{ID: newID(), Name: "claude-1", Kind: "claude"}}
@@ -462,7 +356,7 @@ func TestCardAssignedToAPersonIsLeftAlone(t *testing.T) {
 func TestCrewedColumnWritesItsWorkerIntoTheAssignee(t *testing.T) {
 	m, _, events, _ := testManager(t, fakeClaudeHappy, func(c *Config) {
 		c.Agents = []AgentEntry{{ID: "ag-klaus", Name: "клаус", Kind: "claude"}}
-		spec := workColumn(c.TriggerProperty, FlowActionAgent)
+		spec := workColumn(c.TriggerProperty, ColumnActionAgent)
 		spec.AgentIDs = []string{"ag-klaus"}
 		c.Columns = []ColumnSpec{spec}
 	})
@@ -497,7 +391,7 @@ func TestCrewedTestColumnWritesItsTesterIntoTheAssignee(t *testing.T) {
 			ID: "ag-tester", Name: "тестер", Kind: "claude",
 			MCPServers: MCPServerSet{"playwright": {Command: "npx"}},
 		}}
-		spec := workColumn(c.TriggerProperty, FlowActionTest)
+		spec := workColumn(c.TriggerProperty, ColumnActionTest)
 		spec.AgentIDs = []string{"ag-tester"}
 		c.Columns = []ColumnSpec{spec}
 	})
@@ -580,7 +474,7 @@ func TestColumnCarriesItsOwnMCPServers(t *testing.T) {
 	m.cfg.Columns = nil
 
 	spec := ColumnSpec{BoardID: "board1", PropertyID: "p", OptionID: "opt-qa", Property: "Status",
-		Column: "QA", Action: FlowActionTest, MCPServers: MCPServerSet{
+		Column: "QA", Action: ColumnActionTest, MCPServers: MCPServerSet{
 			"playwright": {Command: "npx", Args: []string{"-y", "@playwright/mcp@latest"}},
 		}}
 	saved, err := m.SaveColumn(spec)
@@ -603,21 +497,6 @@ func TestColumnCarriesItsOwnMCPServers(t *testing.T) {
 	}
 }
 
-// Which servers a stage runs with: the column's, unless the route's node names
-// its own set — the same inheritance the crew and the prompt have.
-func TestStageMCPPrefersTheNodesOwnServers(t *testing.T) {
-	column := ColumnSpec{Column: "QA", MCPServers: MCPServerSet{"playwright": {Command: "npx"}}}
-
-	if got := (startOptions{column: column}).stageMCP(); len(got) != 1 || got["playwright"].Command != "npx" {
-		t.Fatalf("a stage with no servers of its own works with the column's: %+v", got)
-	}
-	opts := startOptions{column: column, mcp: MCPServerSet{"figma": {Command: "figma-mcp"}}}
-	got := opts.stageMCP()
-	if len(got) != 1 || got["figma"].Command != "figma-mcp" {
-		t.Fatalf("the node's own set should replace the column's whole answer: %+v", got)
-	}
-}
-
 // A column's limit is a fact about the board, not about a process. It used to
 // be counted over the manager's own map of live sessions, so two windows of
 // this app each counted their own and a limit of one ran two — and one day two
@@ -628,7 +507,7 @@ func TestStageMCPPrefersTheNodesOwnServers(t *testing.T) {
 // launch.
 func TestAColumnsLimitIsCountedWhereEverybodyCanSeeIt(t *testing.T) {
 	m, _, _, _ := testManager(t, fakeClaudeHang, func(c *Config) {
-		spec := workColumn(c.TriggerProperty, FlowActionAgent)
+		spec := workColumn(c.TriggerProperty, ColumnActionAgent)
 		spec.MaxRunning = 2
 		c.Columns = []ColumnSpec{spec}
 	})

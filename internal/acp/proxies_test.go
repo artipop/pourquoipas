@@ -3,6 +3,7 @@ package acp
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -168,6 +169,9 @@ func TestConfigFileIsPrivate(t *testing.T) {
 	cfgPath := filepath.Join(t.TempDir(), "config.json")
 	// A pre-existing world-readable config is tightened on the next save: it
 	// can hold proxy credentials and agent API keys.
+	if runtime.GOOS == "windows" {
+		t.Skip("file modes are POSIX; Windows answers 666 whatever is asked for")
+	}
 	if err := os.WriteFile(cfgPath, []byte("{}"), 0o644); err != nil {
 		t.Fatal(err)
 	}

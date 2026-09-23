@@ -63,8 +63,6 @@ describe('components/cardDetail/CardDetail', () => {
     test('draws no rule for a section it is not drawing', async () => {
         const bindings = {
             GetCardAgent: vi.fn().mockResolvedValue('{}'),
-            GetCardFlow: vi.fn().mockResolvedValue('null'),
-            OpenCardTerminal: vi.fn(),
             ListAgents: vi.fn().mockResolvedValue('[]'),
             ListAgentWorkdirs: vi.fn().mockResolvedValue('[]'),
         }
@@ -119,14 +117,11 @@ describe('components/cardDetail/CardDetail', () => {
             </AppStoreProvider>
         ))
 
-        await waitFor(() => expect(bindings.GetCardFlow).toHaveBeenCalled())
+        await waitFor(() => expect(bindings.GetCardAgent).toHaveBeenCalled())
 
-        expect(container.querySelector('.FlowStrip')).toBeNull()
-        expect(container.querySelector('.CardTerminal')).toBeNull()
-
-        // Nothing under the properties has anything to show — no attachments,
-        // no route — so the card draws no rule at all. A rule belongs to the
-        // section under it, and a card with no such section draws none.
+        // Nothing under the properties has anything to show — no attachments —
+        // so the card draws no rule at all. A rule belongs to the section under
+        // it, and a card with no such section draws none.
         expect(container.querySelectorAll('hr').length).toBe(0)
     })
 

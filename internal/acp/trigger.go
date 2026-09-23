@@ -34,22 +34,12 @@ func (m *Manager) handleEvent(ev CardMoved) {
 	// them once, before anything asks what this column does.
 	m.seedFromBoard(ev.BoardID)
 
-	// A card with a route is driven by its flow; a card without one still gets
-	// whatever its column does — the flow adds transitions, not behaviour.
-	if m.handleFlowMove(ev) {
-		return
-	}
-	// Not a move on the route's column — but a parked card may be waiting for
-	// exactly this: an option set on the card itself.
-	if m.handleCardChanged(ev) {
-		return
-	}
 	to, entered := m.columnFor(ev.BoardID, ev.ToColumn)
-	if entered && to.Action != FlowActionNone {
+	if entered && to.Action != ColumnActionNone {
 		m.handleEnter(ev, to)
 		return
 	}
-	if from, left := m.columnFor(ev.BoardID, ev.FromColumn); left && from.Action != FlowActionNone {
+	if from, left := m.columnFor(ev.BoardID, ev.FromColumn); left && from.Action != ColumnActionNone {
 		// A card that leaves stops waiting for the column it left — and stops
 		// being stalled by it: whatever could not start there is moot now.
 		m.dequeueStage(ev.CardID)
@@ -67,9 +57,9 @@ func (m *Manager) handleEnter(ev CardMoved, spec ColumnSpec) {
 	opts := startOptions{column: spec}
 	kind, failed := "agent", "агент не запущен"
 	switch spec.Action {
-	case FlowActionDeploy:
+	case ColumnActionDeploy:
 		opts.deploy, kind, failed = true, "deploy", "деплой не запущен"
-	case FlowActionTest:
+	case ColumnActionTest:
 		opts.test, kind, failed = true, "test", "тестирование не запущено"
 	}
 	if !m.claimMove(ev, kind) {
@@ -77,7 +67,7 @@ func (m *Manager) handleEnter(ev CardMoved, spec ColumnSpec) {
 	}
 	s, err := m.startSession(ev, opts)
 	if errors.Is(err, errStageBusy) {
-		m.enqueueStage(ev, spec, "", "")
+		m.enqueueStage(ev, spec, "")
 		return
 	}
 	var mine AssignedToHumanError

@@ -42,7 +42,6 @@ type Props = {
     // arrives in the first column before anything has decided which route it
     // takes, so that column belongs to every route and is not a stage of any:
     // the line says which side of it the picture is about. Empty draws none.
-    dividerAfter?: string
     hiddenGroups: BoardGroup[]
     selectedCardIds: string[]
     readonly: boolean
@@ -227,11 +226,6 @@ const Kanban = (props: Props) => {
     // about the past: dropping a card in another one would be asking the board
     // to have been written by somebody else. So the cards do not drag, and
     // there is no group to add.
-    // The line after the column every route shares. Drawn between the columns
-    // rather than around one, so the board reads as "everything arrives here,
-    // and this route is what happens next".
-    const dividesAfter = (group: BoardGroup) => Boolean(props.dividerAfter) && group.option.id === props.dividerAfter
-
     const columnsAreFacts = () => {
         const type = props.groupByProperty?.type
         return type === 'createdBy' || type === 'updatedBy'
@@ -262,9 +256,6 @@ const Kanban = (props: Props) => {
                                 onCalculationMenuOpen={() => toggleOptions(group.option.id, true)}
                                 onCalculationMenuClose={() => toggleOptions(group.option.id, false)}
                             />
-                            <Show when={dividesAfter(group)}>
-                                <div class='octo-board-divider'/>
-                            </Show>
                         </>
                     )}
                 </For>
@@ -351,9 +342,6 @@ const Kanban = (props: Props) => {
                                     </BoardPermissionGate>
                                 </Show>
                             </KanbanColumn>
-                            <Show when={dividesAfter(group)}>
-                                <div class='octo-board-divider'/>
-                            </Show>
                         </>
                     )}
                 </For>
