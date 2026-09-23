@@ -5,6 +5,7 @@ import {Accessor, createEffect, createSignal, onSettled} from 'solid-js'
 import {BoardGroup, IPropertyTemplate} from '../../blocks/board'
 
 import {goApp} from '../../goBridge'
+import {aiEnabled} from '../../aiSwitch'
 
 import {onAgentEvent} from './agentEvents'
 import {Flow, nodeFor} from './automation'
@@ -109,7 +110,13 @@ export function useBoardFlows(boardId: Accessor<string>): BoardRoutes {
     createEffect(boardId, (id) => {
         retarget(id)
     })
-    return {flows, onFlow: cardFlows}
+
+    // With the AI switched off a board has no routes to be seen by: a route is
+    // the path its agents take, and the kanban is drawn whole.
+    return {
+        flows: () => (aiEnabled() ? flows() : []),
+        onFlow: () => (aiEnabled() ? cardFlows() : {}),
+    }
 }
 
 // flowById is the route a view was pointed at, if the board still has it. A

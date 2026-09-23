@@ -16,6 +16,7 @@ import (
 
 	"github.com/artipop/xciii/internal/acp"
 	"github.com/artipop/xciii/internal/boardadapter"
+	"github.com/artipop/xciii/internal/inboxsort"
 	"github.com/artipop/xciii/internal/secrets"
 	"github.com/artipop/xciii/internal/sources"
 	"github.com/artipop/xciii/internal/userpath"
@@ -328,6 +329,11 @@ func main() {
 		// The same manager, kept for shutdown: its plugins are processes, and
 		// they have to be stopped before the app goes.
 		sourcePlugins *sources.Manager
+		// The inbox sorter, its stop, and where its agent runs — handed the
+		// agent once there is one, below.
+		inboxSorter *inboxsort.Sorter
+		stopSorter  = func() {}
+		sortDir     string
 	)
 	if dir, err := sourcesDataDir(); err != nil {
 		log.Printf("sources: disabled, no data dir: %v", err)
@@ -374,6 +380,22 @@ func main() {
 		sourceMgr.Start(context.Background())
 		sourcePlugins = sourceMgr
 		log.Printf("sources: enabled (%d registered)", len(cfg.Sources))
+
+		// The sorter reads this process's boards alone: the inbox is this
+		// machine's, and so are the boards it is sorted onto.
+		sorter, err := inboxsort.New(boardadapter.NewSortBoard(boardadapter.NewWriter(srv.App())),
+			inboxsort.NewStore(brd.db), filepath.Join(dir, "sorting.json"), nil)
+		if err != nil {
+			log.Printf("inboxsort: disabled: %v", err)
+		} else {
+			sourceMgr.SetArrivals(sorter.Arrived)
+			sorterCtx, stop := context.WithCancel(context.Background())
+			sorter.Start(sorterCtx)
+			stopSorter = stop
+			inboxSorter = sorter
+			app.sorter = sorter
+			sortDir = dir
+		}
 	}
 
 	// Manager lifecycle: created after the server (needs srv.App()), stopped
@@ -392,6 +414,9 @@ func main() {
 			mgr = acp.NewManager(acpCfg, filepath.Join(dir, "config.json"), store, seam.writer, emitter, nil)
 			// Lets the UI open a console on a card without moving it.
 			mgr.SetBoardReader(seam.reader)
+			// The app-wide AI switch, read on every start rather than once:
+			// it is flipped from the settings while the app runs.
+			mgr.SetSwitchedOff(func() bool { return !aiEnabled() })
 			// Where the GitHub token for pull-request polling comes from. It
 			// was `githubToken` in config.json, which is a credential in a
 			// settings file people edit by hand and paste into issues.
@@ -428,6 +453,9 @@ func main() {
 				if sourcePlugins != nil {
 					sourcePlugins.SetAgentRunner(inboxAgentRunner{mgr})
 				}
+				if inboxSorter != nil {
+					inboxSorter.SetAgent(sortingAgent{mgr: mgr, dir: sortDir})
+				}
 			}
 		}
 	}
@@ -445,6 +473,7 @@ func main() {
 		}
 		tailnet.close()
 		app.updates.close()
+		stopSorter()
 		if sourcePlugins != nil {
 			sourcePlugins.Stop(5 * time.Second)
 		}
@@ -558,6 +587,18 @@ func (r inboxAgentRunner) RunForSource(ctx context.Context, run sources.AgentRun
 		Prompt:  run.Prompt,
 		Servers: servers,
 	})
+}
+
+// sortingAgent runs the inbox sorter's turns: one prompt, no tools of ours, in
+// the sources' own directory because a process needs one and nothing is
+// written there.
+type sortingAgent struct {
+	mgr *acp.Manager
+	dir string
+}
+
+func (r sortingAgent) Ask(ctx context.Context, agent, prompt string) (string, error) {
+	return r.mgr.RunInbox(ctx, acp.InboxRun{Agent: agent, Dir: r.dir, Prompt: prompt})
 }
 
 // openVault is the credential store, built the same way whether or not this

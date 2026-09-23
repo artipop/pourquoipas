@@ -1,4 +1,5 @@
 import {goApp} from '../../goBridge'
+import {aiEnabled} from '../../aiSwitch'
 
 // Whether this build has the route editor at all. In a module of its own
 // rather than beside the dialog: the view menu asks the question on every
@@ -6,5 +7,5 @@ import {goApp} from '../../goBridge'
 // the route canvas — solid-flow, xyflow and d3 — to find out whether to draw
 // one menu item.
 export function isAutomationAvailable(): boolean {
-    return Boolean(goApp()?.ListFlows)
+    return aiEnabled() && Boolean(goApp()?.ListFlows)
 }

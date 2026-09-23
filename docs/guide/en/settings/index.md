@@ -4,7 +4,7 @@ App settings live in one window: at the bottom of the left-hand list, under
 "Add board", the **"Settings"** button with a cog. They apply to all boards.
 Sections:
 
-- **"The app itself"** — theme, language, help and feedback;
+- **"The app itself"** — theme, language, AI agents, help and feedback;
 - **"Updates"** — the app's version and moving to a newer one, see
   [Updates](./updates.md);
 - **«Люди»** — who is on the server and who runs it; the section is shown to
@@ -14,7 +14,8 @@ Sections:
   [Moving](../transfer.md);
 - **"Other"** — the instruction for conversations without a card, "Notify me
   when an agent is waiting", "Fill a new card's folder in when the board has
-  only one", and install details.
+  only one", and install details. The section is gone while the AI is off
+  (see [AI agents](#ai-agents)).
 
 Sections this build does not support are not shown: on a machine without
 agents, "The app itself", "Updates", "Import and export" and "Other" remain.
@@ -39,6 +40,31 @@ under them. See [Agents, npx and Node.js](./agents.md).
   it — "Give feedback", with a "Write" button: it opens your mail program
   addressed to `hello@deffun.com`. The address is also printed next to the
   button, to copy if the mail program does not open.
+
+## AI agents
+
+The **"Agents work on the cards"** switch in "The app itself" turns everything
+to do with agents on and off. It is on by default.
+
+When it is off, the app is a plain kanban board:
+
+- a board's ⋯ menu has no "Columns and routes…", "Agents…", "Folders…",
+  "Where to deploy…" or the board's system prompt, and the board setup never
+  opens by itself;
+- moving a card into a column starts nothing: no agent, deploy or test, and no
+  route moves on;
+- a card has no terminal button, route strip, "Changes" or the agents' fields —
+  the folder, the branch and «Исход»; the assignee field offers people only;
+- there are no agent notifications, no dot on the icon next to the clock and no
+  route questions;
+- the settings have no "Other" section, and the phone has no "Waiting" and
+  "Terminals" tabs.
+
+Nothing is deleted: routes, agents, folders and the values on the cards stay,
+and come back as soon as the switch is on again. An agent already working when
+the switch is turned off finishes its stage.
+
+The switch is shown only in a build that has agents at all.
 
 All of this is available before the first board is created. The picked theme
 and language are kept by the install itself: they survive a restart and apply

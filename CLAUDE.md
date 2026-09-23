@@ -352,6 +352,13 @@ over HTTP on the front door (`/acp/board/mcp`, `boardapi.go`).
 - A card is carried to another board as a **real move** keeping its id
   (`app.MoveCardToBoard`); `insertBlock` cannot do it because it keys on
   `id AND board_id`. Properties travel by name.
+- **An agent may do the carrying** (`internal/inboxsort`, `docs/sources.md`
+  §29), off until a person turns it on from the inbox's ⋯ menu. It decides by
+  each board's description (asked with its name in the setup wizard) and a
+  summary of its cards the agent writes into `board_summary`. A card it files
+  stands in the first column **silently** (`SortBoard.FileCard`) — never through
+  the notifying move. Decisions are `inbox_sort`; like sources, the package
+  imports neither board nor agents.
 
 ### A terminal is where the work happens, watched or not
 

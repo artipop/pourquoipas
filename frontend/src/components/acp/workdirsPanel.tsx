@@ -10,6 +10,7 @@ import CompassIcon from '../../widgets/icons/compassIcon'
 import {sendFlashMessage} from '../flashMessages'
 
 import {goApp} from '../../goBridge'
+import {aiEnabled} from '../../aiSwitch'
 
 import {Workdir, WORKDIR_PROPERTY_TITLE, findWorkdirProperty, syncWorkdirsToBoard, useWorkdirHere} from './workdirSync'
 
@@ -41,7 +42,7 @@ export function pathParts(path: string): {head: string, tail: string} {
 }
 
 export function isWorkdirsAvailable(): boolean {
-    return Boolean(goApp()?.ListAgentWorkdirs)
+    return aiEnabled() && Boolean(goApp()?.ListAgentWorkdirs)
 }
 
 type Props = {

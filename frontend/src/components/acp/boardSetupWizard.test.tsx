@@ -106,6 +106,22 @@ describe('components/acp/boardSetupWizard', () => {
             expect(mockedMutator.changeBoardTitle).toHaveBeenCalledWith(testBoard.id, expect.any(String), 'Ремонт кухни')
         })
 
+        // Asked with the name, because the inbox sorter decides by it and the
+        // moment a board is made is the moment somebody knows what it is for.
+        test('saves what the board is for along with its name', async () => {
+            const bindings = stubBindings({
+                BoardSetupPlan: vi.fn().mockResolvedValue(plan(['name', 'project', 'done'])),
+            })
+            renderWizard()
+
+            const field = await screen.findByLabelText('Description')
+            fireEvent.input(field, {target: {value: '  Ремонт: материалы, мастера, сроки  '}})
+            userEvent.click(screen.getByRole('button', {name: 'Next'}))
+
+            await waitFor(() => expect(bindings.RecordBoardSetupStep).toHaveBeenCalledWith(testBoard.id, 'name', 'done'))
+            expect(mockedMutator.changeBoardDescription).toHaveBeenCalledWith(testBoard.id, testBoard.id, testBoard.description, 'Ремонт: материалы, мастера, сроки')
+        })
+
         test('refuses a name another board already has', async () => {
             stubBindings({
                 BoardSetupPlan: vi.fn().mockResolvedValue(plan(['name', 'project', 'done'])),

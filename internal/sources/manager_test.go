@@ -421,3 +421,31 @@ func TestAnItemIsLeftAloneWhileTheBoardCannotBeAsked(t *testing.T) {
 		t.Fatalf("a card was made anyway: %+v", board.cards())
 	}
 }
+
+// A card that lands in the inbox is announced — that is how the inbox sorter
+// hears of it — and a card the share dialog put on a board somebody picked is
+// not: it has already arrived where it belongs.
+func TestACardInTheInboxIsAnnouncedAndAPickedBoardIsNot(t *testing.T) {
+	m, _, _ := testManager(t, phoneSource())
+	var heard []string
+	m.SetArrivals(func(cardID string) { heard = append(heard, cardID) })
+
+	if _, err := m.Deliver(context.Background(), "телефон", []Item{deliveryItem()}); err != nil {
+		t.Fatal(err)
+	}
+	if len(heard) != 1 {
+		t.Fatalf("the inbox card was announced %d times", len(heard))
+	}
+
+	share, err := m.EnsureSource(ShareSource())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := m.Deliver(context.Background(), share.Name,
+		[]Item{ShareItem("work", "Статья", "https://example.com/a", "")}); err != nil {
+		t.Fatal(err)
+	}
+	if len(heard) != 1 {
+		t.Fatalf("a card on a picked board was announced: %v", heard)
+	}
+}

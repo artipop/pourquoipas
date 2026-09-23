@@ -5,6 +5,7 @@ import type {Component} from 'solid-js'
 import {useIntl} from '../../intl'
 import {useAppSelector} from '../../store/hooks'
 import {getMe} from '../../store/users'
+import {aiEnabled} from '../../aiSwitch'
 
 import Dialog from '../dialog'
 
@@ -121,15 +122,18 @@ const AppSettingsDialog = (props: Props) => {
             body: DataPanel,
         },
         {
+
+            // Every setting in it is about agents, so with the AI switched off
+            // it is not drawn at all.
             id: 'misc',
             name: () => intl.formatMessage({id: 'Machine.section-misc', defaultMessage: 'Other'}),
-            when: () => true,
+            when: aiEnabled,
             body: MachineMiscPanel,
         },
     ]
 
     const offered = () => sections.filter((s) => s.when())
-    const [current, setCurrent] = createSignal(offered()[0]?.id || 'misc')
+    const [current, setCurrent] = createSignal(offered()[0]?.id || 'app')
     const section = () => offered().find((s) => s.id === current()) || offered()[0]
 
     return (

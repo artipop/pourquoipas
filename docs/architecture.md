@@ -803,6 +803,21 @@ interrupt, and the archive that carries every board in and out — is
 `settings/appSettingsDialog.tsx`, one dialog of panels opened from
 `sidebarSettingsButton.tsx`, reachable with no board open.
 
+**One switch turns the agents off** (`aiSwitch.ts`, the `aiEnabled` install
+preference, «Агенты работают с карточками» in `settings/appPanel.tsx`). Off,
+the app is a kanban board and nothing on screen names an agent. The page does
+it at the gates it already had: every `is…Available()` of `components/acp`
+answers no, the setup plan keeps only the name (`withoutAgents`), a board has
+no routes (`useBoardFlows`), nothing waits (`useAttention`), the agents' card
+fields are hidden (`withoutAgentProperties` — the folder, the branch, the
+outcome) and the assignee field offers people only. Go reads the same key
+(`aiEnabled` in `uisettings.go`) through `Manager.SetSwitchedOff`: a card move
+is dropped before the engine sees it, the folder poll and agent sources stop,
+and `startSession` refuses whatever was already queued. What is running is
+left to finish — the switch means no more, not undo — and nothing is deleted,
+so switching back on is the board as it was. The tray keeps its open and quit
+items and loses the dot.
+
 **Three registries are the machine's and are offered from a board anyway**,
 because a registry belongs where it means something: the deploy hosts
 (`deploy_target`, shared by every board that deploys), the agents and the
@@ -1360,6 +1375,16 @@ card is the board's own operation, not ours, and because it cannot be built out
 of what was there: `insertBlock` keys its update on `id AND board_id`, so
 re-inserting a block under a new board updates nothing and says it worked.
 Properties travel by **name**, since the two boards share nothing else.
+
+The same carrying can be left to an agent (`internal/inboxsort`,
+`docs/sources.md` §29), switched on from the inbox's ⋯ menu. It decides by each
+board's title and **description** — asked with the name when a board is made —
+and by a **summary of the board's cards** that the agent writes itself and this
+machine keeps (`board_summary`), rewritten when the cards change. A card it
+files stands in the board's first column **without notifying**, unlike the
+person's move above: the sorter picked a board, not a column's automation.
+Every decision, moved or left, is a row of `inbox_sort`. Like the sources, the
+package imports neither the board nor the agents; `main.go` hands both in.
 
 ## A terminal is where the work happens, watched or not
 

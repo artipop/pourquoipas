@@ -19,6 +19,7 @@ import CardActionsMenuIcon from '../cardActionsMenu/cardActionsMenuIcon'
 import {attentionHeading, useCardAttention} from '../acp/attention'
 import {isCardTerminalAvailable, openCardTerminalWindow, useCardCutOff, useCardTerminal} from '../acp/liveTerminals'
 import {findWorkdirProperty} from '../acp/workdirSync'
+import {aiEnabled} from '../../aiSwitch'
 
 export const OnboardingCardClassName = 'onboardingCard'
 
@@ -70,6 +71,9 @@ const KanbanCard = (props: Props) => {
     // Left out when the view already lists the property, or the same fact would
     // stand on the card twice.
     const folderChip = () => {
+        if (!aiEnabled()) {
+            return ''
+        }
         const property = findWorkdirProperty(props.board, props.board.cardProperties)
         if (!property || visiblePropertyTemplates().some((t) => t.id === property.id)) {
             return ''
@@ -106,7 +110,7 @@ const KanbanCard = (props: Props) => {
     // recorded before either of them is stale until the card makes progress and
     // drops it.
     const paused = () => Boolean(cutOff()) && !attention() && !liveTerminal()
-    const showsAgent = () => Boolean(attention() || liveTerminal() || cutOff())
+    const showsAgent = () => aiEnabled() && Boolean(attention() || liveTerminal() || cutOff())
 
     // How a stage ended is answered in the card, on its route strip — not here.
     // These two buttons stood on the card's face for a while, and what that

@@ -289,6 +289,14 @@ export function GetCardFlow(cardID: string): $CancellablePromise<string> {
 }
 
 /**
+ * GetInboxSorting returns everything the sorting dialog draws: the settings,
+ * every board with its description and summary, and the recent decisions.
+ */
+export function GetInboxSorting(): $CancellablePromise<string> {
+    return $Call.ByID(4190063719);
+}
+
+/**
  * GetPlanningPrompt returns the instructions a planning terminal is opened
  * with, falling back to the default when the config has none.
  */
@@ -661,6 +669,14 @@ export function RecordBoardSetupStep(boardID: string, step: string, status: stri
 }
 
 /**
+ * RefreshBoardSummaries has the agent read every board's cards again and
+ * rewrite what they are about.
+ */
+export function RefreshBoardSummaries(): $CancellablePromise<void> {
+    return $Call.ByID(1441935576);
+}
+
+/**
  * RemoveAgent deletes an agent registry entry by name.
  */
 export function RemoveAgent(name: string): $CancellablePromise<void> {
@@ -799,6 +815,13 @@ export function SetAgentWorkdirMode(name: string, boardID: string, mode: string)
 }
 
 /**
+ * SetBoardDescription writes a board's description from the sorting dialog.
+ */
+export function SetBoardDescription(boardID: string, text: string): $CancellablePromise<void> {
+    return $Call.ByID(1208233237, boardID, text);
+}
+
+/**
  * SetBoardPrompt stores that instruction for one board.
  */
 export function SetBoardPrompt(boardID: string, text: string): $CancellablePromise<void> {
@@ -823,6 +846,14 @@ export function SetBoardTestAgent(boardID: string, agentName: string, serversJSO
  */
 export function SetBoardWorkAgent(boardID: string, namesJSON: string): $CancellablePromise<void> {
     return $Call.ByID(4244272453, boardID, namesJSON);
+}
+
+/**
+ * SetInboxSorting saves {"enabled":true,"agent":"claude"} and returns what was
+ * saved.
+ */
+export function SetInboxSorting(settingsJSON: string): $CancellablePromise<string> {
+    return $Call.ByID(3073967635, settingsJSON);
 }
 
 /**
@@ -907,6 +938,15 @@ export function ShowTerminal(terminalID: string): $CancellablePromise<string> {
  */
 export function SkipUpdateVersion(): $CancellablePromise<void> {
     return $Call.ByID(3143090493);
+}
+
+/**
+ * SortInboxNow sorts every card in the inbox, sorting switched on or not, and
+ * returns how many were moved, kept and failed. It waits for the agent, which
+ * is a minute rather than a moment.
+ */
+export function SortInboxNow(): $CancellablePromise<string> {
+    return $Call.ByID(216347697);
 }
 
 /**

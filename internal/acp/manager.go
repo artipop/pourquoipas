@@ -83,6 +83,9 @@ type Manager struct {
 	seededMu sync.Mutex
 	seeded   map[string]bool // boards whose own settings have been imported
 
+	// switchedOff is the app-wide AI switch (SetSwitchedOff). Nil means on.
+	switchedOff func() bool
+
 	// boardUnadopted is what a board carries that this machine cannot use — a
 	// column naming an agent nobody registered here, which is every column of
 	// a board that has just been imported. Kept verbatim and written back
@@ -192,6 +195,17 @@ func (m *Manager) SetSecrets(v secrets.Store) {
 			m.watchers = m.defaultWatchers()
 		}
 	}
+}
+
+// SetSwitchedOff supplies the app-wide AI switch. While it answers true
+// nothing starts by itself: a card moved between columns is only moved, no
+// route advances on what a folder did, and no agent source polls. Whatever
+// was already running goes on to its end; a person switching the AI off is
+// saying "no more", not "throw away what an agent is halfway through".
+func (m *Manager) SetSwitchedOff(off func() bool) { m.switchedOff = off }
+
+func (m *Manager) aiSwitchedOff() bool {
+	return m.switchedOff != nil && m.switchedOff()
 }
 
 // Start recovers interrupted sessions and launches the trigger loop.
@@ -383,6 +397,11 @@ func (m *Manager) StartSessionForEvent(ev CardMoved) (*Session, error) {
 // startSession is the shared launch path: every session — a card's task, a
 // deploy, a browser test — is started here, runs its one turn and ends.
 func (m *Manager) startSession(ev CardMoved, opts startOptions) (*Session, error) {
+	// The last line of the switch: a stage queued behind a busy one, or an
+	// edge taken on something that was already in flight, stops here.
+	if m.aiSwitchedOff() {
+		return nil, errSwitchedOff
+	}
 	// Asked before anything is resolved: a card somebody took for themselves is
 	// theirs, and there is no point working out which folder an agent would
 	// not be using. Deploy and test are unaffected — that is machine work, not

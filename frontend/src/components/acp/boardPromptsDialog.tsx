@@ -11,6 +11,7 @@ import Dialog from '../dialog'
 import {createLoader} from '../../hooks/loader'
 
 import {goApp} from '../../goBridge'
+import {aiEnabled} from '../../aiSwitch'
 
 import './boardPromptsDialog.scss'
 
@@ -31,7 +32,7 @@ import './boardPromptsDialog.scss'
 // said in the folder, by the AGENTS.md its CLI reads.
 
 export function isBoardPromptsAvailable(): boolean {
-    return Boolean(goApp()?.GetBoardPrompt)
+    return aiEnabled() && Boolean(goApp()?.GetBoardPrompt)
 }
 
 type Props = {

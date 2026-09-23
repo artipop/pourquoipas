@@ -7,6 +7,7 @@ import {createLoader} from '../../hooks/loader'
 import {Board} from '../../blocks/board'
 
 import {goApp} from '../../goBridge'
+import {aiEnabled} from '../../aiSwitch'
 
 // What a board needs answered before its automation can run is resolved on the
 // Go side (internal/acp/setup.go) out of what the board asks for, what its
@@ -75,8 +76,11 @@ export function agentColumn(plan: SetupPlan | undefined): string {
     return plan?.agentColumn || DEFAULT_AGENT_COLUMN
 }
 
+// The setup is agents' questions — where to work, who works, where it goes —
+// so with the AI switched off it is not offered at all (the plan below keeps
+// only the board's name).
 export function isBoardSetupAvailable(): boolean {
-    return Boolean(goApp()?.BoardSetupPlan)
+    return aiEnabled() && Boolean(goApp()?.BoardSetupPlan)
 }
 
 export async function readSetupPlan(boardId: string): Promise<SetupPlan> {
@@ -93,7 +97,14 @@ export async function readSetupPlan(boardId: string): Promise<SetupPlan> {
 // straight through.
 export function createSetupPlan(board: () => Board | undefined): [Accessor<SetupPlan>, () => void] {
     const [plan, reload] = createLoader((boardId: string) => readSetupPlan(boardId).catch(() => NO_SETUP), NO_SETUP, () => board()?.id ?? '')
-    return [plan, reload]
+    return [() => (aiEnabled() ? plan() : withoutAgents(plan())), reload]
+}
+
+// withoutAgents is the plan a board has while the AI is switched off: its name
+// is still a question about the board, everything else is a question about
+// agents. Not automated, so the wizard never opens itself either.
+export function withoutAgents(plan: SetupPlan): SetupPlan {
+    return {...plan, steps: plan.steps.filter((step) => step.kind === 'name'), automated: false}
 }
 
 // Recording is for the answer no registry can be read for: a step deliberately

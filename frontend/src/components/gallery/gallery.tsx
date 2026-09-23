@@ -14,6 +14,7 @@ import mutator from '../../mutator'
 import {Utils} from '../../utils'
 
 import BoardPermissionGate from '../permissions/boardPermissionGate'
+import {withoutAgentProperties} from '../acp/agentProperties'
 
 import './gallery.scss'
 import GalleryCard from './galleryCard'
@@ -30,9 +31,9 @@ type Props = {
 
 const Gallery = (props: Props): JSX.Element => {
     const visiblePropertyTemplates = () => {
-        return props.board.cardProperties.filter(
+        return withoutAgentProperties(props.board, props.board.cardProperties.filter(
             (template: IPropertyTemplate) => props.activeView.fields.visiblePropertyIds.includes(template.id),
-        )
+        ))
     }
 
     const isManualSort = () => props.activeView.fields.sortOptions.length === 0

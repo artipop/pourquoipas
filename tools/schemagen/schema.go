@@ -48,6 +48,8 @@ func appTables() []Table {
 		checkout(),
 		sourceItem(),
 		sourceEvent(),
+		boardSummary(),
+		inboxSort(),
 	}
 }
 
@@ -754,6 +756,62 @@ func sourceEvent() Table {
 		}},
 		Indexes: []Index{
 			{Name: "idx_source_event_source", Columns: []string{"source", "id"}},
+		},
+	}
+}
+
+// board_summary is what a board's cards are about, in a few sentences.
+func boardSummary() Table {
+	return Table{
+		Name: "board_summary",
+		Why: "What a board's cards are about, written by an agent from their titles.\n" +
+			"It is what the inbox is sorted by beside the board's own description:\n" +
+			"a description says what a board was made for, and the cards say what\n" +
+			"it is used for. Kept here rather than on the board because it is this\n" +
+			"machine's reading of the board, redone whenever the cards change.",
+		Columns: []Column{
+			{Name: "board_id", Type: ID()},
+			{Name: "summary", Type: Text()},
+			{Name: "card_count", Type: Int()},
+			{Name: "fingerprint", Type: Name(64),
+				Why: "A hash of the cards the summary was written from. A different one\n" +
+					"means the summary is about cards the board no longer holds."},
+			{Name: "updated_at", Type: Millis()},
+		},
+		PK:  []string{"board_id"},
+		FKs: []FK{boardFK("board_summary")},
+	}
+}
+
+// inbox_sort is the log of where the inbox sorter put each card.
+func inboxSort() Table {
+	return Table{
+		Name: "inbox_sort",
+		Why: "Where the sorter put a card from the inbox, and why. A card that\n" +
+			"turns up on a board nobody carried it to is the question this answers.\n" +
+			"Both keys SET NULL: the decision is a fact about the sorter and\n" +
+			"outlives the card and the board.",
+		Columns: []Column{
+			{Name: "id", Type: ID()},
+			{Name: "card_id", Type: ID(), Null: true},
+			{Name: "card_title", Type: Text(), Null: true,
+				Why: "What the card was called, so the log still reads once it is gone."},
+			{Name: "board_id", Type: ID(), Null: true,
+				Why: "Where it went. NULL for a card left in the inbox."},
+			{Name: "outcome", Type: Name(16)},
+			{Name: "reason", Type: Text(), Null: true},
+			{Name: "created_at", Type: Millis()},
+		},
+		PK: []string{"id"},
+		Checks: []Check{{
+			Name: "inbox_sort_outcome", Column: "outcome",
+			Values: []string{"moved", "kept", "failed"},
+		}},
+		FKs: []FK{
+			{Name: "inbox_sort_card", Columns: []string{"card_id"},
+				RefTable: "card_ref", RefCols: []string{"card_id"}, OnDelete: SetNull},
+			{Name: "inbox_sort_board", Columns: []string{"board_id"},
+				RefTable: "board_ref", RefCols: []string{"board_id"}, OnDelete: SetNull},
 		},
 	}
 }

@@ -12,6 +12,7 @@ import (
 
 	"github.com/artipop/xciii/internal/acp"
 	"github.com/artipop/xciii/internal/boardadapter"
+	"github.com/artipop/xciii/internal/inboxsort"
 	"github.com/artipop/xciii/internal/sources"
 )
 
@@ -43,6 +44,9 @@ type App struct {
 	// sources turns outside events into cards. Separate from mgr on purpose: a
 	// board of household chores wants cards from a phone and no agents at all.
 	sources *sources.Manager
+	// sorter carries what arrives in the inbox on to the boards it belongs on.
+	// Nil when the sources are off, since it keeps its log in their database.
+	sorter *inboxsort.Sorter
 	// board is how the page at /m reads the board, since it is served the
 	// bindings and the event socket and no board API of its own.
 	board boardLists
@@ -1660,6 +1664,85 @@ func (a *App) MoveCardToBoard(cardID, boardID, column string) error {
 		return errors.New("не сказано, какую карточку и куда переносить")
 	}
 	return a.board.MoveCardToBoard(context.Background(), cardID, boardID, column)
+}
+
+// Sorting the inbox (internal/inboxsort, docs/sources.md §29): which agent
+// carries arrivals on to the boards, what it has read about each board, and
+// what it decided.
+
+var errNoSorter = errors.New("разбор входящих недоступен: нет источников")
+
+// GetInboxSorting returns everything the sorting dialog draws: the settings,
+// every board with its description and summary, and the recent decisions.
+func (a *App) GetInboxSorting() (string, error) {
+	if a.sorter == nil {
+		return "", errNoSorter
+	}
+	state, err := a.sorter.State(context.Background())
+	if err != nil {
+		return "", err
+	}
+	out, err := json.Marshal(state)
+	if err != nil {
+		return "", err
+	}
+	return string(out), nil
+}
+
+// SetInboxSorting saves {"enabled":true,"agent":"claude"} and returns what was
+// saved.
+func (a *App) SetInboxSorting(settingsJSON string) (string, error) {
+	if a.sorter == nil {
+		return "", errNoSorter
+	}
+	var want inboxsort.Settings
+	if err := json.Unmarshal([]byte(settingsJSON), &want); err != nil {
+		return "", err
+	}
+	saved, err := a.sorter.SetSettings(want)
+	if err != nil {
+		return "", err
+	}
+	out, err := json.Marshal(saved)
+	if err != nil {
+		return "", err
+	}
+	return string(out), nil
+}
+
+// SortInboxNow sorts every card in the inbox, sorting switched on or not, and
+// returns how many were moved, kept and failed. It waits for the agent, which
+// is a minute rather than a moment.
+func (a *App) SortInboxNow() (string, error) {
+	if a.sorter == nil {
+		return "", errNoSorter
+	}
+	res, err := a.sorter.SortInbox(context.Background())
+	if err != nil {
+		return "", err
+	}
+	out, err := json.Marshal(res)
+	if err != nil {
+		return "", err
+	}
+	return string(out), nil
+}
+
+// RefreshBoardSummaries has the agent read every board's cards again and
+// rewrite what they are about.
+func (a *App) RefreshBoardSummaries() error {
+	if a.sorter == nil {
+		return errNoSorter
+	}
+	return a.sorter.RefreshSummaries(context.Background())
+}
+
+// SetBoardDescription writes a board's description from the sorting dialog.
+func (a *App) SetBoardDescription(boardID, text string) error {
+	if a.sorter == nil {
+		return errNoSorter
+	}
+	return a.sorter.SetBoardDescription(context.Background(), boardID, text)
 }
 
 // The share sheet.

@@ -35,6 +35,7 @@ import {
 import {UserConfigPatch} from '../user'
 
 import octoClient from '../octoClient'
+import {aiEnabled} from '../aiSwitch'
 
 import ShareBoardButton from './shareBoard/shareBoardButton'
 import ShareBoardLoginButton from './shareBoard/shareBoardLoginButton'
@@ -205,7 +206,8 @@ const CenterPanel = (props: Props) => {
         // grouped by its folder is left alone entirely — there the empty group
         // means «no folder yet», and filling it in would make that group
         // impossible to add a card to.
-        const folder = soleWorkdirOption(board)
+        // With the AI switched off the folder is a field nobody is shown.
+        const folder = aiEnabled() ? soleWorkdirOption(board) : undefined
         if (folder && UserSettings.prefillCardFolder &&
             folder.propertyId !== groupByProperty?.id && !properties[folder.propertyId]) {
             properties[folder.propertyId] = folder.optionId

@@ -51,6 +51,9 @@ type InboxServer struct {
 // The agent's *own* tools stay under its usual policy: this is not a licence to
 // run anything, it is a licence to use the two servers it was handed.
 func (m *Manager) RunInbox(ctx context.Context, run InboxRun) (string, error) {
+	if m.aiSwitchedOff() {
+		return "", errSwitchedOff
+	}
 	agentName := strings.TrimSpace(run.Agent)
 	if agentName == "" {
 		return "", fmt.Errorf("не сказано, каким агентом опрашивать")

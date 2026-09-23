@@ -56,6 +56,7 @@ const ru = {
                 items: [
                     {text: 'Обзор', link: '/inbox/'},
                     {text: 'Источники', link: '/inbox/sources'},
+                    {text: 'Разбор входящих', link: '/inbox/sorting'},
                 ],
             },
             {
@@ -142,6 +143,7 @@ const en = {
                 items: [
                     {text: 'Overview', link: '/en/inbox/'},
                     {text: 'Sources', link: '/en/inbox/sources'},
+                    {text: 'Sorting the inbox', link: '/en/inbox/sorting'},
                 ],
             },
             {

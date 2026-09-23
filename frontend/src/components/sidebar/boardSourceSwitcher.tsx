@@ -7,6 +7,7 @@ import Menu from '../../widgets/menu'
 import MenuWrapper from '../../widgets/menuWrapper'
 import CompassIcon from '../../widgets/icons/compassIcon'
 import {goApp} from '../../goBridge'
+import {aiEnabled} from '../../aiSwitch'
 import {createLoader} from '../../hooks/loader'
 
 import './boardSourceSwitcher.scss'
@@ -88,12 +89,14 @@ const BoardSourceSwitcher = () => {
                         </For>
                     </Menu>
                 </MenuWrapper>
-                <div class='BoardSourceSwitcher__hint'>
-                    {intl.formatMessage({
-                        id: 'BoardSource.hint',
-                        defaultMessage: 'Agents keep working both boards.',
-                    })}
-                </div>
+                <Show when={aiEnabled()}>
+                    <div class='BoardSourceSwitcher__hint'>
+                        {intl.formatMessage({
+                            id: 'BoardSource.hint',
+                            defaultMessage: 'Agents keep working both boards.',
+                        })}
+                    </div>
+                </Show>
             </div>
         </Show>
     )

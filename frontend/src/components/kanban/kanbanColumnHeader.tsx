@@ -30,6 +30,7 @@ import {personNameById} from '../../userDisplay'
 import BoardPermissionGate from '../permissions/boardPermissionGate'
 
 import ColumnBadge from '../acp/columnBadge'
+import {aiEnabled} from '../../aiSwitch'
 import {MineColumnTitle, isInboxBoard} from '../acp/inboxView'
 
 import {KanbanCalculation} from './calculation/calculation'
@@ -179,7 +180,7 @@ export default function KanbanColumnHeader(props: Props): JSX.Element {
                     mutator.changeViewKanbanCalculations(props.board.id, props.activeView.id, props.activeView.fields.kanbanCalculations, newCalculations)
                 }}
             />
-            <Show when={Boolean(props.group.option.id) && props.groupByProperty}>
+            <Show when={aiEnabled() && Boolean(props.group.option.id) && props.groupByProperty}>
                 <ColumnBadge
                     boardId={props.board.id}
                     optionId={props.group.option.id}

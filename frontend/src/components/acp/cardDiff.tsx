@@ -9,6 +9,7 @@ import CompassIcon from '../../widgets/icons/compassIcon'
 import {createLoader} from '../../hooks/loader'
 
 import {goApp} from '../../goBridge'
+import {aiEnabled} from '../../aiSwitch'
 
 import {onAgentEvent} from './agentEvents'
 
@@ -48,7 +49,7 @@ export type CardDiffData = {
 }
 
 export function isCardDiffAvailable(): boolean {
-    return Boolean(goApp()?.GetCardDiff)
+    return aiEnabled() && Boolean(goApp()?.GetCardDiff)
 }
 
 // A patch line, classified by the one character git puts in front of it. The

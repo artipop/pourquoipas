@@ -30,6 +30,7 @@ import './fullcalendar.scss'
 import MenuWrapper from '../../widgets/menuWrapper'
 import CardActionsMenu from '../cardActionsMenu/cardActionsMenu'
 import CardActionsMenuIcon from '../cardActionsMenu/cardActionsMenuIcon'
+import {withoutAgentProperties} from '../acp/agentProperties'
 
 const oneDay = 60 * 60 * 24 * 1000
 
@@ -83,7 +84,7 @@ const CalendarFullView = (props: Props): JSX.Element => {
     const [showConfirmationDialogBox, setShowConfirmationDialogBox] = createSignal<boolean>(false)
     const [cardItem, setCardItem] = createSignal<Card>()
 
-    const visiblePropertyTemplates = () => props.board.cardProperties.filter((template: IPropertyTemplate) => props.activeView.fields.visiblePropertyIds.includes(template.id))
+    const visiblePropertyTemplates = () => withoutAgentProperties(props.board, props.board.cardProperties.filter((template: IPropertyTemplate) => props.activeView.fields.visiblePropertyIds.includes(template.id)))
 
     const initialDate = () => props.initialDate || new Date()
 

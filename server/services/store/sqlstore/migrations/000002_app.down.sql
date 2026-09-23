@@ -11,6 +11,12 @@
 
 {{if .sqlite}}
 PRAGMA foreign_keys = off;
+DROP TABLE `inbox_sort`;
+PRAGMA foreign_keys = on;
+PRAGMA foreign_keys = off;
+DROP TABLE `board_summary`;
+PRAGMA foreign_keys = on;
+PRAGMA foreign_keys = off;
 DROP TABLE `source_event`;
 PRAGMA foreign_keys = on;
 PRAGMA foreign_keys = off;
@@ -76,6 +82,8 @@ PRAGMA foreign_keys = on;
 {{end}}
 
 {{if .mysql}}
+DROP TABLE `inbox_sort`;
+DROP TABLE `board_summary`;
 DROP TABLE `source_event`;
 DROP TABLE `source_item`;
 DROP TABLE `checkout`;
@@ -100,6 +108,8 @@ DROP TABLE `board_ref`;
 {{end}}
 
 {{if .postgres}}
+DROP TABLE "inbox_sort";
+DROP TABLE "board_summary";
 DROP TABLE "source_event";
 DROP TABLE "source_item";
 DROP TABLE "checkout";

@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+
+	"github.com/artipop/xciii/internal/acp"
 )
 
 // What the install remembers about its own UI — the language and theme a
@@ -112,6 +114,17 @@ func agentNotificationsEnabled() bool {
 	uiSettingsMu.Lock()
 	defer uiSettingsMu.Unlock()
 	return readUISettings().Preferences["agentNotifications"] != "false"
+}
+
+// aiEnabled is the app-wide AI switch, kept where the page keeps it
+// (aiSwitch.ts, the "aiEnabled" preference). On unless it has been turned off,
+// the rule UserSettings.aiEnabled states on the other side. Off, the agent
+// manager starts nothing by itself (acp.Manager.SetSwitchedOff) and the OS is
+// told about no wait.
+func aiEnabled() bool {
+	uiSettingsMu.Lock()
+	defer uiSettingsMu.Unlock()
+	return readUISettings().Preferences["aiEnabled"] != "false"
 }
 
 // activeLanguage is the language the page resolved for itself when nobody has
@@ -238,6 +251,15 @@ func (a *App) SetUIPreference(key, value string) error {
 	// the earliest. It fetches what it draws when it opens, so by then this is
 	// done. A failure costs the person templates in the language they already
 	// had, so it is logged rather than returned.
+	// The tray's dot and the OS notifications re-read the waits on this event
+	// (alerts_desktop.go), and they answer the switch as well: without it the
+	// dot switched off would stay lit until the next wait came or went. Off
+	// this goroutine, which holds uiSettingsMu, and every listener reads the
+	// switch under it.
+	if key == "aiEnabled" && changed && a != nil && a.emitter != nil {
+		go a.emitter.Emit(acp.EventAttention, nil)
+	}
+
 	if key == "language" && changed {
 		// Into the language now in force, not into value: a pick taken back is
 		// an empty value, and it means "follow the system again" — which is the

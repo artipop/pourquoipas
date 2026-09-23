@@ -7,6 +7,7 @@ import {useIntl} from '../../intl'
 import Button from '../../widgets/buttons/button'
 
 import {goApp} from '../../goBridge'
+import {aiEnabled} from '../../aiSwitch'
 
 import './proxiesPanel.scss'
 
@@ -32,7 +33,7 @@ function displayProxy(proxy?: string): string {
 }
 
 export function isProxiesAvailable(): boolean {
-    return Boolean(goApp()?.ListProxies)
+    return aiEnabled() && Boolean(goApp()?.ListProxies)
 }
 
 const emptyForm: ProxyEntry = {name: ''}

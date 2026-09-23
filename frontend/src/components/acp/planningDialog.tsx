@@ -9,6 +9,7 @@ import CompassIcon from '../../widgets/icons/compassIcon'
 import Dialog from '../dialog'
 
 import {goApp} from '../../goBridge'
+import {aiEnabled} from '../../aiSwitch'
 
 import {onAgentEvent} from './agentEvents'
 import AgentQuickAdd from './agentQuickAdd'
@@ -57,7 +58,7 @@ type LiveTerminal = {
 }
 
 export function isPlanningAvailable(): boolean {
-    return Boolean(goApp()?.OpenPlanningTerminal)
+    return aiEnabled() && Boolean(goApp()?.OpenPlanningTerminal)
 }
 
 type Props = {

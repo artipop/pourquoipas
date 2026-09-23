@@ -35,6 +35,11 @@ export enum UserSettingKey {
     WelcomePageViewed = 'welcomePageViewed',
     NameFormat = 'nameFormat',
 
+    // Whether the app runs agents at all. Off, it is a kanban board and
+    // nothing on screen mentions an agent (aiSwitch.ts); the Go side reads the
+    // same key to stop starting stages (uisettings.go).
+    AIEnabled = 'aiEnabled',
+
     // Whether a card whose agent is waiting for an answer says so out loud.
     AgentNotifications = 'agentNotifications',
 
@@ -64,6 +69,7 @@ const installKept = new Set<string>([
     UserSettingKey.LastBoardId,
     UserSettingKey.LastViewId,
     UserSettingKey.MobileWarningClosed,
+    UserSettingKey.AIEnabled,
     UserSettingKey.AgentNotifications,
     UserSettingKey.PrefillCardFolder,
 ])
@@ -269,6 +275,17 @@ export class UserSettings {
             data[boardID] = viewID
         }
         UserSettings.set(UserSettingKey.LastViewId, JSON.stringify(data))
+    }
+
+    // On unless it has been turned off, the rule aiEnabled in uisettings.go
+    // states on the other side: an install that has always run agents keeps
+    // running them until somebody says otherwise.
+    static get aiEnabled(): boolean {
+        return UserSettings.get(UserSettingKey.AIEnabled) !== 'false'
+    }
+
+    static set aiEnabled(newValue: boolean) {
+        UserSettings.set(UserSettingKey.AIEnabled, JSON.stringify(newValue))
     }
 
     // On unless it has been turned off: an agent that has stopped to ask
