@@ -46,22 +46,6 @@ func TestACatalogueSaysNothingTheTemplatesDoNot(t *testing.T) {
 	}
 }
 
-// What the app matches on by name is not a person's word to change: translating
-// «прошло» would leave the engine writing an outcome the board has no option
-// for.
-func TestTheNamesTheAppMatchesOnAreNeverTranslated(t *testing.T) {
-	for lang, cat := range catalogues(t) {
-		for name := range appGivenNames {
-			if _, ok := cat[name]; ok {
-				t.Errorf("%s translates %q, which this app finds by name", lang, name)
-			}
-			if got := translateText(cat, name); got != name {
-				t.Errorf("%s turned %q into %q", lang, name, got)
-			}
-		}
-	}
-}
-
 // Everything that is not a word stays exactly as it was — the ids a board's own
 // properties point at, and the millisecond timestamps a decoder is happy to
 // hand back as 1.7e+12.
@@ -77,8 +61,8 @@ func TestTranslatingATemplateKeepsEverythingThatIsNotAWord(t *testing.T) {
 	board := firstBoard(t, out)
 	fields, _ := board["fields"].(map[string]any)
 	props, _ := fields["properties"].(map[string]any)
-	if props["outcomeProperty"] != "aoutcomefield000000000000001" {
-		t.Errorf("the board points at %v as its outcome property", props["outcomeProperty"])
+	if props["branchProperty"] != "abranchfield0000000000000001" {
+		t.Errorf("the board points at %v as its branch property", props["branchProperty"])
 	}
 	if props["template"] != "developer-tasks" {
 		t.Errorf("the slug became %v", props["template"])
@@ -86,14 +70,13 @@ func TestTranslatingATemplateKeepsEverythingThatIsNotAWord(t *testing.T) {
 	if strings.ContainsAny(string(out), "e+") && strings.Contains(string(out), "e+1") {
 		t.Error("a timestamp came back in exponent form")
 	}
-	if !strings.Contains(string(out), `"aworkflowfeatureopt000000001"`) {
-		t.Error("an option id was rewritten")
+	if !strings.Contains(string(out), `"arepositoriesfield0000000001"`) {
+		t.Error("a property id was rewritten")
 	}
 }
 
-// The words a person reads are translated wherever they stand, and a board is
-// only usable if they agree: a route is picked by a card's option, and the
-// option's value has to be the route's name.
+// The words a person reads are translated wherever they stand: the board's
+// title, its columns, and the cards that arrive standing in one of them.
 func TestATranslatedBoardSaysTheSameNameInEveryPlace(t *testing.T) {
 	data, err := readShippedTemplate("templates/developer-tasks.jsonl")
 	if err != nil {
@@ -108,25 +91,8 @@ func TestATranslatedBoardSaysTheSameNameInEveryPlace(t *testing.T) {
 		t.Errorf("board title %v", board["title"])
 	}
 	fields, _ := board["fields"].(map[string]any)
-	if !optionExists(fields, "Сценарий", "Фича") {
-		t.Error("the route property has no «Фича» option")
-	}
-	if !optionExists(fields, "Исход", "прошло") {
-		t.Error("the outcome field was translated")
-	}
-	props, _ := fields["properties"].(map[string]any)
-	flows, _ := props["flows"].([]any)
-	first, _ := flows[0].(map[string]any)
-	if first["name"] != "Фича" {
-		t.Errorf("the first route is called %v, and the card picks a route by that name", first["name"])
-	}
-	if first["property"] != "Статус" {
-		t.Errorf("the route runs on %v", first["property"])
-	}
-	nodes, _ := first["nodes"].([]any)
-	node, _ := nodes[0].(map[string]any)
-	if node["column"] != "В работе" {
-		t.Errorf("its first stage stands on %v", node["column"])
+	if !optionExists(fields, "Статус", "В работе") {
+		t.Error("the column property has no «В работе» option")
 	}
 }
 

@@ -24,15 +24,10 @@ func (m *Manager) applyDeployOutcome(s *Session) {
 	res, err := dokku.ReadOutcome(s.Artifacts)
 	switch {
 	case os.IsNotExist(err):
-		s.setOutcome(OutcomeFailure, "деплой не выполнялся")
 		m.comment(s, "Деплой не подтверждён: инструмент `deploy_branch` ни разу не отработал, так что ветка не опубликована.")
 	case err != nil:
 		m.log.Warn("acp: cannot read deploy outcome", "session", s.ID, "err", err)
 	case !res.OK:
-		s.setOutcome(OutcomeFailure, "деплой упал")
 		m.comment(s, fmt.Sprintf("Деплой ветки `%s` не удался: %s", res.Branch, res.Error))
-	default:
-		s.setOutcome(OutcomeSuccess, "ветка задеплоена")
 	}
 }
-

@@ -200,9 +200,9 @@ func TestABumpedVersionReplacesTheInstalledCopy(t *testing.T) {
 	}
 }
 
-// The cards and the automation have to survive the import, or the board arrives
-// as a title with nothing behind it.
-func TestAnInstalledTemplateKeepsItsCardsAndAutomation(t *testing.T) {
+// The cards and the board's own records have to survive the import, or the
+// board arrives as a title with nothing behind it.
+func TestAnInstalledTemplateKeepsItsCardsAndRecords(t *testing.T) {
 	a := newTestApp(t)
 	logger, _ := mlog.NewLogger()
 	if err := ImportTemplates(a, logger, SourceLanguage); err != nil {
@@ -213,11 +213,8 @@ func TestAnInstalledTemplateKeepsItsCardsAndAutomation(t *testing.T) {
 	if board == nil {
 		t.Fatal("«Личное» is not installed")
 	}
-	if _, ok := board.Properties["columns"]; !ok {
-		t.Error("the board arrived without the columns it runs")
-	}
-	if _, ok := board.Properties["flows"]; !ok {
-		t.Error("the board arrived without its routes")
+	if _, ok := board.Properties["projectProperty"]; !ok {
+		t.Error("the board arrived without the field its cards name a folder in")
 	}
 	if len(board.CardProperties) == 0 {
 		t.Error("the board arrived with no card properties")

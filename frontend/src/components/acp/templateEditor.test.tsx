@@ -9,7 +9,7 @@ import {Board, createBoard} from '../../blocks/board'
 import {fakeGoSide} from '../../test/goSide'
 
 import TemplateEditor from './templateEditor'
-import {BOARD_PROP_COLUMNS, BOARD_PROP_SETUP} from './automation'
+import {BOARD_PROP_SETUP} from './automation'
 
 vi.mock('../../mutator')
 
@@ -29,11 +29,6 @@ const template: Board = {
             {id: 'opt-review', value: 'На ревью', color: ''},
         ],
     }],
-    properties: {
-        [BOARD_PROP_COLUMNS]: JSON.stringify([
-            {optionId: 'opt-work', propertyId: 'prop-status', property: 'Статус', column: 'В работе', action: 'agent'},
-        ]),
-    } as Board['properties'],
 }
 
 function stubBindings() {
@@ -75,7 +70,7 @@ describe('components/acp/templateEditor', () => {
         expect(screen.getByDisplayValue('Разработка')).toBeInTheDocument()
     })
 
-    test('saving writes the columns and the questions into the board', async () => {
+    test('saving writes the questions into the board', async () => {
         stubBindings()
         const onClose = vi.fn()
         render(() => wrapIntl(() => (
@@ -98,8 +93,6 @@ describe('components/acp/templateEditor', () => {
         await waitFor(() => expect(mockedMutator.updateBoard).toHaveBeenCalled())
 
         const saved = mockedMutator.updateBoard.mock.calls[0][0] as Board
-        expect(JSON.parse(saved.properties[BOARD_PROP_COLUMNS] as string)[0].column).toBe('В работе')
-
         const setup = JSON.parse(saved.properties[BOARD_PROP_SETUP] as string)
         expect(setup.steps.map((s: {kind: string}) => s.kind)).toEqual(['project', 'agent', 'done'])
         expect(setup.steps[0].hint).toBe('Папка с заметками')

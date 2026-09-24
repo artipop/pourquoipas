@@ -34,17 +34,12 @@ export function boardColumns(board: Board, propertyName?: string): BoardColumn[]
     return (property?.options || []).map((o: IPropertyOption) => ({optionId: o.id, name: o.value, color: o.color}))
 }
 
-// The board properties a template carries its automation in — the same names Go
-// reads (internal/acp/boardseed.go). A board made from the template brings them,
-// and the first look at it takes them into the registry.
-// KEY_PREFIX is the namespace this application's own keys live under wherever
-// they share a map with somebody else's — a board's `properties`, a card's
-// `fields`. Spelled the same on the Go side (acp.KeyPrefix), and deliberately
-// not the product's name: a name can be revisited, and after a release every
-// key carrying one is a migration in its own store.
-export const KEY_PREFIX = 'app'
-
-export const BOARD_PROP_COLUMNS = 'columns'
+// The board's own keys, spelled as Go spells them
+// (internal/acp/boardseed.go). A board made from a template brings them.
+//
+// BOARD_PROP_SETUP is the questions a board asks the machine when one is made
+// from it: which steps, in which order, with the template's own hint beside
+// each.
 export const BOARD_PROP_SETUP = 'setup'
 
 // What this board's agents are told first. Nothing here writes it — the page
@@ -58,28 +53,6 @@ export const BOARD_PROP_PROMPT = 'prompt'
 // this app gives it is Russian, so a board in any other language could only
 // ever have been matched by luck.
 export const BOARD_PROP_PROJECT_PROPERTY = 'projectProperty'
-
-// And which one this app writes a stage's outcome into — «прошло», «не прошло»,
-// «заблокировано» — for every stage, without anybody declaring it. Written by
-// the engine (acp.BoardPropOutcome); named here because the editor must not
-// offer it as something a stage declares, the way it does not offer the column
-// property: both are the app's own answer about the card.
-export const BOARD_PROP_OUTCOME_PROPERTY = 'outcomeProperty'
-
-// The values it takes, in the engine's own spelling (acp.OutcomeValue). Two,
-// because what the card carries here is whether the step worked — and every
-// question anybody asks of it is that question. A check that could not run
-// answers «не прошло» like anything else that did not pass; why is the stall's
-// business, where it can be a sentence.
-export const OUTCOME_PASSED = 'прошло'
-export const OUTCOME_FAILED = 'не прошло'
-export const OUTCOME_VALUES = [OUTCOME_PASSED, OUTCOME_FAILED]
-
-// boardOutcomeProperty is the id of that field, or '' for a board without one.
-export function boardOutcomeProperty(board: {properties?: Record<string, unknown>}): string {
-    const recorded = board.properties?.[BOARD_PROP_OUTCOME_PROPERTY]
-    return typeof recorded === 'string' ? recorded : ''
-}
 
 // And which one holds the branch a card's work is on, by id for the same
 // reason. Go writes into it (workspace.go); the page is what creates it,

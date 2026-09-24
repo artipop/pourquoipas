@@ -10,7 +10,7 @@ import {aiEnabled, setAIEnabled} from './aiSwitch'
 import {isPlanningAvailable} from './components/acp/planningDialog'
 import {NO_SETUP, withoutAgents} from './components/acp/boardSetup'
 import {withoutAgentProperties} from './components/acp/agentProperties'
-import {BOARD_PROP_OUTCOME_PROPERTY, BOARD_PROP_PROJECT_PROPERTY} from './components/acp/automation'
+import {BOARD_PROP_BRANCH_PROPERTY, BOARD_PROP_PROJECT_PROPERTY} from './components/acp/automation'
 import AppPanel from './components/settings/appPanel'
 
 describe('the AI switch', () => {
@@ -65,24 +65,24 @@ describe('the AI switch', () => {
         expect(plan.automated).toBe(false)
     })
 
-    // The folder and the outcome are the agents' fields; the board's own stay.
+    // The folder and the branch are the agents' fields; the board's own stay.
     // Hidden, not removed: switching back on shows them again.
     test('switched off, a card does not show the agents’ fields', () => {
         const board = TestBlockFactory.createBoard()
         const own = {id: 'own', name: 'Own', type: 'text' as const, options: []}
         const folder = {id: 'folder', name: 'Folder', type: 'select' as const, options: []}
-        const outcome = {id: 'outcome', name: 'Outcome', type: 'select' as const, options: []}
-        board.cardProperties = [own, folder, outcome]
-        board.properties = {...board.properties, [BOARD_PROP_PROJECT_PROPERTY]: folder.id, [BOARD_PROP_OUTCOME_PROPERTY]: outcome.id}
+        const branch = {id: 'branch', name: 'Branch', type: 'text' as const, options: []}
+        board.cardProperties = [own, folder, branch]
+        board.properties = {...board.properties, [BOARD_PROP_PROJECT_PROPERTY]: folder.id, [BOARD_PROP_BRANCH_PROPERTY]: branch.id}
 
-        expect(withoutAgentProperties(board, board.cardProperties).map((t) => t.id)).toEqual([own.id, folder.id, outcome.id])
+        expect(withoutAgentProperties(board, board.cardProperties).map((t) => t.id)).toEqual([own.id, folder.id, branch.id])
 
         fakeGoSide({SetUIPreference: vi.fn().mockResolvedValue(undefined)})
         setAIEnabled(false)
         expect(withoutAgentProperties(board, board.cardProperties).map((t) => t.id)).toEqual([own.id])
 
         setAIEnabled(true)
-        expect(withoutAgentProperties(board, board.cardProperties).map((t) => t.id)).toEqual([own.id, folder.id, outcome.id])
+        expect(withoutAgentProperties(board, board.cardProperties).map((t) => t.id)).toEqual([own.id, folder.id, branch.id])
     })
 
     // The switch is in the app's own settings, and only where the app can run

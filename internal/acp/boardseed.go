@@ -7,40 +7,21 @@ import (
 	"time"
 )
 
-// A board's automation lives on the board. The columns it runs and the routes
-// cards take across it are two of the board's own properties, in the board
-// database, beside everything else that is the board's — which is why a board
-// made from the the developer template template works before anything is configured, and
-// why a template can carry automation at all.
+// What this application keeps on a board lives on the board: in the board's
+// own `properties` map, in the board database, beside everything else that is
+// the board's. That is why a board made from a template arrives briefed, and
+// why a board carried to another machine takes its instructions with it.
 //
-// The registry in memory is what the engine reads on every card move — a board
-// read per move would be absurd — but it is a cache of what the boards say, and
-// every edit is written through to the board it belongs to
-// (persistBoardLocked).
-//
-// A template's automation is still a **seed** for a board made from it: it is
-// imported once, tagged with the new board's id, and from then on that board
-// owns it. A template that changes later does not rewrite a board somebody has
-// since adjusted.
-
-// Board properties the template writes its automation into. BoardPropSetup is
-// not automation but the questions the board needs answered before any of it
-// can run — see setup.go; it is read there rather than adopted here, because it
-// is about this machine and nothing about it belongs in the registry.
-//
-// The prefix is the app's, not the agent integration's, because a route does
-// not presuppose an agent: of the twelve triggers an edge can wait on, nine
-// come from git, GitHub or the board itself, and a ColumnActionNone stage runs
-// nothing at all. A board can carry a working route with no agent in it.
-// The keys this application keeps on a board, in the board's own `properties`
-// map. Bare names on purpose: the map is shared with the board server's own
-// keys — of which there is exactly one, `trackingTemplateId` — and a prefix
+// The keys are bare names on purpose: the map is shared with the board server's
+// own keys — of which there is exactly one, `trackingTemplateId` — and a prefix
 // here would only be the product's name written into stored data, where a
 // rename becomes a migration.
+//
+// BoardPropSetup is not about the board but about this machine: the questions
+// it has to be asked before an agent can work a card of it. It is read in
+// setup.go.
 const (
-	BoardPropColumns = "columns"
-	BoardPropFlows   = "flows"
-	BoardPropSetup   = "setup"
+	BoardPropSetup = "setup"
 	// BoardPropPrompt is what this board's agents are told first. It is the
 	// board's, for the same reason its columns are: a household board and a
 	// code board want different first words, and a board carried to another
@@ -67,79 +48,10 @@ const (
 	// in the machine's settings, matched against every board this machine ever
 	// saw. A board in English, or one
 	// where somebody renamed the status property, matched nothing.
-	//
-	// Written here rather than by the page, unlike the folder and branch
-	// records: the columns already carry the property they were bound to, so
-	// the board can be told what it is the first time its automation is saved.
 	BoardPropColumnProperty = "columnProperty"
-	// BoardPropOutcome is the id of the select property this app writes the
-	// outcome of a stage into — every stage, without anybody declaring it.
-	//
-	// It exists because how a stage ended used to be expressible only as *where
-	// the card went*: a board grew a «Проверено», a «Не прошло» and a
-	// «Заблокировано» column whose whole content was one fact about the stage
-	// before them, and that fact then read as a place where work happens — on
-	// the board and on the canvas alike. An outcome belongs to the card, like
-	// the branch and the folder, and a column is for work.
-	//
-	// Written by the engine and never declared, which is what makes it
-	// "служебное": every node produces one, so no node should have to say so.
-	BoardPropOutcome = "outcomeProperty"
 )
 
-// The values that property takes, and there are two. A third was tried —
-// «заблокировано», for a check that could not run — and taken out: what a card
-// carries here is whether the step worked, and every question anybody asks of
-// it is that question. «Заблокировано» is not a third answer to it, it is a
-// reason, and the reason is on the card's route strip already (stallCardSoft),
-// where it can be a sentence instead of a word.
-//
-// Binary is also what makes it cheap to answer by hand: a reviewer marking a
-// card picks between two things and not out of a list.
-const (
-	OutcomePassed = "прошло"
-	OutcomeFailed = "не прошло"
-)
-
-// OutcomePropertyTitle is what this app calls that field when it makes one. A
-// name and not an id, unlike everything else that finds a field of ours — but
-// this one is never *found* by it: it is what a shipped route's condition asks
-// about, and a condition names a property the way a person reading the canvas
-// does. A board whose owner renamed the field renames the condition with it,
-// which is the same bargain every condition on the canvas takes.
-const OutcomePropertyTitle = "Исход"
-
-// OutcomeValue is what a stage's outcome is called on the card. Empty for
-// anything that is not a stage's own outcome — a merged branch is news about
-// the world, not a verdict on the work.
-//
-// A check that could not run answers «не прошло» like anything else that did
-// not pass: the card is asked whether the step worked, and it did not. Why is
-// the stall's business.
-func OutcomeValue(trigger string) string {
-	switch trigger {
-	case OutcomeSuccess:
-		return OutcomePassed
-	case OutcomeFailure:
-		return OutcomeFailed
-	default:
-		return ""
-	}
-}
-
-// The names these keys had before, still read because every board made until
-// now carries them. They are never written: reading a board carries what it
-// says over to the current names and drops the old ones in the same patch, so
-// a board migrates the first time anything touches it and nothing has to walk
-// the database looking for boards to fix.
-//
-// BoardPropPrompt is the odd one and is listed for honesty rather than for
-// history: the prompt was in config.json until this key existed, so no released
-// build ever wrote `acpPrompt`. `acp` was also the one defensible prefix here —
-// this really is what an agent is told — and it was renamed anyway so that a
-// board does not carry four keys under one prefix and a fifth under another.
-// boardProp reads one of this app's own keys off a board, under whichever name
-// that board happens to carry it.
+// boardProp reads one of this app's own keys off a board.
 func boardProp(props map[string]any, key string) (any, bool) {
 	if v, ok := props[key]; ok && v != nil {
 		return v, true
@@ -147,27 +59,26 @@ func boardProp(props map[string]any, key string) (any, bool) {
 	return nil, false
 }
 
-// BoardMeta is the board's own properties — where a board keeps the automation
-// it runs and a template the automation it ships — and whether the board is
+// BoardMeta is the board's own properties — where a board keeps what it tells
+// its agents and which of its fields are which — and whether the board is
 // itself a template. Optional: without it a board brings nothing and keeps
-// nothing, and the registry falls back to the file it used to live in.
+// nothing.
 type BoardMeta interface {
 	BoardProperties(ctx context.Context, boardID string) (map[string]any, error)
 	// SetBoardProperties writes the named properties onto the board and removes
-	// the named ones, leaving everything else alone. This is how a board's
-	// automation is saved: the board is where it belongs, so the board is what
-	// is patched. remove is how a key that has been renamed stops existing —
-	// writing the new name without it would leave two answers on the board.
+	// the named ones, leaving everything else alone: the board is where they
+	// belong, so the board is what is patched. remove is how a key that has
+	// been renamed stops existing — writing the new name without it would leave
+	// two answers on the board.
 	SetBoardProperties(ctx context.Context, boardID string, props map[string]any, remove []string) error
 	// BoardColumnOptions is the board's own columns: the property they live on
-	// and every option of it. It is what binds a stage written before stages
-	// recorded an option id to the option it always meant, once, so nothing has
-	// to go on matching a column by its name (contradiction 5).
+	// and every option of it. Asked for every time rather than remembered — a
+	// column added this morning has to be offered this afternoon.
 	BoardColumnOptions(ctx context.Context, boardID string) ([]Column, error)
-	// CardProperties is the board's card fields, for the one thing a stage's
-	// declared outputs cannot say by themselves: what a value may be. A select
-	// takes one of its option names and nothing else, and until this the agent
-	// found that out by being refused.
+	// CardProperties is the board's card fields, for the one thing an agent
+	// cannot work out by itself: what a value may be. A select takes one of its
+	// option names and nothing else, and until this the agent found that out by
+	// being refused.
 	CardProperties(ctx context.Context, boardID string) ([]CardProperty, error)
 	// IsBoardTemplate says this board is one to copy rather than to work in.
 	// Nothing runs in a template — no card moves in it, no session starts from
@@ -177,8 +88,8 @@ type BoardMeta interface {
 
 // CardProperty is one field of a board's cards: what it is called, what kind of
 // value it takes, and — for a closed set — which values those are. Named rather
-// than identified, because that is how a stage declares a write and how
-// finish_work delivers one.
+// than identified, because that is how an agent is told about it and how
+// update_card names one.
 type CardProperty struct {
 	Name string `json:"name"`
 	Type string `json:"type"`

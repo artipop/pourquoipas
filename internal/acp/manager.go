@@ -70,7 +70,6 @@ type Manager struct {
 	// switchedOff is the app-wide AI switch (SetSwitchedOff). Nil means on.
 	switchedOff func() bool
 
-
 	// questions are what agents are waiting to hear back on: one entry per open
 	// question, keyed by its id (question.go). Its own lock — a question is
 	// registered from an agent's inbound request and answered from the UI, and

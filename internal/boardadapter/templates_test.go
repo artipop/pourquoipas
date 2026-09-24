@@ -149,18 +149,21 @@ func TestEveryTemplateCarriesTheSlugOfItsFile(t *testing.T) {
 	}
 }
 
-// What the selector offers has to be what the app can run: a template that
-// brings no columns and no routes is a board that does nothing when a card is
-// dragged, which is the one thing the upstream templates already are.
-func TestEveryTemplateBringsItsOwnAutomation(t *testing.T) {
+// A template carries what its boards tell their agents and which of its fields
+// hold the card's folder and branch. It used to carry a column registry and a
+// graph of routes as well; those are gone, and a template that still shipped
+// them would write dead data onto every board made from it.
+func TestATemplateCarriesWhatTheBoardStillKeeps(t *testing.T) {
 	for _, file := range embeddedTemplates(t) {
 		board := readTemplate(t, file)[0].Data
 		properties, _ := board.Fields["properties"].(map[string]any)
-		for _, key := range []string{"columns", "flows"} {
-			list, ok := properties[key].([]any)
-			if !ok || len(list) == 0 {
-				t.Errorf("%s (%s) ships no %s", file, board.Title, key)
+		for _, key := range []string{"columns", "flows", "outcomeProperty"} {
+			if _, ok := properties[key]; ok {
+				t.Errorf("%s (%s) still ships %s", file, board.Title, key)
 			}
+		}
+		if _, ok := properties["projectProperty"].(string); !ok {
+			t.Errorf("%s (%s) does not say which field holds the card's folder", file, board.Title)
 		}
 	}
 }

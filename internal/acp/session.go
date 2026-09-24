@@ -69,7 +69,7 @@ type Session struct {
 	// NodeID is the column this session is working under, by its option id.
 	// It is what a stall is recorded against, so a reason is drawn beside the
 	// column it is about.
-	NodeID string
+	NodeID       string
 	Worktree     WorktreeInfo
 	usedWorktree bool // a dedicated worktree was actually created
 
@@ -87,7 +87,6 @@ type Session struct {
 
 	mu          sync.Mutex
 	status      SessionStatus
-	outcome     string       // flow trigger the session ended with, when it is known
 	outcomeText string       // what to write on the card when the flow moves on
 	finalText   string       // the agent's closing words — what a comment condition on an edge reads
 	report      *stageReport // what finish_work said, once it has (stagereport.go)
@@ -129,14 +128,6 @@ func (s *Session) recordedBranch() string {
 	}
 }
 
-// setOutcome records the flow trigger the session's own work produced — a test
-// verdict, say — instead of the status the session ends in.
-func (s *Session) setOutcome(trigger, detail string) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.outcome, s.outcomeText = trigger, detail
-}
-
 // setFinalText keeps the agent's closing words for the route to read: an edge
 // may be conditional on what the agent said («READY TO DEPLOY»).
 func (s *Session) setFinalText(text string) {
@@ -149,25 +140,6 @@ func (s *Session) agentFinalText() string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.finalText
-}
-
-// flowOutcome is the event the session hands to its stage. A recorded outcome
-// wins; otherwise it follows from the final status, and a cancelled session
-// yields nothing at all — a human stepped in, so the route waits for them.
-func (s *Session) flowOutcome() (trigger, detail string) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.outcome != "" {
-		return s.outcome, s.outcomeText
-	}
-	switch s.status {
-	case StatusDone:
-		return OutcomeSuccess, "агент завершил работу"
-	case StatusFailed:
-		return OutcomeFailure, "сессия агента упала"
-	default:
-		return "", ""
-	}
 }
 
 // markMCPConfigured records that this session was started with an MCP server we

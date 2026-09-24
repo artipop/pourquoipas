@@ -390,7 +390,6 @@ func (m *Manager) registryFilled(registry string) bool {
 	return false
 }
 
-
 func (m *Manager) setupStates(boardID string) map[string]string {
 	out := map[string]string{}
 	if m.store == nil {
