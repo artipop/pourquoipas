@@ -45,8 +45,8 @@ Most of the first run is built. None of it needs replacing.
   board: it survives translation, it is editable, and it costs no UI.
 - **`tutorial_tour_tip/`** — the drawing half of a coach mark: a positioned
   bubble and a hole punched over a real element, measured from a selector.
-  Mechanically fine. It is the linear nine-step *script* around it that is
-  not.
+  Mechanically fine, and so is the tour built on it (`onboardingTour/`);
+  what is wrong is where the tour runs and what it says — step 1.
 - **`components/acp/attention.ts` and the event socket** — how the page
   already learns that something happened to a card, without polling.
 - **`docs/guide/`** — the manual. Onboarding points into it, never
@@ -66,22 +66,74 @@ somebody closer to that moment is not onboarding.
 
 Six pieces, each shippable on its own, in dependency order.
 
-### 1. Delete the Focalboard tour — half done
+### 1. Rebuild the Focalboard tour in place
 
-Gone already (the fork shrink, `docs/fork-shrink-removed.md`): `pages/welcome/`,
-`POST /teams/{teamID}/onboard` with `server/app/onboarding.go`, and
-`static/boards-welcome*.png` with the other unreferenced upstream images.
+The first version of this plan deleted the tour. It stays instead, in
+Focalboard's shape, and is taught about this product: the tree is kept close
+to upstream in structure and main features, and the tour's machinery is
+sound — what is wrong with it is where it runs and what it says.
 
-Left, all of it page code, and nothing blocks it any more — the Solid 2
-migration it waited for is done: `frontend/src/components/onboardingTour/` (twelve steps and their tests), the
-gifs they import from `src/assets/`, and the old preferences
-(`onboardingTourStarted`, `onboardingTourStep`, `tourCategory`), which
-`centerPanel.tsx`, `boardsSwitcher.tsx` and `boardTemplateSelector.tsx` still
-read; step 4 says what replaces them.
+**What is there.** `components/onboardingTour/` — twelve tips in four
+categories, `TOUR_BASE` (open a card) → `TOUR_CARD` (properties, comments,
+description) → `TOUR_BOARD` (add a view, copy a link, share the board) →
+`TOUR_SIDEBAR` (the sidebar, categories, search), ordered by `TOUR_ORDER` and
+numbered by `TourCategoriesMapToSteps`. Each tip is a `TourTipRenderer` over
+`tutorial_tour_tip/` (the bubble, the punched-out hole, the manager's
+next/skip/finish), mounted where its element is: `cardDetailProperties`,
+`commentsList`, `cardDetailContents`, `viewHeader`, `centerPanel`,
+`sidebarCategory`, `boardsSwitcher`. Progress is three user preferences —
+`onboardingTourStarted`, `tourCategory`, `onboardingTourStep` — and the tip
+texts were already rewritten for this product in `frontend/i18n`.
 
-Nothing routes any of it. It has now cost two rounds of work to rediscover
-that; leaving it in the tree guarantees a third. The `tutorial_tour_tip/`
-drawing code stays — step 4 uses it.
+**Why nobody has ever seen it.** Every tip asks whether the board is called
+«Welcome to Boards!» and the card «Create a new card» (`OnboardingBoardTitle`,
+`OnboardingCardTitle` in `cardDetail.tsx`, and a literal copy in
+`centerPanel.tsx`), and the tour is started only by picking a template of that
+name (`boardTemplateSelector.tsx`). No template is called that. Finding a
+board by its title is also exactly what this repository does not do.
+
+The work, in the order it becomes visible:
+
+1. **Run on a board by id, not by title.** A fourth preference,
+   `tourBoard`, written when the tour starts; every `isOnboardingBoard` asks
+   for it. The card tour starts on the first card opened on that board,
+   whatever it is called — «Where to start» is what the base tip points at,
+   but nothing checks its name. `OnboardingBoardTitle` and
+   `OnboardingCardTitle` go, and with them the `requireCard` title check.
+2. **Start it where a person already is.** Not from the template picker and
+   not from a `/welcome` screen: the last page of the setup wizard offers it
+   («Показать, как устроена доска»), on the board just set up. Step 6's
+   settings row restarts it (Settings → «The app itself»), as Focalboard's
+   own menu once did.
+3. **Say this product in the steps.** The categories stay; what is in them
+   changes, so the tour is about the one thing no other board does:
+
+   | Category | Steps |
+   |---|---|
+   | base | open a card — the tip over «Where to start» |
+   | card | the assignee field: an agent there is what starts work · the folder field · the description is the task · comments are where the agent answers |
+   | board | the columns: moving a card into one starts its agent, and the agent moves it on · «New» → «Talk it over with an agent…» · the board's ⋯ menu: prompt, folders, agents · add a view |
+   | sidebar | the inbox pinned on top, and what arrives there · categories · search |
+
+   «Copy the link» and «Share the board» stay as Focalboard features but only
+   where they work: the share step only in team mode (`teamMode`), where the
+   button is drawn at all.
+4. **Steps depend on what is switched on.** With agents off
+   (`aiEnabled`) the card and board steps about agents are left out, the way
+   every `is…Available()` already leaves them out of the page. So
+   `TourCategoriesMapToSteps` becomes a function of the switch and the mode,
+   and the manager's "last step" logic reads it instead of a constant map.
+5. **Images.** The five gifs in `src/assets/` show Focalboard's UI. Tips go
+   without images until they can be recorded from this app; `changeViews.gif`
+   may survive for «add a view» if it still matches.
+6. **Tests and the guide.** The tip tests exist per step and move with them
+   (`onboardingTour/*/…test.tsx`, plus `cardDetail`, `centerPanel` and the
+   template selector, which read the old titles). `docs/guide/` gets a line
+   saying where the tour starts and how to see it again.
+
+Verified the way this document says everything here is: a clean data
+directory, a browser, the whole path — template → wizard → tour → a card
+moved into a column with an agent on it.
 
 ### 2. End the wizard with a first task
 
@@ -119,7 +171,7 @@ and never comes back.
 Driven by the events already on the socket — the same ones
 `components/acp/attention.ts` subscribes to. No polling, no new API.
 
-### 4. Contextual hints, one at a time, never a tour
+### 4. Contextual hints, one at a time, after the tour
 
 Everything else worth learning happens at a moment that arrives on its own.
 Tie each hint to its moment rather than to a position in a script:
@@ -131,11 +183,14 @@ Tie each hint to its moment rather than to a position in a script:
 | A card first arrives in «Входящие» | something outside brought this in; it waits here until you move it to the board it belongs on |
 | «Changes» first appears on a card | what the agent changed in the folder, read from git |
 
-Each is independent, shown once, drawn with `tutorial_tour_tip/`.
+Each is independent, shown once, drawn with `tutorial_tour_tip/` — the same
+machinery as the tour, which walks a person through the board once; these
+arrive later, at moments the tour cannot schedule.
 
-**Store them as a set, not a counter.** The old design had `tourCategory`
-plus `onboardingTourStep`, which forced a total order and made "show me that
-one again" meaningless. A `shownHints` preference holding ids lets hints be
+**Store them as a set, not a counter.** The tour keeps Focalboard's
+`tourCategory` plus `onboardingTourStep`, because a tour is a script and its
+order is the point; hints are not, and a counter would force a total order on
+them and make "show me that one again" meaningless. A `shownHints` preference holding ids lets hints be
 added, removed and reordered without a migration, and lets one be cleared
 alone.
 
@@ -157,10 +212,11 @@ layered over it. Prose belongs there; the app itself stays short.
 
 ### 6. Only then, a settings entry
 
-Once hints exist as a set, Settings → «The app itself» can carry a row
-that clears `shownHints`, and it will mean something. Adding it before there
-was anything to replay is what produced a button that cleared four
-preferences and navigated to a route that no longer existed.
+Once the tour runs (step 1) and hints exist as a set, Settings → «The app
+itself» can carry a row that starts the tour again and clears `shownHints`,
+and it will mean something. Adding it before there was anything to replay is
+what produced a button that cleared four preferences and navigated to a route
+that no longer existed.
 
 ## How each piece gets verified
 
