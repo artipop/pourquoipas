@@ -14,11 +14,14 @@ import (
 // whether the board was a Mattermost plugin, which it cannot be any more. sku
 // went with them — it existed to say "suite" for that same edition.
 type ServerMetadata struct {
-	Version   string `json:"version"`
-	DBType    string `json:"db_type"`
-	DBVersion string `json:"db_version"`
-	OSType    string `json:"os_type"`
-	OSArch    string `json:"os_arch"`
+	Version string `json:"version"`
+	// Capabilities is what this server answers beyond Focalboard's API, by name
+	// (model.Capabilities); a client checks for a name, never for a version.
+	Capabilities []string `json:"capabilities"`
+	DBType       string   `json:"db_type"`
+	DBVersion    string   `json:"db_version"`
+	OSType       string   `json:"os_type"`
+	OSArch       string   `json:"os_arch"`
 }
 
 func (a *App) GetServerMetadata() *ServerMetadata {
@@ -30,10 +33,11 @@ func (a *App) GetServerMetadata() *ServerMetadata {
 	}
 
 	return &ServerMetadata{
-		Version:   model.CurrentVersion,
-		DBType:    dbType,
-		DBVersion: dbVersion,
-		OSType:    runtime.GOOS,
-		OSArch:    runtime.GOARCH,
+		Version:      model.CurrentVersion,
+		Capabilities: model.Capabilities,
+		DBType:       dbType,
+		DBVersion:    dbVersion,
+		OSType:       runtime.GOOS,
+		OSArch:       runtime.GOARCH,
 	}
 }

@@ -74,6 +74,10 @@ and the folders stay on your machine.
 3. **«Connect»**, then **restart the app**: which board it works is decided
    when it starts.
 
+If the server is older than the app and lacks something the app needs, the
+connection is refused: the app says which version the server is and what it is
+missing. Update the server to the app's version or newer.
+
 The password is not kept — what is stored is the session it buys. **«Work this
 machine's own board»** disconnects the app from the server; everything made on
 the server stays there.

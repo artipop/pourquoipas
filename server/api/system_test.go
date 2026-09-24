@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"runtime"
 	"testing"
 
@@ -50,14 +51,16 @@ func TestPing(t *testing.T) {
 		}
 
 		want := app.ServerMetadata{
-			Version:   model.CurrentVersion,
-			DBType:    "",
-			DBVersion: "",
-			OSType:    runtime.GOOS,
-			OSArch:    runtime.GOARCH,
+			Version:      model.CurrentVersion,
+			Capabilities: model.Capabilities,
+			DBType:       "",
+			DBVersion:    "",
+			OSType:       runtime.GOOS,
+			OSArch:       runtime.GOARCH,
 		}
 
-		if got != want {
+		// What a desktop reads before it joins: every capability, by name.
+		if !reflect.DeepEqual(got, want) {
 			t.Errorf("got %q want %q", got, want)
 		}
 
