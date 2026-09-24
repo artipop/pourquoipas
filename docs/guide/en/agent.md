@@ -129,6 +129,24 @@ worked it. The panel says so: the work has not started, or it started on another
 machine — a working copy lives on the machine the agent worked on and does not
 travel with the card.
 
+## The history: who did what to the card
+
+The card's toolbar has a **«История»** button. It opens a list of what happened
+to the card on the right, newest first:
+
+- who made it;
+- who renamed it, and to what;
+- who changed a field and how: “Статус”: В работе → Готово;
+- who wrote a comment — and what it said.
+
+The names are real. Every registered agent has a board account of its own, and
+its writes are signed by it rather than by you: the history shows that the agent
+moved the card and that you set the date.
+
+Every card has one, even one nobody has touched: being made is an entry too. It
+lives on the board itself and travels with it into an export and onto another
+machine.
+
 ## What is visible on the card
 
 The branch and the directory are on the line under the card's title; the agent's

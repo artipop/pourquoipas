@@ -332,7 +332,7 @@ func (m *Manager) UpdateCardFromTools(ctx context.Context, token, cardID string,
 		return fmt.Errorf("не сказано, что менять")
 	}
 	edit.Property = g.Property
-	if err := m.forCard(ev.CardID).Writer.UpdateCard(ctx, ev.CardID, edit); err != nil {
+	if err := m.forCard(ev.CardID).Writer.UpdateCard(m.asGrantedAgent(ctx, g), ev.CardID, edit); err != nil {
 		return err
 	}
 	// A move the agent made is the result of its run, not a new one: the board
@@ -366,6 +366,7 @@ func (m *Manager) SetFieldsFromTools(ctx context.Context, token, cardID string, 
 		return fmt.Errorf("доска недоступна")
 	}
 	writer := m.forCard(ev.CardID).Writer
+	ctx = m.asGrantedAgent(ctx, g)
 	known := map[string]bool{}
 	for _, p := range m.boardCardProperties(g.BoardID) {
 		known[strings.ToLower(p.Name)] = true
@@ -393,7 +394,7 @@ func (m *Manager) SetFieldsFromTools(ctx context.Context, token, cardID string, 
 // having — the same place a session's report goes, so a person reading the card
 // later finds one history and not two.
 func (m *Manager) CommentFromTools(ctx context.Context, token, cardID, text string) error {
-	_, ev, err := m.grantedCard(ctx, token, cardID)
+	g, ev, err := m.grantedCard(ctx, token, cardID)
 	if err != nil {
 		return err
 	}
@@ -403,7 +404,7 @@ func (m *Manager) CommentFromTools(ctx context.Context, token, cardID, text stri
 	if m.writer == nil {
 		return fmt.Errorf("доска недоступна")
 	}
-	if err := m.forCard(ev.CardID).Writer.AddComment(ctx, ev.CardID, text); err != nil {
+	if err := m.forCard(ev.CardID).Writer.AddComment(m.asGrantedAgent(ctx, g), ev.CardID, text); err != nil {
 		return err
 	}
 	// On its own card, this is the stage's report, and the one comment the
@@ -432,7 +433,7 @@ func (m *Manager) CreateCardFromTools(ctx context.Context, token string, card Ne
 	card.BoardID = g.BoardID
 	card.Property = g.Property
 
-	id, err := m.forBoard(card.BoardID).Writer.CreateCard(ctx, card)
+	id, err := m.forBoard(card.BoardID).Writer.CreateCard(m.asGrantedAgent(ctx, g), card)
 	if err != nil {
 		return "", err
 	}

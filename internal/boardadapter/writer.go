@@ -12,6 +12,7 @@ import (
 	"github.com/artipop/xciii/server/utils"
 
 	"github.com/artipop/xciii/internal/acp"
+	"github.com/artipop/xciii/internal/author"
 	"github.com/artipop/xciii/internal/boardmodel"
 )
 
@@ -61,17 +62,29 @@ func (w *Writer) AddComment(ctx context.Context, cardID, text string) error {
 		ParentID: cardID,
 		Type:     model.TypeComment,
 		Title:    text,
-		// A session's report and a person's comment are both written by the
-		// single user this app runs as, so the author cannot tell them apart.
-		// The card draws them differently — one is a log entry, the other is
-		// somebody talking — and this is what it reads to know which.
+		// The card draws an agent's comment differently from a person's — one
+		// is a report, the other is somebody talking — and this is what it
+		// reads to know which. The author says *which* agent; this says that
+		// it is one, which is still the question on a board whose agents have
+		// no accounts yet.
 		Fields:    map[string]any{"agent": true},
-		CreatedBy: model.SingleUser,
+		CreatedBy: w.author(ctx),
 		CreateAt:  now,
 		UpdateAt:  now,
 	}
-	_, err = w.app.InsertBlocksAndNotify([]*model.Block{block}, model.SingleUser, true)
+	_, err = w.app.InsertBlocksAndNotify([]*model.Block{block}, w.author(ctx), true)
 	return err
+}
+
+// author is whose this write is. An agent's run says so on the context
+// (internal/author), and without that the board takes the write as the
+// single user it runs as — which is what every write was before the card kept
+// a history worth reading.
+func (w *Writer) author(ctx context.Context) string {
+	if who := author.From(ctx); who != "" {
+		return who
+	}
+	return model.SingleUser
 }
 
 // MoveCard sets the card's select property to optionID (post-MVP: used to
@@ -101,7 +114,7 @@ func (w *Writer) MoveCard(ctx context.Context, cardID, optionID string) error {
 	if propID == "" {
 		return fmt.Errorf("no select property on board %s has option %s", board.ID, optionID)
 	}
-	return w.patchCard(cardID, &model.CardPatch{UpdatedProperties: map[string]any{propID: optionID}}, true)
+	return w.patchCard(ctx, cardID, &model.CardPatch{UpdatedProperties: map[string]any{propID: optionID}}, true)
 }
 
 // MoveCardByOptionName moves a card to a column named in the config rather than
@@ -124,7 +137,7 @@ func (w *Writer) MoveCardByOptionName(ctx context.Context, cardID, propertyName,
 	if !ok {
 		return fmt.Errorf("на доске %s нет колонки %q в свойстве %q", board.ID, optionName, propertyName)
 	}
-	return w.patchCard(cardID, &model.CardPatch{UpdatedProperties: map[string]any{propID: optionID}}, true)
+	return w.patchCard(ctx, cardID, &model.CardPatch{UpdatedProperties: map[string]any{propID: optionID}}, true)
 }
 
 // UpdateCard changes an existing card the way a person editing it would: its
@@ -158,7 +171,7 @@ func (w *Writer) UpdateCard(ctx context.Context, cardID string, edit acp.CardEdi
 	if err != nil {
 		return err
 	}
-	return w.patchCard(cardID, patch, false)
+	return w.patchCard(ctx, cardID, patch, false)
 }
 
 // SetCardText writes one text property of a card, by id. Silent: it is the
@@ -168,7 +181,7 @@ func (w *Writer) SetCardText(ctx context.Context, cardID, propertyID, value stri
 	if strings.TrimSpace(propertyID) == "" {
 		return nil
 	}
-	return w.patchCard(cardID, &model.CardPatch{UpdatedProperties: map[string]any{propertyID: value}}, true)
+	return w.patchCard(ctx, cardID, &model.CardPatch{UpdatedProperties: map[string]any{propertyID: value}}, true)
 }
 
 // SetCardOption writes one select property by id, choosing the option whose
@@ -201,7 +214,7 @@ func (w *Writer) SetCardOption(ctx context.Context, cardID, propertyID, optionNa
 	}
 	for oid, opt := range def.Options {
 		if strings.EqualFold(opt.Value, optionName) {
-			return w.patchCard(cardID, &model.CardPatch{UpdatedProperties: map[string]any{propertyID: oid}}, true)
+			return w.patchCard(ctx, cardID, &model.CardPatch{UpdatedProperties: map[string]any{propertyID: oid}}, true)
 		}
 	}
 	return fmt.Errorf("у свойства %q нет значения %q", def.Name, optionName)
@@ -251,7 +264,7 @@ func (w *Writer) SetCardFields(ctx context.Context, cardID string, fields map[st
 		}
 		properties[propID] = value
 	}
-	return w.patchCard(cardID, &model.CardPatch{UpdatedProperties: properties}, true)
+	return w.patchCard(ctx, cardID, &model.CardPatch{UpdatedProperties: properties}, true)
 }
 
 // AddCardProperty adds a text property to the card's board, unless one of that
@@ -277,7 +290,7 @@ func (w *Writer) AddCardProperty(ctx context.Context, cardID, name string) error
 		return nil
 	}
 	patch := &model.BoardPatch{UpdatedCardProperties: []map[string]any{textProperty(name)}}
-	if _, err := w.app.PatchBoard(patch, card.BoardID, model.SingleUser); err != nil {
+	if _, err := w.app.PatchBoard(patch, card.BoardID, w.author(ctx)); err != nil {
 		return fmt.Errorf("add the property %q to board %s: %w", name, card.BoardID, err)
 	}
 	return nil
@@ -297,7 +310,7 @@ func textProperty(name string) map[string]any {
 // same and then convert the result back into a Card, which fails for a card
 // whose contentOrder is not a list — and a write that landed must not be
 // reported as an error because the answer could not be rendered.
-func (w *Writer) patchCard(cardID string, patch *model.CardPatch, disableNotify bool) error {
+func (w *Writer) patchCard(ctx context.Context, cardID string, patch *model.CardPatch, disableNotify bool) error {
 	if len(patch.UpdatedProperties) > 0 {
 		block, err := w.app.GetBlockByID(cardID)
 		if err != nil {
@@ -309,7 +322,7 @@ func (w *Writer) patchCard(cardID string, patch *model.CardPatch, disableNotify 
 	if err != nil {
 		return err
 	}
-	_, err = w.app.PatchBlockAndNotify(cardID, blockPatch, model.SingleUser, disableNotify)
+	_, err = w.app.PatchBlockAndNotify(cardID, blockPatch, w.author(ctx), disableNotify)
 	return err
 }
 
@@ -361,7 +374,7 @@ func (w *Writer) ColumnProperty(ctx context.Context, boardID string) (string, er
 // ensureLinkProperty returns the id of the board's url property, adding one if
 // it has none. A card from a source is the only thing that asks for it, so a
 // board nothing arrives on never grows the field.
-func (w *Writer) ensureLinkProperty(boardID string) (string, error) {
+func (w *Writer) ensureLinkProperty(ctx context.Context, boardID string) (string, error) {
 	board, err := w.app.GetBoard(boardID)
 	if err != nil {
 		return "", fmt.Errorf("get board %s: %w", boardID, err)
@@ -381,7 +394,7 @@ func (w *Writer) ensureLinkProperty(boardID string) (string, error) {
 		"options": []any{},
 	}
 	patch := &model.BoardPatch{UpdatedCardProperties: []map[string]any{prop}}
-	if _, err := w.app.PatchBoard(patch, boardID, model.SingleUser); err != nil {
+	if _, err := w.app.PatchBoard(patch, boardID, w.author(ctx)); err != nil {
 		return "", fmt.Errorf("add the link property to board %s: %w", boardID, err)
 	}
 	return propID, nil
@@ -416,14 +429,14 @@ func (w *Writer) AttachFile(ctx context.Context, cardID, filename, mime string, 
 		Type:      blockType,
 		Title:     filename,
 		Fields:    map[string]any{"fileId": fileID},
-		CreatedBy: model.SingleUser,
+		CreatedBy: w.author(ctx),
 		CreateAt:  now,
 		UpdateAt:  now,
 	}
-	if _, err := w.app.InsertBlocksAndNotify([]*model.Block{block}, model.SingleUser, true); err != nil {
+	if _, err := w.app.InsertBlocksAndNotify([]*model.Block{block}, w.author(ctx), true); err != nil {
 		return fmt.Errorf("insert %s block: %w", blockType, err)
 	}
-	return w.appendContent(cardID, block.ID)
+	return w.appendContent(ctx, cardID, block.ID)
 }
 
 // CreateCard puts a new card on a board, in the column the spec names, with its
@@ -468,7 +481,7 @@ func (w *Writer) CreateCard(ctx context.Context, spec acp.NewCard) (string, erro
 	// was supposed to happen to it next.
 	card, err := w.app.CreateCard(
 		&model.Card{Title: spec.Title, Properties: properties, ContentOrder: []string{}},
-		board.ID, model.SingleUser, true,
+		board.ID, w.author(ctx), true,
 	)
 	if err != nil {
 		return "", err
@@ -485,16 +498,16 @@ func (w *Writer) CreateCard(ctx context.Context, spec acp.NewCard) (string, erro
 		Type:      model.TypeText,
 		Title:     spec.Body,
 		Fields:    map[string]any{},
-		CreatedBy: model.SingleUser,
+		CreatedBy: w.author(ctx),
 		CreateAt:  now,
 		UpdateAt:  now,
 	}
-	if _, err := w.app.InsertBlocksAndNotify([]*model.Block{body}, model.SingleUser, true); err != nil {
+	if _, err := w.app.InsertBlocksAndNotify([]*model.Block{body}, w.author(ctx), true); err != nil {
 		// The card exists and is the point; a description that did not land is
 		// worth reporting, not worth pretending the card was never made.
 		return card.ID, fmt.Errorf("карточка создана, но описание не сохранилось: %w", err)
 	}
-	if err := w.appendContent(card.ID, body.ID); err != nil {
+	if err := w.appendContent(ctx, card.ID, body.ID); err != nil {
 		return card.ID, fmt.Errorf("карточка создана, но описание не встало в неё: %w", err)
 	}
 	return card.ID, nil
@@ -504,7 +517,7 @@ func (w *Writer) CreateCard(ctx context.Context, spec acp.NewCard) (string, erro
 // contentOrder is patched rather than model.CardPatch's flat []string, because
 // the field may hold nested arrays (side-by-side rows) that flattening would
 // silently rearrange.
-func (w *Writer) appendContent(cardID, blockID string) error {
+func (w *Writer) appendContent(ctx context.Context, cardID, blockID string) error {
 	block, err := w.app.GetBlockByID(cardID)
 	if err != nil {
 		return fmt.Errorf("get card block %s: %w", cardID, err)
@@ -512,7 +525,7 @@ func (w *Writer) appendContent(cardID, blockID string) error {
 	patch := &model.BlockPatch{UpdatedFields: map[string]any{
 		"contentOrder": appendContentOrder(block.Fields, blockID),
 	}}
-	_, err = w.app.PatchBlockAndNotify(cardID, patch, model.SingleUser, true)
+	_, err = w.app.PatchBlockAndNotify(cardID, patch, w.author(ctx), true)
 	return err
 }
 
@@ -527,12 +540,12 @@ func appendContentOrder(fields map[string]any, blockID string) []any {
 }
 
 // patchCardFields writes our own keys on a card, silently.
-func (w *Writer) patchCardFields(cardID string, patch *model.BlockPatch) error {
+func (w *Writer) patchCardFields(ctx context.Context, cardID string, patch *model.BlockPatch) error {
 	if _, err := w.cardBlock(cardID); err != nil {
 		return err
 	}
 	return boardmodel.RetryOnceInTheSameMillisecond(func() error {
-		_, err := w.app.PatchBlockAndNotify(cardID, patch, model.SingleUser, true)
+		_, err := w.app.PatchBlockAndNotify(cardID, patch, w.author(ctx), true)
 		return err
 	})
 }

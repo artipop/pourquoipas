@@ -486,6 +486,26 @@ wrote in its comment, and where the card stands is where somebody put it.
 `/acp/diff/:cardId` is the window, because a column beside a card is the
 narrowest place in the app to read code in.
 
+**And who did what is `blocks_history`, read at last** (`server/app/
+cardhistory.go`, `GET /cards/{cardID}/history`, `cardHistory.tsx`). The board
+has always kept a full copy of every block on every write, stamped with the id
+of whoever made it, and nothing ever read it: the card could say what it says
+now and never who made it say that. The entries are the difference between
+consecutive copies — a title rewritten, a property filled in, a card moved —
+plus one per comment. Computed on the server rather than on the page for two
+reasons: those rows reach the page through no other door, and naming a property
+or an option needs the board's schema, which is there.
+
+**Which is only an answer if the writes are signed.** On a desktop the board
+runs single-user, so every write — a person's and an agent's alike — arrived as
+`model.SingleUser`, and a history built on that could only ever say "you". An
+agent already has a board account (`AgentEntry.UserID`, the same one its cards
+name it by), so a run says on the context whose its writes are (`internal/
+author`, a leaf package both sides can import; `asagent.go` sets it, `Writer`
+reads it). Anything that does not set it writes as the single user, exactly as
+before. The comment an agent writes through `comment_card` is signed by it, and
+so is the fallback this side writes when it did not.
+
 **And the button is drawn on a count, not on hope** (`card_changes`,
 `CardChanges`). It appears only where there is something to read: a button that
 opened «ничего не изменено» is a button nobody can learn. The dialog's answer is

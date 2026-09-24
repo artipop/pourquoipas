@@ -32,6 +32,7 @@ import BoardPermissionGate from './permissions/boardPermissionGate'
 
 import CardDiffPanel, {isCardDiffAvailable} from './acp/cardDiff'
 import CardComments from './cardDetail/cardComments'
+import CardHistory from './cardDetail/cardHistory'
 import {cardAgentState, refreshCardAgent} from './acp/cardAgentState'
 import {onAgentEvent} from './acp/agentEvents'
 
@@ -70,8 +71,8 @@ const CardDialog = (props: Props): JSX.Element => {
     // (docs/teamwork.md); the changes are what the work amounts to. Both are
     // about the card without being part of it, which is why neither is in its
     // body.
-    const [side, setSide] = createSignal<'' | 'comments' | 'diff'>('')
-    const toggleSide = (which: 'comments' | 'diff') => setSide(side() === which ? '' : which)
+    const [side, setSide] = createSignal<'' | 'comments' | 'diff' | 'history'>('')
+    const toggleSide = (which: 'comments' | 'diff' | 'history') => setSide(side() === which ? '' : which)
     const makeTemplateClicked = async () => {
         const currentCard = card()
         if (!currentCard) {
@@ -300,6 +301,23 @@ const CardDialog = (props: Props): JSX.Element => {
         </Show>
     )
 
+    // Every card has one, because every write the board took left a row: even
+    // a card nobody has touched since it was made says who made it and when.
+    const historyBtn = (): JSX.Element => (
+        <Show when={Boolean(card()) && !isTemplate()}>
+            <Button
+                icon={<CompassIcon icon='clock-outline'/>}
+                class='cardFollowBtn cardFollowBtn--attach'
+                emphasis='gray'
+                size='medium'
+                active={side() === 'history'}
+                onClick={() => toggleSide('history')}
+            >
+                {intl.formatMessage({id: 'CardHistory.title-panel', defaultMessage: 'History'})}
+            </Button>
+        </Show>
+    )
+
     return (
         <>
             <Dialog
@@ -307,7 +325,7 @@ const CardDialog = (props: Props): JSX.Element => {
                 class='cardDialog'
                 onClose={props.onClose}
                 toolsMenu={!props.readonly && menu()}
-                toolbar={<>{diffBtn()}{commentsBtn()}{attachBtn()}</>}
+                toolbar={<>{historyBtn()}{diffBtn()}{commentsBtn()}{attachBtn()}</>}
             >
                 <Show when={isTemplate()}>
                     <div class='banner'>
@@ -351,7 +369,7 @@ const CardDialog = (props: Props): JSX.Element => {
                         </Show>
                     </div>
 
-                    <Show when={side() === 'comments' || side() === 'diff'}>
+                    <Show when={side() !== ''}>
                         <div class='cardDialog__side'>
                             <Show when={side() === 'comments'}>
                                 <CardComments
@@ -364,6 +382,12 @@ const CardDialog = (props: Props): JSX.Element => {
                             </Show>
                             <Show when={side() === 'diff'}>
                                 <CardDiffPanel
+                                    cardId={props.cardId}
+                                    onClose={() => setSide('')}
+                                />
+                            </Show>
+                            <Show when={side() === 'history'}>
+                                <CardHistory
                                     cardId={props.cardId}
                                     onClose={() => setSide('')}
                                 />

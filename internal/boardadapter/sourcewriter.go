@@ -87,7 +87,7 @@ func (w *SourceWriter) CreateCard(ctx context.Context, boardID string, spec Card
 	// property of its own for the link still wins — it was written against this
 	// board by somebody looking at it.
 	if url := strings.TrimSpace(spec.URL); url != "" {
-		if id, err := w.ensureLinkProperty(boardID); err == nil {
+		if id, err := w.ensureLinkProperty(ctx, boardID); err == nil {
 			if _, taken := properties[id]; !taken {
 				properties[id] = url
 			}
@@ -114,13 +114,13 @@ func (w *SourceWriter) CreateCard(ctx context.Context, boardID string, spec Card
 	// Which item of which source this card came from goes on the card, so the
 	// board itself answers "have we brought this one already" — this machine's
 	// table cannot, on a board that came from another machine.
-	if err := w.setCardSource(created.ID, spec.Source, spec.Item); err != nil {
+	if err := w.setCardSource(ctx, created.ID, spec.Source, spec.Item); err != nil {
 		w.logSourceOrigin(created.ID, err)
 	}
 	if strings.TrimSpace(spec.Body) == "" {
 		return created.ID, nil
 	}
-	if err := w.appendText(created.ID, boardID, spec.Body); err != nil {
+	if err := w.appendText(ctx, created.ID, boardID, spec.Body); err != nil {
 		// The card exists and is the useful half; a missing body is worth
 		// reporting, not worth pretending the card was never created.
 		return created.ID, err
@@ -130,7 +130,7 @@ func (w *SourceWriter) CreateCard(ctx context.Context, boardID string, spec Card
 
 // appendText adds a text block to the end of the card's content — the two-step
 // write AttachFile already does, and the only way a card gets a description.
-func (w *Writer) appendText(cardID, boardID, text string) error {
+func (w *Writer) appendText(ctx context.Context, cardID, boardID, text string) error {
 	now := utils.GetMillis()
 	block := &model.Block{
 		ID:        utils.NewID(model.BlockType2IDType(model.TypeText)),
@@ -145,7 +145,7 @@ func (w *Writer) appendText(cardID, boardID, text string) error {
 	if _, err := w.app.InsertBlocksAndNotify([]*model.Block{block}, model.SingleUser, true); err != nil {
 		return fmt.Errorf("insert text block: %w", err)
 	}
-	return w.appendContent(cardID, block.ID)
+	return w.appendContent(ctx, cardID, block.ID)
 }
 
 // cardProperties resolves named properties against the board's schema: a select
@@ -167,7 +167,7 @@ func (w *Writer) appendText(cardID, boardID, text string) error {
 // working with it switched off (docs/sources.md §18).
 // setCardSource records the origin. A card with no origin — one a person typed
 // — is left alone rather than given an empty key.
-func (w *Writer) setCardSource(cardID, source string, ref sources.ItemRef) error {
+func (w *Writer) setCardSource(ctx context.Context, cardID, source string, ref sources.ItemRef) error {
 	if strings.TrimSpace(source) == "" || strings.TrimSpace(ref.ExternalID) == "" {
 		return nil
 	}
@@ -176,7 +176,7 @@ func (w *Writer) setCardSource(cardID, source string, ref sources.ItemRef) error
 		"externalId": ref.ExternalID,
 		"version":    ref.Version,
 	}
-	return w.patchCardFields(cardID, &model.BlockPatch{UpdatedFields: map[string]any{boardmodel.CardFieldSource: field}})
+	return w.patchCardFields(ctx, cardID, &model.BlockPatch{UpdatedFields: map[string]any{boardmodel.CardFieldSource: field}})
 }
 
 // CardBySourceItem asks the board whether this source has already brought this

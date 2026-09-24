@@ -25,6 +25,7 @@ func (a *API) registerCardsRoutes(r *web.Router) {
 	r.HandleFunc("PATCH /cards/{cardID}", a.sessionRequired(a.handlePatchCard))
 	r.HandleFunc("GET /cards/{cardID}", a.sessionRequired(a.handleGetCard))
 	r.HandleFunc("POST /cards/{cardID}/move", a.sessionRequired(a.handleMoveCard))
+	r.HandleFunc("GET /cards/{cardID}/history", a.sessionRequired(a.handleGetCardHistory))
 }
 
 func (a *API) handleCreateCard(w http.ResponseWriter, r *http.Request) {
@@ -464,4 +465,64 @@ func (a *API) handleGetCard(w http.ResponseWriter, r *http.Request) {
 	// response
 	jsonBytesResponse(w, http.StatusOK, data)
 
+}
+
+func (a *API) handleGetCardHistory(w http.ResponseWriter, r *http.Request) {
+	// swagger:operation GET /cards/{cardID}/history getCardHistory
+	//
+	// Returns what was done to the card, and by whom, newest first.
+	//
+	// ---
+	// produces:
+	// - application/json
+	// parameters:
+	// - name: cardID
+	//   in: path
+	//   description: Card ID
+	//   required: true
+	//   type: string
+	// security:
+	// - BearerAuth: []
+	// responses:
+	//   '200':
+	//     description: success
+	//   default:
+	//     description: internal error
+	//     schema:
+	//       "$ref": "#/definitions/ErrorResponse"
+
+	userID := getUserID(r)
+	cardID := r.PathValue("cardID")
+
+	card, err := a.app.GetCardByID(cardID)
+	if err != nil {
+		message := fmt.Sprintf("could not fetch card %s: %s", cardID, err)
+		a.errorResponse(w, r, model.NewErrBadRequest(message))
+		return
+	}
+
+	// Reading the history is reading the card: anybody who may open it may see
+	// who has touched it.
+	if !a.permissions.HasPermissionToBoard(userID, card.BoardID, model.PermissionViewBoard) {
+		a.errorResponse(w, r, model.NewErrPermission("access denied to fetch card history"))
+		return
+	}
+
+	entries, err := a.app.GetCardHistory(cardID)
+	if err != nil {
+		a.errorResponse(w, r, err)
+		return
+	}
+
+	a.logger.Debug("GetCardHistory",
+		mlog.String("cardID", cardID),
+		mlog.Int("entries", len(entries)),
+	)
+
+	data, err := json.Marshal(entries)
+	if err != nil {
+		a.errorResponse(w, r, err)
+		return
+	}
+	jsonBytesResponse(w, http.StatusOK, data)
 }

@@ -236,6 +236,12 @@ server.
   never cached, the committed half read by branch name because the copy is
   folded away when a stage ends; the button is drawn on a stored count
   (`card_changes`).
+- **The card's history is `blocks_history`, diffed** (`server/app/cardhistory.go`,
+  `GET /cards/{cardID}/history`, `cardHistory.tsx`): every write already left a
+  copy of the block with its author, and the entries are the difference between
+  consecutive copies. **Who** is a board account id, so an agent's writes are
+  the agent's: a run says so on the context (`internal/author`, `asagent.go`),
+  and `boardadapter.Writer` stamps it instead of `model.SingleUser`.
 - **Planning is a conversation with no card** (`planning.go`,
   `planningDialog.tsx`): read-only policy, several turns, and the cards it
   agrees on are created through the board tools.

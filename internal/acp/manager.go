@@ -674,16 +674,23 @@ func (m *Manager) emitSession(s *Session, errText string) {
 }
 
 func (m *Manager) comment(s *Session, text string) {
-	m.commentCard(s.CardID, text)
+	// Signed by the agent whose run it reports, not by the app: this comment is
+	// the fallback for an agent that did not write its own, and reading it as
+	// the owner's would be the card telling a person they said it.
+	m.commentAs(s, s.CardID, text)
 }
 
 func (m *Manager) commentCard(cardID, text string) {
+	m.commentAs(nil, cardID, text)
+}
+
+func (m *Manager) commentAs(s *Session, cardID, text string) {
 	if cardID == "" {
 		return // nothing to report to
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	if err := m.forCard(cardID).Writer.AddComment(ctx, cardID, text); err != nil {
+	if err := m.forCard(cardID).Writer.AddComment(m.asAgent(ctx, s), cardID, text); err != nil {
 		m.log.Error("acp: failed to add card comment", "card", cardID, "err", err)
 	}
 }
