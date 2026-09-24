@@ -85,3 +85,16 @@ finished. «Done», «In review», «Blocked» are sentences, not settings.
 
 The board's first column is separated from the rest by a vertical rule. What
 arrives is to the left of it; what the board does with it is to the right.
+
+## A card in another app
+
+A card can be dragged off the board into another app — for example, a terminal
+where an agent runs. Hover over the card: a grip appears at its left edge with
+the hint «Drag the card into another app, such as a terminal». Pull it and
+release the card over the other app's window.
+
+The app receives the card as Markdown text: the title, the filled-in fields as
+«Field: value», and the description. Images and attachments are left out. A
+terminal puts the text on its command line, as a paste from the clipboard would.
+
+Dragging the card itself still moves it between columns.

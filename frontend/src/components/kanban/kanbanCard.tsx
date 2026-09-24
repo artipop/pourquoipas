@@ -19,6 +19,10 @@ import CardActionsMenuIcon from '../cardActionsMenu/cardActionsMenuIcon'
 import {attentionHeading, useCardAttention} from '../acp/attention'
 import {findWorkdirProperty} from '../acp/workdirSync'
 import {aiEnabled} from '../../aiSwitch'
+import {cardAsText} from '../../cardText'
+import {useAppStore} from '../../store/hooks'
+import {getCardContents} from '../../store/contents'
+import GripIcon from '../../widgets/icons/grip'
 
 export const OnboardingCardClassName = 'onboardingCard'
 
@@ -104,6 +108,35 @@ const KanbanCard = (props: Props) => {
         return name
     }
 
+    // Out of the window rather than across the board: the browser's own drag,
+    // which is the only one another application can receive, from a grip of its
+    // own. The card is dnd-kit's, and a natively draggable card makes the two
+    // drags race (the test below the snapshot says how). The grip keeps its
+    // pointerdown from the card, so dnd-kit never hears the press at all.
+    //
+    // Contents are read when the drag starts rather than subscribed to: every
+    // card on the board would otherwise watch its description for a gesture
+    // made once in a while.
+    const store = useAppStore()
+    const offerCard = (e: DragEvent) => {
+        if (!e.dataTransfer) {
+            return
+        }
+        const contents = getCardContents(props.card.id)(store.state)
+        e.dataTransfer.effectAllowed = 'copy'
+        e.dataTransfer.setData('text/plain', cardAsText(props.card, props.board, contents, intl))
+        const cardElement = (e.currentTarget as HTMLElement).closest('.KanbanCard')
+        if (cardElement) {
+            const rect = cardElement.getBoundingClientRect()
+            e.dataTransfer.setDragImage(cardElement, e.clientX - rect.left, e.clientY - rect.top)
+        }
+    }
+
+    // On the element itself: Solid delegates onPointerDown to the document,
+    // which is after dnd-kit's own listener on the card has taken the press.
+    const keepPressFromCard = (el: HTMLElement) => el.addEventListener('pointerdown', (e) => e.stopPropagation())
+    const dragOutTitle = () => intl.formatMessage({id: 'KanbanCard.dragOut', defaultMessage: 'Drag the card into another app, such as a terminal'})
+
     const [showConfirmationDialogBox, setShowConfirmationDialogBox] = createSignal<boolean>(false)
     const handleDeleteCard = () => {
         const card = props.card
@@ -178,6 +211,18 @@ const KanbanCard = (props: Props) => {
                         </button>
                     </Show>
                 </Show>
+
+                <span
+                    class='KanbanCard__dragOut'
+                    draggable='true'
+                    title={dragOutTitle()}
+                    aria-label={dragOutTitle()}
+                    ref={keepPressFromCard}
+                    onClick={(e) => e.stopPropagation()}
+                    onDragStart={offerCard}
+                >
+                    <GripIcon/>
+                </span>
 
                 <Show when={!props.readonly}>
                     <MenuWrapper

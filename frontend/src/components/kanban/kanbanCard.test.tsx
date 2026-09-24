@@ -1,4 +1,4 @@
-import {render, screen, waitFor, within} from '@solidjs/testing-library'
+import {fireEvent, render, screen, waitFor, within} from '@solidjs/testing-library'
 import '@testing-library/jest-dom'
 
 import userEvent from '@testing-library/user-event'
@@ -93,7 +93,11 @@ describe('src/components/kanban/kanbanCard', () => {
     // pointerdown with nothing after it, not even a pointerup. Whether the
     // native drag or the five-pixel threshold got there first came down to how
     // fast the hand moved, which is what made it look random.
-    test('does not offer the card to the browser own drag and drop', () => {
+    //
+    // The browser's drag is still the only one another application can take a
+    // card from, so it has a grip of its own, and the grip keeps its press from
+    // the card: dnd-kit never sees it and nothing races.
+    test('offers the card to the browser own drag and drop only from its grip', () => {
         const {container} = render(() => wrapDNDIntl(() =>
             <AppStoreProvider store={store}>
                 <KanbanCard
@@ -112,7 +116,48 @@ describe('src/components/kanban/kanbanCard', () => {
             </AppStoreProvider>,
         ), {wrapper: TestRouter})
 
-        expect(container.querySelector('[draggable="true"]')).toBeNull()
+        const draggables = container.querySelectorAll('[draggable="true"]')
+        expect(draggables).toHaveLength(1)
+        expect(draggables[0]).toHaveClass('KanbanCard__dragOut')
+
+        const pressed = vi.fn()
+        container.querySelector('.KanbanCard')!.addEventListener('pointerdown', pressed)
+        fireEvent.pointerDown(draggables[0])
+        expect(pressed).not.toHaveBeenCalled()
+    })
+
+    // A terminal takes a drop as typed text, which is how the card reaches an
+    // agent running in one.
+    test('a card dragged out of the window carries its text', () => {
+        const {container} = render(() => wrapDNDIntl(() =>
+            <AppStoreProvider store={store}>
+                <KanbanCard
+                    card={card}
+                    board={board}
+                    visiblePropertyTemplates={[propertyTemplate]}
+                    visibleBadges={false}
+                    isSelected={false}
+                    readonly={true}
+                    onDrop={vi.fn()}
+                    showCard={vi.fn()}
+                    isManualSort={false}
+                    index={0}
+                    groupId='group-1'
+                />
+            </AppStoreProvider>,
+        ), {wrapper: TestRouter})
+
+        const data: {[type: string]: string} = {}
+        const dataTransfer = {
+            setData: (type: string, value: string) => {
+                data[type] = value
+            },
+            setDragImage: vi.fn(),
+            effectAllowed: 'all',
+        }
+        fireEvent.dragStart(container.querySelector('.KanbanCard__dragOut')!, {dataTransfer})
+        expect(data['text/plain']).toMatch(new RegExp(`^# ${card.title}`))
+        expect(dataTransfer.effectAllowed).toBe('copy')
     })
 
     test('should match snapshot', () => {

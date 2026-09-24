@@ -33,6 +33,10 @@
         .optionsMenu {
             display: block;
         }
+
+        .KanbanCard__dragOut {
+            display: flex;
+        }
     }
 
     &.selected {
@@ -47,6 +51,32 @@
 
         &.show {
             display: block;
+        }
+    }
+
+    // The grip that drags the card out to another application, in the card's
+    // left padding, so it covers nothing of the card and the card needs no room
+    // for it.
+    .KanbanCard__dragOut {
+        display: none;
+        position: absolute;
+        top: 12px;
+        left: 1px;
+        width: 14px;
+        height: 20px;
+        align-items: center;
+        justify-content: center;
+        cursor: grab;
+        color: rgba(var(--center-channel-color-rgb), 0.56);
+
+        &:hover {
+            color: rgb(var(--center-channel-color-rgb));
+        }
+
+        .GripIcon {
+            width: 14px;
+            height: 14px;
+            fill: currentColor;
         }
     }
 

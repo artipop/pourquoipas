@@ -359,6 +359,7 @@
   "InboxSorting.summary": "Summary of the cards",
   "InboxSorting.title": "Sorting the inbox",
   "InboxSorting.unavailable": "Agents are turned off in this app, so the inbox is not sorted. Turn them on in the settings.",
+  "KanbanCard.dragOut": "Drag the card into another app, such as a terminal",
   "KanbanCard.untitled": "Untitled",
   "KanbanColumnHeader.inbox-mine": "My tasks",
   "Machine.agent-notifications-hint": "The notification shows the question itself, and the agent can be answered right in it; when the app is in the background it comes from the system instead. The dot on the card and the dot on the tray icon stay even with this off.",
