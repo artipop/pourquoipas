@@ -12,10 +12,10 @@ was dropped into, and what the board's other columns are called.
 
 ## What has to be true
 
-1. **An agent is assigned to the card.** The field is «Кто занимается» («Who is
-   working on it»; on the «Разработка» board it is «Исполнитель»). A card
+1. **An agent is assigned to the card.** The field is «Who is on it» (on the
+   «Development» board it is «Assignee»). A card
    assigned to a person, or to nobody, starts nothing.
-2. **Agents are switched on.** Settings → «Агенты работают с карточками».
+2. **Agents are switched on.** Settings → «Agents work on the cards».
 
 With one agent registered, assigning it is one click on the card; the field
 offers every agent on the machine. Registering one is covered in
@@ -57,7 +57,7 @@ closed, the CLI died), the card keeps its place and the reason is written on it.
 
 - **nobody is assigned** — assign an agent;
 - **a person is assigned** — that is what "I am doing this myself" means;
-- **agents are switched off** — Settings → «Агенты работают с карточками»;
+- **agents are switched off** — Settings → «Agents work on the cards»;
 - **the board has no folder** — the agent still runs, in a scratch directory of
   its own. See ["Folders and branches"](../folders.md);
 - **anything else** — open the card: the reason is written on it.
@@ -67,5 +67,5 @@ closed, the CLI died), the card keeps its place and the reason is written on it.
 The board used to carry a registry of columns (an action, a crew, a limit) and
 routes with arrows and conditions, and every column had an editor of its own.
 All of it is gone: what the graph was for, the agent does, and a column means
-its name again. The «Исход» field, column limits, queues and conditions on
+its name again. The outcome field, column limits, queues and conditions on
 transitions went with the routes.

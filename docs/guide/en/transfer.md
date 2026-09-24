@@ -37,7 +37,7 @@ SSH keys, tokens and environment variables are not valid on another computer.
 | Sources — the token is issued anew | [Sources…](./inbox/sources.md) in the inbox board's menu |
 
 The setup wizard asks only for what is missing; it can be walked again any
-time: ⋯ → «Пройти настройку заново…».
+time: ⋯ → «Walk the setup again…».
 
 Agent names are remembered: the assignment field travels with the card, so
 registering an agent under the same name is enough. A column that refers to an

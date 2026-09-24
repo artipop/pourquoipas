@@ -44,14 +44,14 @@ menu:
 This is where the board answers the questions about this machine, one menu item
 per question:
 
-- **«Системный промпт доски…»** — what this board's agents are told before
+- **«The board’s system prompt…»** — what this board's agents are told before
   anything else (["The board's system prompt"](./automation/prompt.md));
-- **«Папки…»** — the folders its agents work in
+- **«Folders…»** — the folders its agents work in
   (["Folders and branches"](./folders.md));
-- **«Агенты…»** and **«Куда деплоить…»** — registries of the machine, opened
+- **«Agents…»** and **«Where to deploy…»** — registries of the machine, opened
   from where they are used;
-- **«Пройти настройку заново…»** — the same wizard a new board opens;
-- **«Сохранить как шаблон…»** and the exports, at the bottom under a rule.
+- **«Walk the setup again…»** — the same wizard a new board opens;
+- **«Save as a template…»** and the exports, at the bottom under a rule.
 
 Which items a board has is the board's own answer: one that publishes nowhere is
 not asked where to deploy.
@@ -73,7 +73,7 @@ field in the header itself — Enter saves it, Esc cancels.
 
 ## Columns
 
-A column is an ordinary option of the property the kanban groups by («Статус» in
+A column is an ordinary option of the property the kanban groups by («Status» in
 the shipped templates). Adding, renaming and reordering them is done on the
 board itself; columns have no editor of their own, and the board knows nothing
 about them but their names.
@@ -81,7 +81,7 @@ about them but their names.
 The name matters, though, because the agent reads it. A card is moved into a
 column, the agent is given that column's name along with the names of the
 board's other columns, and it decides from them where to put the card when it is
-finished. «Готово», «На ревью», «Заблокировано» are sentences, not settings.
+finished. «Done», «In review», «Blocked» are sentences, not settings.
 
 The board's first column is separated from the rest by a vertical rule. What
 arrives is to the left of it; what the board does with it is to the right.

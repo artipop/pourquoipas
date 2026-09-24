@@ -7,8 +7,8 @@ questions and what stays on the card.
 
 A card is worked by whoever it is assigned to. The assignment field is an
 ordinary board field of the "person" type; templates name it differently:
-«Исполнитель» on the «Разработка» board, «Кто делает» on «Личное», «Кто ведёт»
-on «Контент».
+«Assignee» on the «Development» board, «Who does it» on «Personal», «Who leads
+it» on «Content».
 
 It has to be filled in by hand: the app assigns nobody by itself. A card
 assigned to a person, or to nobody, is left alone — it simply stands where it
@@ -20,7 +20,7 @@ under its own name: open the field and pick it.
 
 **The list holds every agent on the machine.** A board keeps no crew of its own:
 any registered agent can be assigned on any board. The only thing that takes
-them out of the list is the «Агенты работают с карточками» switch in
+them out of the list is the «Agents work on the cards» switch in
 [the settings](./settings/index.md).
 
 The agent reads its task from the **card's description** — there is no separate
@@ -47,7 +47,7 @@ cancelled: a move is a new instruction, not a continuation of the old one.
 1. writes **one comment** with the result;
 2. puts values **into the card's fields**, if the task called for it;
 3. **moves the card itself** into the column whose name says what has happened:
-   «Готово», «На ревью», «Заблокировано». If there is no fitting column, the
+   «Done», «In review», «Blocked». If there is no fitting column, the
    card stays where it is;
 4. says the **work is finished**, which is what ends the session.
 
@@ -60,18 +60,18 @@ the CLI died), the card keeps its place and the reason is written on it.
 ## Talking to an agent before there is a card
 
 A task can be talked through before it becomes a card: the arrow beside
-«Создать» in the board header → **«Обсудить с агентом…»**.
+«New» in the board header → **«Talk it over with an agent…»**.
 
-First it asks **which agent** and **which folder** — the board's folders, «черновики
-доски» and «Добавить папку…». After that it is an ordinary conversation: you
-write, the agent answers, «Остановить» interrupts it.
+First it asks **which agent** and **which folder** — the board's folders, «The board’s
+drafts» and «Add a folder…». After that it is an ordinary conversation: you
+write, the agent answers, «Stop» interrupts it.
 
 In such a conversation the agent changes nothing in the folder — its
 instructions and the tool policy hold it to reading — and the cards you agree on
 it creates on this board itself.
 
-At the top of the dialog are the **«Открытые разговоры»**: a conversation
-outlives its window. **«Завершить разговор»** stops the agent and takes the
+At the top of the dialog are the **«Open conversations»**: a conversation
+outlives its window. **«End the conversation»** stops the agent and takes the
 conversation off the list.
 
 ## The agent's questions
@@ -83,11 +83,11 @@ of them answers it:
 - **on the card** — an amber badge in its bottom-right corner, and the question
   itself with its buttons once the card is open;
 - **in the notification** in the corner of the board window;
-- **on the phone**, under «Ждут».
+- **on the phone**, under «Waiting».
 
 Whichever answer arrives first counts; the others stop showing the question.
 
-A notification can be dismissed with «Скрыть» — that means "I know", not
+A notification can be dismissed with «Dismiss» — that means "I know", not
 "answered": the question stays on the card until somebody answers it. A
 dismissed notification does not come back in another window, on the phone, or
 after a reload.
@@ -96,24 +96,24 @@ If the app is minimised the notification comes from the system, and an amber dot
 appears on the icon beside the clock.
 
 Notifications are switched off in
-[the settings](./settings/index.md#уведомления-агента). The badge on the card
+[the settings](./settings/index.md#agent-notifications). The badge on the card
 and the dot beside the clock stay either way — a notification is about the
 question, they are about the agent still waiting.
 
 ## The changes, read by eye
 
-The card's toolbar has a **«Изменения»** button. It appears on a card that has
+The card's toolbar has a **«Changes»** button. It appears on a card that has
 something to show: with no work started, or nothing changed, there is no button.
 
 It opens the diff on the right — what has been done on this card:
 
-- **«В ветке»** — what is already committed on top of the main branch;
-- **«Не закоммичено»** — what is changed but not committed, and new files git
+- **«On the branch»** — what is already committed on top of the main branch;
+- **«Not committed»** — what is changed but not committed, and new files git
   does not track yet.
 
 At the top: the branch name, what it was cut from, and how many files and lines
 in total. Each file folds away when its row is clicked. The arrows button
-(«Перечитать папку») reads everything again; the diff itself refreshes when the
+(«Read the folder again») reads everything again; the diff itself refreshes when the
 agent finishes something.
 
 It can be read after the work is over, too. When an agent finishes, the card's
@@ -121,8 +121,8 @@ working copy is folded away and the branch stays — so the committed half is re
 from the branch even in a column where the copy is gone. The uncommitted half
 lives only while the copy does; a folder with unsaved work is never folded away.
 
-The panel beside the card is narrow, so its header has **«Открыть в отдельном
-окне»** — the same thing full screen.
+The panel beside the card is narrow, so its header has **«Open in a separate
+window»** — the same thing full screen.
 
 Any card can be looked at, but there is nothing to show until somebody has
 worked it. The panel says so: the work has not started, or it started on another
@@ -131,12 +131,12 @@ travel with the card.
 
 ## The history: who did what to the card
 
-The card's toolbar has a **«История»** button. It opens a list of what happened
+The card's toolbar has a **«History»** button. It opens a list of what happened
 to the card on the right, newest first:
 
 - who made it;
 - who renamed it, and to what;
-- who changed a field and how: “Статус”: В работе → Готово;
+- who changed a field and how: “Status”: In progress → Done;
 - who wrote a comment — and what it said.
 
 The names are real. Every registered agent has a board account of its own, and
@@ -153,7 +153,7 @@ The branch and the directory are on the line under the card's title; the agent's
 question is under it.
 
 Comments appear once the install is in [team mode](./settings/team.md): a
-**«Комментарии»** button joins the card's toolbar, it opens the panel on the
+**«Comments»** button joins the card's toolbar, it opens the panel on the
 right, and the card's face shows their count. While one person works the board
 the comments are written but not drawn: everything worth knowing is either on
 the card or in the diff.

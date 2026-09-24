@@ -7,7 +7,7 @@ Sections:
 - **"The app itself"** — theme, language, AI agents, help and feedback;
 - **"Updates"** — the app's version and moving to a newer one, see
   [Updates](./updates.md);
-- **«Люди»** — who is on the server and who runs it; the section is shown to
+- **«People»** — who is on the server and who runs it; the section is shown to
   the administrator alone, see ["Your own server"](./team.md);
 - **"Access from a phone"** — see below;
 - **"Import and export"** — board archive export and import, see
@@ -168,5 +168,5 @@ into an export and into a template.
 Settings of a specific board — project folders and agent instructions — are
 asked from the board's own ⋯ menu, one item per question.
 
-**«Куда деплоить…»** is there too, and only on a board that asked for it: no
+**«Where to deploy…»** is there too, and only on a board that asked for it: no
 other board has any use for a deploy host.

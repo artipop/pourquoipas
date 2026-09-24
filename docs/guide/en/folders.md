@@ -10,7 +10,7 @@ board with several folders leaves the field empty — that choice is yours. The
 switch is in Settings → "Other".
 
 A card shows its folder on its face on the board, as a line with a folder icon
-under the title. An empty field draws no line. «Черновики доски» never appears
+under the title. An empty field draws no line. «The board’s drafts» never appears
 there: that is where a conversation stands when the card has not named a folder,
 not an answer the card gives.
 
@@ -62,7 +62,7 @@ the repository treats as its main one. Change it if you work off another —
 
 This is a choice about **that folder on this board** — the two buttons under
 **"The agent works"** on the repository's card in "Folders…". A folder belongs to one board anyway, so for it
-this reads as "how this folder works"; a folder marked «на всех досках» can be
+this reads as "how this folder works"; a folder marked «On every board» can be
 used differently by two boards.
 
 **"in a copy of its own"** (the default) — the card gets its own copy of the
@@ -115,5 +115,5 @@ is left exactly where it is.
 
 An agent works on the card's own branch; a deploy stands in the folder itself,
 because it publishes a branch that already exists and needs no copy of its own.
-A conversation with no card («Обсудить с агентом») stands in the folder too and
+A conversation with no card («Talk it over with an agent») stands in the folder too and
 changes nothing in it.

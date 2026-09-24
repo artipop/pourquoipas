@@ -17,7 +17,7 @@ restart changes it.
 - a waiting agent gets an addressee — whoever the card is assigned to.
 
 This says **who** may open the board, not where it is visible from. A second
-device still comes in through the tailnet («Доступ с телефона»), and the two are
+device still comes in through the tailnet («Access from a phone»), and the two are
 unrelated.
 
 ## The first login
@@ -30,13 +30,13 @@ unrelated.
 
 ## Inviting the rest
 
-**Настройки → «Люди»** — the section is shown to the administrator alone. In it:
+**Settings → «People»** — the section is shown to the administrator alone. In it:
 
-- **«Отправьте это тому, кто присоединяется»** — a link of the form
-  `…/register?t=…`. **«Скопировать»** puts it on the clipboard; pass it on any
+- **«Send this to whoever is joining»** — a link of the form
+  `…/register?t=…`. **«Copy»** puts it on the clipboard; pass it on any
   way you like. They open the link, choose a name and a password, and land on
   the boards you add them to.
-- **«Новая ссылка»** issues another one and retires the previous. That is how a
+- **«New link»** issues another one and retires the previous. That is how a
   link sent to the wrong person is taken back.
 
 Without such a link nobody can register.
@@ -47,15 +47,15 @@ in it, and membership is granted on the board itself.
 ## The list of people
 
 Below the link are all the accounts there are. Under each name it says what kind
-of account it is: **администратор**, **агент** or **источник**. The app makes
+of account it is: **administrator**, **agent** or **source**. The app makes
 the agent and source accounts itself — a card names its agent by being assigned
 to it, and that name needs an account.
 
 For everybody but yourself there are two buttons:
 
-- **«Сделать администратором»** and **«Снять администрирование»** — who else
+- **«Make an administrator»** and **«Take away administration»** — who else
   runs the install;
-- **«Выключить»** and **«Включить»** — somebody switched off cannot log in, and
+- **«Switch off»** and **«Switch on»** — somebody switched off cannot log in, and
   their open sessions end immediately.
 
 There are no buttons against your own account. And the last administrator can
@@ -68,18 +68,18 @@ You can work the server's board from the app on your own computer as well as
 from a browser — and then the cards live on the server while the agents, the
 and the folders stay on your machine.
 
-1. **Настройки → «Сервер»**.
+1. **Settings → «Server»**.
 2. Type the address (a bare `board.example.com` will do), your name and your
    password.
-3. **«Подключиться»**, then **restart the app**: which board it works is decided
+3. **«Connect»**, then **restart the app**: which board it works is decided
    when it starts.
 
-The password is not kept — what is stored is the session it buys. **«Работать
-доской этой машины»** disconnects the app from the server; everything made on
+The password is not kept — what is stored is the session it buys. **«Work this
+machine's own board»** disconnects the app from the server; everything made on
 the server stays there.
 
-This is not the same as «Доступ с телефона»: the tailnet answers where the board
-can be reached *from*, and «Сервер» answers *whose* it is.
+This is not the same as «Access from a phone»: the tailnet answers where the board
+can be reached *from*, and «Server» answers *whose* it is.
 
 ## Switching between your own board and the server's
 
