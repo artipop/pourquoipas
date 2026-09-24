@@ -157,8 +157,10 @@ func (c *attachController) state() attachState {
 
 // thisMachine is what the switcher calls the board this process serves. Not the
 // machine's name: there is one of it, and what a person is choosing between is
-// «here» and «the server».
-const thisMachine = "Эта машина"
+// "here" and "the server". The page draws the empty id in its own words
+// (boardSourceSwitcher.tsx); this is the English a page that does not know the
+// entry falls back on.
+const thisMachine = "This machine"
 
 // selected is the board the page shows. A server since detached falls back to
 // this machine's own rather than to a blank screen.

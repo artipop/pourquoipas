@@ -5,6 +5,7 @@ import {installPolyfills} from './polyfills'
 import {initThemes} from './theme'
 import {importNativeAppSettings} from './nativeApp'
 import {hydrateUserSettings, reportLanguage} from './userSettings'
+import {reportWords} from './goWords'
 import {getCurrentLanguage} from './i18n'
 
 import {IUser} from './user'
@@ -67,6 +68,11 @@ async function boot() {
     // because it can mean those boards are replaced and everything read before
     // that is stale.
     await reportLanguage(getCurrentLanguage())
+
+    // And the words Go draws for us — the menu bar, notifications, window
+    // titles — in the same language. Not awaited: nothing on the page waits
+    // for them.
+    reportWords(getCurrentLanguage())
 
     // The store is created here, not in a module singleton, and everything
     // that writes to it from outside the component tree — the Mutator — gets

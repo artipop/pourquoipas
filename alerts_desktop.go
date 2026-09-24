@@ -173,11 +173,12 @@ func (c *alertController) refresh() {
 		c.authorise()
 		return
 	}
+	w := currentWords()
 	for _, a := range fresh {
 		if err := c.notifier.SendNotification(notifications.NotificationOptions{
 			ID:    a.Key,
-			Title: alertTitle(a),
-			Body:  alertBody(a),
+			Title: alertTitle(w, a),
+			Body:  alertBody(w, a),
 			// The key is all the click needs; the rest of the wait is looked up
 			// again, because by then it may have ended.
 			Data:     map[string]any{"key": a.Key},
@@ -251,18 +252,19 @@ func (c *alertController) drawTray(waiting []acp.Attention) {
 // whichever agent is asking. Nothing here answers anything — the agent drew its
 // question in its own terminal, and this is the way to it.
 func (c *alertController) menu(waiting []acp.Attention) *application.Menu {
+	w := currentWords()
 	menu := application.NewMenu()
-	menu.Add("Открыть").OnClick(func(*application.Context) {
+	menu.Add(w.Open).OnClick(func(*application.Context) {
 		go showMainWindow(c.wapp, c.app.originURL())
 	})
 	if len(waiting) > 0 {
 		menu.AddSeparator()
 		for i, a := range waiting {
 			if i == trayWaitCap {
-				menu.Add(hiddenWaitsLabel(len(waiting) - trayWaitCap))
+				menu.Add(hiddenWaitsLabel(w, len(waiting)-trayWaitCap))
 				break
 			}
-			menu.Add(alertMenuLabel(a)).OnClick(func(*application.Context) { go c.openWait(a) })
+			menu.Add(alertMenuLabel(w, a)).OnClick(func(*application.Context) { go c.openWait(a) })
 		}
 	}
 
@@ -271,7 +273,7 @@ func (c *alertController) menu(waiting []acp.Attention) *application.Menu {
 	// front of. It also ends every agent CLI, which is why it is the last item
 	// and behind a separator rather than beside the open item.
 	menu.AddSeparator()
-	menu.Add("Выход").OnClick(func(*application.Context) { go requestQuit(c.wapp) })
+	menu.Add(w.Quit).OnClick(func(*application.Context) { go requestQuit(c.wapp) })
 	return menu
 }
 

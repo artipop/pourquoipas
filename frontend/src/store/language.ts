@@ -1,6 +1,7 @@
 import {storePath} from 'solid-js'
 
 import {getCurrentLanguage, storeLanguage as i18nStoreLanguage} from '../i18n'
+import {reportWords} from '../goWords'
 
 import type {StoreContext} from './context'
 
@@ -21,6 +22,7 @@ export const createLanguageActions = ({setState}: StoreContext) => ({
     storeLanguage(lang: string) {
         i18nStoreLanguage(lang)
         setState(storePath('language', 'value', lang))
+        reportWords(lang)
     },
 })
 

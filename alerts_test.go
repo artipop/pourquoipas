@@ -79,10 +79,10 @@ func TestAWaitRaisedAgainIsAnnouncedAgain(t *testing.T) {
 // reading it is somewhere else entirely and has neither in front of them.
 func TestANotificationNamesTheAgentAndTheCard(t *testing.T) {
 	a := acp.Attention{Key: "t1", Agent: "клаус", Title: "Почини логин", Text: "агент ждёт ответа в терминале"}
-	if got := alertTitle(a); got != "клаус спрашивает" {
+	if got := alertTitle(englishWords, a); got != "клаус is asking" {
 		t.Errorf("title = %q", got)
 	}
-	if got := alertBody(a); !strings.Contains(got, "Почини логин") || !strings.Contains(got, "ждёт ответа") {
+	if got := alertBody(englishWords, a); !strings.Contains(got, "Почини логин") || !strings.Contains(got, "ждёт ответа") {
 		t.Errorf("body = %q, want the card and the question", got)
 	}
 }
@@ -90,7 +90,7 @@ func TestANotificationNamesTheAgentAndTheCard(t *testing.T) {
 // A conversation with no card behind it can still be waiting, and a notification
 // with an empty body says nothing at all.
 func TestAWaitWithNothingToQuoteStillSaysWhatToDo(t *testing.T) {
-	if got := alertBody(acp.Attention{Key: "t1"}); got == "" {
+	if got := alertBody(englishWords, acp.Attention{Key: "t1"}); got == "" {
 		t.Fatal("a wait with no card and no question should still say something")
 	}
 }
@@ -99,11 +99,55 @@ func TestAWaitWithNothingToQuoteStillSaysWhatToDo(t *testing.T) {
 // must not make the menu as wide as the screen.
 func TestALongCardTitleIsClippedInTheMenu(t *testing.T) {
 	long := strings.Repeat("длинный заголовок ", 20)
-	got := alertMenuLabel(acp.Attention{Key: "t1", Agent: "клаус", Title: long})
+	got := alertMenuLabel(englishWords, acp.Attention{Key: "t1", Agent: "клаус", Title: long})
 	if n := len([]rune(got)); n > 64 {
 		t.Fatalf("label is %d runes: %q", n, got)
 	}
 	if !strings.HasSuffix(got, "…") {
 		t.Errorf("a clipped label should say it was clipped: %q", got)
+	}
+}
+
+// The words are the page's: a person reading the app in Russian gets the menu
+// bar in Russian, and the words come from the same catalogue as the rest.
+func TestTheMenuBarSpeaksTheWordsThePageSent(t *testing.T) {
+	w := mergeWords(englishWords, uiWords{AgentAsking: "{agent} спрашивает", Quit: "Выход"})
+	if got := alertTitle(w, acp.Attention{Agent: "клаус"}); got != "клаус спрашивает" {
+		t.Errorf("title = %q", got)
+	}
+	if w.Quit != "Выход" {
+		t.Errorf("quit = %q", w.Quit)
+	}
+	// A word the page did not send keeps its English default rather than
+	// coming out blank: a page older than the word is still a page.
+	if w.Open != "Open" {
+		t.Errorf("open = %q, want the English default", w.Open)
+	}
+}
+
+// How many waits the menu stopped naming is counted in the page's own plural:
+// Russian takes a different form for 2 and for 5, and 21 goes with 1.
+func TestHiddenWaitsTakeThePluralFormThePageChose(t *testing.T) {
+	counts := make([]string, 100)
+	for n := range counts {
+		switch {
+		case n%10 == 1 && n%100 != 11:
+			counts[n] = "one"
+		case n%10 >= 2 && n%10 <= 4 && (n%100 < 12 || n%100 > 14):
+			counts[n] = "few"
+		default:
+			counts[n] = "many"
+		}
+	}
+	w := uiWords{MoreWaits: pluralWords{Counts: counts, Forms: map[string]string{
+		"one": "ещё {count} агент", "few": "ещё {count} агента", "many": "ещё {count} агентов", "other": "ещё {count}",
+	}}}
+	for n, want := range map[int]string{1: "ещё 1 агент", 3: "ещё 3 агента", 5: "ещё 5 агентов", 21: "ещё 21 агент", 150: "ещё 150"} {
+		if got := hiddenWaitsLabel(w, n); got != want {
+			t.Errorf("%d: %q, want %q", n, got, want)
+		}
+	}
+	if got := hiddenWaitsLabel(englishWords, 4); got != "…and 4 more" {
+		t.Errorf("default: %q", got)
 	}
 }

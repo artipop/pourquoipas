@@ -806,3 +806,13 @@ export function UpdateSource(entryJSON: string): $CancellablePromise<string> {
 export function UseLanguage(lang: string): $CancellablePromise<void> {
     return $Call.ByID(517287990, lang);
 }
+
+/**
+ * UseWords is the page handing over the words Go draws on its behalf, in the
+ * language it is showing. Sent at boot beside UseLanguage and again when the
+ * language changes; a field left empty keeps its English default, so a page
+ * older than a new word does not blank it.
+ */
+export function UseWords(raw: string): $CancellablePromise<void> {
+    return $Call.ByID(932259925, raw);
+}

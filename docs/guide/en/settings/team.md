@@ -84,7 +84,7 @@ can be reached *from*, and «Server» answers *whose* it is.
 ## Switching between your own board and the server's
 
 Once connected, a switcher appears in the sidebar above the list of boards, with
-two entries: **«Эта машина»** and the server's address.
+two entries: **"This machine"** and the server's address.
 
 It decides only **what the window shows**. The agents work both boards: an
 agent running on the server's card keeps going while you look at your own. The page

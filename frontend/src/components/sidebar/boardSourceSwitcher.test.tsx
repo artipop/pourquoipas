@@ -19,7 +19,7 @@ describe('components/sidebar/boardSourceSwitcher', () => {
     test('is not drawn while there is only this machine', async () => {
         fakeGoSide({
             GetServerAttachment: vi.fn().mockResolvedValue(JSON.stringify({
-                selected: '', sources: [{id: '', title: 'Эта машина'}],
+                selected: '', sources: [{id: '', title: 'This machine'}],
             })),
         })
         const {container} = open()
@@ -38,7 +38,9 @@ describe('components/sidebar/boardSourceSwitcher', () => {
         fakeGoSide({
             GetServerAttachment: vi.fn().mockResolvedValue(JSON.stringify({
                 selected: 'https://board.example.com',
-                sources: [{id: '', title: 'Эта машина'}, {id: 'https://board.example.com', title: 'https://board.example.com'}],
+                // The title Go sends for this machine is not what is drawn:
+                // the page names it in its own language.
+                sources: [{id: '', title: 'from Go'}, {id: 'https://board.example.com', title: 'https://board.example.com'}],
             })),
             SelectBoardSource: vi.fn().mockResolvedValue('{}'),
         })
@@ -53,7 +55,7 @@ describe('components/sidebar/boardSourceSwitcher', () => {
         expect(container.querySelector('.BoardSourceSwitcher__title')).toHaveTextContent('https://board.example.com')
 
         await userEvent.click(container.querySelector('.BoardSourceSwitcher__current') as HTMLElement)
-        await userEvent.click(screen.getByText('Эта машина'))
+        await userEvent.click(screen.getByText('This machine'))
 
         expect(goSide.SelectBoardSource).toHaveBeenCalledWith('')
 

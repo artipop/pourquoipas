@@ -254,7 +254,7 @@ func openDiffWindow(wapp *application.App, cardID, title, url string) {
 	}
 	wapp.Window.NewWithOptions(application.WebviewWindowOptions{
 		Name:   name,
-		Title:  "Изменения · " + title,
+		Title:  fill(currentWords().DiffWindow, "{title}", title),
 		Width:  1040,
 		Height: 760,
 		URL:    url,
@@ -277,7 +277,7 @@ func openShareWindow(wapp *application.App, url string) {
 	}
 	wapp.Window.NewWithOptions(application.WebviewWindowOptions{
 		Name:             shareWindowName,
-		Title:            "Сохранить на доску",
+		Title:            currentWords().ShareWindow,
 		Width:            420,
 		Height:           520,
 		DisableResize:    true,

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"strconv"
 	"strings"
 
 	"github.com/artipop/xciii/internal/acp"
@@ -61,18 +60,18 @@ func alertPlan(told map[string]bool, waiting []acp.Attention) (fresh []acp.Atten
 // alertTitle is who is asking — the same sentence the card and the page's own
 // notification use (attentionHeading in attention.ts), so one wait reads the
 // same wherever a person meets it.
-func alertTitle(a acp.Attention) string {
+func alertTitle(w uiWords, a acp.Attention) string {
 	if a.Agent != "" {
-		return a.Agent + " спрашивает"
+		return fill(w.AgentAsking, "{agent}", a.Agent)
 	}
-	return "Агент спрашивает"
+	return w.AnAgentAsking
 }
 
 // alertBody is what is being asked, in one line: the card it is about and the
 // question itself. The subtitle field is deliberately unused — Windows drops it
 // — and the card is the fact that identifies the wait, so it goes in the body
 // where every platform shows it.
-func alertBody(a acp.Attention) string {
+func alertBody(w uiWords, a acp.Attention) string {
 	parts := make([]string, 0, 2)
 	if title := strings.TrimSpace(a.Title); title != "" {
 		parts = append(parts, title)
@@ -81,7 +80,7 @@ func alertBody(a acp.Attention) string {
 		parts = append(parts, text)
 	}
 	if len(parts) == 0 {
-		return "Откройте доску, чтобы ответить."
+		return w.OpenToAnswer
 	}
 	return strings.Join(parts, " — ")
 }
@@ -89,22 +88,20 @@ func alertBody(a acp.Attention) string {
 // alertMenuLabel is one waiting agent as a line of the menu bar's menu. It is
 // clipped rather than wrapped: a menu that is as wide as somebody's card title
 // is a menu that covers the screen.
-func alertMenuLabel(a acp.Attention) string {
-	label := alertTitle(a)
+func alertMenuLabel(w uiWords, a acp.Attention) string {
+	label := alertTitle(w, a)
 	if title := strings.TrimSpace(a.Title); title != "" {
 		label += ": " + title
 	}
 	return clipLabel(label, 64)
 }
 
-// hiddenWaitsLabel stands for the waits the menu stopped naming. It counts and
-// does not inflect: waiting/waiting would have to agree with the number, and the
-// number is the whole of what this line says.
-func hiddenWaitsLabel(n int) string {
-	return "…и ещё " + strconv.Itoa(n)
+// hiddenWaitsLabel stands for the waits the menu stopped naming.
+func hiddenWaitsLabel(w uiWords, n int) string {
+	return w.MoreWaits.plural(n)
 }
 
-// clipLabel cuts to n runes, not bytes: every label here is Russian.
+// clipLabel cuts to n runes, not bytes: a label may be in any script.
 func clipLabel(s string, n int) string {
 	runes := []rune(s)
 	if len(runes) <= n {

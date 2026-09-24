@@ -108,10 +108,11 @@ amber dot appears on it while at least one agent is waiting for a person.
 
 Clicking it opens a menu:
 
-- **"Открыть"** — bring the board's window back, even from minimised or closed.
+- **"Open"** — bring the board's window back, even from minimised or closed.
 - The waiting agents, one per line: the agent's name and the card. Clicking one
-  opens that card.
-- **"Выход"** — close the application entirely.
+  opens that card. If more than six are waiting, the last line is "…and N more": how many
+  agents did not fit.
+- **"Quit"** — close the application entirely.
 
 The icon cannot be turned off: it interrupts nobody, and it is there for exactly
 the time when nobody is looking at the board.
@@ -126,7 +127,7 @@ application is running, and it brings the window back.
 The same window comes back with the same board, not a page loaded from scratch.
 On macOS the Dock icon does the same thing.
 
-To quit for real, use **"Выход"** in the icon's menu (or ⌘Q while the window is
+To quit for real, use **"Quit"** in the icon's menu (or ⌘Q while the window is
 open). Quitting stops the agents that are working: if one never said how it
 ended, its card stays in its column with the reason written on it.
 

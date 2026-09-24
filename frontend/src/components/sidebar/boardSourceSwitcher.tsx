@@ -52,6 +52,10 @@ const BoardSourceSwitcher = () => {
     const sources = () => state()?.sources ?? []
     const current = () => sources().find((s) => s.id === (state()?.selected ?? '')) ?? sources()[0]
 
+    // The board this process serves has no name of its own to show, so Go sends
+    // it with an empty id and the words are ours.
+    const titleOf = (source: BoardChoice | undefined) => (source && source.id === '' ? intl.formatMessage({id: 'BoardSource.this-machine', defaultMessage: 'This machine'}) : source?.title)
+
     const choose = async (id: string) => {
         if (!bindings?.SelectBoardSource || id === state()?.selected) {
             return
@@ -70,7 +74,7 @@ const BoardSourceSwitcher = () => {
             <div class='BoardSourceSwitcher'>
                 <MenuWrapper>
                     <div class='BoardSourceSwitcher__current'>
-                        <span class='BoardSourceSwitcher__title'>{current()?.title}</span>
+                        <span class='BoardSourceSwitcher__title'>{titleOf(current())}</span>
                         <CompassIcon icon='chevron-down'/>
                     </div>
                     <Menu position='bottom'>
@@ -81,7 +85,7 @@ const BoardSourceSwitcher = () => {
                             {(source) => (
                                 <Menu.Text
                                     id={source.id || 'this-machine'}
-                                    name={source.title}
+                                    name={titleOf(source) ?? ''}
                                     check={source.id === (state()?.selected ?? '')}
                                     onClick={() => choose(source.id)}
                                 />

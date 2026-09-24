@@ -961,7 +961,7 @@ func (a *App) OpenCardDiff(cardID string) (string, error) {
 }
 
 // cardDiffTitle names the window after the card, falling back to the card id:
-// a window in the dock is picked out by its title, and "Изменения" three times
+// a window in the dock is picked out by its title, and "Changes" three times
 // over is three windows nobody can tell apart.
 func (a *App) cardDiffTitle(cardID string) string {
 	if a.mgr == nil {
