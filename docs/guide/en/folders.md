@@ -52,7 +52,7 @@ will you work in?".
 ## The base branch
 
 A repository has a **"Work branches from"** field. Work on a card starts from
-that branch, and the "branch merged into the main one" transitions wait for it.
+that branch, and a finished branch is merged back into it.
 
 The value is filled in when the folder is added: the app asks git which branch
 the repository treats as its main one. Change it if you work off another —
@@ -77,8 +77,10 @@ repository and its own branch in it.
 
 - you see the agent's work in your editor as it happens, without going to
   another directory;
-- one card at a time: until the first card's branch is merged, the next one
-  waits and says on its strip what it is waiting for;
+- one card at a time: until the first card's branch is merged into the main
+  one (locally or on the server, through a pull request) or deleted, the next
+  one waits and says on the card what it is waiting for. It does not start by
+  itself afterwards — once the branch is merged, move it into the column again;
 - if the folder has **uncommitted changes to tracked files**, the agent will not
   start: the app will not switch a branch under your unsaved work. Commit or
   stash it. Untracked files — a build directory, an `.env`, a scratch clone —

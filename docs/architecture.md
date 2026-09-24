@@ -998,10 +998,15 @@ switch untouched and every checkout has some. Both refusals are **state, not
 failure** —
 `errWorkdirBusy`/`errWorkdirDirty` become the card's stall reason and the card
 keeps its place, instead of being carried off to «Заблокировано» by something
-that is not about the work. A merge was what freed the folder
-(`ReleaseMergedBranch`, called by the VCS watcher); the watcher went with the
-routes and nothing frees it now, which is a bug (`docs/todo.md`). Picking the
-next card up automatically is deliberately not built (`docs/deferred.md`).
+that is not about the work. A merge is what frees the folder, and it is found
+out when the next card asks for it rather than by watching: `folderIsFree`
+asks git whether the holder's branch is gone or already in its base — locally,
+then on the remote after a fetch, since a pull request is merged there
+(`branchIsDone`) — and never while the holder still has a live session, because
+a branch with nothing committed yet reads as merged. A watcher that polled
+every branch did this once and went with the routes, leaving the folder held
+for good. Picking the next card up automatically is deliberately not built
+(`docs/deferred.md`).
 
 **The branch is the product, the copy is the workshop.** After a stage finishes
 the directory is folded away (`FoldWorktree`) and the branch stays; the next
