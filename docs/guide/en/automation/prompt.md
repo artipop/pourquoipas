@@ -2,11 +2,12 @@
 
 The board menu (⋯ in the header) → **"The board's system prompt…"**. This is
 what an agent is told before anything else: before the card's task, before the
-deploy or test instructions, before the question you type in a terminal.
+deploy instructions, before anything you type in a conversation.
 
 It is added to:
 
-- a session a column starts (agent, deploy, test);
+- a session a card being moved into a column starts;
+- a deploy session;
 - a conversation opened by "Talk it over with an agent".
 
 Write here what is true of the whole board: "answer in Russian", "these are
@@ -37,16 +38,14 @@ files with their line counts, and the command that reads the whole diff. If
 anything is uncommitted, that is said too.
 
 Nothing has to be written for this. It is assembled on its own, and it appears
-only when there is something in the copy to show — the first stage of a route,
-on a clean branch, gets none of it.
+only when there is something in the copy to show — the first run, on a clean
+branch, gets none of it.
 
-It is there for the second stage and the ones after it. A review that runs an
-agent used to get exactly the text the “In progress” stage got: the card's task, in
-a folder full of somebody else's commits — and the agent did the task again
-instead of checking it. What the stage is actually for is still written in its
-own instructions: “What the agent is told here” on the column, or “What the
-agent is told at this stage” on a route's stage, in
-[“Колонки и маршруты…”](./index.md).
+It is there for the second run on the same card and the ones after it. An agent
+called in to review used to get exactly the text it got the first time: the
+card's task, in a folder full of commits already made — and it did the task
+again instead of checking it. What is wanted this time is written on the card
+itself, or in the board's prompt.
 
 ## Where each of them is kept
 

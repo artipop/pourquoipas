@@ -61,9 +61,9 @@ code builds a headless server (`-tags server`) that serves the board to a browse
   macOS and Linux desktops need it, Windows and the server build without it and
   cross-compile from anywhere.
 - **A packaged app is not a child of a shell.** launchd hands the `.app` a bare
-  PATH and no `TERM`; `internal/userpath` restores the login shell's PATH for the
-  process, and `terminalEnv` writes `TERM`/`COLORTERM` for the pty. A bug that
-  exists only in the installed app is usually this.
+  PATH; `internal/userpath` restores the login shell's PATH for the process,
+  which is what lets an agent's CLI be found at all. A bug that exists only in
+  the installed app is usually this.
 - **The desktop app is a WKWebView, and CSS prefixes are the build's job**
   (autoprefixer in `vite.config.ts`, targets in `browserslist`). WebKit there
   does not know unprefixed `user-select`. Never write prefixes by hand — stylelint
@@ -92,7 +92,7 @@ Tests:
 
 ## Architecture
 
-Eleven ideas hold this together. Each is a section of `docs/architecture.md`
+Ten ideas hold this together. Each is a section of `docs/architecture.md`
 with the same title; what follows is the part that must not be forgotten.
 
 ### The front door owns the origin
@@ -191,80 +191,69 @@ is a board server with cgo SQLite; the phone app is a window per machine onto
   `calendar.ts`, `combobox.ts`). **Nothing may import React or Redux** —
   `no-restricted-imports` in `eslint.config.ts` fails the lint.
 
-### A stage is the agent's own CLI, and it asks in its own words
+### A card moved into a column is a session, and it answers through MCP
 
 `internal/acp` is the agent integration and is board-agnostic;
 `internal/boardadapter` is the only package importing both it and the board
 server.
 
-- **An agent stage of a route is a terminal, not a session**
-  (`stageterminal.go`): the vendor CLI in a pty with the card's task on its
-  command line, drawing its own plan, questions and permission prompts. **Nothing
-  of ours is drawn over the CLI's screen.** Which agents qualify is
-  `stageRunsInTerminal` (board tools available, an interactive CLI exists and is
-  installed); the rest, and every deploy and test, stay ACP sessions
-  (`question.go`).
+- **The whole rule is one sentence** (`trigger.go`): a card moved into a column
+  whose assignee is a registered agent starts a session for that agent. No
+  column registry, no crew, no routes. A move the agent made itself starts
+  nothing (`movedByAgent`, `agentMoveWindow`), or an agent would hand itself its
+  own work back for ever.
+- **A move while a session runs cancels it** (`cancelForMove`) and waits for the
+  folder to be let go (`cardIdleWait`) before the next one starts.
+- **The agent is told where the card stands and what the board's columns are**
+  (`cardplace.go`, `boardStanding`), read off the board every time — a column
+  added this morning has to be offered this afternoon. It moves the card on
+  itself with `move_card`.
+- **A stage is an ACP session** (`session.go`, `question.go`): a tool outside
+  `autoAllowTools` arrives as `session/request_permission`, a decision as a form
+  elicitation, either one blocks only the request that asked, and an unanswered
+  one refuses on cancellation or shutdown.
 - **The stage ends when the agent calls `finish_work`**, and the task text says
-  so too (`finishWorkBrief`) because a CLI may defer loading the tools. A CLI
-  exiting without it is a stall with a reason, not a failed stage.
-- **Attention** (`acp:attention`): silence on a stage's terminal
-  (`AttentionTerminal`, `terminalQuietFor`) is the floor; a permission hook
-  (`internal/acp/toolhook.go`, `hook.go`, `docs/attention-hooks.md`) is the
-  precise signal, where the CLI supports one. The hook never takes the question
-  from the terminal, and **every hook failure is silence** (exit 0). Output after
-  the box settles withdraws the wait (`withdrawWhenAnsweredOnScreen`, measured on
-  `workedAt`, not `lastOutput`, because a resize repaints).
-- `AttentionCard` (`cardwait.go`) is the route parking a card where nothing runs;
-  the ack *ends* it. A wait is addressed to the card's assignee in team mode
-  (`attentionAudience.ts`).
-- **Ack is kept by Go** (`attentionack.go`), so one click clears every window and
-  the phone; only real work, not the repaint our own looking provoked
-  (`resizeEcho`), drops it.
-- The notification stack is drawn only in the board window, never on a terminal
-  page. OS notifications and the tray (`alerts.go`, `alerts_desktop.go`) re-read
-  `Manager.Attention()` on each event. Traps: the notification service is started
-  by hand, never registered in `Options.Services` (it errors outside a bundle,
-  i.e. in every `wails3 dev`); `RemoveDeliveredNotification`, not the stub
-  `RemoveNotification`; the tray icons are two inks, not a template icon.
+  so (`resultBrief`) because a CLI may defer loading the tools.
+- **Attention is one reason: the agent is asking** (`attention.go`,
+  `acp:attention`). It is drawn on the card (the amber badge, and the question
+  itself under the case stamp), in the notification stack, and on the phone's
+  «Ждут»; all three answer through `AnswerQuestion` and the first answer wins.
+- **Ack is kept by Go** (`attentionack.go`), so one click clears every window
+  and the phone.
+- The notification stack is drawn in the board window (`app.tsx`, outside the
+  router). OS notifications and the tray (`alerts.go`, `alerts_desktop.go`)
+  re-read `Manager.Attention()` on each event. Traps: the notification service
+  is started by hand, never registered in `Options.Services` (it errors outside
+  a bundle, i.e. in every `wails3 dev`); `RemoveDeliveredNotification`, not the
+  stub `RemoveNotification`; the tray icons are two inks, not a template icon.
 - **The app outlives its windows**: closing hides; «Выход» quits. Quitting is
   per-platform — `appShouldQuit` says yes on darwin, or ⌘Q is refused.
-- The card's corner button (`KanbanCard__terminal`) opens the card's terminal;
-  its colour and glyph say what is happening (`StallKindConversation` for a cut
-  stage). The terminal page draws nothing over the screen.
-- **A stage writes one comment, at the end** (`stageComment`). "Nothing happened"
-  is state, never a comment: one stall record per card (`card_stall`,
-  `stall.go`), route dead-ends written softly so they never bury the root cause.
-  Comments are drawn only in team mode.
+- **The agent writes the comment** (`comment_card`), one, at the end; this side
+  writes one only when the agent did not (`commentFirstTurn`, `hasCommented`).
+  "Nothing happened" is state, never a comment: one stall record per card
+  (`card_stall`, `stall.go`). Comments are drawn only in team mode.
 - The card's changes are git and nothing else (`cardDiff.tsx`, `carddiff.go`),
   never cached, the committed half read by branch name because the copy is
-  folded away after a stage; the button is drawn on a stored count
+  folded away when a stage ends; the button is drawn on a stored count
   (`card_changes`).
-- **The model is a graph**: nodes (a column is a node's face; the node id is the
-  board option id and never regenerated), edges are routes, crew and `Prompt`
-  inherit node → column. A board can be viewed one route at a time
-  (`boardFlows.ts`; which route a card is on is Go's answer, `CardFlowsForBoard`,
-  after `SeedBoard`); the intake column is kept and divided off
-  (`intakeColumn`), found as the view's first group, never by name.
-- Editing: `automationEditor.tsx` over the board's own columns, inside
-  `automationDialog.tsx`; types and pure helpers in `automation.ts`. The panel
-  edits the column on «Колонки» and the stage on a route tab, each stage field
-  naming the column's answer it falls back to. A template is shown, not edited
-  (`templateEditor.tsx`); made by saving a board (`saveAsTemplate.ts`).
+- **Planning is a conversation with no card** (`planning.go`,
+  `planningDialog.tsx`): read-only policy, several turns, and the cards it
+  agrees on are created through the board tools.
 - Templates (`docs/templates.md`): the marker (`TemplateMarkerProperty`) is the
   app's to give, and copies are disowned at launch; which templates are ours is
   `createdBy`. Files are English and translated on import through
   `templates/i18n/*.json` keyed by the English string
-  (`TestEveryTemplateStringIsTranslated`). Language is `ui-settings.json`;
-  switching reinstalls (`App.retemplate`); the page reports the system locale via
-  `UseLanguage` and awaits it before the first render. **Three names stay
-  Russian in the files** (`appGivenNames`: «Исход» and its two values), because
-  the engine finds them by title.
+  (`TestEveryTemplateStringIsTranslated`) — every string, with no exemptions.
+  Language is `ui-settings.json`; switching reinstalls (`App.retemplate`); the
+  page reports the system locale via `UseLanguage` and awaits it before the
+  first render.
 - **What an agent is told first is two texts** (`promptLead`,
   `boardprompts.go`): the board's `prompt`, then the agent's own. A third layer
   per (board, agent) was built and removed; do not bring it back.
-- **Automation lives on the board** (`columns`/`flows` in board properties,
-  written through by `persistBoardLocked`); the registry in memory is a working
-  copy, and `config.json` does not carry it.
+- **What the board keeps is the board's** (`boardseed.go`): `prompt`, `setup`
+  and the three "which field is which" records (`projectProperty`,
+  `branchProperty`, `columnProperty`), written through by `persistBoardLocked`.
+  `config.json` does not carry them.
 - **A setting lives where its owner is**: machine settings in
   `settings/appSettingsDialog.tsx`; deploy targets, agents and proxies are
   machine registries offered from a board's ⋯ menu on its setup plan; UI prefs
@@ -274,17 +263,18 @@ server.
   `docs/themes.md`), shipped as pairs (light/dark) with `themeMode` choosing the
   half; `_tokens.scss` is the first paint and a test holds it equal to the
   shipped configs.
-- **Board setup questions are each a ⋯ menu item**, and which ones a board has is
-  read off its stages (`setupSteps`, `BoardSetupPlan`), not its template. The
+- **Board setup is four questions** — name, folder, agent, done (`impliedSetup`,
+  `BoardSetupPlan`) — and a board may declare its own (`BoardPropSetup`). The
   first is the board's name, unique case-insensitively (`boardTitle.ts`).
   **Every question may be left unanswered** ("relaxed mode", a word and not a
   flag): the default must be sayable in one sentence where the question is asked
   and must keep a person able to work.
-- **A card names its agent by its assignee** («Кто занимается») and nothing else;
-  the stage writes the resolved worker there (`assignCardAgent`), and
-  `humanAssignee` vetoes a session on a person's card. Agent accounts are made
-  when the agent is registered (`EnsureAgentAccounts`); `AgentUsername` keeps
-  letters of any script.
+- **A card names its agent by its assignee** («Кто занимается») and nothing else
+  (`assignedAgent`, by account id then by username); `humanAssignee` vetoes a
+  session on a person's card. Agent accounts are made when the agent is
+  registered (`EnsureAgentAccounts`); `AgentUsername` keeps letters of any
+  script. Every registered agent is offered on every board
+  (`agentAssignees.ts`); the AI switch is the only thing that narrows the list.
 
 ### A folder hands out a workspace, and the card owns it
 
@@ -305,9 +295,10 @@ keep that spelling).
   (folder, board): `worktree` or `branch` (`WorkdirEntry.Modes`); `branch` holds
   the folder for one card and refuses dirty tracked work — as a stall, not a
   failure.
-- **The branch is the product, the copy is the workshop**: `FoldWorktree` after a
-  stage, remade from the branch on the next terminal; the branch is written onto
-  the card, the path never. Where a stage runs is `FlowNode.RunIn`.
+- **The branch is the product, the copy is the workshop**: `FoldWorktree` when
+  a stage ends, remade from the branch on the next one; the branch is written
+  onto the card, the path never. A deploy stands in the folder itself — it
+  publishes a branch that already exists.
 
 ### An agent talks back through MCP, not through its output
 
@@ -316,17 +307,18 @@ over HTTP on the front door (`/acp/board/mcp`, `boardapi.go`).
 
 - Everything is **named, not identified**, except a card id, which defaults to
   the card the run stands on.
-- `finish_work` ends a stage; `describe_conversation`/`name_conversation` exist
-  because nothing else can know what a pty conversation is about.
-- `move_card` is the one write that lets the board notify — a card moved at an
-  agent's request must fire the column's automation. A card's description is not
-  editable by an agent.
+- `finish_work` ends a stage; `comment_card` is how the result reaches a person;
+  `update_card` puts values into the card's own fields, and `list_card_fields`
+  says what a value may be.
+- `move_card` is the one write that lets the board notify, and it is how a stage
+  ends up somewhere: the agent names the column whose name says what happened.
+  The move is remembered as the agent's own (`noteAgentMove`) so it starts
+  nothing. A card's description is not editable by an agent.
 - **The server carries a grant token, not a board id** (`boardtools.go`), minted
   per run; every card id is checked against the grant's board (`grantedCard`).
   The handler is stateless.
-- A session declares the server in `session/new`; a terminal gets a config file
-  (`cliMCPArgs`). A deploy or test session deliberately does not get the tools
-  (an agent moving its own card is a loop).
+- A session declares the server in `session/new`, when the adapter advertises
+  `mcpCapabilities.http`. A deploy session deliberately does not get the tools.
 
 ### A source brings cards in, and the app decides what they become
 
@@ -359,39 +351,6 @@ over HTTP on the front door (`/acp/board/mcp`, `boardapi.go`).
   stands in the first column **silently** (`SortBoard.FileCard`) — never through
   the notifying move. Decisions are `inbox_sort`; like sources, the package
   imports neither board nor agents.
-
-### A terminal is where the work happens, watched or not
-
-`internal/acp/terminal.go` + `terminalws.go`: the agent's own CLI in a pty in the
-card's workspace, xterm.js over `/acp/terminal/{id}/ws`.
-
-- Drawn **beside the card** (`cardTerminal.tsx` panel, lazily loaded), opened
-  from the dialog toolbar; the window is the panel's open-in-new button.
-- **A conversation is keyed (card, node)**, node = column option id (`@none` for
-  no column). A stage **adopts** the conversation already open on its node
-  (`startStageTerminal`).
-- **Two declared kinds**: work (`StartCardTerminal`, claims the workspace,
-  refuses with `errNoWorkdir` when no folder) and talk (`StartCardTalk`,
-  `@talk`, may stand in «черновики доски», `<dataDir>/boards/<boardID>`). Never
-  infer the kind.
-- Where a conversation runs is `cardPlace`. A card returning to a node gets a
-  brief, not the task again (`returnBrief`); a stage is told what the branch
-  already holds (`branchstate.go`) and what the card says (`cardIntro`).
-- **Properties are the dataflow**: a stage declares `Writes`/`Reads`; writes come
-  through `finish_work` and are written before the report is delivered; reads
-  fall back to what upstream stages write (`UpstreamWrites`). The brief and
-  `list_card_fields` state the contract to the agent.
-- **A transition can ask** (`cardask.go`, `FlowEdge.Ask`), including the entry
-  edge (`EntryNode`); `AskWorkMode` lands on `FlowState.WorkMode`.
-- **How a stage ended is the «Исход» field, two values**, written by the engine
-  for every stage before edges are read, silently and by id; a person writes it
-  from the route strip (`MarkCardOutcome` via `UpdateCard`, the one notifying
-  write). No outcome columns.
-- Tools per column/node (`MCPServers`), added to the agent's own; dokku's and
-  `boardmcp.ServerName` are refused names.
-- A refused resume restarts fresh once (`restartFresh`); a terminal drops the
-  kind's `dropEnv` like a session (`CLAUDE_CODE_CHILD_SESSION` disables
-  transcripts). A terminal a person opened raises no attention; a stage's does.
 
 ### The app replaces itself, and trusts one key while doing it
 
@@ -461,12 +420,13 @@ per driver.
 - **User-facing text is plain documentation**, in `frontend/i18n/*.json`,
   component defaults, `site/` and `docs/guide/`: name the thing, say what it
   does, say what to do. No aphorisms, mirrored halves, metaphors where a plain
-  verb exists, or headings that make statements. Product vocabulary (маршрут,
-  карточка едет, «Входящие») is terminology and stays.
+  verb exists, or headings that make statements. Product vocabulary (карточка,
+  колонка, папка, «Входящие») is terminology and stays.
 - **Russian is never a key.** Nothing finds, matches or branches on a Russian
   word: the column property is what a view groups by, author/link properties are
-  found by type, folders by the id the board records. The one exception is
-  `NormalizeVerdict`.
+  found by type, folders by the id the board records. There are no exceptions
+  left — the last three were «Исход» and its two values, and they went with the
+  route engine.
 - **A reference is a foreign key**, and nothing is found by name.
   `docs/schema/erd.md`, `app.hcl` and `erd.html` are generated and tested;
   `docs/db-erd.md` is the model in words, `docs/db-schema-review.md` the

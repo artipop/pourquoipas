@@ -151,9 +151,3 @@ The field says what is wrong with it:
 
 The theme is not applied, and the text stays in the field — fix it and press
 "Apply" again.
-
-## The terminal
-
-The terminal window stays dark under every theme: a real CLI runs there, and a
-console on a light background reads worse. The theme paints the chrome around
-the terminal, not its own ground.

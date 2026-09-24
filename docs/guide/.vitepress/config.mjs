@@ -20,7 +20,7 @@ const ru = {
     label: 'Русский',
     lang: 'ru-RU',
     titleTemplate: ':title — руководство XCIII',
-    description: 'Руководство пользователя XCIII: доска, агенты, маршруты, Входящие и настройки.',
+    description: 'Руководство пользователя XCIII: доска, агенты, Входящие и настройки.',
 
     themeConfig: {
         siteTitle: 'XCIII · Руководство',
@@ -45,9 +45,7 @@ const ru = {
             {
                 text: 'Автоматизация',
                 items: [
-                    {text: 'Колонки и маршруты', link: '/automation/'},
-                    {text: 'Правила на стрелках', link: '/automation/rules'},
-                    {text: 'Собрать маршрут', link: '/automation/flow'},
+                    {text: 'Как доска запускает агента', link: '/automation/'},
                     {text: 'Системный промпт доски', link: '/automation/prompt'},
                 ],
             },
@@ -107,7 +105,7 @@ const en = {
     lang: 'en-US',
     link: '/en/',
     titleTemplate: ':title — the XCIII guide',
-    description: 'The XCIII user guide: the board, agents, routes, the inbox and the settings.',
+    description: 'The XCIII user guide: the board, agents, the inbox and the settings.',
 
     themeConfig: {
         siteTitle: 'XCIII · Guide',
@@ -132,9 +130,7 @@ const en = {
             {
                 text: 'Automation',
                 items: [
-                    {text: 'Columns and routes', link: '/en/automation/'},
-                    {text: 'Conditions on arrows', link: '/en/automation/rules'},
-                    {text: 'Build a route', link: '/en/automation/flow'},
+                    {text: 'How the board starts an agent', link: '/en/automation/'},
                     {text: 'The board’s system prompt', link: '/en/automation/prompt'},
                 ],
             },

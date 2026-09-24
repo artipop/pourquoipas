@@ -76,10 +76,6 @@ function onExportCsvTrigger(board: Board, activeView: BoardView, cards: Card[], 
     }
 }
 
-// The route canvas (solid-flow, xyflow, d3) rides with this dialog and with
-// nothing else on the board, so it arrives when the dialog is opened. Whether
-// to offer it at all is asked of bindings.ts, which costs nothing to import.
-
 const ViewHeaderActionsMenu = (props: Props) => {
     const intl = useIntl()
     const [showSources, setShowSources] = createSignal(false)

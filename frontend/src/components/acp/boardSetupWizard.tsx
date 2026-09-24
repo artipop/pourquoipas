@@ -338,7 +338,7 @@ const BoardSetupWizard = (props: Props) => {
                         stage of a route has nowhere to work and waits. */}
                     <Show when={!workdirAnswered()}>
                         <p class='BoardSetupWizard__hint'>
-                            {intl.formatMessage({id: 'BoardSetup.folder-skip', defaultMessage: 'This can be answered later. Without a folder a card can still be discussed with an agent — in the board’s drafts folder — but a card on a route will wait at the stage that works it.'})}
+                            {intl.formatMessage({id: 'BoardSetup.folder-skip', defaultMessage: 'This can be answered later. Without a folder the agent still runs — in a scratch directory of its own — and a task can still be discussed in the board’s drafts.'})}
                         </p>
                     </Show>
                     <Button onClick={pickWorkdir}>
@@ -598,7 +598,7 @@ const BoardSetupWizard = (props: Props) => {
         <Dialog
             class='BoardSetupWizard'
             title={<span>{intl.formatMessage({id: 'BoardSetup.title', defaultMessage: 'Set up this board: {step}'}, {step: title(step())})}</span>}
-            subtitle={<span>{intl.formatMessage({id: 'BoardSetup.subtitle', defaultMessage: 'The board\'s columns and routes are already in place. What is left is to say where things are on your machine.'})}</span>}
+            subtitle={<span>{intl.formatMessage({id: 'BoardSetup.subtitle', defaultMessage: 'The board\'s columns are already in place. What is left is to say where things are on your machine.'})}</span>}
             onClose={props.onClose}
         >
             <div class='BoardSetupWizard__content'>

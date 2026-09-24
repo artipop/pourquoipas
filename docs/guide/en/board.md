@@ -1,7 +1,7 @@
 # The board: title, description, menu
 
-This page is about the board itself: the header, the menu, the views. Columns
-and routes are covered in ["Columns and routes"](./automation/index.md).
+This page is about the board itself: the header, the menu, the views. How an
+agent takes a card is covered in ["The agent on a card"](./agent.md).
 
 ## Title and icon
 
@@ -35,15 +35,26 @@ menu:
 - **"Export board archive"** — export this board as one file. Exporting all
   boards at once, and import, are in [Moving](./transfer.md);
 - **"New template from board"** — turn the board into a template, so the next
-  one starts with the same columns and routes; see
-  ["Columns and routes"](./automation/index.md);
+  one starts with the same columns;
 - **"Duplicate board"**, **"Hide board"**, **"Delete board"** and
   **"Move To..."** — move the board to another category of the list.
 
-The board's behaviour — columns, routes, project folders, agent instructions —
-is configured elsewhere: in the **"Columns and routes"** window, opened from
-the «⋯» menu in the board header, right of the view tabs. See
-["Columns and routes"](./automation/index.md).
+## The «⋯» menu in the board header
+
+This is where the board answers the questions about this machine, one menu item
+per question:
+
+- **«Системный промпт доски…»** — what this board's agents are told before
+  anything else (["The board's system prompt"](./automation/prompt.md));
+- **«Папки…»** — the folders its agents work in
+  (["Folders and branches"](./folders.md));
+- **«Агенты…»** and **«Куда деплоить…»** — registries of the machine, opened
+  from where they are used;
+- **«Пройти настройку заново…»** — the same wizard a new board opens;
+- **«Сохранить как шаблон…»** and the exports, at the bottom under a rule.
+
+Which items a board has is the board's own answer: one that publishes nowhere is
+not asked where to deploy.
 
 ## Views
 
@@ -53,8 +64,7 @@ Everything that arrives from outside goes not to a working board but to a
 board of its own, **Входящие** — see [the Inbox section](./inbox/index.md). (The
 app names that board in Russian, and the name is not translated.)
 
-The view header has the view's name, **"Route"**, **"Filter"**, **"Sort"** and
-search. These are settings of the view, not of the board: each view has its own.
+The view header has the view's name, **"Filter"**, **"Sort"** and search. These are settings of the view, not of the board: each view has its own.
 When they do not fit the window the bar scrolls sideways. The ⋯ menu belongs to
 the view too; on the Входящие board it holds **"Sources…"** and nothing else.
 
@@ -62,29 +72,17 @@ Clicking the view's name opens a menu: the board's views, **"Rename view"**,
 **"Duplicate view"**, **"Delete view"** and **"Add view"**. Renaming opens a
 field in the header itself — Enter saves it, Esc cancels.
 
-## Showing one route
+## Columns
 
-The kanban's view header has **"Route"**. It starts on "All
-routes": the board shows every column and every card. Pick a route and the
-board keeps only that route's stages and only the cards travelling it.
+A column is an ordinary option of the property the kanban groups by («Статус» in
+the shipped templates). Adding, renaming and reordering them is done on the
+board itself; columns have no editor of their own, and the board knows nothing
+about them but their names.
 
-The button is there on any board with a route at all, even a single one:
-narrowing a board of nine columns to the three its route goes through is worth
-it too.
+The name matters, though, because the agent reads it. A card is moved into a
+column, the agent is given that column's name along with the names of the
+board's other columns, and it decides from them where to put the card when it is
+finished. «Готово», «На ревью», «Заблокировано» are sentences, not settings.
 
-The board's first column is separated from the rest by a vertical line —
-always, not only when a route is picked. What arrives is to the left of it,
-what the board does with it is to the right. A card arrives in that first
-column before anything has decided which route it takes, so it stays there
-whatever the route is: that column belongs to every route at once. A card already travelling
-another route disappears from it; a card that has chosen no route is shown
-under every one.
-
-Which route a card is on is decided exactly as the automation decides it: the
-card stands on one of the route's stages, or it names the route with an option
-of that name — usually in the «Workflow» field. See
-["How a card gets onto a route"](./automation/index.md).
-
-The pick is kept in the view itself: it is the same after a reload and on
-another screen. For a view per route, add a view and pick the route in it — the
-other views are untouched.
+The board's first column is separated from the rest by a vertical rule. What
+arrives is to the left of it; what the board does with it is to the right.

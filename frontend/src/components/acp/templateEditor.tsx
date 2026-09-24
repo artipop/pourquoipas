@@ -121,7 +121,7 @@ const TemplateEditor = (props: Props) => {
         <Dialog
             class='TemplateEditor'
             title={<span>{intl.formatMessage({id: 'TemplateEditor.title', defaultMessage: 'Template'})}</span>}
-            subtitle={<span>{intl.formatMessage({id: 'TemplateEditor.subtitle', defaultMessage: 'A board made from this template arrives with the columns and routes below. Its name, what it is for, and what it asks about this machine are set here.'})}</span>}
+            subtitle={<span>{intl.formatMessage({id: 'TemplateEditor.subtitle', defaultMessage: 'A board made from this template arrives with the columns below. Its name, what it is for, and what it asks about this machine are set here.'})}</span>}
             onClose={props.onClose}
         >
             <div class='TemplateEditor__content'>

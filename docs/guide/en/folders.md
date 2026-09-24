@@ -22,11 +22,9 @@ it there. This holds on another machine too: the card carries its branch in the
 «Branch» field, so the work is known about there even when the copy itself is
 not.
 
-**The terminal button in the corner of a card** opens the work on it. When the
-card has no folder there is nowhere to work, so the button opens the card
-itself, where the question "Which folder will the agent work in?" is asked. A
-card can still be discussed without a folder: «Обсуждение» in the terminals
-panel always opens.
+**Without a folder the agent still runs** — it gets a scratch directory with
+nothing to read and nothing to commit. For a card that needs code, pick the
+folder first: the «Папка» field is on the card itself.
 
 Which items a board's menu has is decided by the template it was made from: the
 «Development» board asks about a folder, a deploy host and a browser, so its menu
@@ -94,33 +92,28 @@ or on that branch. The new answer applies to the cards that come after.
 
 ## The card's branch
 
-One card, one branch — however many stages of a route it travels and however
-many terminals you open beside it. The branch reads like the task: a Russian
-title is transliterated, so «Почини логин» becomes `pochini-login-1a2b`.
+One card, one branch — however many times an agent runs on it. The branch reads
+like the task: a Russian title is transliterated, so «Почини логин» becomes
+`pochini-login-1a2b`.
 
 For names by meaning rather than by spelling — Settings → This machine → Other →
 **"The agent names each card's branch"**: before the card's first branch the
-agent runs briefly and answers with one name ("fix-sso-login"). No terminal
-opens, and a slow or odd answer falls back to the card's title.
+agent runs briefly and answers with one name ("fix-sso-login"); a slow or odd
+answer falls back to the card's title.
 
 The branch is written into the card's «Branch» field, so it travels with the card
 to another board and is visible on another machine. The copy's directory is not
 written to the card — a path means nothing on another machine; it is shown on
-the card's stamp and in the terminal panel.
+the card's stamp.
 
-When a stage is finished and everything is committed, the copy's directory is put
-away and the branch stays: the next terminal on that card remakes the copy from
+When the work is finished and everything is committed, the copy's directory is
+put away and the branch stays: the next run on that card remakes the copy from
 the branch. A copy with uncommitted changes — or one a CLI is still running in —
 is left exactly where it is.
 
-## Where a stage of a route works
+## Where the agent works
 
-By default: an agent works on the card's own branch, a deploy and a test in the
-folder itself (a deploy publishes a branch that already exists, a test checks
-something already published).
-
-A stage can say otherwise: select it in the route editor, open "Only on this
-route…" and set **The stage works**. That is how you build a route where QA
-checks the card's code *before* the merge: the QA stage works on the card's own
-branch, and a "branch merged into the main one" transition after it leads to the
-deploy.
+An agent works on the card's own branch; a deploy stands in the folder itself,
+because it publishes a branch that already exists and needs no copy of its own.
+A conversation with no card («Обсудить с агентом») stands in the folder too and
+changes nothing in it.

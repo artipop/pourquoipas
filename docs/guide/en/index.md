@@ -14,18 +14,18 @@ hero:
       text: Start with the board
       link: /en/board
     - theme: alt
-      text: Build a route
-      link: /en/automation/flow
+      text: How an agent is started
+      link: /en/automation/
 
 features:
   - title: The board
     details: Title, icon, description, the «⋯» menu and views.
     link: /en/board
   - title: The agent
-    details: How to assign a card to an agent, where the terminal is, what stays on the card.
+    details: How to assign a card to an agent, how to answer its questions, what stays on the card.
     link: /en/agent
   - title: Automation
-    details: Columns, routes and conditions on transitions.
+    details: The one rule by which the board starts an agent, and what it is told.
     link: /en/automation/
   - title: Inbox
     details: 'Cards that arrive on their own: a link, Kaiten, a script or a phone over HTTP.'

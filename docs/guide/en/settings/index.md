@@ -34,7 +34,7 @@ under them. See [Agents, npx and Node.js](./agents.md).
 - **Language** — the list of app languages. When none was ever picked, the
   system language applies. The board templates come in the app's language:
   changing the language reinstalls them, so the template picker offers boards
-  whose columns and routes are in the new one. Boards you have already made are
+  whose columns are in the new one. Boards you have already made are
   left alone — they are yours.
 - **Help** — "The guide", with an "Open" button: it opens this guide. Below
   it — "Give feedback", with a "Write" button: it opens your mail program
@@ -48,21 +48,17 @@ to do with agents on and off. It is on by default.
 
 When it is off, the app is a plain kanban board:
 
-- a board's ⋯ menu has no "Columns and routes…", "Agents…", "Folders…",
-  "Where to deploy…" or the board's system prompt, and the board setup never
-  opens by itself;
-- moving a card into a column starts nothing: no agent, deploy or test, and no
-  route moves on;
-- a card has no terminal button, route strip, "Changes" or the agents' fields —
-  the folder, the branch and «Исход»; the assignee field offers people only;
-- there are no agent notifications, no dot on the icon next to the clock and no
-  route questions;
-- the settings have no "Other" section, and the phone has no "Waiting" and
-  "Terminals" tabs.
+- a board's ⋯ menu has no "Agents…", "Folders…", the board's system prompt or
+  "Where to deploy…", and the board setup never opens by itself;
+- moving a card into a column starts nothing;
+- a card has no "Changes" and none of the agents' fields — the folder and the
+  branch; the assignee field offers people only;
+- there are no agent notifications and no dot on the icon next to the clock;
+- the settings have no "Other" section, and the phone has no "Waiting" tab.
 
-Nothing is deleted: routes, agents, folders and the values on the cards stay,
-and come back as soon as the switch is on again. An agent already working when
-the switch is turned off finishes its stage.
+Nothing is deleted: agents, folders and the values on the cards stay, and come
+back as soon as the switch is on again. An agent already working when the switch
+is turned off finishes what it was doing.
 
 The switch is shown only in a build that has agents at all.
 
@@ -89,16 +85,16 @@ the Inbox, Cards, Waiting and Terminals tabs.
 ## Agent notifications
 
 The **"Notify me when an agent is waiting"** switch is in the "Other" section.
-Notifications are shown in the board's window; a terminal window has none — the
-agent's question is right there on it.
+A notification carries the question itself and its buttons: it can be answered
+from there without opening the card.
 
 When the app is minimised or behind another window, the notification comes from
 the system instead: it names the agent that is asking and the card it is about.
-Clicking it opens that agent's terminal — the same thing the "Open the terminal"
-button does, and it counts the same way as knowing about the question.
+Clicking it opens the card, and that counts the same way as knowing about the
+question.
 
-When off, the switch removes only the notifications. The amber terminal button
-on the card stays, and so does the dot on the app's icon next to the clock: they
+When off, the switch removes only the notifications. The amber badge on the card
+stays, and so does the dot on the app's icon next to the clock: they
 say an agent is waiting, and they interrupt nobody.
 
 On macOS the system asks for notification permission once — the first time an
@@ -114,7 +110,7 @@ Clicking it opens a menu:
 
 - **"Открыть"** — bring the board's window back, even from minimised or closed.
 - The waiting agents, one per line: the agent's name and the card. Clicking one
-  opens that agent's terminal.
+  opens that card.
 - **"Выход"** — close the application entirely.
 
 The icon cannot be turned off: it interrupts nobody, and it is there for exactly
@@ -123,7 +119,7 @@ the time when nobody is looking at the board.
 ## Closing the window is not quitting
 
 The board's window can be closed: the application keeps running, and so do the
-agents. A stage of a route sees its work through, sources bring cards in,
+agents. An agent sees its work through, sources bring cards in,
 notifications arrive. What stays is the icon next to the clock — it says the
 application is running, and it brings the window back.
 
@@ -131,8 +127,8 @@ The same window comes back with the same board, not a page loaded from scratch.
 On macOS the Dock icon does the same thing.
 
 To quit for real, use **"Выход"** in the icon's menu (or ⌘Q while the window is
-open). Quitting closes every agent terminal: if a stage never reported a result,
-its card stays on its step with the amber pause on its terminal button.
+open). Quitting stops the agents that are working: if one never said how it
+ended, its card stays in its column with the reason written on it.
 
 ## The agent's instructions
 
@@ -164,14 +160,13 @@ Close the app before editing the file: it reads the file at startup.
 | `worktreeMode` | what to do in a repository on a board that was never asked: `always` — a copy of its own per card, `never` — a branch in the folder itself. The folder's own answer on this board (board menu → "Folders…") wins — see [Folders and branches](../folders.md) |
 | `artifactsDir` | where screenshots and reports of test runs are kept |
 
-Columns and routes are not in this file: the automation lives on the board
-itself and travels with it into an export and into a template.
+Columns are not in this file: they belong to the board itself and travel with it
+into an export and into a template.
 
 ## What is not here
 
-Settings of a specific board — columns, routes, project folders, agent
-instructions — are set on the board itself, in the
-["Columns and routes"](../automation/index.md) window.
+Settings of a specific board — project folders and agent instructions — are
+asked from the board's own ⋯ menu, one item per question.
 
-**"Where to deploy"** is there too: deploy targets are only shown on a board
-that has a deploy column, because no other board has any use for them.
+**«Куда деплоить…»** is there too, and only on a board that asked for it: no
+other board has any use for a deploy host.

@@ -34,7 +34,7 @@ const AddPropertiesTourStep = (): JSX.Element => {
     const screen = (
         <FormattedMessage
             id='OnboardingTour.AddProperties.Body'
-            defaultMessage='Properties are what the board groups, sorts and filters by: who works on the card, which project it belongs to, what stage it is on.'
+            defaultMessage='Properties are what the board groups, sorts and filters by: who works on the card, which project it belongs to, when it is due.'
         />
     )
 

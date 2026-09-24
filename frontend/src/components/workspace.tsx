@@ -202,7 +202,7 @@ const Workspace = (props: Props): JSX.Element => {
                         >
                             <FormattedMessage
                                 id='Workspace.edit-template-settings'
-                                defaultMessage='Columns, routes and setup…'
+                                defaultMessage='Columns and setup…'
                             />
                         </button>
                     </div>

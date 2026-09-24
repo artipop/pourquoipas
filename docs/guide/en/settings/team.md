@@ -66,7 +66,7 @@ be repaired from inside the app.
 
 You can work the server's board from the app on your own computer as well as
 from a browser — and then the cards live on the server while the agents, the
-terminals and the folders stay on your machine.
+and the folders stay on your machine.
 
 1. **Настройки → «Сервер»**.
 2. Type the address (a bare `board.example.com` will do), your name and your
@@ -86,8 +86,8 @@ can be reached *from*, and «Сервер» answers *whose* it is.
 Once connected, a switcher appears in the sidebar above the list of boards, with
 two entries: **«Эта машина»** and the server's address.
 
-It decides only **what the window shows**. The agents work both boards: a stage
-running on the server's card keeps going while you look at your own. The page
+It decides only **what the window shows**. The agents work both boards: an
+agent running on the server's card keeps going while you look at your own. The page
 reloads when you switch — everything open on it was fetched against the board it
 came from.
 

@@ -72,7 +72,6 @@ What the app will not find:
 After changing your PATH, restart the app: the shell is asked once, at
 startup.
 
-The same applies to [the terminal with an agent](../agent.md): it launches the
-CLI itself (`claude`, `codex`) rather than an adapter, and looks for it in the
-same places. Windows does not have this problem — there the app gets your
-whole environment.
+The same applies to [an agent run on a card](../agent.md): the adapter is looked
+for in the same PATH as `npx`, and the CLI itself where the adapter can see it.
+Windows does not have this problem — there the app gets your whole environment.
