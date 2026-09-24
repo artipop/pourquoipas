@@ -20,7 +20,7 @@ export type ShareResult = {
 export async function shareItem(boardId: string, title: string, url: string, note: string): Promise<ShareResult> {
     const bindings = goApp()
     if (!bindings?.ShareItem) {
-        throw new Error('отправка недоступна')
+        throw new Error('no Go side to file the item through')
     }
     return JSON.parse(await bindings.ShareItem(boardId, title, url, note)) || {}
 }

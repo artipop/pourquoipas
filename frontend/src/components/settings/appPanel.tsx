@@ -29,6 +29,7 @@ import {
     themeModes,
     ThemeName,
     THEME_FAMILIES,
+    themeFamilyName,
     defaultFamilyId,
 } from '../../theme'
 
@@ -197,7 +198,7 @@ const AppPanel = () => {
         const mine = customThemes()
 
         return [
-            ...THEME_FAMILIES.map((family) => ({value: family.id, label: family.name})),
+            ...THEME_FAMILIES.map((family) => ({value: family.id, label: themeFamilyName(family, intl)})),
 
             // One line in the list, and it is not a heading: everything above
             // it is a theme this build ships, everything below it is one you

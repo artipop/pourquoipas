@@ -20,7 +20,7 @@ Twelve rows, in this order:
   **GitHub**, **Monokai** — themes from Mattermost's community list. The half
   that list does not carry is the real one the theme has at home — One Light,
   Gruvbox Light, Light Owl and so on.
-- **«Кислота: синий и жёлтый»** and **«Эйсид-техно»** — the acid ones, and they
+- **Acid: blue and yellow** and **Acid techno** — the acid ones, and they
   are meant to hurt.
 - **Your own themes** — the ones you wrote, as many as you like; below.
 - **"+ New theme"** — the last row of the list; it is not a theme, it makes one.

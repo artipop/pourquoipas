@@ -1,6 +1,7 @@
 // The Wails-generated Go bindings are PascalCase methods, not constructors.
 /* eslint-disable new-cap */
 import {Board, IPropertyTemplate, IPropertyOption} from '../../blocks/board'
+import {IntlShape} from '../../intl'
 import mutator from '../../mutator'
 import {Utils, IDType} from '../../utils'
 import {goApp} from '../../goBridge'
@@ -17,23 +18,18 @@ import {BOARD_PROP_BRANCH_PROPERTY, BOARD_PROP_PROJECT_PROPERTY, boardBranchProp
 // empty and the person who had just answered the question with nothing to
 // choose. Anything that adds a folder calls this.
 
-// What the fields are *called* when this app has to make one. Names given at
-// creation and never keys: the board records which property is which, so a
-// person may rename either and a board in another language is not obliged to
-// spell them this way.
-export const WORKDIR_PROPERTY_TITLE = 'Папка'
-export const BRANCH_PROPERTY_TITLE = 'Ветка'
+// What the fields are *called* when this app has to make one: in the language
+// the page is read in, like the templates that ship the same pair. Names given
+// at creation and never keys: the board records which property is which, so a
+// person may rename either, and a board made in another language keeps the
+// names it was made with.
+export type FieldNames = {folder: string, branch: string}
 
-// The names this app has given the folder field before now, newest last. A
-// board that still carries one is renamed, once, by the same rule that lets us
-// create it: the name is ours, so changing it is not editing somebody's own
-// field. Anything a person renamed it to is left alone — it is none of these.
-const OUR_WORKDIR_TITLES = ['Проекты', 'Папки', WORKDIR_PROPERTY_TITLE]
-
-// namedByUs says whether the field still carries a name we gave it, and may
-// therefore be renamed under its owner.
-function namedByUs(name?: string): boolean {
-    return OUR_WORKDIR_TITLES.includes((name || '').trim())
+export function fieldNames(intl: IntlShape): FieldNames {
+    return {
+        folder: intl.formatMessage({id: 'Workdirs.field-folder', defaultMessage: 'Folder'}),
+        branch: intl.formatMessage({id: 'Workdirs.field-branch', defaultMessage: 'Branch'}),
+    }
 }
 
 // Workdir is a registry entry as the page reads it back (see workdirsPanel).
@@ -75,7 +71,7 @@ export function findWorkdirProperty(board: Board, properties: IPropertyTemplate[
 // untouched — this runs on its own, so it must not churn the board or the undo
 // history. Returns how many options were added, so a caller that wants to say
 // so can.
-export async function syncWorkdirsToBoard(board: Board, registry: Workdir[]): Promise<{added: number, property?: IPropertyTemplate}> {
+export async function syncWorkdirsToBoard(board: Board, registry: Workdir[], names: FieldNames): Promise<{added: number, property?: IPropertyTemplate}> {
     if (registry.length === 0) {
         return {added: 0}
     }
@@ -98,8 +94,7 @@ export async function syncWorkdirsToBoard(board: Board, registry: Workdir[]): Pr
     // two exist for the same reason and a board of shopping lists must get
     // neither: what puts it there is a folder that is actually a repository.
     const wantsBranch = mine.some((r) => r.git) && !boardBranchProperty(board)
-    const renaming = Boolean(property) && namedByUs(property!.name) && property!.name !== WORKDIR_PROPERTY_TITLE
-    if (property && missing.length === 0 && !wantsBranch && !renaming) {
+    if (property && missing.length === 0 && !wantsBranch) {
         return {added: 0, property}
     }
 
@@ -111,18 +106,14 @@ export async function syncWorkdirsToBoard(board: Board, registry: Workdir[]): Pr
     if (!target) {
         target = {
             id: Utils.createGuid(IDType.BlockID),
-            name: WORKDIR_PROPERTY_TITLE,
+            name: names.folder,
 
             // One choice, because a card is one workspace: it claims one
-            // directory, works one branch and hands its agent one cwd. See
-            // narrowWorkdirProperty for what a second value used to mean.
+            // directory, works one branch and hands its agent one cwd.
             type: 'select',
             options: [],
         }
         newProperties.push(target)
-    }
-    if (renaming) {
-        target.name = WORKDIR_PROPERTY_TITLE
     }
     for (const workdir of missing) {
         target.options.push({
@@ -138,7 +129,7 @@ export async function syncWorkdirsToBoard(board: Board, registry: Workdir[]): Pr
     if (wantsBranch) {
         branchProperty = {
             id: Utils.createGuid(IDType.BlockID),
-            name: BRANCH_PROPERTY_TITLE,
+            name: names.branch,
             type: 'text',
             options: [],
         }

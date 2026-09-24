@@ -18,7 +18,7 @@ import {goApp} from '../../goBridge'
 
 import AgentQuickAdd from './agentQuickAdd'
 import {checkSetupAnswer, createSetupPlan, recordSetupStep, SetupStep, SetupStepKind, stepRequires} from './boardSetup'
-import {Workdir, syncWorkdirsToBoard, useWorkdirHere} from './workdirSync'
+import {Workdir, fieldNames, syncWorkdirsToBoard, useWorkdirHere} from './workdirSync'
 
 import './boardSetupWizard.scss'
 
@@ -223,7 +223,7 @@ const BoardSetupWizard = (props: Props) => {
             await useWorkdirHere(entry, props.board.id)
             setTaken(null)
         }
-        await syncWorkdirsToBoard(props.board, JSON.parse(await bindings!.ListAgentWorkdirs(props.board.id)) || [])
+        await syncWorkdirsToBoard(props.board, JSON.parse(await bindings!.ListAgentWorkdirs(props.board.id)) || [], fieldNames(intl))
     }, STEP_WORKDIR)
 
     const addWorkdir = () => run(async () => {
@@ -242,7 +242,7 @@ const BoardSetupWizard = (props: Props) => {
         // card names its folder with an option of the board's own field, so a
         // folder added here and nowhere else left the person who had just
         // answered this question with nothing to pick on the card.
-        await syncWorkdirsToBoard(props.board, JSON.parse(await bindings!.ListAgentWorkdirs(props.board.id)) || [])
+        await syncWorkdirsToBoard(props.board, JSON.parse(await bindings!.ListAgentWorkdirs(props.board.id)) || [], fieldNames(intl))
     }, STEP_WORKDIR)
 
     const addDeploy = () => run(async () => {
@@ -444,7 +444,7 @@ const BoardSetupWizard = (props: Props) => {
         case STEP_DEPLOY:
             return (
                 <div class='BoardSetupWizard__step'>
-                    <p>{intl.formatMessage({id: 'BoardSetup.deploy-why', defaultMessage: 'Where a card’s branch is published from the "Деплой" column. Skip it if nothing is deployed from here — everything else still works.'})}</p>
+                    <p>{intl.formatMessage({id: 'BoardSetup.deploy-why', defaultMessage: 'Where a card’s branch is published from the "Deploy" column. Skip it if nothing is deployed from here — everything else still works.'})}</p>
                     <label>
                         {intl.formatMessage({id: 'BoardSetup.deploy-name', defaultMessage: 'Name'})}
                         <input

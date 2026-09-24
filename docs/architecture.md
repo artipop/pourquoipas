@@ -708,7 +708,7 @@ is adjusted, since `awayIndicator` is an eight-pixel dot there and the word
 ours included; that bar is what moved the paper theme's amber and its stamp a
 few levels.
 **A theme is a pair, and which half is a second setting.** «XCIII», «Gruvbox»,
-«Эйсид-техно» each come light and dark, and `themeMode` — light, dark, or
+«Acid techno» each come light and dark, and `themeMode` — light, dark, or
 whichever the system is set to — says which is worn. One list asked both
 questions at once and could answer neither: it said «Gruvbox Dark» and «Как в
 системе» in the same column, so choosing a design also fixed a polarity, and
@@ -917,9 +917,9 @@ one workspace, works one branch — which the board keeps in a single text field
 and hands its agent one cwd, so a second folder had nowhere to go:
 `resolveWorkdir` took the first of the selected options and dropped the rest,
 which is a choice made for the person and made in silence. So the field is a
-single select (`workdirSync.ts`). The name goes with the type, by the
-rule that lets this app rename a field at all — it is one this app gave
-(`OUR_WORKDIR_TITLES`), and a name a person typed is theirs and stays.
+single select (`workdirSync.ts`). It is named in the language the page is
+read in when this app makes it (`fieldNames`), and never renamed after: the
+board records the field by id, so what it is called is the person's.
 
 **A board with one folder fills the field in** (`soleWorkdirOption`, applied in
 `centerPanel.newCardProperties` beside the view's filter and the group a card

@@ -16,6 +16,8 @@
 // carried headings for those three for a while, and they were three lines of
 // furniture over eleven entries a person reads by name anyway.
 
+import type {IntlShape} from '../intl'
+
 import acidBlueYellowDark from './themes/acid-blue-yellow-dark.json'
 import acidBlueYellowLight from './themes/acid-blue-yellow-light.json'
 import acidTechnoGreenDark from './themes/acid-techno-green-dark.json'
@@ -49,7 +51,7 @@ export type ThemeFamily = {
 }
 
 // The name in the list is the family's, not the file's: a variant keeps its own
-// («Gruvbox Light», «XCIII — бумага») because that is what it is, and because a
+// («Gruvbox Light», «XCIII — paper») because that is what it is, and because a
 // config exported from here should say which half it is.
 export const THEME_FAMILIES: ThemeFamily[] = [
 
@@ -74,17 +76,30 @@ export const THEME_FAMILIES: ThemeFamily[] = [
 
     {
         id: 'acid-blue-yellow',
-        name: 'Кислота: синий и жёлтый',
+        name: 'Acid: blue and yellow',
         light: acidBlueYellowLight,
         dark: acidBlueYellowDark,
     },
     {
         id: 'acid-techno-green',
-        name: 'Эйсид-техно',
+        name: 'Acid techno',
         light: acidTechnoGreenLight,
         dark: acidTechnoGreenDark,
     },
 ]
+
+// themeFamilyName is the family as the list names it. A name that is a product
+// or a palette's own (Gruvbox, Night Owl) is the same in every language; ours
+// are words, and are translated like the rest of the page.
+export function themeFamilyName(family: ThemeFamily, intl: IntlShape): string {
+    switch (family.id) {
+    case 'acid-blue-yellow':
+        return intl.formatMessage({id: 'Theme.acid-blue-yellow', defaultMessage: 'Acid: blue and yellow'})
+    case 'acid-techno-green':
+        return intl.formatMessage({id: 'Theme.acid-techno-green', defaultMessage: 'Acid techno'})
+    }
+    return family.name
+}
 
 export const SHIPPED_VARIANTS: ThemeConfig[] = THEME_FAMILIES.flatMap((f) => [f.light, f.dark])
 

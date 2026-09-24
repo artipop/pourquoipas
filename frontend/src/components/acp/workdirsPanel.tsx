@@ -12,7 +12,7 @@ import {sendFlashMessage} from '../flashMessages'
 import {goApp} from '../../goBridge'
 import {aiEnabled} from '../../aiSwitch'
 
-import {Workdir, WORKDIR_PROPERTY_TITLE, findWorkdirProperty, syncWorkdirsToBoard, useWorkdirHere} from './workdirSync'
+import {Workdir, fieldNames, findWorkdirProperty, syncWorkdirsToBoard, useWorkdirHere} from './workdirSync'
 
 import './workdirsPanel.scss'
 
@@ -78,13 +78,13 @@ const WorkdirsPanel = (props: Props) => {
     // it: a board made before folders were called folders still says the old projects name,
     // and a hint naming a field the board has not got sends somebody looking for
     // one that is not there.
-    const propertyTitle = () => findWorkdirProperty(props.board, props.board.cardProperties)?.name || WORKDIR_PROPERTY_TITLE
+    const propertyTitle = () => findWorkdirProperty(props.board, props.board.cardProperties)?.name || fieldNames(intl).folder
 
     // The registry into the board's own field, said out loud: a person who
     // just added a folder wants to know the card can now name it.
     const syncWorkdirs = async (registry: Workdir[]) => {
         try {
-            const {added, property} = await syncWorkdirsToBoard(props.board, registry)
+            const {added, property} = await syncWorkdirsToBoard(props.board, registry, fieldNames(intl))
             if (added > 0) {
                 sendFlashMessage({
                     content: intl.formatMessage(

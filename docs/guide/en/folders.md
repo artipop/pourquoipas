@@ -24,7 +24,7 @@ not.
 
 **Without a folder the agent still runs** — it gets a scratch directory with
 nothing to read and nothing to commit. For a card that needs code, pick the
-folder first: the «Папка» field is on the card itself.
+folder first: the «Folder» field is on the card itself.
 
 Which items a board's menu has is decided by the template it was made from: the
 «Development» board asks about a folder, a deploy host and a browser, so its menu
