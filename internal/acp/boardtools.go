@@ -205,15 +205,13 @@ type BoardToolCard struct {
 	Running bool `json:"running,omitempty"`
 }
 
-// BoardToolField is one property of the granted board's cards, with what this
-// stage owes on it.
+// BoardToolField is one property of the granted board's cards, and whether a
+// value may be put in it.
 type BoardToolField struct {
 	Name     string   `json:"name"`
 	Kind     string   `json:"kind"`
 	Values   []string `json:"values,omitempty"`
 	Writable bool     `json:"writable"`
-	Declared bool     `json:"declared,omitempty"`
-	Required bool     `json:"required,omitempty"`
 }
 
 // BoardToolFields is the board's card properties as an agent needs them: what a
@@ -237,22 +235,14 @@ func (m *Manager) BoardToolFields(ctx context.Context, token string) ([]BoardToo
 	if err != nil {
 		return nil, err
 	}
-	declared := map[string]PropertyWrite{}
-	if st := m.session(g.SessionID); st != nil {
-		for _, w := range st.Writes {
-			declared[strings.ToLower(w.Property)] = w
-		}
-	}
 	out := make([]BoardToolField, 0, len(props))
 	for _, p := range props {
-		// The column property is left out of the writable set on purpose: the
-		// card moves by the stage's own outcome or by move_card, and
-		// finish_work refuses it (FinishWorkFromTools).
-		writable := writableProperty(p.Type) && !strings.EqualFold(p.Name, g.Property)
-		w, mine := declared[strings.ToLower(p.Name)]
+		// The column property is left out of the writable set on purpose: a
+		// card is moved with move_card, and finish_work refuses it
+		// (FinishWorkFromTools).
 		out = append(out, BoardToolField{
 			Name: p.Name, Kind: p.Type, Values: p.Values,
-			Writable: writable, Declared: mine, Required: mine && w.Required,
+			Writable: writableProperty(p.Type) && !strings.EqualFold(p.Name, g.Property),
 		})
 	}
 	return out, nil

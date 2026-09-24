@@ -83,11 +83,9 @@ func (s *Session) hasCommented() bool {
 
 // FinishWorkFromTools is the agent saying the stage is over, and how.
 //
-// fields are the stage's outputs, written onto the card **before the report is
-// accepted**, for two reasons. The route advances when the turn ends and its
-// edges read the card as it is then, so a value an edge branches on has to be
-// standing first. And a write the board refuses comes back as this call's own
-// error, to the one party that can fix it: the agent.
+// fields are whatever the agent puts into the card's own properties on its way
+// out, written **before the report is accepted**: a write the board refuses
+// then comes back as this call's own error, to the one party that can fix it.
 func (m *Manager) FinishWorkFromTools(token string, ok bool, summary string, fields map[string]string) error {
 	g, found := m.boardGrant(token)
 	if !found {
@@ -95,15 +93,7 @@ func (m *Manager) FinishWorkFromTools(token string, ok bool, summary string, fie
 	}
 	s := m.session(g.SessionID)
 	if s == nil || s.CardID == "" {
-		return fmt.Errorf("этот разговор — не стадия маршрута: сказать здесь «работа закончена» некому, переложите карточку через move_card")
-	}
-	for _, w := range s.Writes {
-		if !w.Required {
-			continue
-		}
-		if strings.TrimSpace(fieldValue(fields, w.Property)) == "" {
-			return fmt.Errorf("стадия обязана записать свойство %q — передай его в properties (что оно принимает, покажет list_card_fields)", w.Property)
-		}
+		return fmt.Errorf("за этим разговором нет карточки: сказать здесь «работа закончена» некому")
 	}
 	if len(fields) > 0 {
 		if g.Property != "" {
@@ -126,28 +116,7 @@ func (m *Manager) FinishWorkFromTools(token string, ok bool, summary string, fie
 	return nil
 }
 
-// missingWrites names the required outputs a stage ended without delivering.
-func missingWrites(s *Session) []string {
-	if _, reported := s.stageReport(); reported {
-		// finish_work refuses a report without them, so a report means they
-		// were written.
-		return nil
-	}
-	var out []string
-	for _, w := range s.Writes {
-		if w.Required {
-			out = append(out, w.Property)
-		}
-	}
-	return out
-}
-
-// fieldValue reads a field the way a person named the property: ignoring case.
-func fieldValue(fields map[string]string, property string) string {
-	v, _ := fieldsHave(fields, property)
-	return v
-}
-
+// fieldsHave reads a field the way a person named the property: ignoring case.
 func fieldsHave(fields map[string]string, property string) (string, bool) {
 	for k, v := range fields {
 		if strings.EqualFold(k, property) {

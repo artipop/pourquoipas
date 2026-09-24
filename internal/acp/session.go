@@ -70,18 +70,6 @@ type Session struct {
 	// It is what a stall is recorded against, so a reason is drawn beside the
 	// column it is about.
 	NodeID string
-	// Writes are the stage's declared outputs (node's, else the column's): what
-	// finish_work must deliver when one is required, and what a deploy or a
-	// test stage writes onto the card by itself.
-	Writes []PropertyWrite
-	// RunIn is where this session works: the card's own workspace or the
-	// folder itself. The stage decides (FlowNode.RunsIn); a session outside a
-	// route leaves it empty and gets the default for what it is doing.
-	RunIn string
-	// StageMCP are the servers the stage hands its agent (node's, else the
-	// column's), on top of whatever the agent carries of its own.
-	StageMCP MCPServerSet
-
 	Worktree     WorktreeInfo
 	usedWorktree bool // a dedicated worktree was actually created
 
@@ -319,13 +307,9 @@ func (m *Manager) prepareWorkdir(s *Session) error {
 	if s.Planning {
 		return m.workInTheFolderItself(s)
 	}
-	// Everything else works where its stage says. The defaults are what the
-	// code did before that was a question: an agent writes code and works in
-	// the card's own workspace; a deploy publishes a branch that already exists
-	// and a test drives a browser against something already published, so both
-	// stand in the folder itself. A column that wants QA on the card's own code
-	// before anything is merged says so of itself.
-	if runsIn(s.RunIn, sessionAction(s)) == RunInWorkdir {
+	// A deploy publishes a branch that already exists, so it stands in the
+	// folder itself. An agent writes code, and gets the card's own workspace.
+	if s.Deploy != nil {
 		return m.workInTheFolderItself(s)
 	}
 
@@ -353,16 +337,6 @@ func (m *Manager) prepareWorkdir(s *Session) error {
 	// first moment it exists.
 	m.emitSession(s, "")
 	return nil
-}
-
-// sessionAction is what this session is doing, in the vocabulary a stage uses.
-func sessionAction(s *Session) string {
-	switch {
-	case s.Deploy != nil:
-		return ColumnActionDeploy
-	default:
-		return ColumnActionAgent
-	}
 }
 
 func (m *Manager) workInTheFolderItself(s *Session) error {
@@ -444,14 +418,6 @@ func (m *Manager) commentFirstTurn(s *Session, finalText string, err error) {
 		m.comment(s, failComment(s, err.Error()))
 		m.applyDeployOutcome(s)
 	default:
-		if missing := missingWrites(s); len(missing) > 0 && s.Deploy == nil {
-			// The route branches on these, so a stage without them has no
-			// outcome a route could read: it failed, and says what it lacked.
-			reason := fmt.Sprintf("агент закончил работу, не записав %s", quoteAll(missing))
-			m.finishSession(s, StatusFailed, reason)
-			m.comment(s, failComment(s, reason))
-			return
-		}
 		if r, reported := s.stageReport(); reported && !r.ok {
 			m.finishSession(s, StatusFailed, "агент не смог закончить работу")
 			if !s.hasCommented() {

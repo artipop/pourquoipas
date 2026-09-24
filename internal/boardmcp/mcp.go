@@ -108,13 +108,9 @@ type FieldInfo struct {
 	Kind string
 	// Values is the closed set, for a select. Empty for the rest.
 	Values []string
-	// Writable says a stage can put a value here at all. The board's own
+	// Writable says a value can be put here at all. The board's own
 	// bookkeeping — who made the card, when — cannot be written to.
 	Writable bool
-	// Declared says this stage names the property among its outputs, and
-	// Required that it cannot end without a value for it.
-	Declared bool
-	Required bool
 }
 
 type CardInfo struct {
@@ -216,18 +212,11 @@ type finishInput struct {
 
 type noInput struct{}
 
-// fieldLine is one property as the model reads it: what it is called, what a
-// value may be, and what this stage owes on it. The contract comes first among
-// the suffixes — a required write is the one thing here that can stop a stage
-// from ending, so it must not be buried under "read-only".
+// fieldLine is one property as the model reads it: what it is called and what a
+// value may be.
 func fieldLine(f FieldInfo) string {
 	line := fmt.Sprintf("- %s — %s", f.Name, fieldShape(f))
-	switch {
-	case f.Required:
-		line += "; this stage must report it"
-	case f.Declared:
-		line += "; this stage reports it"
-	case !f.Writable:
+	if !f.Writable {
 		line += "; read-only"
 	}
 	return line

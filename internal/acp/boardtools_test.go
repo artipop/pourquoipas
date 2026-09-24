@@ -51,10 +51,10 @@ func TestBoardToolsWriteOnlyToTheGrantedBoard(t *testing.T) {
 	}
 }
 
-// A property is described to the agent, and the description carries the stage's
-// own contract: what has to be reported, and what a value may be. Without it an
-// agent asked for a verdict learns what «Вердикт» accepts by being refused.
-func TestBoardToolFieldsSayWhatThisStageOwes(t *testing.T) {
+// A property is described to the agent so it can put a value in one without
+// guessing: what a value may be, and whether it may be written at all. Without
+// it an agent filling «Вердикт» learns what it accepts by being refused.
+func TestBoardToolFieldsSayWhatAValueMayBe(t *testing.T) {
 	m, _, _, _ := testManager(t, "idle", func(cfg *Config) {
 		cfg.TriggerProperty = "Статус"
 	})
@@ -65,9 +65,7 @@ func TestBoardToolFieldsSayWhatThisStageOwes(t *testing.T) {
 		{Name: "Статус", Type: "select", Values: []string{"QA", "Готово"}},
 	}})
 
-	stage := &Session{ID: "sess-1", CardID: "card-1", Writes: []PropertyWrite{
-		{Property: "Вердикт", Required: true},
-	}}
+	stage := &Session{ID: "sess-1", CardID: "card-1"}
 	m.mu.Lock()
 	m.active = map[string]*Session{stage.ID: stage}
 	m.mu.Unlock()
@@ -83,15 +81,15 @@ func TestBoardToolFieldsSayWhatThisStageOwes(t *testing.T) {
 	}
 
 	verdict := by["Вердикт"]
-	if !verdict.Declared || !verdict.Required || len(verdict.Values) != 3 {
-		t.Errorf("the stage's own contract is not on the property: %+v", verdict)
+	if !verdict.Writable || len(verdict.Values) != 3 {
+		t.Errorf("the property's closed set is not on it: %+v", verdict)
 	}
-	if by["Превью"].Declared || !by["Превью"].Writable {
-		t.Errorf("a property this stage does not report should still be writable: %+v", by["Превью"])
+	if !by["Превью"].Writable {
+		t.Errorf("an ordinary property should be writable: %+v", by["Превью"])
 	}
-	// Two the stage must not be told it can write: the board's own bookkeeping,
-	// and the column — a card moves by its outcome or by move_card, and
-	// finish_work refuses the column property outright.
+	// Two the agent must not be told it can write: the board's own bookkeeping,
+	// and the column — a card is moved with move_card, and finish_work refuses
+	// the column property outright.
 	if by["Автор"].Writable {
 		t.Error("createdBy was offered as writable")
 	}
@@ -100,9 +98,9 @@ func TestBoardToolFieldsSayWhatThisStageOwes(t *testing.T) {
 	}
 }
 
-// A conversation that is not a stage still gets the board's properties — it may
-// be about to call update_card — but owes nothing.
-func TestBoardToolFieldsOutsideAStageDeclareNothing(t *testing.T) {
+// A conversation with no card behind it still gets the board's properties: it
+// may be about to create one.
+func TestBoardToolFieldsOutsideACardStillDescribeTheBoard(t *testing.T) {
 	m, _, _, _ := testManager(t, "idle", nil)
 	m.SetBoardMeta(&fakeBoardMeta{cardProps: []CardProperty{{Name: "Превью", Type: "url"}}})
 
@@ -110,8 +108,8 @@ func TestBoardToolFieldsOutsideAStageDeclareNothing(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(fields) != 1 || fields[0].Declared || fields[0].Required {
-		t.Errorf("a planning conversation was handed a contract: %+v", fields)
+	if len(fields) != 1 || fields[0].Name != "Превью" {
+		t.Errorf("the board's properties did not arrive: %+v", fields)
 	}
 }
 

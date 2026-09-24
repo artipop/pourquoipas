@@ -26,7 +26,7 @@ func (b *fakeBoard) Columns(context.Context) ([]Column, error) {
 
 func (b *fakeBoard) Fields(context.Context) ([]FieldInfo, error) {
 	return []FieldInfo{
-		{Name: "Вердикт", Kind: "select", Values: []string{"blocked", "fail", "pass"}, Writable: true, Declared: true, Required: true},
+		{Name: "Вердикт", Kind: "select", Values: []string{"blocked", "fail", "pass"}, Writable: true},
 		{Name: "Превью", Kind: "url", Writable: true},
 		{Name: "Автор", Kind: "createdBy"},
 	}, nil
@@ -181,15 +181,14 @@ func TestACardSaysWhatActingOnItNeeds(t *testing.T) {
 	}
 }
 
-// A property is described so an agent can report a value without guessing at
-// it: the closed set is spelled out, and the stage's own obligation is on the
-// line rather than only in the brief it may have scrolled past.
-func TestAFieldSaysWhatAValueMayBeAndWhatIsOwed(t *testing.T) {
+// A property is described so an agent can put a value in it without guessing:
+// the closed set is spelled out where there is one.
+func TestAFieldSaysWhatAValueMayBe(t *testing.T) {
 	verdict := fieldLine(FieldInfo{
 		Name: "Вердикт", Kind: "select", Values: []string{"blocked", "fail", "pass"},
-		Writable: true, Declared: true, Required: true,
+		Writable: true,
 	})
-	if !strings.Contains(verdict, "one of blocked, fail, pass") || !strings.Contains(verdict, "must report it") {
+	if !strings.Contains(verdict, "one of blocked, fail, pass") {
 		t.Errorf("the verdict's line says too little:\n%s", verdict)
 	}
 
@@ -199,7 +198,7 @@ func TestAFieldSaysWhatAValueMayBeAndWhatIsOwed(t *testing.T) {
 		t.Error("a read-only property was offered as writable")
 	}
 
-	// And an ordinary writable one carries no verdict about the stage at all.
+	// And an ordinary writable one carries no suffix at all.
 	preview := fieldLine(FieldInfo{Name: "Превью", Kind: "url", Writable: true})
 	if preview != "- Превью — a link" {
 		t.Errorf("a plain property picked up a suffix: %q", preview)

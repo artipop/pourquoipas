@@ -118,7 +118,7 @@ func (g *grantedBoard) Fields(ctx context.Context) ([]boardmcp.FieldInfo, error)
 	for _, f := range fields {
 		out = append(out, boardmcp.FieldInfo{
 			Name: f.Name, Kind: f.Kind, Values: f.Values,
-			Writable: f.Writable, Declared: f.Declared, Required: f.Required,
+			Writable: f.Writable,
 		})
 	}
 	return out, nil

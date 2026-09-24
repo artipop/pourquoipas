@@ -810,29 +810,6 @@ func (m *Manager) boardCardProperties(boardID string) []CardProperty {
 	return fields
 }
 
-// stageOutputs is the stage's declared writes, said as the contract they are:
-// what finish_work must carry, and — for a property with a closed set — which
-// values it may be. Nothing said this before, so an agent asked for a verdict
-// found out what «Вердикт» accepts by being refused, and a required write it
-// was never told about failed the whole stage on the first attempt to end it.
-//
-// The values come from the board rather than from the declaration, so renaming
-// an option cannot leave a stale list standing in a brief.
-func stageOutputs(writes []PropertyWrite, fields []CardProperty) string {
-	if len(writes) == 0 {
-		return ""
-	}
-	var b strings.Builder
-	b.WriteString("Before this stage can end, report these card properties in finish_work's `properties`:")
-	for _, w := range writes {
-		fmt.Fprintf(&b, "\n%s: %s", w.Property, propertyShape(w.Property, fields))
-		if w.Required {
-			b.WriteString(" (required)")
-		}
-	}
-	return b.String()
-}
-
 // propertyShape is what a value for this property may be, in the words a model
 // needs: the closed set where there is one, and the kind otherwise.
 func propertyShape(name string, fields []CardProperty) string {
