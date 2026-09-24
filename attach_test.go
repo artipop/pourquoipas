@@ -1,15 +1,10 @@
 package main
 
 import (
-	"encoding/json"
-	"net/http"
-	"net/http/httptest"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/artipop/xciii/internal/secrets"
-	"github.com/artipop/xciii/server/model"
 )
 
 // fakeVault is the credential store as the attachment sees it: one key, set,
@@ -217,54 +212,5 @@ func TestTheSwitcherOffersWhatThereIs(t *testing.T) {
 	got := c.state().Sources
 	if len(got) != 2 || got[0].ID != "" || got[1].ID != "https://board.example.com" {
 		t.Fatalf("sources = %v, want this machine and the server", got)
-	}
-}
-
-// fakeHostedServer answers /ping with what it can do and logs anybody in.
-func fakeHostedServer(t *testing.T, capabilities []string) *httptest.Server {
-	t.Helper()
-	mux := http.NewServeMux()
-	mux.HandleFunc("GET /ping", func(w http.ResponseWriter, _ *http.Request) {
-		_ = json.NewEncoder(w).Encode(model.ServerInfo{Version: "0.9.0", Capabilities: capabilities})
-	})
-	mux.HandleFunc("POST /api/v0/login", func(w http.ResponseWriter, _ *http.Request) {
-		_ = json.NewEncoder(w).Encode(model.LoginResponse{Token: "session"})
-	})
-	srv := httptest.NewServer(mux)
-	t.Cleanup(srv.Close)
-	return srv
-}
-
-// A desktop and the server it joins are shipped apart. A server that lacks
-// something the desktop calls used to show it as a 404 when the first agent
-// was registered; now the join is refused, before the login, naming what is
-// missing — and nothing is remembered.
-func TestJoiningAServerThatCannotHostThisDesktopIsRefused(t *testing.T) {
-	short := model.Capabilities[:len(model.Capabilities)-1]
-	srv := fakeHostedServer(t, short)
-	c, vault := attachAt(t)
-
-	_, err := c.attach(srv.URL, "ann", "secret")
-	if err == nil {
-		t.Fatal("a server missing a capability was joined")
-	}
-	if want := model.Capabilities[len(model.Capabilities)-1]; !strings.Contains(err.Error(), want) {
-		t.Errorf("the refusal does not name what is missing (%s): %v", want, err)
-	}
-	if got := c.state().URL; got != "" || len(vault) != 0 {
-		t.Errorf("a refused join was remembered: %q, vault %v", got, vault)
-	}
-}
-
-func TestAServerThatCanHostThisDesktopIsJoined(t *testing.T) {
-	srv := fakeHostedServer(t, model.Capabilities)
-	c, _ := attachAt(t)
-
-	state, err := c.attach(srv.URL, "ann", "secret")
-	if err != nil {
-		t.Fatalf("a server with every capability was refused: %v", err)
-	}
-	if state.URL != srv.URL {
-		t.Errorf("attached to %q, want %q", state.URL, srv.URL)
 	}
 }

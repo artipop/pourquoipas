@@ -721,22 +721,6 @@ func (c *Client) GetUserRoute(id string) string {
 	return fmt.Sprintf("/users/%s", id)
 }
 
-// Ping asks the server what it is and what it can do. /ping lives outside
-// /api/v0 and needs no session, so it can be asked before logging in.
-func (c *Client) Ping() (*model.ServerInfo, *Response) {
-	r, err := c.DoAPIRequest(http.MethodGet, c.URL+"/ping", "", "")
-	if err != nil {
-		return nil, BuildErrorResponse(r, err)
-	}
-	defer closeBody(r)
-
-	var info model.ServerInfo
-	if err := json.NewDecoder(r.Body).Decode(&info); err != nil {
-		return nil, BuildErrorResponse(r, err)
-	}
-	return &info, BuildResponse(r)
-}
-
 func (c *Client) GetUser(id string) (*model.User, *Response) {
 	r, err := c.DoAPIGet(c.GetUserRoute(id), "")
 	if err != nil {

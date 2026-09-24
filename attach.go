@@ -214,9 +214,6 @@ func (c *attachController) attach(rawURL, username, password string) (attachStat
 	}
 
 	api := client.NewClient(origin, "")
-	if err := serverCanHost(api, origin); err != nil {
-		return attachState{}, err
-	}
 	login, resp := api.Login(&model.LoginRequest{Type: "normal", Username: username, Password: password})
 	if resp != nil && resp.Error != nil {
 		return attachState{}, fmt.Errorf("вход на %s: %w", origin, resp.Error)
@@ -242,33 +239,6 @@ func (c *attachController) attach(rawURL, username, password string) (attachStat
 	c.cfg = next
 	return attachState{URL: next.URL, Username: next.Username, Running: c.running, Selected: next.Selected,
 		Sources: []boardChoice{{ID: "", Title: thisMachine}, {ID: origin, Title: origin}}}, nil
-}
-
-// serverCanHost refuses a server that lacks something this desktop calls on a
-// hosted board. The two are shipped apart, and a server that is older finds out
-// from a 404 when an agent is registered, a newer client from a field it never
-// reads; asking before the login says it once, in words, with what is missing.
-//
-// What is required is what this build's own server answers
-// (model.Capabilities): the desktop and the server are the same source, so a
-// server of the same version or newer has all of it. Refusing rather than
-// joining with a warning, because nothing on the page has room for one, and a
-// half-working board is harder to explain than a refusal.
-func serverCanHost(api *client.Client, origin string) error {
-	info, resp := api.Ping()
-	if resp != nil && resp.Error != nil || info == nil {
-		var cause error
-		if resp != nil {
-			cause = resp.Error
-		}
-		return fmt.Errorf("%s не ответил, что это за сервер: %v", origin, cause)
-	}
-	missing := info.Missing(model.Capabilities)
-	if len(missing) == 0 {
-		return nil
-	}
-	return fmt.Errorf("сервер %s (версия %s) не умеет того, что нужно этому приложению (версия %s): %s — обновите сервер",
-		origin, info.Version, appVersion, strings.Join(missing, ", "))
 }
 
 // detach puts this desktop back on its own board. The server keeps everything
