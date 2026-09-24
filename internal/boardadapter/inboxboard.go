@@ -23,15 +23,24 @@ import (
 // not a key (Russian never is).
 const InboxBoardProperty = "xciiiInbox"
 
-// InboxViewTitle is what the inbox board and its one view are called. A name
-// the app gives, Russian in every language like the other given names, and
-// matched on by the page (frontend inboxView.ts) to know the view it is on.
-const InboxViewTitle = "Входящие"
+// The inbox's words, in the source language like the template files, and
+// translated through the same catalogue (templatetext.go): the board and its
+// one view are called inboxTitle, the two card properties are named by the
+// other two. Nothing finds the board or its fields by these — the board by its
+// mark, the fields by their type — so a translation is only ever a label.
+const (
+	inboxTitle   = "Inbox"
+	inboxAuthor  = "Author"
+	inboxCreated = "Created"
+)
+
+// inboxWords is what the inbox says to a person, for the catalogue guard.
+var inboxWords = []string{inboxTitle, inboxAuthor, inboxCreated}
 
 // inboxViewType is what the inbox is drawn as: a kanban grouped by who brought
 // the card, so each source is a column — the question a person has of an inbox
 // is "what did the mail bring, what did the tracker". The person's own cards
-// are a column too, headed "Мои задачи" by the page.
+// are a column too, headed as the person's own tasks by the page.
 const inboxViewType = "board"
 
 // inboxBoardMu keeps two first arrivals from making two inboxes: the board is
@@ -89,14 +98,14 @@ func createInboxBoard(a *app.App, words func(string) string) (string, error) {
 		// Open, so that on a hosted server every member of the team sees the
 		// one inbox rather than whoever happened to be the first to need it.
 		Type:  model.BoardTypeOpen,
-		Title: InboxViewTitle,
+		Title: words(inboxTitle),
 		Icon:  "📥",
 		Properties: map[string]any{
 			InboxBoardProperty: true,
 		},
 		CardProperties: []map[string]any{
-			{"id": authorID, "name": words("Author"), "type": "createdBy", "options": []any{}},
-			{"id": utils.NewID(utils.IDTypeBlock), "name": words("Created"), "type": "createdTime", "options": []any{}},
+			{"id": authorID, "name": words(inboxAuthor), "type": "createdBy", "options": []any{}},
+			{"id": utils.NewID(utils.IDTypeBlock), "name": words(inboxCreated), "type": "createdTime", "options": []any{}},
 		},
 	}
 	created, err := a.CreateBoard(board, model.SingleUser, true)
@@ -110,7 +119,7 @@ func createInboxBoard(a *app.App, words func(string) string) (string, error) {
 		BoardID:  created.ID,
 		ParentID: created.ID,
 		Type:     model.TypeView,
-		Title:    InboxViewTitle,
+		Title:    words(inboxTitle),
 		Fields: map[string]any{
 			"viewType":  inboxViewType,
 			"groupById": authorID,
@@ -140,4 +149,83 @@ func createInboxBoard(a *app.App, words func(string) string) (string, error) {
 		return created.ID, fmt.Errorf("the view of the inbox board: %w", err)
 	}
 	return created.ID, nil
+}
+
+// inboxPropertyWords is which of the inbox's words names a card property of
+// that type.
+var inboxPropertyWords = map[string]string{
+	"createdBy":   inboxAuthor,
+	"createdTime": inboxCreated,
+}
+
+// RelabelInboxBoard puts the inbox's own names into a language. The inbox is
+// made once, in whatever language the app was read in that day, and unlike a
+// board made from a template it is the app's rather than the person's — so it
+// follows a switch in the settings. What follows is only what still says one of
+// the app's names, in any language a catalogue has: a board, view or field the
+// person renamed keeps their name.
+func RelabelInboxBoard(a *app.App, lang string) error {
+	inboxBoardMu.Lock()
+	defer inboxBoardMu.Unlock()
+	id, ok, err := findInboxBoard(a)
+	if err != nil || !ok {
+		return err
+	}
+	board, err := a.GetBoard(id)
+	if err != nil {
+		return fmt.Errorf("read the inbox board: %w", err)
+	}
+	words := TemplateWords(lang)
+
+	patch := &model.BoardPatch{}
+	changed := false
+	if title, ok := relabel(board.Title, inboxTitle, words); ok {
+		patch.Title = &title
+		changed = true
+	}
+	for _, prop := range board.CardProperties {
+		kind, _ := prop["type"].(string)
+		source, ok := inboxPropertyWords[kind]
+		if !ok {
+			continue
+		}
+		name, _ := prop["name"].(string)
+		if next, ok := relabel(name, source, words); ok {
+			updated := make(map[string]any, len(prop))
+			for k, v := range prop {
+				updated[k] = v
+			}
+			updated["name"] = next
+			patch.UpdatedCardProperties = append(patch.UpdatedCardProperties, updated)
+			changed = true
+		}
+	}
+	if changed {
+		if _, err := a.PatchBoard(patch, id, model.SingleUser); err != nil {
+			return fmt.Errorf("rename the inbox board: %w", err)
+		}
+	}
+
+	views, err := a.GetBlocks(id, "", model.TypeView)
+	if err != nil {
+		return fmt.Errorf("read the inbox views: %w", err)
+	}
+	for _, view := range views {
+		if title, ok := relabel(view.Title, inboxTitle, words); ok {
+			if _, err := a.PatchBlock(view.ID, &model.BlockPatch{Title: &title}, model.SingleUser); err != nil {
+				return fmt.Errorf("rename the inbox view: %w", err)
+			}
+		}
+	}
+	return nil
+}
+
+// relabel is the name source should now be said as, when current is still one
+// of the ways the app has said it.
+func relabel(current, source string, words func(string) string) (string, bool) {
+	next := words(source)
+	if current == next || !saidAs(source)[current] {
+		return "", false
+	}
+	return next, true
 }

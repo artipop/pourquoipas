@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"testing"
@@ -56,9 +57,14 @@ func TestMain(m *testing.M) {
 }
 
 // writeFakeAgent installs a launcher for one scenario and returns its path. It
-// is a shell script rather than the binary itself so that the scenario travels
-// in the environment of the child alone, and so a test can still put a wrapper
-// in front of it the way a user puts proxychains in front of a CLI.
+// is a script rather than the binary itself so that the scenario travels in the
+// environment of the child alone, and so a test can still put a wrapper in
+// front of it the way a user puts proxychains in front of a CLI.
+//
+// Two spellings, because the shell is the one thing about a launcher that is
+// not portable: a .bat on Windows, a /bin/sh script everywhere else. Without
+// the first, every test that starts an agent fails on Windows with "executable
+// file not found" and says nothing about the code under it.
 func writeFakeAgent(t *testing.T, scenario string) string {
 	t.Helper()
 	dir := t.TempDir()
@@ -66,9 +72,14 @@ func writeFakeAgent(t *testing.T, scenario string) string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	path := filepath.Join(dir, "fake-agent")
-	script := fmt.Sprintf("#!/bin/sh\n%s=%q %s=%q exec %q \"$@\"\n",
+	name, script := "fake-agent", fmt.Sprintf("#!/bin/sh\n%s=%q %s=%q exec %q \"$@\"\n",
 		fakeAgentEnv, scenario, fakeAgentDirEnv, dir, self)
+	if runtime.GOOS == "windows" {
+		name = "fake-agent.bat"
+		script = fmt.Sprintf("@echo off\r\nset %s=%s\r\nset %s=%s\r\n%q %%*\r\n",
+			fakeAgentEnv, scenario, fakeAgentDirEnv, dir, self)
+	}
+	path := filepath.Join(dir, name)
 	if err := os.WriteFile(path, []byte(script), 0o755); err != nil {
 		t.Fatal(err)
 	}

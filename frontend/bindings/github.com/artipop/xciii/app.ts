@@ -16,9 +16,8 @@ import { Call as $Call, CancellablePromise as $CancellablePromise } from "@wails
 
 /**
  * AckAttention says a person has seen this wait, so it stops being announced.
- * The wait itself stands — the card keeps its amber button until the agent is
- * answered — and the announcement comes back if the agent does something and
- * stops again (internal/acp/attentionack.go).
+ * The wait itself stands — the card keeps its mark until the agent is answered
+ * (internal/acp/attentionack.go).
  */
 export function AckAttention(key: string): $CancellablePromise<void> {
     return $Call.ByID(1782455336, key);
@@ -52,13 +51,6 @@ export function AddDeployTarget(entryJSON: string): $CancellablePromise<string> 
 }
 
 /**
- * AddFlow registers a route from a JSON-encoded FlowEntry and returns it.
- */
-export function AddFlow(entryJSON: string): $CancellablePromise<string> {
-    return $Call.ByID(3246024388, entryJSON);
-}
-
-/**
  * AddProxy registers a network configuration from a JSON-encoded ProxyEntry and
  * returns the created entry as JSON.
  */
@@ -88,30 +80,12 @@ export function AgentOptions(entryJSON: string, refresh: boolean): $CancellableP
 }
 
 /**
- * AnswerCardAsk is a person answering the question a transition is holding the
- * card at. The last answer lets the card across.
- */
-export function AnswerCardAsk(cardID: string, questionID: string, value: string): $CancellablePromise<void> {
-    return $Call.ByID(1712754390, cardID, questionID, value);
-}
-
-/**
  * AnswerQuestion hands an agent the answer it is waiting for: an option it
  * offered, or text typed instead. Both empty means no — the agent hears a
  * refusal and carries on without what it asked for.
  */
 export function AnswerQuestion(questionID: string, optionID: string, text: string): $CancellablePromise<void> {
     return $Call.ByID(910414563, questionID, optionID, text);
-}
-
-/**
- * AskTerminalName asks the agent to name the conversation it is having. The
- * request is typed into that conversation and the answer comes back through the
- * board tools, so the row in the list says what is going on in it rather than
- * who is talking and where.
- */
-export function AskTerminalName(terminalID: string): $CancellablePromise<void> {
-    return $Call.ByID(679143417, terminalID);
 }
 
 /**
@@ -132,23 +106,11 @@ export function AttachServer(entryJSON: string): $CancellablePromise<string> {
 }
 
 /**
- * BoardAgentUsers says which of this machine's agents this board names, and
- * which agents there are at all — as board usernames, because that is what a
- * person property holds. The page needs both to narrow the assignee list: an
- * agent the board does not name is dropped, and anybody who is not an agent is
- * left alone. A board that names nobody narrows nothing, or a board nobody has
- * crewed would have no agent to assign at all.
- */
-export function BoardAgentUsers(boardID: string): $CancellablePromise<string> {
-    return $Call.ByID(330100400, boardID);
-}
-
-/**
- * BoardSetupPlan returns what this board needs answered before its automation
- * can run: which steps, in which order, which of them may be skipped and which
- * are already answered by this machine. It is one answer to one question — the
- * wizard walks it and the board menu reads it to know which registries are
- * worth opening at all.
+ * BoardSetupPlan returns what this board needs answered before an agent can
+ * work a card on it: which steps, in which order, which of them may be skipped
+ * and which are already answered by this machine. It is one answer to one
+ * question — the wizard walks it and the board menu reads it to know which
+ * registries are worth opening at all.
  */
 export function BoardSetupPlan(boardID: string): $CancellablePromise<string> {
     return $Call.ByID(1459048039, boardID);
@@ -190,23 +152,6 @@ export function CloseShareWindow(): $CancellablePromise<void> {
 }
 
 /**
- * CloseTerminal ends a terminal session and everything its CLI started.
- */
-export function CloseTerminal(terminalID: string): $CancellablePromise<void> {
-    return $Call.ByID(2702963191, terminalID);
-}
-
-/**
- * DeleteCardConversation throws away one conversation of a card: the CLI in it
- * ends and the record goes with it, so the next one starts on a blank screen.
- * It is how the card's own conversation is closed for good — everything else
- * about a terminal is kept, which is what makes continue possible.
- */
-export function DeleteCardConversation(cardID: string, nodeID: string): $CancellablePromise<void> {
-    return $Call.ByID(2525902351, cardID, nodeID);
-}
-
-/**
  * DetachServer puts this desktop back on its own board.
  */
 export function DetachServer(): $CancellablePromise<string> {
@@ -214,13 +159,10 @@ export function DetachServer(): $CancellablePromise<string> {
 }
 
 /**
- * ExportBoardAutomation returns what a board runs — its columns and its routes
- * — in the shape a template carries them in its own properties. It is how a
- * board somebody has built by hand becomes a template: the registry is Go's, so
- * only this side can read it out.
+ * EndPlanning ends a planning conversation and the agent process with it.
  */
-export function ExportBoardAutomation(boardID: string): $CancellablePromise<string> {
-    return $Call.ByID(2337511102, boardID);
+export function EndPlanning(id: string): $CancellablePromise<void> {
+    return $Call.ByID(3237020843, id);
 }
 
 /**
@@ -242,14 +184,6 @@ export function GetAgentNamedBranches(): $CancellablePromise<boolean> {
 }
 
 /**
- * GetBoardFlowOverview returns where the board's cards stand on each route:
- * per stage, how many are there, how many are working and how many wait.
- */
-export function GetBoardFlowOverview(boardID: string): $CancellablePromise<string> {
-    return $Call.ByID(3740332594, boardID);
-}
-
-/**
  * GetBoardPrompt returns what every agent of this board is told first.
  */
 export function GetBoardPrompt(boardID: string): $CancellablePromise<string> {
@@ -258,13 +192,12 @@ export function GetBoardPrompt(boardID: string): $CancellablePromise<string> {
 
 /**
  * GetCardAgent is everything a card shows about its agent in one call: the
- * terminal it already has running or could continue, and the state of the
- * automation's own session — the branch it works on, so the card can offer to
- * deploy it, and whether something is running, so it can be cancelled.
+ * state of the automation's own session — the branch it works on, so the card
+ * can offer to deploy it, and whether something is running, so it can be
+ * cancelled — and the question it is waiting on, if any.
  * 
- * There is no transcript here. A session reports itself in the card's comments,
- * and a conversation with an agent happens in a terminal window.
- * JSON: {"running":{…}|null,"resume":{…},"session":{…}}.
+ * There is no transcript here: a stage reports itself in the card's comments.
+ * JSON: {"session":{…},"question":{…}?,…}.
  */
 export function GetCardAgent(cardID: string): $CancellablePromise<string> {
     return $Call.ByID(2823886114, cardID);
@@ -281,14 +214,6 @@ export function GetCardDiff(cardID: string): $CancellablePromise<string> {
 }
 
 /**
- * GetCardFlow describes where a card stands on its route: the stages, the one
- * it is on, what that stage waits for. Returns "null" for a card with no route.
- */
-export function GetCardFlow(cardID: string): $CancellablePromise<string> {
-    return $Call.ByID(1218867209, cardID);
-}
-
-/**
  * GetInboxSorting returns everything the sorting dialog draws: the settings,
  * every board with its description and summary, and the recent decisions.
  */
@@ -297,7 +222,7 @@ export function GetInboxSorting(): $CancellablePromise<string> {
 }
 
 /**
- * GetPlanningPrompt returns the instructions a planning terminal is opened
+ * GetPlanningPrompt returns the instructions a planning conversation opens
  * with, falling back to the default when the config has none.
  */
 export function GetPlanningPrompt(): $CancellablePromise<string> {
@@ -324,13 +249,6 @@ export function GetServerAttachment(): $CancellablePromise<string> {
  */
 export function GetTailnetAccess(): $CancellablePromise<string> {
     return $Call.ByID(2633877674);
-}
-
-/**
- * GetTerminalInfo describes a live terminal, for the page that draws it.
- */
-export function GetTerminalInfo(terminalID: string): $CancellablePromise<string> {
-    return $Call.ByID(1163454871, terminalID);
 }
 
 /**
@@ -413,8 +331,9 @@ export function ListAgents(): $CancellablePromise<string> {
 }
 
 /**
- * ListAttention returns everything waiting for a person as JSON: the terminals
- * whose agent has gone quiet, oldest wait first. The page keeps itself current
+ * ListAttention returns everything waiting for a person as JSON: the questions
+ * agents are holding a turn open on, and the cards a route handed to a person,
+ * oldest wait first. The page keeps itself current
  * from acp:attention events; this is what a page that opened later starts from.
  */
 export function ListAttention(): $CancellablePromise<string> {
@@ -429,42 +348,12 @@ export function ListBoardCards(boardID: string): $CancellablePromise<string> {
 }
 
 /**
- * ListBoardColumns returns what each configured column of a board does: the
- * action, the crew that works it and how many of them at once.
- */
-export function ListBoardColumns(boardID: string): $CancellablePromise<string> {
-    return $Call.ByID(3216057602, boardID);
-}
-
-/**
  * ListBoards returns the boards with the columns a card can be moved into.
  * Both are one call because the two questions are always asked together —
  * which board, then which column of it — and a phone should ask once.
  */
 export function ListBoards(): $CancellablePromise<string> {
     return $Call.ByID(1557127052);
-}
-
-/**
- * ListCardFlows is which route each card of a board is on, in one call: a view
- * filtered by route asks it of every card it draws.
- */
-export function ListCardFlows(boardID: string): $CancellablePromise<string> {
-    return $Call.ByID(3554256028, boardID);
-}
-
-/**
- * ListCutOffConversations returns, as a JSON object of card id → reason, the
- * cards whose conversation stopped without a verdict: the CLI was closed, or
- * the app was, and the stage was never reported. The board draws a paused
- * terminal button on each of them, so that work nobody picked back up is
- * visible from the board rather than only from inside the card.
- * 
- * One call for the page, indexed by card, exactly as ListTerminals is: a board
- * has as many cards as it likes.
- */
-export function ListCutOffConversations(): $CancellablePromise<string> {
-    return $Call.ByID(1491825480);
 }
 
 /**
@@ -476,40 +365,6 @@ export function ListDeployTargets(): $CancellablePromise<string> {
 }
 
 /**
- * ListFlowTemplates returns the routes a fresh install is seeded with, rebuilt
- * from the current column names. An install whose registry predates them (or
- * whose routes were deleted) can add the ones it is missing from the editor
- * instead of retyping a graph.
- */
-export function ListFlowTemplates(): $CancellablePromise<string> {
-    return $Call.ByID(1915700660);
-}
-
-/**
- * ListFlowTriggers returns the closed set of edge triggers the engine
- * implements, so the editor can only offer transitions that actually work.
- */
-export function ListFlowTriggers(): $CancellablePromise<string> {
-    return $Call.ByID(2133389940);
-}
-
-/**
- * ListFlows returns the routes a board may use as JSON — its own, plus any tied
- * to no board in particular — each a graph of nodes (a column) and edges (an
- * event and where it leads).
- * 
- * It reads the board first (SeedBoard), because the registry is filled lazily —
- * by a card being moved, by an edit, by the automation editor opening — and the
- * question this answers is asked by a screen that is opened before any of that
- * happens. A board carrying three routes of its own answered "none" until
- * somebody touched it, and the route picker above the kanban then drew nothing
- * on exactly the boards it is for. Idempotent and once per board per run.
- */
-export function ListFlows(boardID: string): $CancellablePromise<string> {
-    return $Call.ByID(3739341294, boardID);
-}
-
-/**
  * ListInbox returns what has arrived and nobody has looked at yet: the cards on
  * the inbox board, newest first. The board is found by the mark the app gave
  * it, never by its title. Empty, not an error, where there is no inbox yet —
@@ -517,6 +372,15 @@ export function ListFlows(boardID: string): $CancellablePromise<string> {
  */
 export function ListInbox(): $CancellablePromise<string> {
     return $Call.ByID(1719333143);
+}
+
+/**
+ * ListPlanning returns the planning conversations open on a board as JSON,
+ * with what was said in each: a dialog closed and opened again finds its
+ * conversation where it left it.
+ */
+export function ListPlanning(boardID: string): $CancellablePromise<string> {
+    return $Call.ByID(406596928, boardID);
 }
 
 /**
@@ -553,15 +417,6 @@ export function ListSources(): $CancellablePromise<string> {
 }
 
 /**
- * ListTerminals returns every terminal currently running as JSON, newest first.
- * A window can be closed while its CLI keeps working, and a planning terminal
- * has no card to be found through, so this is how the UI offers it back.
- */
-export function ListTerminals(): $CancellablePromise<string> {
-    return $Call.ByID(2445206506);
-}
-
-/**
  * ListUnattachedWorkdirs returns the registry entries no board has claimed, as
  * JSON. They are what an install upgrading into board-owned folders is left
  * with, and the dialog offers them to the board somebody is on.
@@ -581,14 +436,6 @@ export function MarkBoardSetupOffered(boardID: string): $CancellablePromise<void
 }
 
 /**
- * MarkCardOutcome is the card's own «прошло»/«не прошло» — the two buttons on a
- * stage where nobody works and nothing runs, and the way a review says no.
- */
-export function MarkCardOutcome(cardID: string, value: string): $CancellablePromise<void> {
-    return $Call.ByID(3114047522, cardID, value);
-}
-
-/**
  * MoveCardToBoard carries a card to another board and, when a column is named,
  * puts it there. It is the phone's half of the card menu's the move-to-board item, and it is the same move: the card keeps its id.
  */
@@ -597,38 +444,12 @@ export function MoveCardToBoard(cardID: string, boardID: string, column: string)
 }
 
 /**
- * OpenCardDiff gives the diff a window of its own, the way a terminal gets one:
- * reading a review is the thing a panel beside the card is least able to be,
+ * OpenCardDiff gives the diff a window of its own: reading a review is the thing a panel beside the card is least able to be,
  * and the card is open behind it anyway. Answers with the address, so a build
  * with no windows — a browser, a phone — can still go there itself.
  */
 export function OpenCardDiff(cardID: string): $CancellablePromise<string> {
     return $Call.ByID(3157622032, cardID);
-}
-
-/**
- * OpenCardTalk opens the card's own conversation rather than the work on it —
- * the wording, the plan, the brief. A door of its own rather than a flag on the
- * one above, because which of the two a person wants is the thing the app kept
- * having to guess (nodeTalk).
- */
-export function OpenCardTalk(cardID: string, workdirName: string, agentName: string, window: boolean): $CancellablePromise<string> {
-    return $Call.ByID(3534506641, cardID, workdirName, agentName, window);
-}
-
-/**
- * OpenCardTerminal opens (or focuses) the agent CLI for a card and returns the
- * terminal as JSON. workdirName/agentName may be empty, in which case the card
- * decides exactly as it does for a session.
- * 
- * window says whether it gets a window of its own. The card draws the terminal
- * inside itself now — the panel its chevron opens is the terminal — so a window
- * would be a second view of the same pty opening behind the one being looked
- * at. It is still what the ⤢ beside the panel asks for, and a screen of its own
- * is worth having.
- */
-export function OpenCardTerminal(cardID: string, workdirName: string, agentName: string, window: boolean): $CancellablePromise<string> {
-    return $Call.ByID(205189519, cardID, workdirName, agentName, window);
 }
 
 /**
@@ -638,16 +459,6 @@ export function OpenCardTerminal(cardID: string, workdirName: string, agentName:
  */
 export function OpenInBrowser(url: string): $CancellablePromise<void> {
     return $Call.ByID(2149156246, url);
-}
-
-/**
- * OpenPlanningTerminal opens the CLI with no card behind it — the terminal half
- * of "Plan a task". boardID is the board the dialog was opened from: the
- * conversation has no card, but it may leave cards, and that is the only board
- * it may leave them on.
- */
-export function OpenPlanningTerminal(workdirName: string, agentName: string, boardID: string): $CancellablePromise<string> {
-    return $Call.ByID(3136365536, workdirName, agentName, boardID);
 }
 
 /**
@@ -691,25 +502,10 @@ export function RemoveAgentWorkdir(name: string): $CancellablePromise<void> {
 }
 
 /**
- * RemoveBoardColumn forgets a column's settings. The column stays on the board.
- */
-export function RemoveBoardColumn(boardID: string, optionID: string, column: string): $CancellablePromise<void> {
-    return $Call.ByID(621442705, boardID, optionID, column);
-}
-
-/**
  * RemoveDeployTarget deletes a Dokku destination by name.
  */
 export function RemoveDeployTarget(name: string): $CancellablePromise<void> {
     return $Call.ByID(2956130287, name);
-}
-
-/**
- * RemoveFlow deletes a board's route by id. Cards standing on it simply stop
- * moving by themselves.
- */
-export function RemoveFlow(boardID: string, flowID: string): $CancellablePromise<void> {
-    return $Call.ByID(333093877, boardID, flowID);
 }
 
 /**
@@ -724,15 +520,6 @@ export function RemoveProxy(name: string): $CancellablePromise<void> {
  */
 export function RemoveSource(name: string): $CancellablePromise<void> {
     return $Call.ByID(471305272, name);
-}
-
-/**
- * RenameTerminal is a person calling a conversation what it is to them. The
- * title a terminal starts with says which card it is on, and a list of open
- * terminals is read by what each one is about.
- */
-export function RenameTerminal(terminalID: string, title: string): $CancellablePromise<void> {
-    return $Call.ByID(2420306135, terminalID, title);
 }
 
 /**
@@ -754,18 +541,16 @@ export function RestartToUpdate(): $CancellablePromise<void> {
 }
 
 /**
- * SaveBoardColumn stores the settings of one column from a JSON-encoded
- * ColumnSpec and returns what was saved.
+ * SayToPlanning is a person's message: the conversation's next turn.
  */
-export function SaveBoardColumn(specJSON: string): $CancellablePromise<string> {
-    return $Call.ByID(143433370, specJSON);
+export function SayToPlanning(id: string, text: string): $CancellablePromise<void> {
+    return $Call.ByID(3664726824, id, text);
 }
 
 /**
- * SeedBoardAutomation takes the columns and routes a board carries of its own
- * into the registry now, rather than waiting for the first card to be moved.
- * The setup wizard calls it, so what the board can do is visible as soon as it
- * is configured. Idempotent: anything already registered is left alone.
+ * SeedBoardAutomation takes what a board carries of its own — the instructions
+ * it gives its agents — into the registry now, rather than waiting for the
+ * first card to be moved. Idempotent.
  */
 export function SeedBoardAutomation(boardID: string): $CancellablePromise<void> {
     return $Call.ByID(4053050179, boardID);
@@ -829,26 +614,6 @@ export function SetBoardPrompt(boardID: string, text: string): $CancellablePromi
 }
 
 /**
- * SetBoardTestAgent answers the wizard's QA step: which agent tests this board,
- * and what it drives a browser with — a JSON-encoded mcpServers block, the same
- * one the agents dialog takes. The agent is also written into the board's test
- * column as its crew, so the column runs the agent the browser was given to.
- */
-export function SetBoardTestAgent(boardID: string, agentName: string, serversJSON: string): $CancellablePromise<void> {
-    return $Call.ByID(334782306, boardID, agentName, serversJSON);
-}
-
-/**
- * SetBoardWorkAgent answers the wizard's agent step: the agents chosen become
- * the crew of this board's agent columns, which is the only place that choice
- * can be recorded — the registry is the machine's and says nothing about who
- * works which board. An empty list takes the crew off again.
- */
-export function SetBoardWorkAgent(boardID: string, namesJSON: string): $CancellablePromise<void> {
-    return $Call.ByID(4244272453, boardID, namesJSON);
-}
-
-/**
  * SetInboxSorting saves {"enabled":true,"agent":"claude"} and returns what was
  * saved.
  */
@@ -857,7 +622,7 @@ export function SetInboxSorting(settingsJSON: string): $CancellablePromise<strin
 }
 
 /**
- * SetPlanningPrompt stores the instructions a planning terminal is opened with.
+ * SetPlanningPrompt stores the instructions a planning conversation opens with.
  */
 export function SetPlanningPrompt(text: string): $CancellablePromise<void> {
     return $Call.ByID(2682910128, text);
@@ -925,14 +690,6 @@ export function ShareItem(boardID: string, title: string, url: string, note: str
 }
 
 /**
- * ShowTerminal reopens the window of a terminal that is already running and
- * returns it as JSON, the same shape OpenCardTerminal returns.
- */
-export function ShowTerminal(terminalID: string): $CancellablePromise<string> {
-    return $Call.ByID(1802153764, terminalID);
-}
-
-/**
  * SkipUpdateVersion stops offering the release now on offer. It is remembered
  * across restarts, which the framework does not do for us.
  */
@@ -977,6 +734,22 @@ export function StartCardDeploy(cardID: string, branch: string): $CancellablePro
 }
 
 /**
+ * StartPlanning opens a planning conversation on a board and returns it as
+ * JSON. folderName may be empty for the board's drafts folder, agentName when
+ * only one agent is registered.
+ */
+export function StartPlanning(boardID: string, folderName: string, agentName: string): $CancellablePromise<string> {
+    return $Call.ByID(296119878, boardID, folderName, agentName);
+}
+
+/**
+ * StopPlanningReply interrupts the reply being written; the conversation stays.
+ */
+export function StopPlanningReply(id: string): $CancellablePromise<void> {
+    return $Call.ByID(854167512, id);
+}
+
+/**
  * SyncAgentUsers gives every registered agent a board account and adds it to
  * the board's members, so cards can be assigned to an agent in a person
  * property. Returns the accounts as JSON: [{"name","username","userId",
@@ -1000,13 +773,6 @@ export function UpdateAgent(entryJSON: string): $CancellablePromise<string> {
  */
 export function UpdateDeployTarget(entryJSON: string): $CancellablePromise<string> {
     return $Call.ByID(1131119282, entryJSON);
-}
-
-/**
- * UpdateFlow replaces an existing route (matched by name) and returns it.
- */
-export function UpdateFlow(entryJSON: string): $CancellablePromise<string> {
-    return $Call.ByID(101487220, entryJSON);
 }
 
 /**

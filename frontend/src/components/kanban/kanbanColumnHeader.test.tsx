@@ -362,7 +362,7 @@ describe('src/components/kanban/kanbanColumnHeader', () => {
 
         test('the viewer\'s own column is headed «Мои задачи»', () => {
             renderHeader(inboxBoard, inboxView, 'single-user')
-            expect(screen.getByText('Мои задачи')).toBeInTheDocument()
+            expect(screen.getByText('My tasks')).toBeInTheDocument()
         })
 
         test('a source\'s column is headed by the source', () => {
@@ -376,7 +376,7 @@ describe('src/components/kanban/kanbanColumnHeader', () => {
         test('outside the inbox the viewer stays themselves', () => {
             renderHeader(board, activeView, 'single-user')
             expect(screen.getByText('You')).toBeInTheDocument()
-            expect(screen.queryByText('Мои задачи')).toBeNull()
+            expect(screen.queryByText('My tasks')).toBeNull()
             expect(screen.queryByText('single-user')).toBeNull()
         })
     })

@@ -57,24 +57,21 @@ Once you and the person have agreed what to do, create the tasks: one card per
 task, all of them in a single create_cards call.
 
 If this conversation started with a task from a card, then it *is* a stage of a
-route: when the work is done, say so with finish_work — the card then travels on
-by itself, and until that call it stands still, waiting for you. If the card does
-not travel by itself, move it to the next column with move_card; that is what
-sets off everything that follows.
+route, and the card is where its result goes. Post the result as one comment
+with comment_card — only what matters: what was done or decided, what the person
+has to know or do next; never a log of your steps. Put values into the card's
+fields with update_card when the task calls for it. Then end the stage with
+finish_work: the card travels on by itself. If the card does not travel by
+itself, move it to the next column with move_card; that is what sets off
+everything that follows.
 
-The board is already chosen and cannot be named. A column decides what happens to
-a card that lands in it, and a route decides what happens after that: read
-list_columns and list_flows first, then put a card where the work begins, unless
-the person asked for something else. Give the folder, the agent, the route and
-every other value by name — the names they have on the board.
+The board is already chosen and cannot be named. A column decides what happens
+to a card that lands in it: read list_columns first, then put a card where the
+work begins, unless the person asked for something else. Give the folder, the
+agent and every other value by name — the names they have on the board.
 
 You never have to name the card you are working on: wherever an id is asked for,
-an empty value means that card.
-
-Once it is clear what this conversation is about, say it in one line with
-describe_conversation, and update it when you move on to something else — the
-person reads that line in the list of open terminals to find the right one. If
-you are asked to name the conversation, answer with name_conversation.`
+an empty value means that card.`
 
 // Card is one card asked for; the field names are what the model fills in.
 type Card struct {
@@ -99,21 +96,6 @@ type Column struct {
 	Agents []string
 }
 
-// FlowStage is one stage of a route: the column a card stands in, what runs
-// there, and what carries the card on.
-type FlowStage struct {
-	Column  string
-	Action  string
-	Crew    []string
-	Waiting []string
-}
-
-// Flow is one route the board's cards may take.
-type Flow struct {
-	Name   string
-	Stages []FlowStage
-}
-
 // CardInfo is a card read back. Body and the route fields are filled in for one
 // card asked about by itself; a listing carries neither.
 // FieldInfo is one property of the board's cards, as an agent needs it: what it
@@ -126,13 +108,9 @@ type FieldInfo struct {
 	Kind string
 	// Values is the closed set, for a select. Empty for the rest.
 	Values []string
-	// Writable says a stage can put a value here at all. The board's own
+	// Writable says a value can be put here at all. The board's own
 	// bookkeeping — who made the card, when — cannot be written to.
 	Writable bool
-	// Declared says this stage names the property among its outputs, and
-	// Required that it cannot end without a value for it.
-	Declared bool
-	Required bool
 }
 
 type CardInfo struct {
@@ -143,11 +121,7 @@ type CardInfo struct {
 	Body    string
 	Mine    bool
 
-	Flow    string
-	Stage   string
-	Waiting []string
 	Running bool
-	Queued  bool
 }
 
 // CardChange is what one card is asked to become. Empty means unchanged, so an
@@ -168,7 +142,6 @@ type CardChange struct {
 // it look its own card up by title first is an invitation to act on another.
 type Board interface {
 	Columns(ctx context.Context) ([]Column, error)
-	Flows(ctx context.Context) ([]Flow, error)
 	// Cards lists the board's cards, optionally only those in one column.
 	Cards(ctx context.Context, column string) ([]CardInfo, error)
 	Card(ctx context.Context, cardID string) (CardInfo, error)
@@ -184,21 +157,15 @@ type Board interface {
 	// UpdateCard changes one card. A change with a column in it is a move, and
 	// a move is what starts the column's automation.
 	UpdateCard(ctx context.Context, change CardChange) error
+	// SetFields writes a card's properties by name, silently. A property the
+	// board does not have yet is added to it as text: an agent that found
+	// something worth keeping on the card may give it a field of its own.
+	SetFields(ctx context.Context, cardID string, fields map[string]string) error
 	Comment(ctx context.Context, cardID, text string) error
-	// Describe records, in one line, what the conversation this run is having is
-	// about. It is the one tool here that writes about the *conversation* rather
-	// than about the board, and it exists because nothing else can know: a
-	// terminal is a vendor CLI in a pty, so no protocol carries a recap of it.
-	Describe(ctx context.Context, text string) error
-	// Name is what this conversation is called in the list of open terminals. It
-	// is the same field a person renames by hand, and it is asked for rather than
-	// volunteered: the app types the request into the conversation itself.
-	Name(ctx context.Context, title string) error
 	// Finish is the agent saying the stage of the route it was given is over,
-	// and what became of it. It is the one thing the app cannot see for itself:
-	// the stage is the agent's own CLI in a terminal, and an interactive CLI
-	// does not exit when a turn ends. fields are the stage's outputs, written
-	// onto the card before the outcome moves it.
+	// and how: done or not. The turn ending is what ends the stage; this is the
+	// verdict the route cannot read off a turn, and the stage's declared
+	// outputs, written onto the card before the route moves it.
 	Finish(ctx context.Context, ok bool, summary string, fields map[string]string) error
 }
 
@@ -219,9 +186,10 @@ type cardInput struct {
 }
 
 type updateInput struct {
-	CardID  string   `json:"cardId,omitempty" jsonschema:"the card's id; empty means the card being worked on"`
-	Title   string   `json:"title,omitempty" jsonschema:"a new title; empty leaves it alone"`
-	Options []string `json:"options,omitempty" jsonschema:"the card's property values by name: folder, agent, route, the answer its route is waiting for"`
+	CardID  string            `json:"cardId,omitempty" jsonschema:"the card's id; empty means the card being worked on"`
+	Title   string            `json:"title,omitempty" jsonschema:"a new title; empty leaves it alone"`
+	Options []string          `json:"options,omitempty" jsonschema:"the card's select values by the names of their values: folder, agent, route, the answer its route is waiting for"`
+	Fields  map[string]string `json:"fields,omitempty" jsonschema:"card properties by name, each with its value — a select by one of its option names, anything else as text; a name the board does not have yet becomes a new text property"`
 }
 
 type moveInput struct {
@@ -234,17 +202,9 @@ type commentInput struct {
 	Text   string `json:"text" jsonschema:"the comment"`
 }
 
-type describeInput struct {
-	Text string `json:"text" jsonschema:"one line: what this conversation is doing right now"`
-}
-
-type nameInput struct {
-	Title string `json:"title" jsonschema:"a short name for this conversation, three to five words, in the language the conversation is in"`
-}
-
 type finishInput struct {
 	Done    bool   `json:"done" jsonschema:"true — the card's work is done; false — it could not be done"`
-	Summary string `json:"summary" jsonschema:"what was done, or why it could not be — this goes onto the card as a comment"`
+	Summary string `json:"summary" jsonschema:"one line: what was done, or why it could not be — the route reads it; the result for the person goes in comment_card"`
 	// The stage's declared outputs. Written onto the card before the route
 	// reads it, so a transition on one of these values is deterministic.
 	Properties map[string]string `json:"properties,omitempty" jsonschema:"card properties this stage writes, by name — a select by one of its option names, anything else as text; the stage's own instructions say which are required"`
@@ -252,18 +212,11 @@ type finishInput struct {
 
 type noInput struct{}
 
-// fieldLine is one property as the model reads it: what it is called, what a
-// value may be, and what this stage owes on it. The contract comes first among
-// the suffixes — a required write is the one thing here that can stop a stage
-// from ending, so it must not be buried under "read-only".
+// fieldLine is one property as the model reads it: what it is called and what a
+// value may be.
 func fieldLine(f FieldInfo) string {
 	line := fmt.Sprintf("- %s — %s", f.Name, fieldShape(f))
-	switch {
-	case f.Required:
-		line += "; this stage must report it"
-	case f.Declared:
-		line += "; this stage reports it"
-	case !f.Writable:
+	if !f.Writable {
 		line += "; read-only"
 	}
 	return line
@@ -322,37 +275,6 @@ func NewServer(board Board) *mcp.Server {
 				fmt.Fprintf(&b, " (agents: %s)", strings.Join(col.Agents, ", "))
 			}
 			b.WriteString("\n")
-		}
-		return textResult(strings.TrimSpace(b.String())), nil, nil
-	})
-
-	mcp.AddTool(srv, &mcp.Tool{
-		Name:        "list_flows",
-		Description: "The board's routes: which columns a card travels by itself, and what moves it along.",
-	}, func(ctx context.Context, _ *mcp.CallToolRequest, _ noInput) (*mcp.CallToolResult, any, error) {
-		flows, err := board.Flows(ctx)
-		if err != nil {
-			return errorResult("%v", err), nil, nil
-		}
-		if len(flows) == 0 {
-			return textResult("This board has no routes: a card stays where it was put until somebody moves it."), nil, nil
-		}
-		var b strings.Builder
-		for _, flow := range flows {
-			fmt.Fprintf(&b, "%s:\n", flow.Name)
-			for _, stage := range flow.Stages {
-				fmt.Fprintf(&b, "  - %s", stage.Column)
-				if stage.Action != "" {
-					fmt.Fprintf(&b, " — %s", stage.Action)
-				}
-				if len(stage.Crew) > 0 {
-					fmt.Fprintf(&b, " (agents: %s)", strings.Join(stage.Crew, ", "))
-				}
-				if len(stage.Waiting) > 0 {
-					fmt.Fprintf(&b, " [next: %s]", strings.Join(stage.Waiting, "; "))
-				}
-				b.WriteString("\n")
-			}
 		}
 		return textResult(strings.TrimSpace(b.String())), nil, nil
 	})
@@ -435,15 +357,25 @@ func NewServer(board Board) *mcp.Server {
 
 	mcp.AddTool(srv, &mcp.Tool{
 		Name: "update_card",
-		Description: "Change a card: its title, and its property values by name — folder, agent, route, " +
-			"the answer its route is waiting for. Not its column: move_card is for that.",
+		Description: "Change a card: its title, its select values by name — folder, agent, route, " +
+			"the answer its route is waiting for — and its fields, by name with a value. A field the " +
+			"board does not have yet is added as text, so a finding worth keeping can have a place of " +
+			"its own. Not its column: move_card is for that. Not its description: that is the " +
+			"person's; say what you have to say with comment_card.",
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, in updateInput) (*mcp.CallToolResult, any, error) {
-		if strings.TrimSpace(in.Title) == "" && len(in.Options) == 0 {
+		if strings.TrimSpace(in.Title) == "" && len(in.Options) == 0 && len(in.Fields) == 0 {
 			return errorResult("nothing was said to change"), nil, nil
 		}
-		err := board.UpdateCard(ctx, CardChange{CardID: in.CardID, Title: in.Title, Options: in.Options})
-		if err != nil {
-			return errorResult("%v", err), nil, nil
+		if strings.TrimSpace(in.Title) != "" || len(in.Options) > 0 {
+			err := board.UpdateCard(ctx, CardChange{CardID: in.CardID, Title: in.Title, Options: in.Options})
+			if err != nil {
+				return errorResult("%v", err), nil, nil
+			}
+		}
+		if len(in.Fields) > 0 {
+			if err := board.SetFields(ctx, in.CardID, in.Fields); err != nil {
+				return errorResult("%v", err), nil, nil
+			}
 		}
 		return textResult("The card has been changed."), nil, nil
 	})
@@ -465,7 +397,7 @@ func NewServer(board Board) *mcp.Server {
 	mcp.AddTool(srv, &mcp.Tool{
 		Name: "comment_card",
 		Description: "Write on a card — the same place the person reads everything else the agents " +
-			"have said about it.",
+			"have said about it. A stage's result goes here, once: what matters, not the steps taken.",
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, in commentInput) (*mcp.CallToolResult, any, error) {
 		if strings.TrimSpace(in.Text) == "" {
 			return errorResult("the comment is empty"), nil, nil
@@ -476,64 +408,27 @@ func NewServer(board Board) *mcp.Server {
 		return textResult("The comment has been added."), nil, nil
 	})
 
-	// How a stage of a route ends. The app started this conversation with the
-	// card's task in it and has no other way to learn that the task is done: a
-	// CLI that is still running is a CLI a person may simply be reading.
+	// How a stage of a route says what became of it. The turn ending ends the
+	// stage; done or not is what a turn's end cannot say.
 	mcp.AddTool(srv, &mcp.Tool{
 		Name: "finish_work",
-		Description: "Say that the card's work is finished. Call this when you have done what the " +
-			"card asks — or when it is clear that it cannot be done. Until you say so the card stands " +
-			"still, waiting for you; after it, the card travels on along its route and this " +
-			"conversation closes. If your instructions name card properties this stage must write, " +
-			"pass their values in properties — they land on the card before it moves, and the route " +
-			"may branch on them.",
+		Description: "Say that the card's work is finished, and whether it was done. Call this last, " +
+			"after the result is on the card (comment_card) — when you have done what the card asks, " +
+			"or when it is clear that it cannot be done. When your turn ends the card travels on along " +
+			"its route: to the next stage if the work was done, down the route's branch for failure if " +
+			"not. If your instructions name card properties this stage must write, pass their values " +
+			"in properties — they land on the card before it moves, and the route may branch on them.",
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, in finishInput) (*mcp.CallToolResult, any, error) {
 		if strings.TrimSpace(in.Summary) == "" {
-			return errorResult("nothing was said about what was done: the short summary goes onto the card, and it is what the person reads"), nil, nil
+			return errorResult("nothing was said about what was done: give one line, the route reads it"), nil, nil
 		}
 		if err := board.Finish(ctx, in.Done, in.Summary, in.Properties); err != nil {
 			return errorResult("%v", err), nil, nil
 		}
 		if in.Done {
-			return textResult("The work is accepted and the card travels on. This conversation is about to close."), nil, nil
+			return textResult("The work is accepted; the card travels on when your turn ends. Nothing more is needed."), nil, nil
 		}
-		return textResult("Recorded that the work could not be finished. The card takes the route's branch for failure."), nil, nil
-	})
-
-	// The two tools here about the conversation rather than about the board. A
-	// person picks one terminal out of a list of them, and the list would
-	// otherwise say who is talking and where and nothing about what is going on.
-	mcp.AddTool(srv, &mcp.Tool{
-		Name: "describe_conversation",
-		Description: "Say in one line what this conversation is doing. The person sees that line in " +
-			"the list of open terminals. Update it when you move on to something else; an empty string removes it.",
-	}, func(ctx context.Context, _ *mcp.CallToolRequest, in describeInput) (*mcp.CallToolResult, any, error) {
-		if err := board.Describe(ctx, in.Text); err != nil {
-			return errorResult("%v", err), nil, nil
-		}
-		if strings.TrimSpace(in.Text) == "" {
-			return textResult("The conversation's description has been removed."), nil, nil
-		}
-		return textResult("The conversation's description has been updated."), nil, nil
-	})
-
-	// Named rather than described: the name is what the row in the list is called
-	// and what a person renames by hand, while the description is a line under it
-	// that changes as the conversation moves on. The app asks for this one — it
-	// types the request into the conversation (AskTerminalName) — because a name
-	// nobody gave reads agent · drafts folder, which is true of every row.
-	mcp.AddTool(srv, &mcp.Tool{
-		Name: "name_conversation",
-		Description: "Give this conversation a short name — three to five words, in the language the " +
-			"conversation is in. The person picks it out of a list of open terminals by that name.",
-	}, func(ctx context.Context, _ *mcp.CallToolRequest, in nameInput) (*mcp.CallToolResult, any, error) {
-		if strings.TrimSpace(in.Title) == "" {
-			return errorResult("no name was given"), nil, nil
-		}
-		if err := board.Name(ctx, in.Title); err != nil {
-			return errorResult("%v", err), nil, nil
-		}
-		return textResult(fmt.Sprintf("This conversation is now called %q.", strings.TrimSpace(in.Title))), nil, nil
+		return textResult("Recorded that the work could not be finished; when your turn ends the card takes the route's branch for failure."), nil, nil
 	})
 
 	return srv
@@ -554,20 +449,8 @@ func cardLine(card CardInfo) string {
 	if len(card.Options) > 0 {
 		fmt.Fprintf(&b, "\n  values: %s", strings.Join(card.Options, ", "))
 	}
-	if card.Flow != "" {
-		fmt.Fprintf(&b, "\n  route: %s", card.Flow)
-		if card.Stage != "" {
-			fmt.Fprintf(&b, ", stage %q", card.Stage)
-		}
-		switch {
-		case card.Running:
-			b.WriteString(", an agent is working on it")
-		case card.Queued:
-			b.WriteString(", waiting its turn")
-		}
-		if len(card.Waiting) > 0 {
-			fmt.Fprintf(&b, "\n  travels on when: %s", strings.Join(card.Waiting, "; "))
-		}
+	if card.Running {
+		b.WriteString("\n  an agent is working on it")
 	}
 	return b.String()
 }

@@ -13,15 +13,13 @@ import {getGlobalError} from './store/globalError'
 import {useAppSelector, useAppStore} from './store/hooks'
 import fbRoute from './route'
 
-// The desktop app's terminal window: the agent's own CLI on a card, drawn by
-// xterm.js. Its own route so the window is just a URL — and lazily loaded so a
-// browser build, which cannot open one, never pays for the emulator.
-const TerminalPage = lazy(() => import('./components/acp/terminalPage'))
+// A card's changes in a window of their own: its own route, so the window is
+// just a URL, and lazily loaded because the board's own window never draws it.
 const DiffPage = lazy(() => import('./components/acp/diffPage'))
 
-// The board on a phone: what is waiting for a person, and the terminals it is
-// waiting in. Lazy for the same reason — a desktop window never opens these,
-// and a browser build should not carry them.
+// The board on a phone: what is waiting for a person, and the cards it is
+// about. Lazy for the same reason — a desktop window never opens these, and a
+// browser build should not carry them.
 const MobilePage = lazy(() => import('./pages/mobile/mobilePage'))
 
 // The dialog the system's the share dialog opens: a link, and the one question of
@@ -84,15 +82,6 @@ const routes = [
     fbRoute({path: '/change_password', component: ChangePasswordPage}),
 
     fbRoute({
-        path: '/acp/terminal/:terminalId',
-        component: () => (
-            <Loading fallback={null}>
-                <TerminalPage/>
-            </Loading>
-        ),
-    }),
-
-    fbRoute({
         path: '/acp/diff/:cardId',
         component: () => (
             <Loading fallback={null}>
@@ -114,15 +103,6 @@ const routes = [
         component: () => (
             <Loading fallback={null}>
                 <SharePage/>
-            </Loading>
-        ),
-    }),
-
-    fbRoute({
-        path: '/m/terminal/:terminalId',
-        component: () => (
-            <Loading fallback={null}>
-                <TerminalPage softKeys={true}/>
             </Loading>
         ),
     }),

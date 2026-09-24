@@ -91,7 +91,7 @@ export function listBoardCards(boardId: string): Promise<BindingCard[]> {
 export async function moveCardToBoard(cardId: string, boardId: string, column: string): Promise<void> {
     const bindings = goApp()
     if (!bindings?.MoveCardToBoard) {
-        throw new Error('перенос недоступен')
+        throw new Error('no Go side to move the card through')
     }
     await bindings.MoveCardToBoard(cardId, boardId, column)
 }

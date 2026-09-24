@@ -40,16 +40,13 @@ export type SetupPlan = {
     steps: SetupStep[]
 
     // What this board calls the column a card is dragged into to be worked on.
-    agentColumn?: string
 
     // What this board calls the column that tests. The QA step names an agent
     // for it, so the question can say which column it is about.
-    testColumn?: string
 
     // Who already works this board's cards: the crew of its agent stages, when
     // they agree on one. The agent step opens on it, so walking the wizard
     // again shows the answer already given rather than nobody chosen.
-    workAgents?: string[]
 
     // The board named these steps itself, rather than them being worked out
     // from the automation it carries.
@@ -67,14 +64,6 @@ export type SetupPlan = {
 // offered and nothing is asked. It is what a browser or plugin build sees,
 // where there is no machine to set up in the first place.
 export const NO_SETUP: SetupPlan = {boardId: '', steps: [], declared: false, automated: false, offered: false}
-
-// What the trigger column is called on a board that ships none: the default the
-// Go config carries (acp.DefaultConfig).
-export const DEFAULT_AGENT_COLUMN = 'In Progress'
-
-export function agentColumn(plan: SetupPlan | undefined): string {
-    return plan?.agentColumn || DEFAULT_AGENT_COLUMN
-}
 
 // The setup is agents' questions — where to work, who works, where it goes —
 // so with the AI switched off it is not offered at all (the plan below keeps

@@ -9,7 +9,7 @@ import {Board, createBoard} from '../../blocks/board'
 import {fakeGoSide} from '../../test/goSide'
 
 import TemplateEditor from './templateEditor'
-import {BOARD_PROP_COLUMNS, BOARD_PROP_FLOWS, BOARD_PROP_SETUP, SUCCESS} from './automation'
+import {BOARD_PROP_SETUP} from './automation'
 
 vi.mock('../../mutator')
 
@@ -29,20 +29,6 @@ const template: Board = {
             {id: 'opt-review', value: 'На ревью', color: ''},
         ],
     }],
-    properties: {
-        [BOARD_PROP_COLUMNS]: JSON.stringify([
-            {optionId: 'opt-work', propertyId: 'prop-status', property: 'Статус', column: 'В работе', action: 'agent'},
-        ]),
-        [BOARD_PROP_FLOWS]: JSON.stringify([{
-            name: 'Фича',
-            property: 'Статус',
-            nodes: [
-                {id: 'opt-work', column: 'В работе', optionId: 'opt-work', action: ''},
-                {id: 'opt-review', column: 'На ревью', optionId: 'opt-review', action: ''},
-            ],
-            edges: [{from: 'opt-work', to: 'opt-review', on: SUCCESS}],
-        }]),
-    } as Board['properties'],
 }
 
 function stubBindings() {
@@ -50,12 +36,7 @@ function stubBindings() {
         ListSetupSteps: vi.fn().mockResolvedValue(JSON.stringify([
             {kind: 'project', registry: 'projects', optional: false},
             {kind: 'agent', registry: 'agents', optional: false},
-            {kind: 'deploy', registry: 'deploys', optional: true},
-            {kind: 'browser', registry: 'agentMCP', optional: true},
             {kind: 'done', optional: false},
-        ])),
-        ListFlowTriggers: vi.fn().mockResolvedValue(JSON.stringify([
-            {kind: SUCCESS, source: 'outcome', label: 'шаг прошёл'},
         ])),
         ListAgents: vi.fn().mockResolvedValue('[]'),
         ListDeployTargets: vi.fn().mockResolvedValue('[]'),
@@ -71,8 +52,7 @@ describe('components/acp/templateEditor', () => {
     })
 
     // What a board made from the template will do is said here and edited on a
-    // board: the routes came off one, and the automation dialog is where a
-    // route is drawn.
+    // board: a template is shown, never drawn.
     test('says what the template carries, and does not offer to redraw it', async () => {
         stubBindings()
         const {container} = render(() => wrapIntl(() => (
@@ -86,13 +66,11 @@ describe('components/acp/templateEditor', () => {
             expect(found).toBeTruthy()
             return found!
         })
-        expect(carries.textContent).toContain('В работе (an agent works on the card)')
-        expect(carries.textContent).toContain('В работе › На ревью')
-        expect(container.querySelector('.FlowDiagram')).toBeNull()
+        expect(carries.textContent).toContain('В работе')
         expect(screen.getByDisplayValue('Разработка')).toBeInTheDocument()
     })
 
-    test('saving writes the columns, the routes and the questions into the board', async () => {
+    test('saving writes the questions into the board', async () => {
         stubBindings()
         const onClose = vi.fn()
         render(() => wrapIntl(() => (
@@ -115,9 +93,6 @@ describe('components/acp/templateEditor', () => {
         await waitFor(() => expect(mockedMutator.updateBoard).toHaveBeenCalled())
 
         const saved = mockedMutator.updateBoard.mock.calls[0][0] as Board
-        expect(JSON.parse(saved.properties[BOARD_PROP_COLUMNS] as string)[0].column).toBe('В работе')
-        expect(JSON.parse(saved.properties[BOARD_PROP_FLOWS] as string)[0].name).toBe('Фича')
-
         const setup = JSON.parse(saved.properties[BOARD_PROP_SETUP] as string)
         expect(setup.steps.map((s: {kind: string}) => s.kind)).toEqual(['project', 'agent', 'done'])
         expect(setup.steps[0].hint).toBe('Папка с заметками')

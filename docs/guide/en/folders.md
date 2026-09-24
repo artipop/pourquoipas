@@ -10,7 +10,7 @@ board with several folders leaves the field empty — that choice is yours. The
 switch is in Settings → "Other".
 
 A card shows its folder on its face on the board, as a line with a folder icon
-under the title. An empty field draws no line. «Черновики доски» never appears
+under the title. An empty field draws no line. «The board’s drafts» never appears
 there: that is where a conversation stands when the card has not named a folder,
 not an answer the card gives.
 
@@ -22,11 +22,9 @@ it there. This holds on another machine too: the card carries its branch in the
 «Branch» field, so the work is known about there even when the copy itself is
 not.
 
-**The terminal button in the corner of a card** opens the work on it. When the
-card has no folder there is nowhere to work, so the button opens the card
-itself, where the question "Which folder will the agent work in?" is asked. A
-card can still be discussed without a folder: «Обсуждение» in the terminals
-panel always opens.
+**Without a folder the agent still runs** — it gets a scratch directory with
+nothing to read and nothing to commit. For a card that needs code, pick the
+folder first: the «Folder» field is on the card itself.
 
 Which items a board's menu has is decided by the template it was made from: the
 «Development» board asks about a folder, a deploy host and a browser, so its menu
@@ -54,7 +52,7 @@ will you work in?".
 ## The base branch
 
 A repository has a **"Work branches from"** field. Work on a card starts from
-that branch, and the "branch merged into the main one" transitions wait for it.
+that branch, and a finished branch is merged back into it.
 
 The value is filled in when the folder is added: the app asks git which branch
 the repository treats as its main one. Change it if you work off another —
@@ -64,7 +62,7 @@ the repository treats as its main one. Change it if you work off another —
 
 This is a choice about **that folder on this board** — the two buttons under
 **"The agent works"** on the repository's card in "Folders…". A folder belongs to one board anyway, so for it
-this reads as "how this folder works"; a folder marked «на всех досках» can be
+this reads as "how this folder works"; a folder marked «On every board» can be
 used differently by two boards.
 
 **"in a copy of its own"** (the default) — the card gets its own copy of the
@@ -79,8 +77,10 @@ repository and its own branch in it.
 
 - you see the agent's work in your editor as it happens, without going to
   another directory;
-- one card at a time: until the first card's branch is merged, the next one
-  waits and says on its strip what it is waiting for;
+- one card at a time: until the first card's branch is merged into the main
+  one (locally or on the server, through a pull request) or deleted, the next
+  one waits and says on the card what it is waiting for. It does not start by
+  itself afterwards — once the branch is merged, move it into the column again;
 - if the folder has **uncommitted changes to tracked files**, the agent will not
   start: the app will not switch a branch under your unsaved work. Commit or
   stash it. Untracked files — a build directory, an `.env`, a scratch clone —
@@ -94,33 +94,28 @@ or on that branch. The new answer applies to the cards that come after.
 
 ## The card's branch
 
-One card, one branch — however many stages of a route it travels and however
-many terminals you open beside it. The branch reads like the task: a Russian
-title is transliterated, so «Почини логин» becomes `pochini-login-1a2b`.
+One card, one branch — however many times an agent runs on it. The branch reads
+like the task: a Russian title is transliterated, so «Почини логин» becomes
+`pochini-login-1a2b`.
 
 For names by meaning rather than by spelling — Settings → This machine → Other →
 **"The agent names each card's branch"**: before the card's first branch the
-agent runs briefly and answers with one name ("fix-sso-login"). No terminal
-opens, and a slow or odd answer falls back to the card's title.
+agent runs briefly and answers with one name ("fix-sso-login"); a slow or odd
+answer falls back to the card's title.
 
 The branch is written into the card's «Branch» field, so it travels with the card
 to another board and is visible on another machine. The copy's directory is not
 written to the card — a path means nothing on another machine; it is shown on
-the card's stamp and in the terminal panel.
+the card's stamp.
 
-When a stage is finished and everything is committed, the copy's directory is put
-away and the branch stays: the next terminal on that card remakes the copy from
+When the work is finished and everything is committed, the copy's directory is
+put away and the branch stays: the next run on that card remakes the copy from
 the branch. A copy with uncommitted changes — or one a CLI is still running in —
 is left exactly where it is.
 
-## Where a stage of a route works
+## Where the agent works
 
-By default: an agent works on the card's own branch, a deploy and a test in the
-folder itself (a deploy publishes a branch that already exists, a test checks
-something already published).
-
-A stage can say otherwise: select it in the route editor, open "Only on this
-route…" and set **The stage works**. That is how you build a route where QA
-checks the card's code *before* the merge: the QA stage works on the card's own
-branch, and a "branch merged into the main one" transition after it leads to the
-deploy.
+An agent works on the card's own branch; a deploy stands in the folder itself,
+because it publishes a branch that already exists and needs no copy of its own.
+A conversation with no card («Talk it over with an agent») stands in the folder too and
+changes nothing in it.

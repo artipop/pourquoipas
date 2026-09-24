@@ -162,7 +162,7 @@ const MachineMiscPanel = () => {
                     {intl.formatMessage({id: 'Machine.named-branches', defaultMessage: 'The agent names each card’s branch'})}
                 </label>
                 <p class='MachineMiscPanel__hint'>
-                    {intl.formatMessage({id: 'Machine.named-branches-hint', defaultMessage: 'A short agent run before the card’s first branch — no terminal opens, and a slow or odd answer falls back to the card’s title.'})}
+                    {intl.formatMessage({id: 'Machine.named-branches-hint', defaultMessage: 'A short agent run before the card’s first branch; a slow or odd answer falls back to the card’s title.'})}
                 </p>
 
                 {/* A default, not a rule: it writes an ordinary value onto the

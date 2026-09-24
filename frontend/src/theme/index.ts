@@ -18,6 +18,7 @@ import {
     ThemeFamily,
     themeFamily,
     THEME_FAMILIES,
+    themeFamilyName,
 } from './themes'
 import {themeTokens} from './tokens'
 
@@ -27,7 +28,7 @@ import {themeTokens} from './tokens'
 // blue-and-yellow joke — and it comes in a light half and a dark half; whether
 // this machine wears the light one, the dark one or whichever the system is set
 // to is a separate question with its own answer. They were one list once, and
-// that list said «Gruvbox Dark» and «XCIII — бумага» in the same column as «Как
+// that list said «Gruvbox Dark» and «XCIII — paper» in the same column as «Как
 // в системе»: picking a design meant also deciding a polarity, and following
 // the system meant giving up every design but ours.
 //
@@ -59,7 +60,7 @@ export const themeModes: ThemeMode[] = ['light', 'dark', 'system']
 
 export type ThemeName = string
 
-export {THEME_FAMILIES, SHIPPED_VARIANTS, ThemeConfigError}
+export {THEME_FAMILIES, SHIPPED_VARIANTS, ThemeConfigError, themeFamilyName}
 export type {ThemeConfig, ThemeFamily}
 
 let activeFamilyId: ThemeName = defaultFamilyId

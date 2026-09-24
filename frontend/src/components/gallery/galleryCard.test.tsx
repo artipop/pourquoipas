@@ -50,6 +50,7 @@ describe('src/components/gallery/GalleryCard', () => {
     describe('without block content', () => {
         beforeEach(() => {
             const state = {
+
                 // "Copy link" in the card menu is a team-install control
                 // (docs/teamwork.md).
                 clientConfig: {
@@ -234,6 +235,7 @@ describe('src/components/gallery/GalleryCard', () => {
         beforeEach(() => {
             card.fields.contentOrder = [contentImage.id]
             const state = {
+
                 // "Copy link" in the card menu is a team-install control
                 // (docs/teamwork.md).
                 clientConfig: {
@@ -308,6 +310,7 @@ describe('src/components/gallery/GalleryCard', () => {
             contentImage2.fields.fileId = 'test2.jpg'
             card.fields.contentOrder = [contentImage.id, contentImage2.id]
             const state = {
+
                 // "Copy link" in the card menu is a team-install control
                 // (docs/teamwork.md).
                 clientConfig: {
@@ -379,6 +382,7 @@ describe('src/components/gallery/GalleryCard', () => {
         beforeEach(() => {
             card.fields.contentOrder = [contentComment.id]
             const state = {
+
                 // "Copy link" in the card menu is a team-install control
                 // (docs/teamwork.md).
                 clientConfig: {
@@ -470,6 +474,7 @@ describe('src/components/gallery/GalleryCard', () => {
         beforeEach(() => {
             card.fields.contentOrder = [contentComment.id, contentDivider.id]
             const state = {
+
                 // "Copy link" in the card menu is a team-install control
                 // (docs/teamwork.md).
                 clientConfig: {

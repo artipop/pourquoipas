@@ -269,13 +269,13 @@ func (a *App) SetUIPreference(key, value string) error {
 	return nil
 }
 
-// reinstallTemplates puts the shipped templates into a language, and does the
+// reinstallTemplates puts the templates and the inbox into a language, and does the
 // work where it is called from.
 func (a *App) reinstallTemplates(lang string) {
-	if a == nil || a.retemplate == nil {
+	if a == nil || a.relanguage == nil {
 		return
 	}
-	if err := a.retemplate(lang); err != nil {
-		log.Printf("templates: %v", err)
+	if err := a.relanguage(lang); err != nil {
+		log.Printf("language: %v", err)
 	}
 }

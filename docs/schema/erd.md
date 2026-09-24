@@ -34,7 +34,7 @@
 Форк Focalboard. Всё содержимое доски — строки `blocks`: карточка,
 вид, комментарий, вложение; дерево внутри доски — через `parent_id`.
 Наша автоматика лежит в `boards.properties` (`columns`,
-`flows`, `prompt`, …) и в `blocks.fields` карточки, своих
+`prompt`, …) и в `blocks.fields` карточки, своих
 таблиц у неё нет — потому и едет с доской при экспорте и переезде.
 
 Внешних ключей здесь нет, и намеренно: у форка наследный soft-delete,
@@ -314,7 +314,7 @@ erDiagram
         text bin_path "nullable"
         name_100 model "nullable"
         text prompt "nullable"
-        json settings "env, args, cliArgs, options, autoAllowTools, command, terminalCommand, mcpServers. JSON on purpose: this is…"
+        json settings "env, args, cliArgs, options, autoAllowTools, command, mcpServers. JSON on purpose: this is how to start a…"
         millis created_at
     }
     proxy {
@@ -340,38 +340,17 @@ erDiagram
     }
 ```
 
-## Разговоры и сессии
+## Сессии
 
-Ось — карточка (`blocks.id`) и нода: id опции колонки, на которой
-карточка стоит. Разговор переживает процесс, который его рисовал
-(`claude --continue`), сессия — это один запуск и один вердикт;
-поэтому таблицы две.
+Сессия — один запуск агента по ACP на карточке (`blocks.id`): один
+ход и один вердикт. Её журнал — `session_event`.
 
 ```mermaid
 erDiagram
     agent_session ||--o{ session_event : "session_id CASCADE"
     board_ref ||--o{ agent_session : "board_id CASCADE"
-    board_ref ||--o{ conversation : "board_id CASCADE"
     card_ref ||--o{ agent_session : "card_id CASCADE"
-    card_ref ||--o{ conversation : "card_id CASCADE"
 
-    conversation {
-        id id PK
-        id card_id FK "NULL for a planning conversation: it is about no card."
-        id board_id FK "nullable"
-        name_64 node_id "The column's option id — work; '@talk' — discussion; '@none' — a card with no column at all."
-        name_200 column_name "What the column was called at the time, frozen: the option may be gone, and the row still has to read the…"
-        text title "nullable"
-        text summary "The agent's own line about what this conversation is doing."
-        name_100 agent "nullable"
-        name_32 kind "nullable"
-        text workdir_path "Was repo_path. Becomes workspace_id in the second half of step 2, together with the code that resolves a…"
-        text cwd "nullable"
-        name_255 branch "nullable"
-        millis started_at
-        millis ended_at "nullable"
-        int exit_code "nullable"
-    }
     agent_session {
         id id PK
         id card_id FK "NULL for a run that is about no card — naming a branch is one."
@@ -396,55 +375,21 @@ erDiagram
     }
 ```
 
-## Маршруты
+## Остановки
 
-Где карточка на маршруте, как она туда попала и почему стоит.
-`card_stall` — одна текущая причина, а не журнал: «в колонке нет
-места» верно только пока верно, и комментарий пережил бы её шумом.
+Почему по карточке ничего не идёт. `card_stall` — одна текущая
+причина, а не журнал: «папку держит другая карточка» верно только пока,
+и комментарий пережил бы её шумом.
 
 ```mermaid
 erDiagram
-    board_ref ||--o{ flow_state : "board_id CASCADE"
-    board_ref ||--o{ stage_queue : "board_id CASCADE"
     card_ref ||--o{ card_stall : "card_id CASCADE"
-    card_ref ||--o{ flow_event : "card_id CASCADE"
-    card_ref ||--o{ flow_state : "card_id CASCADE"
-    card_ref ||--o{ stage_queue : "card_id CASCADE"
 
-    flow_state {
-        id card_id PK, FK
-        id board_id FK "nullable"
-        id flow_id "The route the card is on. An id rather than the route's name, so renaming a route does not lose the place of…"
-        name_64 node_id
-        name_255 branch "nullable"
-        text workdir_path "nullable"
-        millis entered_at
-    }
-    flow_event {
-        id id PK
-        id card_id FK
-        id flow_id "nullable"
-        name_64 from_node "nullable"
-        name_64 to_node
-        name_32 on_kind
-        text detail "nullable"
-        text said "The agent's closing words: what a conversation is told instead of its task when the card comes back to it."
-        millis created_at
-    }
     card_stall {
         id card_id PK, FK
         name_64 node_id "nullable"
-        name_32 kind "'conversation' is the one kind with somewhere to go: open the terminal. The rest have no button, which is why…"
         text reason
         millis created_at
-    }
-    stage_queue {
-        id card_id PK, FK
-        id board_id FK "nullable"
-        name_128 column_key "board|option — the queue belongs to one column of one board."
-        id flow_id "nullable"
-        name_64 node_id "nullable"
-        millis queued_at
     }
 ```
 
@@ -463,7 +408,6 @@ erDiagram
     card_ref ||--o{ card_changes : "card_id CASCADE"
     card_ref ||--o{ checkout : "card_id CASCADE"
     workspace ||--o{ checkout : "workspace_id RESTRICT"
-    workspace ||--o{ vcs_seen : "workspace_id CASCADE"
 
     checkout {
         id id PK "A surrogate, and the one place in this schema where that is right: the natural key would have to include a…"
@@ -476,13 +420,6 @@ erDiagram
         name_255 base "What the branch was cut from, and therefore what «merged» means."
         millis created_at
         millis released_at "NULL means the checkout is live."
-    }
-    vcs_seen {
-        id workspace_id PK, FK
-        name_255 branch PK
-        name_32 kind PK
-        name_64 marker "The commit the event refers to: the same state seen twice fires once."
-        millis created_at
     }
     card_changes {
         id card_id PK, FK

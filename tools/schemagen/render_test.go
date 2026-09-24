@@ -67,7 +67,7 @@ func TestEveryDialectCreatesEveryTable(t *testing.T) {
 }
 
 // A foreign key onto the board's own tables is the whole reason our tables
-// moved into its database: a deleted card used to leave its conversations, its
+// moved into its database: a deleted card used to leave its sessions, its
 // stall and its place in the queue behind for ever.
 //
 // The route is one hop longer than it was — card_ref stands between, so that a
@@ -95,8 +95,7 @@ func TestWhatBelongsToACardGoesWithIt(t *testing.T) {
 	}
 
 	for _, name := range []string{
-		"conversation", "agent_session", "flow_state", "flow_event",
-		"card_stall", "stage_queue",
+		"agent_session", "card_stall", "card_changes",
 	} {
 		tbl, ok := byName[name]
 		if !ok {
@@ -210,17 +209,29 @@ func TestTheCollapsedMigrationBuildsTheSchemaTheLadderBuilt(t *testing.T) {
 		"table sessions":        {tightenedKey},
 		"table teams":           {tightenedKey},
 		"table system_settings": {tightenedKey},
-		// The route stopped being addressed by its name.
-		"table flow_state":  {routeByID},
-		"table flow_event":  {routeByID},
-		"table stage_queue": {routeByID},
 		// A column's limit stopped being counted in one process's memory.
 		"table agent_session": {"column_key: which column's limit this run counts against"},
+		// Its one kind was a conversation cut off in a terminal.
+		"table card_stall": {terminalsRemoved},
+	}
+	// Tables the ladder made that are gone on purpose.
+	intendedRemovals := map[string]string{
+		"table conversation": terminalsRemoved,
+		"table flow_state":   routesRemoved,
+		"table flow_event":   routesRemoved,
+		// The queue belonged to a column's limit, and a column runs nothing now.
+		"table stage_queue": routesRemoved,
+		// The watcher polled a branch to fire an edge; there are no edges.
+		"table vcs_seen": routesRemoved,
 	}
 
 	for name, w := range wantShape {
 		g, ok := gotShape[name]
 		if !ok {
+			if why, gone := intendedRemovals[name]; gone {
+				t.Logf("%s is gone on purpose — %s", name, why)
+				continue
+			}
 			t.Errorf("the collapsed schema has no %s", name)
 			continue
 		}
@@ -254,6 +265,10 @@ func TestTheCollapsedMigrationBuildsTheSchemaTheLadderBuilt(t *testing.T) {
 	}
 }
 
+// terminalsRemoved is why what a terminal needed is gone: a stage is an ACP
+// session again, and nothing runs an agent's CLI in a pty any more.
+const terminalsRemoved = "the agent's CLI in a terminal is gone; a stage is an ACP session"
+
 // refsForARemoteBoard is why the tables keyed on a card and a board stopped
 // pointing at blocks and boards directly.
 //
@@ -263,10 +278,9 @@ func TestTheCollapsedMigrationBuildsTheSchemaTheLadderBuilt(t *testing.T) {
 // and a remote one carries no block_id.
 const refsForARemoteBoard = "a key cannot point at a board on another server, so it points at a ref row here"
 
-// routeByID is why the three tables that record a card's place on a route no
-// longer carry the route's name. Renaming a route lost the place of every card
-// standing on it.
-const routeByID = "flow (the route's name) became flow_id"
+// routesRemoved is why the two tables a route needed are gone: a card moves
+// because a person or an agent moves it, and nothing walks a graph any more.
+const routesRemoved = "routes are gone; a card moves by hand or through move_card"
 
 // deadColumns is why five tables are narrower than the ladder left them.
 const deadColumns = "a remnant column dropped: root_id (always equal to " +

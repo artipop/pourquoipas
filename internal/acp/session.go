@@ -56,11 +56,6 @@ type Session struct {
 	// answer rather than the user's.
 	mcpConfigured bool
 
-	// Test is set only for a session started by the test column: the preview it
-	// checks and where its evidence goes. Its presence turns the browser tools
-	// on, the same way Deploy turns the dokku tools on.
-	Test *TestRun
-
 	// Artifacts is the session's own directory for evidence: screenshots and
 	// the test verdict, the deploy outcome. Empty disables recording.
 	Artifacts string
@@ -71,30 +66,10 @@ type Session struct {
 	ColumnKey  string
 	ColumnName string
 
-	// FlowID/FlowNodeID are set when a flow stage started this session. Its
-	// outcome is then the event that moves the card on.
-	FlowID     string
-	FlowNodeID string
-	// NodeID is the node this session's conversation is keyed under: the flow
-	// node when a route started it, else the option id of the column that did.
-	// It exists because a column can run an agent with no route behind it, and
-	// that stage's conversation still belongs to its column — the same place a
-	// person opening a terminal there lands.
-	NodeID string
-	// Writes are the stage's declared outputs (node's, else the column's): what
-	// finish_work must deliver when one is required, and what a deploy or a
-	// test stage writes onto the card by itself.
-	Writes []PropertyWrite
-	// RunIn is where this session works: the card's own workspace or the
-	// folder itself. The stage decides (FlowNode.RunsIn); a session outside a
-	// route leaves it empty and gets the default for what it is doing.
-	RunIn string
-	// StageMCP are the servers the stage hands its agent (node's, else the
-	// column's), on top of whatever the agent carries of its own. Kept on the
-	// session because a stage that runs as a terminal is opened from it, and
-	// the terminal is where the file is written (boardtools.go).
-	StageMCP MCPServerSet
-
+	// NodeID is the column this session is working under, by its option id.
+	// It is what a stall is recorded against, so a reason is drawn beside the
+	// column it is about.
+	NodeID       string
 	Worktree     WorktreeInfo
 	usedWorktree bool // a dedicated worktree was actually created
 
@@ -110,11 +85,15 @@ type Session struct {
 	// no folder, removed when the session ends.
 	scratchDir string
 
-	mu            sync.Mutex
-	status        SessionStatus
-	outcome       string             // flow trigger the session ended with, when it is known
-	outcomeText   string             // what to write on the card when the flow moves on
-	finalText     string             // the agent's closing words — what a comment condition on an edge reads
+	mu          sync.Mutex
+	status      SessionStatus
+	outcomeText string       // what to write on the card when the flow moves on
+	finalText   string       // the agent's closing words — what a comment condition on an edge reads
+	report      *stageReport // what finish_work said, once it has (stagereport.go)
+	commented   bool         // the agent wrote on its own card through comment_card
+	// boardTools is the grant this session's board server carries, empty when
+	// it was handed none; revoked when the connection closes.
+	boardTools    string
 	turnCancel    context.CancelFunc // cancels the in-flight turn
 	cancelSent    bool
 	cancelPending bool // cancelled before a turn existed; the next one is stopped at once
@@ -144,19 +123,9 @@ func (s *Session) recordedBranch() string {
 	switch {
 	case s.Worktree.Branch != "":
 		return s.Worktree.Branch
-	case s.Test != nil:
-		return s.Test.Branch
 	default:
 		return s.DeployBranch
 	}
-}
-
-// setOutcome records the flow trigger the session's own work produced — a test
-// verdict, say — instead of the status the session ends in.
-func (s *Session) setOutcome(trigger, detail string) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.outcome, s.outcomeText = trigger, detail
 }
 
 // setFinalText keeps the agent's closing words for the route to read: an edge
@@ -171,25 +140,6 @@ func (s *Session) agentFinalText() string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.finalText
-}
-
-// flowOutcome is the event the session hands to its stage. A recorded outcome
-// wins; otherwise it follows from the final status, and a cancelled session
-// yields nothing at all — a human stepped in, so the route waits for them.
-func (s *Session) flowOutcome() (trigger, detail string) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.outcome != "" {
-		return s.outcome, s.outcomeText
-	}
-	switch s.status {
-	case StatusDone:
-		return TriggerSuccess, "агент завершил работу"
-	case StatusFailed:
-		return TriggerFailure, "сессия агента упала"
-	default:
-		return "", ""
-	}
 }
 
 // markMCPConfigured records that this session was started with an MCP server we
@@ -256,6 +206,9 @@ func (s *Session) autoAllowed(name string, input any, cfg Config) bool {
 // the row's own id is a UUIDv7, so the order it was written in is the order it
 // comes back in.
 func (s *Session) appendEvent(m *Manager, kind string, payload any) {
+	if s.Planning {
+		return // no row to hang it on (persistStatus)
+	}
 	if err := m.store.AppendEvent(s.ID, kind, payload); err != nil {
 		m.log.Warn("acp: failed to persist session event", "session", s.ID, "err", err)
 	}
@@ -264,11 +217,6 @@ func (s *Session) appendEvent(m *Manager, kind string, payload any) {
 // runSession is the whole session lifecycle; it runs on its own goroutine.
 func (m *Manager) runSession(s *Session) {
 	defer m.wg.Done()
-	// Deferred before releaseSession, so they run after it: the next stage of a
-	// flow, and the next card waiting for this column, must not race the
-	// finished session for the folder or for its own place.
-	defer m.drainColumn(s.ColumnKey)
-	defer m.flowAfterSession(s)
 	defer m.releaseSession(s)
 
 	if m.rootCtx.Err() != nil {
@@ -285,7 +233,7 @@ func (m *Manager) runSession(s *Session) {
 		// failed stage that carries the card off to the blocked column.
 		if errors.Is(err, errWorkdirBusy) || errors.Is(err, errWorkdirDirty) {
 			m.finishSession(s, StatusCancelled, err.Error())
-			m.stallCard(s.CardID, s.FlowNodeID, err.Error())
+			m.stallCard(s.CardID, s.NodeID, err.Error())
 			return
 		}
 		m.finishSession(s, StatusFailed, err.Error())
@@ -300,20 +248,7 @@ func (m *Manager) runSession(s *Session) {
 		s.PromptText = joinPrompts(s.PromptText, state)
 	}
 
-	// 2. An agent stage is the agent's own CLI in the card's terminal, not a
-	// connection of ours: what it does, what it asks and what it asks permission
-	// for are all drawn by the CLI, in the window a person is looking at
-	// (stageterminal.go). A deploy and a test stay ACP sessions — nobody watches
-	// them and the machine reads their verdict — and so does an agent that has
-	// no interactive CLI to put in a pty at all, which is the generic acp kind
-	// and any entry whose command speaks only the protocol.
-	if sessionAction(s) == FlowActionAgent && !s.Planning && stageRunsInTerminal(s.Agent) {
-		m.runCardTaskInTerminal(s)
-		m.cleanupWorktree(s)
-		return
-	}
-
-	// 3. Agent connection.
+	// 2. Agent connection.
 	conn, acpSessionID, cleanup, err := m.openConnection(m.rootCtx, s)
 	if err != nil {
 		m.finishSession(s, StatusFailed, err.Error())
@@ -323,10 +258,10 @@ func (m *Manager) runSession(s *Session) {
 	}
 	defer cleanup()
 
-	// 4. The card's task, which is the whole of the session.
+	// 3. The card's task, which is the whole of the session.
 	m.runCardTask(s, conn, acpSessionID)
 
-	// 5. Worktree cleanup for unsuccessful sessions.
+	// 4. Worktree cleanup for unsuccessful sessions.
 	m.cleanupWorktree(s)
 }
 
@@ -344,17 +279,9 @@ func (m *Manager) prepareWorkdir(s *Session) error {
 	if s.Planning {
 		return m.workInTheFolderItself(s)
 	}
-	// Everything else works where its stage says. The defaults are what the
-	// code did before that was a question: an agent writes code and works in
-	// the card's own workspace; a deploy publishes a branch that already exists
-	// and a test drives a browser against something already published, so both
-	// stand in the folder itself. A route that wants QA on the card's own code
-	// before anything is merged says so on the stage.
-	runIn := s.RunIn
-	if runIn == "" {
-		runIn = FlowNode{}.RunsIn(sessionAction(s))
-	}
-	if runIn == RunInWorkdir {
+	// A deploy publishes a branch that already exists, so it stands in the
+	// folder itself. An agent writes code, and gets the card's own workspace.
+	if s.Deploy != nil {
 		return m.workInTheFolderItself(s)
 	}
 
@@ -384,18 +311,6 @@ func (m *Manager) prepareWorkdir(s *Session) error {
 	return nil
 }
 
-// sessionAction is what this session is doing, in the vocabulary a stage uses.
-func sessionAction(s *Session) string {
-	switch {
-	case s.Deploy != nil:
-		return FlowActionDeploy
-	case s.Test != nil:
-		return FlowActionTest
-	default:
-		return FlowActionAgent
-	}
-}
-
 func (m *Manager) workInTheFolderItself(s *Session) error {
 	s.Worktree = WorktreeInfo{Path: s.WorkdirPath, BaseRef: "HEAD"}
 	if err := m.store.UpdateSession(s.ID, StatusRunning, "", s.WorkdirPath, "", s.recordedBranch(), "", nil); err != nil {
@@ -413,17 +328,11 @@ func (m *Manager) cleanupWorktree(s *Session) {
 	if !s.usedWorktree {
 		return
 	}
-	// A copy somebody is sitting in is never touched: the terminal beside the
-	// card runs in this very directory, and a person watching an agent work is
-	// the last thing a tidy-up may interrupt.
-	if m.terminalLivesIn(s.Worktree.Path) {
-		return
-	}
 	if s.Status() == StatusDone {
 		// The work is done and committed: the branch is the product and stays,
-		// the copy is the workshop and can be put away — the next terminal on
-		// this card remakes it from the branch (heldWorkspace). A copy with
-		// anything uncommitted in it is left exactly where it is.
+		// the copy is the workshop and can be put away — the next stage on this
+		// card remakes it from the branch (heldWorkspace). A copy with anything
+		// uncommitted in it is left exactly where it is.
 		if folded, err := FoldWorktree(context.Background(), s.WorkdirPath, s.Worktree); err != nil {
 			m.log.Warn("acp: could not put the card's copy away", "session", s.ID, "err", err)
 		} else if folded {
@@ -442,28 +351,16 @@ func (m *Manager) cleanupWorktree(s *Session) {
 	}
 }
 
-// terminalLivesIn reports that a CLI is running in this directory.
-func (m *Manager) terminalLivesIn(dir string) bool {
-	if dir == "" {
-		return false
-	}
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	// The map holds the live ones: a terminal is taken out of it when its CLI
-	// exits (finishTerminal).
-	for _, t := range m.terminals {
-		if t.Cwd == dir {
-			return true
-		}
-	}
-	return false
-}
-
 // runCardTask runs the card's task, reports it and ends. There is no second
-// turn: what a person types goes to the agent's own CLI in a terminal window,
-// not through here, so a session is exactly the piece of work a card asked for.
+// turn: a stage is exactly the piece of work a card asked for, and it ends when
+// the agent's turn does.
 func (m *Manager) runCardTask(s *Session, conn *acpsdk.ClientSideConnection, acpSessionID acpsdk.SessionId) {
 	finalText, err := m.runTurn(s, conn, acpSessionID, s.PromptText)
+	// What the route reads is the agent's one line when it gave one, ahead of
+	// the rest of what it said: an edge may test either.
+	if r, reported := s.stageReport(); reported {
+		finalText = joinPrompts(r.summary, finalText)
+	}
 	s.setFinalText(finalText)
 	m.commentFirstTurn(s, finalText, err)
 
@@ -472,8 +369,13 @@ func (m *Manager) runCardTask(s *Session, conn *acpsdk.ClientSideConnection, acp
 	}
 }
 
-// commentFirstTurn records the outcome of the session on the card, along with
-// the terminal status that goes with it.
+// commentFirstTurn records the outcome of the session, along with the status
+// that goes with it.
+//
+// The card's comment is the agent's to write (comment_card, stagereport.go).
+// This side writes one only when the agent could not — no board tools were
+// handed to it, or it ended without using them — so a stage never leaves the
+// card silent, and never says the same thing twice.
 func (m *Manager) commentFirstTurn(s *Session, finalText string, err error) {
 	switch {
 	case m.rootCtx.Err() != nil:
@@ -485,23 +387,31 @@ func (m *Manager) commentFirstTurn(s *Session, finalText string, err error) {
 		m.finishSession(s, StatusCancelled, "сессия отменена")
 	case err != nil:
 		m.finishSession(s, StatusFailed, err.Error())
-		// A test session reports even when its turn broke off: the screenshots
-		// and the verdict it managed to write are the point of the run.
-		if s.Test != nil {
-			m.reportTestRun(s, finalText, err)
-			return
-		}
 		m.comment(s, failComment(s, err.Error()))
 		m.applyDeployOutcome(s)
 	default:
-		m.finishSession(s, StatusDone, "")
-		if s.Test != nil {
-			m.reportTestRun(s, finalText, nil)
+		if r, reported := s.stageReport(); reported && !r.ok {
+			m.finishSession(s, StatusFailed, "агент не смог закончить работу")
+			if !s.hasCommented() {
+				m.comment(s, failComment(s, firstNonEmpty(r.summary, "агент не смог закончить работу")))
+			}
 			return
 		}
-		m.comment(s, doneComment(s, finalText))
+		m.finishSession(s, StatusDone, "")
+		if s.Deploy != nil || !s.hasCommented() {
+			m.comment(s, doneComment(s, finalText))
+		}
 		m.applyDeployOutcome(s)
 	}
+}
+
+// quoteAll is names in «», comma-separated, for a sentence on the card.
+func quoteAll(names []string) string {
+	out := make([]string, len(names))
+	for i, n := range names {
+		out[i] = "«" + n + "»"
+	}
+	return strings.Join(out, ", ")
 }
 
 // connectionLost reports whether the agent connection is gone, which makes
@@ -532,17 +442,36 @@ func (m *Manager) openConnection(ctx context.Context, s *Session) (*acpsdk.Clien
 		return nil, "", nil, err
 	}
 
-	if _, err := conn.Initialize(ctx, acpsdk.InitializeRequest{
+	init, err := conn.Initialize(ctx, acpsdk.InitializeRequest{
 		ProtocolVersion:    acpsdk.ProtocolVersionNumber,
 		ClientCapabilities: clientCapabilities(),
-	}); err != nil {
+	})
+	if err != nil {
 		cleanup()
 		return nil, "", nil, fmt.Errorf("initialize: %w", err)
 	}
 
+	// The board's own tools, which is how the agent writes its result on the
+	// card and ends a stage (stagereport.go). The grant dies with the
+	// connection.
+	servers := acpMCPServers(specs)
+	if board := m.sessionBoardServer(s, init.AgentCapabilities); board != nil {
+		servers = append(servers, *board)
+		s.markMCPConfigured()
+		closeConn := cleanup
+		cleanup = func() {
+			closeConn()
+			s.mu.Lock()
+			token := s.boardTools
+			s.mu.Unlock()
+			m.RevokeBoardTools(token)
+		}
+		s.PromptText = joinPrompts(s.PromptText, m.boardToolsBrief(s))
+	}
+
 	sess, err := conn.NewSession(ctx, acpsdk.NewSessionRequest{
 		Cwd:        s.Worktree.Path,
-		McpServers: acpMCPServers(specs),
+		McpServers: servers,
 		// Extra arguments for the CLI behind the adapter, for what ACP has no
 		// word for (Remote Control). An argument the CLI does not know fails
 		// right here, with the CLI's own message.
@@ -578,13 +507,7 @@ func (m *Manager) runTurn(s *Session, conn *acpsdk.ClientSideConnection, acpSess
 		return "", m.rootCtx.Err()
 	}
 
-	// A browser scenario is much slower than a code edit, so a test turn gets
-	// its own budget.
-	timeout := m.cfg.SessionTimeout()
-	if s.Test != nil {
-		timeout = m.cfg.TestTimeout()
-	}
-	ctx, cancel := context.WithTimeout(m.rootCtx, timeout)
+	ctx, cancel := context.WithTimeout(m.rootCtx, m.cfg.SessionTimeout())
 	defer cancel()
 
 	s.mu.Lock()
@@ -916,7 +839,7 @@ func doneComment(s *Session, finalText string) string {
 		// One fact: the branch. A copy is that branch checked out elsewhere —
 		// naming both made the card read as if two things had been created —
 		// and the copy is the workshop anyway: folded away once the work is
-		// committed, shown in the terminal panel while it exists. The diff
+		// committed, read in the card's changes panel. The diff
 		// runs from the folder itself, since the branch lives in the shared
 		// object store: nobody is sent into the app's data directory.
 		fmt.Fprintf(&b, "Ветка: `%s`\n", s.Worktree.Branch)

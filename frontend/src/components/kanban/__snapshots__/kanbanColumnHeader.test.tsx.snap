@@ -40,8 +40,6 @@ exports[`src/components/kanban/kanbanColumnHeader > return kanbanColumnHeader an
       
       <!---->
     </div>
-    <!---->
-    
     <div
       class="octo-spacer"
     />
@@ -409,8 +407,6 @@ exports[`src/components/kanban/kanbanColumnHeader > return kanbanColumnHeader an
       
       <!---->
     </div>
-    <!---->
-    
     <div
       class="octo-spacer"
     />
@@ -484,8 +480,6 @@ exports[`src/components/kanban/kanbanColumnHeader > should match snapshot 1`] = 
       
       <!---->
     </div>
-    <!---->
-    
     <div
       class="octo-spacer"
     />
@@ -560,8 +554,6 @@ exports[`src/components/kanban/kanbanColumnHeader > should match snapshot readon
       
       <!---->
     </div>
-    <!---->
-    
     <div
       class="octo-spacer"
     />

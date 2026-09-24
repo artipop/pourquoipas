@@ -14,7 +14,7 @@ import {useHasPermissions} from '../../hooks/permissions'
 import {Permission} from '../../constants'
 import ConfirmAddUserForNotifications from '../../components/confirmAddUserForNotifications'
 import PersonSelector from '../../components/personSelector'
-import {boardAgentsFilter} from '../../components/acp/boardAgents'
+import {assignableFilter} from '../../components/acp/agentAssignees'
 
 const ConfirmPerson = (props: PropertyProps): JSX.Element => {
     const [confirmAddUser, setConfirmAddUser] = createSignal<IUser|null>(null)
@@ -101,12 +101,9 @@ const ConfirmPerson = (props: PropertyProps): JSX.Element => {
                 emptyDisplayValue={emptyDisplayValue()}
                 clearLabel={intl.formatMessage({id: 'PropertyValueElement.clear', defaultMessage: 'Clear'})}
 
-                // Which agents this board puts to work. The registry is the
-                // machine's, so without this every agent registered anywhere
-                // was offered in every board's person fields; a board that
-                // names its own crew offers that crew, and one that names
-                // nobody offers everybody, as before.
-                offerable={boardAgentsFilter(props.board.id)}
+                // Every agent on this machine may be assigned a card on any
+                // board — with the agents switched off, none of them may.
+                offerable={assignableFilter()}
                 property={props.property}
                 onChange={onChange}
             />

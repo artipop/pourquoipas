@@ -15,7 +15,6 @@ import (
 
 	"github.com/artipop/xciii/internal/dokku"
 	"github.com/artipop/xciii/internal/secrets"
-	"github.com/artipop/xciii/internal/vcs"
 )
 
 // Manager owns all agent sessions: it consumes board events, enforces limits
@@ -36,7 +35,6 @@ type Manager struct {
 	// cards is where a card's own route position is kept — on the card, so it
 	// travels with it. Optional; without it the position lives in this
 	// machine's store alone and stays behind when the board moves.
-	cards BoardCardState
 	// routing is how a board or a card is matched to the source it lives on,
 	// once there is more than one (boardsource.go). Empty and unused on every
 	// install that works its own board.
@@ -48,29 +46,15 @@ type Manager struct {
 	mu     sync.Mutex
 	active map[string]*Session // session ID → session
 	byCard map[string]*Session // card ID → live (non-terminal) session
-	// terminals are the agent CLIs a human has open in a window. They share the
-	// lock but nothing else with sessions: a terminal is a person working, not
-	// an agent being driven (terminal.go).
-	terminals map[string]*TerminalSession // terminal ID → terminal session
-	// terminalQuiet overrides how long a CLI must be silent before it counts as
-	// waiting for a person (terminalQuietFor). Only a test sets it: the real
-	// threshold is a human one and would make the suite wait it out.
-	terminalQuiet time.Duration
-	// hookSettle overrides how long a permission box is given to finish drawing
-	// before the CLI's output counts as somebody answering it
-	// (hookAskSettle, withdrawWhenAnsweredOnScreen). Only a test sets it, and
-	// for the same reason.
-	hookSettle time.Duration
-
-	// The stages of routes that are running in a terminal (stageterminal.go):
-	// what each is waiting to be told through finish_work, and which of them
-	// have gone quiet and want a person. Their own lock, for the same reason
-	// questions have one — a report arrives on an HTTP handler and must not
-	// queue behind a session starting.
-	stageMu      sync.Mutex
-	stageWaits   map[string]stageWait // terminal ID → the running stage finish_work answers to
-	stageWaiting map[string]Attention // terminal ID → the wait it is showing
-	cardWaits    map[string]Attention // card ID → the route handing it to a person (cardwait.go)
+	// planning are the conversations of the planning dialog (planning.go).
+	planning map[string]*planningChat
+	// moved remembers the cards an agent has just moved itself (cardplace.go).
+	moved agentMoves
+	// Waits the route raises on cards where nothing runs (cardwait.go). Their
+	// own lock, for the same reason questions have one: an ack arrives on a
+	// click and must not queue behind a session starting.
+	stageMu   sync.Mutex
+	cardWaits map[string]Attention // card ID → the route handing it to a person (cardwait.go)
 	// changesWriteFailed keeps the "no card_changes table" warning to one line
 	// a run — see saveCardChanges.
 	changesWriteFailed sync.Once
@@ -85,13 +69,6 @@ type Manager struct {
 
 	// switchedOff is the app-wide AI switch (SetSwitchedOff). Nil means on.
 	switchedOff func() bool
-
-	// boardUnadopted is what a board carries that this machine cannot use — a
-	// column naming an agent nobody registered here, which is every column of
-	// a board that has just been imported. Kept verbatim and written back
-	// beside the registry's own, so that reading a board can never shrink it.
-	// Guarded by cfgMu.
-	boardUnadopted map[string]unadopted
 
 	// questions are what agents are waiting to hear back on: one entry per open
 	// question, keyed by its id (question.go). Its own lock — a question is
@@ -113,8 +90,6 @@ type Manager struct {
 	// form is opened. See capabilities.go.
 	optionsMu    sync.Mutex
 	optionsCache map[string][]AgentOption
-
-	watchers []vcs.Watcher // folder watchers feeding the flow engine
 
 	sem chan struct{}
 	// rootCtx is the running manager's, and it is nil until Start. What reads
@@ -145,11 +120,6 @@ func (m *Manager) SetBoardReader(r BoardReader) { m.reader = r }
 // its column's crew.
 func (m *Manager) SetBoardUsers(u BoardUsers) { m.users = u }
 
-// SetBoardCardState supplies the per-card store on the board. Optional: without
-// it a card's place on its route is remembered only here, and an exported board
-// arrives elsewhere with every card back at the start of its route.
-func (m *Manager) SetBoardCardState(c BoardCardState) { m.cards = c }
-
 // NewManager wires the manager. cfgPath is where folder-registry edits are
 // persisted (may be empty in tests). Call Start to begin consuming events.
 func NewManager(cfg Config, cfgPath string, st *Store, w BoardWriter, ui UIEmitter, log *slog.Logger) *Manager {
@@ -176,10 +146,6 @@ func NewManager(cfg Config, cfgPath string, st *Store, w BoardWriter, ui UIEmitt
 		byCard:  make(map[string]*Session),
 		sem:     make(chan struct{}, maxConc),
 	}
-	// After the struct, because the GitHub watcher asks for a token and the
-	// token comes off the manager's own secret store (SetSecrets, which the
-	// caller may not have called yet — an absent token is the ordinary case).
-	m.watchers = m.defaultWatchers()
 	return m
 }
 
@@ -187,14 +153,6 @@ func NewManager(cfg Config, cfgPath string, st *Store, w BoardWriter, ui UIEmitt
 // still arrive through the environment, and most folders need none at all.
 func (m *Manager) SetSecrets(v secrets.Store) {
 	m.vault = v
-	// The GitHub watcher took its token when it was built, which was before
-	// this. Rebuild the default set so the token is the one just supplied —
-	// unless a test has replaced the watchers, in which case they are theirs.
-	if len(m.watchers) == 2 {
-		if _, ok := m.watchers[1].(*vcs.GitHub); ok {
-			m.watchers = m.defaultWatchers()
-		}
-	}
 }
 
 // SetSwitchedOff supplies the app-wide AI switch. While it answers true
@@ -267,13 +225,6 @@ func (m *Manager) Start(ctx context.Context, events BoardEvents) error {
 	}
 	m.wg.Add(1)
 	go m.triggerLoop(ch)
-
-	// Folder polling only matters once some card waits on a branch, but the
-	// loop itself is cheap: it does nothing at all until FlowTargets is non-empty.
-	if m.cfg.VCSPoll() > 0 && len(m.watchers) > 0 {
-		m.wg.Add(1)
-		go m.vcsLoop()
-	}
 	return nil
 }
 
@@ -295,97 +246,19 @@ func (m *Manager) recover() {
 
 // startOptions are the ways a session can differ from a plain card task.
 type startOptions struct {
+	// agent is who works it, resolved by the caller from the card's assignee.
+	// Empty leaves the resolution to startSession, which is what a deploy
+	// started from the card's own button gets.
+	agent AgentEntry
 	// deploy makes this a deploy session: it resolves a Dokku target, is given
 	// the dokku MCP tools and gets the deploy prompt instead of the card task.
 	deploy bool
-	// test makes this a test session: it resolves the card's preview address, is
-	// given the browser MCP tools and gets the tester prompt.
-	test bool
-	// folderName picks a folder explicitly, for a console opened on a card
-	// that does not say which one it is about.
-	folderName string
-	// flowID/flowNodeID tie the session to the stage of a route that started
-	// it, so its outcome can move the card on.
-	flowID, flowNodeID string
-	// agentCrew/deployOverride let a flow node name the agents or the deploy
-	// target for its stage only, overriding the column's own. The target is an
-	// id, because a name is what somebody renames (contradiction 8).
-	agentCrew      []string
+	// deployOverride pins the target by the registry entry's id, because a name
+	// is what somebody renames.
 	deployOverride string
-	// column is the column the card landed in: who works it, how many at once,
-	// and where it deploys to. What a flow node names wins over it.
-	column ColumnSpec
-	// runIn is where the stage works: the card's own workspace (RunInOwner) or
-	// the folder itself (RunInWorkdir). Empty falls back to the action's own
-	// default, which is what a session started outside a route gets.
-	runIn string
-	// stagePrompt is the node's own instructions, overriding the column's
-	// (FlowNode.Prompt). Empty falls back to opts.column.Prompt.
-	stagePrompt string
-	// writes/reads are the node's declared outputs and inputs, overriding the
-	// column's. Empty falls back, like the crew.
-	writes []PropertyWrite
-	reads  []string
-	// upstream is what the stages ahead of this one on the route write, which
-	// is what reads fall back to when nothing was declared at all. Filled by
-	// the engine, which is the only caller that has a route to walk.
-	upstream []string
-	// mcp are the node's own MCP servers, overriding the column's. Empty falls
-	// back, like the crew.
-	mcp MCPServerSet
-}
-
-// stageMCP is the tools this stage hands its agent: the node's set if it names
-// one, else the column's. Whole sets rather than a merge of the two, so what
-// the editor shows on the stage is what the agent gets.
-func (o startOptions) stageMCP() MCPServerSet {
-	if len(o.mcp) > 0 {
-		return o.mcp
-	}
-	return o.column.MCPServers
-}
-
-// declaredWrites is what this stage must leave on the card: the node's own
-// list, else the column's.
-func (o startOptions) declaredWrites() []PropertyWrite {
-	if len(o.writes) > 0 {
-		return o.writes
-	}
-	return o.column.Writes
-}
-
-// declaredReads is what this stage is handed on the way in: the node's own
-// list, else the column's — and, when neither says anything, whatever the
-// stages ahead of it on the route declare that they write (upstreamReads).
-//
-// The graph is the third answer rather than nothing because it is the true one:
-// a value put on the card by an earlier stage is on the card, and making
-// somebody tick it again on every stage that needs it is asking for the same
-// fact twice. An explicit list still wins, which is how a stage says "not all
-// of it" — and clearing the list gives the graph's answer back.
-func (o startOptions) declaredReads() []string {
-	if len(o.reads) > 0 {
-		return o.reads
-	}
-	if len(o.column.Reads) > 0 {
-		return o.column.Reads
-	}
-	return o.upstream
-}
-
-// prompt is what this stage wants said to whoever works it: the node's own
-// instructions, else the column's.
-func (o startOptions) prompt() string {
-	return firstNonEmpty(o.stagePrompt, o.column.Prompt)
-}
-
-// crew is who may work this session: the stage's own list if it has one, else
-// the column's.
-func (o startOptions) crew() []string {
-	if len(o.agentCrew) > 0 {
-		return o.agentCrew
-	}
-	return o.column.AgentIDs
+	// folderName picks a folder explicitly, for a start from the card that does
+	// not say which one it is about.
+	folderName string
 }
 
 // StartSessionForEvent creates and launches a session for a validated trigger
@@ -403,13 +276,11 @@ func (m *Manager) startSession(ev CardMoved, opts startOptions) (*Session, error
 		return nil, errSwitchedOff
 	}
 	// Asked before anything is resolved: a card somebody took for themselves is
-	// theirs, and there is no point working out which folder an agent would
-	// not be using. Deploy and test are unaffected — that is machine work, not
-	// the assignee's. Somebody who wants to work the card *with* an agent opens
-	// a terminal on it, which is not a session and not vetoed here; somebody
-	// who wants an agent to work it assigns the agent, which humanAssignee
-	// reads as the opposite answer.
-	if !opts.deploy && !opts.test {
+	// theirs, and there is no point working out which folder an agent would not
+	// be using. A deploy is unaffected — that is machine work, not the
+	// assignee's. Somebody who wants an agent to work it assigns the agent,
+	// which humanAssignee reads as the opposite answer.
+	if !opts.deploy {
 		m.cfgMu.RLock()
 		known := append([]AgentEntry(nil), m.cfg.Agents...)
 		m.cfgMu.RUnlock()
@@ -427,67 +298,34 @@ func (m *Manager) startSession(ev CardMoved, opts startOptions) (*Session, error
 	if err != nil {
 		return nil, err
 	}
-	deployID := opts.deployOverride
-	if deployID == "" {
-		deployID = opts.column.DeployID
-	}
-	deploy, deployBranch, err := m.resolveDeploy(ev, workdirPath, opts.deploy, deployID)
+	deploy, deployBranch, err := m.resolveDeploy(ev, workdirPath, opts.deploy, opts.deployOverride)
 	if err != nil {
 		return nil, err
 	}
 	sessionID := uuid.NewString()
+	// Where a deploy's own outcome is recorded (deployreport.go).
 	artifacts, err := m.artifactsDir(sessionID)
 	if err != nil {
 		return nil, err
 	}
-	test, err := m.resolveTestRun(ev, workdirPath, artifacts, opts.test)
-	if err != nil {
-		return nil, err
+	// Who works it: the caller's answer, which is the card's assignee wherever
+	// a move started this (assignedAgent). A deploy started from the card's own
+	// button names nobody, and falls back to the registry.
+	agent := opts.agent
+	if agent.Name == "" {
+		resolved, busy, resolveErr := m.resolveSessionAgent(ev, nil)
+		if resolveErr != nil {
+			return nil, resolveErr
+		}
+		if busy {
+			return nil, fmt.Errorf("агент занят другой карточкой")
+		}
+		agent = resolved
 	}
-	// A deploy no longer pins its own agent: the card decides among the crew of
-	// the column it landed in — the flow node's crew, if the stage names one.
-	agent, busy, err := m.resolveSessionAgent(ev, opts.crew())
-	if err != nil {
-		return nil, err
-	}
-	if busy {
-		return nil, errStageBusy
-	}
-	// A stage with its own crew names its worker, so the card's assignee field
-	// is written to match — by the machine, as the card travels.
-	// Before the launch rather than after: the stage gave the card to this
-	// agent whether or not the start then succeeds, and the field should say
-	// so either way. A person in the field never reaches this line
-	// (humanAssignee, above), and a card already saying this agent is left
-	// alone.
-	//
-	// Every crewed stage writes, a deploy and a test included. They were
-	// excluded once, on the grounds that machine work is not an assignment,
-	// and what that cost was a card being tested by an agent the field did not
-	// name: the crew of the column is who works the card while it stands
-	// there, and the field is the one answer to that question whatever the
-	// column does. An uncrewed stage still writes nothing — it has nothing of
-	// its own to record, and resolves by this very field.
-	if len(opts.crew()) > 0 {
-		m.assignCardAgent(ev, agent)
-	}
-	// The column's own limit: how many of its crew may work it at once. It is
-	// checked here rather than at the trigger, so every way into a stage — a
-	// drag, a flow transition, the queue itself — obeys the same number.
-	if opts.column.MaxRunning > 0 && m.runningInColumn(opts.column.Key()) >= opts.column.MaxRunning {
-		return nil, errStageBusy
-	}
+
 	net, err := m.resolveNetwork(agent)
 	if err != nil {
 		return nil, err
-	}
-	// A test session is an agent clicking through a browser it brings itself:
-	// with no browser MCP server anywhere there is nothing to test with, and
-	// finding that out mid-turn costs a whole session. Either owner counts —
-	// the agent's registry entry, or the column the card landed in, which is
-	// the answer that keeps one agent from being registered twice.
-	if test != nil && len(agent.MCPServers) == 0 && len(opts.stageMCP()) == 0 {
-		return nil, fmt.Errorf("агенту %q не задан MCP-сервер браузера — тестировать нечем (настройки колонки → «MCP-серверы», либо «Настройки → Агенты»)", agent.Name)
 	}
 	// An ordinary folder is one working copy with nothing to hold it, and two
 	// agents must never share it (spec §7): reject while another live session
@@ -524,38 +362,20 @@ func (m *Manager) startSession(ev CardMoved, opts startOptions) (*Session, error
 	}
 
 	m.cfgMu.RLock()
-	systemPrompt, deployPrompt, testPrompt := m.cfg.BoardPrompts[ev.BoardID], m.cfg.DeployPrompt, m.cfg.TestPrompt
+	systemPrompt, deployPrompt := m.cfg.BoardPrompts[ev.BoardID], m.cfg.DeployPrompt
 	m.cfgMu.RUnlock()
-	inputs := cardInputs(ev, opts.declaredReads())
 
-	// The contract, but only where the agent is the one who delivers it: a
-	// deploy stage's address and a test stage's verdict are written by this side
-	// (writeStageFields), so naming them here would ask for something the agent
-	// has no way to produce.
-	outputs := ""
-	if deploy == nil && test == nil {
-		outputs = stageOutputs(opts.declaredWrites(), m.boardCardProperties(ev.BoardID))
-	}
-	stage := joinPrompts(opts.prompt(), inputs, outputs)
-	// Whether the agent will be handed the board's tools at all, which is what
-	// decides whether the task may tell it to end the stage with finish_work:
-	// a stage that runs as an ACP session takes no board server, and telling it
-	// to call a tool it does not have is a turn spent looking for one. The same
-	// test runSession makes before it opens a terminal at all.
-	prompt := composePrompt(ev, agent, systemPrompt, stage, worktreeAvailable,
-		deploy == nil && test == nil && stageRunsInTerminal(agent))
-	switch {
-	case deploy != nil:
-		prompt = composeDeployPrompt(ev, agent, systemPrompt, deployPrompt, stage, *deploy, deployBranch)
-	case test != nil:
-		prompt = composeTestPrompt(ev, agent, systemPrompt, testPrompt, stage, *test)
+	// Where the card stands, said in the words the board uses: the agent reads
+	// the column it was dragged into along with the task, and moves the card on
+	// by naming another one (move_card).
+	prompt := composePrompt(ev, agent, systemPrompt, m.boardStanding(ev), worktreeAvailable)
+	if deploy != nil {
+		prompt = composeDeployPrompt(ev, agent, systemPrompt, deployPrompt, "", *deploy, deployBranch)
 	}
 	// The tools of the deploy server are allowed up front: nobody is watching a
 	// card-triggered run, and an unanswered prompt is a rejected one. Seeding
 	// the session rather than DefaultConfig.AutoAllowTools also reaches installs
-	// whose config.json predates the feature. A test session drives a browser
-	// through a server the agent carries, whose tools are allowed by prefix
-	// (agentMCPServers) since their names only exist at run time.
+	// whose config.json predates the feature.
 	allowTools := make(map[string]bool)
 	if deploy != nil {
 		allowTools = deployTools()
@@ -571,29 +391,13 @@ func (m *Manager) startSession(ev CardMoved, opts startOptions) (*Session, error
 		Net:          net,
 		Deploy:       deploy,
 		DeployBranch: deployBranch,
-		ColumnKey:    opts.column.Key(),
-		ColumnName:   opts.column.Column,
-		Test:         test,
 		Artifacts:    artifacts,
-		FlowID:       opts.flowID,
-		FlowNodeID:   opts.flowNodeID,
-		NodeID:       firstNonEmpty(opts.flowNodeID, ev.ToColumn.OptionID, opts.column.OptionID, nodeNone),
-		Writes:       opts.declaredWrites(),
-		RunIn:        opts.runIn,
-		StageMCP:     opts.stageMCP(),
+		ColumnName:   ev.ToColumn.Name,
+		NodeID:       ev.ToColumn.OptionID,
 		PromptText:   prompt,
 		Policy:       agentPolicy(agent),
 		status:       StatusQueued,
 		allowTools:   allowTools,
-	}
-	// What the column hands its agent, on the same terms the agent's own
-	// servers travel on: wiring a server to a stage is consent to use it, and a
-	// card-triggered run has no console to ask in. A stage that runs as a
-	// terminal takes them through the CLI's config file instead (startTerminal),
-	// where the CLI's own permission prompt is the answer.
-	for _, srv := range stageMCPSpecs(s.StageMCP) {
-		s.extraMCP = append(s.extraMCP, srv)
-		s.allowToolPrefix("mcp__" + srv.Name + "__")
 	}
 	rec := SessionRecord{
 		ID:        s.ID,
@@ -601,10 +405,6 @@ func (m *Manager) startSession(ev CardMoved, opts startOptions) (*Session, error
 		BoardID:   s.BoardID,
 		AgentKind: agent.Kind,
 		Status:    StatusQueued,
-		// What the column's limit counts. Written with the row rather than
-		// held in memory, so every window and every restart counts the same
-		// sessions (Store.RunningInColumn).
-		ColumnKey: s.ColumnKey,
 		StartedAt: time.Now(),
 	}
 	if err := m.store.InsertSession(rec); err != nil {
@@ -721,13 +521,6 @@ func (m *Manager) planningAgent(name string) (AgentEntry, error) {
 	return AgentEntry{}, fmt.Errorf("агент %q не найден в реестре", name)
 }
 
-// composeTaskPrompt asks for the conversation to be boiled down to a card. The
-// shape is fixed because the UI splits the answer on the first line.
-const composeTaskPrompt = `Оформи то, о чём мы договорились, как задачу для трекера.
-Ответь ровно в таком виде, без markdown-заголовков и без вступления:
-первая строка — краткий заголовок задачи (до 80 символов),
-далее с новой строки — описание: что нужно сделать, где в коде и как проверить.`
-
 // session looks up a live session by id.
 func (m *Manager) session(sessionID string) *Session {
 	m.mu.Lock()
@@ -738,8 +531,7 @@ func (m *Manager) session(sessionID string) *Session {
 // CardSessions returns persisted sessions and events for a card (UI hydration).
 // CardAgentState is what a card shows about the agent working it: whether a
 // session of the automation is running, and which branch the card's work is on.
-// It is deliberately small — the transcript of a session is its comments, and
-// the conversation with an agent happens in a terminal.
+// It is deliberately small — what a session did is the comment it wrote.
 type CardAgentState struct {
 	SessionID string `json:"sessionId,omitempty"`
 	Status    string `json:"status,omitempty"`
@@ -790,9 +582,6 @@ func (m *Manager) Shutdown(grace time.Duration) {
 	if m.stop != nil {
 		m.stop()
 	}
-	// A terminal is a child process holding a pty; nothing waits for it, and
-	// leaving it behind would outlive the window it was opened in.
-	m.shutdownTerminals()
 	done := make(chan struct{})
 	go func() {
 		m.wg.Wait()
@@ -853,6 +642,12 @@ func (m *Manager) setStatus(s *Session, status SessionStatus) {
 }
 
 func (m *Manager) persistStatus(s *Session, status SessionStatus, errText string) {
+	// A session with no card behind it has no row: nothing is recorded against
+	// a conversation that belongs to no card (planning.go, inboxrun.go).
+	if s.Planning {
+		m.emitSession(s, errText)
+		return
+	}
 	if err := m.store.SetSessionStatus(s.ID, status, errText); err != nil {
 		m.log.Warn("acp: failed to persist status", "session", s.ID, "status", status, "err", err)
 	}
@@ -879,16 +674,23 @@ func (m *Manager) emitSession(s *Session, errText string) {
 }
 
 func (m *Manager) comment(s *Session, text string) {
-	m.commentCard(s.CardID, text)
+	// Signed by the agent whose run it reports, not by the app: this comment is
+	// the fallback for an agent that did not write its own, and reading it as
+	// the owner's would be the card telling a person they said it.
+	m.commentAs(s, s.CardID, text)
 }
 
 func (m *Manager) commentCard(cardID, text string) {
+	m.commentAs(nil, cardID, text)
+}
+
+func (m *Manager) commentAs(s *Session, cardID, text string) {
 	if cardID == "" {
 		return // nothing to report to
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	if err := m.forCard(cardID).Writer.AddComment(ctx, cardID, text); err != nil {
+	if err := m.forCard(cardID).Writer.AddComment(m.asAgent(ctx, s), cardID, text); err != nil {
 		m.log.Error("acp: failed to add card comment", "card", cardID, "err", err)
 	}
 }
@@ -949,14 +751,10 @@ func resolveArgv0(argv []string) []string {
 	return out
 }
 
-// planningPrompt is what a planning terminal is opened with: the board's system
-// prompt, the agent's own, the planning instructions a person can edit, and the
-// one fact nobody should have to type — which folder the CLI is standing in.
-//
-// It reaches the CLI as the terminal's task text, pasted by the button on the
-// terminal page, rather than as an argv flag: what a CLI is told at startup is
-// its own business (terminalCommand says why), and this is the same road a
-// card's task already travels.
+// planningPrompt is what a planning conversation opens with, ahead of the
+// person's first message: the board's system prompt, the agent's own, the
+// planning instructions a person can edit, and the one fact nobody should have
+// to type — which folder the agent is standing in.
 func planningPrompt(systemPrompt, planning string, agent AgentEntry, workdir WorkdirEntry) string {
 	b := []byte(promptLead(systemPrompt, agent))
 	if p := strings.TrimSpace(planning); p == "" {
@@ -1008,7 +806,7 @@ func (m *Manager) boardCardProperties(boardID string) []CardProperty {
 	if m.meta == nil || boardID == "" {
 		return nil
 	}
-	ctx, cancel := context.WithTimeout(m.rootCtx, 5*time.Second)
+	ctx, cancel := context.WithTimeout(m.rootOr(), 5*time.Second)
 	defer cancel()
 	fields, err := m.meta.CardProperties(ctx, boardID)
 	if err != nil {
@@ -1016,29 +814,6 @@ func (m *Manager) boardCardProperties(boardID string) []CardProperty {
 		return nil
 	}
 	return fields
-}
-
-// stageOutputs is the stage's declared writes, said as the contract they are:
-// what finish_work must carry, and — for a property with a closed set — which
-// values it may be. Nothing said this before, so an agent asked for a verdict
-// found out what «Вердикт» accepts by being refused, and a required write it
-// was never told about failed the whole stage on the first attempt to end it.
-//
-// The values come from the board rather than from the declaration, so renaming
-// an option cannot leave a stale list standing in a brief.
-func stageOutputs(writes []PropertyWrite, fields []CardProperty) string {
-	if len(writes) == 0 {
-		return ""
-	}
-	var b strings.Builder
-	b.WriteString("Before this stage can end, report these card properties in finish_work's `properties`:")
-	for _, w := range writes {
-		fmt.Fprintf(&b, "\n%s: %s", w.Property, propertyShape(w.Property, fields))
-		if w.Required {
-			b.WriteString(" (required)")
-		}
-	}
-	return b.String()
 }
 
 // propertyShape is what a value for this property may be, in the words a model
@@ -1074,7 +849,7 @@ func propertyShape(name string, fields []CardProperty) string {
 // and what the agent carries (promptLead), what the stage wants said
 // (stagePrompt — the column's instructions, or its route node's), then the
 // card task.
-func composePrompt(ev CardMoved, agent AgentEntry, systemPrompt, stagePrompt string, useWorktree, endsWithFinishWork bool) string {
+func composePrompt(ev CardMoved, agent AgentEntry, systemPrompt, stagePrompt string, useWorktree bool) string {
 	b := []byte(promptLead(systemPrompt, agent))
 	if p := strings.TrimSpace(stagePrompt); p != "" {
 		b = fmt.Appendf(b, "%s\n\n", p)
@@ -1088,30 +863,8 @@ func composePrompt(ev CardMoved, agent AgentEntry, systemPrompt, stagePrompt str
 	} else {
 		b = fmt.Appendf(b, "\nWork in the current directory — it is the person's own working folder. Do not switch branches, do not commit and do not push: leave the changes uncommitted for review.")
 	}
-	if endsWithFinishWork {
-		b = fmt.Appendf(b, "\n\n%s", finishWorkBrief)
-	}
 	return string(b)
 }
-
-// finishWorkBrief is how the stage ends, said in the task itself.
-//
-// It was said only by the board's MCP server, in the instructions that come
-// with its tools — and a CLI is free not to load them. Measured: Claude Code
-// deferred the whole board server, so `finish_work` reached the agent as a name
-// in a list and nothing else; the agent did the work, wrote a summary in the
-// terminal and stopped, and the card stood on the stage with nobody able to say
-// it was over. The same route had run to the end the day before, which is what
-// makes this worth saying twice: whether the tools arrive loaded is not ours to
-// decide, and the task text is the one thing that always arrives.
-//
-// Deliberately not naming how to load a tool: that is each CLI's own business,
-// and a sentence about ToolSearch would be wrong everywhere else.
-const finishWorkBrief = `How this stage ends: by you saying so, not by the CLI exiting. ` +
-	`Call the board tool ` + "`finish_work`" + ` — done or not done, and one line about what you did — ` +
-	`the moment the work is finished, or when you find you cannot finish it. ` +
-	`It is on the board's MCP server; if it is not among the tools you have loaded, look it up before you finish. ` +
-	`Nothing else can end this stage: until you call it the card stands where it is and nobody is told.`
 
 // composeDeployPrompt builds the task text of a deploy session: the same brief
 // an ordinary task gets, then the deploy instructions, then the concrete

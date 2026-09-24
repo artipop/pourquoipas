@@ -1,9 +1,9 @@
 # XCIII
 
 A desktop board that runs coding agents from the board itself. Moving a card
-into a column starts an agent on it; opening a terminal on a card puts you in that
-agent's own CLI, where the card's work lives, with the branch and environment already
-set up. One binary, built with [Wails v3](https://v3.wails.io), with the board
+into a column starts the agent it is assigned to on it, in a branch and an
+environment already set up; the agent reports back on the card and moves it on
+itself. One binary, built with [Wails v3](https://v3.wails.io), with the board
 server running **in-process** — no spawned server process, no Node.js of our
 own — and the same code builds a **headless server** (`-tags server`) that serves
 the whole thing to a browser.
@@ -78,18 +78,13 @@ The Go code is platform-agnostic — the same files build for every OS:
   `Utils.htmlFromMarkdown` puts on markdown links: when that handler does not
   run, the click is simply lost — the webview cannot navigate to an outside
   origin either — which is what made preview links in card comments dead.
-- `internal/acp/terminal.go`, `terminalws.go` — **the way a person works a card with
-  an agent**, and the only one: the agent's own CLI running in a pty in the card's
-  own directory, drawn by xterm.js in a second window of the app and wired to the pty over
-  a WebSocket on the front door. The session console this module used to carry — the
-  transcript, the prompt box, the permission buttons — is gone with everything behind
-  it, so a session is now one turn (a card's task, run and reported) and a tool
-  outside the policy is refused rather than put to somebody who is not there.
-  It is not an ACP session (an ACP agent speaks JSON-RPC on stdio and has no terminal
-  UI) — it reuses everything around one: the folder, the card's directory and branch, the
-  agent's environment and proxy. The card is told when it opens and what it left on
-  the branch when the CLI exits, and the next terminal on that card returns to the
-  same place with `claude --continue` / `codex resume --last`.
+- `internal/acp/` — **the agent integration**: an ACP session per card, started
+  by a move, given the board as MCP tools, reporting through them. `trigger.go`
+  is the whole rule (a card moved into a column, assigned to an agent, is worked
+  by it), `session.go` runs it, `boardtools.go` hands out the tools, and
+  `workspace.go` gives it a branch to work on. There was a period when a stage
+  was the vendor CLI in a pty instead, with the app drawing a terminal beside
+  the card; it is gone, and `docs/decisions.md` says what it cost.
 - `tsnetdoor.go` — **the board on your own tailnet**, which is how a phone
   reaches it. The app becomes a Tailscale node itself
   ([`tsnet`](https://tailscale.com/docs/features/tsnet): userspace, no daemon,
@@ -119,8 +114,8 @@ The Go code is platform-agnostic — the same files build for every OS:
 - `main.go` — wires it all together and runs the app.
 
 **On a phone**, the board is the same board: `frontend/src/pages/mobile` is the
-`/m` route — what is waiting for a person, answered in place, and the terminals
-it is waiting in — and [`mobile/`](mobile/README.md) is a small Wails app for
+`/m` route — the inbox, one board's cards, and what is waiting for a person,
+answered in place — and [`mobile/`](mobile/README.md) is a small Wails app for
 iOS and Android that is one window onto it, over the tailnet door above. It is
 its own Go module because the mobile build compiles `package main` from the
 module root, and this one is a board server with SQLite, git and a pty.
@@ -131,10 +126,10 @@ cross-compile with the host toolchain; `wails3 task setup:docker` builds the
 image that can, if a Mac has to produce a Linux binary. Windows is pure Go and
 cross-compiles from anywhere; SQLite is `modernc.org/sqlite`, pure Go, everywhere.
 
-**[How a card gets worked on](docs/flows.md)** walks through the whole thing for
-somebody using the board: what happens when a card lands in a column, when a
-a branch appears and what becomes of it, which branch is followed, the routes
-the template ships, and what to look at when nothing happens.
+**[How a card gets worked on](docs/card-work.md)** walks through the whole thing
+for somebody using the board: what starts an agent, what it is told, what it
+does at the end, where the work happens, and what to look at when nothing
+happens.
 
 ## What this app requires of the frontend
 
@@ -196,23 +191,13 @@ There is deliberately **no `window.webSocketBaseURL`** here, unlike v2:
 - **Linux targets GTK 3** (`gtk3` build tag, webkit2gtk-4.1). Wails v3 defaults
   to GTK 4, but its GTK 4 code needs 4.10 — newer than several still-supported
   distributions ship. `GTK_TAG=` drops the tag where GTK 4 is new enough.
-- **Browser-testing sessions** (the «QA» column) need a browser MCP server
-  on the agent — under *Agents → MCP servers*, paste the same JSON any MCP
-  client takes, e.g. `{"mcpServers": {"playwright": {"command": "npx", "args":
-  ["-y", "@playwright/mcp@latest", "--headless"]}}}`. The app ships no
-  browser driver of its own and stays Node-free; the server is the user's
-  choice, and a test session refuses to start for an agent without one. Each run
-  gets a directory under `artifactsDir` (default
-  `<dataDir>/artifacts/<session-id>`) where the agent is asked to save its
-  screenshots and write `result.json` — that verdict is what moves the card.
-- **Templates**: the board selector offers three of them, and each ships the
-  columns and routes it needs in the board's own properties — «Разработка»
-  for code, «Контент» for writing, and «Личное» for the ordinary life
-  the same machinery turns out to fit: an agent that puts a plan, a list or a
-  draft in a folder of notes, and a route that waits for a person to read it. Every other
-  upstream template is hidden, because a board the automation knows nothing
-  about arrives empty — the server module's own templates are the upstream's
-  examples and stay hidden. Ours live **here**, in
+- **Templates**: the board selector offers three of them — «Разработка» for
+  code, «Контент» for writing, and «Личное» for the ordinary life the same
+  machinery turns out to fit: an agent that puts a plan, a list or a draft in a
+  folder of notes. Each carries its columns, the fields a card names a folder
+  and a branch in, and the questions it wants asked when a board is made from
+  it. Every other upstream template is hidden — the server module's own are the
+  upstream's examples. Ours live **here**, in
   `internal/boardadapter/templates/`, one `.jsonl` per board, embedded with
   `go:embed` and installed into the global team on launch by `ImportTemplates`.
   A board is recognised on the next launch by the `template` property
@@ -226,51 +211,39 @@ There is deliberately **no `window.webSocketBaseURL`** here, unlike v2:
   network, whether the board is published on the tailnet — so they are one
   dialog opened from the sidebar's *«Настройки → Эта машина…»*, beside the theme
   and the language, and are reachable with no board open at all. What a board
-  runs — its columns, its routes, the folders its agents work in, and what those
-  agents are told first — is one screen, *«Как работает эта доска…»*. The board's
-  ⋯ menu holds nothing else but export and *«Сохранить как шаблон…»*: it used to
+  keeps — the folders its agents work in, what those agents are told first, where
+  it deploys — is asked one question at a time from its ⋯ menu, each item being
+  one of the questions its setup plan lists. That menu used to
   be the only door to all of the above, which made machine settings look like a
   property of whichever board happened to be open. A setting that belongs to one
   *screen* goes with it: what feeds the inbox is asked on «Входящие», the one
   board every source writes to, whose ⋯ menu offers *«Источники…»* and nothing
   besides.
-  Registering an agent or a folder does not require going there — the card's
-  terminal and the column's crew list both offer the short form (a name and a
-  kind) where the choice is being made, and the full form stays in the
-  settings. **Folders are part of running an agent, not of having a board**: a
-  board with no agent column is never asked for one and never grows a «Папки»
-  field, and a folder marked "on every board" joins only boards that already
-  have that field.
-- **What a board tells its agents first is the board's** (`boardPrompts` in the
-  config, keyed by board id, edited in *«Как работает эта доска…»*). It was one
-  string shared by every board on the machine, labelled "board system prompt"
-  while being nothing of the kind — which meant the household board and the code
-  board shared it and so nobody could write anything useful in it. An install
-  that had written something keeps it: on first load the old `systemPrompt` is
-  spread over every board named by a column or a route, and the global field is
-  blanked.
-- **First run**: a board made from a template opens a setup wizard by itself
-  when the registries are still empty — a folder and an agent are asked for
-  (nothing runs without them), Dokku and a browser MCP server are offered and
-  skippable. **Which steps it has is the board's own answer.** A template
-  declares them in `setup`, beside the columns and routes it carries, and may
-  add a sentence of its own to a step ("the folder with your household notes")
-  or insist on one the app calls optional. It may only name steps from the
-  closed set `internal/acp/setup.go` implements — like the flow triggers, the
-  list is the app's, so a board cannot ask for something nothing can fill.
+  Registering an agent does not require going there — the setup wizard offers
+  the short form (a name and a kind) where the choice is being made, and the
+  full form stays in the settings. A folder marked "on every board" joins only
+  boards that already have a «Папка» field.
+- **What a board tells its agents first is the board's** (the `prompt` property
+  on the board itself, edited in *«Системный промпт доски…»*). It was one string
+  shared by every board on the machine, labelled "board system prompt" while
+  being nothing of the kind — which meant the household board and the code board
+  shared it and so nobody could write anything useful in it.
+- **First run**: a board made from a template opens a setup wizard by itself.
+  Four questions are every board's — its name, a folder, an agent, and a last
+  screen saying what to do next — and a template may declare more of its own in
+  `setup`, add a sentence to a step ("the folder with your household notes") or
+  insist on one the app calls optional. It may only name steps from the closed
+  set `internal/acp/setup.go` implements, so a board cannot ask for something
+  nothing can fill.
   **A folder does not have to be a git repository.** What git buys — a branch
   per card, something to publish, every transition that waits for one — is
   offered to the folders that have it and simply absent from the ones that
   do not, so a board of household chores sends an agent into a folder of notes
-  and nobody is told to `git init` their shopping list. Which boards do need it
-  is worked out, not declared: a step of the plan carries what its answer must
-  satisfy (`requires: ["git"]`), and the folder step asks for git exactly when
-  the board publishes a branch or waits for one — a deploy or test stage, or an
-  edge whose trigger the VCS watcher polls. `CheckBoardSetupAnswer` enforces it
-  where the question is asked, rather than on a card three steps later.
-  `BoardSetupPlan` resolves the whole answer in Go: what the board asked for, or
-  failing that what its automation implies, and how far *this board* has got
-  through it. **Setup is per board, not per machine.** Every step's status is
+  and nobody is told to `git init` their shopping list. A step of the plan carries what its answer must satisfy
+  (`requires: ["git"]`), and `CheckBoardSetupAnswer` enforces it where the
+  question is asked rather than on a card three steps later. `BoardSetupPlan`
+  resolves the whole answer in Go: the four questions every board has, whatever
+  the board declared of its own, and how far *this board* has got through them. **Setup is per board, not per machine.** Every step's status is
   read from the `board_setup` table, keyed by board — the registries are the
   machine's and say only that a step *can* be answered quickly (`ready`, shown
   as "already registered" with one click to pass it). Reading them as the answer
@@ -279,81 +252,31 @@ There is deliberately **no `window.webSocketBaseURL`** here, unlike v2:
   wizard walks exactly what the plan lists, which is why a board that never
   deploys is never asked where to. The wizard opens itself once per board —
   closing it half-way answers nothing, so the header goes on saying *«Доска ещё
-  не настроена»* until every question that board asks has an answer, and that
-  button is the way back in (*«Пройти настройку заново…»* in *«Как работает эта
-  доска…»* afterwards).
+  не настроена»* until every question that board asks has an answer, and
+  *«Пройти настройку заново…»* in the ⋯ menu is the way back in.
   Having been offered it is remembered in the store, not in the page: the app
   publishes itself on a fresh port every launch, so `localStorage` is keyed by
   an origin that does not survive a restart — anything the page has to remember
   between runs has to be asked of Go.
-- **Columns** (column menu → *«Что происходит в этой колонке…»*, or the board
-  menu's *«Как работает эта доска…»*) say what happens when a
-  card lands in one: the action, the crew of agents who work it, and how many of
-  them at once. A card without an agent of its own goes to whoever of the crew is
-  free; when they are all busy, or the limit is reached, the card waits in place
-  and starts by itself as soon as a place frees up. The old
-  `triggerColumn`/`deployColumn`/`testColumn` keys are migrated into this
-  registry on first load, so nothing changes until you edit it. A crew of several
-  agents needs the board's «в отдельной копии» (the default) — with one branch
-  in the folder itself two agents cannot share it, and the crew works one card
-  at a time.
-- **Taking a card yourself**: assign it to yourself and no agent starts on it —
-  the card keeps its place on the route and waits for you to move it on. Deploy
-  and test still run, since that is machine work; assigning a registered agent,
-  or nobody, hands the card back to automation.
-- **Flows** (board "…" menu → *«Как работает эта доска…»*) join those columns into a route and
-  move cards along it. Repository events are polled from the branches parked
-  cards wait on: plain git needs nothing, while `pr.*`, `review.approved` and
-  `checks.*` call the GitHub API and want a token: `GITHUB_TOKEN` in the
-  environment, or the credential store under `github.token` — public
-  repositories work without one, more slowly. The
-  interval is `vcsPollSeconds` (default 60) and the remote is `gitRemote`
-  (default `origin`). Which branch is watched: the card's `branch` property if
-  it has one, otherwise the branch the card's own work is on, which the card
-  never names itself. A fresh config is seeded with three routes — «Фича»,
-  «Хотфикс» and «Только ревью» — and the «Разработка» board template ships
-  the columns they name plus a «Сценарий» property to pick one with, so a new
-  board runs them without any setup. Picking a route stays optional: a card with
-  no «Сценарий» option takes none, and the trigger columns work as they always
-  did. The editor draws the route as a graph and offers whichever shipped route
-  the registry is missing. A card shows its own route: which stage it stands on
-  and what that stage is waiting for. Routes belong to the board they were made
-  on, and a board made from the «Разработка» template arrives with them:
-  the template carries its columns and routes in the board's own properties, and
-  the first card moved on it — or opening the editor — takes them into the
-  registry.
-- **One editor for both halves** (board menu → *«Как работает эта доска…»*).
-  The canvas is the board: every column of the chosen select property is a box
-  on it, and choosing a route draws that route's arrows over the same boxes,
-  fading the columns it does not use — clicking one, or drawing an arrow to it,
-  is what puts it on the route. There is no "add a stage, then pick its column".
-  The panel beside the canvas is about whatever is selected: a column (what
-  happens there, the crew, the limit, the deploy target — the whole of what used
-  to be a dialog of its own) or a transition (which event, and where it leads).
-  What a card names its route with is checked too: a route with no option of its
-  name is one no card can ever take, and the editor says so and offers the click
-  that adds it. A palette beside the canvas holds the blocks a route is built
-  from — «Агент», «Деплой», «Тест», a plain column — and dropping one makes a
-  real column of the board where it landed, already doing what the block says.
-- **Rules on the arrows.** A transition can be conditional on the card — «по
-  успеху → Деплой, но только если Приоритет = Высокий», with the unconditional
-  arrow as the fallback — or on the words the agent signed off with («ГОТОВО К
-  ДЕПЛОЮ»), which is how the agent itself routes the card. A stage can also wait
-  for an option set on the card («Одобрено = Да») and move the moment a person
-  marks it — pushed by the board, nothing polled. The conditions are drawn on
-  the arrows, spelled out in the card's flow strip, and the set is closed: the
-  board picks from what the engine implements, nothing is a script.
-- **Templates** (*«Сохранить как шаблон…»* in the board menu, the pencil in the
-  template picker, or *«Колонки, маршруты и настройка…»* on the banner of a
-  template being edited). A template is a board that has not been made yet, and
-  what makes it worth choosing is not on the board: the same editor writes its
-  columns and routes into the template's own properties, and below it the
-  template names the questions a new board should ask about this machine — the
-  closed set of setup steps, each with a line of the template's own and a "cannot
-  be skipped" flag. Saving a working board as a template reads its automation
-  back out of the registry into the copy, so the template arrives with the
-  columns *doing* something rather than merely drawn. Templates somebody made
-  are offered beside the ones the install ships.
+- **What starts an agent** is a card being moved into a column while it is
+  assigned to one. Nothing else: a column is an ordinary option of the board's
+  status field, and there is no registry saying what any of them does. The agent
+  is told which column the card was dropped into and what the board's columns
+  are called, and it moves the card on itself when it is done (`move_card`),
+  writes what it did in one comment (`comment_card`) and ends the run
+  (`finish_work`). A card assigned to a person, or to nobody, starts nothing and
+  waits where it is.
+- **Taking a card yourself**: assign it to yourself and no agent starts on it.
+  Assigning a registered agent, or nobody, hands it back.
+- **Deploying** is a button on the card rather than a column: it publishes the
+  card's branch to a Dokku host from the registry and says in a comment what
+  happened.
+- **Templates** (*«Сохранить как шаблон…»* in the board menu, or the pencil in
+  the template picker). A template is a board that has not been made yet: saving
+  a working board copies it under its own name, and the template editor is a
+  form — name, icon, what it is for, and the questions a new board should ask
+  about this machine. Templates somebody made are offered beside the ones the
+  install ships.
 
 ## Develop
 
@@ -471,7 +394,7 @@ window-position autosave.
 - [docs/guide/](docs/guide/index.md) — руководство пользователя, по-русски:
   как этим пользоваться, а не как это устроено. Это же и сайт — VitePress,
   разделами и с поиском; как он собирается — [docs/guide-site.md](docs/guide-site.md).
-- [docs/flows.md](docs/flows.md) — how a card gets worked on, for somebody using the
+- [docs/card-work.md](docs/card-work.md) — how a card gets worked on, for somebody using the
   board rather than working on it.
 - [docs/templates.md](docs/templates.md) — what a template carries, how it is edited,
   and how a working board becomes one.

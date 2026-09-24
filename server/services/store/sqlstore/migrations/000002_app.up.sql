@@ -6,7 +6,7 @@
 -- somebody has to remember three answers to one question.
 --
 -- What this application adds beside the board: the machine's registries, the
--- conversations and sessions, where a card stands on its route. Every foreign
+-- sessions, where a card stands on its route. Every foreign
 -- key here points at a table the migration before it made.
 
 {{if .sqlite}}
@@ -75,8 +75,8 @@ CREATE TABLE `workspace_board` (`workspace_id` varchar NOT NULL, `board_id` varc
 --   user_id: The board account. NULL until one is made, and NULL again if it is
 --     deleted: the registry entry is the machine's and outlives it.
 --   settings: env, args, cliArgs, options, autoAllowTools, command,
---     terminalCommand, mcpServers. JSON on purpose: this is how to start
---     a process, it points at nothing and nothing joins to it.
+--     mcpServers. JSON on purpose: this is how to start a process, it
+--     points at nothing and nothing joins to it.
 CREATE TABLE `agent` (`id` varchar NOT NULL, `name` varchar NOT NULL, `kind` varchar NOT NULL, `user_id` varchar NULL, `proxy_id` varchar NULL, `bin_path` text NULL, `model` varchar NULL, `prompt` text NULL, `settings` text NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`id`), CONSTRAINT `agent_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL, CONSTRAINT `agent_proxy` FOREIGN KEY (`proxy_id`) REFERENCES `proxy` (`id`) ON DELETE SET NULL);
 
 CREATE UNIQUE INDEX `idx_agent_name` ON `agent` (`name`);
@@ -87,9 +87,7 @@ CREATE TABLE `deploy_target` (`id` varchar NOT NULL, `name` varchar NOT NULL, `s
 
 CREATE UNIQUE INDEX `idx_deploy_target_name` ON `deploy_target` (`name`);
 
--- A run of an agent over ACP. One process, one verdict: unlike a
--- conversation, it is never resumed, which is why the two are
--- separate tables and not one row with a transport column.
+-- A run of an agent over ACP. One process, one turn, one verdict.
 --   card_id: NULL for a run that is about no card — naming a branch is one.
 --   column_key: Which column's limit this run counts against. Here rather than in
 --     memory because a column's limit is about the board and not about
@@ -108,24 +106,6 @@ CREATE TABLE `session_event` (`id` varchar NOT NULL, `session_id` varchar NOT NU
 
 CREATE INDEX `idx_session_event_session` ON `session_event` (`session_id`, `id`);
 
--- A conversation with an agent: its CLI in a pty, keyed (card, node).
--- The row outlives every process that ever drew it — that is what makes
--- a conversation resumable, and it is the difference from agent_session,
--- which is one run and then over.
---   card_id: NULL for a planning conversation: it is about no card.
---   node_id: The column's option id — work; '@talk' — discussion; '@none' — a
---     card with no column at all.
---   column_name: What the column was called at the time, frozen: the option may be
---     gone, and the row still has to read the same.
---   summary: The agent's own line about what this conversation is doing.
---   workdir_path: Was repo_path. Becomes workspace_id in the second half of step 2,
---     together with the code that resolves a folder to its registry id.
-CREATE TABLE `conversation` (`id` varchar NOT NULL, `card_id` varchar NULL, `board_id` varchar NULL, `node_id` varchar NOT NULL, `column_name` varchar NULL, `title` text NULL, `summary` text NULL, `agent` varchar NULL, `kind` varchar NULL, `workdir_path` text NULL, `cwd` text NULL, `branch` varchar NULL, `started_at` bigint NOT NULL, `ended_at` bigint NULL, `exit_code` bigint NULL, PRIMARY KEY (`id`), CONSTRAINT `conversation_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE CASCADE, CONSTRAINT `conversation_board` FOREIGN KEY (`board_id`) REFERENCES `board_ref` (`board_id`) ON DELETE CASCADE);
-
-CREATE INDEX `idx_conversation_card` ON `conversation` (`card_id`, `started_at`);
-
-CREATE INDEX `idx_conversation_card_node` ON `conversation` (`card_id`, `node_id`, `started_at`);
-
 -- One route event, handled once. `key` was the column's name and is a
 -- reserved word in MySQL, so it is `token` — cheaper than backticks in
 -- every query for ever.
@@ -133,30 +113,10 @@ CREATE TABLE `idempotency` (`token` varchar NOT NULL, `session_id` varchar NULL,
 
 CREATE INDEX `idx_idempotency_created` ON `idempotency` (`created_at`);
 
--- This machine's index of where each card is on its route. The truth is
--- on the card itself, so it travels with the board; this is what the VCS
--- watcher asks "which cards are parked and on what branch" in one query.
---   flow_id: The route the card is on. An id rather than the route's name, so
---     renaming a route does not lose the place of every card on it. No
---     foreign key: routes live in the board's JSON, not in a table.
---     Nullable because a row carried over from before routes had ids
---     knows only a name; the card's own record supplies the id.
-CREATE TABLE `flow_state` (`card_id` varchar NOT NULL, `board_id` varchar NULL, `flow_id` varchar NULL, `node_id` varchar NOT NULL, `branch` varchar NULL, `workdir_path` text NULL, `entered_at` bigint NOT NULL, PRIMARY KEY (`card_id`), CONSTRAINT `flow_state_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE CASCADE, CONSTRAINT `flow_state_board` FOREIGN KEY (`board_id`) REFERENCES `board_ref` (`board_id`) ON DELETE CASCADE);
-
--- Every transition a card made, and what the agent said on it.
---   said: The agent's closing words: what a conversation is told instead of
---     its task when the card comes back to it.
-CREATE TABLE `flow_event` (`id` varchar NOT NULL, `card_id` varchar NOT NULL, `flow_id` varchar NULL, `from_node` varchar NULL, `to_node` varchar NOT NULL, `on_kind` varchar NOT NULL, `detail` text NULL, `said` text NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`id`), CONSTRAINT `flow_event_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE CASCADE);
-
-CREATE INDEX `idx_flow_event_card` ON `flow_event` (`card_id`, `id`);
-
 -- One current reason a card is not moving — not a journal. The reason is
 -- true only until somebody fixes what it is about, and a comment would
 -- outlive it as noise.
---   kind: 'conversation' is the one kind with somewhere to go: open the
---     terminal. The rest have no button, which is why this is a field and
---     never a reading of the reason's own Russian.
-CREATE TABLE `card_stall` (`card_id` varchar NOT NULL, `node_id` varchar NULL, `kind` varchar NULL, `reason` text NOT NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`card_id`), CONSTRAINT `card_stall_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE CASCADE);
+CREATE TABLE `card_stall` (`card_id` varchar NOT NULL, `node_id` varchar NULL, `reason` text NOT NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`card_id`), CONSTRAINT `card_stall_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE CASCADE);
 
 -- How much a card's branch holds, in numbers. The diff itself is read
 -- from git every time and never from here — this is what the button
@@ -171,23 +131,11 @@ CREATE TABLE `card_stall` (`card_id` varchar NOT NULL, `node_id` varchar NULL, `
 --     only while a working copy does, and the committed half survives it.
 CREATE TABLE `card_changes` (`card_id` varchar NOT NULL, `branch` varchar NULL, `base` varchar NULL, `files` bigint NOT NULL, `added` bigint NOT NULL, `removed` bigint NOT NULL, `dirty` bigint NOT NULL, `computed_at` bigint NOT NULL, PRIMARY KEY (`card_id`), CONSTRAINT `card_changes_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE CASCADE);
 
--- A card waiting for its column to free up a place.
---   column_key: board|option — the queue belongs to one column of one board.
-CREATE TABLE `stage_queue` (`card_id` varchar NOT NULL, `board_id` varchar NULL, `column_key` varchar NOT NULL, `flow_id` varchar NULL, `node_id` varchar NULL, `queued_at` bigint NOT NULL, PRIMARY KEY (`card_id`), CONSTRAINT `stage_queue_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE CASCADE, CONSTRAINT `stage_queue_board` FOREIGN KEY (`board_id`) REFERENCES `board_ref` (`board_id`) ON DELETE CASCADE);
-
-CREATE INDEX `idx_stage_queue_column` ON `stage_queue` (`column_key`, `queued_at`);
-
 -- Which setup questions a board has been asked. It is about this machine
 -- — the answers are folders and hosts here — so it cannot live in the
 -- browser's storage, which the desktop window forgets on every launch.
 --   changed_at: Was `at`. AT is a keyword in Postgres and a name not worth having.
 CREATE TABLE `board_setup` (`board_id` varchar NOT NULL, `step` varchar NOT NULL, `status` varchar NOT NULL, `changed_at` bigint NOT NULL, PRIMARY KEY (`board_id`, `step`), CONSTRAINT `board_setup_board` FOREIGN KEY (`board_id`) REFERENCES `board_ref` (`board_id`) ON DELETE CASCADE, CONSTRAINT `board_setup_status` CHECK (`status` IN ('pending', 'done', 'skipped', 'offered')));
-
--- This branch event has already been acted on. Keyed by the workspace
--- rather than by its path: a folder somebody moved used to keep its
--- latches, and MySQL would refuse a path in a key of any real length.
---   marker: The commit the event refers to: the same state seen twice fires once.
-CREATE TABLE `vcs_seen` (`workspace_id` varchar NOT NULL, `branch` varchar NOT NULL, `kind` varchar NOT NULL, `marker` varchar NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`workspace_id`, `branch`, `kind`), CONSTRAINT `vcs_seen_workspace` FOREIGN KEY (`workspace_id`) REFERENCES `workspace` (`id`) ON DELETE CASCADE);
 
 -- The directory and the branch one owner holds in one workspace. The
 -- owner is a card, or a board for a conversation with no card — two
@@ -247,14 +195,14 @@ CREATE TABLE `inbox_sort` (`id` varchar NOT NULL, `card_id` varchar NULL, `card_
 {{end}}
 
 {{if .mysql}}
--- Where a card's branch is published. Was the `deploys` array in
--- config.json, and a route's stage named it by name.
-CREATE TABLE `deploy_target` (`id` varchar(36) NOT NULL, `name` varchar(100) NOT NULL, `ssh_host` varchar(255) NOT NULL, `ssh_user` varchar(64) NULL, `ssh_port` bigint NULL, `ssh_key` text NULL, `base_app` varchar(100) NULL, `base_domain` varchar(255) NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`id`), UNIQUE INDEX `idx_deploy_target_name` (`name`)) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
-
 -- One route event, handled once. `key` was the column's name and is a
 -- reserved word in MySQL, so it is `token` — cheaper than backticks in
 -- every query for ever.
 CREATE TABLE `idempotency` (`token` varchar(255) NOT NULL, `session_id` varchar(36) NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`token`), INDEX `idx_idempotency_created` (`created_at`)) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
+
+-- Where a card's branch is published. Was the `deploys` array in
+-- config.json, and a route's stage named it by name.
+CREATE TABLE `deploy_target` (`id` varchar(36) NOT NULL, `name` varchar(100) NOT NULL, `ssh_host` varchar(255) NOT NULL, `ssh_user` varchar(64) NULL, `ssh_port` bigint NULL, `ssh_key` text NULL, `base_app` varchar(100) NULL, `base_domain` varchar(255) NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`id`), UNIQUE INDEX `idx_deploy_target_name` (`name`)) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
 
 -- Network settings several agents share, so they are edited in one
 -- place. Was the `proxies` array in config.json.
@@ -271,8 +219,8 @@ CREATE TABLE `proxy` (`id` varchar(36) NOT NULL, `name` varchar(100) NOT NULL, `
 --   user_id: The board account. NULL until one is made, and NULL again if it is
 --     deleted: the registry entry is the machine's and outlives it.
 --   settings: env, args, cliArgs, options, autoAllowTools, command,
---     terminalCommand, mcpServers. JSON on purpose: this is how to start
---     a process, it points at nothing and nothing joins to it.
+--     mcpServers. JSON on purpose: this is how to start a process, it
+--     points at nothing and nothing joins to it.
 CREATE TABLE `agent` (`id` varchar(36) NOT NULL, `name` varchar(100) NOT NULL, `kind` varchar(32) NOT NULL, `user_id` varchar(36) NULL, `proxy_id` varchar(36) NULL, `bin_path` text NULL, `model` varchar(100) NULL, `prompt` text NULL, `settings` text NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`id`), UNIQUE INDEX `idx_agent_name` (`name`), CONSTRAINT `agent_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL, CONSTRAINT `agent_proxy` FOREIGN KEY (`proxy_id`) REFERENCES `proxy` (`id`) ON DELETE SET NULL) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
 
 -- A board this machine knows about, whoever's it is. What the app's own
@@ -296,9 +244,7 @@ CREATE TABLE `board_ref` (`board_id` varchar(36) NOT NULL, `source_id` varchar(6
 --     and everything about the card goes with it.
 CREATE TABLE `card_ref` (`card_id` varchar(36) NOT NULL, `board_id` varchar(36) NULL, `block_id` varchar(36) NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`card_id`), CONSTRAINT `card_ref_board` FOREIGN KEY (`board_id`) REFERENCES `board_ref` (`board_id`) ON DELETE CASCADE, CONSTRAINT `card_ref_block` FOREIGN KEY (`block_id`) REFERENCES `blocks` (`id`) ON DELETE CASCADE) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
 
--- A run of an agent over ACP. One process, one verdict: unlike a
--- conversation, it is never resumed, which is why the two are
--- separate tables and not one row with a transport column.
+-- A run of an agent over ACP. One process, one turn, one verdict.
 --   card_id: NULL for a run that is about no card — naming a branch is one.
 --   column_key: Which column's limit this run counts against. Here rather than in
 --     memory because a column's limit is about the board and not about
@@ -338,10 +284,7 @@ CREATE TABLE `card_changes` (`card_id` varchar(36) NOT NULL, `branch` varchar(25
 -- One current reason a card is not moving — not a journal. The reason is
 -- true only until somebody fixes what it is about, and a comment would
 -- outlive it as noise.
---   kind: 'conversation' is the one kind with somewhere to go: open the
---     terminal. The rest have no button, which is why this is a field and
---     never a reading of the reason's own Russian.
-CREATE TABLE `card_stall` (`card_id` varchar(36) NOT NULL, `node_id` varchar(64) NULL, `kind` varchar(32) NULL, `reason` text NOT NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`card_id`), CONSTRAINT `card_stall_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE CASCADE) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
+CREATE TABLE `card_stall` (`card_id` varchar(36) NOT NULL, `node_id` varchar(64) NULL, `reason` text NOT NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`card_id`), CONSTRAINT `card_stall_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE CASCADE) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
 
 -- A named place an agent can work in. Was the `projects` array in
 -- config.json; a card points at it by id, which is also the id of the
@@ -378,35 +321,6 @@ CREATE TABLE `workspace` (`id` varchar(36) NOT NULL, `name` varchar(200) NOT NUL
 --   released_at: NULL means the checkout is live.
 CREATE TABLE `checkout` (`id` varchar(36) NOT NULL, `workspace_id` varchar(36) NOT NULL, `card_id` varchar(36) NULL, `board_id` varchar(36) NULL, `mode` varchar(16) NOT NULL, `branch` varchar(255) NULL, `path` text NULL, `base` varchar(255) NULL, `created_at` bigint NOT NULL, `released_at` bigint NULL, PRIMARY KEY (`id`), UNIQUE INDEX `idx_checkout_card` (`workspace_id`, `card_id`), UNIQUE INDEX `idx_checkout_board` (`workspace_id`, `board_id`), INDEX `idx_checkout_live` (`workspace_id`, `released_at`), CONSTRAINT `checkout_workspace` FOREIGN KEY (`workspace_id`) REFERENCES `workspace` (`id`) ON DELETE RESTRICT, CONSTRAINT `checkout_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE CASCADE, CONSTRAINT `checkout_board` FOREIGN KEY (`board_id`) REFERENCES `board_ref` (`board_id`) ON DELETE CASCADE, CONSTRAINT `checkout_mode` CHECK (`mode` IN ('worktree', 'branch', 'plain'))) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
 
--- A conversation with an agent: its CLI in a pty, keyed (card, node).
--- The row outlives every process that ever drew it — that is what makes
--- a conversation resumable, and it is the difference from agent_session,
--- which is one run and then over.
---   card_id: NULL for a planning conversation: it is about no card.
---   node_id: The column's option id — work; '@talk' — discussion; '@none' — a
---     card with no column at all.
---   column_name: What the column was called at the time, frozen: the option may be
---     gone, and the row still has to read the same.
---   summary: The agent's own line about what this conversation is doing.
---   workdir_path: Was repo_path. Becomes workspace_id in the second half of step 2,
---     together with the code that resolves a folder to its registry id.
-CREATE TABLE `conversation` (`id` varchar(36) NOT NULL, `card_id` varchar(36) NULL, `board_id` varchar(36) NULL, `node_id` varchar(64) NOT NULL, `column_name` varchar(200) NULL, `title` text NULL, `summary` text NULL, `agent` varchar(100) NULL, `kind` varchar(32) NULL, `workdir_path` text NULL, `cwd` text NULL, `branch` varchar(255) NULL, `started_at` bigint NOT NULL, `ended_at` bigint NULL, `exit_code` bigint NULL, PRIMARY KEY (`id`), INDEX `idx_conversation_card` (`card_id`, `started_at`), INDEX `idx_conversation_card_node` (`card_id`, `node_id`, `started_at`), CONSTRAINT `conversation_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE CASCADE, CONSTRAINT `conversation_board` FOREIGN KEY (`board_id`) REFERENCES `board_ref` (`board_id`) ON DELETE CASCADE) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
-
--- Every transition a card made, and what the agent said on it.
---   said: The agent's closing words: what a conversation is told instead of
---     its task when the card comes back to it.
-CREATE TABLE `flow_event` (`id` varchar(36) NOT NULL, `card_id` varchar(36) NOT NULL, `flow_id` varchar(36) NULL, `from_node` varchar(64) NULL, `to_node` varchar(64) NOT NULL, `on_kind` varchar(32) NOT NULL, `detail` text NULL, `said` text NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`id`), INDEX `idx_flow_event_card` (`card_id`, `id`), CONSTRAINT `flow_event_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE CASCADE) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
-
--- This machine's index of where each card is on its route. The truth is
--- on the card itself, so it travels with the board; this is what the VCS
--- watcher asks "which cards are parked and on what branch" in one query.
---   flow_id: The route the card is on. An id rather than the route's name, so
---     renaming a route does not lose the place of every card on it. No
---     foreign key: routes live in the board's JSON, not in a table.
---     Nullable because a row carried over from before routes had ids
---     knows only a name; the card's own record supplies the id.
-CREATE TABLE `flow_state` (`card_id` varchar(36) NOT NULL, `board_id` varchar(36) NULL, `flow_id` varchar(36) NULL, `node_id` varchar(64) NOT NULL, `branch` varchar(255) NULL, `workdir_path` text NULL, `entered_at` bigint NOT NULL, PRIMARY KEY (`card_id`), CONSTRAINT `flow_state_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE CASCADE, CONSTRAINT `flow_state_board` FOREIGN KEY (`board_id`) REFERENCES `board_ref` (`board_id`) ON DELETE CASCADE) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
-
 -- Where the sorter put a card from the inbox, and why. A card that
 -- turns up on a board nobody carried it to is the question this answers.
 -- Both keys SET NULL: the decision is a fact about the sorter and
@@ -432,16 +346,6 @@ CREATE TABLE `source_event` (`id` varchar(36) NOT NULL, `source` varchar(100) NO
 --     to add.
 CREATE TABLE `source_item` (`source` varchar(100) NOT NULL, `external_id` varchar(255) NOT NULL, `version` varchar(255) NULL, `card_id` varchar(36) NULL, `created_at` bigint NOT NULL, `updated_at` bigint NOT NULL, PRIMARY KEY (`source`, `external_id`), INDEX `idx_source_item_card` (`card_id`), CONSTRAINT `source_item_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE SET NULL) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
 
--- A card waiting for its column to free up a place.
---   column_key: board|option — the queue belongs to one column of one board.
-CREATE TABLE `stage_queue` (`card_id` varchar(36) NOT NULL, `board_id` varchar(36) NULL, `column_key` varchar(128) NOT NULL, `flow_id` varchar(36) NULL, `node_id` varchar(64) NULL, `queued_at` bigint NOT NULL, PRIMARY KEY (`card_id`), INDEX `idx_stage_queue_column` (`column_key`, `queued_at`), CONSTRAINT `stage_queue_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE CASCADE, CONSTRAINT `stage_queue_board` FOREIGN KEY (`board_id`) REFERENCES `board_ref` (`board_id`) ON DELETE CASCADE) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
-
--- This branch event has already been acted on. Keyed by the workspace
--- rather than by its path: a folder somebody moved used to keep its
--- latches, and MySQL would refuse a path in a key of any real length.
---   marker: The commit the event refers to: the same state seen twice fires once.
-CREATE TABLE `vcs_seen` (`workspace_id` varchar(36) NOT NULL, `branch` varchar(255) NOT NULL, `kind` varchar(32) NOT NULL, `marker` varchar(64) NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`workspace_id`, `branch`, `kind`), CONSTRAINT `vcs_seen_workspace` FOREIGN KEY (`workspace_id`) REFERENCES `workspace` (`id`) ON DELETE CASCADE) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
-
 -- Which board a folder is offered to and how work happens in it there.
 -- Keyed by the pair rather than by the folder, because a folder marked
 -- «на всех досках» is one entry with a different answer per board: a copy
@@ -452,14 +356,6 @@ CREATE TABLE `workspace_board` (`workspace_id` varchar(36) NOT NULL, `board_id` 
 {{end}}
 
 {{if .postgres}}
--- Where a card's branch is published. Was the `deploys` array in
--- config.json, and a route's stage named it by name.
-CREATE TABLE "deploy_target" ("id" character varying(36) NOT NULL, "name" character varying(100) NOT NULL, "ssh_host" character varying(255) NOT NULL, "ssh_user" character varying(64) NULL, "ssh_port" bigint NULL, "ssh_key" text NULL, "base_app" character varying(100) NULL, "base_domain" character varying(255) NULL, "created_at" bigint NOT NULL, PRIMARY KEY ("id"));
-
--- Where a card's branch is published. Was the `deploys` array in
--- config.json, and a route's stage named it by name.
-CREATE UNIQUE INDEX "idx_deploy_target_name" ON "deploy_target" ("name");
-
 -- One route event, handled once. `key` was the column's name and is a
 -- reserved word in MySQL, so it is `token` — cheaper than backticks in
 -- every query for ever.
@@ -469,6 +365,14 @@ CREATE TABLE "idempotency" ("token" character varying(255) NOT NULL, "session_id
 -- reserved word in MySQL, so it is `token` — cheaper than backticks in
 -- every query for ever.
 CREATE INDEX "idx_idempotency_created" ON "idempotency" ("created_at");
+
+-- Where a card's branch is published. Was the `deploys` array in
+-- config.json, and a route's stage named it by name.
+CREATE TABLE "deploy_target" ("id" character varying(36) NOT NULL, "name" character varying(100) NOT NULL, "ssh_host" character varying(255) NOT NULL, "ssh_user" character varying(64) NULL, "ssh_port" bigint NULL, "ssh_key" text NULL, "base_app" character varying(100) NULL, "base_domain" character varying(255) NULL, "created_at" bigint NOT NULL, PRIMARY KEY ("id"));
+
+-- Where a card's branch is published. Was the `deploys` array in
+-- config.json, and a route's stage named it by name.
+CREATE UNIQUE INDEX "idx_deploy_target_name" ON "deploy_target" ("name");
 
 -- Network settings several agents share, so they are edited in one
 -- place. Was the `proxies` array in config.json.
@@ -492,8 +396,8 @@ CREATE UNIQUE INDEX "idx_proxy_name" ON "proxy" ("name");
 --   user_id: The board account. NULL until one is made, and NULL again if it is
 --     deleted: the registry entry is the machine's and outlives it.
 --   settings: env, args, cliArgs, options, autoAllowTools, command,
---     terminalCommand, mcpServers. JSON on purpose: this is how to start
---     a process, it points at nothing and nothing joins to it.
+--     mcpServers. JSON on purpose: this is how to start a process, it
+--     points at nothing and nothing joins to it.
 CREATE TABLE "agent" ("id" character varying(36) NOT NULL, "name" character varying(100) NOT NULL, "kind" character varying(32) NOT NULL, "user_id" character varying(36) NULL, "proxy_id" character varying(36) NULL, "bin_path" text NULL, "model" character varying(100) NULL, "prompt" text NULL, "settings" text NULL, "created_at" bigint NOT NULL, PRIMARY KEY ("id"), CONSTRAINT "agent_user" FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON DELETE SET NULL, CONSTRAINT "agent_proxy" FOREIGN KEY ("proxy_id") REFERENCES "proxy" ("id") ON DELETE SET NULL);
 
 -- A registered agent. Its board account is a row in users, and the two
@@ -504,8 +408,8 @@ CREATE TABLE "agent" ("id" character varying(36) NOT NULL, "name" character vary
 --   user_id: The board account. NULL until one is made, and NULL again if it is
 --     deleted: the registry entry is the machine's and outlives it.
 --   settings: env, args, cliArgs, options, autoAllowTools, command,
---     terminalCommand, mcpServers. JSON on purpose: this is how to start
---     a process, it points at nothing and nothing joins to it.
+--     mcpServers. JSON on purpose: this is how to start a process, it
+--     points at nothing and nothing joins to it.
 CREATE UNIQUE INDEX "idx_agent_name" ON "agent" ("name");
 
 -- A board this machine knows about, whoever's it is. What the app's own
@@ -529,9 +433,7 @@ CREATE TABLE "board_ref" ("board_id" character varying(36) NOT NULL, "source_id"
 --     and everything about the card goes with it.
 CREATE TABLE "card_ref" ("card_id" character varying(36) NOT NULL, "board_id" character varying(36) NULL, "block_id" character varying(36) NULL, "created_at" bigint NOT NULL, PRIMARY KEY ("card_id"), CONSTRAINT "card_ref_board" FOREIGN KEY ("board_id") REFERENCES "board_ref" ("board_id") ON DELETE CASCADE, CONSTRAINT "card_ref_block" FOREIGN KEY ("block_id") REFERENCES "blocks" ("id") ON DELETE CASCADE);
 
--- A run of an agent over ACP. One process, one verdict: unlike a
--- conversation, it is never resumed, which is why the two are
--- separate tables and not one row with a transport column.
+-- A run of an agent over ACP. One process, one turn, one verdict.
 --   card_id: NULL for a run that is about no card — naming a branch is one.
 --   column_key: Which column's limit this run counts against. Here rather than in
 --     memory because a column's limit is about the board and not about
@@ -540,9 +442,7 @@ CREATE TABLE "card_ref" ("card_id" character varying(36) NOT NULL, "board_id" ch
 --   finished_at: NULL means the session is still live.
 CREATE TABLE "agent_session" ("id" character varying(36) NOT NULL, "card_id" character varying(36) NULL, "board_id" character varying(36) NULL, "agent_kind" character varying(32) NOT NULL, "acp_session_id" character varying(100) NULL, "status" character varying(24) NOT NULL, "column_key" character varying(128) NULL, "cwd" text NULL, "worktree_path" text NULL, "branch" character varying(255) NULL, "started_at" bigint NOT NULL, "finished_at" bigint NULL, "error_text" text NULL, PRIMARY KEY ("id"), CONSTRAINT "agent_session_card" FOREIGN KEY ("card_id") REFERENCES "card_ref" ("card_id") ON DELETE CASCADE, CONSTRAINT "agent_session_board" FOREIGN KEY ("board_id") REFERENCES "board_ref" ("board_id") ON DELETE CASCADE, CONSTRAINT "agent_session_status" CHECK ("status" IN ('queued', 'running', 'idle', 'waiting_permission', 'done', 'failed', 'cancelled')));
 
--- A run of an agent over ACP. One process, one verdict: unlike a
--- conversation, it is never resumed, which is why the two are
--- separate tables and not one row with a transport column.
+-- A run of an agent over ACP. One process, one turn, one verdict.
 --   card_id: NULL for a run that is about no card — naming a branch is one.
 --   column_key: Which column's limit this run counts against. Here rather than in
 --     memory because a column's limit is about the board and not about
@@ -582,10 +482,7 @@ CREATE TABLE "card_changes" ("card_id" character varying(36) NOT NULL, "branch" 
 -- One current reason a card is not moving — not a journal. The reason is
 -- true only until somebody fixes what it is about, and a comment would
 -- outlive it as noise.
---   kind: 'conversation' is the one kind with somewhere to go: open the
---     terminal. The rest have no button, which is why this is a field and
---     never a reading of the reason's own Russian.
-CREATE TABLE "card_stall" ("card_id" character varying(36) NOT NULL, "node_id" character varying(64) NULL, "kind" character varying(32) NULL, "reason" text NOT NULL, "created_at" bigint NOT NULL, PRIMARY KEY ("card_id"), CONSTRAINT "card_stall_card" FOREIGN KEY ("card_id") REFERENCES "card_ref" ("card_id") ON DELETE CASCADE);
+CREATE TABLE "card_stall" ("card_id" character varying(36) NOT NULL, "node_id" character varying(64) NULL, "reason" text NOT NULL, "created_at" bigint NOT NULL, PRIMARY KEY ("card_id"), CONSTRAINT "card_stall_card" FOREIGN KEY ("card_id") REFERENCES "card_ref" ("card_id") ON DELETE CASCADE);
 
 -- A named place an agent can work in. Was the `projects` array in
 -- config.json; a card points at it by id, which is also the id of the
@@ -693,68 +590,6 @@ CREATE UNIQUE INDEX "idx_checkout_board" ON "checkout" ("workspace_id", "board_i
 --   released_at: NULL means the checkout is live.
 CREATE INDEX "idx_checkout_live" ON "checkout" ("workspace_id", "released_at");
 
--- A conversation with an agent: its CLI in a pty, keyed (card, node).
--- The row outlives every process that ever drew it — that is what makes
--- a conversation resumable, and it is the difference from agent_session,
--- which is one run and then over.
---   card_id: NULL for a planning conversation: it is about no card.
---   node_id: The column's option id — work; '@talk' — discussion; '@none' — a
---     card with no column at all.
---   column_name: What the column was called at the time, frozen: the option may be
---     gone, and the row still has to read the same.
---   summary: The agent's own line about what this conversation is doing.
---   workdir_path: Was repo_path. Becomes workspace_id in the second half of step 2,
---     together with the code that resolves a folder to its registry id.
-CREATE TABLE "conversation" ("id" character varying(36) NOT NULL, "card_id" character varying(36) NULL, "board_id" character varying(36) NULL, "node_id" character varying(64) NOT NULL, "column_name" character varying(200) NULL, "title" text NULL, "summary" text NULL, "agent" character varying(100) NULL, "kind" character varying(32) NULL, "workdir_path" text NULL, "cwd" text NULL, "branch" character varying(255) NULL, "started_at" bigint NOT NULL, "ended_at" bigint NULL, "exit_code" bigint NULL, PRIMARY KEY ("id"), CONSTRAINT "conversation_card" FOREIGN KEY ("card_id") REFERENCES "card_ref" ("card_id") ON DELETE CASCADE, CONSTRAINT "conversation_board" FOREIGN KEY ("board_id") REFERENCES "board_ref" ("board_id") ON DELETE CASCADE);
-
--- A conversation with an agent: its CLI in a pty, keyed (card, node).
--- The row outlives every process that ever drew it — that is what makes
--- a conversation resumable, and it is the difference from agent_session,
--- which is one run and then over.
---   card_id: NULL for a planning conversation: it is about no card.
---   node_id: The column's option id — work; '@talk' — discussion; '@none' — a
---     card with no column at all.
---   column_name: What the column was called at the time, frozen: the option may be
---     gone, and the row still has to read the same.
---   summary: The agent's own line about what this conversation is doing.
---   workdir_path: Was repo_path. Becomes workspace_id in the second half of step 2,
---     together with the code that resolves a folder to its registry id.
-CREATE INDEX "idx_conversation_card" ON "conversation" ("card_id", "started_at");
-
--- A conversation with an agent: its CLI in a pty, keyed (card, node).
--- The row outlives every process that ever drew it — that is what makes
--- a conversation resumable, and it is the difference from agent_session,
--- which is one run and then over.
---   card_id: NULL for a planning conversation: it is about no card.
---   node_id: The column's option id — work; '@talk' — discussion; '@none' — a
---     card with no column at all.
---   column_name: What the column was called at the time, frozen: the option may be
---     gone, and the row still has to read the same.
---   summary: The agent's own line about what this conversation is doing.
---   workdir_path: Was repo_path. Becomes workspace_id in the second half of step 2,
---     together with the code that resolves a folder to its registry id.
-CREATE INDEX "idx_conversation_card_node" ON "conversation" ("card_id", "node_id", "started_at");
-
--- Every transition a card made, and what the agent said on it.
---   said: The agent's closing words: what a conversation is told instead of
---     its task when the card comes back to it.
-CREATE TABLE "flow_event" ("id" character varying(36) NOT NULL, "card_id" character varying(36) NOT NULL, "flow_id" character varying(36) NULL, "from_node" character varying(64) NULL, "to_node" character varying(64) NOT NULL, "on_kind" character varying(32) NOT NULL, "detail" text NULL, "said" text NULL, "created_at" bigint NOT NULL, PRIMARY KEY ("id"), CONSTRAINT "flow_event_card" FOREIGN KEY ("card_id") REFERENCES "card_ref" ("card_id") ON DELETE CASCADE);
-
--- Every transition a card made, and what the agent said on it.
---   said: The agent's closing words: what a conversation is told instead of
---     its task when the card comes back to it.
-CREATE INDEX "idx_flow_event_card" ON "flow_event" ("card_id", "id");
-
--- This machine's index of where each card is on its route. The truth is
--- on the card itself, so it travels with the board; this is what the VCS
--- watcher asks "which cards are parked and on what branch" in one query.
---   flow_id: The route the card is on. An id rather than the route's name, so
---     renaming a route does not lose the place of every card on it. No
---     foreign key: routes live in the board's JSON, not in a table.
---     Nullable because a row carried over from before routes had ids
---     knows only a name; the card's own record supplies the id.
-CREATE TABLE "flow_state" ("card_id" character varying(36) NOT NULL, "board_id" character varying(36) NULL, "flow_id" character varying(36) NULL, "node_id" character varying(64) NOT NULL, "branch" character varying(255) NULL, "workdir_path" text NULL, "entered_at" bigint NOT NULL, PRIMARY KEY ("card_id"), CONSTRAINT "flow_state_card" FOREIGN KEY ("card_id") REFERENCES "card_ref" ("card_id") ON DELETE CASCADE, CONSTRAINT "flow_state_board" FOREIGN KEY ("board_id") REFERENCES "board_ref" ("board_id") ON DELETE CASCADE);
-
 -- Where the sorter put a card from the inbox, and why. A card that
 -- turns up on a board nobody carried it to is the question this answers.
 -- Both keys SET NULL: the decision is a fact about the sorter and
@@ -796,20 +631,6 @@ CREATE TABLE "source_item" ("source" character varying(100) NOT NULL, "external_
 --   version: The service's own updated/etag: changed means there is something
 --     to add.
 CREATE INDEX "idx_source_item_card" ON "source_item" ("card_id");
-
--- A card waiting for its column to free up a place.
---   column_key: board|option — the queue belongs to one column of one board.
-CREATE TABLE "stage_queue" ("card_id" character varying(36) NOT NULL, "board_id" character varying(36) NULL, "column_key" character varying(128) NOT NULL, "flow_id" character varying(36) NULL, "node_id" character varying(64) NULL, "queued_at" bigint NOT NULL, PRIMARY KEY ("card_id"), CONSTRAINT "stage_queue_card" FOREIGN KEY ("card_id") REFERENCES "card_ref" ("card_id") ON DELETE CASCADE, CONSTRAINT "stage_queue_board" FOREIGN KEY ("board_id") REFERENCES "board_ref" ("board_id") ON DELETE CASCADE);
-
--- A card waiting for its column to free up a place.
---   column_key: board|option — the queue belongs to one column of one board.
-CREATE INDEX "idx_stage_queue_column" ON "stage_queue" ("column_key", "queued_at");
-
--- This branch event has already been acted on. Keyed by the workspace
--- rather than by its path: a folder somebody moved used to keep its
--- latches, and MySQL would refuse a path in a key of any real length.
---   marker: The commit the event refers to: the same state seen twice fires once.
-CREATE TABLE "vcs_seen" ("workspace_id" character varying(36) NOT NULL, "branch" character varying(255) NOT NULL, "kind" character varying(32) NOT NULL, "marker" character varying(64) NULL, "created_at" bigint NOT NULL, PRIMARY KEY ("workspace_id", "branch", "kind"), CONSTRAINT "vcs_seen_workspace" FOREIGN KEY ("workspace_id") REFERENCES "workspace" ("id") ON DELETE CASCADE);
 
 -- Which board a folder is offered to and how work happens in it there.
 -- Keyed by the pair rather than by the folder, because a folder marked

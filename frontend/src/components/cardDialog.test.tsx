@@ -18,13 +18,6 @@ vi.mock('../mutator')
 vi.mock('../octoClient')
 vi.mock('../utils')
 
-// The panel beside the card is the terminal page itself. What it draws — xterm
-// on a socket — is terminalPage's own test; here it only has to be the thing
-// that appears, for the terminal it was given.
-vi.mock('./acp/terminalPage', () => ({
-    default: (props: {terminalId?: string}) => <div data-testid='terminal'>{props.terminalId}</div>,
-}))
-
 // A Go side a test installed outlives it, and a test left holding one decides for
 // every test after it whether this app has an agent integration at all.
 afterEach(() => {
@@ -335,36 +328,6 @@ describe('components/cardDialog', () => {
         expect(container).toMatchSnapshot()
     })
 
-    // A board of household chores is a board. The agent integration being
-    // compiled in is not a reason to offer a terminal on a machine that has
-    // nobody to open one with.
-    it('offers no terminal on a machine where no agent is registered', async () => {
-        const bindings = {
-            GetCardAgent: vi.fn().mockResolvedValue('{}'),
-            OpenCardTerminal: vi.fn(),
-            ListAgentAccounts: vi.fn().mockResolvedValue('[]'),
-        }
-        fakeGoSide(bindings)
-
-        render(() => wrapDNDIntl(() =>
-            <AppStoreProvider store={store}>
-                <CardDialog
-                    board={board}
-                    activeView={boardView}
-                    views={[boardView]}
-                    cards={[card]}
-                    cardId={card.id}
-                    onClose={vi.fn()}
-                    showCard={vi.fn()}
-                    readonly={false}
-                />
-            </AppStoreProvider>,
-        ))
-
-        await waitFor(() => expect(bindings.ListAgentAccounts).toHaveBeenCalled())
-        expect(screen.queryByRole('button', {name: 'Terminal'})).toBeNull()
-    })
-
     // The changes are worth a button only when there are some. On «На ревью»
     // the card's working copy has already been folded away, so the count comes
     // from what the Go side recorded as the work moved — never from a look.
@@ -414,46 +377,6 @@ describe('components/cardDialog', () => {
         expect(await screen.findByRole('button', {name: 'Changes'})).toBeInTheDocument()
     })
 
-    // The terminal is beside the card rather than in it: the card is what a
-    // person wrote, and the dialog's toolbar is where the machinery lives.
-    it('opens the terminal in a panel beside the card', async () => {
-        const bindings = {
-
-            // The card resolves a folder, so the panel starts straight away
-            // rather than asking where the conversation should live.
-            GetCardAgent: vi.fn().mockResolvedValue(JSON.stringify({folder: '/tmp/proj'})),
-            OpenCardTerminal: vi.fn().mockResolvedValue(JSON.stringify({id: 'term-7'})),
-            ListAgentAccounts: vi.fn().mockResolvedValue(JSON.stringify([{name: 'claude', username: 'claude'}])),
-        }
-        fakeGoSide(bindings)
-
-        const {container} = render(() => wrapDNDIntl(() =>
-            <AppStoreProvider store={store}>
-                <CardDialog
-                    board={board}
-                    activeView={boardView}
-                    views={[boardView]}
-                    cards={[card]}
-                    cardId={card.id}
-                    onClose={vi.fn()}
-                    showCard={vi.fn()}
-                    readonly={false}
-                />
-            </AppStoreProvider>,
-        ))
-
-        await userEvent.click(await screen.findByRole('button', {name: 'Terminal'}))
-
-        // The panel asks Go for this card's terminal as it opens: opening it is
-        // the whole request, and there is nothing else in it to look at first.
-        await waitFor(() => expect(bindings.OpenCardTerminal).toHaveBeenCalledWith(card.id, '', '', false))
-        expect(await screen.findByTestId('terminal')).toHaveTextContent('term-7')
-        expect(container.querySelector('.cardDialog__side')).not.toBeNull()
-
-        await userEvent.click(screen.getByRole('button', {name: 'Close the panel'}))
-        expect(container.querySelector('.cardDialog__side')).toBeNull()
-    })
-
     // A comment is said to a person who reads it later, so on an install of one
     // person there is nobody to say it to and the button is not there at all
     // (docs/teamwork.md).
@@ -475,7 +398,7 @@ describe('components/cardDialog', () => {
         expect(screen.queryByRole('button', {name: 'Comments'})).toBeNull()
     })
 
-    // The comments share the terminal's panel rather than getting one of their
+    // The comments share the panel beside the card rather than getting one of their
     // own: they are the same question asked of the other reader.
     it('draws the comments in the panel beside the card', async () => {
         const comment = TestBlockFactory.createComment(card)

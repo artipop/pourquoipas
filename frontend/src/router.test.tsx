@@ -11,7 +11,6 @@ import FocalboardRouter from './router'
 
 vi.mock('./pages/boardPage/boardPage', () => ({default: () => <div>{'the board'}</div>}))
 vi.mock('./pages/mobile/mobilePage', () => ({default: () => <div>{'the phone page'}</div>}))
-vi.mock('./components/acp/terminalPage', () => ({default: () => <div>{'the terminal'}</div>}))
 vi.mock('./components/acp/diffPage', () => ({default: () => <div>{'the diff'}</div>}))
 vi.mock('./pages/share/sharePage', () => ({default: () => <div>{'the share dialog'}</div>}))
 
@@ -28,12 +27,6 @@ describe('router', () => {
         renderAt('/m')
 
         expect(await screen.findByText('the phone page')).toBeInTheDocument()
-    })
-
-    it('gives /m/terminal/:id the terminal', async () => {
-        renderAt('/m/terminal/term-1')
-
-        expect(await screen.findByText('the terminal')).toBeInTheDocument()
     })
 
     // A diff window is opened by the app itself, on an address nobody types.

@@ -1,10 +1,12 @@
 package acp
 
 import (
-	"encoding/json"
-	"os"
 	"strings"
 	"testing"
+
+	acpsdk "github.com/coder/acp-go-sdk"
+
+	"github.com/artipop/xciii/internal/boardmcp"
 )
 
 // The grant is the whole of the door: the token names the board, so an agent
@@ -49,10 +51,10 @@ func TestBoardToolsWriteOnlyToTheGrantedBoard(t *testing.T) {
 	}
 }
 
-// A property is described to the agent, and the description carries the stage's
-// own contract: what has to be reported, and what a value may be. Without it an
-// agent asked for a verdict learns what «Вердикт» accepts by being refused.
-func TestBoardToolFieldsSayWhatThisStageOwes(t *testing.T) {
+// A property is described to the agent so it can put a value in one without
+// guessing: what a value may be, and whether it may be written at all. Without
+// it an agent filling «Вердикт» learns what it accepts by being refused.
+func TestBoardToolFieldsSayWhatAValueMayBe(t *testing.T) {
 	m, _, _, _ := testManager(t, "idle", func(cfg *Config) {
 		cfg.TriggerProperty = "Статус"
 	})
@@ -63,11 +65,11 @@ func TestBoardToolFieldsSayWhatThisStageOwes(t *testing.T) {
 		{Name: "Статус", Type: "select", Values: []string{"QA", "Готово"}},
 	}})
 
-	token := m.GrantBoardTools("board-1", "card-1", "term-1")
-	m.awaitStage("term-1", &Session{CardID: "card-1", Writes: []PropertyWrite{
-		{Property: "Вердикт", Required: true},
-	}})
-	defer m.forgetStage("term-1")
+	stage := &Session{ID: "sess-1", CardID: "card-1"}
+	m.mu.Lock()
+	m.active = map[string]*Session{stage.ID: stage}
+	m.mu.Unlock()
+	token := m.GrantBoardTools("board-1", "card-1", stage.ID)
 
 	fields, err := m.BoardToolFields(t.Context(), token)
 	if err != nil {
@@ -79,15 +81,15 @@ func TestBoardToolFieldsSayWhatThisStageOwes(t *testing.T) {
 	}
 
 	verdict := by["Вердикт"]
-	if !verdict.Declared || !verdict.Required || len(verdict.Values) != 3 {
-		t.Errorf("the stage's own contract is not on the property: %+v", verdict)
+	if !verdict.Writable || len(verdict.Values) != 3 {
+		t.Errorf("the property's closed set is not on it: %+v", verdict)
 	}
-	if by["Превью"].Declared || !by["Превью"].Writable {
-		t.Errorf("a property this stage does not report should still be writable: %+v", by["Превью"])
+	if !by["Превью"].Writable {
+		t.Errorf("an ordinary property should be writable: %+v", by["Превью"])
 	}
-	// Two the stage must not be told it can write: the board's own bookkeeping,
-	// and the column — a card moves by its outcome or by move_card, and
-	// finish_work refuses the column property outright.
+	// Two the agent must not be told it can write: the board's own bookkeeping,
+	// and the column — a card is moved with move_card, and finish_work refuses
+	// the column property outright.
 	if by["Автор"].Writable {
 		t.Error("createdBy was offered as writable")
 	}
@@ -96,9 +98,9 @@ func TestBoardToolFieldsSayWhatThisStageOwes(t *testing.T) {
 	}
 }
 
-// A conversation that is not a stage still gets the board's properties — it may
-// be about to call update_card — but owes nothing.
-func TestBoardToolFieldsOutsideAStageDeclareNothing(t *testing.T) {
+// A conversation with no card behind it still gets the board's properties: it
+// may be about to create one.
+func TestBoardToolFieldsOutsideACardStillDescribeTheBoard(t *testing.T) {
 	m, _, _, _ := testManager(t, "idle", nil)
 	m.SetBoardMeta(&fakeBoardMeta{cardProps: []CardProperty{{Name: "Превью", Type: "url"}}})
 
@@ -106,8 +108,8 @@ func TestBoardToolFieldsOutsideAStageDeclareNothing(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(fields) != 1 || fields[0].Declared || fields[0].Required {
-		t.Errorf("a planning conversation was handed a contract: %+v", fields)
+	if len(fields) != 1 || fields[0].Name != "Превью" {
+		t.Errorf("the board's properties did not arrive: %+v", fields)
 	}
 }
 
@@ -140,11 +142,11 @@ func boardWithCards(t *testing.T) (*Manager, *fakeWriter) {
 	t.Helper()
 	m, writer, _, _ := testManager(t, "idle", func(cfg *Config) {
 		cfg.TriggerProperty = "Статус"
-		cfg.Columns = append(cfg.Columns,
-			ColumnSpec{BoardID: "board-1", PropertyID: "p", OptionID: "opt-toagent", Property: "Статус", Column: "К агенту", Action: "session"},
-			ColumnSpec{BoardID: "board-1", PropertyID: "p", OptionID: "opt-review", Property: "Статус", Column: "Ревью"},
-		)
 	})
+	m.SetBoardMeta(&fakeBoardMeta{options: []Column{
+		{PropertyID: "p", PropertyName: "Статус", OptionID: "opt-toagent", Name: "К агенту"},
+		{PropertyID: "p", PropertyName: "Статус", OptionID: "opt-review", Name: "Ревью"},
+	}})
 	m.SetBoardReader(&fakeReader{cards: []CardMoved{
 		{
 			CardID:  "card-1",
@@ -275,193 +277,44 @@ func TestBoardToolsListTheGrantedBoardsCards(t *testing.T) {
 	}
 }
 
-// A route is what a column does *afterwards*, and an agent cannot infer it from
-// the columns: it has to be told that one column carries the card through four.
-func TestBoardToolsDescribeTheBoardsRoutes(t *testing.T) {
-	m, _ := boardWithCards(t)
-	if _, err := m.AddFlow(FlowEntry{
-		Name:    "Обычный",
-		BoardID: "board-1",
-		Nodes: []FlowNode{
-			{ID: "n1", Column: "К агенту", OptionID: "opt-toagent"},
-			{ID: "n2", Column: "Ревью", OptionID: "opt-review"},
-		},
-		Edges: []FlowEdge{{From: "n1", To: "n2", On: TriggerSuccess}, {From: "n2", To: "n1", On: TriggerBranchMerged}},
-	}); err != nil {
-		t.Fatal(err)
-	}
-
-	flows, err := m.BoardToolFlows(m.GrantBoardTools("board-1", "", ""))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(flows) != 1 || flows[0].Name != "Обычный" || len(flows[0].Stages) != 2 {
-		t.Fatalf("routes read back as %+v", flows)
-	}
-	// A stage that names no action of its own runs its column's, and that is
-	// what the agent must be told — not the blank the stage wrote down.
-	if flows[0].Stages[0].Action != "session" {
-		t.Errorf("the stage does not say what runs there: %+v", flows[0].Stages[0])
-	}
-	if len(flows[0].Stages[1].Waiting) == 0 {
-		t.Errorf("the stage does not say what carries a card off it: %+v", flows[0].Stages[1])
-	}
-}
-
 // A terminal is the vendor CLI, so the tools reach it as a config file the CLI
 // is pointed at — and the file carries the grant, so it goes when the grant does.
-func TestBoardToolsConfigIsWrittenForTheCLIAndCleanedUpAfter(t *testing.T) {
-	m, _, _, _ := testManager(t, "idle", nil)
+// The board's tools reach an agent as an HTTP server declared in session/new,
+// so an agent that does not speak that transport is handed none — rather than
+// one it would refuse, on a stage that could then never report.
+func TestTheBoardServerIsOfferedOnlyToAnAgentThatSpeaksHTTP(t *testing.T) {
+	m, _, _, _ := testManager(t, "idle", func(*Config) {})
 	m.SetOrigin("http://127.0.0.1:8088/")
 
-	token, path := m.openBoardTools("board-1", "card-1", "term-1", AgentEntry{Name: "c", Kind: AgentKindClaude}, nil)
-	if token == "" || path == "" {
-		t.Fatal("claude takes an MCP config and got none")
+	http := acpsdk.AgentCapabilities{McpCapabilities: acpsdk.McpCapabilities{Http: true}}
+	stdio := acpsdk.AgentCapabilities{}
+
+	s := &Session{ID: "sess-http", BoardID: "board-1", CardID: "card-1"}
+	server := m.sessionBoardServer(s, http)
+	if server == nil || server.Http == nil {
+		t.Fatal("an agent that speaks HTTP was handed no board server")
+	}
+	if server.Http.Name != boardmcp.ServerName {
+		t.Errorf("the board server arrived under %q", server.Http.Name)
+	}
+	if len(server.Http.Headers) != 1 || !strings.HasPrefix(server.Http.Headers[0].Value, "Bearer ") {
+		t.Errorf("the grant did not travel with the server: %v", server.Http.Headers)
+	}
+	if m.CheckBoardTools(strings.TrimPrefix(server.Http.Headers[0].Value, "Bearer ")) != nil {
+		t.Error("the token handed to the agent opens nothing")
 	}
 
-	raw, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatal(err)
+	if got := m.sessionBoardServer(&Session{ID: "sess-stdio", BoardID: "board-1"}, stdio); got != nil {
+		t.Error("an agent with no HTTP transport was handed a server it cannot reach")
 	}
-	var config struct {
-		MCPServers map[string]struct {
-			Type    string            `json:"type"`
-			URL     string            `json:"url"`
-			Headers map[string]string `json:"headers"`
-		} `json:"mcpServers"`
-	}
-	if err := json.Unmarshal(raw, &config); err != nil {
-		t.Fatalf("the CLI would not read this config: %v\n%s", err, raw)
-	}
-	server, ok := config.MCPServers["board"]
-	if !ok {
-		t.Fatalf("no board server in the config: %s", raw)
-	}
-	// The app serves the tools itself, so the CLI is pointed at the front door
-	// rather than at a program to run.
-	if server.Type != "http" || server.URL != "http://127.0.0.1:8088/acp/board/mcp" {
-		t.Errorf("the CLI was pointed at %s %q", server.Type, server.URL)
-	}
-	if server.Headers["Authorization"] != "Bearer "+token {
-		t.Errorf("the grant does not travel with the call: %q", server.Headers["Authorization"])
-	}
-
-	// And the argv the terminal runs is what that CLI takes.
-	argv, _, err := terminalCommand(AgentEntry{Name: "c", Kind: AgentKindClaude}, false, path, "", "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if strings.Join(argv, " ") != "claude --mcp-config "+path {
-		t.Errorf("argv %v, want the CLI pointed at the config", argv)
-	}
-
-	m.closeBoardTools(token, path)
-	if _, err := os.Stat(path); !os.IsNotExist(err) {
-		t.Error("the config outlived the terminal, and it holds a grant")
-	}
-	if err := m.CheckBoardTools(token); err == nil {
-		t.Error("the grant outlived the terminal")
+	// A deploy reads the board for nobody and moves its own card nowhere: it
+	// gets no tools, whatever it speaks.
+	deploy := &Session{ID: "sess-deploy", BoardID: "board-1", CardID: "card-1", Deploy: &DeployEntry{Name: "prod"}}
+	if got := m.sessionBoardServer(deploy, http); got != nil {
+		t.Error("a deploy session was handed the board's tools")
 	}
 }
 
-// An agent whose CLI we cannot tell about MCP simply runs without the tools:
-// guessing a flag is how a terminal fails to open at all.
-func TestBoardToolsAreSkippedForACLIThatCannotTakeThem(t *testing.T) {
-	m, _, _, _ := testManager(t, "idle", nil)
-	m.SetOrigin("http://127.0.0.1:8088/")
-
-	for _, agent := range []AgentEntry{
-		{Name: "x", Kind: AgentKindCodex},
-		{Name: "w", Kind: AgentKindClaude, TerminalCommand: []string{"proxychains4", "claude"}},
-	} {
-		if token, path := m.openBoardTools("board-1", "card-1", "term-1", agent, nil); token != "" || path != "" {
-			t.Errorf("%s was given tools it cannot be told about", agent.Name)
-			m.closeBoardTools(token, path)
-		}
-	}
-
-	// And a terminal with no board behind it has nowhere to write anyway.
-	if token, _ := m.openBoardTools("", "", "term-1", AgentEntry{Name: "c", Kind: AgentKindClaude}, nil); token != "" {
-		t.Error("a grant was minted for no board")
-	}
-}
-
-// A stage's own servers reach the CLI the only way a terminal can be told about
-// one: the same config file the board's tools travel in. This is what makes a
-// column configurable without registering the agent a second time.
-func TestStageServersTravelInTheSameConfigAsTheBoardTools(t *testing.T) {
-	m, _, _, _ := testManager(t, "idle", nil)
-	m.SetOrigin("http://127.0.0.1:8088/")
-
-	servers := MCPServerSet{"playwright": {
-		Command: "npx",
-		Args:    []string{"-y", "@playwright/mcp@latest"},
-		Env:     map[string]string{"BROWSER": "chrome"},
-	}}
-	token, path := m.openBoardTools("board-1", "card-1", "term-1", AgentEntry{Name: "c", Kind: AgentKindClaude}, servers)
-	if token == "" || path == "" {
-		t.Fatal("claude takes an MCP config and got none")
-	}
-	defer m.closeBoardTools(token, path)
-
-	raw, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	var config struct {
-		MCPServers map[string]struct {
-			Type    string            `json:"type"`
-			Command string            `json:"command"`
-			Args    []string          `json:"args"`
-			Env     map[string]string `json:"env"`
-		} `json:"mcpServers"`
-	}
-	if err := json.Unmarshal(raw, &config); err != nil {
-		t.Fatalf("the CLI would not read this config: %v\n%s", err, raw)
-	}
-	if _, ok := config.MCPServers["board"]; !ok {
-		t.Errorf("the stage's servers displaced the board's own: %s", raw)
-	}
-	stage, ok := config.MCPServers["playwright"]
-	if !ok {
-		t.Fatalf("the column's server is not in the config: %s", raw)
-	}
-	if stage.Command != "npx" || strings.Join(stage.Args, " ") != "-y @playwright/mcp@latest" || stage.Env["BROWSER"] != "chrome" {
-		t.Errorf("the server was rewritten on the way: %+v", stage)
-	}
-	if stage.Type != "" {
-		t.Errorf("a stdio server must not be declared as %q", stage.Type)
-	}
-}
-
-// A conversation on a board nobody named still gets the column's tools: the
-// board's own server is what needs a grant, and a browser does not.
-func TestStageServersSurviveWithoutAGrant(t *testing.T) {
-	m, _, _, _ := testManager(t, "idle", nil)
-
-	servers := MCPServerSet{"playwright": {Command: "npx"}}
-	token, path := m.openBoardTools("", "", "term-1", AgentEntry{Name: "c", Kind: AgentKindClaude}, servers)
-	if token != "" {
-		t.Error("a grant was minted for no board")
-	}
-	if path == "" {
-		t.Fatal("the column's own servers were dropped along with the board's")
-	}
-	defer m.closeBoardTools(token, path)
-	raw, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !strings.Contains(string(raw), "playwright") || strings.Contains(string(raw), "\"board\"") {
-		t.Errorf("config: %s", raw)
-	}
-}
-
-// A board says which field carries its columns, and the grant takes that answer
-// rather than the machine's. The config's TriggerProperty is one name for every
-// board this install ever opens, and its default is the Russian the status property — so a
-// board in another language, or one where somebody renamed the field, used to
-// hand the agent a property that does not exist there and every write bounced.
 func TestTheGrantTakesTheColumnPropertyFromTheBoard(t *testing.T) {
 	m, writer, _, _ := testManager(t, "idle", func(cfg *Config) {
 		cfg.TriggerProperty = "Статус"

@@ -1,35 +1,13 @@
 import {Board, createBoard} from '../../blocks/board'
 
 import {
-    Automation,
-    BOARD_PROP_COLUMNS,
-    BOARD_PROP_FLOWS,
     BOARD_PROP_PROMPT,
     BOARD_PROP_SETUP,
-    Flow,
-    SUCCESS,
-    automationChanges,
-    automationProperty,
     boardAutomationProperties,
     boardColumns,
-    condIsComplete,
-    edgeTarget,
     impliedSetupSteps,
-    outgoing,
-    readBoardAutomation,
     readBoardSetup,
-    routeOptionMissing,
-    upstreamWrites,
-    withColumn,
-    withEdge,
-    withoutColumn,
-    withoutEdge,
 } from './automation'
-
-const columns = [
-    {optionId: 'opt-work', name: 'В работе'},
-    {optionId: 'opt-review', name: 'На ревью'},
-]
 
 function boardWith(properties: Record<string, unknown>): Board {
     return {
@@ -48,120 +26,33 @@ function boardWith(properties: Record<string, unknown>): Board {
 }
 
 describe('components/acp/automation', () => {
-    // Which property the columns are options of is a fact about the board, not
-    // a preference: the specs and the routes were written for one of them. It
-    // used to be "the board's first select" — an accident of the order fields
-    // were added in — with a dropdown in the editor to correct it by hand.
-    test('the property the automation names wins over the board’s first select', () => {
-        const board: Board = {
-            ...createBoard(),
-            cardProperties: [
-                {id: 'prop-stage', name: 'Этап', type: 'select', options: [{id: 'o1', value: 'Черновик', color: ''}]},
-                {id: 'prop-status', name: 'Статус', type: 'select', options: [{id: 'opt-work', value: 'В работе', color: ''}]},
-            ] as Board['cardProperties'],
-        }
-
-        // Nothing written yet: the first select is all there is to go on.
-        expect(automationProperty(board, {columns: [], flows: []})?.name).toBe('Этап')
-
-        // A spec names the property by id, which survives a rename…
-        const byId: Automation = {
-            columns: [{propertyId: 'prop-status', property: 'что-то другое', column: 'В работе', action: 'agent'}],
-            flows: [],
-        }
-        expect(automationProperty(board, byId)?.name).toBe('Статус')
-
-        // …and a route names it by name, for a board whose specs have not
-        // reached the registry yet.
-        const byName: Automation = {columns: [], flows: [{name: 'Фича', property: 'Статус', nodes: [], edges: []}]}
-        expect(automationProperty(board, byName)?.name).toBe('Статус')
-    })
-
+    // The board's columns are the options of its select property and nothing
+    // else: there is no registry saying what any of them does.
     test('a board’s columns are the options of its select property', () => {
-        expect(boardColumns(boardWith({}), 'Статус')).toEqual([
-            {optionId: 'opt-work', name: 'В работе', color: 'propColorBlue'},
-            {optionId: 'opt-review', name: 'На ревью', color: 'propColorPink'},
-        ])
+        expect(boardColumns(boardWith({}), 'Статус').map((c) => c.name)).toEqual(['В работе', 'На ревью'])
     })
 
-    // The stage a column stands as carries the option's id, so renaming the
-    // column on the board leaves the route alone.
-    test('joining a column to a route makes it a stage of the column', () => {
-        const flow: Flow = {name: 'Фича', nodes: [], edges: []}
-        const joined = withColumn(flow, columns[0])
-        expect(joined.nodes).toEqual([{id: 'opt-work', column: 'В работе', optionId: 'opt-work', action: ''}])
+    test('a template’s setup steps are read whether they are an object or text', () => {
+        const asObject = readBoardSetup(boardWith({[BOARD_PROP_SETUP]: {steps: [{kind: 'project'}]}}))
+        expect(asObject?.steps).toEqual([{kind: 'project'}])
 
-        // Twice is once: the column is already on the route.
-        expect(withColumn(joined, columns[0]).nodes).toHaveLength(1)
+        const asText = readBoardSetup(boardWith({[BOARD_PROP_SETUP]: JSON.stringify({steps: [{kind: 'agent'}]})}))
+        expect(asText?.steps).toEqual([{kind: 'agent'}])
     })
 
-    test('taking a column off a route takes its transitions with it', () => {
-        const flow: Flow = {
-            name: 'Фича',
-            nodes: [
-                {id: 'a', column: 'В работе', action: ''},
-                {id: 'b', column: 'На ревью', action: ''},
-            ],
-            edges: [{from: 'a', to: 'b', on: SUCCESS}],
-        }
-        expect(withoutColumn(flow, 'b')).toEqual({name: 'Фича', nodes: [{id: 'a', column: 'В работе', action: ''}], edges: []})
-    })
-
-    // Routes are keyed by name, so renaming one is a new route and the old one
-    // going away — which is what happens to the cards that named it too.
-    test('what changed is worked out per column and per route name', () => {
-        const before: Automation = {
-            columns: [{optionId: 'opt-work', property: 'Статус', column: 'В работе', action: 'agent'}],
-            flows: [{name: 'Фича', nodes: [], edges: []}, {name: 'Хотфикс', nodes: [], edges: []}],
-        }
-        const after: Automation = {
-            columns: [{optionId: 'opt-review', property: 'Статус', column: 'На ревью', action: 'none'}],
-            flows: [{name: 'Фича', nodes: [], edges: [], workspaceId: 'ws-1'}, {name: 'Быстрый', nodes: [], edges: []}],
-        }
-        const changes = automationChanges(before, after)
-        expect(changes.savedColumns.map((c) => c.column)).toEqual(['На ревью'])
-        expect(changes.removedColumns.map((c) => c.column)).toEqual(['В работе'])
-        expect(changes.addedFlows.map((f) => f.name)).toEqual(['Быстрый'])
-        expect(changes.updatedFlows.map((f) => f.name)).toEqual(['Фича'])
-        expect(changes.removedFlows.map((f) => f.name)).toEqual(['Хотфикс'])
-    })
-
-    // A template carries its automation in the board's own properties, and Go
-    // reads either the object or the JSON text of it.
-    test('a template’s automation is read whether it is an object or its text', () => {
-        const asObjects = readBoardAutomation(boardWith({
-            [BOARD_PROP_COLUMNS]: [{property: 'Статус', column: 'В работе', action: 'agent'}],
-            [BOARD_PROP_FLOWS]: [{name: 'Фича', nodes: [], edges: []}],
-        }))
-        expect(asObjects.columns[0].column).toBe('В работе')
-        expect(asObjects.flows[0].name).toBe('Фича')
-
-        const asText = readBoardAutomation(boardWith({
-            [BOARD_PROP_COLUMNS]: JSON.stringify([{property: 'Статус', column: 'На ревью', action: 'none'}]),
-        }))
-        expect(asText.columns[0].column).toBe('На ревью')
-        expect(asText.flows).toEqual([])
-    })
-
-    test('a template with unreadable automation reads as one with none', () => {
-        expect(readBoardAutomation(boardWith({[BOARD_PROP_COLUMNS]: '{'}))).toEqual({columns: [], flows: []})
+    test('a template with unreadable setup steps reads as one with none', () => {
         expect(readBoardSetup(boardWith({[BOARD_PROP_SETUP]: 'nonsense'}))).toBeUndefined()
     })
 
-    test('saving a template writes the three properties Go reads', () => {
+    test('saving a template writes the steps Go reads and keeps the rest', () => {
         const board = boardWith({keepMe: 'yes'})
-        const properties = boardAutomationProperties(
-            board,
-            {columns: [{property: 'Статус', column: 'В работе', action: 'agent'}], flows: []},
-            {steps: [{kind: 'project'}]},
-        )
+        const properties = boardAutomationProperties(board, {steps: [{kind: 'project'}]})
         expect(properties.keepMe).toBe('yes')
-        expect(JSON.parse(properties[BOARD_PROP_COLUMNS] as string)[0].column).toBe('В работе')
         expect(JSON.parse(properties[BOARD_PROP_SETUP] as string).steps).toEqual([{kind: 'project'}])
 
-        // Going back to "work it out from the automation" is the property not
-        // being there at all, which is what Go reads as "the board said nothing".
-        expect(boardAutomationProperties(board, {columns: [], flows: []}, undefined)[BOARD_PROP_SETUP]).toBeUndefined()
+        // Going back to "work it out yourself" is the property not being there
+        // at all, which is what Go reads as "the board said nothing".
+        expect(boardAutomationProperties(board, undefined)[BOARD_PROP_SETUP]).toBeUndefined()
     })
 
     test('saving a template keeps the instructions its agents are given', () => {
@@ -169,107 +60,17 @@ describe('components/acp/automation', () => {
         // affect it is by dropping it — which would leave a template that runs
         // the right columns and briefs nobody.
         const board = boardWith({[BOARD_PROP_PROMPT]: 'Отвечай по-русски.'})
-        const properties = boardAutomationProperties(board, {columns: [], flows: []}, undefined)
-        expect(properties[BOARD_PROP_PROMPT]).toBe('Отвечай по-русски.')
+        expect(boardAutomationProperties(board, undefined)[BOARD_PROP_PROMPT]).toBe('Отвечай по-русски.')
     })
 
-    test('the steps offered to a template follow what its automation does', () => {
+    // Naming the steps by hand starts from the ones the app would ask for
+    // anyway: nothing is inferred from the board itself any more.
+    test('the steps offered to a template are the ones this build can ask', () => {
         const defs = [
             {kind: 'project', optional: false},
             {kind: 'agent', optional: false},
-            {kind: 'deploy', optional: true},
-            {kind: 'browser', optional: true},
             {kind: 'done', optional: false},
         ]
-        const plain = impliedSetupSteps({columns: [{property: 'Статус', column: 'В работе', action: 'agent'}], flows: []}, defs)
-        expect(plain.map((s) => s.kind)).toEqual(['project', 'agent', 'done'])
-
-        const publishing = impliedSetupSteps({
-            columns: [{property: 'Статус', column: 'Деплой', action: 'deploy'}],
-            flows: [{name: 'Фича', nodes: [{id: 'n', column: 'Тест', action: 'test'}], edges: []}],
-        }, defs)
-        expect(publishing.map((s) => s.kind)).toEqual(['project', 'agent', 'deploy', 'browser', 'done'])
-    })
-
-    // A route no card can name is drawn and never taken — the commonest way an
-    // afternoon in the editor comes to nothing.
-    test('a route with no option of its name is reported as unreachable', () => {
-        const board = boardWith({})
-        expect(routeOptionMissing(board, {name: 'Фича', nodes: [], edges: []})).toBe(true)
-        expect(routeOptionMissing(board, {name: 'на ревью', nodes: [], edges: []})).toBe(false)
-    })
-
-    // With conditions, several edges share one (from, on): the identity of an
-    // edge is its index, and the unconditional one is the fallback wherever it
-    // stands in the list.
-    test('edges are addressed by index, and the fallback is the unconditional one', () => {
-        const edges = [
-            {from: 'a', to: 'fast', on: SUCCESS, if: {property: 'Приоритет', value: 'Высокий'}},
-            {from: 'a', to: 'review', on: SUCCESS},
-            {from: 'a', to: 'blocked', on: 'failure'},
-        ]
-        expect(edgeTarget(edges, 'a', SUCCESS)).toBe('review')
-
-        const listed = outgoing(edges, 'a')
-        expect(listed.map(({index}) => index)).toEqual([0, 1, 2])
-
-        const flow: Flow = {name: 'Фича', nodes: [], edges}
-        expect(withEdge(flow, 0, {to: 'done'}).edges[0].to).toBe('done')
-        expect(withoutEdge(flow, 1).edges).toHaveLength(2)
-    })
-
-    // The engine refuses half-filled conditions, so the editor must know when
-    // one can be saved at all.
-    test('a condition is complete with both halves of exactly one question', () => {
-        expect(condIsComplete(undefined)).toBe(true)
-        expect(condIsComplete({property: 'Приоритет', value: 'Высокий'})).toBe(true)
-        expect(condIsComplete({commentContains: 'READY'})).toBe(true)
-        expect(condIsComplete({property: 'Приоритет'})).toBe(false)
-        expect(condIsComplete({property: 'Приоритет', value: 'Высокий', commentContains: 'x'})).toBe(false)
-    })
-
-    // A value an earlier stage put on the card is on the card, so a stage that
-    // declares no reads is handed what the route wrote ahead of it — and the
-    // chip says which stage, which is the half that makes it readable.
-    describe('upstreamWrites', () => {
-        const specs = [{boardId: 'b',
-            property: 'Статус',
-            column: 'В работе',
-            action: 'agent',
-            optionId: 'opt-work',
-            writes: [{property: 'Заметка'}]}]
-        const flow: Flow = {
-            name: 'Фича',
-            nodes: [
-                {id: 'work', column: 'В работе', optionId: 'opt-work', action: ''},
-                {id: 'deploy', column: 'Деплой', action: 'deploy', writes: [{property: 'Превью'}]},
-                {id: 'qa', column: 'QA', action: 'test', writes: [{property: 'Вердикт'}]},
-            ],
-            edges: [
-                {from: 'work', to: 'deploy', on: SUCCESS},
-                {from: 'deploy', to: 'qa', on: SUCCESS},
-
-                // A failed check returns the card to the agent: the graph has a
-                // cycle on purpose and the walk has to survive it.
-                {from: 'qa', to: 'work', on: 'failure'},
-            ],
-        }
-
-        test('a stage is handed what the stages before it write, named by their stage', () => {
-            expect(upstreamWrites(flow, 'qa', specs)).toEqual([
-                {property: 'Превью', from: 'Деплой'},
-
-                // The stage that declares nothing still produces what its
-                // column produces.
-                {property: 'Заметка', from: 'В работе'},
-            ])
-        })
-
-        test('a stage never reads its own output back, and the cycle terminates', () => {
-            expect(upstreamWrites(flow, 'work', specs)).toEqual([
-                {property: 'Вердикт', from: 'QA'},
-                {property: 'Превью', from: 'Деплой'},
-            ])
-        })
+        expect(impliedSetupSteps(defs).map((s) => s.kind)).toEqual(['project', 'agent', 'done'])
     })
 })

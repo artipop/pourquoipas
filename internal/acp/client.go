@@ -72,6 +72,11 @@ func (c *sessionClient) flushLocked() {
 		payload["thought"] = true
 	}
 	c.chunkBuf.Reset()
+	// Only a planning conversation has a reader for it: a stage's reply is not
+	// drawn anywhere, its result is the comment it writes.
+	if c.s.Planning && c.s.BoardID != "" && c.m.ui != nil {
+		c.m.ui.Emit(EventChunk, payload)
+	}
 }
 
 var _ acpsdk.Client = (*sessionClient)(nil)

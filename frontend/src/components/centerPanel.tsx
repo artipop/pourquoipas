@@ -54,7 +54,6 @@ import ShareBoardTourStep from './onboardingTour/shareBoard/shareBoard'
 import BoardSetupWizard from './acp/boardSetupWizard'
 import {createSetupPlan, markSetupOffered, shouldOfferSetup} from './acp/boardSetup'
 import {soleWorkdirOption} from './acp/workdirSync'
-import {flowById, flowView, useBoardFlows} from './acp/boardFlows'
 
 // FullCalendar is half a megabyte of source, and a board opens on its kanban:
 // the calendar arrives when somebody switches to it.
@@ -406,16 +405,10 @@ const CenterPanel = (props: Props) => {
         return intl.formatMessage({id: 'centerPanel.unknown-user', defaultMessage: 'Unknown user'})
     }
 
-    // The board's routes, and which of them each card is on: what the route
-    // picker offers and what a view narrowed to one route is drawn from.
-    const routes = useBoardFlows(() => props.board.id)
-    const drawnBy = () => flowById(routes.flows(), props.activeView.fields.flowId || '')
-
     const groups = createMemo(() => {
         const {cards, activeView, groupByProperty} = props
         const all = getVisibleAndHiddenGroups(cards, activeView.fields.visibleOptionIds, activeView.fields.hiddenOptionIds, groupByProperty)
-        const narrowed = flowView(all.visible, drawnBy(), routes.onFlow(), groupByProperty)
-        const vg = narrowed.groups
+        const vg = all.visible
         const hg = all.hidden
         if (groupByProperty?.type === 'createdBy' || groupByProperty?.type === 'updatedBy' || groupByProperty?.type === 'person') {
             if (boardUsers()) {
@@ -427,7 +420,7 @@ const CenterPanel = (props: Props) => {
                 })
             }
         }
-        return {visible: vg, hidden: hg, dividerAfter: narrowed.dividerAfter}
+        return {visible: vg, hidden: hg}
     })
 
     return (
@@ -482,7 +475,6 @@ const CenterPanel = (props: Props) => {
                 <ViewHeader
                     board={props.board}
                     activeView={props.activeView}
-                    flows={routes.flows()}
                     cards={props.cards}
                     views={props.views}
                     groupByProperty={props.groupByProperty}
@@ -504,7 +496,6 @@ const CenterPanel = (props: Props) => {
                         groupByProperty={props.groupByProperty}
                         visibleGroups={groups().visible}
                         hiddenGroups={groups().hidden}
-                        dividerAfter={groups().dividerAfter}
                         selectedCardIds={selectedCardIds()}
                         readonly={props.readonly}
                         onCardClicked={cardClicked}

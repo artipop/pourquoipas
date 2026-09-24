@@ -29,6 +29,7 @@ import {
     themeModes,
     ThemeName,
     THEME_FAMILIES,
+    themeFamilyName,
     defaultFamilyId,
 } from '../../theme'
 
@@ -197,7 +198,7 @@ const AppPanel = () => {
         const mine = customThemes()
 
         return [
-            ...THEME_FAMILIES.map((family) => ({value: family.id, label: family.name})),
+            ...THEME_FAMILIES.map((family) => ({value: family.id, label: themeFamilyName(family, intl)})),
 
             // One line in the list, and it is not a heading: everything above
             // it is a theme this build ships, everything below it is one you
@@ -453,7 +454,7 @@ const AppPanel = () => {
                                 <span class='AppPanel__actionHint'>
                                     {intl.formatMessage({
                                         id: 'Settings.ai-enabled-hint',
-                                        defaultMessage: 'When this is off, the app is a plain kanban board: no agents, routes, terminals or agent settings, and cards moved between columns start nothing. The routes and agents already set up are kept and come back when this is turned on again.',
+                                        defaultMessage: 'When this is off, the app is a plain kanban board: no agents and no agent settings, and cards moved between columns start nothing. The routes and agents already set up are kept and come back when this is turned on again.',
                                     })}
                                 </span>
                             </div>
@@ -477,7 +478,7 @@ const AppPanel = () => {
                             <span class='AppPanel__actionHint'>
                                 {aiEnabled() ? intl.formatMessage({
                                     id: 'Settings.help-hint',
-                                    defaultMessage: 'How the board, its columns and its routes work, screen by screen.',
+                                    defaultMessage: 'How the board, its columns and its cards work, screen by screen.',
                                 }) : intl.formatMessage({
                                     id: 'Settings.help-hint-plain',
                                     defaultMessage: 'How the board and its columns work, screen by screen.',

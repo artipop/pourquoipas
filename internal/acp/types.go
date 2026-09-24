@@ -58,6 +58,10 @@ type BoardWriter interface {
 	// SetCardFields writes named properties: a select by one of its option
 	// names, anything else as text.
 	SetCardFields(ctx context.Context, cardID string, fields map[string]string) error
+	// AddCardProperty gives the card's board a text property of this name,
+	// unless it already has one by that name. It is how an agent adds a field
+	// to a card: the field is the board's, and every card of it shows it.
+	AddCardProperty(ctx context.Context, cardID, name string) error
 	// SetCardOption writes one select property by id, choosing the option of
 	// this name. By id for the reason SetCardText is: this is a field the app
 	// made, and what a person renamed it to is theirs.
@@ -98,19 +102,6 @@ type BoardReader interface {
 	// CardsForBoard carries no Body: a body is a query per card, and a listing
 	// is read to pick a card out rather than to work from it.
 	CardsForBoard(ctx context.Context, boardID string) ([]CardMoved, error)
-}
-
-// BoardCardState keeps where a card stands on its route on the card itself, so
-// it travels with the board. Separate from BoardWriter because it never
-// notifies and shows nothing to anybody.
-//
-// Optional: without it the position lives in this machine's store alone.
-type BoardCardState interface {
-	CardFlow(ctx context.Context, cardID string) (FlowState, bool, error)
-	SetCardFlow(ctx context.Context, cardID string, st FlowState) error
-	ClearCardFlow(ctx context.Context, cardID string) error
-	// BoardCardFlows refills this machine's index for a board it has not seen.
-	BoardCardFlows(ctx context.Context, boardID string) ([]FlowState, error)
 }
 
 // AgentUser is a registry entry seen as a board account. Username is derived
@@ -162,11 +153,16 @@ func (s SessionStatus) Terminal() bool {
 	return s == StatusDone || s == StatusFailed || s == StatusCancelled
 }
 
-// UI event names emitted through UIEmitter. What a session *says* is not among
-// them: that is the card's comments and the terminal it runs in.
+// UI event names emitted through UIEmitter. What a stage *says* is not among
+// them: that is the card's comments. What a planning conversation says is —
+// the reply streams (EventChunk) into the dialog it is being written for.
 const (
-	EventSession  = "acp:session"
-	EventTerminal = "acp:terminal"
+	EventSession = "acp:session"
+	// EventChunk is a piece of an agent's reply as it is written.
+	EventChunk = "acp:chunk"
+	// EventPlanning says a planning conversation changed: a turn began or
+	// ended, it failed, or it is over.
+	EventPlanning = "acp:planning"
 	// EventAttention says an agent stopped and is waiting for a person.
 	EventAttention = "acp:attention"
 )

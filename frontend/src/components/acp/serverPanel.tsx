@@ -105,7 +105,7 @@ const ServerPanel = () => {
             <div class='ServerPanel__subtitle'>
                 {intl.formatMessage({
                     id: 'Server.subtitle',
-                    defaultMessage: 'Work a board that lives on a server. The cards are there; the agents, the terminals and the folders stay on this machine.',
+                    defaultMessage: 'Work a board that lives on a server. The cards are there; the agents and the folders stay on this machine.',
                 })}
             </div>
 

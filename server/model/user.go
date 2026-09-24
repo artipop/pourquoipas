@@ -21,8 +21,9 @@ const (
 	// cannot be in the language somebody is reading in, and this session is
 	// synthesized per request rather than stored, so there is nothing to
 	// localize at the source. What is left here is the fallback for a client
-	// that does not.
-	SingleUserName = "Вы"
+	// that does not — an agent reading the board through MCP among them, and
+	// everything said to an agent is English.
+	SingleUserName = "You"
 )
 
 // User is a user

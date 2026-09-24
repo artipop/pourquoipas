@@ -75,3 +75,6 @@ go.work.sum
 # .claude/settings.json is deliberately still committable.
 .claude/settings.local.json
 .claude/worktrees/
+
+# The build output of `go build .` on Windows.
+xciii.exe

@@ -97,13 +97,11 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
     // are reachable with no board open — which is the whole point of moving
     // them, and is exactly what a regression here would undo.
     describe('the menu holds what is true of this board', () => {
-
         beforeEach(() => {
             fakeGoSide({
                 ListAgents: vi.fn(),
                 ListDeployTargets: vi.fn(),
                 ListAgentWorkdirs: vi.fn(),
-                ListFlows: vi.fn(),
                 ListSources: vi.fn().mockResolvedValue('[]'),
                 ExportBoardAutomation: vi.fn(),
                 BoardSetupPlan: vi.fn().mockResolvedValue('{"steps":[]}'),
@@ -123,10 +121,6 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
         })
         afterEach(() => {
             fakeGoSide()
-        })
-
-        test('the one screen that says what this board does is offered', async () => {
-            await waitFor(() => expect(screen.getByRole('button', {name: 'Columns and routes…'})).toBeInTheDocument())
         })
 
         // Making a template is a rare, deliberate act and no longer stands in
@@ -166,13 +160,11 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
     // where an agent works was filed under columns and routes — and a fold
     // under a canvas is a place nobody opens.
     describe('a board offers the setup steps it asks for', () => {
-
         beforeEach(() => {
             fakeGoSide({
                 ListAgents: vi.fn(),
                 ListDeployTargets: vi.fn(),
                 ListAgentWorkdirs: vi.fn(),
-                ListFlows: vi.fn(),
                 ListSources: vi.fn().mockResolvedValue('[]'),
                 ExportBoardAutomation: vi.fn(),
                 GetBoardPrompt: vi.fn().mockResolvedValue(''),
@@ -231,11 +223,9 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
     // about nothing else: it runs no routes, and exporting it or saving it as a
     // template is not what an inbox is for.
     describe('on «Входящие» the menu is the sources and nothing else', () => {
-
         beforeEach(() => {
             fakeGoSide({
                 ListSources: vi.fn().mockResolvedValue('[]'),
-                ListFlows: vi.fn(),
             })
             render(() =>
                 wrapIntl(() =>

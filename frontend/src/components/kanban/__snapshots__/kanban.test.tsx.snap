@@ -52,8 +52,6 @@ exports[`src/component/kanban/kanban > return kanban and change title on KanbanC
           
           <!---->
         </div>
-        <!---->
-        
         <div
           class="octo-spacer"
         />
@@ -119,8 +117,6 @@ exports[`src/component/kanban/kanban > return kanban and change title on KanbanC
           
           <!---->
         </div>
-        <!---->
-        
         <div
           class="octo-spacer"
         />
@@ -612,8 +608,6 @@ exports[`src/component/kanban/kanban > return kanban and click on KanbanCalculat
           </div>
           <!---->
         </div>
-        <!---->
-        
         <div
           class="octo-spacer"
         />
@@ -679,8 +673,6 @@ exports[`src/component/kanban/kanban > return kanban and click on KanbanCalculat
           
           <!---->
         </div>
-        <!---->
-        
         <div
           class="octo-spacer"
         />
@@ -983,8 +975,6 @@ exports[`src/component/kanban/kanban > should match snapshot 1`] = `
           
           <!---->
         </div>
-        <!---->
-        
         <div
           class="octo-spacer"
         />
@@ -1050,8 +1040,6 @@ exports[`src/component/kanban/kanban > should match snapshot 1`] = `
           
           <!---->
         </div>
-        <!---->
-        
         <div
           class="octo-spacer"
         />
@@ -1355,8 +1343,6 @@ exports[`src/component/kanban/kanban > should match snapshot without permissions
           
           <!---->
         </div>
-        <!---->
-        
         <div
           class="octo-spacer"
         />
@@ -1400,8 +1386,6 @@ exports[`src/component/kanban/kanban > should match snapshot without permissions
           
           <!---->
         </div>
-        <!---->
-        
         <div
           class="octo-spacer"
         />

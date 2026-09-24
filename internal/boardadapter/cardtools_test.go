@@ -10,6 +10,7 @@ import (
 	"github.com/artipop/xciii/server/model"
 
 	"github.com/artipop/xciii/internal/acp"
+	"github.com/artipop/xciii/internal/author"
 )
 
 // What an agent does to a card through the board tools ends here, in the real
@@ -171,5 +172,61 @@ func TestCardsForBoardReadTheBoardBackByName(t *testing.T) {
 	}
 	if cards, err := events.CardsForBoard(t.Context(), empty.ID); err != nil || len(cards) != 0 {
 		t.Errorf("an empty board listed %+v, %v", cards, err)
+	}
+}
+
+// The card's history is only an answer if the writes are signed. On a desktop
+// the board runs single-user, so an agent's write used to arrive under the one
+// account there is — the person's — and the history could only ever have said
+// "you". A run says whose its writes are on the context, and this is where that
+// reaches the board.
+func TestAnAgentsWriteIsSignedByTheAgent(t *testing.T) {
+	a := newTestApp(t)
+	_, card := boardWithACard(t, a)
+	writer := NewWriter(a)
+
+	if err := writer.AddComment(author.With(t.Context(), "agent-user-1"), card.ID, "Сделал"); err != nil {
+		t.Fatal(err)
+	}
+	if err := writer.AddComment(t.Context(), card.ID, "И это тоже"); err != nil {
+		t.Fatal(err)
+	}
+
+	comments, err := a.GetBlocks(card.BoardID, card.ID, string(model.TypeComment))
+	if err != nil {
+		t.Fatal(err)
+	}
+	by := map[string]string{}
+	for _, c := range comments {
+		by[c.Title] = c.CreatedBy
+	}
+	if by["Сделал"] != "agent-user-1" {
+		t.Errorf("the agent's comment is signed %q, so the history cannot say who wrote it", by["Сделал"])
+	}
+	// And a caller that names nobody writes as the app always did, which is
+	// what keeps every other path unchanged.
+	if by["И это тоже"] != model.SingleUser {
+		t.Errorf("a write with no author became %q", by["И это тоже"])
+	}
+}
+
+// A property an agent fills in is the agent's too — the history line about a
+// card moving is the one a person reads first.
+func TestAnAgentsFieldWriteIsSignedByTheAgent(t *testing.T) {
+	a := newTestApp(t)
+	_, card := boardWithACard(t, a)
+	writer := NewWriter(a)
+
+	ctx := author.With(t.Context(), "agent-user-1")
+	if err := writer.UpdateCard(ctx, card.ID, acp.CardEdit{Title: "Починил вход"}); err != nil {
+		t.Fatal(err)
+	}
+
+	block, err := a.GetBlockByID(card.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if block.ModifiedBy != "agent-user-1" {
+		t.Errorf("the card was changed by %q, want the agent", block.ModifiedBy)
 	}
 }

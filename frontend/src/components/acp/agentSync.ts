@@ -4,7 +4,7 @@ import {Board} from '../../blocks/board'
 
 import {goApp} from '../../goBridge'
 
-import {invalidateBoardAgents} from './boardAgents'
+import {invalidateAgentUsers} from './agentAssignees'
 
 // Making the machine's agents usable on a board: an account each, so the board
 // can name one the same way it names a person.
@@ -50,7 +50,7 @@ export async function syncAgentsToBoard(board: Board): Promise<SyncResult> {
     // Opening a board is when the registry may have moved since anybody last
     // looked: an agent added in the settings is one this board's assignee list
     // has to know about, one way or the other.
-    invalidateBoardAgents()
+    invalidateAgentUsers()
 
     return result
 }

@@ -8,10 +8,11 @@ inbox board. How to connect sources is on [the next page](./sources.md).
 
 The inbox is a **board of its own**, always first in the sidebar, above the
 other boards. The app creates it at the first launch, and there is one for all
-sources: no source puts cards straight on a working board. (The app names the
-board **Входящие**; the name is not translated.)
+sources: no source puts cards straight on a working board.
 
-You can rename the board — the app still recognises it.
+You can rename the board — the app still recognises it. Until you rename it,
+it is named in the app's language: switch the language in the settings, and
+the name changes with it.
 
 The board has one column per source and one for your own cards. Cards cannot
 be dragged between the columns: a column shows who brought the card.
@@ -23,7 +24,7 @@ it is saved on the card in a link field.
 ## A task of your own
 
 The **"New"** button on the inbox creates a card of your own. It stands in the
-**Мои задачи** ("my tasks") column — your own column among the source columns.
+**My tasks** column — your own column among the source columns.
 It is the place for what came to mind and has not been given a place yet.
 
 ## Sorting it out

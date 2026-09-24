@@ -38,6 +38,18 @@ exports[`components/cardDialog > already following card 1`] = `
                 type="button"
               >
                 <i
+                  class="CompassIcon icon-clock-outline"
+                />
+                <span>
+                  History
+                </span>
+                
+                <!---->
+              </button>
+              <button
+                type="button"
+              >
+                <i
                   class="CompassIcon icon-paperclip"
                 />
                 <span>
@@ -134,6 +146,8 @@ exports[`components/cardDialog > already following card 1`] = `
               <!---->
               
               <!---->
+              
+              <!---->
               <div
                 class="octo-propertylist CardDetailProperties"
               >
@@ -170,8 +184,6 @@ exports[`components/cardDialog > already following card 1`] = `
                 </div>
                 <!---->
               </div>
-              <!---->
-              
               <!---->
               
               <!---->
@@ -269,6 +281,18 @@ exports[`components/cardDialog > return a cardDialog readonly 1`] = `
                 type="button"
               >
                 <i
+                  class="CompassIcon icon-clock-outline"
+                />
+                <span>
+                  History
+                </span>
+                
+                <!---->
+              </button>
+              <button
+                type="button"
+              >
+                <i
                   class="CompassIcon icon-paperclip"
                 />
                 <span>
@@ -342,6 +366,8 @@ exports[`components/cardDialog > return a cardDialog readonly 1`] = `
               <!---->
               
               <!---->
+              
+              <!---->
               <div
                 class="octo-propertylist CardDetailProperties"
               >
@@ -351,8 +377,6 @@ exports[`components/cardDialog > return a cardDialog readonly 1`] = `
                 
                 <!---->
               </div>
-              <!---->
-              
               <!---->
               
               <!---->
@@ -416,6 +440,18 @@ exports[`components/cardDialog > return cardDialog menu content 1`] = `
             <div
               class="d-flex"
             >
+              <button
+                type="button"
+              >
+                <i
+                  class="CompassIcon icon-clock-outline"
+                />
+                <span>
+                  History
+                </span>
+                
+                <!---->
+              </button>
               <button
                 type="button"
               >
@@ -668,6 +704,8 @@ exports[`components/cardDialog > return cardDialog menu content 1`] = `
               <!---->
               
               <!---->
+              
+              <!---->
               <div
                 class="octo-propertylist CardDetailProperties"
               >
@@ -704,8 +742,6 @@ exports[`components/cardDialog > return cardDialog menu content 1`] = `
                 </div>
                 <!---->
               </div>
-              <!---->
-              
               <!---->
               
               <!---->
@@ -803,6 +839,18 @@ exports[`components/cardDialog > return cardDialog menu content and cancel delet
                 type="button"
               >
                 <i
+                  class="CompassIcon icon-clock-outline"
+                />
+                <span>
+                  History
+                </span>
+                
+                <!---->
+              </button>
+              <button
+                type="button"
+              >
+                <i
                   class="CompassIcon icon-paperclip"
                 />
                 <span>
@@ -899,6 +947,8 @@ exports[`components/cardDialog > return cardDialog menu content and cancel delet
               <!---->
               
               <!---->
+              
+              <!---->
               <div
                 class="octo-propertylist CardDetailProperties"
               >
@@ -935,8 +985,6 @@ exports[`components/cardDialog > return cardDialog menu content and cancel delet
                 </div>
                 <!---->
               </div>
-              <!---->
-              
               <!---->
               
               <!---->
@@ -1034,6 +1082,18 @@ exports[`components/cardDialog > should match snapshot 1`] = `
                 type="button"
               >
                 <i
+                  class="CompassIcon icon-clock-outline"
+                />
+                <span>
+                  History
+                </span>
+                
+                <!---->
+              </button>
+              <button
+                type="button"
+              >
+                <i
                   class="CompassIcon icon-paperclip"
                 />
                 <span>
@@ -1130,6 +1190,8 @@ exports[`components/cardDialog > should match snapshot 1`] = `
               <!---->
               
               <!---->
+              
+              <!---->
               <div
                 class="octo-propertylist CardDetailProperties"
               >
@@ -1166,8 +1228,6 @@ exports[`components/cardDialog > should match snapshot 1`] = `
                 </div>
                 <!---->
               </div>
-              <!---->
-              
               <!---->
               
               <!---->
@@ -1260,7 +1320,20 @@ exports[`components/cardDialog > should match snapshot without permissions 1`] =
           >
             <div
               class="d-flex"
-            />
+            >
+              <button
+                type="button"
+              >
+                <i
+                  class="CompassIcon icon-clock-outline"
+                />
+                <span>
+                  History
+                </span>
+                
+                <!---->
+              </button>
+            </div>
             <!---->
             <div
               aria-label="menuwrapper"
@@ -1340,6 +1413,8 @@ exports[`components/cardDialog > should match snapshot without permissions 1`] =
               <!---->
               
               <!---->
+              
+              <!---->
               <div
                 class="octo-propertylist CardDetailProperties"
               >
@@ -1349,8 +1424,6 @@ exports[`components/cardDialog > should match snapshot without permissions 1`] =
                 
                 <!---->
               </div>
-              <!---->
-              
               <!---->
               
               <!---->

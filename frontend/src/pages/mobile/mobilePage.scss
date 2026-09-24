@@ -49,8 +49,7 @@
         opacity: 0.6;
     }
 
-    &__item,
-    &__terminal {
+    &__item {
         display: flex;
         flex-direction: column;
         gap: 4px;
@@ -67,12 +66,6 @@
     // carries the same amber edge the card's own indicator does.
     &__item {
         border-left: 3px solid rgb(var(--warning-rgb));
-    }
-
-    &__terminal {
-        font: inherit;
-        color: inherit;
-        cursor: pointer;
     }
 
     &__who {
@@ -92,24 +85,6 @@
 
         margin: 6px 0 0;
         white-space: pre-wrap;
-    }
-
-    &__branch {
-        @include data;
-
-        opacity: 0.7;
-    }
-
-    // The agent's own line about what the conversation is doing. Two lines at
-    // most: it is what tells two terminals apart, not what is read here.
-    &__terminalSummary {
-        @include prose;
-
-        opacity: 0.72;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
     }
 
     // A thumb-sized target: the one thing a row on this page offers.

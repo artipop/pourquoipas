@@ -1,357 +1,163 @@
 # The agent on a card
 
-This page covers how an agent works a card: who takes it, where the terminal
-is, how to answer questions and what stays on the card.
+This page covers how an agent works a card: who takes it, how to answer its
+questions and what stays on the card.
 
 ## Who gets a card
 
 A card is worked by whoever it is assigned to. The assignment field is an
 ordinary board field of the "person" type; templates name it differently:
-«Assignee» on the «Development» board, «Who does it» on «Personal»,
-«Who leads it» on «Content».
+«Assignee» on the «Development» board, «Who does it» on «Personal», «Who leads
+it» on «Content».
 
-You do not have to fill it in by hand. If a route stage has its own agent (in
-the editor — "Worked by" on the column or "Worked here by" on the route stage),
-the app sets the field itself when the card enters the stage. The field always
-shows who is working the card now. A card assigned to a person is left alone.
+It has to be filled in by hand: the app assigns nobody by itself. A card
+assigned to a person, or to nobody, is left alone — it simply stands where it
+was put.
 
 To make an agent appear in the assignment list, register it: the board's ⋯ menu
 → [Agents…](./settings/agents.md). After registration it becomes a board member
 under its own name: open the field and pick it.
 
-**The list holds this board's agents.** The registry is one per machine, and a
-board names its own in "Worked by" on its columns and stages; those are the ones
-the assignment field offers. A board that names nobody offers every agent on the
-machine — the same as before it was set up. People are untouched: the field
-offers them always.
+**The list holds every agent on the machine.** A board keeps no crew of its own:
+any registered agent can be assigned on any board. The only thing that takes
+them out of the list is the «Agents work on the cards» switch in
+[the settings](./settings/index.md).
 
-Who works this board's cards is asked by the setup wizard
-([⋯ → "Walk the setup again…"](./automation/index.md)) on its "Agent" step: the
-names are chips, clicking one turns it on and off, and several or none may be
-chosen. The answer can be changed later in "Columns and routes…", the column's
-"Worked by" field.
+The agent reads its task from the **card's description** — there is no separate
+task field. The board's instruction to all its agents is added in front of it
+(["The board's system prompt"](./automation/prompt.md)), and so is the agent's
+own prompt from the registry.
 
-With exactly one agent registered, that agent takes the card and nothing has to
-be assigned. With several, a card whose column has no crew and which is
-assigned to nobody stops: the app cannot pick for you.
+## What starts the work
 
-The agent reads its task from the **card description** — there is no separate
-task field. The board's instruction, shared by all its agents, is added in
-front of the description; it is set in
-["Columns and routes"](./automation/index.md).
+Moving the card into another column. All that has to be true:
 
-## The terminal: the column's conversation
+- an agent is assigned to the card;
+- agents are switched on in the settings.
 
-Open a card: in the top right corner of the dialog, next to "Attach", there is
-a "Terminal" button. It opens a panel on the right, and the terminal in it
-starts by itself.
+Nothing else is configured — columns have no actions and no crews. The agent is
+given the name of the column the card was put into and the names of the board's
+other columns; what to do, it reads from the card.
 
-**A card has one conversation per column it has stood in.** The conversation
-belongs to the column: wording and plans are talked over in «Not started», the
-work happens in «In progress», the review in «In review». The panel opens the
-conversation of the column the card stands in now, and a person and the route's
-agent in one column talk in **one** conversation — with that column's agent, in
-its working folder, with its instructions (see
-["Columns and routes"](./automation/index.md)).
+If the card is dragged out of the column while the agent is working, the work is
+cancelled: a move is a new instruction, not a continuation of the old one.
 
-It asks for nothing: a card with no column, no folder and nobody assigned can
-be talked over at once — with no folder the conversation happens in the board's
-drafts. A column that runs an agent works in the card's own working copy; every
-other column's conversation stands beside the work and creates nothing.
+## What the agent does at the end
 
-**The conversation opens with what the card says**: the agent is handed its
-title and description as the first message (and the column's instructions,
-when there are any), and waits for your question. It is not handed them twice —
-a conversation being continued already knows them.
+1. writes **one comment** with the result;
+2. puts values **into the card's fields**, if the task called for it;
+3. **moves the card itself** into the column whose name says what has happened:
+   «Done», «In review», «Blocked». If there is no fitting column, the
+   card stays where it is;
+4. says the **work is finished**, which is what ends the session.
 
-It is kept. Close the panel, close the app, move the card away and back — the
-column's conversation continues where it stopped. **A returning card brings the
-new input with it**: sent back from «In review», the resumed conversation is told
-why it is back and what the reviewer said — not the task again.
+A move the agent makes itself starts no new work.
 
-- if this column's terminal is already running, the same one opens, with its
-  history;
-- if there turned out to be nothing to continue — the terminal was opened last
-  time and nothing was typed in it, so the CLI saved no conversation — the
-  terminal says «Продолжить прошлый разговор не удалось — открыт новый» and
-  starts a new conversation in the same folder;
-- `✕` in the header closes the panel. The terminal keeps running until the CLI
-  in it exits, and opens in the same place next time.
+If the agent finishes without writing anything, the app writes the comment —
+something always stays on the card. If the work was cut off (the app was closed,
+the CLI died), the card keeps its place and the reason is written on it.
 
-The panel shows the CLI's own interface: the agent displays its progress and
-asks its questions right there.
+## Talking to an agent before there is a card
 
-### The list of conversations
+A task can be talked through before it becomes a card: the arrow beside
+«New» in the board header → **«Talk it over with an agent…»**.
 
-The panel reads top to bottom: a **"Terminals"** plate with a ✕ that closes the
-panel itself; under it the card's conversations; and below that the conversation
-being read, with a head of its own. That head's ✕ puts the terminal away without
-ending it: the CLI keeps running, the row keeps its green dot.
+First it asks **which agent** and **which folder** — the board's folders, «The board’s
+drafts» and «Add a folder…». After that it is an ordinary conversation: you
+write, the agent answers, «Stop» interrupts it.
 
-Conversations are of two kinds, and a glyph on the row says which:
+In such a conversation the agent changes nothing in the folder — its
+instructions and the tool policy hold it to reading — and the cards you agree on
+it creates on this board itself.
 
-- **«Обсуждение»** (a speech glyph) — the card itself: the wording, the plan,
-  the brief. It is always first, it asks nothing of the card — no folder, no
-  route, nobody assigned — and no route ever runs in it. It opens where it
-  started: a discussion held in the board's drafts stays there even after the
-  card gains a folder;
-- **work** (a console glyph) — one conversation per column the card has worked
-  in, the current one first. This is where you sit down to watch an agent, and
-  where a stage of the route arrives.
+At the top of the dialog are the **«Open conversations»**: a conversation
+outlives its window. **«End the conversation»** stops the agent and takes the
+conversation off the list.
 
-A row is built the same way as in "Talk it over with an agent":
+## The agent's questions
 
-- **the name** — clicking it opens the conversation in the panel; the dot on
-  the left is green while a CLI is running in it. Until somebody names it, a
-  conversation is called after its column; a conversation of a card that had no
-  column is "No column";
-- **the line under the name** — what the conversation is doing: the agent
-  writes it;
-- **who and where** — the agent and the conversation's folder;
-- **⧉** — open the same terminal in a separate window (the head of the open
-  conversation offers the same). The panel then gives way to the window: two
-  views of one terminal argue about its size;
-- **✎** — rename the conversation;
-- **✨** — ask the agent to name it. The request is typed into the conversation
-  itself, because only the one having it can name it; the answer appears in the
-  row. The button is there while the CLI is running and was given the board's
-  tools;
-- **the bin** — delete the conversation. It asks first: the CLI ends and the
-  record of the conversation goes with it, so the column's next conversation
-  starts on a blank screen. Every row has it except the conversation a route is
-  running right now — that one cannot be deleted, the route is waiting on it.
+An agent asks through the protocol: permission for a tool it was not given, or a
+choice that cannot be made for it. The question appears in three places, and any
+of them answers it:
 
-A click opens «Обсуждение», the current column's conversation, and any one with
-a CLI running in it. A past column's conversation cannot be opened — it
-continues when the card comes back to that column.
+- **on the card** — an amber badge in its bottom-right corner, and the question
+  itself with its buttons once the card is open;
+- **in the notification** in the corner of the board window;
+- **on the phone**, under «Waiting».
 
-The terminal button in the corner of the card on the board also leads to a
-running one: it turns amber when the agent is waiting, and it opens that
-terminal.
+Whichever answer arrives first counts; the others stop showing the question.
 
-There is no "Terminal" button if no agent is registered on the machine. The
-exception is a card that was already worked: it has a branch of its own, so
-the button stays even after the agent is removed.
+A notification can be dismissed with «Dismiss» — that means "I know", not
+"answered": the question stays on the card until somebody answers it. A
+dismissed notification does not come back in another window, on the phone, or
+after a reload.
 
-**If no folder resolves, the panel asks.** A card can be talked over without
-code: wording, subtasks, a brief. When neither the «Folder» field nor the
-registry names a folder, the question "Which folder will the agent work in?"
-appears, and the answers are chips:
+If the app is minimised the notification comes from the system, and an amber dot
+appears on the icon beside the clock.
 
-- **the board's folders** by name: the one you pick becomes the conversation's
-  working folder;
-- **"The board’s drafts"** — the board's own folder in the app's data: its
-  agents keep what they write for its cards there — briefs, drafts, notes.
-  There is no code in it, and it is one per board: what was written for one
-  card is on hand when another is talked over;
-- **"Add a folder…"** — the usual folder pick; it joins the board's projects
-  and the conversation starts in it.
-
-With more than one agent, the questions come one at a time and in order:
-first "Choosing an agent" — the names are the answers — then the folder; the
-chosen name stays above the question and is the way back. The choice lasts
-one conversation and does not change the card's assignment; a started
-conversation continues in the same place with the same agent. A folder the
-card names but which is missing on disk is still an error.
-
-The agent in such a conversation has the board's tools: it can fill the card
-in, split it into subtasks, set fields.
-
-## Talking it over before there is a card
-
-A task can be talked through before it becomes a card: the arrow next to the
-"New" button in the board header → **"Talk it over with an agent…"**.
-
-At the top of the dialog: **"Open terminals"**. A conversation outlives its
-window, and with no card behind it this is the only place to find it again.
-Each row is one conversation:
-
-- **the name** — clicking it opens the conversation; the ⧉ icon on the right
-  does the same;
-- **the line under the name** — what the conversation is doing: the agent
-  writes it once it knows, and updates it when it moves on to something else;
-- **who and where** — the agent and the conversation's folder;
-- **✎** — rename: a conversation starts out named after its card, or called
-  «Планирование», and what a list needs is what the conversation is about;
-- **✨** — ask the agent to name it. The request is typed into the conversation
-  itself, and the agent writes the name in the language the two of you are
-  speaking;
-- **✕** — end it: asks "End this terminal?", because this stops the CLI. It is also the
-  only way to take a conversation off the list — the list is exactly the
-  terminals that are running.
-
-Below: **"A new conversation"** — the same stepped pick as the card's
-terminal. "Choosing an agent" — the agents' names are the answers — then
-"Which folder will the agent work in?" — the board's folders, "The board’s
-drafts" or "Add a folder…". Answering the second question is what opens the
-terminal in a window.
-
-The agent changes nothing in the project — the instructions forbid it — and
-the cards you agree on it creates right on this board.
-
-## The terminal button on a card
-
-You do not need to open a card to reach its terminal. A terminal-icon button
-appears in the bottom right corner of a card on the board:
-
-- **amber, blinking** — the agent is asking something;
-- **grey** — a terminal is currently working on the card;
-- **amber pause** — the work was cut off: the terminal was closed, or the app
-  was, and the stage never reported a result.
-
-Clicking it opens the terminal in a separate window. There is no button when
-nothing is running and there are no questions.
-
-The pause means the card is still on its step, waiting to be picked back up.
-Hover the button and it says what happened. Clicking it continues the same
-conversation from where it stopped, and the pause goes as soon as something
-happens on the card again.
-
-## Questions from the agent
-
-The agent asks in the terminal — in its own interface, the same way it asks you
-in an ordinary console: a choice of options, permission for a command, a
-question about the task. That is where you answer.
-
-The app only tells you about it. When the CLI stops drawing anything, the
-terminal button on the card turns amber, a notification arrives, an amber dot
-appears on the app's icon next to the clock, and the card appears in "Waiting"
-on the phone. They all offer the same button — "Open the terminal".
-
-If the app is minimised, the notification comes from the system. It names the
-agent and the card, and clicking it opens the right terminal.
-
-## Permissions can be granted without opening the terminal
-
-There is one kind of question you can answer on the spot: when the agent asks
-for permission — to run a command, write a file, reach the network. That
-question arrives whole, in the notification and in "Waiting": which tool, and
-what exactly it is about to do, with two buttons under it — "Allow" and "Deny".
-
-The answer reaches the agent immediately; no terminal needed. On a phone this is
-the main way to work: a permission is one tap.
-
-The question does **not** leave the terminal either. The agent draws its own box
-on screen at the same moment, so it can be answered there as well, and whichever
-happened first is the one that counts.
-
-An answer given in the terminal is seen: the CLI starts drawing again, and a
-couple of seconds later the question leaves the card, the notification, the
-system's notification and the icon next to the clock. Opening the terminal to
-read the question is not an answer — the app tells the two apart. If you did
-manage to press a button in the notification after answering in the terminal,
-the app says "The agent is no longer waiting for this answer" — not an error,
-the answer simply already arrived.
-
-This works for Claude agents. Every other question — a plan, a clarification, a
-choice between options — still lives in the terminal and is answered there.
-
-A notification is shown once. The "Dismiss" cross and the "Open the terminal"
-button put it away in the same way: both mean you know about this question. A
-notification you have put away does not come back in another window, on the
-phone, or after a page reload — not until the agent does something and stops
-again. That is a new question, and it is announced afresh.
-
-Notifications can be turned off in the
-[settings](./settings/index.md#agent-notifications). The terminal button on the
-card and the dot on the icon next to the clock stay either way — the
-notification is about the question, they are about the agent still waiting.
+Notifications are switched off in
+[the settings](./settings/index.md#agent-notifications). The badge on the card
+and the dot beside the clock stay either way — a notification is about the
+question, they are about the agent still waiting.
 
 ## The changes, read by eye
 
-The card's toolbar has a **“Changes”** button beside “Terminal”. It is there on
-a card that has something to read: no work started, or nothing changed, and
-there is no button.
+The card's toolbar has a **«Changes»** button. It appears on a card that has
+something to show: with no work started, or nothing changed, there is no button.
 
-It opens a diff in the panel on the right — what has been done on the card:
+It opens the diff on the right — what has been done on this card:
 
-- **“On the branch”** — what is already committed on top of the main branch;
-- **“Not committed”** — what has been changed and not saved into a commit, plus
-  the new files git is not tracking yet.
+- **«On the branch»** — what is already committed on top of the main branch;
+- **«Not committed»** — what is changed but not committed, and new files git
+  does not track yet.
 
-Above them: the branch, what it was cut from, and how many files and lines
-there are in all. A file folds away when its row is clicked. The arrows button
-(“Read the folder again”) reads it all again; the diff also refreshes itself
-whenever an agent finishes something.
+At the top: the branch name, what it was cut from, and how many files and lines
+in total. Each file folds away when its row is clicked. The arrows button
+(«Read the folder again») reads everything again; the diff itself refreshes when the
+agent finishes something.
 
-It can be read after a stage is over, too. When an agent finishes, the card's
+It can be read after the work is over, too. When an agent finishes, the card's
 working copy is folded away and the branch stays — so the committed half is read
-from the branch, and it is there on «In review», where the copy is already gone.
-Uncommitted work lives only in a copy: while there is one it is shown, and after
-the fold there is none to show — a folder with unsaved work in it is never
-folded.
+from the branch even in a column where the copy is gone. The uncommitted half
+lives only while the copy does; a folder with unsaved work is never folded away.
 
-The panel beside a card is narrow, so its head carries **“Open in a separate
-window”** — the same reading full size, in a window of its own, the way a
-terminal gets one.
+The panel beside the card is narrow, so its header has **«Open in a separate
+window»** — the same thing full screen.
 
 Any card can be looked at, but there is nothing to show until somebody has
-worked on it. The panel says which it is: work never started, or it started on
-another machine — a working copy lives on the machine the agent worked on and
-does not travel with the card.
+worked it. The panel says so: the work has not started, or it started on another
+machine — a working copy lives on the machine the agent worked on and does not
+travel with the card.
 
-The diff is read-only. How a stage ended is the card's “Исход” field, answered
-by the two buttons on the route strip; there is no second way to say the same
-thing here.
+## The history: who did what to the card
 
-## The card has arrived for you
+The card's toolbar has a **«History»** button. It opens a list of what happened
+to the card on the right, newest first:
 
-A stage where nothing runs is a stage for a person: «In review», «To read»,
-«To check». When the route brings a card there **by itself**, the app says
-so: a notification in the app, a system notification, and the dot on the icon
-beside the clock. Clicking the system notification opens the board the card is
-standing on.
+- who made it;
+- who renamed it, and to what;
+- who changed a field and how: “Status”: In progress → Done;
+- who wrote a comment — and what it said.
 
-The same happens to a card assigned to a person: the agent does not take it, the
-route leaves it where it is and says you are needed next.
+The names are real. Every registered agent has a board account of its own, and
+its writes are signed by it rather than by you: the history shows that the agent
+moved the card and that you set the date.
 
-A card you dragged into such a column yourself is not announced — you are
-looking at it already.
+Every card has one, even one nobody has touched: being made is an entry too. It
+lives on the board itself and travels with it into an export and onto another
+machine.
 
-This notification lives until the first “I know”: the “Dismiss” cross takes it
-away for good, not merely off the screen — unlike an agent's question, which
-goes on waiting for an answer after you have read it. It comes back if the card
-arrives at such a stage again.
+## What is visible on the card
 
-## When a stage ends
+The branch and the directory are on the line under the card's title; the agent's
+question is under it.
 
-A stage of a route is a conversation in a terminal, and a terminal does not end
-by itself: the CLI keeps running until it is closed. So the agent is the one
-that declares the work over — through the board tool `finish_work`, which the
-app hands it along with the rest. It says whether the work is done or could not
-be done, and briefly what was done.
+Comments appear once the install is in [team mode](./settings/team.md): a
+**«Comments»** button joins the card's toolbar, it opens the panel on the
+right, and the card's face shows their count. While one person works the board
+the comments are written but not drawn: everything worth knowing is either on
+the card or in the diff.
 
-The task says so as well. A CLI does not always load the board's tools up
-front, and an agent that never went looking for them finishes the work, writes
-its summary in the terminal and stops — leaving the card where it was. So the
-task itself states that the stage ends with a call to `finish_work`.
-
-After that the card travels on along the route and the conversation is closed.
-What exactly was done is in the agent's closing words in the terminal — the
-conditions on the route's arrows read the same words.
-
-If you close the terminal yourself before the agent has said this, the card
-stays where it is: the route strip shows an amber line saying the result was
-never reported. Open the terminal again and see the stage through.
-
-That is how agent stages work. Deploys and tests are arranged differently —
-there is no terminal there, the app talks to the agent directly and reads the
-result itself.
-
-## What is shown on the card
-
-The branch and the directory are in the line under the card title; where the
-card stands on its route and what it waits for — in the route strip; the
-conversation with the agent — in the terminal panel beside the card.
-
-Comments appear once the install is
-[working as a team](./settings/team.md): the card's toolbar grows a
-**«Комментарии»** button, which opens the same panel on the right that the
-terminal uses, and the card's face shows a badge with their count. While one
-person works the board there are none: everything that used to be written into a
-comment is either shown on the card itself or said by the agent in the terminal.
-
-If a stage could not start — no project found, the column is busy, the route
-has no transition — the reason is shown in amber on the route strip and
-disappears once the card moves on. For a card outside a route the same reason
-is shown by the terminal panel, together with the choice that fixes it.
+If the work could not start — no folder, or another card is holding the folder —
+the reason is shown on the card and goes as soon as something happens on it
+again.

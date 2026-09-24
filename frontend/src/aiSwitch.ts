@@ -3,7 +3,7 @@ import {createSignal} from 'solid-js'
 import {UserSettings} from './userSettings'
 
 // The one switch for everything the app does with agents. Off, XCIII is a
-// kanban board: no agent settings, no routes, no terminals, no waits — nothing
+// kanban board: no agent settings, no routes, no waits — nothing
 // on screen that mentions an agent. The Go side reads the same key and stops
 // starting stages (aiEnabled in uisettings.go).
 //

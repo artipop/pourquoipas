@@ -5,6 +5,8 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
+	"io/fs"
+	"path"
 	"strings"
 )
 
@@ -50,23 +52,6 @@ var textFields = map[string]bool{
 	"prompt":      true,
 }
 
-// appGivenNames are the strings in a template that this app matches on by name
-// rather than by id, so translating one would make the app stop recognising its
-// own field:
-//
-//   - «Исход» with «прошло» and «не прошло» — the outcome the engine writes for
-//     every stage (acp.OutcomePassed/OutcomeFailed) and the value a route's
-//     conditional edges compare against.
-//
-// They are Russian inside an English file, and they stay Russian in every
-// language, which is a wart with a name: the fix is for the engine to write
-// those options by id, and it is owed rather than done (docs/deferred.md).
-var appGivenNames = map[string]bool{
-	"Исход":     true,
-	"прошло":    true,
-	"не прошло": true,
-}
-
 // templateCatalogue is the words for one language, or nil when the templates
 // are already in it and when nobody has translated them into it. Nil is a
 // working catalogue: everything looked up in it comes back unchanged.
@@ -102,7 +87,7 @@ func templateLanguage(lang string) string {
 
 // translateText is one lookup, and the place the exceptions above are honoured.
 func translateText(cat map[string]string, s string) string {
-	if cat == nil || appGivenNames[s] {
+	if cat == nil {
 		return s
 	}
 	if out, ok := cat[s]; ok && out != "" {
@@ -174,7 +159,26 @@ func TemplateStrings() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	return templateStrings(files, readShippedTemplate)
+	strs, err := templateStrings(files, readShippedTemplate)
+	if err != nil {
+		return nil, err
+	}
+	return withInboxWords(strs), nil
+}
+
+// withInboxWords adds the inbox's words, which no template file carries: the
+// app makes that board in code and translates it through the same catalogue.
+func withInboxWords(strs []string) []string {
+	seen := make(map[string]bool, len(strs))
+	for _, s := range strs {
+		seen[s] = true
+	}
+	for _, s := range inboxWords {
+		if !seen[s] {
+			strs = append(strs, s)
+		}
+	}
+	return strs
 }
 
 // templateStrings takes the files and the way to read one, because a test reads
@@ -215,7 +219,7 @@ func collectStrings(v any, key string, seen map[string]bool, out *[]string) {
 			collectStrings(item, key, seen, out)
 		}
 	case string:
-		if !textFields[key] || strings.TrimSpace(t) == "" || appGivenNames[t] || seen[t] {
+		if !textFields[key] || strings.TrimSpace(t) == "" || seen[t] {
 			return
 		}
 		seen[t] = true
@@ -223,12 +227,28 @@ func collectStrings(v any, key string, seen map[string]bool, out *[]string) {
 	}
 }
 
+// saidAs is every way a source string has been said: itself and its
+// translation in each catalogue there is. It is what tells a name the app gave
+// from one a person chose.
+func saidAs(source string) map[string]bool {
+	out := map[string]bool{source: true}
+	files, err := fs.Glob(templateCatalogues, "templates/i18n/*.json")
+	if err != nil {
+		return out
+	}
+	for _, file := range files {
+		lang := strings.TrimSuffix(path.Base(file), ".json")
+		if s := translateText(templateCatalogue(lang), source); s != "" {
+			out[s] = true
+		}
+	}
+	return out
+}
+
 // TemplateWords is the catalogue as a function, for the words this app says
-// outside the template files themselves: the routes it offers a board that has
-// none (acp.TemplateFlows) name the template board's columns, so they have to
-// arrive in the language that board was installed in or they name stages no
-// board has. A language nobody has translated the templates into gets the
-// identity, which is the source language and is what those names already are.
+// outside the template files themselves — the inbox board it makes at launch.
+// A language nobody has translated the templates into gets the identity, which
+// is the source language and is what those names already are.
 func TemplateWords(lang string) func(string) string {
 	cat := templateCatalogue(lang)
 	return func(s string) string { return translateText(cat, s) }

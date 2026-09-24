@@ -1,14 +1,14 @@
 import {Board, IPropertyTemplate} from '../../blocks/board'
 import {aiEnabled} from '../../aiSwitch'
 
-import {BOARD_PROP_PROJECT_PROPERTY, boardBranchProperty, boardOutcomeProperty} from './automation'
+import {BOARD_PROP_PROJECT_PROPERTY, boardBranchProperty} from './automation'
 
-// The card fields that are the agents' own: where the work is (the folder),
-// what it is on (the branch) and how the last stage ended (the outcome). The
-// board records each by id, so they are found the way the engine finds them.
+// The card fields that are the agents' own: where the work is (the folder) and
+// what it is on (the branch). The board records each by id, so they are found
+// the way Go finds them.
 export function agentPropertyIds(board: Board): Set<string> {
     const folder = board.properties?.[BOARD_PROP_PROJECT_PROPERTY]
-    return new Set([typeof folder === 'string' ? folder : '', boardBranchProperty(board), boardOutcomeProperty(board)].filter(Boolean))
+    return new Set([typeof folder === 'string' ? folder : '', boardBranchProperty(board)].filter(Boolean))
 }
 
 // withoutAgentProperties is what a card shows while the AI is switched off:

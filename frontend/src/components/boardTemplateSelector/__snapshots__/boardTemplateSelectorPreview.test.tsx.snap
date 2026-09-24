@@ -227,8 +227,6 @@ exports[`components/boardTemplateSelector/boardTemplateSelectorPreview > should 
             
             <!---->
           </div>
-          <!---->
-          
           <div
             class="octo-spacer"
           />
@@ -294,8 +292,6 @@ exports[`components/boardTemplateSelector/boardTemplateSelectorPreview > should 
             
             <!---->
           </div>
-          <!---->
-          
           <div
             class="octo-spacer"
           />
@@ -361,8 +357,6 @@ exports[`components/boardTemplateSelector/boardTemplateSelectorPreview > should 
             
             <!---->
           </div>
-          <!---->
-          
           <div
             class="octo-spacer"
           />

@@ -135,20 +135,18 @@ the page listens only on the socket — `components/acp/agentEvents.ts`, one sha
 connection for the whole page, with backoff and a "look again" nudge to every
 subscriber when it reconnects. A new UI event needs nothing but `Emit`.
 
-**`/m` is the board on a phone**, and deliberately not the board: four screens
+**`/m` is the board on a phone**, and deliberately not the board: a few screens
 and a row of buttons at the bottom, which is where a thumb is. «Входящие» — what
 a source left and nobody has looked at, carried onto a board from there;
 «Карточки» — one board's cards as a list, to find out where something got to
 without walking to the desk; «Ждут» — what is asking for a person, answered in
-place, because a question carries its own options; «Терминалы» — which are
-alive, with a soft key row on the terminal for the keys a phone keyboard lacks.
-«Ждут» is what opens, being the only one of the four that cannot wait; the rest
-count themselves on their own button, which is why the page and not the tab
-holds those lists — a tab that only counts once you are looking at it counts
-nothing.
+place, because a question carries its own options. «Ждут» is what opens, being
+the one that cannot wait; the rest count themselves on their own button, which
+is why the page and not the tab holds those lists — a tab that only counts once
+you are looking at it counts nothing.
 
-It is `pages/mobile/`, lazily routed like the terminal page, and it **asks
-nothing of the board's own API**: everything on it, the board included, comes
+It is `pages/mobile/`, lazily routed, and it **asks nothing of the board's own
+API**: everything on it, the board included, comes
 from `main.App.*` and the event socket, both of which the front door serves to a
 phone exactly as to the window. That is what `ListBoards`/`ListInbox`/
 `ListBoardCards`/`MoveCardToBoard` are for (`bindings/boards.ts`) —
@@ -207,8 +205,7 @@ return value and so writes the branch away. `reconcile` returns nothing, and
 board empty with no error anywhere.
 
 React-only libraries were replaced rather than wrapped: `@dnd-kit/solid`,
-`@dschz/solid-flow` for the workflow canvas, `@solidjs/router`, `@formatjs/intl`
-behind our own `src/intl.tsx` (same `IntlShape`, same message ids), and headless
+`@solidjs/router`, `@formatjs/intl` behind our own `src/intl.tsx` (same `IntlShape`, same message ids), and headless
 Lexical with a typeahead menu of our own under `markdownEditorInput/plugins/`.
 
 **Anything drawn over the page is placed by `@floating-ui/dom`** — the menus,
@@ -271,151 +268,114 @@ in `eslint.config.ts` fails the lint, which is cheaper than finding a React
 component rendered from Solid at runtime — which is exactly how that guard
 earned its place.
 
-## A stage is the agent's own CLI, and it asks in its own words
+## A card moved into a column is a session, and it answers through MCP
 
 `internal/acp` is the agent integration, and it is board-agnostic: `internal/
 boardadapter` is the only package importing both it and the board server.
 
-**An agent stage of a route is a terminal, not a session** (`stageterminal.go`).
-The card's task goes to the vendor CLI on its command line — `claude "…"`, the
-kind's `cliPromptArgs` — and everything the agent does from there is drawn by the
-CLI in its own screen: its plan, its questions, its permission prompts. Nothing
-of ours is drawn over that, which is the whole point. It was an ACP session
-before: an adapter on stdio, its questions lifted out of the protocol into a box
-of our own — and that box was drawn *over the card's terminal*, in which a second
-CLI was sitting in the same worktree knowing nothing about the first. Two agents
-in one copy of the code, and a question about the card hiding the window it was
-asked from.
+**The whole rule the app applies on its own is one sentence** (`trigger.go`): a
+card moved into a column, whose assignee is an agent this machine has
+registered, is a card that agent starts working on. Nothing configures it. A
+column is an option of the board's own select property and means whatever the
+people using the board mean by it; which column somebody drags a card into is
+their sentence, and the agent reads it along with the card.
 
-Three things follow, and each had to be answered before the swap was possible.
+What used to be here was a registry saying that this column runs an agent with
+this crew and that one deploys, and a graph of routes saying what follows what,
+and an engine walking it. It is gone, and so is every question it made a person
+answer before the board would do anything. What it bought — a card moving on by
+itself when a step passed — the agent now does directly: it is told which
+columns the board has and moves the card into one of them with `move_card`.
 
-**How the route learns the stage is over**: the agent says so, through the board
-tools — `finish_work` (below), which reports done-or-not and one line about what
-it did. **And the task text says so too** (`finishWorkBrief`), because whether
-those tools arrive *loaded* is the CLI's business and not ours: measured, Claude
-Code deferred the whole board server, so `finish_work` reached the agent as a
-name in a list and nothing else — it did the work, wrote a summary in the
-terminal and stopped, and the card stood on the stage with nobody able to say it
-was over. The same route had run to the end the day before. The brief is the one
-thing that always arrives, so it carries the instruction as well; it names no
-way to load a tool, that being each CLI's own. Nothing else can: an interactive CLI does not exit when a turn ends, and
-a person typing in that terminal afterwards is the ordinary case rather than a
-signal. A CLI that exits without having said it is *not* a failed stage — the
-card keeps its place and stalls with a reason, since a window somebody closed is
-not a verdict.
+**The agent is told where the card stands and where it can be put**
+(`cardplace.go`, `boardStanding`), in the task rather than in the tools'
+instructions, because whether a CLI has loaded its tools is its own business and
+the task text always arrives. The columns are read off the board every time
+rather than remembered: a column added this morning has to be offered this
+afternoon.
 
-**How a stuck card is noticed**: `AttentionTerminal`, raised while the stage's
-CLI draws nothing (`terminalQuietFor`). This is silence standing in for a
-question, which is exactly what was thrown out once — and it is back because
-what it measures has changed. It used to be measured on a terminal somebody had
-opened and left, where nothing happening is the ordinary state, and it announced
-"needs you" five seconds later every time. Here the agent was handed a task and
-has not said it is finished, so a still frame means it is waiting on somebody: a
-model mid-turn redraws its own spinner, and a permission box does not.
+**A move the agent made itself starts nothing** (`noteAgentMove`,
+`movedByAgent`, `agentMoveWindow`). A move is what starts a run and an agent
+ends its run by moving the card, so without this the board would hand the card
+straight back to the agent that had just finished with it, for ever. The window
+is short and the entry is used once: what it has to survive is the round trip
+from the write to the board event, not the rest of the day.
 
-**Silence is the floor, not the only signal** (`internal/acp/toolhook.go`,
-`docs/attention-hooks.md`). A CLI with a permission hook says so precisely: the
-hook is a command it runs when it needs a person, the command is this binary
-re-invoked (`hook.go`), and it posts the tool call to the front door on the
-run's own grant, holds while a person answers, and hands the decision back.
-Registered by `cliHookArgs` — another column of the adapter table, filled for
-claude and empty for everyone else, who keep the timer exactly as it was. Two
-things make it safe. It **does not take the question away from the terminal**:
-measured, the CLI draws its own box at the same moment it asks, so the card is a
-second *place* to answer rather than a second interface over the agent's screen
-— which is what makes `attentionAnswers.tsx` legitimate after the answer surface
-was deliberately deleted (`docs/deferred.md`). And **every failure is silence**:
-no app, no grant, nobody looking — the hook prints nothing and exits 0, leaving
-the CLI's own prompt standing. What a hook cannot see is anything outside the
-agent loop — the folder-trust question, a login, a refused resume — which is why
-the timer stays.
+**A move while a session is running cancels it** (`cancelForMove`), and waits
+for it to let go of the folder before the next one starts (`cardIdleWait`). The
+work that was running was about where the card was; the move is a new
+instruction. A card dragged out from under a running agent is a card taken back,
+whoever it now belongs to — so the cancel happens even when the card no longer
+names an agent at all.
 
-**Which agents can do this at all**: `stageRunsInTerminal`. Three requirements,
-and an agent missing any of them keeps the old arrangement, an ACP session — a
-way to be handed the board tools (without them the stage could never end), an
-interactive CLI at all (the generic `acp` kind is an adapter and nothing else),
-and that CLI actually installed here (the claude adapter embeds the CLI it
-drives, so a machine can run sessions of that kind with no `claude` on it).
+**A stage is an ACP session** (`session.go`, `question.go`), which is what this
+was before terminals and is what it is again. The agent runs as an adapter on
+stdio, a tool outside `autoAllowTools` arrives as `session/request_permission`,
+a decision as a form elicitation, either one **blocks only the request that
+asked** — the SDK gives every inbound request its own goroutine — and an
+unanswered one refuses on cancellation or shutdown rather than stalling for
+ever.
 
-**A deploy and a test are still sessions**, and so is anything the rule above
-excludes. Nobody watches them, the machine reads their verdict rather than a
-person, and there is no terminal for anybody to answer in. So `question.go`
-stays: a tool outside `autoAllowTools` comes as `session/request_permission`, a
-decision as a form elicitation, either one **blocks only the request that asked**
-— the SDK gives every inbound request its own goroutine — and an unanswered one
-refuses on cancellation or shutdown rather than stalling for ever. What is gone
-is the surface that answered it; `docs/deferred.md` records why that is
-acceptable and what it costs.
+**How the app learns the stage is over**: the agent says so, through the board
+tools — `finish_work`, which reports done-or-not and one line about what it did.
+**And the task text says so too** (`resultBrief`), because whether those tools
+arrive *loaded* is the CLI's business and not ours: measured, Claude Code
+deferred the whole board server once, so `finish_work` reached the agent as a
+name in a list and nothing else — it did the work, wrote a summary and stopped,
+and the card stood where it was with nobody able to say it was over. The brief
+is the one thing that always arrives, so it carries the instruction as well; it
+names no way to load a tool, that being each CLI's own.
 
-Both reasons show up as `acp:attention` — the amber terminal button on the card's
-corner, and, unless turned off in the settings menu, a notification. **Neither is
-answered there any more.** The notification carries what is being asked and one
-thing to do about it, «Открыть терминал», because the answer belongs to the
-interface the agent drew it in. `components/acp/attention.ts` is the one
-subscription behind all of it.
+**There is one kind of attention, and it is the agent asking** (`attention.go`,
+`acp:attention`). It wanted a tool it was not given, or sent an elicitation, and
+its turn stays open until somebody answers. The second kind — a card parked
+where nothing runs, which the route engine raised when it handed a card to a
+person — went with the routes: nothing hands a card to anybody any more, a
+person moves it and is looking at it while they do.
 
-**A third reason arrives from the other end** (`AttentionCard`,
-`internal/acp/cardwait.go`): not an agent that stopped mid-work, but the route
-handing the card over — it moved the card onto a stage where nothing runs, or
-onto one whose card is assigned to a person, and an agent will not take that.
-«На ревью» is the whole of the first case, and until this existed such a card
-simply appeared in a column and waited for somebody to happen to look. Only when
-*we* moved it (`enterNode`'s `move`): a person dragging a card into a review
-column is looking at it. Two things follow from nothing running there. The
-card's own button ignores it — `useCardAttention` filters the reason out,
-because that button is a console and there is no CLI to open — and the ack
-**ends** the wait rather than silencing it: an agent goes on waiting after
-somebody has looked and this does not, so keeping it standing would hold the
-tray icon amber for every card parked at a review and the icon would stop
-meaning anything. What ends it otherwise is progress, wherever `clearStall`
-already means that.
+**A question is drawn in three places and answered in any of them.** On the
+card: an amber badge in its bottom-right corner (`KanbanCard__asking`) and the
+question itself under the case stamp in the card's dialog, with its answers
+(`attentionAnswers.tsx`). In the notification stack, which is the same component
+under a box that can be dismissed. And on the phone's «Ждут» screen. All three
+call `AnswerQuestion`, and whichever arrives first is the answer; the others
+stop showing it when the wait ends. The card is the one that cannot be
+dismissed, because a question outlives being read.
 
 **A wait has an addressee once there is more than one person**
 (`attentionAudience.ts`, `docs/teamwork.md`). The card answers it: «Кто
 занимается» is the field the whole board says who a card belongs to in, and it
 already tells a person from an agent. So a wait on a card assigned to a person
 is announced to that person; a card assigned to an agent, or to nobody, names no
-person and its wait goes to everybody — an agent stage is the ordinary case, and
-a wait nobody is told about is a wait nobody answers. Following the card is the
-other way in. It is worked out on the page rather than in Go because the board
-has the card loaded already, and the Go side would be reading one per wait; and
-on an install of one person the question is not asked at all.
+person and its wait goes to everybody. Following the card is the other way in.
+It is worked out on the page rather than in Go because the board has the card
+loaded already, and the Go side would be reading one per wait; and on an install
+of one person the question is not asked at all.
 
 **Being told is a thing that happens once** (`internal/acp/attentionack.go`).
-The ✕ and «Открыть терминал» are the same answer to the same question — whether
-anybody still needs telling — and both call `AckAttention(key)`. The ack is
-kept by the Go side, not by the page, so one click takes the notification off
-every window and off the phone and a reload does not bring it back; the card's
-amber button is untouched, being part of the card. It was a list in the page
-keyed by the wait *and when it was raised*, and that made a loop: a stage's
-wait is silence, opening the terminal to look at it resizes the CLI, a TUI
-repaints when it is resized — so the wait ended and went up again forty-five
-seconds later under a timestamp nobody had dismissed. Going to look at an agent
-guaranteed a fresh notification about it a minute afterwards, for ever. What
-drops the ack is the CLI drawing something that is **not** the repaint our own
-looking provoked (`TerminalSession.workAt`, `resizeEcho`), because an agent
-that revives, does a turn and stops again is asking something new. A wait that
-ends takes its ack with it.
+The ✕ on a notification and an answer given anywhere are the same answer to the
+same question — whether anybody still needs telling — and both call
+`AckAttention(key)`. The ack is kept by the Go side, not by the page, so one
+click takes the notification off every window and off the phone and a reload
+does not bring it back; the card's amber badge is untouched, being part of the
+card. It was a list in the page keyed by the wait *and when it was raised*, and
+that made a loop where looking at a wait produced a fresh one a minute later. A
+wait that ends takes its ack with it.
 
 **The stack belongs to the window with the board in it.** It is mounted outside
-the router (`app.tsx`), which is what puts it wherever in the app a person is —
-and a terminal window is the app too, so every one of them drew the whole stack
-as well: two conversations waiting read as the first one being announced twice.
-One of those copies was worse than a repeat, since a box saying «агент ждёт»
-over the terminal it is *about* covers the question it is announcing — the same
-reason nothing of ours is drawn on that screen. So `attentionNotifications.tsx`
-draws nothing on a `/acp/terminal/` or `/m/terminal/` page, and the list it does
-draw is deduped by the wait's own key.
+the router (`app.tsx`), which is what puts it wherever in the app a person is,
+and the list it draws is deduped by the wait's own key: one wait drawn twice is
+the notification a person cannot tell from a second agent asking the same thing.
 
 **Every one of those surfaces needs somebody to be looking at a window**, and
-the case a stage's wait is raised in is usually the opposite one: the app is
-minimised, or behind an editor, or on another space. So the same wait goes out
-through the two surfaces a desktop keeps for exactly that — the OS notification
-centre and the menu bar (`alerts.go`, `alerts_desktop.go`, desktop build only:
-a headless install has no menu bar and would post to whoever is logged into the
-server). Both are driven by re-reading `Manager.Attention()` on `acp:attention`
-rather than by the payload, since a wait ending and a wait being acknowledged
-arrive as the same event and what both surfaces need is the picture afterwards.
+the case a wait is raised in is usually the opposite one: the app is minimised,
+or behind an editor, or on another space. So the same wait goes out through the
+two surfaces a desktop keeps for exactly that — the OS notification centre and
+the menu bar (`alerts.go`, `alerts_desktop.go`, desktop build only: a headless
+install has no menu bar and would post to whoever is logged into the server).
+Both are driven by re-reading `Manager.Attention()` on `acp:attention` rather
+than by the payload, since a wait ending and a wait being acknowledged arrive as
+the same event and what both surfaces need is the picture afterwards.
 
 The line between them is the setting. **The dot on the tray icon is an
 indicator**, like the card's amber button: it interrupts nobody, it is drawn
@@ -425,33 +385,18 @@ and it is *the switch that already existed*, `agentNotifications`, read out of
 `ui-settings.json` by the Go side (`agentNotificationsEnabled`) rather than
 duplicated, because "tell me when an agent is waiting" is one question and two
 of them would need a rule about which wins. It is also suppressed while any
-window of this app has focus, terminal windows included: announcing a wait to
-somebody sitting in front of the agent's own screen is the noise this is meant
-to be the opposite of. Clicking it opens the terminal and acks the wait —
-`openWait`/`AckAttention`, the same pair `attention.ts` performs, so going to
-look takes the notification off every window and off the phone. **Both buttons
-open the menu** and the way in is «Открыть» inside it, because opening the app
-straight off a left click is not reachable on this Wails — see
-`docs/deferred.md`.
+window of this app has focus: announcing a wait to somebody who is looking at
+the board is the noise this is meant to be the opposite of. Clicking it opens
+the card and acks the wait — `openWait`/`AckAttention`, the same pair
+`attention.ts` performs, so going to look takes the notification off every
+window and off the phone. **Both buttons open the menu** and the way in is
+«Открыть» inside it, because opening the app straight off a left click is not
+reachable on this Wails — see `docs/deferred.md`.
 
 **Taking a notification down is not `RemoveNotification`**, which is the call
 that reads like it and is a stub returning nil on macOS and on Windows.
 `RemoveDeliveredNotification` is the one, delivered being what ours are —
 nothing here schedules — and on Linux the two are the same method.
-
-**Answering in the terminal is now seen** (`withdrawWhenAnsweredOnScreen`). "The
-CLI's box and the card are two places to answer, whoever is first wins" was true
-of the *agent* and false of everything a person looks at: somebody answering on
-screen told this side nothing, so the hook went on holding and the card, both
-notifications and the menu bar icon went on saying an agent waited for a
-decision it already had — for the rest of `hookHold`. What the terminal does say
-is that it started drawing again, and a permission box is a still frame (the
-premise `AttentionTerminal` already rests on), so output after the box has
-settled is the person. `workedAt` rather than `lastOutput`, because opening the
-window to read the question resizes the CLI and a TUI repaints when resized:
-being looked at must not read as being answered — the same trap the ack fell
-into. Wrong in the safe direction, since withdrawing leaves the CLI's own box
-standing, which is where the question was.
 
 **The app outlives its windows**, which is what makes the icon worth having:
 one that dies with the last window is a decoration on a window, and every agent
@@ -486,75 +431,48 @@ whole point — would come out the same grey as the mark. macOS and Linux take o
 icon and never ask for a second, so which ink is right is ours and is redecided
 on `ThemeChanged`; Windows keeps both and swaps them itself.
 
-**One colour, three shapes.** The button says the machine needs a person here
-in amber, and what kind of needing is the glyph: a console breathing while an
-agent is asking, a still pause while a stage was cut off — the CLI was closed,
-or the app was, and nothing was reported. Quiet ink is the third, and it says
-only that a CLI is running. A second colour would have needed a legend, which a
-card cannot carry. Where the pause comes from is `StallKindConversation`: the
-stall record gained a *kind* because one of the reasons a card stands still has
-somewhere to go and the rest — a column with no free place, a folder another
-card holds, a route with no edge — do not, and reading that off the reason's own
-Russian is exactly what is never allowed. The shutdown path writes one now
-(`stallCardConversation` in `stageterminal.go`), which it never did: the session
-went to cancelled where only the panel would show it, and the next launch had
-nothing on the board saying the card was mid-something. Recorded there rather
-than at the next startup, because that is the one moment that knows *why* — a
-session found stale on launch could equally be a crash. Continuing such a stage
-by itself was thought through and deliberately not built (`docs/deferred.md`).
+**The card says an agent is asking, and that is all it says.** An amber badge
+in the card's bottom-right corner (`KanbanCard__asking`), whose click opens the
+card — where the question is, with its answers under the case stamp. It used to
+be a console glyph in three shapes, opening the card's terminal: amber while an
+agent asked, quiet ink while a CLI merely ran, and a still pause where a stage
+had been cut off mid-work. Two of those said something about a machine rather
+than about the work, and the third belonged to a kind of interruption that no
+longer happens — a session ends by ending.
 
-**The button is also the way in.** A console-glyph button in the card's bottom
-right corner (`KanbanCard__terminal` — it began life as a dot, and the corner
-button is what it grew into; it started in the *top* right, where a card's
-controls are, and moved because the ⋯ menu is there too and the two spent their
-time stepping around each other) opens the card's terminal in a window, and it is
-the same control whether it is amber because an agent is asking or the
-board's own ink because a terminal is merely running there — one thing on the
-card's face, its colour saying what is happening and its click saying where to
-go. Reaching the CLI otherwise meant opening the card, finding the toolbar and
-opening a panel, which is three steps to a window that was already there. What
-the board knows per card comes from `components/acp/liveTerminals.ts`: one
-`ListTerminals` for the page indexed by card, because `GetCardAgent` is a call
-per card and a board has as many as it likes.
+**The agent writes one comment, and writes it at the end.** `comment_card` is
+in the brief as the first of the four things a finished stage does (`resultBrief`):
+one comment, with what was done or decided and what a person has to know next —
+not a log of its steps. This side writes one only when the agent did not
+(`commentFirstTurn`, `hasCommented`), so the fallback is a fallback rather than
+a second comment about the same work; a deploy always gets ours, since nothing
+there is holding the board's tools.
 
-Which is why **the terminal page draws nothing over the screen**: the button
-leads here, and what it leads for is on the screen already, drawn by the CLI. A
-box of ours above the terminal covered the very thing the button was for.
-
-**A stage writes one comment, and writes it at the end**: what the agent did,
-or why it could not. There were a dozen once — started, cancelled, asked,
-answered, terminal opened, moved along the route — and a card whose comments are
-a log of the machinery is a card nobody reads, with the one thing worth reading
-buried in it. Everything that was narrated there is shown instead: the branch and
-the worktree on the card's stamp, the position on its route strip (whose reason
-is kept in the flow event record rather than on the card), the question on the
-card's face. What survives is what the card cannot show for itself — the summary
-the agent handed to `finish_work` with what landed on the branch under it
-(`stageComment`), a deploy or test report, the report a terminal somebody opened
-leaves when its CLI exits, a session cut off by a restart — and `comment_card`,
-which is the agent choosing to say something. A stage's terminal writes no
-report of its own, or one piece of work would be commented twice.
+There were a dozen comments once — started, cancelled, asked, answered, moved
+along the route — and a card whose comments are a log of the machinery is a card
+nobody reads, with the one thing worth reading buried in it. Everything that was
+narrated there is shown instead: the branch and the worktree on the card's
+stamp, the question on the card's face, the stall in its own record.
 
 **And the card draws them only where somebody can be talked to**
 (`docs/teamwork.md`). A comment is a thing said to a person who will read it
-later, and on an install of one person that is nobody: they are talking to the
-agent instead, in the card's terminal and in the talk conversation beside it. So
+later, and on an install of one person that is nobody. So
 the panel and the badge hang off `teamMode` in the client config — one answer
 from the Go side, the same one the board server was started with — and an
-install of one person writes comments it never draws. What that costs there is
-what it always cost: the `finish_work` summary is readable in the terminal the
-agent said it in and in the edge conditions that match on it, and nowhere else.
+install of one person writes comments it never draws. What that costs there is that the agent's own comment is written
+and not drawn; what the card cannot show for itself is shown on the card
+instead.
 
-**The changes are the third thing that panel holds** (`cardDiff.tsx`,
-`internal/acp/carddiff.go`). A route can park a card on a stage where nothing
-runs and a person decides, and there was nothing on screen to decide *from*: the
-branch was a label on the card and the changes lived in a directory somebody had
-to go and find. It is git and nothing else — the claim says where the work is,
+**The changes are the other thing the panel holds** (`cardDiff.tsx`,
+`internal/acp/carddiff.go`). A card comes back to a person to be decided about,
+and there was nothing on screen to decide *from*: the branch was a label on the
+card and the changes lived in a directory somebody had to go and find. It is git and nothing else — the claim says where the work is,
 `git diff <base>...<branch>` and `git diff HEAD` say what it holds, and the
 patches are never cached, because a stored answer is wrong the moment the agent
 commits again. **The copy is not where the work is kept**: a stage ending folds
 it away (`FoldWorktree`) and leaves the branch in the folder's object store —
-and «На ревью», the stage this is for, is the one *after* that. So the
+and the column this is read in is the one the agent moved the card to *after*
+that. So the
 committed half is read from the folder by branch name, which works whether or
 not the copy is still there, and the uncommitted half only while it is, since
 what is unsaved in the folder itself belongs to whoever is sitting in it
@@ -562,11 +480,30 @@ what is unsaved in the folder itself belongs to whoever is sitting in it
 card working in a plain folder records no claim at all (`ClaimWorkspace` writes
 none for `WorkModePlain`), so the folder the card names is the fallback — and
 that is exactly the card whose changes are deliberately left uncommitted for
-somebody to read. It is a reader: how a stage ended is «Исход», answered by the
-two buttons the route strip already draws, and a second way to say it would be a
-second answer to one question. `/acp/diff/:cardId` is the window, opened the way
-a terminal's is, because a column beside a card is the narrowest place in the app
-to read code in.
+somebody to read. It is a reader and nothing else: how the work went is what the agent
+wrote in its comment, and where the card stands is where somebody put it.
+`/acp/diff/:cardId` is the window, because a column beside a card is the
+narrowest place in the app to read code in.
+
+**And who did what is `blocks_history`, read at last** (`server/app/
+cardhistory.go`, `GET /cards/{cardID}/history`, `cardHistory.tsx`). The board
+has always kept a full copy of every block on every write, stamped with the id
+of whoever made it, and nothing ever read it: the card could say what it says
+now and never who made it say that. The entries are the difference between
+consecutive copies — a title rewritten, a property filled in, a card moved —
+plus one per comment. Computed on the server rather than on the page for two
+reasons: those rows reach the page through no other door, and naming a property
+or an option needs the board's schema, which is there.
+
+**Which is only an answer if the writes are signed.** On a desktop the board
+runs single-user, so every write — a person's and an agent's alike — arrived as
+`model.SingleUser`, and a history built on that could only ever say "you". An
+agent already has a board account (`AgentEntry.UserID`, the same one its cards
+name it by), so a run says on the context whose its writes are (`internal/
+author`, a leaf package both sides can import; `asagent.go` sets it, `Writer`
+reads it). Anything that does not set it writes as the single user, exactly as
+before. The comment an agent writes through `comment_card` is signed by it, and
+so is the fallback this side writes when it did not.
 
 **And the button is drawn on a count, not on hope** (`card_changes`,
 `CardChanges`). It appears only where there is something to read: a button that
@@ -574,124 +511,39 @@ opened «ничего не изменено» is a button nobody can learn. The 
 counted on the spot — one card, one git run, and a stale answer would be wrong
 in both directions — while the row it writes is what a *board* would read, one
 row per card instead of a git process per card. The row is also written where
-this side already knows the work moved (`releaseSession`, `terminalEnded`),
-which is the only moment that can still count the unsaved work: the copy goes
-with the stage. Counting is deliberately not in `finishSession` — that is the
+this side already knows the work moved (`releaseSession`), which is the only
+moment that can still count the unsaved work: the copy goes with the stage. Counting is deliberately not in `finishSession` — that is the
 status transition, and it stands in front of the card's own comment, so a git
 run there delays the comment by as long as git takes.
 
 **They are in the panel, not in the card.** The body of a card is what a person
-wrote, and the machinery has already been carried out of it; a comment is about
-the card rather than part of it, so it shares the panel the terminal has
-(`cardComments.tsx`, a second button in `cardDialog.tsx`'s toolbar). One panel
-with two things in it is the shape, because the two are one question asked of
-two readers — what to tell the agent about this card, and what to tell the
-person who comes to it later.
+wrote; a comment is about the card rather than part of it, so it is drawn in the
+panel beside it (`cardComments.tsx`, a button in `cardDialog.tsx`'s toolbar)
+along with the changes.
 
 **"Nothing happened" is state, never a comment.** A stage that would not start,
-a card refused because a person holds it, a column with no free place, a route
-with no edge for the event that arrived — each is true only until somebody fixes
-the registry or moves the card, and a comment outlives it as noise (`«Агент не
-запущен: …»` from SINGLE-USER was the reading experience this replaces). One
-stall record per card (`card_stall`, `stall.go`) holds the current reason:
-written where the comments used to be, replaced by a newer reason, deleted by
-any progress, and drawn by the route strip in amber (`CardFlow.stalled`) or, for
-a card outside any route, handed to the terminal panel via `GetCardAgent.stall`.
-Route dead-ends write *softly* — only when no reason is recorded — so the
-consequence («нет перехода по событию «шаг упал»») can never bury the root
-cause (why the шаг упал).
+a card refused because a person holds it, a folder another card is using — each
+is true only until somebody fixes the registry or moves the card, and a comment
+outlives it as noise (`«Агент не запущен: …»` from SINGLE-USER was the reading
+experience this replaces). One stall record per card (`card_stall`, `stall.go`)
+holds the current reason: replaced by a newer reason, deleted by any progress,
+and handed to the card via `GetCardAgent.stall`.
 
-The automation around sessions is untouched by that: columns say what happens when a
-card lands in them, flows join columns into routes, deploys publish a branch to
-Dokku through our own MCP server, and the test column drives a browser through an
-MCP server the agent carries. `docs/flows.md` is that machinery written for somebody
-using the board.
-
-The model is a graph, and the kanban is one projection of it: **nodes** are
-what a card stands on (a column is a node's face on the board), **edges** are
-the routes, a node names its worker (crew — the stage's own, falling back to
-the column's) and its instructions (`Prompt`, same inheritance), and a card
-carries one conversation per node (the terminal, above). Everything per-node
-hangs off the node id, which is why it is the board option id and never
-regenerated.
-
-**And the board can be drawn one route at a time** (`components/acp/
-boardFlows.ts`, `viewHeaderFlowMenu.tsx`). A board carries several routes — not
-every task is deployed — and its kanban is the union of them: eight columns for
-a route of three, and cards travelling somebody else's. «Маршрут» beside
-«Сгруппировать по» narrows the view to the route's own stages and to the cards
-on it. Three things make it honest. Which route a card is on is **Go's answer,
-not a second copy of the rule** (`CardFlowsForBoard`): the flow state where the
-card has entered a stage, `resolveFlow` — the very call `handleFlowMove` makes —
-where it has only declared one, and one call for the whole board, the bargain
-`ListCardMarks` already takes — and both bindings **read the board before
-answering** (`SeedBoard`), because the registry is filled lazily, by a card
-moving or an edit, and this is the screen opened before any of that: a board
-carrying three routes answered "none" until somebody touched it, so the picker
-drew nothing on exactly the boards it is for. The pick is **a field of the view**
-(`fields.flowId`, by the route's id), for the reason `calendarSpan` is one: it
-is a thing about this view, so it survives a reload and is the same on the next
-screen — and a view per route is then just another view. And it is **narrowed
-only where a route could run**: `routeRunsOn` refuses a view grouped by
-something the route's stages are not options of, or «Входящие» — grouped by who
-brought the card — would keep one column and hide the rest for no reason
-anybody could see.
-
-**The first column is every route's, and the line says so.** A card arrives
-there before anything has decided which route it takes, so a route view that
-dropped it would hide the only column work comes from; it is kept whatever the
-route, drawn first, and separated by a rule in the header and the body alike
-(`dividerAfter`, `.octo-board-divider`). Which column that is, is the view's
-own first option group and never a name: the shipped «Разработка» calls it «Не
-начата», and nothing here may know that.
-
-**The rule is not about the route, though**, and for a while it was drawn only
-while one was picked — which is the board nobody has on screen most of the
-time. What it divides is what arrives from what the board does with it, and
-that is as true of the whole board as of one route through it, so
-`intakeColumn` answers before the narrowing and the narrowing only takes
-columns away from the right of it. Two boards have nothing to divide and get no
-rule: one grouped by a person, where the groups are authors rather than places
-— «Входящие» is that board — and one with a single column, where a rule after
-the only group is furniture.
-
-Both halves are edited over **the board's own columns**: `components/acp/
-automationEditor.tsx` draws every option of the board's column property as a box,
-and a route is that same set of boxes with arrows over it — a stage that is not a
-column is a stage no card can stand on, so there is no way to make one.
-`automationDialog.tsx` points it at the registry of a live board (saving through
-`SaveBoardColumn`/`AddFlow`/…), and it is the only container: `automation.ts`
-holds the types and every pure helper, so nothing else has to grow its own
-answers about the same shapes.
-
-**The panel beside the canvas is about whatever the tab is about**, and that is
-the whole of how a route says something a column does not. On «Колонки» it edits
-the column — its action, its crew, its limit, its target — which holds wherever
-a card lands. On a route's tab it edits *the stage*: action, crew, `runIn`,
-deploy target, transitions, each falling back to the column's answer and each
-**naming that answer in the control** («— как в колонке: агент работает над
-карточкой —», «Никто не отмечен — работают агенты колонки: …»), with a link back
-to the column's own settings. That is what puts a different agent on each node of
-one route — the engine always preferred `FlowNode.Crew`, and the editor could
-only say it inside a fold called «Только в этом маршруте…», under a second list
-of the same agents. Two crews for one question read as a bug rather than as an
-override, and the fold meant the commonest reason to open a route was the one
-thing hidden on it. Making a column is one line above the canvas rather than a
-column of blocks beside it — click a kind, or drag it if where it stands matters
-— because the palette repeated in prose what the panel says anyway and took a
-sixth of the screen the picture is for.
+**The board is one projection and the only one.** A column is an option of the
+board's own select property, and which property that is is recorded on the board
+(`columnProperty`) rather than matched by name, so a board in any language and a
+board somebody renamed the status field on both work. There is no second model
+over it: no nodes, no edges, no per-node anything. What was there — a route
+canvas, a column registry, an editor with a tab per route — is described in
+`docs/decisions.md` under what it cost and why it went.
 
 A template is **shown and not edited**: `templateEditor.tsx` is a form — name,
-icon, what it is for, and the setup questions — with the columns and routes the
-template carries listed in words beside them. A template is made by building a
-board and saving it («Сохранить как шаблон…», `saveAsTemplate.ts`, which copies
-the board under the board's own name and carries its automation across), so what
-it carries is what already worked, and the way to change it is to change the
-board and save it again. It was the same route canvas inside a scrolling dialog,
-which put a graph editor between somebody and the two fields they came to fill
-in, and gave one set of routes two places to be edited — the second of them a
-copy nobody was looking at. `docs/templates.md` is that half written for
-somebody using it.
+icon, what it is for, and the setup questions — with the board's own columns
+listed in words beside them. A template is made by building a board and saving
+it («Сохранить как шаблон…», `saveAsTemplate.ts`, which copies the board under
+the board's own name), so what it carries is what already worked, and the way to
+change it is to change the board and save it again. `docs/templates.md` is that
+half written for somebody using it.
 
 **The marker is the app's to give** (`TemplateMarkerProperty`, `template`).
 It is how the importer recognises its own copy of a template across launches, so
@@ -731,15 +583,9 @@ translating something no template says any more. Both read the templates **off
 the disk**, because a base build embeds the paid edition's boards nowhere and a
 catalogue covers every edition.
 
-The columns and route names in `internal/acp/flowtemplates.go` are English for
-the same reason and translated at the same door: they name the template board's
-own columns, so `ListFlowTemplates` puts them through `TemplateWords` before
-the editor offers them — a route naming "In progress" on a Russian board is a
-route with nowhere to run.
-
 Which language is `<dataDir>/ui-settings.json` — the same setting the page
 keeps — so the templates are boards in the language the app is read in.
-Switching it reinstalls them (`App.retemplate`, set in `main.go`), because a
+Switching it reinstalls them (`App.relanguage`, set in `main.go`), because a
 template is a board rather than a catalogue string and nothing about the files
 changed: only the language recorded on the installed copy
 (`TemplateLanguageProperty`) can say the copy is now in the wrong one. Boards
@@ -759,13 +605,10 @@ is a member of an open template, so a template board being deleted reaches no
 client, while the replacement arrives as a new board on the team — the picker
 drew both languages at once.
 
-**Three names sit in those English files in Russian** (`appGivenNames`), and
-are never translated either way: «Исход» with «прошло»/«не прошло», the outcome
-the engine writes for every stage
-(`OutcomePassed`/`OutcomeFailed`) and the value a route's conditional edges
-compare against. They are the app's own field on somebody else's board, and the
-fix is for the engine to write those options by id rather than by name;
-`docs/deferred.md` carries it.
+Nothing is exempt from that translation any more. Three strings used to be —
+«Исход» and its two values, which the engine matched by title inside English
+template files — and they went with the field: nothing writes an outcome now,
+so nothing has to recognise one.
 
 **What an agent is told first is two texts, and there are two because there are
 two owners** (`internal/acp/boardprompts.go`). The board's — `boardPrompts`, on
@@ -785,16 +628,15 @@ wants said is already said in the folder, in the `AGENTS.md` its own CLI reads,
 and what one card wants said is the card. So the dialog prints the order it
 composes, and the count it prints is two.
 
-And a board's automation **lives on the board** — `columns`/`flows` in the
-board's own properties, in the board database, which is why a live board and a
-template are the same two keys and why a template can carry automation at all.
-`internal/acp` keeps the registry in memory because the engine reads it on every
-card move, but every edit is written through to the board it belongs to
-(`persistBoardLocked` in `boardseed.go`), and `config.json` does not carry it at
-all: `Columns`, `Flows` and `BoardPrompts` are `json:"-"`, working copies fed
-from the boards themselves. A board that refuses the write keeps its entries in
-the registry for the run and the next edit tries again — the file is not a
-fallback any more, which is the trade the move onto the board bought.
+And what a board keeps **lives on the board** — `prompt`, `setup` and the three
+records saying which of its fields hold the folder, the branch and the columns,
+in the board's own properties, in the board database. That is why a live board
+and a template are the same keys, and why a board carried to another machine
+takes its instructions with it. `internal/acp` holds a working copy in memory
+and writes every edit through to the board (`persistBoardLocked` in
+`boardseed.go`); `config.json` does not carry any of it — `BoardPrompts` is
+`json:"-"`. A board that refuses the write keeps its entries for the run and the
+next edit tries again.
 
 **A setting lives where its owner does**, and that is the rule the whole
 settings surface is sorted by. What the machine keeps for itself — the tailnet,
@@ -807,10 +649,9 @@ interrupt, and the archive that carries every board in and out — is
 preference, «Агенты работают с карточками» in `settings/appPanel.tsx`). Off,
 the app is a kanban board and nothing on screen names an agent. The page does
 it at the gates it already had: every `is…Available()` of `components/acp`
-answers no, the setup plan keeps only the name (`withoutAgents`), a board has
-no routes (`useBoardFlows`), nothing waits (`useAttention`), the agents' card
-fields are hidden (`withoutAgentProperties` — the folder, the branch, the
-outcome) and the assignee field offers people only. Go reads the same key
+answers no, the setup plan keeps only the name (`withoutAgents`), nothing
+waits (`useAttention`), the agents' card fields are hidden
+(`withoutAgentProperties` — the folder and the branch) and the assignee field offers people only. Go reads the same key
 (`aiEnabled` in `uisettings.go`) through `Manager.SetSwitchedOff`: a card move
 is dropped before the engine sees it, the folder poll and agent sources stop,
 and `startSession` refuses whatever was already queued. What is running is
@@ -865,7 +706,7 @@ is adjusted, since `awayIndicator` is an eight-pixel dot there and the word
 ours included; that bar is what moved the paper theme's amber and its stamp a
 few levels.
 **A theme is a pair, and which half is a second setting.** «XCIII», «Gruvbox»,
-«Эйсид-техно» each come light and dark, and `themeMode` — light, dark, or
+«Acid techno» each come light and dark, and `themeMode` — light, dark, or
 whichever the system is set to — says which is worn. One list asked both
 questions at once and could answer neither: it said «Gruvbox Dark» and «Как в
 системе» in the same column, so choosing a design also fixed a polarity, and
@@ -899,16 +740,15 @@ in for both while there was no site: somebody who opens «Руководство
 manual and not a source tree, and a bug report should not cost a person an
 account on a hosting service. The address is printed on the panel as well as put
 in the `mailto:`, since a webview that refuses to open one leaves nothing to
-copy. What a board *runs* — its columns and its routes — is
-`automationDialog.tsx`.
+copy.
 
 **What a board had to be asked before it can run is not that, and each question
 is its own item in the board's ⋯ menu**: «Системный промпт доски…»
 (`boardPromptsDialog.tsx`), «Папки…» (`workdirsDialog.tsx`), «Куда деплоить…»
 (`deployTargetsDialog.tsx`), «Пройти настройку заново…» (the wizard). Which of
 them a board has is **the board's own setup plan** (`BoardSetupPlan`), so the
-menu differs by board exactly as the questions do: one that deploys offers a
-deploy host, a board of household chores offers folders alone.
+menu differs by board exactly as the questions do: one that declares a deploy
+step offers a deploy host, a board of household chores offers folders alone.
 
 **The first question is the board's own name** (`SetupStepName`), and it is the
 only step that is not about this machine and the only one with no way past it.
@@ -921,30 +761,19 @@ on screen are two boards with the same name whatever the bytes say. The wizard
 reads the other names through `listBoards()` rather than the store, so it needs
 no provider around it in a test.
 
-**The plan is read off the board's stages, not off its template**
-(`setupSteps`). It used to be the steps the template declared in `setup`,
-falling back to inference — and a declaration is written once, before the board
-exists, so a board of household chores that grew a deploy stage a month later
-was never asked for a host and never offered «Куда деплоить…» either: the stage
-stood there when a card reached it with no door in the UI to fix it. It ran
-stale the other way too. So the stages decide *which* questions there are and
-the declaration decides what they say — the hint, the `required`, and the one
-kind nothing implies (`source`: no arrangement of columns means cards should
-arrive by themselves). A board with no stages at all is the exception, since
-inference answers that case by offering everything: there the declaration is
-the whole plan.
+**Four questions are every board's** (`impliedSetup`): its name, a folder, an
+agent, and the last screen saying what to do with what was set up. They are what
+an agent needs to work a card at all — somewhere to work, and somebody to do it
+— and nothing about a board implies more than that any more. A board may ask for
+others of its own in `setup` (`BoardPropSetup`): a deploy host, and whatever the
+closed set grows later. The set is closed on purpose — a board that could
+declare arbitrary fields would be a program, and nothing on this side could
+promise the answer fits the registry it is going into.
 
-None of it makes a stage's question an obligation. An inferred step keeps the
-closed set's own answer about being optional, because **a stage nobody has
-configured is not a broken board** — it runs nothing by itself and a person
-works the card there by hand, which is a way of using a column and not a
-failure. The one place that is said out loud is the stage that cannot start at
-all: a test stage with no browser anywhere gets a note in the editor's panel
-saying so, and saying what happens instead (the card waits for a person). They were folds of the automation dialog, and that was
-wrong twice over — setting up where an agent works is not a question about
-columns and routes, and a fold under a canvas is a place nobody opens, which is
-how somebody who had just answered "which folder" in the wizard ended up with a
-card that could not name one.
+It used to be read off the board's stages, which is how a step could be *implied*
+at all: a route with a deploy stage needed somewhere to deploy to. With the
+routes gone there is nothing to infer from, so the four are asked of everybody
+and the rest is the board's to declare.
 
 **Relaxed mode is the word for that, and for the moment it is a word and not a
 thing.** Every setup question may be left unanswered — «Пропустить» in the
@@ -960,18 +789,13 @@ time.
 
 What it means today, question by question:
 
-- **no folder** — a conversation about a card opens in «черновики доски», and
-  an agent stage of a route stalls with a reason and keeps the card where it
-  is (`errNoWorkdir`, `StartCardTerminal`);
-- **no crew on the board's agent stages** — the card's assignee field offers
-  every agent on the machine rather than none (`BoardAgentNames` empty narrows
-  nothing), and who works the card is whoever it is assigned to; one agent
-  registered answers that by itself, several and nobody assigned is the stall
-  `resolveSessionAgent` reports;
-- **no deploy target, no browser** — the stage does not start and the card
-  waits for a person, which is the "not a broken board" rule above;
-- **no action on a column at all** — a person works the card there, and that is
-  what most columns on most boards are.
+- **no folder** — the session runs in a scratch directory of its own, and a
+  planning conversation reads «черновики доски» (`<dataDir>/boards/<boardID>`);
+- **nobody assigned** — nothing starts, and the card sits in the column
+  somebody put it in. The assignee field offers every agent on the machine, so
+  answering it is one click on the card;
+- **no deploy target** — the deploy button says there is nowhere to publish to,
+  and the card is otherwise untouched.
 
 The rule a new default has to meet is the one those share: it must be sayable
 in one sentence on the screen that leaves the question open, and it must be the
@@ -992,8 +816,8 @@ lives with the line rather than being re-derived at each call site. **"Сохр�
 machinery is untouched and still reached by the template picker's pencil, but
 making a template is the rarest thing anybody does on a board and it stood one
 slot from the things a board is set up with. Registering an agent needs none
-of these screens: `agentQuickAdd.tsx` is the two-field form, used by the card,
-the column's crew list and the setup wizard alike.
+of these screens: `agentQuickAdd.tsx` is the two-field form, used by the card
+and the setup wizard alike.
 
 **The registry is not an answer by itself.** A card names its folder with an
 option of the board's own field, so anything that adds a folder mirrors the
@@ -1006,14 +830,13 @@ deadline on it: `docs/deferred.md` says why an id belongs there instead.
 
 **A card names its agent by whom it is assigned to**, and by nothing else. Each
 registered agent has a board account under its own name, so «Кто занимается»
-answers the question the whole board already asks with that
-field. The machine keeps the field truthful as the card travels: a stage with
-its own crew writes the worker it resolved into the assignee
-(`assignCardAgent` → `BoardUsers.AssignCardAgent`, the person property found by
-its *type*, the write silent and before the launch) — an uncrewed stage writes
-nothing, a card already saying so is left alone, and a card assigned to a
-person never reaches the write because `humanAssignee` vetoes the session
-first. There used to be a second one — an «Agent» select `agentSync.ts` kept in
+answers the question the whole board already asks with that field — and it is
+now the *only* thing that decides who works a card: `assignedAgent` matches the
+card's assignee against the registry by account id first and by username after,
+the id being the answer that survives a rename and the username the one that
+still answers for a card assigned before the account was recorded. A card
+assigned to a person starts nothing, because `humanAssignee` vetoes the session.
+There used to be a second one — an «Agent» select `agentSync.ts` kept in
 step with the registry — and two fields for one question meant a rule about
 which of them wins and a field that said nothing on a board where nobody had
 registered an agent. It is gone, and `resolveSessionAgent` no longer reads
@@ -1031,11 +854,14 @@ be assigned to — and it needs no board: an account is a row in the board
 server's own users table, which is what every board reads when it offers people
 to assign a card to. There was a sync instead, `syncAgentsToBoard`, run from
 wherever a board happened to be open, and it was a sync in search of an event:
-register an agent in the settings, never open «Колонки и маршруты…», and
-the agent had no account anywhere. Running it on every board render was worse —
+register an agent in the settings, never open a board's own screens, and the
+agent had no account anywhere. Running it on every board render was worse —
 finding-then-creating is not atomic, so one agent got three accounts. A
 registry that predates this is caught up once, at startup (`ensureAgentAccounts`
-in `Manager.Start`). `SyncAgentUsers` survives for the board *membership*,
+in `Manager.Start`). Every registered agent may be assigned a card on any board:
+the board keeps no crew of its own, so the only thing that narrows the field is
+the AI switch (`agentAssignees.ts`). `SyncAgentUsers` survives for the board
+*membership*,
 which is the board's own business and decides only whether the agent is listed
 under «участники доски» or found by search.
 
@@ -1045,9 +871,8 @@ the empty string, was skipped by `AgentUsers`, got no account and could never be
 put in the one field that says who works a card — and «клаус 2» was provisioned
 under the name "2".
 
-Folders belong to **running an agent**, not to having a board: a board with no
-`agent`/`test` column is never asked for one, never grows a «Папка» property,
-and a folder marked global joins only boards that already have that property.
+A folder marked global joins only boards that already have a «Папка» property,
+so a board nobody works code on never grows one.
 
 ## A folder hands out a workspace, and the card owns it
 
@@ -1089,9 +914,9 @@ one workspace, works one branch — which the board keeps in a single text field
 and hands its agent one cwd, so a second folder had nowhere to go:
 `resolveWorkdir` took the first of the selected options and dropped the rest,
 which is a choice made for the person and made in silence. So the field is a
-single select (`workdirSync.ts`). The name goes with the type, by the
-rule that lets this app rename a field at all — it is one this app gave
-(`OUR_WORKDIR_TITLES`), and a name a person typed is theirs and stays.
+single select (`workdirSync.ts`). It is named in the language the page is
+read in when this app makes it (`fieldNames`), and never renamed after: the
+board records the field by id, so what it is called is the person's.
 
 **A board with one folder fills the field in** (`soleWorkdirOption`, applied in
 `centerPanel.newCardProperties` beside the view's filter and the group a card
@@ -1141,13 +966,12 @@ with a folder that has no git is refused where the answer is given.
 
 **A branch appears because somebody took the folder to work on a card, not
 because the folder is a repository.** `workspace.go` is the one entry point —
-`ClaimWorkspace(WorkSpec)` — and who asks does not change the answer: the
-session, the terminal beside it and the next stage of the route all get the same
-directory and the same branch, because a workspace belongs to the **owner** (the
-card id, or `board:<id>` for a conversation with no card) rather than to the
-run. Each run used to make its own, so a card that travelled a three-stage route
-left three branches and three checkouts, and the conversation about a card sat
-in a copy the agent working on it never saw. A conversation with no card gets
+`ClaimWorkspace(WorkSpec)` — and who asks does not change the answer: every
+session a card has, one after another, gets the same directory and the same
+branch, because a workspace belongs to the **owner** (the card id, or
+`board:<id>` for a conversation with no card) rather than to the run. Each run
+used to make its own, so a card worked three times left three branches and three
+checkouts. A conversation with no card gets
 the folder itself and creates nothing.
 
 Two ways to work in a repository, and the answer is the **folder's, on the board
@@ -1172,15 +996,21 @@ has been asked about (`always`→worktree, `never`→branch).
 somebody's uncommitted work — tracked work, since untracked files survive a
 switch untouched and every checkout has some. Both refusals are **state, not
 failure** —
-`errWorkdirBusy`/`errWorkdirDirty` become the card's stall reason and the route
-keeps its place, instead of the card being carried off to «Заблокировано» by
-something that is not about the work. A merge is what frees the folder
-(`ReleaseMergedBranch`, from the VCS watcher); picking the next card up
-automatically is deliberately not built (`docs/deferred.md`).
+`errWorkdirBusy`/`errWorkdirDirty` become the card's stall reason and the card
+keeps its place, instead of being carried off to «Заблокировано» by something
+that is not about the work. A merge is what frees the folder, and it is found
+out when the next card asks for it rather than by watching: `folderIsFree`
+asks git whether the holder's branch is gone or already in its base — locally,
+then on the remote after a fetch, since a pull request is merged there
+(`branchIsDone`) — and never while the holder still has a live session, because
+a branch with nothing committed yet reads as merged. A watcher that polled
+every branch did this once and went with the routes, leaving the folder held
+for good. Picking the next card up automatically is deliberately not built
+(`docs/deferred.md`).
 
 **The branch is the product, the copy is the workshop.** After a stage finishes
 the directory is folded away (`FoldWorktree`) and the branch stays; the next
-terminal on that card remakes the copy from the branch, which is what makes
+session on that card remakes the copy from the branch, which is what makes
 folding it safe — and it never touches a copy with uncommitted work in it or one
 a CLI is still running in. The branch is also written onto the card, into the
 text property the board records as `branchProperty`: a machine's database
@@ -1191,15 +1021,13 @@ The branch is named after the card's title, transliterated (`dokku.foldLabel`
 carries а Cyrillic→Latin table, so «Почини логин» is `pochini-login-…` rather
 than a hash) — or by the agent itself when `agentNamedBranches` is on: a short
 headless ACP session (`naming.go`, the same shape as a source's run) answers
-with one name, no terminal appears, and anything wrong with the answer falls
-back to the title. Machine-wide, because it is about how this machine spends
+with one name, and anything wrong with the answer falls back to the title. Machine-wide, because it is about how this machine spends
 agent runs.
 
-Where a stage works is the stage's own answer (`FlowNode.RunIn`, `RunsIn`),
-defaulting to what that kind of stage has always done: an agent in the card's
-workspace, a deploy and a test in the folder itself. That field is the whole of
-"QA before the merge" — a test stage told to run in the card's workspace, and an
-edge waiting for «ветка влита» after it.
+Where a session works follows from what it is: an agent gets the card's own
+workspace, because it writes code; a deploy stands in the folder itself, because
+it publishes a branch that already exists; a planning conversation stands there
+too and claims nothing, because it only reads.
 
 ## An agent talks back through MCP, not through its output
 
@@ -1210,45 +1038,35 @@ a person read the screen and retyped them — and it is what finishing ends with
 too, since a card carries what happens to it next in its own column.
 
 The surface is the board in the vocabulary a person uses: read it
-(`list_columns`, `list_flows`, `list_cards`, `get_card`), put work on it
-(`create_card`, `create_cards`), change it (`update_card`, `comment_card`), and
-carry a card on (`move_card`). Everything is **named, never identified** — a
-column, a folder, a route, an answer a stage waits for — because names are what
+(`list_columns`, `list_card_fields`, `list_cards`, `get_card`), put work on
+it (`create_card`, `create_cards`), change it (`update_card`, `comment_card`),
+carry a card on (`move_card`) and end the run (`finish_work`). Everything is
+**named, never identified** — a column, a folder, a field and its values —
+because names are what
 a person typed and ids are what the board's own REST API would have made an agent
 learn. A **card id** is the one exception, and it has a default: empty means the
 card the run stands on (the grant carries it), which is the card an agent working
 on one always means.
 
-**`finish_work` is how a stage of a route ends**, and it is the load-bearing
-piece of the arrangement above: an agent stage is a terminal, and only the agent
-knows the work in it is over. It says done-or-not and one line of what it did;
-that becomes the flow trigger, the card's one comment and the end of the
-conversation. A run that is not a stage — a planning terminal, a card outside any
-route — is told so and pointed at `move_card`, since the tool is about a stage
-rather than about the board.
-
-Three tools are not about the board at all, and all three are there because
-**nothing else can know**. A terminal is the vendor CLI in a pty, not an ACP
-session, so no protocol carries a title, a recap or a stop reason, and the only
-other source would be the CLI's own transcript file — its private business, in a
-different shape per kind. The agent, on the other hand, is the one having the
-conversation, so it is asked: `finish_work` above, `describe_conversation`, one
-line about what this conversation is doing, and `name_conversation`, what it is
-called. The grant names the terminal (`BoardGrant.TerminalID`), which is what
-keeps an agent from describing somebody else's; the recap lands in
-`TerminalInfo.Summary`, drawn under the name in «Открытые терминалы» and on
-«Терминалы» on a phone, and both are kept in the record so they come back with
-the conversation. The two are split rather than one call with two fields because
-they are edited from opposite ends: the recap is the agent's, volunteered and
-replaced as the conversation moves on, while the name is the row's — a person
-types over it — and it is *asked for* rather than offered (`AskTerminalName`).
+**Four tools are what a finished stage does**, in this order, and the task text
+says so (`resultBrief`) because a CLI may not have loaded the tools by the time
+it is told: `comment_card` with the result, `update_card` for anything the task
+asks to be recorded on the card, `move_card` into the column whose name says
+what has happened, and `finish_work` — done or not done, and one line — which
+ends the stage. `finish_work` is load-bearing: the session's turn ending is not
+the same as the work being over, and only the agent knows which. A run with no
+card behind it is told so, since the tool is about a card rather than about the
+board.
 
 `move_card` is `update_card` with a column in it, and the split is for the model
 rather than for the code: moving is the call whose *consequence* is the point.
 Which is why `acp.CardEdit` is the one write in `BoardWriter` that lets the board
 notify — the rest are the integration's own bookkeeping and must not re-trigger
 the agent that produced them, but a card moved because an agent asked for it has
-to set the column's automation off, exactly as a person's drag does. The card's
+to reach every window and every other reader, exactly as a person's drag does.
+What it must *not* do is start the agent again, and that is remembered on the
+way out rather than read off the event: `noteAgentMove` before the write,
+`movedByAgent` in the trigger loop. The card's
 **description is not editable**: it is a person's content, and what an agent has
 to say about a card goes where everything else a session says already goes.
 
@@ -1272,18 +1090,14 @@ existing cards, every call that names one is checked against the grant's board
 that check one board's grant would edit every other board's cards.
 
 A session declares MCP servers in `session/new`, where ACP has a field for HTTP
-ones. A **terminal** has no such field, so it gets a config file its CLI is
-pointed at — `cliMCPArgs` in the kind table, beside `cliBin`. A kind that has not
-filled that column in simply runs without the tools, and since a stage of a route
-*is* a terminal that now decides more than whether the window is useful: no
-tools, no `finish_work`, so `stageRunsInTerminal` leaves such an agent on the
-protocol rather than opening a conversation nothing could end.
+ones — and only when the adapter says it takes them
+(`AgentCapabilities.McpCapabilities.Http`). An agent whose adapter does not is
+an agent with no way to end a stage, since `finish_work` is a tool: it runs, and
+the card waits for a person.
 
-A deploy or a test session could take the same server through `session/new` and
-does not: a card's own agent creating cards — or moving its own card into the
-column that starts it — is a loop with nothing to stop it, and that wants a
-decision before it wants code. An agent stage no longer has the question, being a
-terminal with a person able to watch it.
+A deploy session could take the same server and does not: it reports through the
+dokku server's own record, and an agent that could move its own card out of the
+column it was started from is a loop with nothing to stop it.
 
 ## A source brings cards in, and the app decides what they become
 
@@ -1344,7 +1158,7 @@ moves between columns: a card is read, then carried away or deleted. Its one
 view is a kanban grouped by who brought the card — a column per source — and
 those columns are facts about the past rather than places, so a card cannot be
 dragged between them (`columnsAreFacts` in `kanban.tsx`). The person's own cards
-form a column too, headed «Мои задачи» rather than by their username
+form a column too, headed "My tasks" rather than by their username
 (`kanbanColumnHeader.tsx`, on the inbox board only), because what those cards
 are says more than who typed them. The sidebar pins it above every category
 (`SidebarInboxItem`), as a row with no views under it and no board menu; a
@@ -1385,504 +1199,6 @@ files stands in the board's first column **without notifying**, unlike the
 person's move above: the sorter picked a board, not a column's automation.
 Every decision, moved or left, is a row of `inbox_sort`. Like the sources, the
 package imports neither the board nor the agents; `main.go` hands both in.
-
-## A terminal is where the work happens, watched or not
-
-`internal/acp/terminal.go` + `terminalws.go` run the agent's **own CLI** in a pty in
-the card's worktree, drawn by xterm.js and wired over a WebSocket on the front door
-(`/acp/terminal/{id}/ws`).
-
-It began as the place a person works *with* an agent, and it is now both that and
-the place the automation works: an agent stage of a route is a terminal, opened
-with the card's task already in it (`stageterminal.go`, above). One mechanism,
-two callers, and the same conversation either way — asking for the card's
-terminal while a stage is running hands back the stage's own, because that *is*
-the conversation about that card at that stage.
-
-**Where it is drawn is beside the card, not in it**: `pages/…/terminalPage.tsx`
-takes its terminal id from the route when it is a window and from a prop when it
-is not, and `cardDialog.tsx` gives it a panel of its own next to the card
-(`cardTerminal.tsx`, lazily so a card whose panel is never opened does not pay
-for the emulator). What opens it is a button in the *dialog's* toolbar, beside
-«Attach», because the card's body is what a person wrote and everything of ours
-put in there was the machine talking in the middle of it. There was a row in the
-card once — the agent's name, the session status, the branch with a deploy
-button, a form asking which folder and which agent, and a chevron that expanded
-downwards — and the thing a person actually wanted, the terminal, was the part
-hardest to find in it. The window survives as the open-in-new button in the
-panel's own head — `OpenCardTerminal`'s `window` argument is what asks for one,
-the glyph is the compass font's, and it appears only once the terminal runs —
-because a screen of its own is the one thing a panel beside a card cannot be. And **no session UI of
-ours was built to go beside it**: the terminal *is* what a session looks like,
-since the agent's own CLI already draws its work and asks its own questions.
-
-**A conversation is keyed (card, node): one per column the card has stood on.**
-The node is the option id of the column — the same id a route's stage hangs off
-(`FlowNode.ID`) — so the person who opens a terminal on a column and the stage
-that runs there are in **one** conversation, with the column's agent, workspace
-and prompt. Come back to the node and you come back to the session. A card with
-no column at all stands on `nodeNone` (`@none`, spelled with `@` because option
-ids are not made of it) and can still be talked over. A stage with no route
-behind it keys by its column's option id too (`Session.NodeID`).
-
-That is the key **work** is filed under, and a stage joins the conversation
-already open there: `startStageTerminal` **adopts** it (marks it a stage, types
-the task in) rather than opening a second CLI beside it. What a column means —
-who works there, what they are told — is the column's setting, so a person who
-sat down at a stage and the stage itself belong in one place.
-
-**A conversation is also one of two kinds, and the kind is declared rather than
-derived** (`nodeTalk`, `@talk`). Work stands in the card's workspace, a route
-may join it, it ends in `finish_work` and leaves a branch; **talk** — the
-wording, the plan, the brief — claims nothing and ends in nothing. There was a
-key for that once (`@brainstorm`), taken out because the split it made was
-arbitrary; what the node model could not express is this axis, and while the
-kind was *inferred* — from the column the card happened to stand in, and from
-whether it had named a folder yet — the two collided. A card talked over before
-it had a folder took the node's key with a conversation standing in «черновики
-доски»; the stage then typed its task into a CLI sitting there, made a branch,
-wrote the branch on the card and left it empty. Neither the lists nor the button
-on the card could say which kind a row was, because nothing knew.
-
-**Work refuses what talk is allowed.** A card with no folder has nowhere for
-work to happen, so `StartCardTerminal` returns `errNoWorkdir` rather than
-falling back to the drafts folder — that fallback is talk's, and it was the
-silent half of the collision above. The refusal is what makes the panel ask
-which folder (it already turns an error into the chips), and the console button
-on the card's face — a window, an interface with no way to ask anything — opens
-**the card** instead (`openCardTerminalWindow` answers false).
-
-So there are **two doors** — `StartCardTerminal` and `StartCardTalk`, bound as
-`OpenCardTerminal`/`OpenCardTalk` — and the card's own conversation is always in
-the list, first, spoken in or not: it is the one that asks nothing of the card.
-It is also the one thing about a conversation that is *not* re-resolved each
-time it opens: it stays in the folder it started in, because it is a train of
-thought with a transcript behind it and the CLI's own resume is
-directory-scoped. `startStageTerminal` keeps a second guard behind the key —
-adopt only what stands in the stage's own place — because the cost of being
-wrong there is silent.
-
-**Where a conversation runs is the node's answer** (`cardPlace`). On a column
-that runs an agent it claims the card's workspace exactly as the stage would —
-so the stage joins it in the right directory — honouring the node's `RunIn`. On
-every other column `talkingPlace` stands it beside the work: the copy the card
-already has, else the folder, else «черновики доски». And it asks little of the
-card: no folder is an ordinary case, nobody assigned is answered by the node's
-crew, then the assignee, then the single agent — a fully busy crew does not
-block a terminal, since the person opening one is present.
-
-**A card returning to a node resumes that node's conversation with a brief, not
-the task** (`returnBrief` → `terminalSpec.returnPrompt`): the conversation
-already had its task, and what it lacks is why the card is back — the trigger
-and what the stage it returned from reported, which `flow_event.said` keeps
-(the agent's closing words, threaded through `advanceFlowWith` → `enterNode`).
-A still-running CLI on a passed node stays reachable by id until it exits — a
-person's terminal is never killed. Resume metadata is per conversation; the
-transcript `claude --continue` picks up is directory-scoped, so two
-conversations sharing a directory share a transcript — the same trade every
-non-git folder already makes.
-
-**And it is told what is already in the copy** (`branchstate.go`): the branch,
-what it was cut from, the commits standing on it, the files they touched, and
-the command that reads the diff — assembled from git after the workspace is
-claimed, which is why it is appended in `runSession` rather than composed with
-the rest. The diff itself is deliberately not in it: the agent is standing in
-the directory it describes. Present only when there is something to describe, so
-a route's first stage gets nothing. What it fixes is the second stage: a review
-running an agent got exactly the brief the stage before it got — the card's task
-in a copy full of somebody else's commits — and did the task again.
-
-**A stage has a prompt of its own, inherited like its crew**: what working in
-this column *means* — the reviewer's brief on «Ревью» — lives on the column
-(`ColumnSpec.Prompt`, the textarea on the «Колонки» tab) and a route node may
-override it for its stage alone (`FlowNode.Prompt`, whose placeholder names the
-column's answer). It lands after `promptLead` and before the card's task in
-every compose path (agent, deploy, test) and opens a person's conversation on
-that node too (`joinPrompts(place.prompt, cardIntro(ev))`). Typed by a person,
-so it passes through as data in whatever language the board works in.
-
-**Properties are the dataflow, and a stage declares its half**
-(`PropertyWrite`; `Writes`/`Reads` on `ColumnSpec` and `FlowNode`, inherited
-like the crew). Writes are what makes a transition on a property deterministic:
-an agent stage delivers the values through `finish_work`'s `properties` and a
-required one is refused without — checked in `FinishWorkFromTools`, which also
-**writes the fields before delivering the report**, deliberately twice over:
-the route advances on the report and its edges read the card as it is then,
-and a write the board refuses (no such option, no such property) comes back as
-the tool call's own error to the one party that can fix the value. The write
-is silent (`SetCardFields` in the writer: a select by option name, anything
-else as text) because the outcome is the one event the route acts on; the
-column property is refused — the card moves by the outcome or `move_card`. A
-deploy stage writes its preview URL and a test its verdict by itself
-(`writeStageFields`), so those facts stop dying in comments. Reads open the
-brief valued (`cardInputs`, «From the card: …») — sessions and the person's
-conversation on the node alike. A read nobody has written is named as empty
-beside one that has a value; a block where *every* read is empty is dropped
-whole. That block is the ordinary state of a route's first stage — and of every
-stage of a route that loops, where a later stage's output is «upstream» of an
-earlier one — so on a real run the task opened «From the card: Превью:» and the
-instructions came after it. The editor edits both lists
-(`writesPicker`/`readsPicker`; deploy/test get a single picker for their one
-machine value) and warns per route about a conditional edge whose property no
-stage writes (`unwrittenConditions`) — named, not refused, since the value may
-be a person's own click.
-
-**The property a stage needs is made where the stage is declared**
-(`onCreateProperty`, `NewPropertyForm`). Not one shipped template declared a
-single write, and the reason was the picker: it offered the board's existing
-fields, which on every board here are Приоритет, Папка, Срок, Ветка, Автор and
-Создана — none of them a preview address. The list was never closed, it was
-empty of the right answers, and the way to one led out of the dialog and onto
-the board. So the last item makes the field, the dialog is what patches the
-board (the editor knows nothing about it, the same bargain `onCreateColumn`
-takes), and the form asks what the property *holds* — because that is the
-question that decides something: an edge asks "is it this value", which only a
-closed set can answer, and a text write is carried to the stages further on
-instead. A deploy and a test stage are not asked, one producing an address and
-the other a verdict. The same picker offers only what `SetCardFields` can
-actually write (`WRITABLE_TYPES`, `writableProperty` in Go): a date or a person
-would take a string the board cannot read back, and `createdBy` and its kin are
-not writable at all.
-
-**And the contract is said to the agent, twice.** In the brief — `stageOutputs`
-beside `cardInputs`, naming every declared write and what its value may be, with
-a select's own options read off the board (`BoardMeta.CardProperties` →
-`boardmodel.ReadCardProperties`) rather than copied into the declaration, where
-a renamed option would leave a stale list standing. And as a tool —
-`list_card_fields`, which answers about *this* run: the grant names the
-conversation, the conversation names the stage waiting on it, so the declared
-and required ones are marked (`BoardToolFields`). Neither is decoration. An
-agent asked for a verdict used to find out what «Вердикт» accepts by being
-refused, and a required write nobody had mentioned failed the stage on the first
-attempt to end it — the deploy/test half is excluded from the brief on purpose,
-since this side writes those values and the agent has no way to produce them.
-
-**Reads have a third answer, and it is the graph** (`FlowEntry.UpstreamWrites`,
-`upstreamWrites` on the page, kept in step). Node's own list, else the column's,
-else what every stage ahead of this one on the route declares that it writes. A
-value an earlier stage put on the card is *on the card*, and ticking «Превью»
-again on each stage after the deploy was asking for the same fact twice — the
-commonest reason a route's dataflow was declared on one stage and nowhere else.
-The walk is backwards over the incoming edges with a visited set, because a
-route has cycles on purpose (a failed check returns the card to the agent), and
-a stage never reads its own output back. The editor draws them as ghost rows
-naming the writer and **does not let them be removed**: with one row left, a ✕
-would write an empty list, and an empty list is exactly what asks the route
-again — so an override is written by *saying* something, which is the shape the
-crew and the prompt already have. A person's conversation on the node gets the
-same fallback (`cardPlace`), since it is about the same work.
-
-**A transition can ask, and the card waits where it is** (`internal/acp/
-cardask.go`, `FlowEdge.Ask`). Everything else on a route is decided without a
-person; this is the one place the machine stops and asks, because some
-decisions are neither the agent's nor the board's — how the work is going to be
-arranged for *this* card. It hangs off the arrow rather than off the stage
-because one stage is entered in more than one way and the answers differ:
-«Не начата» → «В работе» is where somebody decides how the work is arranged, and
-the same card coming back from a review has that decided already.
-
-**The way onto the route is transition 0** (`EntryNode`, `@entry`), and it had
-to exist before that first example was true of anything. A route's first stage
-has no arrow into it — the card arrives from the backlog, from a source, from a
-hand anywhere the route does not pass through — so the crossing where nothing
-about the work has been decided yet was the one crossing with nowhere to write a
-question. It is an ordinary edge whose `From` is `EntryNode`: at most one per
-stage, carrying no trigger (what fires it is the card arriving, which is the
-move itself) and no condition, skipped by `UpstreamWrites`, and invisible to
-`Next` because no stage has that id. `handleFlowMove` reads a card with no
-recorded place as coming from there, which is what makes the question asked once
-— coming back to the first stage later arrives from a real stage. It is also the
-one hold that has no flow state to write itself onto, so `holdForAsk` makes the
-record, standing on no stage.
-
-Every route gets one: `flowBuilder.node` adds it with the first stage, and the
-shipped «Разработка» carries it on all three routes asking `AskWorkMode`. The
-canvas does not draw it yet — an entry edge has no source box, and `FlowDiagram`
-already filters out edges whose ends are not stages, so it survives every edit
-round trip without being editable there. Two kinds,
-and the split is where the answer goes. `AskProperty` writes a board select
-onto the card, which is the dataflow above and nothing new. `AskWorkdir` writes the board's own folder field, and is
-asked first for the reason the whole mechanism nearly missed its own case: the
-crossing it was built for is a card leaving the backlog, and such a card has
-usually named no folder, which made the question after it unanswerable exactly
-where it mattered. So questions are resolved **as each comes up** rather than
-when the arrow is crossed, and one that cannot be put to anybody is marked
-skipped rather than dropping the lot. `AskWorkMode` is
-the machine's own — «отдельное рабочее дерево» or «ветка в этой же папке» — and it has no
-card property because it is not a fact about the work but what the workspace is
-made of: it lands on `FlowState.WorkMode`, which `ClaimWorkspace` prefers over
-the folder's setting, and from there into the `checkout` row that the review's
-diff and the deploy already read. Three answers to one question with the
-precedence stated once, in the only place that asks it — the checkout is the
-fact, the card's answer is the intent, the folder is the default — and
-`enterNode` carries the answer across every later transition, because it
-rebuilds the record from scratch and anything not carried is dropped. The
-question is drawn on the card's own route strip beside where the outcome
-buttons are, one at a time, and it takes those buttons away while it stands, or
-there would be a second way to move the card out from under it. An unanswerable
-question — a select that left the board, a work mode asked of a folder that is
-not a repository — is **dropped rather than parked on**: the arrow carried
-cards before anybody wrote a question on it.
-
-**How a stage ended is a field, not a column** (`BoardPropOutcome`,
-`writeCardOutcome`, `OutcomeValue`). It used to be expressible only as *where
-the card went*: the shipped board grew «Проверено», «Не прошло» and
-«Заблокировано», three columns whose whole content was one fact about the stage
-before them — and a fact read as a place where work happens, on the board where
-nobody works in them and on the canvas where they are stages that «ждёт» for
-ever. The engine writes «прошло»/«не прошло» onto the card for
-**every** stage and without anybody declaring it, which is what makes it
-служебное: every node produces one, so no node should have to say so. Written
-before the edges are read, so a condition may branch on it, and written on the
-dead-end path too, because that card is the one somebody will come and look at.
-Silently and by id, like the branch — a notify would set the column's own
-automation off — and by the *card's* board rather than the route's, since a
-route with an empty `BoardID` runs on all of them. A board with no such field
-gets nothing, which is every board made before it existed; the editor keeps it
-out of the writes picker exactly as it keeps the column property out, and a
-condition may still ask about it, which is the point of it being a closed set —
-though the editor no longer *offers* it: it is out of the condition picker as
-well as the writes one, and an arrow that already asks about it is shown as a
-sentence rather than as two dropdowns whose answer is the only one there is.
-
-**Two values and not three.** «Заблокировано» was tried and taken out: the card
-is asked whether the step worked, every question anybody asks of the field is
-that question, and «could not run» is a *reason* — which the stall record
-already carries, where it can be a sentence instead of a word. Binary is also
-what makes the field answerable in one click by a person.
-So a route no longer needs a column to say "this failed": a stage whose outcome
-has no edge parks the card where it is and says why (`stallCardSoft`).
-
-**A person writes it too, and that is the way back from a review** (`rejected`
-in `flowtemplates.go`). A wait stage runs nothing, so it has no outcome of its
-own — git says a branch was merged and cannot say a reviewer refused — and the
-signal is the reviewer marking the card: `card.changed` with «Исход» = «не
-прошло». One field for "how did this step end" whether a machine or a person
-answers it, and no second «Одобрено» beside it. The engine's own write cannot
-fire that arrow, because `SetCardOption` disables the notify — which is the
-same reason every write of ours is silent, doing double duty here.
-
-**And the card offers that answer as two buttons** (`CardFlowMark`,
-`MarkCardOutcome`). A stage where nobody works and nothing runs is one the card
-sits on until a person says how it went, and saying so was finding a field and
-picking a value out of it. The route already knows where each of the two
-answers leads, so the strip draws them named by the stage they lead to — «← В
-работе», «Деплой →» — and pressing one writes the outcome **through
-`UpdateCard`**, which is the one board write of ours that notifies, because the
-notify is what wakes `handleCardChanged` and moves the card. Offered only where
-the route has such an edge and nothing is running: a stage that decides for
-itself must not grow a second way to answer for it.
-
-**They are on the route strip and not on the card's face.** They stood on the
-face for a while, on the argument that the card is what somebody is looking at
-when they decide — and what that cost was a face saying two things at once,
-what the work is and a decision about it, on every card of a review column. The
-strip is inside the card, beside the stage the answer is about, which is where
-the rest of a card's machinery already lives. The per-board call that fed the
-face went with them (`CardMarksForBoard`, `ListCardMarks`): the strip asks
-`GetCardFlow` about the one card it draws.
-
-**Those two transitions are drawn as the outcomes they are** (`isOutcomeEdge`):
-green on, red back, out of the same two sockets every stage uses. They ride
-`card.changed`, and colouring by the trigger drew them grey and dashed among the
-waits — which is how the way back from a review managed to be on the canvas and
-invisible for five separate askings. On a stage where nothing runs these two
-*are* the success and the failure, so the caption is dropped: the colour says
-which is which.
-
-**Deleting a route is confirmed and then written through** rather than queued
-behind Save (`onDeleteRoute`). Everything else in that editor is a draft
-somebody may still be arranging; a route somebody has just confirmed deleting is
-not, and what goes with it — where every card standing on it was — cannot be
-edited back.
-
-**And the dataflow is on the picture, because that is where the fork is drawn**
-(`StageWrite`, `HANDLE_WRITE`, `stageHeight`). A stage's resolved writes are a
-third line of chips on its box, and each one whose property has a closed set is
-also a `Handle`: pulling from it makes `{on: SUCCESS, if: {property, value: ''}}`
-— "the card goes here depending on this" — with the value left for the panel,
-since that is the one thing the gesture cannot carry. The caption says
-«Вердикт = ?» in amber until it is answered, written as `labelStyle` rather than
-a class because the library renders the label into a portal of its own that no
-edge class reaches. **Only a closed set is connectable**: an arrow asks "is it
-this value", so a text output is drawn faint and carries no port — which is why
-the new-property form asks what the property holds. The box grows by
-`WRITE_ROW`, stated in both the geometry and the stylesheet (the canvas is told
-the size before it paints; a measured box draws its arrows from the wrong corner
-on the first frame), and the row pitch takes the tallest stage on the route. The
-condition picker is ordered by the same graph: what this stage writes, then what
-the stages before it write with their names, then the board — an alphabetical
-list of every select buried the three that a route actually produces.
-
-**Tools are the column's answer too, and inherited exactly as the crew is**
-(`MCPServers` on `ColumnSpec` and `FlowNode`, resolved by `startOptions.
-stageMCP` and by `cardPlace`). A browser belongs to «QA» and not to whoever
-works it: the alternative was registering one agent twice under two names to
-have it configured two ways, which is a copy of a thing to stand in for a
-setting of another thing. The set is **added** to what the agent carries in the
-registry, and a node's set replaces the column's whole answer rather than
-merging with it — what the editor shows on the stage is what the agent gets. It
-travels by the road each kind of run already has: a session gets it as
-`extraMCP` with the tool prefixes allowed (wiring a server in is consent, the
-same bargain `agentMCPServers` takes), and a terminal — which is what an agent
-stage is — gets it in the config file the board's own tools already travel in
-(`openBoardTools`), where the CLI's own permission prompt is the answer. Two
-names are refused where the JSON is typed: dokku's, as before, and
-`boardmcp.ServerName`, because that file has one key per server and a set that
-shadowed it would put out `finish_work` — the call a stage ends through. The
-one behaviour this changed rather than added: a test session is refused for
-having no browser only when *neither* owner brings one.
-
-**The panel is «Терминалы», the list, and the conversation being read under
-them** (`GetCardAgent.conversations`) — one row per node, the current column's
-first and always present (`CardConversations` synthesizes it before anything has
-been said there, because it is the one a click opens) — and each part owns its
-own ✕: the head's closes the panel, the one over the terminal puts that terminal
-away (the CLI keeps running; ending it is the bin on the row). The row is the
-row «Обсудить с агентом» draws — `conversationRow.tsx`, shared, because the two
-screens list the same thing and had drifted into two shapes of it. The current
-node's row starts or resumes on a click; another node's opens only while its CLI
-runs, and otherwise continues when the card returns to that column. **Every row
-has the bin except a running stage's** (`CardConversation.Stage`): deleting ends
-the CLI and the record (`DeleteCardConversation`), so the next conversation on
-that node starts blank, and the card is told nothing about an exit somebody
-asked for (`discarded`); the running stage's is refused because the route is
-waiting on it. Rows are drawn with `Index` rather than `For` — the list is
-re-read on every `acp:terminal` event, and identity-keyed rows would take a
-half-typed rename with them. A row is never named after the card
-(`conversationTitle` drops a title that is just the card's): it falls back to
-its column, or «Без колонки» (`NoColumn`), so two rows cannot read as one thing
-twice — what survives is a name somebody gave, by hand or through
-`name_conversation`.
-
-**A conversation opens with what the card says** (`cardIntro`): the person
-clicking the button has the card in front of them and the agent has nothing, so
-the first thing anybody typed was the title they were both looking at. It rides
-in as `terminalSpec.intro` — the first message of a conversation that is
-*starting*, dropped on a resume, where repeating it would read as a new
-instruction. A stage's `prompt` is not dropped, because a stage hands over a
-task every time it runs.
-
-**A folder is optional, an agent is not — and neither is picked silently.** A
-card can be talked over — wording, a plan, the brief — before anybody decides
-where the work lives, so "the card names no folder" is not a refusal:
-`resolveWorkdir`'s two nothing-chosen errors are marked `errNoWorkdir`
-(workdirs.go) and `StartCardTerminal` opens the node's conversation in **«черновики
-доски»** — `<dataDir>/boards/<boardID>`, the board's own directory under the
-app's data, which is what every UI surface calls it (`TerminalInfo.
-BoardFolder` is how a surface knows to; the name is the board id and nothing
-else, because a generated name would need remembering somewhere). It was
-«папка доски» for a while, and the name said where it is rather than what is
-in it — briefs, drafts, notes — which is the half a person needs to decide
-whether to answer with it. One folder
-per board on purpose: what an agent writes there for one card — a brief, a
-draft — is on hand when another card of the same board is talked over; the
-price is that the CLI's directory-scoped resume is board-scoped there, the
-same trade every non-git folder makes. The *panel* asks before
-starting one: `GetCardAgent.folder` (`CardFolder`) says whether the card
-resolves a folder, and a card that does not — with no conversation to
-reopen — gets the question «В какой папке будет работать агент?», answered by
-clicking one of them. Go's own fallback (board folder) stays for the
-windowed path, which has no form to ask with. A conversation that already
-exists continues with the agent who held it — re-resolving refused every old
-conversation the moment a second agent was registered. A folder the card
-*does* name but which is broken stays an error: the person meant it. Sessions
-are untouched — automation without a folder has nowhere to work, so it stalls
-as before.
-
-**The pick is a stepped flow, one question per screen, the answers as
-chips** (`cardTerminal.tsx`, mirrored by `planningDialog.tsx`): «Выбор агента»
-with the agents as name-chips first — a single registered agent answers it
-unasked, quick-add beside the names — then «В какой папке будет работать
-агент?», with the chosen name kept above it as the way back. Clicking a name
-when the folder is already known is also the start. Two selects asking both
-questions at once was the shape this replaced, twice: it read as one question
-interrupted by another.
-
-**Both questions are answered the same way, and the folder half is one
-component** — `folderChoices.tsx`, used by both panels: the board's folders as
-chips, the board's own drafts folder as a chip among them, and «Добавить
-папку…» as a quiet link, which is exactly the shape «Добавить агента…» has in
-the question before it. What it replaced was a row of folder chips *plus* two
-full-width buttons — the drafts folder and the native picker — so the answer a
-person mostly wanted was the smallest thing on the screen, and nothing said
-which of the three were the same kind of thing. Sharing the component is the
-point: the two panels asked one question in two shapes, and that is how they
-drift. The choice lives that one conversation and writes
-nothing to the card: planning in place, not an assignment. (This deliberately
-reversed an earlier decision to point at the settings instead; the form that
-once overloaded the card stood on every card always, while this one appears
-only when there is something to ask, in the panel the question is about.)
-
-**«Обсудить с агентом» is two sections, and the open conversations are the
-first of them** (`planningDialog.tsx`): «Открытые терминалы», then «Новый
-разговор». Continuing a conversation is the shorter path, and it used to be the
-lower one — a line of buttons under the pick, each labelled «агент · папка», so
-two terminals on the same thing was what the dialog led to. A row now carries
-what a person needs to pick one: its name, the agent's own recap
-(`describe_conversation`), and who is talking where. Everything a row can do is
-an icon — open (`ShowTerminal`), rename (`RenameTerminal`), ask the agent for a
-name (`AskTerminalName`), end (`CloseTerminal`) — and **ending is asked about**,
-because it stops a CLI somebody is using and is the only way this list gets
-shorter: the list *is* the terminals that are running. The dialog subscribes to
-`acp:terminal` rather than reloading on its own, since the recap arrives
-mid-turn, while it is open.
-
-**A name is asked for in the conversation, because that is the only way in.**
-`AskTerminalName` types one English line into the pty (`namingAsk`, delivered on
-the same quiet-wait `deliverPrompt` uses, so it lands between turns) and the
-agent answers with `name_conversation` — the same field `RenameTerminal` writes,
-capped at `terminalTitleLimit` so an answered sentence stays a row. This is the
-one message this app ever puts into somebody else's conversation, and it earns
-it: until the agent says so, every row reads «клаус · черновики доски». A CLI
-that took no board tools cannot answer, so `TerminalInfo.Tools` is what the
-button is drawn on.
-
-It is deliberately not an ACP session: an ACP agent speaks JSON-RPC on stdio and has
-no terminal UI, so one process cannot be both. What the two share is everything
-around them — the card's workspace (its directory and its branch, claimed the
-same way a session claims it), the agent entry's env and proxy — and that is
-what `startTerminal` reuses. It used to make a copy of its own, which is how a
-person ended up talking about a card in a checkout the agent working on it never
-saw. Which binary is the interactive half of a kind
-is a column in the same table that knows the adapters (`cliBin`: `claude-agent-acp`
-→ `claude`); `terminalCommand` on an entry replaces the argv outright.
-
-The card still hears about it, once: a comment when the CLI exits, saying what it
-left on the branch (`workLanded`). Opening the terminal is not commented — it is
-on the card, in front of whoever opened it. A *stage's* terminal writes no such
-comment, because the stage already wrote one carrying the same facts under the
-agent's own summary. Terminals outlive the panel and the window and resume —
-every one is recorded, so the next terminal on that card returns to the card's
-own workspace with `claude --continue`.
-
-**Our record of a terminal is not the CLI's own history, so a refused resume
-opens a new conversation rather than a dead window** (`restartFresh`). A terminal
-that was opened and never spoken in leaves a row here and nothing there — which
-is what a `wails3 dev` restart makes of every terminal that was open — and
-`claude --continue` then prints "No conversation found to continue" and exits 1.
-The CLI is started once more without the resume flags, in the same terminal id,
-the same directory and a new pty (a pty takes one process), and the window is
-told why in its own scrollback; the card is told nothing, because nothing
-happened to it. Only for a launch that asked to resume, only for an exit too fast
-to have been work, and only once — a kill is this app closing the terminal and
-must never come back. Nothing vendor-specific is read to decide it, so the same
-fallback covers a pruned transcript and a `codex resume --last` with nothing to
-resume. The other half of that bug was the environment: **a terminal drops the
-kind's `dropEnv` exactly as a session does**, because `CLAUDE_CODE_CHILD_SESSION`
-inherited from a Claude Code session the app was launched from turns the CLI's
-transcript saving *off*, and then there is never anything to continue.
-
-**A terminal somebody opened raises nothing; a stage's does.** There is no
-protocol to ask through in a pty, so the only signal is silence — and the same
-measurement means different things in the two cases. On a terminal a person
-opened, nothing happening is the ordinary state: it announced "needs you" five
-seconds later, every time, including after the window was closed, and a signal
-that is wrong more often than right is worse than none — the window is in front
-of whoever opened it anyway. On a stage the agent was handed a task and has not
-called `finish_work`, so a CLI drawing nothing has stopped *for somebody*
-(`watchStageQuiet`, `AttentionTerminal`). That is the whole difference, and it is
-why `acp:attention` has two reasons again without the old bug coming back.
 
 ## The app replaces itself, and trusts one key while doing it
 
@@ -1986,9 +1302,8 @@ from them are the person's and are untouched.
 ## One database, and the schema is written once
 
 Everything this application knows is about a card or a board, and both of those
-are rows in the board's database. So our tables are in it too — `conversation`,
-`agent_session`, `flow_state`, `card_stall`, `stage_queue`, `checkout`,
-`source_item` and the rest — rather than in files beside it, which is where they
+are rows in the board's database. So our tables are in it too —
+`agent_session`, `card_stall`, `checkout`, `source_item` and the rest — rather than in files beside it, which is where they
 began (`acp.db`, `sources.db`). `internal/acp` and `internal/sources` take a
 `*sql.DB` (`NewStore(db)`) and create nothing; `server.NewStore` hands
 back both the store and the handle under it, and `runServerWithLogger` carries
@@ -2104,7 +1419,7 @@ Two consequences worth knowing before touching a query. **Absence is NULL**
 wherever a key looks: a planning conversation has no card, and `''` is a card
 id that does not exist; the reads say `COALESCE(...,'')` because in Go absence
 here is the zero value. And **no
-journal has an autoincrement** any more — `session_event`, `flow_event` and
+journal has an autoincrement** any more — `session_event` and
 `source_event` take UUIDv7, which sorts by the moment it was made, so
 `ORDER BY id` still means "as it happened" and three spellings of
 `AUTO_INCREMENT` are gone. `session_event.seq` went with them.
@@ -2114,10 +1429,10 @@ drifts — the exact bug all of this is about. `internal/appschema` renders the
 same migration out of the same embedded filesystem onto a scratch file; that is
 the only thing it is for, and the running application never touches it.
 
-`conversation` and `agent_session` stay two tables on purpose. **A conversation
-outlives every process that drew it** — it is resumed, `claude --continue`, and
-the row is the conversation while the pty under it has changed three times —
-where a session is one run and one verdict. `docs/deferred.md` records the rest.
+Every run is an `agent_session`: one process, one turn, one verdict. There
+used to be a second table, `conversation`, for a terminal's CLI that outlived
+its process and was resumed with `claude --continue`; it went with the
+terminals, and a planning conversation leaves no row at all.
 
 **The registry's name is applied in the schema, and not yet in the code.** The
 tables say it: **`workspace`** is the named place, carrying the git *settings* —

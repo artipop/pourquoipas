@@ -20,10 +20,11 @@ import (
 
 // recordingWriter is the board as far as these tests are concerned.
 type recordingWriter struct {
-	cards    []acp.NewCard
-	edits    map[string]acp.CardEdit
-	comments map[string][]string
-	fields   map[string]map[string]string
+	cards           []acp.NewCard
+	edits           map[string]acp.CardEdit
+	comments        map[string][]string
+	fields          map[string]map[string]string
+	addedProperties []string
 }
 
 func (w *recordingWriter) AddComment(_ context.Context, cardID, text string) error {
@@ -61,6 +62,11 @@ func (w *recordingWriter) SetCardText(context.Context, string, string, string) e
 
 func (w *recordingWriter) SetCardOption(context.Context, string, string, string) error { return nil }
 
+func (w *recordingWriter) AddCardProperty(_ context.Context, _, name string) error {
+	w.addedProperties = append(w.addedProperties, name)
+	return nil
+}
+
 func (w *recordingWriter) SetCardFields(_ context.Context, cardID string, fields map[string]string) error {
 	if w.fields == nil {
 		w.fields = map[string]map[string]string{}
@@ -76,6 +82,31 @@ func (w *recordingWriter) SetCardFields(_ context.Context, cardID string, fields
 
 // recordingReader is the board read back: two cards on the granted board and one
 // on another, which is the case the grant has to refuse.
+// recordingMeta is the board's own answer about itself: the columns it offers,
+// which is what an agent is told and what move_card takes.
+type recordingMeta struct{}
+
+func (m *recordingMeta) BoardProperties(context.Context, string) (map[string]any, error) {
+	return nil, nil
+}
+
+func (m *recordingMeta) BoardColumnOptions(context.Context, string) ([]acp.Column, error) {
+	return []acp.Column{
+		{PropertyID: "p", PropertyName: "Статус", OptionID: "opt-toagent", Name: "К агенту"},
+		{PropertyID: "p", PropertyName: "Статус", OptionID: "opt-ideas", Name: "Идеи"},
+	}, nil
+}
+
+func (m *recordingMeta) SetBoardProperties(context.Context, string, map[string]any, []string) error {
+	return nil
+}
+
+func (m *recordingMeta) CardProperties(context.Context, string) ([]acp.CardProperty, error) {
+	return nil, nil
+}
+
+func (m *recordingMeta) IsBoardTemplate(context.Context, string) (bool, error) { return false, nil }
+
 type recordingReader struct{}
 
 func (r *recordingReader) CardByID(_ context.Context, cardID string) (acp.CardMoved, error) {
@@ -127,9 +158,9 @@ func toolsBoard(t *testing.T) (*acp.Manager, *recordingWriter, string) {
 	writer := &recordingWriter{}
 	cfg := acp.DefaultConfig(t.TempDir())
 	cfg.TriggerProperty = "Статус"
-	cfg.Columns = []acp.ColumnSpec{{BoardID: "board-1", Property: "Статус", Column: "К агенту", Action: "session"}}
 	mgr := acp.NewManager(cfg, "", store, writer, nil, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	mgr.SetBoardReader(&recordingReader{})
+	mgr.SetBoardMeta(&recordingMeta{})
 
 	routes := newBoardToolRoutes()
 	routes.SetManager(mgr)
@@ -190,21 +221,21 @@ func TestBoardToolsRoundTrip(t *testing.T) {
 		offered[tool.Name] = true
 	}
 	for _, want := range []string{
-		"list_columns", "list_flows", "list_cards", "get_card",
+		"list_columns", "list_cards", "get_card", "list_card_fields",
 		"create_card", "create_cards", "update_card", "move_card", "comment_card",
-		"describe_conversation",
+		"finish_work",
 	} {
 		if !offered[want] {
 			t.Errorf("the agent is not offered %s", want)
 		}
 	}
 
-	// Where a card may go, and what putting one there sets off.
+	// Where a card may go: the board's own columns, by the names move_card takes.
 	columns, err := session.CallTool(t.Context(), &mcp.CallToolParams{Name: "list_columns"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if text := toolText(t, columns); !strings.Contains(text, "К агенту") || !strings.Contains(text, "session") {
+	if text := toolText(t, columns); !strings.Contains(text, "К агенту") {
 		t.Errorf("columns read back as %q", text)
 	}
 
@@ -320,27 +351,28 @@ func TestAnAgentCarriesACardOnThroughTheTools(t *testing.T) {
 	}
 }
 
-// The recap in the list of open terminals is written by the agent, because
-// nothing else can know it: a terminal is a vendor CLI in a pty, and no protocol
-// carries a summary of one. It is the grant that says which conversation the
-// agent is in, so a run standing in no terminal is told so rather than quietly
-// describing somebody else's.
-func TestAnAgentDescribesTheConversationItIsIn(t *testing.T) {
-	mgr, _, endpoint := toolsBoard(t)
+// A value an agent found belongs on the card, and a card has a place for it
+// only if the board has the field. So the field is made on the way: an agent
+// naming one the board has not got grows it rather than being refused.
+func TestAnAgentGivesTheCardAFieldItDidNotHave(t *testing.T) {
+	mgr, writer, endpoint := toolsBoard(t)
 	session := connect(t, endpoint, mgr.GrantBoardTools("board-1", "card-1", ""))
 
 	res, err := session.CallTool(t.Context(), &mcp.CallToolParams{
-		Name:      "describe_conversation",
-		Arguments: map[string]any{"text": "разбираю, почему окно открывается пополам"},
+		Name:      "update_card",
+		Arguments: map[string]any{"fields": map[string]any{"Версия": "1.4.2"}},
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !res.IsError {
-		t.Errorf("a run with no terminal behind it described one: %s", toolText(t, res))
+	if res.IsError {
+		t.Fatalf("the agent could not write a field: %s", toolText(t, res))
 	}
-	if text := toolText(t, res); !strings.Contains(text, "терминале") {
-		t.Errorf("the agent is not told why: %s", text)
+	if got := writer.fields["card-1"]["Версия"]; got != "1.4.2" {
+		t.Errorf("the value did not reach the card: %+v", writer.fields)
+	}
+	if len(writer.addedProperties) != 1 || writer.addedProperties[0] != "Версия" {
+		t.Errorf("the board was not given the field: %v", writer.addedProperties)
 	}
 }
 

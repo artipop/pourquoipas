@@ -1,6 +1,6 @@
 // The Wails-generated Go bindings are PascalCase methods, not constructors.
 /* eslint-disable new-cap */
-import {For, Show, createSignal, onSettled} from 'solid-js'
+import {For, Show, createMemo, createSignal, onSettled} from 'solid-js'
 
 import {useIntl} from '../../intl'
 
@@ -13,52 +13,45 @@ import {aiEnabled} from '../../aiSwitch'
 
 import {onAgentEvent} from './agentEvents'
 import AgentQuickAdd from './agentQuickAdd'
-import ConversationRow from './conversationRow'
 import FolderChoices from './folderChoices'
+import AttentionAnswers from './attentionAnswers'
+import {useAttention} from './attention'
 
 import './planningDialog.scss'
 
-// Talking a task through before it exists: the agent's own CLI, in a folder, in
-// a window.
+// Talking a task through before it exists: a conversation with the agent, in a
+// folder, that ends in cards the agent creates on this board.
 //
-// This dialog used to hold the conversation itself — a transcript, a prompt box
-// and a "create task" turn that boiled the discussion down into a card. The
-// conversation now happens where the agent already has a good one, in its
-// terminal, so what is left here is two things, in the order a person wants
-// them: **the conversations already open**, because a terminal outlives its
-// window and one with no card behind it has nothing else to be found through,
-// and **a new one**, which is two questions — which agent, then which folder.
+// The conversation is held here rather than in the agent's own CLI: the same
+// ACP session a stage runs on (internal/acp/planning.go), so what the agent
+// says arrives as text this page can draw, its questions are answered where
+// they are read, and the cards it agrees to create it creates through the board
+// tools. The dialog is the whole interface — a transcript, a box to type in,
+// and the two questions a new conversation needs: which agent, which folder.
 //
-// The open ones come first on purpose. They used to be a line of buttons at the
-// bottom, under the pick, each button labelled agent · folder — so the shorter
-// path was the one below the longer one, and nothing said what any of those
-// conversations was about. Now each is a row that can be read: its name, the
-// recap the agent wrote for it (describe_conversation, one of the two board
-// tools that are about the conversation rather than the board), and who is
-// talking where. The row is conversationRow.tsx, shared with the panel beside a
-// card, which lists the same thing — opening is an icon, renaming is an icon,
-// asking the agent for a name is an icon, and ending is an icon with a
-// confirmation, since a CLI somebody is using must not close on a stray click.
-//
-// The pick is the same stepped flow the card's terminal asks with
-// (cardTerminal.tsx): one question per screen, the answers as things to click.
+// A conversation outlives the dialog. Closing the window leaves the agent
+// where it is, and opening the dialog again lists what is open with everything
+// said in it, so coming back is continuing rather than starting again.
 
 type NamedEntry = {name: string}
-type LiveTerminal = {
-    id: string
-    agent: string
-    cwd: string
-    title?: string
-    summary?: string
-    boardFolder?: boolean
 
-    // Whether the CLI was handed the board tools, and therefore whether it can
-    // answer what the conversation should be called.
-    tools?: boolean
+type PlanningMessage = {
+    role: 'person' | 'agent'
+    text: string
+}
+
+type PlanningChat = {
+    id: string
+    boardId: string
+    agent: string
+    folder?: string
+    busy: boolean
+    error?: string
+    messages: PlanningMessage[]
 }
 
 export function isPlanningAvailable(): boolean {
-    return aiEnabled() && Boolean(goApp()?.OpenPlanningTerminal)
+    return aiEnabled() && Boolean(goApp()?.StartPlanning)
 }
 
 type Props = {
@@ -72,28 +65,39 @@ type Props = {
 const PlanningDialog = (props: Props) => {
     const intl = useIntl()
     const bindings = goApp()
+    const waiting = useAttention()
 
     const [agents, setAgents] = createSignal<NamedEntry[]>([])
     const [agentName, setAgentName] = createSignal('')
     const [addingAgent, setAddingAgent] = createSignal(false)
-    const [terminals, setTerminals] = createSignal<LiveTerminal[]>([])
+    const [chats, setChats] = createSignal<PlanningChat[]>([])
+    const [openID, setOpenID] = createSignal('')
+    const [draft, setDraft] = createSignal('')
     const [busy, setBusy] = createSignal(false)
     const [error, setError] = createSignal('')
+
+    // The conversation being read, taken out of the list rather than kept
+    // beside it: the list is what Go says, and a copy of one row would go stale
+    // the moment a turn ended.
+    const open = createMemo(() => chats().find((c) => c.id === openID()))
 
     // Which agent first, which folder second: the agent question is open while
     // nobody is named, and a single registered agent answers it without being
     // asked.
     const askingAgent = () => !agentName()
 
-    const refreshTerminals = async () => {
-        if (!bindings?.ListTerminals) {
+    const refreshChats = async () => {
+        if (!bindings?.ListPlanning) {
             return
         }
         try {
-            const all = JSON.parse(await bindings.ListTerminals())
-            setTerminals(all.filter((t: {cardId?: string}) => !t.cardId))
-        } catch (e) {
-            // Nothing running is the ordinary case, not a failure.
+            const all: PlanningChat[] = JSON.parse(await bindings.ListPlanning(props.board.id)) || []
+            setChats(all)
+            if (openID() && !all.some((c) => c.id === openID())) {
+                setOpenID('')
+            }
+        } catch (e: any) {
+            setError(String(e?.message || e))
         }
     }
 
@@ -112,35 +116,43 @@ const PlanningDialog = (props: Props) => {
         }
     }
 
+    // What the agent is writing right now, while it writes it. The turn's text
+    // lands in the conversation when the turn ends (acp:planning); until then
+    // this is the only thing that says anything is happening at all.
+    const [streaming, setStreaming] = createSignal('')
+
     onSettled(() => {
-        refreshTerminals()
+        refreshChats()
         refreshAgents()
 
-        // The recap arrives while this is open — the agent writes it mid-turn —
-        // and so does a terminal ending on its own. One subscription keeps the
-        // list true rather than making a person close and reopen the dialog.
-        return onAgentEvent('acp:terminal', () => refreshTerminals())
-    })
-
-    // The desktop app has already opened the window by the time the binding
-    // returns; a server build has no windows, so the browser opens a tab.
-    const openWindow = (handle: {windowed?: boolean, url?: string}) => {
-        if (!handle.windowed && handle.url) {
-            window.open(handle.url, '_blank', 'noopener')
+        const offPlanning = onAgentEvent('acp:planning', () => {
+            setStreaming('')
+            refreshChats()
+        })
+        const offChunk = onAgentEvent('acp:chunk', (payload?: {sessionId?: string, text?: string, thought?: boolean}) => {
+            if (!payload?.text || payload.thought || payload.sessionId !== openID()) {
+                return
+            }
+            setStreaming((current) => current + payload.text)
+        })
+        return () => {
+            offPlanning()
+            offChunk()
         }
-    }
+    })
 
     // Answering the folder question is what starts: a workdir by name, or '' for
     // the board's own drafts folder, resolved on the Go side.
     const start = async (workdirName: string) => {
-        if (!bindings?.OpenPlanningTerminal) {
+        if (!bindings?.StartPlanning) {
             return
         }
         setError('')
         setBusy(true)
         try {
-            openWindow(JSON.parse(await bindings.OpenPlanningTerminal(workdirName, agentName(), props.board.id)))
-            await refreshTerminals()
+            const chat: PlanningChat = JSON.parse(await bindings.StartPlanning(props.board.id, workdirName, agentName()))
+            setOpenID(chat.id)
+            await refreshChats()
         } catch (e: any) {
             setError(String(e?.message || e))
         } finally {
@@ -148,66 +160,69 @@ const PlanningDialog = (props: Props) => {
         }
     }
 
-    const show = async (id: string) => {
-        if (!bindings?.ShowTerminal) {
+    const say = async () => {
+        const text = draft().trim()
+        const chat = open()
+        if (!text || !chat || !bindings?.SayToPlanning) {
             return
         }
+        setError('')
+        setDraft('')
+        setStreaming('')
         try {
-            openWindow(JSON.parse(await bindings.ShowTerminal(id)))
-        } catch (e: any) {
-            setError(String(e?.message || e))
-            refreshTerminals()
-        }
-    }
-
-    const rename = async (id: string, title: string) => {
-        if (!bindings?.RenameTerminal) {
-            return
-        }
-        try {
-            await bindings.RenameTerminal(id, title)
-            await refreshTerminals()
+            await bindings.SayToPlanning(chat.id, text)
+            await refreshChats()
         } catch (e: any) {
             setError(String(e?.message || e))
         }
     }
 
-    // Asking the agent what to call the conversation it is having. Nothing else
-    // knows: a terminal is a vendor CLI in a pty, so the request is typed into
-    // the conversation itself and the answer comes back through the board
-    // tools, landing on this row.
-    const askName = async (id: string) => {
-        if (!bindings?.AskTerminalName) {
+    const stop = async () => {
+        const chat = open()
+        if (!chat || !bindings?.StopPlanningReply) {
             return
         }
         try {
-            await bindings.AskTerminalName(id)
+            await bindings.StopPlanningReply(chat.id)
         } catch (e: any) {
             setError(String(e?.message || e))
         }
     }
 
-    // Ending a terminal ends the CLI in it, which is why it is asked about
-    // first. There is no other way to take one off this list: the list *is* the
-    // terminals that are running.
+    // Ending a conversation ends the agent with it, which is why it is asked
+    // about first.
+    const [ending, setEnding] = createSignal('')
     const end = async (id: string) => {
-        if (!bindings?.CloseTerminal) {
+        if (!bindings?.EndPlanning) {
             return
         }
+        setEnding('')
         try {
-            await bindings.CloseTerminal(id)
+            await bindings.EndPlanning(id)
         } catch (e: any) {
             setError(String(e?.message || e))
         }
-        await refreshTerminals()
+        if (openID() === id) {
+            setOpenID('')
+        }
+        await refreshChats()
     }
 
-    const terminalName = (t: LiveTerminal) => t.title || t.agent
-    const terminalWhere = (t: LiveTerminal) => {
-        if (t.boardFolder) {
-            return intl.formatMessage({id: 'Terminal.board-drafts', defaultMessage: 'the board’s drafts'})
+    // The agent's own questions, drawn in the conversation they were asked in:
+    // it is holding its turn open on them, and this is the screen the person
+    // who caused it is looking at.
+    const questions = createMemo(() => waiting().filter((a) => a.sessionId && a.sessionId === openID()))
+
+    const chatWhere = (chat: PlanningChat) => chat.folder ||
+        intl.formatMessage({id: 'Planning.board-drafts', defaultMessage: 'the board’s drafts'})
+
+    const onKeyDown = (e: KeyboardEvent) => {
+        // Enter sends, Shift+Enter is a new line: this is a conversation, and
+        // most of what is typed in it is one line.
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault()
+            say()
         }
-        return t.cwd.split('/').filter(Boolean).pop() || t.cwd
     }
 
     return (
@@ -217,141 +232,241 @@ const PlanningDialog = (props: Props) => {
             title={<div>{intl.formatMessage({id: 'Planning.title', defaultMessage: 'Talk it over with an agent'})}</div>}
         >
             <div class='PlanningDialog__body'>
-                <p class='PlanningDialog__hint'>
-                    {intl.formatMessage({
-                        id: 'Planning.hint-terminal',
-                        defaultMessage: 'Opens the agent\'s CLI in the folder you choose. Nothing is committed without you, and the agent can create the cards you agree on right on this board.',
-                    })}
-                </p>
+                <Show
+                    when={open()}
+                    fallback={
+                        <>
+                            <p class='PlanningDialog__hint'>
+                                {intl.formatMessage({
+                                    id: 'Planning.hint',
+                                    defaultMessage: 'The agent reads the folder you choose and changes nothing in it. When you have agreed what to do, it creates the cards on this board itself.',
+                                })}
+                            </p>
 
-                {/* The conversations already open, first: continuing one is
-                    shorter than starting another, and two terminals on the same
-                    thing is what a list nobody reads leads to. */}
-                <Show when={terminals().length > 0}>
-                    <section class='PlanningDialog__section'>
-                        <h4 class='PlanningDialog__sectionTitle'>
-                            {intl.formatMessage({id: 'Planning.terminals-running', defaultMessage: 'Open terminals'})}
-                        </h4>
-                        <ul class='ConversationList'>
-                            <For each={terminals()}>
-                                {(t) => (
-                                    <ConversationRow
+                            {/* The conversations already open, first: continuing
+                                one is shorter than starting another, and two
+                                conversations about one thing is what a list
+                                nobody reads leads to. */}
+                            <Show when={chats().length > 0}>
+                                <section class='PlanningDialog__section'>
+                                    <h4 class='PlanningDialog__sectionTitle'>
+                                        {intl.formatMessage({id: 'Planning.open-conversations', defaultMessage: 'Open conversations'})}
+                                    </h4>
+                                    <ul class='PlanningDialog__chats'>
+                                        <For each={chats()}>
+                                            {(chat) => (
+                                                <li class='PlanningDialog__chat'>
+                                                    <button
+                                                        type='button'
+                                                        class='PlanningDialog__chatName'
+                                                        onClick={() => setOpenID(chat.id)}
+                                                    >
+                                                        {`${chat.agent} · ${chatWhere(chat)}`}
+                                                    </button>
+                                                    <Show when={chat.error}>
+                                                        <span class='PlanningDialog__error'>{chat.error}</span>
+                                                    </Show>
+                                                    <Show
+                                                        when={ending() === chat.id}
+                                                        fallback={
+                                                            <button
+                                                                type='button'
+                                                                class='PlanningDialog__iconButton'
+                                                                title={intl.formatMessage({id: 'Planning.end', defaultMessage: 'End the conversation'})}
+                                                                aria-label={intl.formatMessage({id: 'Planning.end', defaultMessage: 'End the conversation'})}
+                                                                onClick={() => setEnding(chat.id)}
+                                                            >
+                                                                <CompassIcon icon='close'/>
+                                                            </button>
+                                                        }
+                                                    >
+                                                        <span class='PlanningDialog__confirm'>
+                                                            {intl.formatMessage({id: 'Planning.end-ask', defaultMessage: 'End this conversation?'})}
+                                                            <button
+                                                                type='button'
+                                                                class='PlanningDialog__confirmYes'
+                                                                onClick={() => end(chat.id)}
+                                                            >
+                                                                {intl.formatMessage({id: 'Planning.end-yes', defaultMessage: 'End'})}
+                                                            </button>
+                                                            <button
+                                                                type='button'
+                                                                class='PlanningDialog__confirmNo'
+                                                                onClick={() => setEnding('')}
+                                                            >
+                                                                {intl.formatMessage({id: 'Planning.end-no', defaultMessage: 'Cancel'})}
+                                                            </button>
+                                                        </span>
+                                                    </Show>
+                                                </li>
+                                            )}
+                                        </For>
+                                    </ul>
+                                </section>
+                            </Show>
 
-                                        // Every conversation here is a
-                                        // discussion: this list is the ones
-                                        // with no card behind them.
-                                        icon='message-text-outline'
-                                        iconTitle={intl.formatMessage({id: 'Conversation.kind-talk', defaultMessage: 'A discussion'})}
-                                        name={terminalName(t)}
-                                        summary={t.summary}
-                                        meta={`${t.agent} · ${terminalWhere(t)}`}
-                                        title={t.cwd}
-                                        running={true}
-                                        onPick={() => show(t.id)}
-                                        onRename={(title) => rename(t.id, title)}
-                                        actions={[
-                                            {
-                                                icon: 'open-in-new',
-                                                title: intl.formatMessage({id: 'CardTerminal.window', defaultMessage: 'Open in a separate window'}),
-                                                run: () => show(t.id),
-                                            },
-                                            ...(t.tools ? [{
-                                                icon: 'auto-fix',
-                                                title: intl.formatMessage({id: 'Conversation.ask-name', defaultMessage: 'Ask the agent to name this conversation'}),
-                                                run: () => askName(t.id),
-                                            }] : []),
-                                            {
-                                                icon: 'close',
-                                                title: intl.formatMessage({id: 'Planning.end', defaultMessage: 'End the terminal'}),
-                                                confirm: intl.formatMessage({id: 'Planning.end-ask', defaultMessage: 'End this terminal?'}),
-                                                confirmYes: intl.formatMessage({id: 'Planning.end-yes', defaultMessage: 'End'}),
-                                                run: () => end(t.id),
-                                            },
-                                        ]}
-                                    />
+                            <section class='PlanningDialog__section'>
+                                <h4 class='PlanningDialog__sectionTitle'>
+                                    {intl.formatMessage({id: 'Planning.new-conversation', defaultMessage: 'A new conversation'})}
+                                </h4>
+
+                                <Show
+                                    when={askingAgent()}
+                                    fallback={
+                                        <>
+                                            <div class='PlanningDialog__ask'>
+                                                {intl.formatMessage({id: 'Planning.ask-folder', defaultMessage: 'Which folder will the agent read?'})}
+                                            </div>
+                                            <div class='PlanningDialog__picker'>
+                                                {/* The answered question, kept in
+                                                    sight: the name is the way back
+                                                    to it. */}
+                                                <Show when={agents().length > 1}>
+                                                    <button
+                                                        type='button'
+                                                        class='PlanningDialog__pickBack'
+                                                        title={intl.formatMessage({id: 'Planning.change-agent', defaultMessage: 'Change the agent'})}
+                                                        onClick={() => setAgentName('')}
+                                                    >
+                                                        <CompassIcon icon='account-outline'/>
+                                                        {agentName()}
+                                                    </button>
+                                                </Show>
+
+                                                <FolderChoices
+                                                    board={props.board}
+                                                    disabled={busy()}
+                                                    onPick={start}
+                                                />
+                                            </div>
+                                        </>
+                                    }
+                                >
+                                    <div class='PlanningDialog__ask'>
+                                        {intl.formatMessage({id: 'Planning.ask-agent', defaultMessage: 'Choosing an agent'})}
+                                    </div>
+                                    <div class='PlanningDialog__picker'>
+                                        <div class='PlanningDialog__agentChoices'>
+                                            <For each={agents()}>
+                                                {(a) => (
+                                                    <button
+                                                        type='button'
+                                                        class='PlanningDialog__agentChoice'
+                                                        disabled={busy()}
+                                                        onClick={() => setAgentName(a.name)}
+                                                    >
+                                                        {a.name}
+                                                    </button>
+                                                )}
+                                            </For>
+                                            <Show when={!addingAgent()}>
+                                                <button
+                                                    type='button'
+                                                    class='PlanningDialog__pickAdd'
+                                                    onClick={() => setAddingAgent(true)}
+                                                >
+                                                    {intl.formatMessage({id: 'Planning.add-agent', defaultMessage: 'Add an agent…'})}
+                                                </button>
+                                            </Show>
+                                        </div>
+                                        <Show when={addingAgent()}>
+                                            <AgentQuickAdd
+                                                board={props.board}
+                                                onAdded={async (name) => {
+                                                    setAddingAgent(false)
+                                                    await refreshAgents()
+                                                    setAgentName(name)
+                                                }}
+                                                onCancel={() => setAddingAgent(false)}
+                                            />
+                                        </Show>
+                                    </div>
+                                </Show>
+                            </section>
+                        </>
+                    }
+                >
+                    <div class='PlanningDialog__conversation'>
+                        <div class='PlanningDialog__conversationHead'>
+                            <button
+                                type='button'
+                                class='PlanningDialog__pickBack'
+                                onClick={() => setOpenID('')}
+                            >
+                                <CompassIcon icon='chevron-left'/>
+                                {intl.formatMessage({id: 'Planning.all-conversations', defaultMessage: 'All conversations'})}
+                            </button>
+                            <span class='PlanningDialog__meta'>
+                                {`${open()!.agent} · ${chatWhere(open()!)}`}
+                            </span>
+                        </div>
+
+                        <div class='PlanningDialog__transcript'>
+                            <For each={open()!.messages}>
+                                {(message) => (
+                                    <div class={`PlanningDialog__message PlanningDialog__message--${message.role}`}>
+                                        {message.text}
+                                    </div>
                                 )}
                             </For>
-                        </ul>
-                    </section>
-                </Show>
-
-                <section class='PlanningDialog__section'>
-                    <h4 class='PlanningDialog__sectionTitle'>
-                        {intl.formatMessage({id: 'Planning.new-conversation', defaultMessage: 'A new conversation'})}
-                    </h4>
-
-                    <Show
-                        when={askingAgent()}
-                        fallback={
-                            <>
-                                <div class='PlanningDialog__ask'>
-                                    {intl.formatMessage({id: 'CardTerminal.ask-folder', defaultMessage: 'Which folder will the agent work in?'})}
+                            <Show when={streaming()}>
+                                <div class='PlanningDialog__message PlanningDialog__message--agent'>
+                                    {streaming()}
                                 </div>
-                                <div class='PlanningDialog__picker'>
-                                    {/* The answered question, kept in sight: the
-                                        name is the way back to it. */}
-                                    <Show when={agents().length > 1}>
-                                        <button
-                                            type='button'
-                                            class='PlanningDialog__pickBack'
-                                            title={intl.formatMessage({id: 'CardTerminal.change-agent', defaultMessage: 'Change the agent'})}
-                                            onClick={() => setAgentName('')}
-                                        >
-                                            <CompassIcon icon='account-outline'/>
-                                            {agentName()}
-                                        </button>
-                                    </Show>
-
-                                    <FolderChoices
-                                        board={props.board}
-                                        disabled={busy()}
-                                        onPick={start}
-                                    />
+                            </Show>
+                            <Show when={open()!.busy && !streaming()}>
+                                <div class='PlanningDialog__thinking'>
+                                    {intl.formatMessage({id: 'Planning.thinking', defaultMessage: 'The agent is reading…'})}
                                 </div>
-                            </>
-                        }
-                    >
-                        <div class='PlanningDialog__ask'>
-                            {intl.formatMessage({id: 'CardTerminal.ask-agent', defaultMessage: 'Choosing an agent'})}
-                        </div>
-                        <div class='PlanningDialog__picker'>
-                            <div class='PlanningDialog__agentChoices'>
-                                <For each={agents()}>
-                                    {(a) => (
-                                        <button
-                                            type='button'
-                                            class='PlanningDialog__agentChoice'
-                                            disabled={busy()}
-                                            onClick={() => setAgentName(a.name)}
-                                        >
-                                            {a.name}
-                                        </button>
-                                    )}
-                                </For>
-                                <Show when={!addingAgent()}>
-                                    <button
-                                        type='button'
-                                        class='PlanningDialog__pickAdd'
-                                        onClick={() => setAddingAgent(true)}
-                                    >
-                                        {intl.formatMessage({id: 'CardTerminal.add-agent', defaultMessage: 'Add an agent…'})}
-                                    </button>
-                                </Show>
-                            </div>
-                            <Show when={addingAgent()}>
-                                <AgentQuickAdd
-                                    board={props.board}
-                                    onAdded={async (name) => {
-                                        setAddingAgent(false)
-                                        await refreshAgents()
-                                        setAgentName(name)
-                                    }}
-                                    onCancel={() => setAddingAgent(false)}
-                                />
                             </Show>
                         </div>
-                    </Show>
-                </section>
+
+                        <For each={questions()}>
+                            {(target) => (
+                                <div class='PlanningDialog__question'>
+                                    <span>{target.text}</span>
+                                    <AttentionAnswers target={target}/>
+                                </div>
+                            )}
+                        </For>
+
+                        <Show when={open()!.error}>
+                            <div class='PlanningDialog__error'>{open()!.error}</div>
+                        </Show>
+
+                        <div class='PlanningDialog__compose'>
+                            <textarea
+                                class='PlanningDialog__input'
+                                rows={3}
+                                value={draft()}
+                                placeholder={intl.formatMessage({id: 'Planning.placeholder', defaultMessage: 'What has to be done?'})}
+                                onInput={(e) => setDraft(e.currentTarget.value)}
+                                onKeyDown={onKeyDown}
+                            />
+                            <Show
+                                when={open()!.busy}
+                                fallback={
+                                    <button
+                                        type='button'
+                                        class='PlanningDialog__send'
+                                        disabled={!draft().trim()}
+                                        onClick={say}
+                                    >
+                                        {intl.formatMessage({id: 'Planning.send', defaultMessage: 'Send'})}
+                                    </button>
+                                }
+                            >
+                                <button
+                                    type='button'
+                                    class='PlanningDialog__send'
+                                    onClick={stop}
+                                >
+                                    {intl.formatMessage({id: 'Planning.stop', defaultMessage: 'Stop'})}
+                                </button>
+                            </Show>
+                        </div>
+                    </div>
+                </Show>
 
                 <Show when={error()}>
                     <div class='PlanningDialog__error'>{error()}</div>

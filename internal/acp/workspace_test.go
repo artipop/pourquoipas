@@ -107,7 +107,8 @@ func TestAFoldedCopyComesBackOnItsOwnBranch(t *testing.T) {
 }
 
 // The other way to work in a repository: a branch in the folder itself. One
-// card holds the folder, the next waits, and a merge is what hands it over.
+// card holds the folder, the next waits, and a merge is what hands it over —
+// found out when the next card asks, because nothing watches the branch.
 func TestABranchInTheFolderIsHeldUntilItIsMerged(t *testing.T) {
 	m, repo := workspaceManager(t)
 	if _, err := m.SetWorkdirMode("code", "board1", WorkModeBranch); err != nil {
@@ -126,21 +127,102 @@ func TestABranchInTheFolderIsHeldUntilItIsMerged(t *testing.T) {
 	if got := DefaultBaseBranch(context.Background(), repo); got != first.Branch {
 		t.Errorf("the folder is on %q, want the card's branch %q", got, first.Branch)
 	}
+	commitOnBranch(t, repo, "feature.txt")
 
-	_, err = m.ClaimWorkspace(WorkSpec{Workdir: repo, Owner: "card-2", BoardID: "board1", Title: "Вторая"})
-	if !errors.Is(err, errWorkdirBusy) {
-		t.Fatalf("the second card got %v, want the folder to be held", err)
+	second := WorkSpec{Workdir: repo, Owner: "card-2", BoardID: "board1", Title: "Вторая"}
+	if _, err := m.ClaimWorkspace(second); !errors.Is(err, errWorkdirBusy) {
+		t.Fatalf("the second card got %v, want the folder to be held while the work is unmerged", err)
 	}
 
-	// Merged: the work is over, so the folder is the next card's.
-	m.ReleaseMergedBranch(repo, first.Branch)
-	second, err := m.ClaimWorkspace(WorkSpec{Workdir: repo, Owner: "card-2", BoardID: "board1", Title: "Вторая"})
+	// Somebody merges it, the way a person does.
+	git(t, repo, "switch", "main")
+	git(t, repo, "merge", "--no-ff", "-m", "merge", first.Branch)
+
+	got, err := m.ClaimWorkspace(second)
 	if err != nil {
-		t.Fatalf("the folder was not handed over: %v", err)
+		t.Fatalf("the folder was not handed over after the merge: %v", err)
 	}
-	if second.Branch == first.Branch {
-		t.Errorf("the second card took the first one's branch %q", second.Branch)
+	if got.Branch == first.Branch {
+		t.Errorf("the second card took the first one's branch %q", got.Branch)
 	}
+}
+
+// A pull request is merged on the remote, and the folder's own main does not
+// know until somebody pulls. The folder is handed over anyway: asking for it
+// fetches.
+func TestABranchMergedOnTheRemoteFreesTheFolder(t *testing.T) {
+	m, repo := workspaceManager(t)
+	if _, err := m.SetWorkdirMode("code", "board1", WorkModeBranch); err != nil {
+		t.Fatal(err)
+	}
+	remote := t.TempDir()
+	git(t, remote, "init", "--bare", "-b", "main")
+	git(t, repo, "remote", "add", "origin", remote)
+	git(t, repo, "push", "-q", "origin", "main")
+
+	first, err := m.ClaimWorkspace(WorkSpec{Workdir: repo, Owner: "card-1", BoardID: "board1", Title: "Первая"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	commitOnBranch(t, repo, "feature.txt")
+	git(t, repo, "push", "-q", "origin", first.Branch)
+
+	// The merge happens in another clone, as it does on GitHub.
+	other := t.TempDir()
+	git(t, other, "clone", "-q", remote, ".")
+	git(t, other, "merge", "--no-ff", "-m", "merge", "origin/"+first.Branch)
+	git(t, other, "push", "-q", "origin", "main")
+
+	// The person's folder is still on the card's branch and knows nothing.
+	git(t, repo, "switch", "main")
+	if _, err := m.ClaimWorkspace(WorkSpec{Workdir: repo, Owner: "card-2", BoardID: "board1", Title: "Вторая"}); err != nil {
+		t.Fatalf("a branch merged on the remote still holds the folder: %v", err)
+	}
+}
+
+// A branch somebody deleted is a branch whose work is over, whatever became of
+// it; and a branch with nothing committed on it holds nothing worth waiting
+// for — the next card is still refused while anything tracked is unsaved.
+func TestADeletedOrEmptyBranchDoesNotHoldTheFolder(t *testing.T) {
+	t.Run("deleted", func(t *testing.T) {
+		m, repo := workspaceManager(t)
+		if _, err := m.SetWorkdirMode("code", "board1", WorkModeBranch); err != nil {
+			t.Fatal(err)
+		}
+		first, err := m.ClaimWorkspace(WorkSpec{Workdir: repo, Owner: "card-1", BoardID: "board1", Title: "Первая"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		commitOnBranch(t, repo, "feature.txt")
+		git(t, repo, "switch", "main")
+		git(t, repo, "branch", "-D", first.Branch)
+		if _, err := m.ClaimWorkspace(WorkSpec{Workdir: repo, Owner: "card-2", BoardID: "board1", Title: "Вторая"}); err != nil {
+			t.Fatalf("a deleted branch still holds the folder: %v", err)
+		}
+	})
+	t.Run("empty, with unsaved work", func(t *testing.T) {
+		m, repo := workspaceManager(t)
+		if _, err := m.SetWorkdirMode("code", "board1", WorkModeBranch); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := m.ClaimWorkspace(WorkSpec{Workdir: repo, Owner: "card-1", BoardID: "board1", Title: "Первая"}); err != nil {
+			t.Fatal(err)
+		}
+		// Branch mode leaves an agent's work uncommitted, for review.
+		write(t, filepath.Join(repo, "README.md"), "changed by the agent\n")
+		_, err := m.ClaimWorkspace(WorkSpec{Workdir: repo, Owner: "card-2", BoardID: "board1", Title: "Вторая"})
+		if !errors.Is(err, errWorkdirDirty) {
+			t.Fatalf("the next card got %v, want to be refused over the unsaved work", err)
+		}
+	})
+}
+
+// commitOnBranch commits one new file on whatever the folder has checked out.
+func commitOnBranch(t *testing.T, repo, name string) {
+	t.Helper()
+	write(t, filepath.Join(repo, name), "work\n")
+	git(t, repo, "add", name)
+	git(t, repo, "commit", "-q", "-m", "work")
 }
 
 // Somebody's unsaved work is never switched out from under them — but an

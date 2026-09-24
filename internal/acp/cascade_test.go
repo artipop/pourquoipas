@@ -33,44 +33,34 @@ func enforcingStore(t *testing.T) (*Store, func(cardID string)) {
 // whole reason the tables moved into the board's database:
 // deleting a card is a real DELETE FROM blocks, this side never heard about it —
 // BlockChanged handles only notify.Update — so every deleted card left its
-// conversations, its place on a route, its stall and its queue slot behind for
-// ever, in a file where no foreign key could reach them.
+// sessions, its stall and its recorded changes behind for ever, in a file where
+// no foreign key could reach them.
 func TestADeletedCardTakesWhatWeKnewAboutIt(t *testing.T) {
 	st, deleteCard := enforcingStore(t)
 
-	if err := st.InsertTerminal(TerminalRecord{
-		ID: "t1", CardID: "card-1", BoardID: "board-1", NodeID: "opt-work",
-		StartedAt: time.Now(),
-	}); err != nil {
-		t.Fatal(err)
-	}
-	if err := st.SaveFlowState(FlowState{
-		CardID: "card-1", BoardID: "board-1", FlowID: "flow-feature", NodeID: "opt-work",
+	if err := st.InsertSession(SessionRecord{
+		ID: "s1", CardID: "card-1", BoardID: "board-1", AgentKind: "claude",
+		Status: StatusRunning, StartedAt: time.Now(),
 	}); err != nil {
 		t.Fatal(err)
 	}
 	if err := st.SetStall(StallRecord{CardID: "card-1", Reason: "стоит"}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := st.EnqueueStage(QueuedStage{
-		CardID: "card-1", BoardID: "board-1", ColumnKey: "board-1|opt-work",
-	}); err != nil {
+	if err := st.SetCardChanges(CardChangesRecord{CardID: "card-1", BoardID: "board-1", Files: 2}); err != nil {
 		t.Fatal(err)
 	}
 
 	deleteCard("card-1")
 
-	if rows, err := st.TerminalsForCard("card-1"); err != nil || len(rows) != 0 {
-		t.Errorf("the card's conversations outlived it: %+v %v", rows, err)
-	}
-	if _, ok, err := st.FlowStateForCard("card-1"); err != nil || ok {
-		t.Errorf("the card's place on its route outlived it: %v %v", ok, err)
+	if rows, _, err := st.SessionsForCard("card-1"); err != nil || len(rows) != 0 {
+		t.Errorf("the card's sessions outlived it: %+v %v", rows, err)
 	}
 	if _, ok, err := st.Stall("card-1"); err != nil || ok {
 		t.Errorf("the card's stall outlived it: %v %v", ok, err)
 	}
-	if _, ok, err := st.NextQueuedStage("board-1|opt-work"); err != nil || ok {
-		t.Errorf("the card's place in the queue outlived it: %v %v", ok, err)
+	if _, ok, err := st.CardChanges("card-1"); err != nil || ok {
+		t.Errorf("the card's recorded changes outlived it: %v %v", ok, err)
 	}
 }
 
@@ -229,8 +219,8 @@ func TestACardOnAnotherServerCanBeWrittenAbout(t *testing.T) {
 	if err := st.SetStall(StallRecord{CardID: "remote-card", Reason: "нет папки"}); err != nil {
 		t.Fatalf("a stall on a card of another board was refused: %v", err)
 	}
-	if err := st.SaveFlowState(FlowState{CardID: "remote-card", BoardID: "remote-board", FlowID: "f", NodeID: "n"}); err != nil {
-		t.Fatalf("a route position on a card of another board was refused: %v", err)
+	if err := st.SetCardChanges(CardChangesRecord{CardID: "remote-card", BoardID: "remote-board", Files: 1}); err != nil {
+		t.Fatalf("a change count on a card of another board was refused: %v", err)
 	}
 
 	// And it is still owned: the client that hears the board say the card is
@@ -241,8 +231,8 @@ func TestACardOnAnotherServerCanBeWrittenAbout(t *testing.T) {
 	if _, ok, err := st.Stall("remote-card"); err != nil || ok {
 		t.Errorf("the stall outlived the card: %v %v", ok, err)
 	}
-	if _, ok, err := st.FlowStateForCard("remote-card"); err != nil || ok {
-		t.Errorf("the route position outlived the card: %v %v", ok, err)
+	if _, ok, err := st.CardChanges("remote-card"); err != nil || ok {
+		t.Errorf("the change count outlived the card: %v %v", ok, err)
 	}
 }
 
@@ -263,7 +253,7 @@ func TestWritingAboutACardMakesItsRefOnTheWay(t *testing.T) {
 	}
 	st := NewStore(db)
 
-	if err := st.SaveFlowState(FlowState{CardID: "card-9", BoardID: "board-1", FlowID: "f", NodeID: "n"}); err != nil {
+	if err := st.SetStall(StallRecord{CardID: "card-9", Reason: "нет папки"}); err != nil {
 		t.Fatalf("the first write about a card was refused: %v", err)
 	}
 
@@ -272,7 +262,7 @@ func TestWritingAboutACardMakesItsRefOnTheWay(t *testing.T) {
 	if _, err := db.Exec(`DELETE FROM blocks WHERE id='card-9'`); err != nil {
 		t.Fatal(err)
 	}
-	if _, ok, err := st.FlowStateForCard("card-9"); err != nil || ok {
-		t.Errorf("the route position outlived the card it was about: %v %v", ok, err)
+	if _, ok, err := st.Stall("card-9"); err != nil || ok {
+		t.Errorf("what we knew about the card outlived the card: %v %v", ok, err)
 	}
 }

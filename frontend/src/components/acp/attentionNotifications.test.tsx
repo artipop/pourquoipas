@@ -24,24 +24,21 @@ const open = (state: Partial<RootState> = {}) => render(() => wrapIntl(() => (
 function attentionBindings(waiting: any[] = []) {
     return {
         ListAttention: vi.fn().mockResolvedValue(JSON.stringify(waiting)),
-        ShowTerminal: vi.fn().mockResolvedValue(JSON.stringify({id: 'term-1', windowed: true})),
-        OpenCardTerminal: vi.fn().mockResolvedValue(JSON.stringify({id: 'term-1', windowed: true})),
         AnswerQuestion: vi.fn().mockResolvedValue(undefined),
         AckAttention: vi.fn().mockResolvedValue(undefined),
     }
 }
 
-// A stage of a route whose CLI has stopped drawing: it is asking something
-// inside its own interface, and the conversation it is asking in is named, which
-// is what the notification leads to.
+// An agent holding its turn open on a question about a card.
 const waitingOnCard = {
-    key: 'term-1',
-    terminalId: 'term-1',
+    key: 'q:q-1',
+    questionId: 'q-1',
     cardId: 'card-2',
     title: 'Выкатить релиз',
     agent: 'clauuus',
-    reason: 'terminal',
-    text: 'агент ждёт ответа в терминале',
+    reason: 'question',
+    text: 'Выкатывать на прод?',
+    options: [{id: 'yes', label: 'Да'}, {id: 'no', label: 'Нет', kind: 'reject_once'}],
     awaiting: true,
     since: '2026-08-05T11:00:00Z',
 }
@@ -104,10 +101,10 @@ describe('components/acp/attentionNotifications', () => {
         await waitFor(() => expect(screen.queryByRole('alert')).toBeNull())
     })
 
-    // What is being asked, in the agent's own words, and nothing to answer it
-    // with: the agent is asking inside its own CLI, and a row of buttons of ours
-    // beside a copy of the question was a second interface for one exchange.
-    it('says what is being asked and offers the terminal rather than an answer', async () => {
+    // What is being asked, in the agent's own words, and the answers with it:
+    // the agent's turn is open until somebody answers, and the person being
+    // interrupted is the person who can.
+    it('says what is being asked and carries the answers', async () => {
         fakeGoSide(attentionBindings())
 
         open()
@@ -115,14 +112,13 @@ describe('components/acp/attentionNotifications', () => {
         handlers['acp:attention'](waitingOnCard)
 
         expect(await screen.findByText('clauuus is asking')).toBeInTheDocument()
-        expect(screen.getByText('агент ждёт ответа в терминале')).toBeInTheDocument()
-        expect(screen.getByText('Open the terminal')).toBeInTheDocument()
+        expect(screen.getByText('Выкатывать на прод?')).toBeInTheDocument()
+        expect(screen.getByRole('button', {name: 'Да'})).toBeInTheDocument()
     })
 
-    // The one thing there is to do: go to where the agent is asking. A wait that
-    // names its conversation is shown by id — reopening "the card's terminal"
-    // would start a second CLI beside the one that is waiting.
-    it('opens the terminal the agent is waiting in', async () => {
+    // Answering is the whole of what this offers, and it counts as having been
+    // told: the wait ends when the agent hears back.
+    it('answers the agent where the question is read', async () => {
         const bindings = attentionBindings()
         fakeGoSide(bindings)
 
@@ -130,11 +126,10 @@ describe('components/acp/attentionNotifications', () => {
         await waitFor(() => expect(handlers['acp:attention']).toBeDefined())
         handlers['acp:attention'](waitingOnCard)
 
-        await userEvent.click(await screen.findByText('Open the terminal'))
-        await waitFor(() => expect(bindings.ShowTerminal).toHaveBeenCalledWith('term-1'))
-        expect(bindings.OpenCardTerminal).not.toHaveBeenCalled()
+        await userEvent.click(await screen.findByRole('button', {name: 'Да'}))
+        await waitFor(() => expect(bindings.AnswerQuestion).toHaveBeenCalledWith('q-1', 'yes', ''))
 
-        // Somebody who is now looking at the agent has been told.
+        // Answered is a stronger form of seen.
         await waitFor(() => expect(screen.queryByRole('alert')).toBeNull())
     })
 
@@ -168,14 +163,12 @@ describe('components/acp/attentionNotifications', () => {
         handlers['acp:attention'](waitingOnCard)
 
         await userEvent.click(await screen.findByLabelText('Dismiss'))
-        await waitFor(() => expect(bindings.AckAttention).toHaveBeenCalledWith('term-1'))
+        await waitFor(() => expect(bindings.AckAttention).toHaveBeenCalledWith('q:q-1'))
     })
 
-    // The spam this whole arrangement is for. A stage's wait is the CLI drawing
-    // nothing, and opening the terminal to look at it makes the CLI redraw — so
-    // the wait ends and is raised again a minute later, about the very thing the
-    // person has just been looking at. It is the same wait, and they have been
-    // told.
+    // The spam this whole arrangement is for: one wait is drawn in every window
+    // and on the phone, and a reload used to bring back everything a person had
+    // already dealt with. It is the same wait, and they have been told.
     it('stays quiet when the same wait is raised again', async () => {
         fakeGoSide(attentionBindings())
 
@@ -183,11 +176,10 @@ describe('components/acp/attentionNotifications', () => {
         await waitFor(() => expect(handlers['acp:attention']).toBeDefined())
         handlers['acp:attention'](waitingOnCard)
 
-        await userEvent.click(await screen.findByText('Open the terminal'))
+        await userEvent.click(await screen.findByLabelText('Dismiss'))
         await waitFor(() => expect(screen.queryByRole('alert')).toBeNull())
 
-        // The CLI redrew, so the silence broke and came back: a new timestamp
-        // for a wait nothing has happened to.
+        // The same wait, said again with the acknowledgement on it.
         handlers['acp:attention']({...waitingOnCard, awaiting: false})
         handlers['acp:attention']({...waitingOnCard, since: '2026-08-05T11:01:00Z', acked: true})
 
@@ -197,7 +189,7 @@ describe('components/acp/attentionNotifications', () => {
     // The other half of it: an agent that came back to life, did something and
     // stopped again is asking a new question, and the app says so by sending the
     // wait without the acknowledgement.
-    it('says it again when the terminal comes back to life', async () => {
+    it('says it again when the agent stops with something new', async () => {
         fakeGoSide(attentionBindings())
 
         open()
@@ -291,10 +283,10 @@ describe('components/acp/attentionNotifications', () => {
         expect(await screen.findByText(/clauuus/)).toBeInTheDocument()
     })
 
-    it('says nothing in a window that is drawing a terminal', async () => {
+    it('says nothing on the phone’s own waiting screen', async () => {
         fakeGoSide(attentionBindings([waitingOnCard]))
         const where = window.location.pathname
-        window.history.replaceState({}, '', '/acp/terminal/term-1')
+        window.history.replaceState({}, '', '/m/waiting')
 
         open()
         await waitFor(() => expect(handlers['acp:attention']).toBeDefined())

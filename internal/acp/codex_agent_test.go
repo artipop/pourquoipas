@@ -3,6 +3,7 @@ package acp
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -20,7 +21,7 @@ func TestCodexAgentRunsWithIsolatedEnv(t *testing.T) {
 	})
 
 	ev := moveEvent("cardCodex", "opt-backlog", "opt-agent")
-	ev.OptionNames = append(ev.OptionNames, "codexagent") // routes to the codex agent
+	ev.PersonNames = []string{"codexagent"} // the card names its agent by its assignee
 	events.ch <- ev
 
 	waitFor(t, 15*time.Second, "codex session done", func() bool {
@@ -62,7 +63,7 @@ func TestCodexModelIsChosenOverTheProtocol(t *testing.T) {
 	})
 
 	ev := moveEvent("cardModel", "opt-backlog", "opt-agent")
-	ev.OptionNames = append(ev.OptionNames, "codexagent")
+	ev.PersonNames = []string{"codexagent"} // the card names its agent by its assignee
 	events.ch <- ev
 
 	waitFor(t, 15*time.Second, "codex session done", func() bool {
@@ -79,6 +80,9 @@ func TestCodexModelIsChosenOverTheProtocol(t *testing.T) {
 // A wrapper command in front of the CLI (proxychains and friends) plus per-agent
 // proxy settings: both must survive all the way to the spawned process.
 func TestCodexAgentWrapperCommandAndProxy(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("the wrapper stands in for proxychains with /bin/sh, which Windows has not got")
+	}
 	script := writeFakeAgent(t, fakeCodexProxy)
 	m, writer, events, _ := testManager(t, fakeClaudeHappy, func(c *Config) {
 		c.Proxies = []ProxyEntry{{
@@ -97,7 +101,7 @@ func TestCodexAgentWrapperCommandAndProxy(t *testing.T) {
 	})
 
 	ev := moveEvent("cardProxy", "opt-backlog", "opt-agent")
-	ev.OptionNames = append(ev.OptionNames, "proxiedcodex")
+	ev.PersonNames = []string{"proxiedcodex"} // the card names its agent by its assignee
 	events.ch <- ev
 
 	waitFor(t, 15*time.Second, "wrapped codex session done", func() bool {

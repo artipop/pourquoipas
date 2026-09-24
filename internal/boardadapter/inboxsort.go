@@ -101,14 +101,14 @@ func (s SortBoard) FileCard(ctx context.Context, cardID, boardID string) error {
 		}
 	}
 	if link != "" {
-		if propID, err := s.w.ensureLinkProperty(boardID); err == nil {
+		if propID, err := s.w.ensureLinkProperty(ctx, boardID); err == nil {
 			patch.UpdatedProperties[propID] = link
 		}
 	}
 	if len(patch.UpdatedProperties) == 0 {
 		return nil
 	}
-	return s.w.patchCard(cardID, patch, true)
+	return s.w.patchCard(ctx, cardID, patch, true)
 }
 
 // linkOf is the card's value of its board's url property, if it has one.

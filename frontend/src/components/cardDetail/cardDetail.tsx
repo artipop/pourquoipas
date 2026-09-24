@@ -30,7 +30,8 @@ import {getClientConfig} from '../../store/clientConfig'
 import type {AppStore} from '../../store'
 
 import CaseStamp, {isCaseStampAvailable} from '../acp/caseStamp'
-import FlowStrip, {isFlowStripAvailable} from '../acp/flowStrip'
+import AttentionAnswers from '../acp/attentionAnswers'
+import {attentionHeading, useCardAttention} from '../acp/attention'
 
 import {CardDetailProvider} from './cardDetailContext'
 import CardDetailContents from './cardDetailContents'
@@ -196,6 +197,9 @@ const CardDetail = (props: Props): JSX.Element => {
         }
     }))
 
+    // The agent's open question on this card, if it has one.
+    const asking = useCardAttention(() => props.card?.id || '')
+
     return (
         <Show when={props.card}>
             <div class='CardDetail'>
@@ -244,6 +248,23 @@ const CardDetail = (props: Props): JSX.Element => {
                     <CaseStamp cardId={props.card.id}/>
                 </Show>
 
+                {/* What the agent is asking about this card, where the card's
+                    own amber badge promises it will be. The notification says
+                    the same thing and is answered the same way, but it is
+                    dismissible and this is not: a question outlives being
+                    read, and the card is where somebody comes back to it. */}
+                <Show when={asking()}>
+                    {(wait) => (
+                        <div class='CardDetail__asking'>
+                            <span class='CardDetail__askingHeading'>{attentionHeading(intl, wait())}</span>
+                            <Show when={wait().text}>
+                                <span class='CardDetail__askingText'>{wait().text}</span>
+                            </Show>
+                            <AttentionAnswers target={wait()}/>
+                        </div>
+                    )}
+                </Show>
+
                 {/* Property list */}
 
                 <CardDetailProperties
@@ -264,27 +285,12 @@ const CardDetail = (props: Props): JSX.Element => {
                     />
                 </Show>
 
-                {/* Where the card is on its route — a fact about the card, like
-                    its properties above. The agent's own controls are not here
-                    and no longer anywhere in the card: the terminal is a panel
-                    beside it, opened from the dialog's toolbar.
-
-                    The strip draws no rule of its own here, the way the
-                    attachments above do: it decides only once its data arrives
-                    whether it has a route to show, and a rule written beside it
-                    would stand alone on every card without one. It carries it
-                    itself, in flowStrip.scss. */}
-
-                <Show when={!props.readonly && isFlowStripAvailable()}>
-                    <FlowStrip cardId={props.card.id}/>
-                </Show>
-
                 {/* Comments are not here, and that is where they were. They
                     are a conversation about the card rather than part of it —
                     the body is what a person wrote — so they are drawn in the
-                    panel beside the card, next to the terminal, and switched
-                    on where there is a second person to have one with
-                    (cardComments.tsx, docs/teamwork.md). */}
+                    panel beside the card, switched on where there is a second
+                    person to have one with (cardComments.tsx,
+                    docs/teamwork.md). */}
             </div>
 
             {/* Content blocks */}

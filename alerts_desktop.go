@@ -302,22 +302,13 @@ func (c *alertController) notificationClicked(res notifications.NotificationResu
 // through the same acknowledgement, so going to look here takes the wait off
 // every other window and off the phone.
 func (c *alertController) openWait(a acp.Attention) {
-	var err error
-	switch {
-	// Nothing is running on a handed-over card, so there is no terminal to
-	// open: what the person came for is the card, and the board is where it is
+	// The board is where every wait is answered: a question is drawn on the
+	// card it was asked about, and a handed-over card is the card itself
 	// (internal/acp/cardwait.go).
-	case a.Reason == acp.AttentionCard:
+	if a.BoardID != "" {
 		showMainWindow(c.wapp, c.app.originURL()+a.BoardID)
-	case a.TerminalID != "":
-		_, err = c.app.ShowTerminal(a.TerminalID)
-	case a.CardID != "":
-		_, err = c.app.OpenCardTerminal(a.CardID, "", "", true)
-	default:
+	} else {
 		showMainWindow(c.wapp, c.app.originURL())
-	}
-	if err != nil {
-		log.Printf("alerts: %v", err)
 	}
 	c.mgr.AckAttention(a.Key)
 }

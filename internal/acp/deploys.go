@@ -260,3 +260,21 @@ func deployNames(deploys []DeployEntry) string {
 	}
 	return strings.Join(names, ", ")
 }
+
+// artifactsDir is where a session's evidence goes: the dokku server writes its
+// outcome there, and applyDeployOutcome reads it back. One directory per
+// session, made on the way in — an empty answer switches recording off, which
+// is what a machine with no artifacts directory configured gets.
+func (m *Manager) artifactsDir(sessionID string) (string, error) {
+	m.cfgMu.RLock()
+	root := strings.TrimSpace(m.cfg.ArtifactsDir)
+	m.cfgMu.RUnlock()
+	if root == "" {
+		return "", nil
+	}
+	dir := filepath.Join(root, sessionID)
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return "", fmt.Errorf("не удалось создать каталог артефактов: %w", err)
+	}
+	return dir, nil
+}

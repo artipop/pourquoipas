@@ -13,28 +13,20 @@ import (
 
 // fakeBoard is one agent's board: already bound to a grant, like the real one.
 type fakeBoard struct {
-	cards     []Card
-	changes   []CardChange
-	comments  []string
-	described []string
-	named     []string
-	finished  []string
+	cards    []Card
+	changes  []CardChange
+	comments []string
+	fields   map[string]string
+	finished []string
 }
 
 func (b *fakeBoard) Columns(context.Context) ([]Column, error) {
 	return []Column{{Name: "К агенту", Action: "session"}, {Name: "Идеи"}}, nil
 }
 
-func (b *fakeBoard) Flows(context.Context) ([]Flow, error) {
-	return []Flow{{Name: "Обычный", Stages: []FlowStage{
-		{Column: "К агенту", Action: "session", Crew: []string{"claude"}},
-		{Column: "Ревью", Waiting: []string{"ревью одобрено"}},
-	}}}, nil
-}
-
 func (b *fakeBoard) Fields(context.Context) ([]FieldInfo, error) {
 	return []FieldInfo{
-		{Name: "Вердикт", Kind: "select", Values: []string{"blocked", "fail", "pass"}, Writable: true, Declared: true, Required: true},
+		{Name: "Вердикт", Kind: "select", Values: []string{"blocked", "fail", "pass"}, Writable: true},
 		{Name: "Превью", Kind: "url", Writable: true},
 		{Name: "Автор", Kind: "createdBy"},
 	}, nil
@@ -43,7 +35,7 @@ func (b *fakeBoard) Fields(context.Context) ([]FieldInfo, error) {
 func (b *fakeBoard) Cards(_ context.Context, column string) ([]CardInfo, error) {
 	all := []CardInfo{
 		{ID: "card-1", Title: "Починить окно", Column: "К агенту", Options: []string{"xciii"}, Mine: true,
-			Flow: "Обычный", Stage: "К агенту", Running: true},
+			Running: true},
 		{ID: "card-2", Title: "Вторая", Column: "Идеи"},
 	}
 	if column == "" {
@@ -98,13 +90,13 @@ func (b *fakeBoard) Comment(_ context.Context, cardID, text string) error {
 	return nil
 }
 
-func (b *fakeBoard) Describe(_ context.Context, text string) error {
-	b.described = append(b.described, text)
-	return nil
-}
-
-func (b *fakeBoard) Name(_ context.Context, title string) error {
-	b.named = append(b.named, title)
+func (b *fakeBoard) SetFields(_ context.Context, cardID string, fields map[string]string) error {
+	if b.fields == nil {
+		b.fields = map[string]string{}
+	}
+	for name, value := range fields {
+		b.fields[name] = value
+	}
 	return nil
 }
 
@@ -170,10 +162,9 @@ func TestNothingLandingIsAFailure(t *testing.T) {
 func TestACardSaysWhatActingOnItNeeds(t *testing.T) {
 	line := cardLine(CardInfo{
 		ID: "card-1", Title: "Починить окно", Column: "К агенту", Options: []string{"xciii"},
-		Mine: true, Flow: "Обычный", Stage: "К агенту", Running: true,
-		Waiting: []string{"ревью одобрено"},
+		Mine: true, Running: true,
 	})
-	for _, want := range []string{"card-1", "Починить окно", "К агенту", "xciii", "Обычный", "an agent is working on it", "ревью одобрено"} {
+	for _, want := range []string{"card-1", "Починить окно", "К агенту", "xciii", "an agent is working on it"} {
 		if !strings.Contains(line, want) {
 			t.Errorf("the card does not say %q:\n%s", want, line)
 		}
@@ -182,23 +173,22 @@ func TestACardSaysWhatActingOnItNeeds(t *testing.T) {
 		t.Errorf("the agent's own card is not pointed out:\n%s", line)
 	}
 
-	// A card off any route says nothing about routes, rather than saying so with
+	// A card nobody is working on says so by saying nothing, rather than with
 	// empty fields the model then has to interpret.
 	plain := cardLine(CardInfo{ID: "card-2", Title: "Вторая", Column: "Идеи"})
-	if strings.Contains(plain, "route:") {
-		t.Errorf("a card on no route talks about one:\n%s", plain)
+	if strings.Contains(plain, "working on it") {
+		t.Errorf("a card nobody is working on says it is:\n%s", plain)
 	}
 }
 
-// A property is described so an agent can report a value without guessing at
-// it: the closed set is spelled out, and the stage's own obligation is on the
-// line rather than only in the brief it may have scrolled past.
-func TestAFieldSaysWhatAValueMayBeAndWhatIsOwed(t *testing.T) {
+// A property is described so an agent can put a value in it without guessing:
+// the closed set is spelled out where there is one.
+func TestAFieldSaysWhatAValueMayBe(t *testing.T) {
 	verdict := fieldLine(FieldInfo{
 		Name: "Вердикт", Kind: "select", Values: []string{"blocked", "fail", "pass"},
-		Writable: true, Declared: true, Required: true,
+		Writable: true,
 	})
-	if !strings.Contains(verdict, "one of blocked, fail, pass") || !strings.Contains(verdict, "must report it") {
+	if !strings.Contains(verdict, "one of blocked, fail, pass") {
 		t.Errorf("the verdict's line says too little:\n%s", verdict)
 	}
 
@@ -208,7 +198,7 @@ func TestAFieldSaysWhatAValueMayBeAndWhatIsOwed(t *testing.T) {
 		t.Error("a read-only property was offered as writable")
 	}
 
-	// And an ordinary writable one carries no verdict about the stage at all.
+	// And an ordinary writable one carries no suffix at all.
 	preview := fieldLine(FieldInfo{Name: "Превью", Kind: "url", Writable: true})
 	if preview != "- Превью — a link" {
 		t.Errorf("a plain property picked up a suffix: %q", preview)

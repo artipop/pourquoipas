@@ -96,42 +96,6 @@ describe('components/acp/workdirsPanel', () => {
         await waitFor(() => expect(setBase).toHaveBeenCalledWith('code', 'develop'))
     })
 
-    // The field this app made used to be called the old projects name, and a card that
-    // names a folder should not be asked about a project. The name is ours, so
-    // it is renamed once, in place — the board records the field by id, so
-    // nothing that points at it notices.
-    test('renames the field it made when it still says «Проекты»', async () => {
-        const legacyBoard = TestBlockFactory.createBoard()
-        legacyBoard.cardProperties.push({
-            id: 'projectprop',
-            name: 'Проекты',
-            type: 'multiSelect',
-            options: [{id: 'o1', value: 'alpha', color: 'propColorDefault'}],
-        })
-        legacyBoard.properties = {...legacyBoard.properties, projectProperty: 'projectprop'}
-        fakeGoSide({
-            ListAgentWorkdirs: vi.fn().mockResolvedValue(JSON.stringify([{name: 'alpha', path: '/tmp/alpha'}])),
-            PickDirectory: vi.fn(),
-            AddAgentWorkdir: vi.fn(),
-            RemoveAgentWorkdir: vi.fn(),
-        })
-        mockedMutator.updateBoardCardProperties.mockResolvedValue()
-
-        render(() => wrapIntl(() =>
-            <WorkdirsPanel
-                board={legacyBoard}
-                onClose={vi.fn()}
-            />,
-        ))
-
-        await waitFor(() => expect(mockedMutator.updateBoardCardProperties).toHaveBeenCalledTimes(1))
-        const renamed = mockedMutator.updateBoardCardProperties.mock.calls[0][2].find((p) => p.id === 'projectprop')!
-        expect(renamed.name).toBe('Папка')
-
-        // And its options are left exactly as they were: cards reference them.
-        expect(renamed.options.map((o) => o.value)).toEqual(['alpha'])
-    })
-
     // Picking a folder somebody has already added is not a mistake: it is the
     // folder they meant, on another board. The answer is a question.
     test('offers a folder that is already added instead of refusing it', async () => {
@@ -244,7 +208,7 @@ describe('components/acp/workdirsPanel', () => {
         await waitFor(() => expect(mockedMutator.updateBoardCardProperties).toHaveBeenCalledTimes(1))
 
         const newProps = mockedMutator.updateBoardCardProperties.mock.calls[0][2]
-        const projectProp = newProps.find((p) => p.name === 'Папка')!
+        const projectProp = newProps.find((p) => p.name === 'Folder')!
         expect(projectProp).toBeDefined()
         expect(projectProp.type).toBe('select')
         expect(projectProp.options.map((o) => o.value)).toEqual(['alpha', 'beta'])
@@ -320,7 +284,7 @@ describe('components/acp/workdirsPanel', () => {
         await waitFor(() => expect(mockedMutator.updateBoardCardProperties).toHaveBeenCalledTimes(1))
 
         const newProps = mockedMutator.updateBoardCardProperties.mock.calls[0][2]
-        const made = newProps.find((p) => p.name === 'Папка')!
+        const made = newProps.find((p) => p.name === 'Folder')!
         expect(made).toBeDefined()
         expect(made.id).not.toBe('tags-prop')
         expect(newProps.find((p) => p.id === 'tags-prop')!.options).toHaveLength(1)
@@ -334,7 +298,7 @@ describe('components/acp/workdirsPanel', () => {
         const boardWithProjects = TestBlockFactory.createBoard()
         boardWithProjects.cardProperties.push({
             id: 'projectprop',
-            name: 'Папка',
+            name: 'Folder',
             type: 'select',
             options: [{id: 'o1', value: 'alpha', color: 'propColorDefault'}],
         })

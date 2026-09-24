@@ -1134,87 +1134,6 @@ table "session_event" {
     columns = [column.session_id, column.id]
   }
 }
-table "conversation" {
-  column "id" {
-    null = false
-    type = varchar(36)
-  }
-  column "card_id" {
-    null = true
-    type = varchar(36)
-  }
-  column "board_id" {
-    null = true
-    type = varchar(36)
-  }
-  column "node_id" {
-    null = false
-    type = varchar(64)
-  }
-  column "column_name" {
-    null = true
-    type = varchar(200)
-  }
-  column "title" {
-    null = true
-    type = text
-  }
-  column "summary" {
-    null = true
-    type = text
-  }
-  column "agent" {
-    null = true
-    type = varchar(100)
-  }
-  column "kind" {
-    null = true
-    type = varchar(32)
-  }
-  column "workdir_path" {
-    null = true
-    type = text
-  }
-  column "cwd" {
-    null = true
-    type = text
-  }
-  column "branch" {
-    null = true
-    type = varchar(255)
-  }
-  column "started_at" {
-    null = false
-    type = bigint
-  }
-  column "ended_at" {
-    null = true
-    type = bigint
-  }
-  column "exit_code" {
-    null = true
-    type = bigint
-  }
-  primary_key {
-    columns = [column.id]
-  }
-  foreign_key "conversation_card" {
-    columns     = [column.card_id]
-    ref_columns = [table.card_ref.column.card_id]
-    on_delete   = CASCADE
-  }
-  foreign_key "conversation_board" {
-    columns     = [column.board_id]
-    ref_columns = [table.board_ref.column.board_id]
-    on_delete   = CASCADE
-  }
-  index "idx_conversation_card" {
-    columns = [column.card_id, column.started_at]
-  }
-  index "idx_conversation_card_node" {
-    columns = [column.card_id, column.node_id, column.started_at]
-  }
-}
 table "idempotency" {
   column "token" {
     null = false
@@ -1235,98 +1154,6 @@ table "idempotency" {
     columns = [column.created_at]
   }
 }
-table "flow_state" {
-  column "card_id" {
-    null = false
-    type = varchar(36)
-  }
-  column "board_id" {
-    null = true
-    type = varchar(36)
-  }
-  column "flow_id" {
-    null = true
-    type = varchar(36)
-  }
-  column "node_id" {
-    null = false
-    type = varchar(64)
-  }
-  column "branch" {
-    null = true
-    type = varchar(255)
-  }
-  column "workdir_path" {
-    null = true
-    type = text
-  }
-  column "entered_at" {
-    null = false
-    type = bigint
-  }
-  primary_key {
-    columns = [column.card_id]
-  }
-  foreign_key "flow_state_card" {
-    columns     = [column.card_id]
-    ref_columns = [table.card_ref.column.card_id]
-    on_delete   = CASCADE
-  }
-  foreign_key "flow_state_board" {
-    columns     = [column.board_id]
-    ref_columns = [table.board_ref.column.board_id]
-    on_delete   = CASCADE
-  }
-}
-table "flow_event" {
-  column "id" {
-    null = false
-    type = varchar(36)
-  }
-  column "card_id" {
-    null = false
-    type = varchar(36)
-  }
-  column "flow_id" {
-    null = true
-    type = varchar(36)
-  }
-  column "from_node" {
-    null = true
-    type = varchar(64)
-  }
-  column "to_node" {
-    null = false
-    type = varchar(64)
-  }
-  column "on_kind" {
-    null = false
-    type = varchar(32)
-  }
-  column "detail" {
-    null = true
-    type = text
-  }
-  column "said" {
-    null = true
-    type = text
-  }
-  column "created_at" {
-    null = false
-    type = bigint
-  }
-  primary_key {
-    columns = [column.id]
-  }
-  foreign_key "flow_event_card" {
-    columns     = [column.card_id]
-    ref_columns = [table.card_ref.column.card_id]
-    on_delete   = CASCADE
-  }
-  index "idx_flow_event_card" {
-    columns = [column.card_id, column.id]
-  }
-}
 table "card_stall" {
   column "card_id" {
     null = false
@@ -1335,10 +1162,6 @@ table "card_stall" {
   column "node_id" {
     null = true
     type = varchar(64)
-  }
-  column "kind" {
-    null = true
-    type = varchar(32)
   }
   column "reason" {
     null = false
@@ -1399,48 +1222,6 @@ table "card_changes" {
     on_delete   = CASCADE
   }
 }
-table "stage_queue" {
-  column "card_id" {
-    null = false
-    type = varchar(36)
-  }
-  column "board_id" {
-    null = true
-    type = varchar(36)
-  }
-  column "column_key" {
-    null = false
-    type = varchar(128)
-  }
-  column "flow_id" {
-    null = true
-    type = varchar(36)
-  }
-  column "node_id" {
-    null = true
-    type = varchar(64)
-  }
-  column "queued_at" {
-    null = false
-    type = bigint
-  }
-  primary_key {
-    columns = [column.card_id]
-  }
-  foreign_key "stage_queue_card" {
-    columns     = [column.card_id]
-    ref_columns = [table.card_ref.column.card_id]
-    on_delete   = CASCADE
-  }
-  foreign_key "stage_queue_board" {
-    columns     = [column.board_id]
-    ref_columns = [table.board_ref.column.board_id]
-    on_delete   = CASCADE
-  }
-  index "idx_stage_queue_column" {
-    columns = [column.column_key, column.queued_at]
-  }
-}
 table "board_setup" {
   column "board_id" {
     null = false
@@ -1468,36 +1249,6 @@ table "board_setup" {
   }
   check "board_setup_status" {
     expr = "`status` IN ('pending', 'done', 'skipped', 'offered')"
-  }
-}
-table "vcs_seen" {
-  column "workspace_id" {
-    null = false
-    type = varchar(36)
-  }
-  column "branch" {
-    null = false
-    type = varchar(255)
-  }
-  column "kind" {
-    null = false
-    type = varchar(32)
-  }
-  column "marker" {
-    null = true
-    type = varchar(64)
-  }
-  column "created_at" {
-    null = false
-    type = bigint
-  }
-  primary_key {
-    columns = [column.workspace_id, column.branch, column.kind]
-  }
-  foreign_key "vcs_seen_workspace" {
-    columns     = [column.workspace_id]
-    ref_columns = [table.workspace.column.id]
-    on_delete   = CASCADE
   }
 }
 table "checkout" {

@@ -125,34 +125,13 @@
         gap: 8px;
     }
 
-    .BoardSetupWizard__agentChoice {
+    // Names, not choices: the registry is the machine's and every agent on it
+    // may be assigned a card on any board.
+    .BoardSetupWizard__agentName {
         border: 1px solid rgba(var(--center-channel-color-rgb), 0.24);
         border-radius: var(--radius-pill);
-        background: transparent;
         color: rgb(var(--center-channel-color-rgb));
-        font: inherit;
         padding: 4px 14px;
-        cursor: pointer;
-
-        &:hover {
-            border-color: rgb(var(--button-bg-rgb));
-            color: rgb(var(--button-bg-rgb));
-        }
-
-        &:disabled {
-            opacity: 0.5;
-            cursor: progress;
-        }
-    }
-
-    .BoardSetupWizard__agentChoice--chosen {
-        border-color: rgb(var(--button-bg-rgb));
-        background: rgb(var(--button-bg-rgb));
-        color: rgb(var(--button-color-rgb));
-
-        &:hover {
-            color: rgb(var(--button-color-rgb));
-        }
     }
 
     .BoardSetupWizard__pickAdd {

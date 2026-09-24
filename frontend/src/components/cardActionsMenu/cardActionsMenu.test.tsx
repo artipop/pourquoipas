@@ -16,6 +16,7 @@ describe('components/cardActionsMenu', () => {
     board.id = 'boardId'
 
     const state = {
+
         // "Copy link" is offered where somebody else can open it, which is a
         // team install (docs/teamwork.md).
         clientConfig: {

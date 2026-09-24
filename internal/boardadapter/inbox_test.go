@@ -133,9 +133,9 @@ func TestTheInboxGroupsByWhoBroughtTheCard(t *testing.T) {
 	if len(views) != 1 {
 		t.Fatalf("the inbox should have one view, it has %d", len(views))
 	}
-	view, ok := views[InboxViewTitle]
+	view, ok := views["Входящие"]
 	if !ok {
-		t.Fatalf("no view called %q", InboxViewTitle)
+		t.Fatalf("no view called «Входящие»: %v", views)
 	}
 	groupBy, _ := view.Fields["groupById"].(string)
 	if def, ok := schema[groupBy]; !ok || def.Type != "createdBy" {
@@ -163,6 +163,54 @@ func TestARenamedInboxIsStillTheInbox(t *testing.T) {
 	again, err := EnsureInboxBoard(a, "ru")
 	if err != nil || again != id {
 		t.Fatalf("the renamed inbox was not found: %q, %v", again, err)
+	}
+}
+
+// The inbox is the app's board, not one the person made from a template, so
+// its names follow the language the app is switched to — and only the names
+// that are still the app's: what the person renamed stays theirs.
+func TestTheInboxFollowsTheLanguageExceptWhereThePersonRenamedIt(t *testing.T) {
+	a := newTestApp(t)
+	id, err := EnsureInboxBoard(a, "ru")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := boardByID(t, a, id).Title; got != "Входящие" {
+		t.Fatalf("a Russian inbox is called %q", got)
+	}
+
+	if err := RelabelInboxBoard(a, "en"); err != nil {
+		t.Fatal(err)
+	}
+	board := boardByID(t, a, id)
+	if board.Title != "Inbox" {
+		t.Errorf("after switching to English the board is %q", board.Title)
+	}
+	if _, ok := viewsByTitle(t, NewWriter(a), id)["Inbox"]; !ok {
+		t.Errorf("after switching to English the view is not «Inbox»")
+	}
+	names := map[string]bool{}
+	for _, prop := range board.CardProperties {
+		name, _ := prop["name"].(string)
+		names[name] = true
+	}
+	if !names["Author"] || !names["Created"] {
+		t.Errorf("after switching to English the fields are %v", names)
+	}
+
+	mine := "Всё подряд"
+	if _, err := a.PatchBoard(&model.BoardPatch{Title: &mine}, id, model.SingleUser); err != nil {
+		t.Fatal(err)
+	}
+	if err := RelabelInboxBoard(a, "ru"); err != nil {
+		t.Fatal(err)
+	}
+	board = boardByID(t, a, id)
+	if board.Title != mine {
+		t.Errorf("the name the person gave became %q", board.Title)
+	}
+	if _, ok := viewsByTitle(t, NewWriter(a), id)["Входящие"]; !ok {
+		t.Errorf("the view the person did not rename stayed in English")
 	}
 }
 

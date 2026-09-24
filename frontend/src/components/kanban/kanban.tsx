@@ -21,7 +21,6 @@ import {dragAndDropRearrange} from '../cardDetail/cardDetailContentsUtility'
 import {getCurrentBoardTemplates} from '../../store/cards'
 import BoardPermissionGate from '../permissions/boardPermissionGate'
 
-import {movedHere} from '../acp/movedHere'
 import {withoutAgentProperties} from '../acp/agentProperties'
 
 import KanbanCard from './kanbanCard'
@@ -42,7 +41,6 @@ type Props = {
     // arrives in the first column before anything has decided which route it
     // takes, so that column belongs to every route and is not a stage of any:
     // the line says which side of it the picture is about. Empty draws none.
-    dividerAfter?: string
     hiddenGroups: BoardGroup[]
     selectedCardIds: string[]
     readonly: boolean
@@ -129,12 +127,6 @@ const Kanban = (props: Props) => {
                     Utils.log(`ondrop. Card: ${draggedCard.title}, column: ${optionId}`)
                     const oldValue = draggedCard.fields.properties[groupByProperty!.id]
                     if (optionId !== oldValue) {
-                        // A transition can hold this card until somebody
-                        // answers, and the route cannot tell a hand from its own
-                        // move — it sees one board event either way. Remembering
-                        // the hand here is what lets the question be asked of
-                        // the person who is holding the card (movedHere.ts).
-                        movedHere(draggedCard.id)
                         awaits.push(mutator.changePropertyValue(props.board.id, draggedCard, groupByProperty!.id, optionId, description))
                     }
                 }
@@ -227,11 +219,6 @@ const Kanban = (props: Props) => {
     // about the past: dropping a card in another one would be asking the board
     // to have been written by somebody else. So the cards do not drag, and
     // there is no group to add.
-    // The line after the column every route shares. Drawn between the columns
-    // rather than around one, so the board reads as "everything arrives here,
-    // and this route is what happens next".
-    const dividesAfter = (group: BoardGroup) => Boolean(props.dividerAfter) && group.option.id === props.dividerAfter
-
     const columnsAreFacts = () => {
         const type = props.groupByProperty?.type
         return type === 'createdBy' || type === 'updatedBy'
@@ -262,9 +249,6 @@ const Kanban = (props: Props) => {
                                 onCalculationMenuOpen={() => toggleOptions(group.option.id, true)}
                                 onCalculationMenuClose={() => toggleOptions(group.option.id, false)}
                             />
-                            <Show when={dividesAfter(group)}>
-                                <div class='octo-board-divider'/>
-                            </Show>
                         </>
                     )}
                 </For>
@@ -351,9 +335,6 @@ const Kanban = (props: Props) => {
                                     </BoardPermissionGate>
                                 </Show>
                             </KanbanColumn>
-                            <Show when={dividesAfter(group)}>
-                                <div class='octo-board-divider'/>
-                            </Show>
                         </>
                     )}
                 </For>

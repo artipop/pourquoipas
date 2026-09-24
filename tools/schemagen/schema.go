@@ -7,7 +7,7 @@ package main
 //
 // What that cost is not hypothetical: deleting a card is a real DELETE FROM
 // blocks, and nothing here ever heard about it, so every deleted card left its
-// conversations, its position on a route, its stall and its queue slot behind
+// sessions, its position on a route, its stall and its queue slot behind
 // for ever. The keys below are the fix, and they are written in CREATE TABLE
 // because SQLite has no ALTER TABLE ADD CONSTRAINT — there is no second chance
 // to add them.
@@ -36,15 +36,10 @@ func appTables() []Table {
 
 		agentSession(),
 		sessionEvent(),
-		conversation(),
 		idempotency(),
-		flowState(),
-		flowEvent(),
 		cardStall(),
 		cardChanges(),
-		stageQueue(),
 		boardSetup(),
-		vcsSeen(),
 		checkout(),
 		sourceItem(),
 		sourceEvent(),
@@ -181,8 +176,8 @@ func agent() Table {
 			{Name: "prompt", Type: Text(), Null: true},
 			{Name: "settings", Type: JSON(), Null: true,
 				Why: "env, args, cliArgs, options, autoAllowTools, command,\n" +
-					"terminalCommand, mcpServers. JSON on purpose: this is how to start\n" +
-					"a process, it points at nothing and nothing joins to it."},
+					"mcpServers. JSON on purpose: this is how to start a process, it\n" +
+					"points at nothing and nothing joins to it."},
 			{Name: "created_at", Type: Millis()},
 		},
 		PK: []string{"id"},
@@ -236,7 +231,7 @@ const (
 // A key can only reach inside its own database. Everything below used to point
 // straight at blocks(id) and boards(id), and that key is the whole reason these
 // tables live in the board's database at all: deleting a card is a real DELETE
-// FROM blocks, which this side never heard about, so conversations, route
+// FROM blocks, which this side never heard about, so sessions, route
 // positions and stalls leaked for ever.
 //
 // A desktop attached to a hosted board has no such rows — a remote card is not
@@ -324,16 +319,13 @@ func boardFK(table string) FK {
 	}
 }
 
-// agent_session is a run over the protocol: a deploy, a test, the short
-// headless run that names a branch. An agent *stage* of a route is not one of
-// these — it is a conversation (below), because the agent's own CLI draws its
-// work and asks its own questions.
+// agent_session is a run over the protocol: a card's work, a deploy, a
+// test, the short headless run that names a branch. A planning conversation is
+// not one: it is about no card and leaves no row.
 func agentSession() Table {
 	return Table{
 		Name: "agent_session",
-		Why: "A run of an agent over ACP. One process, one verdict: unlike a\n" +
-			"conversation, it is never resumed, which is why the two are\n" +
-			"separate tables and not one row with a transport column.",
+		Why: "A run of an agent over ACP. One process, one turn, one verdict.",
 		Columns: []Column{
 			{Name: "id", Type: ID()},
 			{Name: "card_id", Type: ID(), Null: true,
@@ -358,9 +350,9 @@ func agentSession() Table {
 		PK: []string{"id"},
 		Checks: []Check{{
 			Name: "agent_session_status", Column: "status",
-			// idle and waiting_permission are no longer reached — a session
-			// runs its task and ends — but rows written before that say so,
-			// and a status read back has to mean something (acp.SessionStatus).
+			// waiting_permission is a question open to a person; idle is no
+			// longer reached — a session runs its task and ends — but a status
+			// read back has to mean something (acp.SessionStatus).
 			Values: []string{"queued", "running", "idle", "waiting_permission",
 				"done", "failed", "cancelled"},
 		}},
@@ -397,50 +389,6 @@ func sessionEvent() Table {
 	}
 }
 
-// conversation was terminal_session, and the rename is the concept catching up
-// with the code: this is the agent's own CLI in a pty, and it is what a person
-// talks in and what a stage of a route runs in.
-func conversation() Table {
-	return Table{
-		Name: "conversation",
-		Why: "A conversation with an agent: its CLI in a pty, keyed (card, node).\n" +
-			"The row outlives every process that ever drew it — that is what makes\n" +
-			"a conversation resumable, and it is the difference from agent_session,\n" +
-			"which is one run and then over.",
-		Columns: []Column{
-			{Name: "id", Type: ID()},
-			{Name: "card_id", Type: ID(), Null: true,
-				Why: "NULL for a planning conversation: it is about no card."},
-			{Name: "board_id", Type: ID(), Null: true},
-			{Name: "node_id", Type: Name(64),
-				Why: "The column's option id — work; '@talk' — discussion; '@none' — a\n" +
-					"card with no column at all."},
-			{Name: "column_name", Type: Name(200), Null: true,
-				Why: "What the column was called at the time, frozen: the option may be\n" +
-					"gone, and the row still has to read the same."},
-			{Name: "title", Type: Text(), Null: true},
-			{Name: "summary", Type: Text(), Null: true,
-				Why: "The agent's own line about what this conversation is doing."},
-			{Name: "agent", Type: Name(100), Null: true},
-			{Name: "kind", Type: Name(32), Null: true},
-			{Name: "workdir_path", Type: Text(), Null: true,
-				Why: "Was repo_path. Becomes workspace_id in the second half of step 2,\n" +
-					"together with the code that resolves a folder to its registry id."},
-			{Name: "cwd", Type: Text(), Null: true},
-			{Name: "branch", Type: Name(255), Null: true},
-			{Name: "started_at", Type: Millis()},
-			{Name: "ended_at", Type: Millis(), Null: true},
-			{Name: "exit_code", Type: Int(), Null: true},
-		},
-		PK:  []string{"id"},
-		FKs: []FK{cardFK("conversation"), boardFK("conversation")},
-		Indexes: []Index{
-			{Name: "idx_conversation_card", Columns: []string{"card_id", "started_at"}},
-			{Name: "idx_conversation_card_node", Columns: []string{"card_id", "node_id", "started_at"}},
-		},
-	}
-}
-
 // idempotency is the flow engine's latch: this event has already been handled.
 func idempotency() Table {
 	return Table{
@@ -460,58 +408,6 @@ func idempotency() Table {
 	}
 }
 
-// flow_state is where a card stands on its route.
-func flowState() Table {
-	return Table{
-		Name: "flow_state",
-		Why: "This machine's index of where each card is on its route. The truth is\n" +
-			"on the card itself, so it travels with the board; this is what the VCS\n" +
-			"watcher asks \"which cards are parked and on what branch\" in one query.",
-		Columns: []Column{
-			{Name: "card_id", Type: ID()},
-			{Name: "board_id", Type: ID(), Null: true},
-			{Name: "flow_id", Type: ID(), Null: true,
-				Why: "The route the card is on. An id rather than the route's name, so\n" +
-					"renaming a route does not lose the place of every card on it. No\n" +
-					"foreign key: routes live in the board's JSON, not in a table.\n" +
-					"Nullable because a row carried over from before routes had ids\n" +
-					"knows only a name; the card's own record supplies the id."},
-			{Name: "node_id", Type: Name(64)},
-			{Name: "branch", Type: Name(255), Null: true},
-			{Name: "workdir_path", Type: Text(), Null: true},
-			{Name: "entered_at", Type: Millis()},
-		},
-		PK:  []string{"card_id"},
-		FKs: []FK{cardFK("flow_state"), boardFK("flow_state")},
-	}
-}
-
-// flow_event is the journal of transitions.
-func flowEvent() Table {
-	return Table{
-		Name: "flow_event",
-		Why:  "Every transition a card made, and what the agent said on it.",
-		Columns: []Column{
-			{Name: "id", Type: ID()},
-			{Name: "card_id", Type: ID()},
-			{Name: "flow_id", Type: ID(), Null: true},
-			{Name: "from_node", Type: Name(64), Null: true},
-			{Name: "to_node", Type: Name(64)},
-			{Name: "on_kind", Type: Name(32)},
-			{Name: "detail", Type: Text(), Null: true},
-			{Name: "said", Type: Text(), Null: true,
-				Why: "The agent's closing words: what a conversation is told instead of\n" +
-					"its task when the card comes back to it."},
-			{Name: "created_at", Type: Millis()},
-		},
-		PK:  []string{"id"},
-		FKs: []FK{cardFK("flow_event")},
-		Indexes: []Index{
-			{Name: "idx_flow_event_card", Columns: []string{"card_id", "id"}},
-		},
-	}
-}
-
 // card_stall is why a card is standing still.
 func cardStall() Table {
 	return Table{
@@ -522,10 +418,6 @@ func cardStall() Table {
 		Columns: []Column{
 			{Name: "card_id", Type: ID()},
 			{Name: "node_id", Type: Name(64), Null: true},
-			{Name: "kind", Type: Name(32), Null: true,
-				Why: "'conversation' is the one kind with somewhere to go: open the\n" +
-					"terminal. The rest have no button, which is why this is a field and\n" +
-					"never a reading of the reason's own Russian."},
 			{Name: "reason", Type: Text()},
 			{Name: "created_at", Type: Millis()},
 		},
@@ -564,28 +456,6 @@ func cardChanges() Table {
 	}
 }
 
-// stage_queue is a card waiting for a free place in its column.
-func stageQueue() Table {
-	return Table{
-		Name: "stage_queue",
-		Why:  "A card waiting for its column to free up a place.",
-		Columns: []Column{
-			{Name: "card_id", Type: ID()},
-			{Name: "board_id", Type: ID(), Null: true},
-			{Name: "column_key", Type: Name(128),
-				Why: "board|option — the queue belongs to one column of one board."},
-			{Name: "flow_id", Type: ID(), Null: true},
-			{Name: "node_id", Type: Name(64), Null: true},
-			{Name: "queued_at", Type: Millis()},
-		},
-		PK:  []string{"card_id"},
-		FKs: []FK{cardFK("stage_queue"), boardFK("stage_queue")},
-		Indexes: []Index{
-			{Name: "idx_stage_queue_column", Columns: []string{"column_key", "queued_at"}},
-		},
-	}
-}
-
 // board_setup is what the setup wizard has already asked about a board.
 func boardSetup() Table {
 	return Table{
@@ -608,29 +478,6 @@ func boardSetup() Table {
 			Values: []string{"pending", "done", "skipped", "offered"},
 		}},
 		FKs: []FK{boardFK("board_setup")},
-	}
-}
-
-// vcs_seen is the git watcher's latch.
-func vcsSeen() Table {
-	return Table{
-		Name: "vcs_seen",
-		Why: "This branch event has already been acted on. Keyed by the workspace\n" +
-			"rather than by its path: a folder somebody moved used to keep its\n" +
-			"latches, and MySQL would refuse a path in a key of any real length.",
-		Columns: []Column{
-			{Name: "workspace_id", Type: ID()},
-			{Name: "branch", Type: Name(255)},
-			{Name: "kind", Type: Name(32)},
-			{Name: "marker", Type: Name(64), Null: true,
-				Why: "The commit the event refers to: the same state seen twice fires once."},
-			{Name: "created_at", Type: Millis()},
-		},
-		PK: []string{"workspace_id", "branch", "kind"},
-		FKs: []FK{{
-			Name: "vcs_seen_workspace", Columns: []string{"workspace_id"},
-			RefTable: "workspace", RefCols: []string{"id"}, OnDelete: Cascade,
-		}},
 	}
 }
 

@@ -15,8 +15,6 @@ import (
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
-
-	"github.com/artipop/xciii/internal/acp"
 )
 
 // origin is the front door of a desktop build. A Wails desktop app has no HTTP
@@ -241,35 +239,6 @@ func newMainWindow(wapp *application.App, url string) {
 		e.Cancel()
 		win.Hide()
 	})
-}
-
-// openTerminalWindow gives a terminal session a window of its own — the app's
-// own window, not a shell somebody opened beside it: it is named after the
-// session, so asking twice focuses the one that exists, and it closes with the
-// app. Reports whether a window was opened at all.
-func openTerminalWindow(wapp *application.App, info acp.TerminalInfo, url string) bool {
-	name := "acp-terminal-" + info.ID
-	if existing, ok := wapp.Window.GetByName(name); ok {
-		existing.Show()
-		existing.Focus()
-		return true
-	}
-	title := "Терминал агента " + info.Agent
-	if info.Title != "" {
-		title = info.Title + " · " + info.Agent
-	}
-	wapp.Window.NewWithOptions(application.WebviewWindowOptions{
-		Name:   name,
-		Title:  title,
-		Width:  980,
-		Height: 640,
-		URL:    url,
-		// A terminal is dark by default and a white flash on open is what
-		// everyone remembers about a terminal in a webview. This is the same
-		// black the page paints, so there is no seam at all.
-		BackgroundColour: application.NewRGB(12, 12, 14),
-	})
-	return true
 }
 
 // openDiffWindow gives a card's changes a window, named after the card so a

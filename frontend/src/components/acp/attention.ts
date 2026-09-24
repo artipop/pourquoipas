@@ -8,7 +8,6 @@ import {goApp} from '../../goBridge'
 import {aiEnabled} from '../../aiSwitch'
 
 import {onAgentEvent} from './agentEvents'
-import {openCardTerminalWindow} from './liveTerminals'
 
 // Which cards are waiting for a person.
 //
@@ -17,22 +16,10 @@ import {openCardTerminalWindow} from './liveTerminals'
 // side says in one place, so every card on the board shares one subscription
 // and one initial load rather than asking for itself.
 
-// The ways a card can want a person.
-//
-// Two of them are an agent that stopped mid-work. 'question' is ACP itself — a
-// deploy or a test asked for a tool it was not given, or sent an elicitation,
-// and its turn is open until somebody answers. 'terminal' is a stage of a route
-// whose CLI has stopped drawing: it is asking something inside its own
-// interface, and only it knows what. Neither is answered here any more — the
-// agent draws its question where it is working, and what this side offers is
-// the way to it.
-//
-// 'card' is the opposite case: the route moved the card onto a stage where
-// nothing runs, or onto one whose work belongs to whoever the card is assigned
-// to, and the next step is a person's (internal/acp/cardwait.go). Nothing is
-// asking anything — the card is the question — so there is no terminal to open
-// and being told is the whole of it.
-export type AttentionReason = 'question' | 'terminal' | 'card'
+// The one way a card wants a person: the agent is asking. It wanted a tool it
+// was not given, or sent an elicitation, and its turn stays open until somebody
+// answers — which is done where the question is read (attentionAnswers.tsx).
+export type AttentionReason = 'question'
 
 export type QuestionOption = {
     id: string
@@ -43,7 +30,10 @@ export type QuestionOption = {
 
 export type Attention = {
     key: string
-    terminalId?: string
+
+    // Who is asking, for a wait with no card behind it: the planning dialog
+    // finds its own agent's questions by this.
+    sessionId?: string
     cardId?: string
     boardId?: string
     title?: string
@@ -75,9 +65,6 @@ export const keyOf = (a: Attention): string => {
     if (a.key) {
         return a.key
     }
-    if (a.terminalId) {
-        return a.terminalId
-    }
     return a.questionId ? `q:${a.questionId}` : `card:${a.cardId}`
 }
 
@@ -90,7 +77,7 @@ let consumers = 0
 let unsubscribe: (() => void) | undefined
 
 function apply(payload: Attention): void {
-    if (!payload?.terminalId && !payload?.cardId) {
+    if (!payload?.cardId && !payload?.sessionId) {
         return
     }
     setWaiting((current) => {
@@ -161,18 +148,7 @@ export function useAttention(): Accessor<Attention[]> {
 export function useCardAttention(cardId: Accessor<string>): Accessor<Attention | undefined> {
     onSettled(() => subscribe())
 
-    // An agent's wait only. The card's own button is a console — amber means an
-    // agent stopped in it, and clicking opens it — and a card the route handed
-    // to a person has no CLI running at all, so drawing it there would be a
-    // button that lies twice over.
-    return createMemo(() => shown().find((a) => a.cardId === cardId() && a.reason !== 'card'))
-}
-
-// openWait goes to where the agent is asking, which is the only thing to do
-// about a wait now: the terminal it is waiting in, by id when the wait names
-// one, else the card's own.
-export async function openWait(target: Attention): Promise<void> {
-    await openCardTerminalWindow(target.cardId || '', target.terminalId)
+    return createMemo(() => shown().find((a) => a.cardId === cardId()))
 }
 
 // ackWait says a person has seen this wait — waved it away, or gone to look at
@@ -205,9 +181,6 @@ type Formatter = {
 // attentionHeading is the one sentence a wait is worth, wherever it is shown —
 // the dot's tooltip, the notification, the card.
 export function attentionHeading(intl: Formatter, target: Attention): string {
-    if (target.reason === 'card') {
-        return intl.formatMessage({id: 'Attention.card-waiting', defaultMessage: 'The card is waiting for you'})
-    }
     const agent = target.agent || ''
     return agent ? intl.formatMessage({id: 'Attention.asking-agent', defaultMessage: '{agent} is asking'}, {agent}) : intl.formatMessage({id: 'Attention.asking', defaultMessage: 'The agent is asking'})
 }

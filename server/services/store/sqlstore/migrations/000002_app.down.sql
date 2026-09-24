@@ -6,7 +6,7 @@
 -- somebody has to remember three answers to one question.
 --
 -- What this application adds beside the board: the machine's registries, the
--- conversations and sessions, where a card stands on its route. Every foreign
+-- sessions, where a card stands on its route. Every foreign
 -- key here points at a table the migration before it made.
 
 {{if .sqlite}}
@@ -26,13 +26,7 @@ PRAGMA foreign_keys = off;
 DROP TABLE `checkout`;
 PRAGMA foreign_keys = on;
 PRAGMA foreign_keys = off;
-DROP TABLE `vcs_seen`;
-PRAGMA foreign_keys = on;
-PRAGMA foreign_keys = off;
 DROP TABLE `board_setup`;
-PRAGMA foreign_keys = on;
-PRAGMA foreign_keys = off;
-DROP TABLE `stage_queue`;
 PRAGMA foreign_keys = on;
 PRAGMA foreign_keys = off;
 DROP TABLE `card_changes`;
@@ -41,16 +35,7 @@ PRAGMA foreign_keys = off;
 DROP TABLE `card_stall`;
 PRAGMA foreign_keys = on;
 PRAGMA foreign_keys = off;
-DROP TABLE `flow_event`;
-PRAGMA foreign_keys = on;
-PRAGMA foreign_keys = off;
-DROP TABLE `flow_state`;
-PRAGMA foreign_keys = on;
-PRAGMA foreign_keys = off;
 DROP TABLE `idempotency`;
-PRAGMA foreign_keys = on;
-PRAGMA foreign_keys = off;
-DROP TABLE `conversation`;
 PRAGMA foreign_keys = on;
 PRAGMA foreign_keys = off;
 DROP TABLE `session_event`;
@@ -87,15 +72,10 @@ DROP TABLE `board_summary`;
 DROP TABLE `source_event`;
 DROP TABLE `source_item`;
 DROP TABLE `checkout`;
-DROP TABLE `vcs_seen`;
 DROP TABLE `board_setup`;
-DROP TABLE `stage_queue`;
 DROP TABLE `card_changes`;
 DROP TABLE `card_stall`;
-DROP TABLE `flow_event`;
-DROP TABLE `flow_state`;
 DROP TABLE `idempotency`;
-DROP TABLE `conversation`;
 DROP TABLE `session_event`;
 DROP TABLE `agent_session`;
 DROP TABLE `deploy_target`;
@@ -113,15 +93,10 @@ DROP TABLE "board_summary";
 DROP TABLE "source_event";
 DROP TABLE "source_item";
 DROP TABLE "checkout";
-DROP TABLE "vcs_seen";
 DROP TABLE "board_setup";
-DROP TABLE "stage_queue";
 DROP TABLE "card_changes";
 DROP TABLE "card_stall";
-DROP TABLE "flow_event";
-DROP TABLE "flow_state";
 DROP TABLE "idempotency";
-DROP TABLE "conversation";
 DROP TABLE "session_event";
 DROP TABLE "agent_session";
 DROP TABLE "deploy_target";

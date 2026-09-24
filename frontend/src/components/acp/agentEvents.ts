@@ -1,6 +1,6 @@
 import {goApp} from '../../goBridge'
 
-// What the agents are doing, as it happens: a session changed state, a terminal
+// What the agents are doing, as it happens: a session changed state, a stage
 // opened or closed, a card started waiting for a person.
 //
 // It arrives over one socket on the front door (/acp/events/ws) rather than

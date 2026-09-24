@@ -14,8 +14,6 @@ import (
 	"strconv"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
-
-	"github.com/artipop/xciii/internal/acp"
 )
 
 // origin is the front door of a server build. Here Wails runs an HTTP server of
@@ -144,10 +142,6 @@ func watchDockReopen(*application.App, string) {}
 func newMainWindow(_ *application.App, url string) {
 	log.Printf("server mode: no window; open %s in a browser", url)
 }
-
-// openTerminalWindow opens nothing in a server build: there are no windows, so
-// the page that asked opens a browser tab at the same address instead.
-func openTerminalWindow(_ *application.App, _ acp.TerminalInfo, _ string) bool { return false }
 
 // openDiffWindow, likewise: the page is a route the board already serves, and a
 // browser opens it itself.

@@ -3,10 +3,8 @@ package acp
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"os"
 	"path/filepath"
-	"sync"
 	"testing"
 )
 
@@ -16,7 +14,6 @@ func storeManager(t *testing.T) (*Manager, *fakeBoardMeta, string) {
 	t.Helper()
 	cfgPath := filepath.Join(t.TempDir(), "config.json")
 	m := agentManager(t, cfgPath)
-	m.cfg.Columns, m.cfg.Flows = nil, nil
 	m.rootCtx = context.Background()
 	meta := &fakeBoardMeta{}
 	m.SetBoardMeta(meta)
@@ -35,148 +32,6 @@ func storedConfig(t *testing.T, path string) Config {
 		t.Fatalf("parse the config: %v", err)
 	}
 	return cfg
-}
-
-// A board's automation belongs to the board, so editing it writes to the board
-// and leaves nothing about that board in the machine's own file — which is what
-// makes it travel with the board and disappear with it.
-func TestABoardsAutomationIsSavedOnTheBoard(t *testing.T) {
-	m, meta, cfgPath := storeManager(t)
-
-	if _, err := m.SaveColumn(ColumnSpec{BoardID: "board1", Property: "Статус", Column: "В работе", Action: FlowActionAgent}); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := m.AddFlow(FlowEntry{
-		BoardID: "board1",
-		Name:    "Фича",
-		Nodes:   []FlowNode{{ID: "agent", Column: "В работе"}},
-	}); err != nil {
-		t.Fatal(err)
-	}
-
-	board := meta.written["board1"]
-	if board == nil {
-		t.Fatal("the board was never told about its own automation")
-	}
-	columns, flows, err := parseBoardAutomation(board)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(columns) != 1 || columns[0].Column != "В работе" {
-		t.Errorf("the board holds columns %+v", columns)
-	}
-	if len(flows) != 1 || flows[0].Name != "Фича" {
-		t.Errorf("the board holds routes %+v", flows)
-	}
-
-	stored := storedConfig(t, cfgPath)
-	if len(stored.Columns) != 0 || len(stored.Flows) != 0 {
-		t.Errorf("the machine's file still carries the board's automation: %+v %+v", stored.Columns, stored.Flows)
-	}
-}
-
-// Deleting the last route of a board has to reach the board too: a board that
-// kept what was deleted would hand it straight back on the next launch.
-func TestDeletingARouteReachesTheBoard(t *testing.T) {
-	m, meta, _ := storeManager(t)
-
-	if _, err := m.AddFlow(FlowEntry{BoardID: "board1", Name: "Фича", Nodes: []FlowNode{{ID: "a", Column: "В работе"}}}); err != nil {
-		t.Fatal(err)
-	}
-	if err := m.RemoveFlow("board1", m.Flows()[0].ID); err != nil {
-		t.Fatal(err)
-	}
-
-	_, flows, err := parseBoardAutomation(meta.written["board1"])
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(flows) != 0 {
-		t.Errorf("the board still holds %d routes after the only one was deleted", len(flows))
-	}
-}
-
-// A board that cannot be written to right now must not lose what somebody drew.
-// It is not in config.json any more, so what has to survive is the registry
-// this run reads — and the next edit has to reach the board.
-func TestARefusedBoardKeepsTheEditForTheRun(t *testing.T) {
-	m, meta, _ := storeManager(t)
-	meta.fail = errors.New("board store is not ready")
-
-	if _, err := m.SaveColumn(ColumnSpec{BoardID: "board1", Property: "Статус", Column: "В работе", Action: FlowActionAgent}); err != nil {
-		t.Fatal(err)
-	}
-	if len(m.cfg.Columns) != 1 {
-		t.Fatalf("the column was dropped with no board to hold it: %+v", m.cfg.Columns)
-	}
-
-	// And it reaches the board the moment the board can take it.
-	meta.fail = nil
-	if _, err := m.SaveColumn(ColumnSpec{BoardID: "board1", Property: "Статус", Column: "В работе", Action: FlowActionDeploy}); err != nil {
-		t.Fatal(err)
-	}
-	columns, _, err := parseBoardAutomation(meta.written["board1"])
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(columns) != 1 || columns[0].Action != FlowActionDeploy {
-		t.Errorf("the board did not get the column after it could take it: %+v", columns)
-	}
-}
-
-// A board imported from another machine names agents and deploy targets that
-// were registered there. Reading it here cannot use those columns — and must
-// not take them off the board, which is what "reading a board cannot shrink
-// it" means. Before this, opening an imported board once emptied its
-// its columns and there was nothing left to register the agent for.
-func TestReadingABoardNeverTakesAutomationOffIt(t *testing.T) {
-	m, meta, _ := storeManager(t)
-	mine := ColumnSpec{Property: "Статус", Column: "Готово", Action: FlowActionNone}
-	theirs := ColumnSpec{Property: "Статус", Column: "В работе", Action: FlowActionAgent, Agents: []string{"Клод"}}
-	meta.props = map[string]any{
-		BoardPropColumns: []ColumnSpec{mine, theirs},
-		BoardPropFlows: []FlowEntry{{
-			Name:  "Фича",
-			Nodes: []FlowNode{{ID: "agent", Column: "В работе", Action: FlowActionAgent, AgentNames: []string{"Клод"}}},
-		}},
-	}
-
-	m.SeedBoard("board1")
-
-	columns, flows, err := parseBoardAutomation(meta.written["board1"])
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(columns) != 2 {
-		t.Fatalf("the board kept %d of its 2 columns: %+v", len(columns), columns)
-	}
-	if len(flows) != 1 {
-		t.Fatalf("the board kept %d of its 1 routes: %+v", len(flows), flows)
-	}
-
-	// The usable half did reach the registry; the other half did not, because
-	// there is no agent here to run it.
-	if len(m.cfg.Columns) != 1 || m.cfg.Columns[0].Column != "Готово" {
-		t.Fatalf("the registry took %+v", m.cfg.Columns)
-	}
-
-	// Registering the agent and asking again — which is what the setup wizard
-	// does — makes the column live without a restart, and still leaves the
-	// board with both.
-	if _, err := m.AddAgent(AgentEntry{Name: "Клод", Kind: "claude"}); err != nil {
-		t.Fatal(err)
-	}
-	m.SeedBoard("board1")
-	if len(m.cfg.Columns) != 2 {
-		t.Fatalf("the registry took %+v after the agent was registered", m.cfg.Columns)
-	}
-	columns, _, err = parseBoardAutomation(meta.written["board1"])
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(columns) != 2 {
-		t.Fatalf("the board ended up with %d columns: %+v", len(columns), columns)
-	}
 }
 
 // What a board's agents are told first is about that board, not about this
@@ -215,108 +70,5 @@ func TestTheBoardsInstructionsAreTakenFromTheBoard(t *testing.T) {
 
 	if got := m.BoardPrompt("board1"); got != "Отвечай по-русски." {
 		t.Fatalf("the machine took %q from the board", got)
-	}
-}
-
-// fakeCardState is the board seen as a place to keep one key per card.
-type fakeCardState struct {
-	// The engine reads and writes a card's place from several goroutines at
-	// once — the same board block does, under a lock of its own.
-	mu    sync.Mutex
-	state map[string]FlowState
-	board map[string]string // card id → board id
-}
-
-func (f *fakeCardState) CardFlow(_ context.Context, cardID string) (FlowState, bool, error) {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	st, ok := f.state[cardID]
-	return st, ok, nil
-}
-
-func (f *fakeCardState) SetCardFlow(_ context.Context, cardID string, st FlowState) error {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	if f.state == nil {
-		f.state = map[string]FlowState{}
-	}
-	st.CardID = cardID
-	f.state[cardID] = st
-	return nil
-}
-
-func (f *fakeCardState) ClearCardFlow(_ context.Context, cardID string) error {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	delete(f.state, cardID)
-	return nil
-}
-
-func (f *fakeCardState) BoardCardFlows(_ context.Context, boardID string) ([]FlowState, error) {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	out := []FlowState{}
-	for cardID, st := range f.state {
-		if f.board[cardID] == boardID {
-			out = append(out, st)
-		}
-	}
-	return out, nil
-}
-
-// A board arriving on this machine brings its parked cards with it, and this
-// machine has to notice: the VCS watcher reads its own table to learn which
-// branches to poll, so a card nobody indexed is a card waiting on a branch
-// nobody is watching.
-func TestParkedCardsOfANewBoardAreIndexedFromIt(t *testing.T) {
-	store, err := newTestStore(t, filepath.Join(t.TempDir(), "acp.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	cfg := DefaultConfig(t.TempDir())
-	m := NewManager(cfg, filepath.Join(t.TempDir(), "config.json"), store, newFakeWriter(), &fakeEmitter{}, nil)
-	m.rootCtx = context.Background()
-	m.SetBoardMeta(&fakeBoardMeta{props: map[string]any{BoardPropPrompt: "Отвечай по-русски."}})
-	m.SetBoardCardState(&fakeCardState{
-		state: map[string]FlowState{"cardOne": {CardID: "cardOne", FlowID: "flow-feature", NodeID: "review", Branch: "feat/x", WorkdirPath: "/tmp/p"}},
-		board: map[string]string{"cardOne": "board1"},
-	})
-
-	m.SeedBoard("board1")
-
-	st, ok, err := store.FlowStateForCard("cardOne")
-	if err != nil || !ok {
-		t.Fatalf("the card was not indexed: %v, %v", ok, err)
-	}
-	if st.NodeID != "review" || st.Branch != "feat/x" {
-		t.Errorf("indexed as %+v", st)
-	}
-}
-
-// Setting a board's instructions can be the first thing that ever happens to a
-// board — the automation editor need not have been opened. Every edit writes
-// the whole of that board's automation back, so an edit made before the board
-// was read once emptied a freshly made board's columns and routes.
-func TestAnEditBeforeTheBoardWasEverReadKeepsItsAutomation(t *testing.T) {
-	m, meta, _ := storeManager(t)
-	meta.props = map[string]any{
-		BoardPropColumns: []ColumnSpec{{Property: "Статус", Column: "В работе", Action: FlowActionAgent, Agents: []string{"Клод"}}},
-		BoardPropFlows:   []FlowEntry{{Name: "Фича", Nodes: []FlowNode{{ID: "agent", Column: "В работе"}}}},
-	}
-
-	if err := m.SetBoardPrompt("board1", "Отвечай по-русски."); err != nil {
-		t.Fatal(err)
-	}
-
-	columns, flows, err := parseBoardAutomation(meta.written["board1"])
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(columns) != 1 || len(flows) != 1 {
-		t.Fatalf("the board was left with %d columns and %d routes", len(columns), len(flows))
-	}
-	if meta.written["board1"][BoardPropPrompt] != "Отвечай по-русски." {
-		t.Errorf("the instruction did not land: %v", meta.written["board1"][BoardPropPrompt])
 	}
 }

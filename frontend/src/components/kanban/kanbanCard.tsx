@@ -17,7 +17,6 @@ import CardBadges from '../cardBadges'
 import CardActionsMenu from '../cardActionsMenu/cardActionsMenu'
 import CardActionsMenuIcon from '../cardActionsMenu/cardActionsMenuIcon'
 import {attentionHeading, useCardAttention} from '../acp/attention'
-import {isCardTerminalAvailable, openCardTerminalWindow, useCardCutOff, useCardTerminal} from '../acp/liveTerminals'
 import {findWorkdirProperty} from '../acp/workdirSync'
 import {aiEnabled} from '../../aiSwitch'
 
@@ -84,62 +83,18 @@ const KanbanCard = (props: Props) => {
     }
 
     // An agent that has stopped to ask something is the one thing about a card
-    // that a person has to notice without opening it — the terminal it asked in
-    // is a window nobody is looking at.
+    // that a person has to notice without opening it: its turn stays open until
+    // somebody answers, and the answer is inside the card.
     const attention = useCardAttention(() => props.card.id)
-    const attentionTitle = () => attentionHeading(intl, attention()!)
+    const agentTitle = () => (attention() ? attentionHeading(intl, attention()!) : '')
+    const showsAgent = () => aiEnabled() && Boolean(attention())
 
-    // And a terminal already running on the card is the other thing worth
-    // seeing from here — it is where the work is happening, and where a
-    // question was asked. The dot is both: what it means is the colour, what it
-    // does is open the terminal, so getting to the CLI from the board is one
-    // click rather than a card, a toolbar and a panel.
-    const liveTerminal = useCardTerminal(() => props.card.id)
-
-    // And the third: a conversation that stopped without a verdict — the CLI
-    // closed, or the app did, and the stage was never reported. It is the same
-    // button and the same amber, because it is the same sentence — the machine
-    // needs a person here — and what tells the two apart is the shape: the
-    // console breathes while an agent is asking, the pause stands still while
-    // work waits to be picked back up. One colour, one meaning; a second colour
-    // would need a legend.
-    const cutOff = useCardCutOff(() => props.card.id)
-
-    // Only when nothing is happening: a CLI that is running, or an agent that
-    // is asking, is the more recent truth about the same card, and a reason
-    // recorded before either of them is stale until the card makes progress and
-    // drops it.
-    const paused = () => Boolean(cutOff()) && !attention() && !liveTerminal()
-    const showsAgent = () => aiEnabled() && Boolean(attention() || liveTerminal() || cutOff())
-
-    // How a stage ended is answered in the card, on its route strip — not here.
-    // These two buttons stood on the card's face for a while, and what that
-    // cost was the face saying two things at once: what the work is, and a
-    // decision about it. The strip already draws them, beside the stage they
-    // are about (flowStrip.tsx).
-    const canOpenTerminal = () => !props.readonly && isCardTerminalAvailable()
-    const agentTitle = () => {
-        if (attention()) {
-            return attentionTitle()
-        }
-        if (paused()) {
-            return cutOff()!
-        }
-        return intl.formatMessage({id: 'KanbanCard.open-terminal', defaultMessage: 'Open the terminal'})
-    }
-
-    const openTerminal = async (e: MouseEvent) => {
-        // The card is a click target of its own, and opening the dialog behind
-        // the terminal window is not what pressing this asked for.
+    const openCard = (e: MouseEvent) => {
+        // The card is a click target of its own; this is the same destination
+        // said twice, and the stopped propagation keeps it from being opened
+        // twice over.
         e.stopPropagation()
-
-        // Unless there is nothing to open: a card that names no folder has
-        // nowhere for work to happen, and a window cannot ask which folder. The
-        // card can — its panel is where that question lives — so the card is
-        // what opens.
-        if (!await openCardTerminalWindow(props.card.id, liveTerminal())) {
-            props.showCard(props.card.id)
-        }
+        props.showCard(props.card.id)
     }
     const classes = () => {
         let name = props.isSelected ? 'KanbanCard selected' : 'KanbanCard'
@@ -193,41 +148,33 @@ const KanbanCard = (props: Props) => {
                 style={{opacity: isDragging() ? 0.5 : 1}}
                 onClick={handleOnClick}
             >
-                {/* The terminal, from the card's bottom-right corner: a
-                    console button whose colour is the meaning — the board's
-                    ink while it merely runs, the amber kept for attention
-                    while the agent is asking — and whose click is the way in.
-                    It stands in a strip the card reserves for it
-                    (`KanbanCard--agent`), so nothing on the card runs under
-                    it. */}
+                {/* The agent's question, from the card's bottom-right
+                    corner: amber, because the machine needs a person here, and
+                    a click away from the card where it is answered. It stands
+                    in a strip the card reserves for it (`KanbanCard--agent`),
+                    so nothing on the card runs under it. */}
                 <Show when={showsAgent()}>
                     <Show
-                        when={canOpenTerminal()}
+                        when={!props.readonly}
                         fallback={
                             <span
-                                class={['KanbanCard__terminal', {
-                                    'KanbanCard__terminal--asking': Boolean(attention()),
-                                    'KanbanCard__terminal--paused': paused(),
-                                }]}
+                                class='KanbanCard__asking'
                                 role='status'
                                 title={agentTitle()}
                                 aria-label={agentTitle()}
                             >
-                                <CompassIcon icon={paused() ? 'pause' : 'console'}/>
+                                <CompassIcon icon='help-circle-outline'/>
                             </span>
                         }
                     >
                         <button
                             type='button'
-                            class={['KanbanCard__terminal', {
-                                'KanbanCard__terminal--asking': Boolean(attention()),
-                                'KanbanCard__terminal--paused': paused(),
-                            }]}
+                            class='KanbanCard__asking'
                             title={agentTitle()}
                             aria-label={agentTitle()}
-                            onClick={openTerminal}
+                            onClick={openCard}
                         >
-                            <CompassIcon icon={paused() ? 'pause' : 'console'}/>
+                            <CompassIcon icon='help-circle-outline'/>
                         </button>
                     </Show>
                 </Show>

@@ -1,4 +1,5 @@
 import {Block, BlockPatch, FileInfo} from './blocks/block'
+import {CardHistoryEntry} from './blocks/cardHistory'
 import {Board, BoardsAndBlocks, BoardsAndBlocksPatch, BoardPatch, BoardMember} from './blocks/board'
 import {ISharing} from './blocks/sharing'
 import {OctoUtils} from './octoUtils'
@@ -353,6 +354,18 @@ class OctoClient {
         })
     }
 
+    // What was done to the card and by whom, newest first. Computed on the
+    // server, because the rows it reads (`blocks_history`) reach the page
+    // through no other door and naming a property needs the board's schema.
+    async getCardHistory(cardId: string): Promise<CardHistoryEntry[]> {
+        const path = `/api/v0/cards/${encodeURIComponent(cardId)}/history`
+        const response = await fetch(this.getBaseURL() + path, {headers: this.headers()})
+        if (response.status !== 200) {
+            return []
+        }
+        return (await this.getJson(response, [])) as CardHistoryEntry[]
+    }
+
     async moveCardToBoard(cardId: string, toBoardId: string): Promise<Response> {
         Utils.log(`moveCardToBoard: ${cardId} to board ${toBoardId}`)
         return fetch(`${this.getBaseURL()}/api/v0/cards/${encodeURIComponent(cardId)}/move`, {
@@ -692,7 +705,7 @@ class OctoClient {
     }
 
     async getTeamUsers(): Promise<IUser[]> {
-        let path = this.teamPath() + '/users'
+        const path = this.teamPath() + '/users'
         const response = await fetch(this.getBaseURL() + path, {headers: this.headers()})
         if (response.status !== 200) {
             return []
@@ -717,7 +730,7 @@ class OctoClient {
     }
 
     async searchTeamUsers(searchQuery: string): Promise<IUser[]> {
-        let path = this.teamPath() + `/users?search=${searchQuery}`
+        const path = this.teamPath() + `/users?search=${searchQuery}`
         const response = await fetch(this.getBaseURL() + path, {headers: this.headers()})
         if (response.status !== 200) {
             return []

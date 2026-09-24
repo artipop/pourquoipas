@@ -809,23 +809,6 @@ class Mutator {
         )
     }
 
-    // Which route the board is drawn by. A field of the view rather than of the
-    // browser, for the reason calendarSpan is one: it is a thing about this
-    // view, so it should be the same view on the next screen and after a
-    // restart. Empty draws the whole board.
-    async changeViewFlowId(boardId: string, viewId: string, oldFlowId: string|undefined, flowId: string): Promise<void> {
-        await undoManager.perform(
-            async () => {
-                await octoClient.patchBlock(boardId, viewId, {updatedFields: {flowId}})
-            },
-            async () => {
-                await octoClient.patchBlock(boardId, viewId, {updatedFields: {flowId: oldFlowId}})
-            },
-            'route',
-            this.undoGroupId,
-        )
-    }
-
     async changeViewDateDisplayPropertyId(boardId: string, viewId: string, oldDateDisplayPropertyId: string|undefined, dateDisplayPropertyId: string): Promise<void> {
         await undoManager.perform(
             async () => {

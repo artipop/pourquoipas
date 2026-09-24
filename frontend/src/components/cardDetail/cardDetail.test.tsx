@@ -50,21 +50,11 @@ describe('components/cardDetail/CardDetail', () => {
 
     const card = TestBlockFactory.createCard(board)
 
-    const createdAt = Date.parse('01 Jan 2021 00:00:00 GMT')
-
-    // A rule across the card means a section starts here. The route strip
-    // learns only after its data arrives whether it has anything to show, so a
-    // rule written beside it in the card stood over nothing on every card
-    // without a route.
-    //
-    // The agent's own controls are not in the card at all any more — the
-    // terminal is a panel beside it, opened from the dialog's toolbar — so
-    // there is nothing here for them to draw a rule for either.
+    // A rule across the card means a section starts here, and a card with
+    // nothing under its properties — no attachments — starts none.
     test('draws no rule for a section it is not drawing', async () => {
         const bindings = {
             GetCardAgent: vi.fn().mockResolvedValue('{}'),
-            GetCardFlow: vi.fn().mockResolvedValue('null'),
-            OpenCardTerminal: vi.fn(),
             ListAgents: vi.fn().mockResolvedValue('[]'),
             ListAgentWorkdirs: vi.fn().mockResolvedValue('[]'),
         }
@@ -119,15 +109,69 @@ describe('components/cardDetail/CardDetail', () => {
             </AppStoreProvider>
         ))
 
-        await waitFor(() => expect(bindings.GetCardFlow).toHaveBeenCalled())
+        await waitFor(() => expect(bindings.GetCardAgent).toHaveBeenCalled())
 
-        expect(container.querySelector('.FlowStrip')).toBeNull()
-        expect(container.querySelector('.CardTerminal')).toBeNull()
-
-        // Nothing under the properties has anything to show — no attachments,
-        // no route — so the card draws no rule at all. A rule belongs to the
-        // section under it, and a card with no such section draws none.
+        // Nothing under the properties has anything to show — no attachments —
+        // so the card draws no rule at all. A rule belongs to the section under
+        // it, and a card with no such section draws none.
         expect(container.querySelectorAll('hr').length).toBe(0)
+    })
+
+    // The card's amber badge says the agent is asking about this card, and
+    // this is what it opens onto. The notification says the same thing, but it
+    // is dismissible: a question outlives being read, so the card keeps it.
+    test('the agent’s question is on the card, with its answers', async () => {
+        const AnswerQuestion = vi.fn().mockResolvedValue(undefined)
+        fakeGoSide({
+            GetCardAgent: vi.fn().mockResolvedValue('{}'),
+            ListAgents: vi.fn().mockResolvedValue('[]'),
+            ListAgentWorkdirs: vi.fn().mockResolvedValue('[]'),
+            AnswerQuestion,
+            AckAttention: vi.fn().mockResolvedValue(undefined),
+            ListAttention: vi.fn().mockResolvedValue(JSON.stringify([{
+                key: 'q:question-1',
+                cardId: card.id,
+                boardId: board.id,
+                reason: 'question',
+                agent: 'клаус',
+                questionId: 'question-1',
+                text: 'Удалить старую миграцию?',
+                options: [{id: 'allow', label: 'Разрешить'}, {id: 'deny', label: 'Запретить'}],
+                awaiting: true,
+            }])),
+        })
+
+        const store = mockAppStore({
+            teams: {current: {id: 'team-id'}},
+            boards: {boards: {[board.id]: board}, current: board.id},
+            cards: {cards: {[card.id]: card}, current: card.id},
+            clientConfig: {value: {}},
+        })
+
+        const {getByText, getByRole} = render(() => (
+            <AppStoreProvider store={store}>
+                {wrapIntl(() =>
+                    <CardDetail
+                        board={board}
+                        activeView={view}
+                        views={[view]}
+                        cards={[card]}
+                        card={card}
+                        contents={[]}
+                        attachments={[]}
+                        readonly={false}
+                        onClose={vi.fn()}
+                        onDelete={vi.fn()}
+                        addAttachment={vi.fn()}
+                    />,
+                )}
+            </AppStoreProvider>
+        ))
+
+        await waitFor(() => expect(getByText('Удалить старую миграцию?')).toBeTruthy())
+
+        userEvent.click(getByRole('button', {name: 'Разрешить'}))
+        await waitFor(() => expect(AnswerQuestion).toHaveBeenCalledWith('question-1', 'allow', ''))
     })
 
     test('should show add properties tour tip', async () => {

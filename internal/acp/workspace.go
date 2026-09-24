@@ -207,19 +207,12 @@ func (m *Manager) ClaimWorkspace(spec WorkSpec) (Workspace, error) {
 	if workdir == "" || strings.TrimSpace(spec.Owner) == "" {
 		return Workspace{}, fmt.Errorf("рабочее место требует папки и владельца")
 	}
-	// Three answers to one question, and the precedence is stated here because
+	// Two answers to one question, and the precedence is stated here because
 	// this is the only place that asks it. The checkout is the fact and wins
 	// wherever it exists — heldWorkspace below hands the owner back the
-	// workspace it already has. Above the folder's own setting sits what a
-	// person answered for this card at a transition (cardask.go): the folder
-	// says what the board does by default, and the answer is this card being
-	// an exception to it. A folder that is not a repository has no question.
+	// workspace it already has; otherwise the folder's own setting for this
+	// board decides. A folder that is not a repository has no question.
 	mode := m.WorkModeFor(spec.BoardID, workdir)
-	if mode != WorkModePlain {
-		if chosen := m.cardWorkModeChoice(spec.Owner); chosen != "" {
-			mode = chosen
-		}
-	}
 	if mode == WorkModePlain {
 		// Nothing is created and nothing is recorded: an ordinary folder is
 		// worked in as it stands, by whoever opens it.
@@ -380,9 +373,38 @@ func (m *Manager) folderIsFree(workdir, owner string) error {
 	if err != nil || !ok || held.Owner() == owner {
 		return err
 	}
+	// Asked here, when somebody wants the folder, rather than by watching the
+	// branch: this is the only moment the answer changes anything, and a
+	// watcher polling every branch for it is what went missing once already.
+	// Never while the holder is still working: a branch with nothing committed
+	// yet reads as done, and switching the folder under a live agent is the one
+	// thing branch mode exists to prevent.
+	done := false
+	if !m.cardIsWorking(held.Owner()) {
+		ctx, cancel := context.WithTimeout(m.rootCtx, 30*time.Second)
+		done = branchIsDone(ctx, workdir, held.Branch, held.Base)
+		cancel()
+	}
+	if done {
+		m.ReleaseMergedBranch(workdir, held.Branch)
+		return nil
+	}
 	// The reason says what will end it, because that is the only thing a
-	// person reading it off the card can act on.
-	return fmt.Errorf("%w (%s) — освободится, когда её ветка будет влита в основную", errWorkdirBusy, held.Owner())
+	// person reading it off the card can act on — and nothing picks the card
+	// up by itself once it is free.
+	return fmt.Errorf("%w (%s) — освободится, когда её ветка будет влита в основную; после этого перенесите карточку ещё раз", errWorkdirBusy, held.Owner())
+}
+
+// cardIsWorking reports a live session of this card, of any kind.
+func (m *Manager) cardIsWorking(cardID string) bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for _, s := range m.active {
+		if s.CardID == cardID {
+			return true
+		}
+	}
+	return false
 }
 
 func (m *Manager) recordClaim(workdir, owner string, ws Workspace) {
@@ -426,9 +448,10 @@ func (m *Manager) ReleaseWorkspace(workdir, owner string) {
 	}
 }
 
-// ReleaseMergedBranch frees whatever workspace was on this branch. The watcher
-// calls it when a branch is merged, which is the moment the work in it is over
-// — and, in branch mode, the moment the folder is somebody else's turn.
+// ReleaseMergedBranch frees whatever workspace was on this branch. It is called
+// when another card asks for the folder and git says the branch is done
+// (folderIsFree), which is the moment the work in it is over — and, in branch
+// mode, the moment the folder is somebody else's turn.
 func (m *Manager) ReleaseMergedBranch(workdir, branch string) {
 	if m.store == nil || strings.TrimSpace(branch) == "" {
 		return
@@ -516,4 +539,27 @@ func (m *Manager) CardWork(cardID string) CardWork {
 		out.Started = true
 	}
 	return out
+}
+
+// cardBranch is the branch a card's work is on: the one its last session
+// recorded, or — for a card whose workspace was claimed before any session ran
+// in it — the one its checkout carries.
+func (m *Manager) cardBranch(cardID string) string {
+	if m.store == nil || cardID == "" {
+		return ""
+	}
+	branch, err := m.store.LatestBranchForCard(cardID)
+	if err != nil {
+		m.log.Warn("acp: cannot read the card's branch", "card", cardID, "err", err)
+		return ""
+	}
+	if branch != "" {
+		return branch
+	}
+	branch, err = m.store.BranchForCard(cardID)
+	if err != nil {
+		m.log.Warn("acp: cannot read the card's workspace", "card", cardID, "err", err)
+		return ""
+	}
+	return branch
 }

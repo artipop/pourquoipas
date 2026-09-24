@@ -249,9 +249,9 @@ describe('src/components/kanban/kanbanCard', () => {
         expect(mockedUtils.copyTextToClipboard).toHaveBeenCalledTimes(1)
     })
 
-    // An agent that stopped to ask something did it in a terminal window
-    // nobody is looking at. The board is where that has to be visible, and it
-    // is visible on the card the agent is working — not on the board as a whole.
+    // An agent holding its turn open on a question is the one thing about a
+    // card a person has to notice without opening it — and it is noticed on the
+    // card the agent is working, not on the board as a whole.
     test('shows that the card agent is waiting for a person', async () => {
         fakeGoSide({ListAttention: vi.fn().mockResolvedValue(JSON.stringify([
             {key: 'q:q-1', questionId: 'q-1', cardId: card.id, agent: 'clauuus', reason: 'question', awaiting: true},
@@ -279,10 +279,9 @@ describe('src/components/kanban/kanbanCard', () => {
         fakeGoSide()
     })
 
-    // Where the card goes next is answered in the card, on its route strip —
-    // never on the face. Two buttons stood here for a while, and what that cost
-    // was a face saying two things at once: what the work is, and a decision
-    // about it. The strip draws them beside the stage they are about.
+    // Where the card goes next is not answered on its face. Two buttons stood
+    // here for a while, and what that cost was a face saying two things at
+    // once: what the work is, and a decision about it.
     test('does not offer where the card goes next on its face', async () => {
         const bindings = {
             ListAttention: vi.fn().mockResolvedValue('[]'),
@@ -336,82 +335,6 @@ describe('src/components/kanban/kanbanCard', () => {
         ), {wrapper: TestRouter})
 
         expect(screen.queryByRole('status')).toBeNull()
-        fakeGoSide()
-    })
-
-    // Getting to the CLI used to mean opening the card, finding the toolbar and
-    // opening a panel. A terminal already running on a card is the board's
-    // business, and the dot that says so is what opens it.
-    test('opens the terminal from the board when one is running on the card', async () => {
-        const openCardTerminal = vi.fn().mockResolvedValue(JSON.stringify({id: 'term-3', windowed: true}))
-        fakeGoSide({
-            ListAttention: vi.fn().mockResolvedValue('[]'),
-            ListTerminals: vi.fn().mockResolvedValue(JSON.stringify([{id: 'term-3', cardId: card.id}])),
-            OpenCardTerminal: openCardTerminal,
-        })
-
-        render(() => wrapDNDIntl(() =>
-            <AppStoreProvider store={store}>
-                <KanbanCard
-                    card={card}
-                    board={board}
-                    visiblePropertyTemplates={[propertyTemplate]}
-                    visibleBadges={false}
-                    isSelected={false}
-                    readonly={false}
-                    onDrop={vi.fn()}
-                    showCard={vi.fn()}
-                    isManualSort={false}
-                    index={0}
-                    groupId='group-1'
-                />
-            </AppStoreProvider>,
-        ), {wrapper: TestRouter})
-
-        await userEvent.click(await screen.findByTitle('Open the terminal'))
-
-        // A window of its own: the board stays where it is, which is the whole
-        // point of going there from the board rather than through the card.
-        expect(openCardTerminal).toHaveBeenCalledWith(card.id, '', '', true)
-        fakeGoSide()
-    })
-
-    // The same dot, and the same click: an agent that has stopped to ask is
-    // asking in a terminal, so that is where the answer is given.
-    test('opens the terminal from the dot an agent is asking on', async () => {
-        const openCardTerminal = vi.fn().mockResolvedValue(JSON.stringify({id: 'term-4', windowed: true}))
-        fakeGoSide({
-            ListAttention: vi.fn().mockResolvedValue(JSON.stringify([{
-                key: 'q:1',
-                cardId: card.id,
-                agent: 'clauuus',
-                reason: 'question',
-                awaiting: true,
-            }])),
-            ListTerminals: vi.fn().mockResolvedValue('[]'),
-            OpenCardTerminal: openCardTerminal,
-        })
-
-        render(() => wrapDNDIntl(() =>
-            <AppStoreProvider store={store}>
-                <KanbanCard
-                    card={card}
-                    board={board}
-                    visiblePropertyTemplates={[propertyTemplate]}
-                    visibleBadges={false}
-                    isSelected={false}
-                    readonly={false}
-                    onDrop={vi.fn()}
-                    showCard={vi.fn()}
-                    isManualSort={false}
-                    index={0}
-                    groupId='group-1'
-                />
-            </AppStoreProvider>,
-        ), {wrapper: TestRouter})
-
-        await userEvent.click(await screen.findByTitle('clauuus is asking'))
-        expect(openCardTerminal).toHaveBeenCalledWith(card.id, '', '', true)
         fakeGoSide()
     })
 })

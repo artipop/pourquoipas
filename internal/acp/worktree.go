@@ -164,6 +164,63 @@ func WorkdirIsClean(ctx context.Context, workdir string) (bool, error) {
 	return out == "", nil
 }
 
+// branchIsDone says whether git considers the work on a branch over: the branch
+// is gone, or everything on it is already in its base. The base is looked for
+// locally first and then on the remote, after a fetch, because a pull request
+// is merged there and the local base only learns of it on the next pull.
+//
+// A branch with no commits of its own counts as done. That is safe because the
+// only caller hands the folder to the next card, and that card is refused while
+// anything tracked is uncommitted (WorkdirIsClean) — which is where branch mode
+// leaves an agent's work.
+func branchIsDone(ctx context.Context, workdir, branch, base string) bool {
+	if branch == "" {
+		return false
+	}
+	if !branchExists(ctx, workdir, branch) {
+		return true
+	}
+	// No base to judge by. "HEAD" is what a claim records when the folder named
+	// none, and in branch mode HEAD is the branch itself — its own ancestor.
+	if base == "" || base == "HEAD" || strings.EqualFold(base, branch) {
+		return false
+	}
+	if isAncestor(ctx, workdir, "refs/heads/"+branch, base) {
+		return true
+	}
+	remote := defaultRemote(ctx, workdir)
+	if remote == "" {
+		return false
+	}
+	// A fetch that fails (offline, no credentials) answers nothing new; the
+	// remote ref from the last fetch is still worth asking.
+	_, _ = gitCmd(ctx, workdir, "fetch", "--quiet", "--prune", remote)
+	return isAncestor(ctx, workdir, "refs/heads/"+branch, "refs/remotes/"+remote+"/"+base)
+}
+
+func isAncestor(ctx context.Context, workdir, commit, of string) bool {
+	_, err := gitCmd(ctx, workdir, "merge-base", "--is-ancestor", commit, of)
+	return err == nil
+}
+
+// defaultRemote is origin when there is one, else the only remote there is.
+func defaultRemote(ctx context.Context, workdir string) string {
+	out, err := gitCmd(ctx, workdir, "remote")
+	if err != nil {
+		return ""
+	}
+	remotes := strings.Fields(out)
+	for _, r := range remotes {
+		if r == "origin" {
+			return r
+		}
+	}
+	if len(remotes) == 1 {
+		return remotes[0]
+	}
+	return ""
+}
+
 func branchExists(ctx context.Context, workdir, branch string) bool {
 	_, err := gitCmd(ctx, workdir, "rev-parse", "--verify", "--quiet", "refs/heads/"+branch)
 	return err == nil

@@ -122,36 +122,6 @@ func TestABoardListsItsCards(t *testing.T) {
 	require.Len(t, cards, 2)
 }
 
-// Where a card stands on its route lives on the card, so it travels with the
-// board — and it must survive the trip through JSON and back.
-func TestTheFlowPositionSurvivesARoundTrip(t *testing.T) {
-	f := raise(t)
-	cardID := f.card(t, "Почини логин", "Разработка")
-	ctx := context.Background()
-
-	_, found, err := f.client.CardFlow(ctx, cardID)
-	require.NoError(t, err)
-	require.False(t, found, "a card that has never been on a route stands nowhere")
-
-	want := acp.FlowState{CardID: cardID, BoardID: f.board.ID, FlowID: "flow-1", NodeID: "opt-doing"}
-	require.NoError(t, f.client.SetCardFlow(ctx, cardID, want))
-
-	got, found, err := f.client.CardFlow(ctx, cardID)
-	require.NoError(t, err)
-	require.True(t, found)
-	require.Equal(t, "flow-1", got.FlowID)
-	require.Equal(t, "opt-doing", got.NodeID)
-
-	parked, err := f.client.BoardCardFlows(ctx, f.board.ID)
-	require.NoError(t, err)
-	require.Len(t, parked, 1)
-
-	require.NoError(t, f.client.ClearCardFlow(ctx, cardID))
-	_, found, err = f.client.CardFlow(ctx, cardID)
-	require.NoError(t, err)
-	require.False(t, found)
-}
-
 // A one-key patch used to erase every other property, because a block patch
 // replaces the field it names whole.
 func TestWritingOnePropertyKeepsTheRest(t *testing.T) {
@@ -159,16 +129,16 @@ func TestWritingOnePropertyKeepsTheRest(t *testing.T) {
 	cardID := f.card(t, "Почини логин", "Разработка")
 	ctx := context.Background()
 
-	require.NoError(t, f.client.SetCardFlow(ctx, cardID, acp.FlowState{FlowID: "flow-1"}))
+	// The field is made on the way, which is what an agent naming a property
+	// the board has not got does (AddCardProperty).
+	require.NoError(t, f.client.AddCardProperty(ctx, cardID, "Ветка"))
+	require.NoError(t, f.client.SetCardFields(ctx, cardID, map[string]string{"Ветка": "card-login"}))
 	require.NoError(t, f.client.MoveCardByOptionName(ctx, cardID, "Статус", "Взять в работу"))
 
 	got, err := f.client.CardByID(ctx, cardID)
 	require.NoError(t, err)
 	require.Contains(t, got.OptionNames, "Взять в работу")
-
-	_, found, err := f.client.CardFlow(ctx, cardID)
-	require.NoError(t, err)
-	require.True(t, found, "moving the card must not take its route position with it")
+	require.Equal(t, "card-login", got.Props["ветка"], "moving the card must not take its other properties with it")
 }
 
 func TestACommentLandsOnTheCard(t *testing.T) {
