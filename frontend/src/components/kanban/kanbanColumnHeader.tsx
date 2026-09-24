@@ -29,7 +29,7 @@ import {personNameById} from '../../userDisplay'
 
 import BoardPermissionGate from '../permissions/boardPermissionGate'
 
-import {MineColumnTitle, isInboxBoard} from '../acp/inboxView'
+import {isInboxBoard} from '../acp/inboxView'
 
 import {KanbanCalculation} from './calculation/calculation'
 
@@ -79,7 +79,7 @@ export default function KanbanColumnHeader(props: Props): JSX.Element {
         // person themselves brought is their unprocessed tasks: the column is
         // headed by what those cards are, not by who typed them.
         if (isInboxBoard(props.board) && id === me()?.id) {
-            return MineColumnTitle
+            return props.intl.formatMessage({id: 'KanbanColumnHeader.inbox-mine', defaultMessage: 'My tasks'})
         }
         return personNameById(props.intl, id, boardUsers(), 'username', teamMode())
     }

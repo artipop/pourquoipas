@@ -61,12 +61,11 @@ not asked where to deploy.
 Under the board on the left are its views: kanban, table, calendar, gallery.
 
 Everything that arrives from outside goes not to a working board but to a
-board of its own, **Входящие** — see [the Inbox section](./inbox/index.md). (The
-app names that board in Russian, and the name is not translated.)
+board of its own, **Inbox** — see [the Inbox section](./inbox/index.md).
 
 The view header has the view's name, **"Filter"**, **"Sort"** and search. These are settings of the view, not of the board: each view has its own.
 When they do not fit the window the bar scrolls sideways. The ⋯ menu belongs to
-the view too; on the Входящие board it holds **"Sources…"** and nothing else.
+the view too; on the Inbox board it holds **"Sources…"** and nothing else.
 
 Clicking the view's name opens a menu: the board's views, **"Rename view"**,
 **"Duplicate view"**, **"Delete view"** and **"Add view"**. Renaming opens a

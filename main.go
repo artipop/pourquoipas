@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	_ "embed"
+	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -206,6 +208,12 @@ func main() {
 	if _, err := boardadapter.EnsureInboxBoard(srv.App(), uiLanguage()); err != nil {
 		log.Printf("inbox: %v", err)
 	}
+	// And in the language in force now, not the one it was made in: a board a
+	// source made when the startup call failed is in the source language, and
+	// a system locale may have changed since the last launch.
+	if err := boardadapter.RelabelInboxBoard(srv.App(), uiLanguage()); err != nil {
+		log.Printf("inbox: %v", err)
+	}
 
 	// Which board the page is served is the attachment's answer: this
 	// process's own, or a hosted server this desktop logged in to (attach.go).
@@ -252,11 +260,19 @@ func main() {
 
 	emitter := newWailsEmitter(uiEvents)
 	app := NewApp(emitter)
-	// The templates follow the language they are read in, and a person changes
-	// that while the app runs — so the switch says nothing about a restart and
-	// the picker is right the next time it is opened (uisettings.go).
-	if attach.target() == "" {
-		app.retemplate = installTemplates
+	// The templates and the inbox follow the language they are read in, and a
+	// person changes that while the app runs — so the switch says nothing about
+	// a restart and the picker is right the next time it is opened
+	// (uisettings.go).
+	app.relanguage = func(lang string) error {
+		var errs []error
+		if attach.target() == "" {
+			errs = append(errs, installTemplates(lang))
+		}
+		if err := boardadapter.RelabelInboxBoard(srv.App(), lang); err != nil {
+			errs = append(errs, fmt.Errorf("inbox: %w", err))
+		}
+		return errors.Join(errs...)
 	}
 
 	// The board as the page at /m reads it. Set here rather than beside the

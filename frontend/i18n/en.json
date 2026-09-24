@@ -358,6 +358,7 @@
   "InboxSorting.title": "Sorting the inbox",
   "InboxSorting.unavailable": "Agents are turned off in this app, so the inbox is not sorted. Turn them on in the settings.",
   "KanbanCard.untitled": "Untitled",
+  "KanbanColumnHeader.inbox-mine": "My tasks",
   "Machine.agent-notifications-hint": "The notification shows the question itself, and the agent can be answered right in it; when the app is in the background it comes from the system instead. The dot on the card and the dot on the tray icon stay even with this off.",
   "Machine.hint-config": "How many sessions run at once, how long a turn may take, which tools an agent may use without asking — those are edited by hand in the app's config.json. The guide says where the file is and what is in it.",
   "Machine.named-branches": "The agent names each card’s branch",

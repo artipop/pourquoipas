@@ -12,7 +12,7 @@ Sends a link from any app to the inbox or to a board you pick.
 
 1. Press **Share** (in Safari or another app) and pick **XCIII**.
 2. In the **"Save to a board"** window the title is already filled in; add a
-   note if you want. The **Входящие** board is first and already picked; if you
+   note if you want. The **Inbox** board is first and already picked; if you
    already know where the link belongs, pick another board.
 3. Press **"Save"** — the card goes to the inbox, or to the first column of the
    board you picked.

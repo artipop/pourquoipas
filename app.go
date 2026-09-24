@@ -52,11 +52,12 @@ type App struct {
 	// whenever the release feed could not be configured. Its methods are safe
 	// on a nil receiver, as the tailnet controller's are.
 	updates *updateController
-	// retemplate reinstalls the shipped board templates in a language. Nil when
-	// the templates are not this process's business — an attached desktop works
-	// a hosted board and must not fight the server over them. Set in main,
-	// where the board server is.
-	retemplate func(lang string) error
+	// relanguage puts what the app itself made into a language: the shipped
+	// board templates, and the names on the inbox board. Nil in a test that
+	// does not care. Set in main, where the board server is; an attached
+	// desktop leaves the templates alone there — it works a hosted board and
+	// must not fight the server over them — and still renames its own inbox.
+	relanguage func(lang string) error
 }
 
 func NewApp(emitter *wailsEmitter) *App {

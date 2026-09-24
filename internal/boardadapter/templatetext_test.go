@@ -133,7 +133,7 @@ func everyTemplateString(t *testing.T) []string {
 	if err != nil {
 		t.Fatalf("read the templates: %v", err)
 	}
-	return strs
+	return withInboxWords(strs)
 }
 
 func catalogues(t *testing.T) map[string]map[string]string {

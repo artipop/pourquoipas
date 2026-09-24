@@ -5,6 +5,8 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
+	"io/fs"
+	"path"
 	"strings"
 )
 
@@ -157,7 +159,26 @@ func TemplateStrings() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	return templateStrings(files, readShippedTemplate)
+	strs, err := templateStrings(files, readShippedTemplate)
+	if err != nil {
+		return nil, err
+	}
+	return withInboxWords(strs), nil
+}
+
+// withInboxWords adds the inbox's words, which no template file carries: the
+// app makes that board in code and translates it through the same catalogue.
+func withInboxWords(strs []string) []string {
+	seen := make(map[string]bool, len(strs))
+	for _, s := range strs {
+		seen[s] = true
+	}
+	for _, s := range inboxWords {
+		if !seen[s] {
+			strs = append(strs, s)
+		}
+	}
+	return strs
 }
 
 // templateStrings takes the files and the way to read one, because a test reads
@@ -204,6 +225,24 @@ func collectStrings(v any, key string, seen map[string]bool, out *[]string) {
 		seen[t] = true
 		*out = append(*out, t)
 	}
+}
+
+// saidAs is every way a source string has been said: itself and its
+// translation in each catalogue there is. It is what tells a name the app gave
+// from one a person chose.
+func saidAs(source string) map[string]bool {
+	out := map[string]bool{source: true}
+	files, err := fs.Glob(templateCatalogues, "templates/i18n/*.json")
+	if err != nil {
+		return out
+	}
+	for _, file := range files {
+		lang := strings.TrimSuffix(path.Base(file), ".json")
+		if s := translateText(templateCatalogue(lang), source); s != "" {
+			out[s] = true
+		}
+	}
+	return out
 }
 
 // TemplateWords is the catalogue as a function, for the words this app says

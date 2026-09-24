@@ -116,7 +116,7 @@ func TestTheLanguageThePageResolvedIsNotAPreference(t *testing.T) {
 	// switch on screen must not wait for five boards.
 	var mu sync.Mutex
 	var installed []string
-	app := &App{retemplate: func(lang string) error {
+	app := &App{relanguage: func(lang string) error {
 		mu.Lock()
 		defer mu.Unlock()
 		installed = append(installed, lang)
@@ -171,7 +171,7 @@ func TestARestartKeepsTheTemplatesInTheLanguageThePageLastAskedFor(t *testing.T)
 	t.Cleanup(func() { activeLanguage = "" })
 
 	var installed []string
-	app := &App{retemplate: func(lang string) error {
+	app := &App{relanguage: func(lang string) error {
 		installed = append(installed, lang)
 		return nil
 	}}

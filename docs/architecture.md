@@ -586,7 +586,7 @@ catalogue covers every edition.
 
 Which language is `<dataDir>/ui-settings.json` — the same setting the page
 keeps — so the templates are boards in the language the app is read in.
-Switching it reinstalls them (`App.retemplate`, set in `main.go`), because a
+Switching it reinstalls them (`App.relanguage`, set in `main.go`), because a
 template is a board rather than a catalogue string and nothing about the files
 changed: only the language recorded on the installed copy
 (`TemplateLanguageProperty`) can say the copy is now in the wrong one. Boards
@@ -1154,7 +1154,7 @@ moves between columns: a card is read, then carried away or deleted. Its one
 view is a kanban grouped by who brought the card — a column per source — and
 those columns are facts about the past rather than places, so a card cannot be
 dragged between them (`columnsAreFacts` in `kanban.tsx`). The person's own cards
-form a column too, headed «Мои задачи» rather than by their username
+form a column too, headed "My tasks" rather than by their username
 (`kanbanColumnHeader.tsx`, on the inbox board only), because what those cards
 are says more than who typed them. The sidebar pins it above every category
 (`SidebarInboxItem`), as a row with no views under it and no board menu; a
