@@ -16,18 +16,10 @@ import {onAgentEvent} from './agentEvents'
 // side says in one place, so every card on the board shares one subscription
 // and one initial load rather than asking for itself.
 
-// The two ways a card can want a person.
-//
-// 'question' is the agent asking: it wanted a tool it was not given, or sent an
-// elicitation, and its turn stays open until somebody answers — which is done
-// where the question is read (attentionAnswers.tsx).
-//
-// 'card' is the opposite case: the route moved the card onto a stage where
-// nothing runs, or onto one whose work belongs to whoever the card is assigned
-// to, and the next step is a person's (internal/acp/cardwait.go). Nothing is
-// asking anything — the card is the question — and being told is the whole of
-// it.
-export type AttentionReason = 'question' | 'card'
+// The one way a card wants a person: the agent is asking. It wanted a tool it
+// was not given, or sent an elicitation, and its turn stays open until somebody
+// answers — which is done where the question is read (attentionAnswers.tsx).
+export type AttentionReason = 'question'
 
 export type QuestionOption = {
     id: string
@@ -189,9 +181,6 @@ type Formatter = {
 // attentionHeading is the one sentence a wait is worth, wherever it is shown —
 // the dot's tooltip, the notification, the card.
 export function attentionHeading(intl: Formatter, target: Attention): string {
-    if (target.reason === 'card') {
-        return intl.formatMessage({id: 'Attention.card-waiting', defaultMessage: 'The card is waiting for you'})
-    }
     const agent = target.agent || ''
     return agent ? intl.formatMessage({id: 'Attention.asking-agent', defaultMessage: '{agent} is asking'}, {agent}) : intl.formatMessage({id: 'Attention.asking', defaultMessage: 'The agent is asking'})
 }

@@ -127,10 +127,10 @@ func (m *Manager) BoardToolsURL() string {
 // The server is the app's own, over HTTP on the front door, so it goes by the
 // protocol's HTTP transport — which an agent may not speak: that is a
 // capability it declares in initialize, and one that does not gets no board
-// server rather than one it would refuse. A deploy and a test get none on
-// purpose: an agent moving its own card is a loop.
+// server rather than one it would refuse. A deploy gets none on purpose: it
+// publishes a branch, and an agent moving its own card would be a loop.
 func (m *Manager) sessionBoardServer(s *Session, caps acpsdk.AgentCapabilities) *acpsdk.McpServer {
-	if s.BoardID == "" || s.Deploy != nil || s.Test != nil || !caps.McpCapabilities.Http {
+	if s.BoardID == "" || s.Deploy != nil || !caps.McpCapabilities.Http {
 		return nil
 	}
 	url := m.BoardToolsURL()
@@ -181,10 +181,10 @@ func (m *Manager) BoardToolColumns(token string) ([]BoardToolColumn, error) {
 	if !ok {
 		return nil, fmt.Errorf("нет доступа к доске")
 	}
-	specs := m.BoardColumns(g.BoardID)
-	out := make([]BoardToolColumn, 0, len(specs))
-	for _, s := range specs {
-		out = append(out, BoardToolColumn{Name: s.Column, Action: s.Action, Agents: m.crewNames(s.AgentIDs)})
+	names := m.boardColumnNames(g.BoardID)
+	out := make([]BoardToolColumn, 0, len(names))
+	for _, name := range names {
+		out = append(out, BoardToolColumn{Name: name})
 	}
 	return out, nil
 }
@@ -201,10 +201,8 @@ type BoardToolCard struct {
 	// that names no card acts on.
 	Mine bool `json:"mine,omitempty"`
 
-	// Whether an agent is working this card right now, or waiting for a place
-	// in its column.
+	// Whether an agent is working this card right now.
 	Running bool `json:"running,omitempty"`
-	Queued  bool `json:"queued,omitempty"`
 }
 
 // BoardToolField is one property of the granted board's cards, with what this
@@ -305,7 +303,6 @@ func (m *Manager) BoardToolCards(ctx context.Context, token, column string) ([]B
 			continue
 		}
 		card.Running = running[ev.CardID]
-		card.Queued = !card.Running && m.cardIsQueued(ev.CardID)
 		out = append(out, card)
 	}
 	return out, nil
@@ -324,7 +321,6 @@ func (m *Manager) BoardToolCardByID(ctx context.Context, token, cardID string) (
 	m.mu.Lock()
 	card.Running = m.byCard[ev.CardID] != nil
 	m.mu.Unlock()
-	card.Queued = !card.Running && m.cardIsQueued(ev.CardID)
 	return card, nil
 }
 
@@ -348,6 +344,12 @@ func (m *Manager) UpdateCardFromTools(ctx context.Context, token, cardID string,
 	edit.Property = g.Property
 	if err := m.forCard(ev.CardID).Writer.UpdateCard(ctx, ev.CardID, edit); err != nil {
 		return err
+	}
+	// A move the agent made is the result of its run, not a new one: the board
+	// will say the card moved, and without this the card would come straight
+	// back to the agent that has just finished with it (cardplace.go).
+	if strings.TrimSpace(edit.Column) != "" {
+		m.noteAgentMove(ev.CardID)
 	}
 	m.log.Info("acp: card changed by an agent", "card", ev.CardID, "board", g.BoardID, "column", edit.Column)
 	return nil

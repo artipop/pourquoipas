@@ -32,7 +32,8 @@ const resultBrief = `When the work is finished, report it on the card through th
 
 1. Post the result as ONE comment with ` + "`comment_card`" + `: only what matters — what was done or decided, and what a person has to know or do next. Not a log of your steps.
 2. If the task calls for it, put values into the card's fields with ` + "`update_card`" + ` (` + "`list_card_fields`" + ` lists them).
-3. Call ` + "`finish_work`" + ` — done or not done, and one line — to end the stage. When you cannot finish, say why in the comment and call it with done set to false.`
+3. Move the card on with ` + "`move_card`" + `, into the column whose name says what has happened to it. Leave it where it is if none of them does.
+4. Call ` + "`finish_work`" + ` — done or not done, and one line — to end the stage. When you cannot finish, say why in the comment and call it with done set to false.`
 
 // boardToolsBrief is what a session handed the board's tools is told about
 // reporting through them: a stage its result; a conversation with no card

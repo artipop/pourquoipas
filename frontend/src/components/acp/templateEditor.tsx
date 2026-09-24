@@ -13,18 +13,14 @@ import {goApp} from '../../goBridge'
 import {aiEnabled} from '../../aiSwitch'
 
 import {
-    Automation,
     BoardSetup,
     BoardSetupStep,
     SetupStepDef,
-    actionLabel,
     boardAutomationProperties,
     boardColumns,
     columnProperty,
     impliedSetupSteps,
-    readBoardAutomation,
     readBoardSetup,
-    specFor,
 } from './automation'
 
 import './templateEditor.scss'
@@ -63,11 +59,6 @@ const TemplateEditor = (props: Props) => {
     const [defs, setDefs] = createSignal<SetupStepDef[]>([])
     const [error, setError] = createSignal('')
 
-    // The automation is the template's as it stands. Nothing here changes it;
-    // it is read to be shown, to work out the questions the template implies,
-    // and to be written back untouched when the rest is saved.
-    const automation: Automation = readBoardAutomation(props.board)
-
     onSettled(() => {
         // Not awaited: onSettled reads a returned promise as a cleanup value.
         void (async () => {
@@ -84,12 +75,8 @@ const TemplateEditor = (props: Props) => {
 
     const columns = () => boardColumns(props.board, columnProperty(props.board)?.name)
 
-    // What a column does, for the summary: the name alone where nothing runs,
-    // and the sentence beside it where something does.
-    const columnLine = () => columns().map((c) => {
-        const action = specFor(automation.columns, c)?.action || 'none'
-        return action === 'none' ? c.name : `${c.name} (${actionLabel(intl, action)})`
-    })
+    // The columns a board made from this template arrives with.
+    const columnLine = () => columns().map((c) => c.name)
 
     const steps = () => setup()?.steps || []
     const stepAt = (kind: string) => steps().find((s) => s.kind === kind)
@@ -120,7 +107,7 @@ const TemplateEditor = (props: Props) => {
                 title: title().trim() || props.board.title,
                 icon: icon(),
                 description: description(),
-                properties: boardAutomationProperties(props.board, automation, setup()),
+                properties: boardAutomationProperties(props.board, setup()),
             }
             await mutator.updateBoard(next, props.board, 'edit template')
             props.onSaved?.()
@@ -196,7 +183,7 @@ const TemplateEditor = (props: Props) => {
                             fallback={
                                 <div class='TemplateEditor__hint'>
                                     {intl.formatMessage({id: 'TemplateEditor.setup-implied', defaultMessage: 'Worked out from the automation above: a template that deploys asks where to, one that tests asks for a browser. Name the steps yourself if that is not what you want.'})}
-                                    <Button onClick={() => setSetup({steps: impliedSetupSteps(automation, defs())})}>
+                                    <Button onClick={() => setSetup({steps: impliedSetupSteps(defs())})}>
                                         {intl.formatMessage({id: 'TemplateEditor.setup-declare', defaultMessage: 'Name the steps'})}
                                     </Button>
                                 </div>

@@ -11,7 +11,6 @@ import (
 func managerOn(t *testing.T, store *Store, dir string) *Manager {
 	t.Helper()
 	m := NewManager(DefaultConfig(dir), "", store, newFakeWriter(), &fakeEmitter{}, nil)
-	m.cfg.Columns = nil
 	m.rootCtx = context.Background()
 	m.SetBoardMeta(&fakeBoardMeta{})
 	return m

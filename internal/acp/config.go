@@ -596,19 +596,12 @@ type Config struct {
 	// Not in the file: the `deploy_target` table. See Workdirs.
 	Deploys []DeployEntry `json:"-"`
 
-	// Columns is what happens in each column of a board (columns.go).
-	//
-	// Not in the file: a board's automation lives on the board (`columns`)
-	// so it travels with it. This is the working copy; every edit is written
-	// through by persistBoardLocked.
-	Columns []ColumnSpec `json:"-"`
-
 	// BoardPrompts is that instruction, per board: the text prepended to every
 	// prompt a session of that board is given, before the agent's own system
 	// prompt and the card task. Keyed by board id, empty for a board that
 	// never set one.
 	//
-	// Not in the file: `prompt` on the board. See Columns.
+	// Not in the file: `prompt` on the board. See Workdirs.
 	BoardPrompts map[string]string `json:"-"`
 
 	// DeployPrompt is what a deploy session is told to do; the concrete facts
@@ -702,7 +695,6 @@ func DefaultConfig(dataDir string) Config {
 		Agents:                   []AgentEntry{},
 		Proxies:                  []ProxyEntry{},
 		Deploys:                  []DeployEntry{},
-		Columns:                  []ColumnSpec{},
 		DeployPrompt:             DefaultDeployPrompt,
 		TestPrompt:               DefaultTestPrompt,
 		PlanningPrompt:           DefaultPlanningPrompt,

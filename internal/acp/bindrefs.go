@@ -18,23 +18,6 @@ import (
 // this target" into "set this column up again from memory". validateColumn
 // then refuses it, which is what routes the column into rememberUnadopted.
 
-// bindColumnRefs folds a column's legacy name references into ids. It reports
-// whether anything changed, which is what tells the caller the board is worth
-// writing back.
-func bindColumnRefs(c *ColumnSpec, agents []AgentEntry, deploys []DeployEntry) bool {
-	changed := false
-	if id, ok := bindDeploy(c.DeployID, c.DeployName, deploys); ok {
-		c.DeployID, c.DeployName = id, ""
-		changed = true
-	}
-	// Assigned whether or not anything resolved: what could not be folded has
-	// to end up in the name field, which is where the caller looks for it.
-	ids, kept, folded := bindCrew(c.AgentIDs, c.Agents, agents)
-	c.AgentIDs, c.Agents = ids, kept
-	changed = changed || folded
-	return changed
-}
-
 // bindDeploy answers with the id a legacy deploy name resolves to, and false
 // when there is nothing to do — an id is already recorded, no name was written,
 // or this machine has no such target and the name has to stay for whoever
@@ -208,21 +191,6 @@ func deployByID(deploys []DeployEntry, id string) (DeployEntry, bool) {
 		}
 	}
 	return DeployEntry{}, false
-}
-
-// bindColumnOption gives a spec the option id it always meant. A spec written
-// before columns carried ids knows the column's name and nothing else, and that
-// name is what three separate places were still matching on (contradiction 5).
-func bindColumnOption(c *ColumnSpec, boardID string, options []Column) bool {
-	if c.OptionID != "" || len(options) == 0 {
-		return false
-	}
-	opt, ok := optionNamed(options, c.Column)
-	if !ok {
-		return false
-	}
-	c.BoardID, c.PropertyID, c.OptionID = boardID, opt.PropertyID, opt.OptionID
-	return true
 }
 
 // optionNamed is the last place a column is found by its name, and it exists

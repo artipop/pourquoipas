@@ -262,14 +262,6 @@ func TestDeploySessionMayUseItsOwnTools(t *testing.T) {
 	if !deploySession.usesOurMCP() {
 		t.Error("the deploy session should know it was given an MCP server")
 	}
-	// A test session brings its own browser server; without one it is given
-	// nothing, and startSession refuses it before it can start.
-	testSession := &Session{WorkdirPath: "/project", Test: &TestRun{URL: "http://preview.example.com", Artifacts: t.TempDir()}}
-	specs, err := sessionMCPServers(testSession, cfg)
-	if err != nil || len(specs) != 0 {
-		t.Errorf("a test session without a browser server: %+v, %v", specs, err)
-	}
-
 	// An ordinary session gets neither.
 	plain := &Session{WorkdirPath: "/project"}
 	if _, err := sessionMCPServers(plain, cfg); err != nil {
@@ -338,58 +330,12 @@ func deployMoveEvent(cardID, column string) CardMoved {
 	}
 }
 
-func TestDeployColumnStartsASessionWithTheDokkuTools(t *testing.T) {
-	m, writer, events, _ := testManager(t, fakeClaudeRecordingArgs, func(c *Config) {
-		c.Deploys = []DeployEntry{deployEntry("prod")}
-	})
-
-	events.ch <- deployMoveEvent("cardD", TemplateDeployColumn)
-
-	waitFor(t, 15*time.Second, "deploy session done", func() bool {
-		sessions, _, err := m.store.SessionsForCard("cardD")
-		return err == nil && len(sessions) == 1 && sessions[0].Status == StatusDone
-	})
-
-	// The card is told once, at the end: which branch went where and at what
-	// address. Announcing the deploy as it started said the same thing one
-	// paragraph earlier, before there was anything to report.
-	all := strings.Join(writer.cardComments("cardD"), "\n")
-	if !strings.Contains(all, "Сессия деплоя завершена") || !strings.Contains(all, "api-main") {
-		t.Errorf("comments should summarize the deployment: %q", all)
-	}
-	if !strings.Contains(all, "http://api-main.example.com") {
-		t.Errorf("the summary should carry the address: %q", all)
-	}
-	// The fake agent never calls deploy_branch, so nothing was published — and
-	// the card has to say so rather than let "the session finished" pass for
-	// "the branch is live".
-	if !strings.Contains(all, "Деплой не подтверждён") {
-		t.Errorf("an unconfirmed deploy must be called out: %q", all)
-	}
-
-	// The session must have been given the dokku MCP server in session/new.
-	servers, err := os.ReadFile(filepath.Join(fakeAgentDir(m.cfg.AgentCommand[0]), "mcp.json"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !strings.Contains(string(servers), dokku.ServerName) || !strings.Contains(string(servers), dokku.EnvTarget) {
-		t.Errorf("the agent was not given the dokku MCP server:\n%s", servers)
-	}
-
-	// The branch it deploys is recorded, unlike an ordinary in-folder session.
-	sessions, _, _ := m.store.SessionsForCard("cardD")
-	if sessions[0].Branch != "main" {
-		t.Errorf("branch not persisted: %q", sessions[0].Branch)
-	}
-}
-
 // A column nothing is configured for does nothing, and that is now the only way
 // to say so: there used to be a `deployColumn` key in the machine's settings
 // which could be emptied to switch deploys off everywhere, and a column is a
 // board's own answer now.
 func TestAColumnWithNoActionDoesNothing(t *testing.T) {
 	m, writer, events, _ := testManager(t, fakeClaudeRecordingArgs, func(c *Config) {
-		c.Columns = nil
 		c.Deploys = []DeployEntry{deployEntry("prod")}
 	})
 
@@ -403,29 +349,6 @@ func TestAColumnWithNoActionDoesNothing(t *testing.T) {
 	}
 	if len(sessions) != 0 || len(writer.cardComments("cardOff")) != 0 {
 		t.Fatalf("a column with no action started something: %v %v", sessions, writer.cardComments("cardOff"))
-	}
-}
-
-func TestDeployWithoutTargetsStallsTheCard(t *testing.T) {
-	m, writer, events, _ := testManager(t, fakeClaudeRecordingArgs, nil)
-
-	events.ch <- deployMoveEvent("cardNoTarget", TemplateDeployColumn)
-
-	// A deploy column with nothing to deploy to is the card's current state,
-	// shown where the card shows its state — not a comment that outlives it.
-	waitFor(t, 5*time.Second, "the stall record appears", func() bool {
-		_, ok, _ := m.store.Stall("cardNoTarget")
-		return ok
-	})
-	stall, _, _ := m.store.Stall("cardNoTarget")
-	if !strings.Contains(stall.Reason, "деплой не запущен") || !strings.Contains(stall.Reason, "Цели деплоя") {
-		t.Errorf("the reason should say what to configure: %q", stall.Reason)
-	}
-	if got := writer.cardComments("cardNoTarget"); len(got) != 0 {
-		t.Errorf("a failed start must not comment on the card: %q", got)
-	}
-	if sessions, _, _ := m.store.SessionsForCard("cardNoTarget"); len(sessions) != 0 {
-		t.Errorf("no session should have started: %v", sessions)
 	}
 }
 

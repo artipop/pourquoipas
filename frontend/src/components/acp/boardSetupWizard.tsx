@@ -16,10 +16,8 @@ import {sendFlashMessage} from '../flashMessages'
 
 import {goApp} from '../../goBridge'
 
-import {invalidateBoardAgents} from './boardAgents'
-import {textToServers} from './mcpServers'
 import AgentQuickAdd from './agentQuickAdd'
-import {agentColumn, checkSetupAnswer, createSetupPlan, recordSetupStep, SetupStep, SetupStepKind, stepRequires} from './boardSetup'
+import {checkSetupAnswer, createSetupPlan, recordSetupStep, SetupStep, SetupStepKind, stepRequires} from './boardSetup'
 import {Workdir, syncWorkdirsToBoard, useWorkdirHere} from './workdirSync'
 
 import './boardSetupWizard.scss'
@@ -33,14 +31,6 @@ import './boardSetupWizard.scss'
 // plan (internal/acp/setup.go) out of what the board asks for, what its
 // automation implies and what this machine already has. This walks that plan
 // and knows how to ask each kind of question — nothing more.
-
-// The playwright server, offered as the answer to "what tests with". It is the
-// shape any MCP client takes, so it can also be replaced by a paste.
-const BROWSER_SERVER = JSON.stringify({
-    mcpServers: {
-        playwright: {command: 'npx', args: ['-y', '@playwright/mcp@latest', '--headless']},
-    },
-}, null, 2)
 
 type Registry = {
     agents: Array<{name: string, kind: string}>
@@ -67,7 +57,6 @@ const STEP_NAME: SetupStepKind = 'name'
 const STEP_WORKDIR: SetupStepKind = 'project'
 const STEP_AGENT: SetupStepKind = 'agent'
 const STEP_DEPLOY: SetupStepKind = 'deploy'
-const STEP_BROWSER: SetupStepKind = 'browser'
 const STEP_DONE: SetupStepKind = 'done'
 
 const BoardSetupWizard = (props: Props) => {
@@ -114,25 +103,10 @@ const BoardSetupWizard = (props: Props) => {
     const [taken, setTaken] = createSignal<Workdir | null>(null)
     const basename = (path: string) => path.split('/').filter(Boolean).pop() || ''
 
-    // Step 2: who works this board, and another agent on a step that already
-    // has one.
+    // Step 3: an agent registered on this machine. Which agent works a card is
+    // the card's own «Кто занимается», so the step asks for nothing beyond one
+    // existing at all.
     const [addingAgent, setAddingAgent] = createSignal(false)
-    const [boardAgents, setBoardAgents] = createSignal<string[]>([])
-
-    // Whether the chips have been answered here, as opposed to filled in from
-    // the plan. Nobody chosen is an answer — it takes the crew off — so "is the
-    // list empty" cannot stand for "has anybody said anything".
-    const [agentPicked, setAgentPicked] = createSignal(false)
-
-    const chosenAgent = (name: string) => boardAgents().some((n) => n === name)
-
-    // A chip is a toggle: clicking the one that is on takes it off, which is
-    // how "nobody" is said. Several may be on — a column's crew is a list, and
-    // the engine hands the card to whichever member is free.
-    const toggleAgent = (name: string) => {
-        setAgentPicked(true)
-        setBoardAgents((chosen) => (chosen.includes(name) ? chosen.filter((n) => n !== name) : [...chosen, name]))
-    }
 
     // Step 1: what this board is called. It arrives named after the template it
     // was made from, so the field opens on that and on the whole of it
@@ -165,25 +139,11 @@ const BoardSetupWizard = (props: Props) => {
     // Step 3: a Dokku host.
     const [deploy, setDeploy] = createSignal({name: '', sshHost: '', sshUser: '', sshKey: '', baseDomain: ''})
 
-    // Step 4: who tests, and what it tests with. The two are one answer — a
-    // test session runs the crew of the test column, and refuses to start
-    // without a browser server on the agent it resolved — so the server is
-    // given to the agent chosen here and that agent becomes the column's crew.
-    const [serversText, setServersText] = createSignal(BROWSER_SERVER)
-    const [testAgent, setTestAgent] = createSignal('')
-    const [addingTestAgent, setAddingTestAgent] = createSignal(false)
-
     const refresh = async () => {
         try {
             const loaded = await readRegistry(props.board.id)
             if (loaded) {
                 setRegistry(loaded)
-
-                // One of a kind needs no choosing: the QA question is then
-                // about the browser alone.
-                if (!testAgent() && loaded.agents.length === 1) {
-                    setTestAgent(loaded.agents[0].name)
-                }
             }
         } catch (e) {
             setError(String(e))
@@ -192,16 +152,6 @@ const BoardSetupWizard = (props: Props) => {
 
     onSettled(() => {
         refresh()
-    })
-
-    // Who the board's agent stages are already crewed with: the step opens on
-    // the answer it was given last time rather than on nobody. Only until
-    // somebody touches the chips — a plan is refetched after every answer, and
-    // it must never reinstate a name just taken off.
-    createEffect(() => plan()?.workAgents, (named) => {
-        if (named?.length && !agentPicked()) {
-            setBoardAgents(named)
-        }
     })
 
     // The wizard opens on the first question this board still has. Walking
@@ -305,25 +255,6 @@ const BoardSetupWizard = (props: Props) => {
         }))
     }, STEP_DEPLOY)
 
-    // The answer is one call because it is one answer: Go puts the server on
-    // the chosen agent — keeping the rest of its entry, which a rebuilt one
-    // dropped — and writes that agent into the test column as its crew. Before
-    // this the server went to whoever the registry listed first, and on a board
-    // with two agents the column ran the other one and the session died saying
-    // it had nothing to test with.
-    const addBrowser = () => {
-        let servers
-        try {
-            servers = textToServers(serversText())
-        } catch {
-            setError(intl.formatMessage({id: 'BoardSetup.browser-invalid', defaultMessage: 'The browser server must be valid JSON: a server name mapped to its command and args, the same block any MCP client takes.'}))
-            return
-        }
-        run(async () => {
-            await bindings!.SetBoardTestAgent!(props.board.id, testAgent(), JSON.stringify(servers))
-        }, STEP_BROWSER)
-    }
-
     const finish = async () => {
         // Take the board's own columns and routes now, so what it can do is
         // visible without waiting for the first card to be moved.
@@ -345,27 +276,6 @@ const BoardSetupWizard = (props: Props) => {
     // board, one picked and named, or one somebody else registered and offered
     // for use here.
     const workdirAnswered = () => Boolean(taken()) || hasWorkdir() || Boolean(workdirPath() && workdirName().trim())
-
-    // Answering the agent step: what the chips show is written as the crew of
-    // the board's agent stages — nobody included, which takes the crew off and
-    // puts the board back to offering every agent on the machine.
-    //
-    // Only once somebody has touched them, though. Chips filled in from the
-    // plan are a picture of what is already there, and the next button pressed without
-    // looking must not rewrite it — the plan shows nothing when two columns are
-    // crewed differently, and that would flatten both into one.
-    const takeAgent = () => {
-        if (!agentPicked() || !bindings?.SetBoardWorkAgent) {
-            return pass(STEP_AGENT)
-        }
-        return run(async () => {
-            await bindings.SetBoardWorkAgent!(props.board.id, JSON.stringify(boardAgents()))
-
-            // The card's assignee list is drawn from the same crew, and
-            // nothing on the Go side announces the change.
-            invalidateBoardAgents()
-        }, STEP_AGENT)
-    }
 
     const body = () => {
         switch (step()) {
@@ -463,16 +373,13 @@ const BoardSetupWizard = (props: Props) => {
                 <div class='BoardSetupWizard__step'>
                     <p>{intl.formatMessage({id: 'BoardSetup.agent-why', defaultMessage: 'The agent that picks a card up. It has to be logged in already; here it is only given a name.'})}</p>
 
-                    {/* The question is asked however many agents there are,
-                        one included. A single agent used to be taken as the
-                        answer without being shown as one, and «выбрано» that
-                        nobody chose is the kind of default a person cannot
-                        argue with: the chip says what the board will do and
-                        clicking it says otherwise. The registered names are the
-                        chips themselves, so there is no list of them above. */}
+                    {/* Nothing is chosen here. The board does not keep a crew
+                        any more — every registered agent may be assigned on any
+                        board — so the step is answered by one existing, and who
+                        works a given card is said on the card. */}
                     <Show when={hasAgent()}>
                         <div class='BoardSetupWizard__ask'>
-                            {intl.formatMessage({id: 'BoardSetup.agent-who', defaultMessage: 'Who works the cards on this board?'})}
+                            {intl.formatMessage({id: 'BoardSetup.agent-registered', defaultMessage: 'Agents on this machine:'})}
                         </div>
                     </Show>
 
@@ -499,17 +406,7 @@ const BoardSetupWizard = (props: Props) => {
                             // the dialog and centred itself.
                             <div class='BoardSetupWizard__agentChoices'>
                                 <For each={registry().agents}>
-                                    {(a) => (
-                                        <button
-                                            type='button'
-                                            class={['BoardSetupWizard__agentChoice', {'BoardSetupWizard__agentChoice--chosen': chosenAgent(a.name)}]}
-                                            aria-pressed={String(chosenAgent(a.name))}
-                                            disabled={busy()}
-                                            onClick={() => toggleAgent(a.name)}
-                                        >
-                                            {a.name}
-                                        </button>
-                                    )}
+                                    {(a) => <span class='BoardSetupWizard__agentName'>{a.name}</span>}
                                 </For>
                                 <button
                                     type='button'
@@ -535,21 +432,11 @@ const BoardSetupWizard = (props: Props) => {
                         />
                     </Show>
 
-                    {/* What the choice does — both halves of it, because the
-                        second is the one a person meets on a card: naming the
-                        board's agents is also what narrows the assignee field
-                        to them. Nobody chosen is a working answer and says so:
-                        the board names none of them, so it offers all of them.
-                        The crew is a membership list rather than a pin, so a
-                        card assigned to somebody on it still decides. */}
+                    {/* What the answer buys, said where it is given: the next
+                        thing a person does with an agent is on a card. */}
                     <Show when={hasAgent()}>
                         <p class='BoardSetupWizard__hint'>
-                            <Show
-                                when={plan()?.agentColumn}
-                                fallback={intl.formatMessage({id: 'BoardSetup.agent-note', defaultMessage: 'The chosen agents become the crew of the columns an agent works in, and the assignee field on a card offers them. With nobody chosen the board offers every agent on the machine, and a card is worked by whoever it is assigned to.'})}
-                            >
-                                {intl.formatMessage({id: 'BoardSetup.agent-column-note', defaultMessage: 'The chosen agents become the crew of the “{column}” column — cards that get there go to them, and the assignee field on a card offers them. With nobody chosen the board offers every agent on the machine, and a card is worked by whoever it is assigned to. This can be changed later in "Columns and routes…".'}, {column: plan()!.agentColumn})}
-                            </Show>
+                            {intl.formatMessage({id: 'BoardSetup.agent-note', defaultMessage: 'A registered agent can be put in a card’s “assigned to” field, and a card assigned to one is worked by it as soon as the card is moved into another column.'})}
                         </p>
                     </Show>
                 </div>
@@ -595,85 +482,10 @@ const BoardSetupWizard = (props: Props) => {
                     </label>
                 </div>
             )
-        case STEP_BROWSER:
-            return (
-                <div class='BoardSetupWizard__step'>
-                    <p>{intl.formatMessage({id: 'BoardSetup.browser-why', defaultMessage: 'Testing is an agent clicking through a browser, which it gets from a browser MCP server. Without one a test session will not start; the configuration below usually fits.'})}</p>
-
-                    {/* Who tests is asked the way a card and «обсудить с
-                        агентом» ask it — the names as chips, quick-add beside
-                        them — because it is the same question, and a wizard
-                        that quietly took the first agent in the registry
-                        answered it wrongly on every board with two. */}
-                    <div class='BoardSetupWizard__ask'>
-                        {intl.formatMessage({id: 'BoardSetup.browser-who', defaultMessage: 'Who tests?'})}
-                    </div>
-                    <div class='BoardSetupWizard__agentChoices'>
-                        <For each={registry().agents}>
-                            {(a) => (
-                                <button
-                                    type='button'
-                                    class={['BoardSetupWizard__agentChoice', {'BoardSetupWizard__agentChoice--chosen': a.name === testAgent()}]}
-                                    aria-pressed={String(a.name === testAgent())}
-                                    disabled={busy()}
-                                    onClick={() => setTestAgent(a.name)}
-                                >
-                                    {a.name}
-                                </button>
-                            )}
-                        </For>
-                        <Show when={!addingTestAgent()}>
-                            <button
-                                type='button'
-                                class='BoardSetupWizard__pickAdd'
-                                onClick={() => setAddingTestAgent(true)}
-                            >
-                                {intl.formatMessage({id: 'BoardSetup.add-agent', defaultMessage: 'Add an agent…'})}
-                            </button>
-                        </Show>
-                    </div>
-                    <Show when={addingTestAgent()}>
-                        <AgentQuickAdd
-                            board={props.board}
-                            onAdded={async (name) => {
-                                setAddingTestAgent(false)
-                                await refresh()
-                                setTestAgent(name)
-                            }}
-                            onCancel={() => setAddingTestAgent(false)}
-                        />
-                    </Show>
-
-                    {/* What the choice does beyond the server: the browser is
-                        set up for the stage that tests, and this agent becomes
-                        its crew — so the column that needs a browser has one
-                        and the card being tested says who is on it. The server
-                        goes to the stage rather than to the agent because
-                        testing is what needs a browser: an agent given one here
-                        would carry it on every other board too. */}
-                    <p class='BoardSetupWizard__hint'>
-                        <Show
-                            when={plan()?.testColumn}
-                            fallback={intl.formatMessage({id: 'BoardSetup.browser-agent-note', defaultMessage: 'The browser is set up for the column that tests, and this agent is who works it.'})}
-                        >
-                            {intl.formatMessage({id: 'BoardSetup.browser-column-note', defaultMessage: 'The browser is set up for the “{column}” column and this agent is who works it: a card that gets there is assigned to it and tested by it. Both can be changed later in "Columns and routes…".'}, {column: plan()!.testColumn})}
-                        </Show>
-                    </p>
-
-                    <textarea
-                        rows={7}
-                        value={serversText()}
-                        onInput={(e) => setServersText(e.currentTarget.value)}
-                    />
-                </div>
-            )
         default:
             return (
                 <div class='BoardSetupWizard__step'>
-                    <p>{intl.formatMessage({id: 'BoardSetup.done-how', defaultMessage: 'Drag a card into "{column}" — creating it there does not start anything, the trigger is the move. Pick a route in the card’s route field, or the card will only be worked on where it stands.'}, {column: agentColumn(plan())})}</p>
-                    <p class='BoardSetupWizard__hint'>
-                        {intl.formatMessage({id: 'BoardSetup.done-branch', defaultMessage: 'For transitions that wait for a branch to be merged, fill the card’s "branch" property: that is the branch being watched.'})}
-                    </p>
+                    <p>{intl.formatMessage({id: 'BoardSetup.done-how', defaultMessage: 'Assign a card to an agent and drag it into another column: the move is what starts the work. The agent reads the card, does it, writes what it did in a comment and moves the card on itself.'})}</p>
                 </div>
             )
         }
@@ -734,7 +546,7 @@ const BoardSetupWizard = (props: Props) => {
                     <Button
                         emphasis='primary'
                         disabled={busy()}
-                        onClick={takeAgent}
+                        onClick={() => pass(STEP_AGENT)}
                     >
                         {intl.formatMessage({id: 'BoardSetup.next', defaultMessage: 'Next'})}
                     </Button>
@@ -751,23 +563,6 @@ const BoardSetupWizard = (props: Props) => {
                         {intl.formatMessage({id: 'BoardSetup.save', defaultMessage: 'Save'})}
                     </Button>
                     <Button onClick={() => skip(STEP_DEPLOY)}>
-                        {intl.formatMessage({id: 'BoardSetup.skip', defaultMessage: 'Skip'})}
-                    </Button>
-                </>
-            )
-        case STEP_BROWSER:
-            return (
-                <>
-                    {/* Nobody chosen is nothing to save: the server belongs to
-                        an agent, and which one is the question. */}
-                    <Button
-                        emphasis='primary'
-                        disabled={busy() || !testAgent()}
-                        onClick={addBrowser}
-                    >
-                        {intl.formatMessage({id: 'BoardSetup.save', defaultMessage: 'Save'})}
-                    </Button>
-                    <Button onClick={() => skip(STEP_BROWSER)}>
                         {intl.formatMessage({id: 'BoardSetup.skip', defaultMessage: 'Skip'})}
                     </Button>
                 </>
@@ -794,8 +589,6 @@ const BoardSetupWizard = (props: Props) => {
             return intl.formatMessage({id: 'BoardSetup.step-agent', defaultMessage: 'Agent'})
         case STEP_DEPLOY:
             return intl.formatMessage({id: 'BoardSetup.step-deploy', defaultMessage: 'Deploy'})
-        case STEP_BROWSER:
-            return intl.formatMessage({id: 'BoardSetup.step-browser', defaultMessage: 'QA'})
         default:
             return intl.formatMessage({id: 'BoardSetup.step-done', defaultMessage: 'Ready'})
         }

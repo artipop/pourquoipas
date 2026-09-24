@@ -3,7 +3,6 @@ package acp
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"strings"
 	"time"
 )
@@ -229,9 +228,9 @@ func (m *Manager) seedFromBoard(boardID string) {
 	}
 	m.seededMu.Lock()
 	if m.seeded == nil {
-		m.seeded = make(map[string]bool)
+		m.seeded = map[string]bool{}
 	}
-	if m.seeded[boardID] && !m.hasUnadopted(boardID) {
+	if m.seeded[boardID] {
 		m.seededMu.Unlock()
 		return
 	}
@@ -254,52 +253,9 @@ func (m *Manager) seedFromBoard(boardID string) {
 	if len(props) == 0 {
 		return
 	}
-
-	columns, err := parseBoardAutomation(props)
-	if err != nil {
-		m.log.Warn("acp: the board's own settings are unreadable", "board", boardID, "err", err)
-		return
-	}
-	// Bind whatever still knows only a column's name to the option it means,
-	// before anything reads it. Asked of the board rather than inferred, and
-	// only where something needs binding: a board whose automation already
-	// carries ids costs nothing (contradiction 5).
-	m.bindToBoardOptions(boardID, columns)
-	added, unusableColumns := m.adoptColumns(boardID, columns)
-	if added > 0 {
-		m.log.Info("acp: columns taken from the board itself", "board", boardID, "count", added)
-	}
-	m.rememberUnadopted(boardID, unusableColumns)
 	if m.adoptPrompt(boardID, boardPromptFrom(props)) {
 		m.log.Info("acp: the board's own instructions taken from the board itself", "board", boardID)
 	}
-
-	// The board is the store, so what the registry ended up with for this board
-	// goes straight back onto it — which also settles the difference between
-	// what the board shipped and what the machine's own file still remembered
-	// for it, in the board's favour from here on. Together with the unadopted
-	// entries put back above, the write is the board's own content plus this
-	// machine's edits, and never less than what was read.
-	m.cfgMu.Lock()
-	m.persistBoardLocked(boardID)
-	err = m.persistConfigLocked()
-	m.cfgMu.Unlock()
-	if err != nil {
-		m.log.Warn("acp: cannot rewrite the config after reading the board", "board", boardID, "err", err)
-	}
-}
-
-// parseBoardAutomation reads the two properties a template writes. They arrive
-// as whatever the board store decoded them into, so they are re-encoded and
-// read back into the real types rather than picked apart by hand.
-func parseBoardAutomation(props map[string]any) ([]ColumnSpec, error) {
-	var columns []ColumnSpec
-	if raw, ok := boardProp(props, BoardPropColumns); ok {
-		if err := reinterpret(raw, &columns); err != nil {
-			return nil, fmt.Errorf("%s: %w", BoardPropColumns, err)
-		}
-	}
-	return columns, nil
 }
 
 func reinterpret(from any, into any) error {
@@ -322,178 +278,26 @@ func reinterpret(from any, into any) error {
 // has an answer for — an edited column is the user's, not the template's. What
 // it could not validate comes back as the second result rather than being
 // dropped: this machine not knowing the agent a column names is a fact about
-// the machine, and the board goes on carrying the column.
-func (m *Manager) adoptColumns(boardID string, columns []ColumnSpec) (int, []ColumnSpec) {
-	if len(columns) == 0 {
-		return 0, nil
-	}
-	m.cfgMu.Lock()
-	defer m.cfgMu.Unlock()
-
-	added := 0
-	var unusable []ColumnSpec
-	for _, c := range columns {
-		c.BoardID = boardID
-		// A board carries what it was written with, and until now that included
-		// names of registry entries. Fold them into ids before validating, or a
-		// column pinned to a deploy target by name would be refused for naming
-		// nothing the registry answers to (bindrefs.go). Not counted as an
-		// addition: nothing new was registered, and seedFromBoard writes the
-		// board back either way.
-		bindColumnRefs(&c, m.cfg.Agents, m.cfg.Deploys)
-		valid, err := validateColumn(c, m.cfg.Agents, m.cfg.Deploys)
-		if err != nil {
-			m.log.Warn("acp: the board offers a column that cannot be used", "board", boardID, "column", c.Column, "err", err)
-			unusable = append(unusable, c)
-			continue
-		}
-		// A column the registry already answers for stays as it is — what
-		// somebody edited is theirs. But a spec migrated from the old config
-		// keys knows only a name, and the board knows exactly which option that
-		// name turned out to be: take the binding, leave the behaviour.
-		known := false
-		for i, existing := range m.cfg.Columns {
-			if !sameColumn(existing, valid) {
-				continue
-			}
-			known = true
-			if existing.OptionID == "" && valid.OptionID != "" {
-				m.cfg.Columns[i].BoardID = valid.BoardID
-				m.cfg.Columns[i].PropertyID = valid.PropertyID
-				m.cfg.Columns[i].OptionID = valid.OptionID
-				added++
-			}
-			// The registry's own copy is bound too. Leaving it out is what
-			// would make the fold look done and not be: the board would be
-			// rewritten from a registry entry still carrying the name.
-			if bindColumnRefs(&m.cfg.Columns[i], m.cfg.Agents, m.cfg.Deploys) {
-				added++
-			}
-			break
-		}
-		if known {
-			continue
-		}
-		m.cfg.Columns = append(m.cfg.Columns, valid)
-		added++
-	}
-	if added > 0 {
-		if err := m.persistConfigLocked(); err != nil {
-			m.log.Warn("acp: cannot persist the board's columns", "board", boardID, "err", err)
-		}
-	}
-	return added, unusable
-}
-
-// unadopted is a board's own automation that this machine could not take into
-// the registry. It is not an error state: an imported board names agents and
-// deploy targets that were registered on the machine it came from, and the
-// person is about to register them here.
-type unadopted struct {
-	Columns []ColumnSpec
-}
-
-// rememberUnadopted records what a board carries and this machine could not
-// use, so that every later write-back can put it back untouched. Without this,
-// reading a board would delete from it: persistBoardLocked writes the registry,
-// and what never reached the registry would simply cease to exist — which is
-// what happened to every column of a freshly imported board the first time it
-// was opened.
-func (m *Manager) rememberUnadopted(boardID string, columns []ColumnSpec) {
-	m.cfgMu.Lock()
-	defer m.cfgMu.Unlock()
-	if len(columns) == 0 {
-		delete(m.boardUnadopted, boardID)
-		return
-	}
-	if m.boardUnadopted == nil {
-		m.boardUnadopted = make(map[string]unadopted)
-	}
-	m.boardUnadopted[boardID] = unadopted{Columns: columns}
-}
-
-// hasUnadopted reports whether the board still carries something this machine
-// could not take. Takes cfgMu itself: it is asked under seededMu, which is the
-// other way round from everywhere else, and the two guard nothing in common.
-func (m *Manager) hasUnadopted(boardID string) bool {
-	m.cfgMu.RLock()
-	defer m.cfgMu.RUnlock()
-	_, ok := m.boardUnadopted[boardID]
-	return ok
-}
-
-// BoardAutomation reads a board's automation back out of the registry in the
-// shape a template carries it — the other direction of seedFromBoard, and how a
-// board built by hand becomes a template somebody else can start from.
+// persistBoardLocked writes what this application keeps on a board back onto
+// the board: its instructions to agents, and the record of which property its
+// columns are. Called from the edit that changes them, with cfgMu already held,
+// so what the registry says and what the board says can never drift apart.
 //
-// The board id is dropped and the option ids are kept, which is exactly what a
-// copy needs: duplicating a board keeps its card properties (options and their
-// ids) and gives the copy a new board id, so a spec that names the option still
-// finds it and one that named the board would point at the original.
-func (m *Manager) BoardAutomation(boardID string) BoardAutomation {
-	columns := m.boardOwnAutomation(boardID)
-	out := BoardAutomation{Columns: make([]ColumnSpec, 0, len(columns))}
-	for _, c := range columns {
-		c.BoardID = ""
-		out.Columns = append(out.Columns, c)
-	}
-	return out
-}
-
-// persistBoardLocked writes a board's columns and routes back onto the board.
-// Called from every edit that touches them, with cfgMu already held — the whole
-// point is that what the registry now says and what the board says can never
-// drift apart, so the write happens inside the same lock as the change.
-//
-// A board that cannot be written to is not a lost edit: the entries stay in the
-// registry for this run, and the next edit tries again. They are not in
-// config.json any more, so the run is as long as they last — which is the
-// trade the move onto the board bought.
+// A board that cannot be written to is not a lost edit: the value stays in the
+// registry for this run, and the next edit tries again.
 func (m *Manager) persistBoardLocked(boardID string) {
 	if boardID == "" || m.meta == nil {
 		return
 	}
-	columns := boardOwn(m.cfg, boardID)
-
-	// What this machine could not take into the registry goes back exactly as
-	// it came. A write-back is the registry's answer for the board, and the
-	// registry has no answer for a column naming an agent registered somewhere
-	// else — so leaving it out would not be a deletion the user asked for, it
-	// would be one machine erasing what another machine set up.
-	if kept, ok := m.boardUnadopted[boardID]; ok {
-		columns = append(columns, kept.Columns...)
-	}
-
-	// Written as `null` rather than left out when a board's last configured
-	// column is deleted: an absent property is one the board never had, and
-	// patching with an absent value is how a deletion turns into "no change at
-	// all".
-	props := map[string]any{
-		BoardPropColumns: columns,
-		BoardPropPrompt:  m.cfg.BoardPrompts[boardID],
-	}
-	// Which field the columns are on, taken from the columns themselves. Only
-	// written when they say — a board whose columns predate option ids has
-	// nothing to record, and an absent value must not overwrite a good one.
-	if propertyID := columnPropertyOf(columns); propertyID != "" {
-		props[BoardPropColumnProperty] = propertyID
-	}
-
-	parent := m.rootCtx
-	if parent == nil {
-		parent = context.Background()
-	}
-	ctx, cancel := context.WithTimeout(parent, 10*time.Second)
+	props := map[string]any{BoardPropPrompt: m.cfg.BoardPrompts[boardID]}
+	ctx, cancel := context.WithTimeout(m.rootOr(), 10*time.Second)
 	defer cancel()
 	if err := m.forBoard(boardID).Meta.SetBoardProperties(ctx, boardID, props, nil); err != nil {
-		m.log.Warn("acp: cannot save the board's automation on the board", "board", boardID, "err", err)
+		m.log.Warn("acp: cannot write the board's own settings", "board", boardID, "err", err)
 	}
 }
 
-// saveBoardsLocked writes the change through to every board it touched and
-// then to the file. Two boards, when a spec that belonged to no board in
-// particular becomes one board's own: the board that lost it has to be told
-// as much as the board that gained it.
+// saveBoardsLocked writes each board once and then the machine's own file.
 func (m *Manager) saveBoardsLocked(boards ...string) error {
 	done := make(map[string]bool, len(boards))
 	for _, boardID := range boards {
@@ -504,69 +308,4 @@ func (m *Manager) saveBoardsLocked(boards ...string) error {
 		m.persistBoardLocked(boardID)
 	}
 	return m.persistConfigLocked()
-}
-
-// boardOwn is what one board owns, out of the whole registry.
-func boardOwn(cfg Config, boardID string) []ColumnSpec {
-	columns := make([]ColumnSpec, 0, len(cfg.Columns))
-	for _, c := range cfg.Columns {
-		if c.BoardID == boardID {
-			columns = append(columns, c)
-		}
-	}
-	return columns
-}
-
-// BoardAutomation is what a board carries: the columns it runs. Exported so a
-// test — and "save this board as a template" — speaks the same shape the
-// template does.
-type BoardAutomation struct {
-	Columns []ColumnSpec `json:"columns,omitempty"`
-}
-
-// columnPropertyOf is the property this board's columns are values of, read off
-// the columns themselves. Empty when they disagree or when none of them says,
-// because a board with columns on two different fields is a board this record
-// cannot describe — and a wrong answer here is worse than none.
-func columnPropertyOf(columns []ColumnSpec) string {
-	found := ""
-	for _, c := range columns {
-		if c.PropertyID == "" {
-			continue
-		}
-		if found != "" && found != c.PropertyID {
-			return ""
-		}
-		found = c.PropertyID
-	}
-	return found
-}
-
-// bindToBoardOptions resolves the columns that carry a name and no option id.
-// What it cannot resolve is left alone: a spec naming a column the board has
-// not got describes nothing, and saying so is the editor's business rather than
-// a silent rewrite here.
-func (m *Manager) bindToBoardOptions(boardID string, columns []ColumnSpec) {
-	needs := false
-	for _, c := range columns {
-		needs = needs || c.OptionID == ""
-	}
-	if !needs || m.meta == nil {
-		return
-	}
-
-	parent := m.rootCtx
-	if parent == nil {
-		parent = context.Background()
-	}
-	ctx, cancel := context.WithTimeout(parent, 10*time.Second)
-	options, err := m.forBoard(boardID).Meta.BoardColumnOptions(ctx, boardID)
-	cancel()
-	if err != nil {
-		m.log.Warn("acp: cannot read the board's columns", "board", boardID, "err", err)
-		return
-	}
-	for i := range columns {
-		bindColumnOption(&columns[i], boardID, options)
-	}
 }

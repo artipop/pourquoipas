@@ -156,7 +156,6 @@ func cardInfo(c acp.BoardToolCard) boardmcp.CardInfo {
 		Body:    c.Body,
 		Mine:    c.Mine,
 		Running: c.Running,
-		Queued:  c.Queued,
 	}
 }
 

@@ -56,11 +56,6 @@ type Session struct {
 	// answer rather than the user's.
 	mcpConfigured bool
 
-	// Test is set only for a session started by the test column: the preview it
-	// checks and where its evidence goes. Its presence turns the browser tools
-	// on, the same way Deploy turns the dokku tools on.
-	Test *TestRun
-
 	// Artifacts is the session's own directory for evidence: screenshots and
 	// the test verdict, the deploy outcome. Empty disables recording.
 	Artifacts string
@@ -141,8 +136,6 @@ func (s *Session) recordedBranch() string {
 	switch {
 	case s.Worktree.Branch != "":
 		return s.Worktree.Branch
-	case s.Test != nil:
-		return s.Test.Branch
 	default:
 		return s.DeployBranch
 	}
@@ -264,10 +257,6 @@ func (s *Session) appendEvent(m *Manager, kind string, payload any) {
 // runSession is the whole session lifecycle; it runs on its own goroutine.
 func (m *Manager) runSession(s *Session) {
 	defer m.wg.Done()
-	// Deferred before releaseSession, so they run after it: the next stage of a
-	// flow, and the next card waiting for this column, must not race the
-	// finished session for the folder or for its own place.
-	defer m.drainColumn(s.ColumnKey)
 	defer m.releaseSession(s)
 
 	if m.rootCtx.Err() != nil {
@@ -371,8 +360,6 @@ func sessionAction(s *Session) string {
 	switch {
 	case s.Deploy != nil:
 		return ColumnActionDeploy
-	case s.Test != nil:
-		return ColumnActionTest
 	default:
 		return ColumnActionAgent
 	}
@@ -454,20 +441,9 @@ func (m *Manager) commentFirstTurn(s *Session, finalText string, err error) {
 		m.finishSession(s, StatusCancelled, "сессия отменена")
 	case err != nil:
 		m.finishSession(s, StatusFailed, err.Error())
-		// A test session reports even when its turn broke off: the screenshots
-		// and the verdict it managed to write are the point of the run.
-		if s.Test != nil {
-			m.reportTestRun(s, finalText, err)
-			return
-		}
 		m.comment(s, failComment(s, err.Error()))
 		m.applyDeployOutcome(s)
 	default:
-		if s.Test != nil {
-			m.finishSession(s, StatusDone, "")
-			m.reportTestRun(s, finalText, nil)
-			return
-		}
 		if missing := missingWrites(s); len(missing) > 0 && s.Deploy == nil {
 			// The route branches on these, so a stage without them has no
 			// outcome a route could read: it failed, and says what it lacked.
@@ -593,13 +569,7 @@ func (m *Manager) runTurn(s *Session, conn *acpsdk.ClientSideConnection, acpSess
 		return "", m.rootCtx.Err()
 	}
 
-	// A browser scenario is much slower than a code edit, so a test turn gets
-	// its own budget.
-	timeout := m.cfg.SessionTimeout()
-	if s.Test != nil {
-		timeout = m.cfg.TestTimeout()
-	}
-	ctx, cancel := context.WithTimeout(m.rootCtx, timeout)
+	ctx, cancel := context.WithTimeout(m.rootCtx, m.cfg.SessionTimeout())
 	defer cancel()
 
 	s.mu.Lock()

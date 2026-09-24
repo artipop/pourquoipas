@@ -267,25 +267,14 @@ func testManagerWithEmitter(t *testing.T, scenario string, mutate func(*Config))
 	project := initTestWorkdir(t)
 	dir := t.TempDir()
 	cfg := DefaultConfig(dir)
-	// Every kind is an ACP process now, so the fallback path is the one that
-	// spells the agent out: the fake agent is the whole command.
+	// A card is worked by the agent it is assigned to, so the fixtures register
+	// one: the fake agent as an ordinary registry entry, named the way
+	// moveEvent assigns it.
 	cfg.AgentMode = agentModeCommand
 	cfg.AgentCommand = []string{writeFakeAgent(t, scenario)}
+	cfg.Agents = []AgentEntry{testAgent(cfg.AgentCommand)}
 	cfg.Workdirs = []WorkdirEntry{testWorkdir(project)}
 	cfg.WorktreeDir = filepath.Join(dir, "wt")
-	// The columns a fixture works with: the registry is a board's own answer
-	// now, so a config built in code has to say so itself — and before the
-	// test's own mutate, which is entitled to replace them.
-	// With their option ids, because a column is its option and nothing is
-	// matched by name any more. The ids
-	// are the ones moveEvent sends.
-	cfg.Columns = []ColumnSpec{
-		workColumn(cfg.TriggerProperty, ColumnActionAgent),
-		{BoardID: "board1", PropertyID: "p1", OptionID: "opt-deploy",
-			Property: cfg.TriggerProperty, Column: TemplateDeployColumn, Action: ColumnActionDeploy},
-		{BoardID: "board1", PropertyID: "p1", OptionID: "opt-test",
-			Property: cfg.TriggerProperty, Column: TemplateTestColumn, Action: ColumnActionTest},
-	}
 	if mutate != nil {
 		mutate(&cfg)
 	}
@@ -321,6 +310,9 @@ func moveEvent(cardID, from, to string) CardMoved {
 		Body:        "Do nothing useful.",
 		Props:       map[string]string{},
 		OptionNames: []string{testWorkdirName},
+		// Who works it: a card names its agent by its assignee, and that is
+		// what a move starts (assignedAgent).
+		PersonNames: []string{testAgentName},
 		FromColumn:  Column{PropertyID: "p1", PropertyName: DefaultTriggerProperty, OptionID: from, Name: columnName(from)},
 		ToColumn:    Column{PropertyID: "p1", PropertyName: DefaultTriggerProperty, OptionID: to, Name: columnName(to)},
 		At:          time.Now(),
@@ -340,13 +332,15 @@ func testWorkdir(path string) WorkdirEntry {
 	}
 }
 
-// workColumn is the column the fixtures move a card into, bound to the option
-// moveEvent sends. Tests that replace the registry rebuild it from here rather
-// than spelling the ids again.
-func workColumn(property, action string) ColumnSpec {
-	return ColumnSpec{
-		BoardID: "board1", PropertyID: "p1", OptionID: "opt-agent",
-		Property: property, Column: TemplateWorkColumn, Action: action,
+// testAgentName is who the fixtures assign their cards to.
+const testAgentName = "claude-1"
+
+// testAgent is the fake agent as a registry entry: an ACP command, which is
+// what the generic kind is.
+func testAgent(command []string) AgentEntry {
+	return AgentEntry{
+		ID: newID(), Name: testAgentName, Kind: AgentKindACP,
+		Command: append([]string(nil), command...),
 	}
 }
 

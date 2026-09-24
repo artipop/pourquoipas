@@ -126,7 +126,6 @@ type CardInfo struct {
 	Mine    bool
 
 	Running bool
-	Queued  bool
 }
 
 // CardChange is what one card is asked to become. Empty means unchanged, so an
@@ -461,11 +460,8 @@ func cardLine(card CardInfo) string {
 	if len(card.Options) > 0 {
 		fmt.Fprintf(&b, "\n  values: %s", strings.Join(card.Options, ", "))
 	}
-	switch {
-	case card.Running:
+	if card.Running {
 		b.WriteString("\n  an agent is working on it")
-	case card.Queued:
-		b.WriteString("\n  waiting its turn")
 	}
 	return b.String()
 }

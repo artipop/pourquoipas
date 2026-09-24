@@ -106,10 +106,31 @@ export function AttachServer(entryJSON: string): $CancellablePromise<string> {
 }
 
 /**
+ * BoardSetupPlan returns what this board needs answered before an agent can
+ * work a card on it: which steps, in which order, which of them may be skipped
+ * and which are already answered by this machine. It is one answer to one
+ * question — the wizard walks it and the board menu reads it to know which
+ * registries are worth opening at all.
+ */
+export function BoardSetupPlan(boardID: string): $CancellablePromise<string> {
+    return $Call.ByID(1459048039, boardID);
+}
+
+/**
  * CancelSession cancels the live agent session of a card, if any.
  */
 export function CancelSession(cardID: string): $CancellablePromise<boolean> {
     return $Call.ByID(1661183533, cardID);
+}
+
+/**
+ * CheckBoardSetupAnswer says whether an answer fits the step it answers on this
+ * board — a folder under git for a board that publishes a branch or waits for
+ * one, and any requirement a step grows later. Called before the answer is
+ * filed, so the question can refuse it where it was asked.
+ */
+export function CheckBoardSetupAnswer(boardID: string, step: string, value: string): $CancellablePromise<void> {
+    return $Call.ByID(2394306312, boardID, step, value);
 }
 
 /**
@@ -142,16 +163,6 @@ export function DetachServer(): $CancellablePromise<string> {
  */
 export function EndPlanning(id: string): $CancellablePromise<void> {
     return $Call.ByID(3237020843, id);
-}
-
-/**
- * ExportBoardAutomation returns what a board runs — its columns — in the shape
- * a template carries them in its own properties. It is how a board somebody has
- * built by hand becomes a template: the registry is Go's, so only this side can
- * read it out.
- */
-export function ExportBoardAutomation(boardID: string): $CancellablePromise<string> {
-    return $Call.ByID(2337511102, boardID);
 }
 
 /**
@@ -337,14 +348,6 @@ export function ListBoardCards(boardID: string): $CancellablePromise<string> {
 }
 
 /**
- * ListBoardColumns returns what each configured column of a board does: the
- * action, the crew that works it and how many of them at once.
- */
-export function ListBoardColumns(boardID: string): $CancellablePromise<string> {
-    return $Call.ByID(3216057602, boardID);
-}
-
-/**
  * ListBoards returns the boards with the columns a card can be moved into.
  * Both are one call because the two questions are always asked together —
  * which board, then which column of it — and a phone should ask once.
@@ -423,6 +426,16 @@ export function ListUnattachedWorkdirs(): $CancellablePromise<string> {
 }
 
 /**
+ * MarkBoardSetupOffered remembers that the setup wizard has opened itself for
+ * this board. It is stored beside the rest of the board's setup rather than in
+ * the page: the desktop app serves itself on a fresh port every launch, so the
+ * page's own storage is a fresh one too.
+ */
+export function MarkBoardSetupOffered(boardID: string): $CancellablePromise<void> {
+    return $Call.ByID(2575414996, boardID);
+}
+
+/**
  * MoveCardToBoard carries a card to another board and, when a column is named,
  * puts it there. It is the phone's half of the card menu's the move-to-board item, and it is the same move: the card keeps its id.
  */
@@ -459,6 +472,14 @@ export function PickDirectory(title: string): $CancellablePromise<string> {
 }
 
 /**
+ * RecordBoardSetupStep remembers what was done with a step — skipping above
+ * all, which is the one answer no registry can be read for.
+ */
+export function RecordBoardSetupStep(boardID: string, step: string, status: string): $CancellablePromise<void> {
+    return $Call.ByID(1701875219, boardID, step, status);
+}
+
+/**
  * RefreshBoardSummaries has the agent read every board's cards again and
  * rewrite what they are about.
  */
@@ -478,13 +499,6 @@ export function RemoveAgent(name: string): $CancellablePromise<void> {
  */
 export function RemoveAgentWorkdir(name: string): $CancellablePromise<void> {
     return $Call.ByID(3325248074, name);
-}
-
-/**
- * RemoveBoardColumn forgets a column's settings. The column stays on the board.
- */
-export function RemoveBoardColumn(boardID: string, optionID: string, column: string): $CancellablePromise<void> {
-    return $Call.ByID(621442705, boardID, optionID, column);
 }
 
 /**
@@ -527,14 +541,6 @@ export function RestartToUpdate(): $CancellablePromise<void> {
 }
 
 /**
- * SaveBoardColumn stores the settings of one column from a JSON-encoded
- * ColumnSpec and returns what was saved.
- */
-export function SaveBoardColumn(specJSON: string): $CancellablePromise<string> {
-    return $Call.ByID(143433370, specJSON);
-}
-
-/**
  * SayToPlanning is a person's message: the conversation's next turn.
  */
 export function SayToPlanning(id: string, text: string): $CancellablePromise<void> {
@@ -542,10 +548,9 @@ export function SayToPlanning(id: string, text: string): $CancellablePromise<voi
 }
 
 /**
- * SeedBoardAutomation takes the columns a board carries of its own into the
- * registry now, rather than waiting for the first card to be moved.
- * The setup wizard calls it, so what the board can do is visible as soon as it
- * is configured. Idempotent: anything already registered is left alone.
+ * SeedBoardAutomation takes what a board carries of its own — the instructions
+ * it gives its agents — into the registry now, rather than waiting for the
+ * first card to be moved. Idempotent.
  */
 export function SeedBoardAutomation(boardID: string): $CancellablePromise<void> {
     return $Call.ByID(4053050179, boardID);

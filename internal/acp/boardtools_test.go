@@ -144,11 +144,11 @@ func boardWithCards(t *testing.T) (*Manager, *fakeWriter) {
 	t.Helper()
 	m, writer, _, _ := testManager(t, "idle", func(cfg *Config) {
 		cfg.TriggerProperty = "Статус"
-		cfg.Columns = append(cfg.Columns,
-			ColumnSpec{BoardID: "board-1", PropertyID: "p", OptionID: "opt-toagent", Property: "Статус", Column: "К агенту", Action: "session"},
-			ColumnSpec{BoardID: "board-1", PropertyID: "p", OptionID: "opt-review", Property: "Статус", Column: "Ревью"},
-		)
 	})
+	m.SetBoardMeta(&fakeBoardMeta{options: []Column{
+		{PropertyID: "p", PropertyName: "Статус", OptionID: "opt-toagent", Name: "К агенту"},
+		{PropertyID: "p", PropertyName: "Статус", OptionID: "opt-review", Name: "Ревью"},
+	}})
 	m.SetBoardReader(&fakeReader{cards: []CardMoved{
 		{
 			CardID:  "card-1",

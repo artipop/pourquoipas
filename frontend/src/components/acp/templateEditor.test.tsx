@@ -41,8 +41,6 @@ function stubBindings() {
         ListSetupSteps: vi.fn().mockResolvedValue(JSON.stringify([
             {kind: 'project', registry: 'projects', optional: false},
             {kind: 'agent', registry: 'agents', optional: false},
-            {kind: 'deploy', registry: 'deploys', optional: true},
-            {kind: 'browser', registry: 'agentMCP', optional: true},
             {kind: 'done', optional: false},
         ])),
         ListAgents: vi.fn().mockResolvedValue('[]'),
@@ -73,7 +71,7 @@ describe('components/acp/templateEditor', () => {
             expect(found).toBeTruthy()
             return found!
         })
-        expect(carries.textContent).toContain('В работе (an agent works on the card)')
+        expect(carries.textContent).toContain('В работе')
         expect(screen.getByDisplayValue('Разработка')).toBeInTheDocument()
     })
 

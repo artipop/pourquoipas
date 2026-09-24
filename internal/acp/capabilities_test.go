@@ -93,7 +93,7 @@ func TestAgentOptionsAreAppliedToTheSession(t *testing.T) {
 	})
 
 	ev := moveEvent("cardOptions", "opt-backlog", "opt-agent")
-	ev.OptionNames = append(ev.OptionNames, "tuned")
+	ev.PersonNames = []string{"tuned"} // the card names its agent by its assignee
 	events.ch <- ev
 
 	waitFor(t, 15*time.Second, "session done", func() bool {
@@ -126,7 +126,7 @@ func TestAgentOptionsOutrankTheKindDefaults(t *testing.T) {
 	})
 
 	ev := moveEvent("cardOverride", "opt-backlog", "opt-agent")
-	ev.OptionNames = append(ev.OptionNames, "careful")
+	ev.PersonNames = []string{"careful"} // the card names its agent by its assignee
 	events.ch <- ev
 
 	waitFor(t, 15*time.Second, "session done", func() bool {

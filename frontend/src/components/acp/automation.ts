@@ -1,116 +1,13 @@
-import type {IntlShape} from '../../intl'
-
 import {Board, IPropertyOption, IPropertyTemplate} from '../../blocks/board'
 
-import {MCPServers} from './mcpServers'
-
-// What a board does, in the two halves the engine keeps apart: a **column**
-// says what happens when a card lands in it, a **route** says where the card
-// goes next. Both are edited over the board's own columns — the options of one
-// select property — which is why they live in one module: a stage that is not a
-// column of the board is a stage no card can ever stand on.
+// What this application keeps on a board: the instructions it gives its agents,
+// the questions it asks when it is set up, and which of the board's own
+// properties hold the card's folder, branch and outcome.
 //
-// Nothing here talks to Go or to the board store. The editor is the same
-// whether it is pointed at the registry (a live board) or at a template's own
-// properties, and both containers hand it these shapes.
-
-export type ColumnSpec = {
-    boardId?: string
-    propertyId?: string
-    optionId?: string
-    property: string
-    column: string
-    action: string
-    agentIds?: string[]
-    deployId?: string
-    maxRunning?: number
-
-    // What working in this column means, said to the agent: the reviewer's
-    // brief on the review column, the builder's on the in-progress column.
-    prompt?: string
-
-    // What working here is expected to put on the card, and what it is handed
-    // off the card on the way in.
-    writes?: PropertyWrite[]
-    reads?: string[]
-
-    // The tools working in this column comes with, handed to whichever agent
-    // works here on top of the servers that agent carries of its own.
-    mcpServers?: MCPServers
-}
-
-// PropertyWrite is one property a stage puts on the card. The value is not
-// here: an agent stage supplies it through finish_work (refused without it
-// when required), a deploy stage writes its preview URL, a test its verdict.
-export type PropertyWrite = {
-    property: string
-    required?: boolean
-}
-
-// Automation is a board's whole answer: what its columns do. It is what a
-// template carries and what the board keeps in its own properties.
-export type Automation = {
-    columns: ColumnSpec[]
-}
-
-// The two outcome triggers are a stage's own outputs and are drawn as such;
-// everything else is an event the stage waits for.
-export const SUCCESS = 'success'
-export const FAILURE = 'failure'
-export const BLOCKED = 'blocked'
-
-// The two kinds of question an arrow can ask. ASK_WORKMODE is the machine's
-// own — how this card's work is arranged in the folder — and its answer goes
-// into the card's workspace rather than onto the card. ASK_PROPERTY writes the
-// answer into one of the board's own selects, which puts it in the route's
-// dataflow like any other write.
-export const ASK_WORKMODE = 'workmode'
-export const ASK_PROPERTY = 'property'
-
-// ASK_WORKDIR is the folder the card's work happens in, written into the
-// board's own folder field. It is an ASK_PROPERTY in everything but which
-// property: which field a card names its folder in is the board's record
-// rather than a person's to pick. Asked before ASK_WORKMODE, because a card
-// that has not chosen a folder has nothing for that question to be about.
-export const ASK_WORKDIR = 'workdir'
-
-// CARD_CHANGED is the board-side trigger: an option set on the card itself.
-// Its edge must say which option through its condition.
-export const CARD_CHANGED = 'card.changed'
-
-export const ACTIONS = ['none', 'agent', 'deploy', 'test']
-
-// The board property types a stage can actually write. SetCardFields resolves a
-// select by one of its option names and stores everything else as text, so a
-// date, a person or a file would be handed a string the board cannot read back,
-// and createdBy/createdTime and their kin are the board's own bookkeeping.
-export const WRITABLE_TYPES = ['text', 'url', 'email', 'phone', 'number', 'select']
-
-// NewProperty is a board property a stage's outputs need and the board has not
-// got. The editor asks for it rather than making it, the way it asks for a
-// column: a property is the board's, visible on every card, and belongs to
-// whoever owns the board rather than to the automation over it.
-export type NewProperty = {
-    name: string
-
-    // 'select' is the one that makes the property branchable — a transition can
-    // only ask "is it this value" of a closed set. 'text' and 'url' are carried
-    // to later stages and read there.
-    type: 'text' | 'url' | 'select'
-
-    // The option names, for a select. Empty for the rest.
-    options?: string[]
-}
-
-// The names this app gives the two machine outputs, and their shape. A deploy
-// stage produces one address and a test one verdict, so neither is a question:
-// the form asks for the name and says what kind it will be.
-export const VERDICT_VALUES = ['pass', 'fail', 'blocked']
-
-// OUTCOMES are the triggers produced by the stage's own action — the only ones
-// where the agent spoke, and therefore the only ones a comment condition makes
-// sense on.
-export const OUTCOMES = [SUCCESS, FAILURE, BLOCKED]
+// It used to keep what each column does and where a card goes next as well.
+// That is gone: a column is an option of the board's own select and means what
+// its name says, a card is worked by the agent it is assigned to, and the agent
+// moves it on itself.
 
 // BoardColumn is a column as the board has it: an option of a select property.
 // The editor never invents one — a column exists on the board first.
@@ -132,84 +29,9 @@ export function columnProperty(board: Board, name?: string): IPropertyTemplate |
     return properties.find((p) => p.name === name) || properties[0]
 }
 
-// automationProperty is the same question answered by the automation itself:
-// which of the board's select properties its columns and routes were written
-// for. A spec carries the id of that property and the name it had, a route
-// carries the name, and either is a better answer than "the first select" —
-// which is a fact about the order somebody added fields in, and would have the
-// editor draw one property's options while the engine runs another's.
-//
-// It is not a preference and there is no control for it: it is a fact about the
-// board, read here.
-export function automationProperty(board: Board, automation?: Automation): IPropertyTemplate | undefined {
-    const properties = selectProperties(board)
-    for (const spec of automation?.columns || []) {
-        const found = properties.find((p) => (spec.propertyId && p.id === spec.propertyId) ||
-            (spec.property && p.name === spec.property))
-        if (found) {
-            return found
-        }
-    }
-    return properties[0]
-}
-
 export function boardColumns(board: Board, propertyName?: string): BoardColumn[] {
     const property = columnProperty(board, propertyName)
     return (property?.options || []).map((o: IPropertyOption) => ({optionId: o.id, name: o.value, color: o.color}))
-}
-
-// specFor is a column's saved behaviour: matched by the option it is, and only
-// then by name — a spec written before the editor knew the ids carries none.
-export function specFor(specs: ColumnSpec[], column: BoardColumn): ColumnSpec | undefined {
-    return specs.find((s) => s.optionId && s.optionId === column.optionId) ||
-        specs.find((s) => !s.optionId && s.column.toLowerCase() === column.name.toLowerCase())
-}
-
-// blankSpec is what a column nobody has configured does: nothing.
-export function blankSpec(boardId: string, property: IPropertyTemplate | undefined, column: BoardColumn): ColumnSpec {
-    return {
-        boardId,
-        propertyId: property?.id,
-        optionId: column.optionId,
-        property: property?.name || '',
-        column: column.name,
-        action: 'none',
-    }
-}
-
-// upsertSpec replaces a column's settings in the list, or appends them.
-export function upsertSpec(specs: ColumnSpec[], spec: ColumnSpec): ColumnSpec[] {
-    const at = specs.findIndex((s) => sameColumn(s, spec))
-    if (at < 0) {
-        return [...specs, spec]
-    }
-    return specs.map((s, i) => (i === at ? spec : s))
-}
-
-// sameColumn is the predicate Go keys the registry on: the same option of the
-// same board, or — before either is known — the same name.
-export function sameColumn(a: ColumnSpec, b: ColumnSpec): boolean {
-    if (a.optionId && b.optionId) {
-        return a.optionId === b.optionId
-    }
-    return a.column.toLowerCase() === b.column.toLowerCase()
-}
-
-// AutomationChanges is what a save has to send: the columns that changed, and
-// the ones that stopped being configured at all.
-export type AutomationChanges = {
-    savedColumns: ColumnSpec[]
-    removedColumns: ColumnSpec[]
-}
-
-export function automationChanges(before: Automation, after: Automation): AutomationChanges {
-    return {
-        savedColumns: after.columns.filter((c) => {
-            const was = before.columns.find((b) => sameColumn(b, c))
-            return !was || JSON.stringify(was) !== JSON.stringify(c)
-        }),
-        removedColumns: before.columns.filter((c) => !after.columns.some((n) => sameColumn(n, c))),
-    }
 }
 
 // The board properties a template carries its automation in — the same names Go
@@ -307,31 +129,21 @@ function readProperty<T>(board: Board, key: string, fallback: T): T {
     return raw as unknown as T
 }
 
-// readBoardAutomation is what a template board carries. A template is not run,
-// so its own properties are the whole truth about it — unlike a live board,
-// whose automation lives in the registry the moment it is first opened.
-export function readBoardAutomation(board: Board): Automation {
-    return {
-        columns: readProperty<ColumnSpec[]>(board, BOARD_PROP_COLUMNS, []),
-    }
-}
-
 export function readBoardSetup(board: Board): BoardSetup | undefined {
     const setup = readProperty<BoardSetup | undefined>(board, BOARD_PROP_SETUP, undefined)
     return setup && Array.isArray(setup.steps) ? setup : undefined
 }
 
-// writeBoardAutomation returns the board's properties with the automation in
-// them. They are written as JSON text rather than as objects because that is
-// what the board's property map is typed to hold, and Go reads either.
+// boardAutomationProperties returns the board's properties with the setup
+// questions in them. They are written as JSON text rather than as objects
+// because that is what the board's property map is typed to hold, and Go reads
+// either.
 export function boardAutomationProperties(
     board: Board,
-    automation: Automation,
     setup: BoardSetup | undefined,
 ): Record<string, string | string[]> {
     const properties = {...(board.properties || {})}
 
-    properties[BOARD_PROP_COLUMNS] = JSON.stringify(automation.columns)
     if (setup) {
         properties[BOARD_PROP_SETUP] = JSON.stringify(setup)
     } else {
@@ -340,40 +152,10 @@ export function boardAutomationProperties(
     return properties
 }
 
-// impliedSetupSteps is what the app would ask for if the template said nothing
-// — the same reasoning as Go's impliedSetup, and only ever used to fill the
-// editor in when somebody chooses to name the steps by hand. Nothing runs off
-// this copy: an undeclared template is still resolved on the Go side.
-export function impliedSetupSteps(automation: Automation, defs: SetupStepDef[]): BoardSetupStep[] {
-    const actions = new Set<string>()
-    for (const column of automation.columns) {
-        actions.add(column.action)
-    }
-    const wanted = (kind: string) => {
-        switch (kind) {
-        case 'deploy':
-            return actions.has('deploy')
-        case 'browser':
-            return actions.has('test')
-        default:
-            return true
-        }
-    }
-    return defs.filter((d) => wanted(d.kind)).map((d) => ({kind: d.kind}))
-}
-
-// routeOptionMissing says the board has no option a card could name this route
-// with. A route nothing can be put on is the commonest way an editor's work
-// disappears: the graph saves, the cards never take it.
-export function actionLabel(intl: IntlShape, action: string): string {
-    switch (action) {
-    case 'agent':
-        return intl.formatMessage({id: 'Automation.action-agent', defaultMessage: 'an agent works on the card'})
-    case 'deploy':
-        return intl.formatMessage({id: 'Automation.action-deploy', defaultMessage: 'deploy the card’s branch'})
-    case 'test':
-        return intl.formatMessage({id: 'Automation.action-test', defaultMessage: 'test the preview'})
-    default:
-        return intl.formatMessage({id: 'Automation.action-none', defaultMessage: 'nothing — the card waits'})
-    }
+// impliedSetupSteps is what the app asks for when a template says nothing, and
+// it is only ever used to fill the editor in when somebody chooses to name the
+// steps by hand. Nothing runs off this copy: an undeclared template is resolved
+// on the Go side.
+export function impliedSetupSteps(defs: SetupStepDef[]): BoardSetupStep[] {
+    return defs.map((d) => ({kind: d.kind}))
 }

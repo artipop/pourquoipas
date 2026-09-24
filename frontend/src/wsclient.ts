@@ -106,6 +106,7 @@ class WSClient {
     onUnfollowBlock: FollowChangeHandler = () => {}
     private notificationDelay = 100
     private reopenDelay = 3000
+
     // When the current socket opened, so a closure can be told from a refusal.
     private openedAt = 0
     private reopenRetryCount = 0

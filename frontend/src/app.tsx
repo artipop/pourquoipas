@@ -6,7 +6,6 @@ import {SortableProvider} from './hooks/sortable'
 import {FlashMessages} from './components/flashMessages'
 import MoveCardToBoard from './components/moveCardToBoard'
 import AttentionNotifications from './components/acp/attentionNotifications'
-import AskDialog from './components/acp/askDialog'
 import {getLanguage} from './store/language'
 import {useAppSelector, useAppStore} from './store/hooks'
 import AppRouter from './router'
@@ -37,7 +36,6 @@ const App: Component = () => {
                     Mounted beside the notification stack and outside the router
                     for the same reason: it belongs to the window a person is
                     in, not to a screen. */}
-                <AskDialog/>
 
                 {/* Outside the router as well: the card menu that asks for it
                     unmounts as soon as it is clicked, so the dialog cannot

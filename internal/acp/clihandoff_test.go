@@ -28,7 +28,7 @@ func TestCLIArgsReachTheAgentThroughSessionMeta(t *testing.T) {
 	})
 
 	ev := moveEvent("cardRemote", "opt-backlog", "opt-agent")
-	ev.OptionNames = append(ev.OptionNames, "remote")
+	ev.PersonNames = []string{"remote"} // the card names its agent by its assignee
 	events.ch <- ev
 
 	waitFor(t, 15*time.Second, "session done", func() bool {

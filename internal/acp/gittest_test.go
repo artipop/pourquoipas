@@ -1,6 +1,7 @@
 package acp
 
 import (
+	"context"
 	"os"
 	"os/exec"
 	"testing"
@@ -36,3 +37,62 @@ const (
 	TemplateDeployColumn = "Deploy"
 	TemplateTestColumn   = "QA"
 )
+
+// fakeBoardMeta is the board seen as the few properties this application keeps
+// on it: what it says, what its column property offers, and what it was told to
+// keep.
+type fakeBoardMeta struct {
+	props    map[string]any
+	template bool
+	// options is what the board's column property offers, for binding a stage
+	// that knows only a column's name to the option it means.
+	options []Column
+
+	// cardProps is what the board's cards have, for the stage contract a brief
+	// names and list_card_fields answers with.
+	cardProps []CardProperty
+
+	// written is what each board was told to keep, by board id — the board
+	// database stands in for itself here.
+	written map[string]map[string]any
+	fail    error
+}
+
+func (f *fakeBoardMeta) BoardProperties(context.Context, string) (map[string]any, error) {
+	return f.props, nil
+}
+
+func (f *fakeBoardMeta) BoardColumnOptions(context.Context, string) ([]Column, error) {
+	return f.options, nil
+}
+
+func (f *fakeBoardMeta) SetBoardProperties(_ context.Context, boardID string, props map[string]any, remove []string) error {
+	if f.fail != nil {
+		return f.fail
+	}
+	if f.written == nil {
+		f.written = map[string]map[string]any{}
+	}
+	board := f.written[boardID]
+	if board == nil {
+		board = map[string]any{}
+		f.written[boardID] = board
+	}
+	for k, v := range props {
+		board[k] = v
+	}
+	// The real board store deletes these; a fake that kept them would let a
+	// reader go on finding the old name for ever.
+	for _, k := range remove {
+		delete(board, k)
+	}
+	return nil
+}
+
+func (f *fakeBoardMeta) CardProperties(context.Context, string) ([]CardProperty, error) {
+	return f.cardProps, nil
+}
+
+func (f *fakeBoardMeta) IsBoardTemplate(context.Context, string) (bool, error) {
+	return f.template, nil
+}

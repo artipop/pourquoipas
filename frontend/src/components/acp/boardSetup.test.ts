@@ -4,7 +4,6 @@ import {
     NO_SETUP,
     SetupPlan,
     SetupStep,
-    agentColumn,
     checkSetupAnswer,
     isBoardSetupAvailable,
     markSetupOffered,
@@ -106,11 +105,5 @@ describe('components/acp/boardSetup', () => {
         fakeGoSide({CheckBoardSetupAnswer})
         await expect(checkSetupAnswer('board-1', 'project', '/tmp/notes')).rejects.toBeTruthy()
         expect(CheckBoardSetupAnswer).toHaveBeenCalledWith('board-1', 'project', '/tmp/notes')
-    })
-
-    test('the agent column is the board’s own, or the name the config ships', () => {
-        expect(agentColumn(plan([], {agentColumn: 'Агент готовит'}))).toBe('Агент готовит')
-        expect(agentColumn(plan([]))).toBe('In Progress')
-        expect(agentColumn(undefined)).toBe('In Progress')
     })
 })

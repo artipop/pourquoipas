@@ -692,7 +692,7 @@ class OctoClient {
     }
 
     async getTeamUsers(): Promise<IUser[]> {
-        let path = this.teamPath() + '/users'
+        const path = this.teamPath() + '/users'
         const response = await fetch(this.getBaseURL() + path, {headers: this.headers()})
         if (response.status !== 200) {
             return []
@@ -717,7 +717,7 @@ class OctoClient {
     }
 
     async searchTeamUsers(searchQuery: string): Promise<IUser[]> {
-        let path = this.teamPath() + `/users?search=${searchQuery}`
+        const path = this.teamPath() + `/users?search=${searchQuery}`
         const response = await fetch(this.getBaseURL() + path, {headers: this.headers()})
         if (response.status !== 200) {
             return []

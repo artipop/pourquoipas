@@ -82,6 +82,31 @@ func (w *recordingWriter) SetCardFields(_ context.Context, cardID string, fields
 
 // recordingReader is the board read back: two cards on the granted board and one
 // on another, which is the case the grant has to refuse.
+// recordingMeta is the board's own answer about itself: the columns it offers,
+// which is what an agent is told and what move_card takes.
+type recordingMeta struct{}
+
+func (m *recordingMeta) BoardProperties(context.Context, string) (map[string]any, error) {
+	return nil, nil
+}
+
+func (m *recordingMeta) BoardColumnOptions(context.Context, string) ([]acp.Column, error) {
+	return []acp.Column{
+		{PropertyID: "p", PropertyName: "Статус", OptionID: "opt-toagent", Name: "К агенту"},
+		{PropertyID: "p", PropertyName: "Статус", OptionID: "opt-ideas", Name: "Идеи"},
+	}, nil
+}
+
+func (m *recordingMeta) SetBoardProperties(context.Context, string, map[string]any, []string) error {
+	return nil
+}
+
+func (m *recordingMeta) CardProperties(context.Context, string) ([]acp.CardProperty, error) {
+	return nil, nil
+}
+
+func (m *recordingMeta) IsBoardTemplate(context.Context, string) (bool, error) { return false, nil }
+
 type recordingReader struct{}
 
 func (r *recordingReader) CardByID(_ context.Context, cardID string) (acp.CardMoved, error) {
@@ -133,9 +158,9 @@ func toolsBoard(t *testing.T) (*acp.Manager, *recordingWriter, string) {
 	writer := &recordingWriter{}
 	cfg := acp.DefaultConfig(t.TempDir())
 	cfg.TriggerProperty = "Статус"
-	cfg.Columns = []acp.ColumnSpec{{BoardID: "board-1", Property: "Статус", Column: "К агенту", Action: "session"}}
 	mgr := acp.NewManager(cfg, "", store, writer, nil, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	mgr.SetBoardReader(&recordingReader{})
+	mgr.SetBoardMeta(&recordingMeta{})
 
 	routes := newBoardToolRoutes()
 	routes.SetManager(mgr)
@@ -196,7 +221,7 @@ func TestBoardToolsRoundTrip(t *testing.T) {
 		offered[tool.Name] = true
 	}
 	for _, want := range []string{
-		"list_columns", "list_flows", "list_cards", "get_card", "list_card_fields",
+		"list_columns", "list_cards", "get_card", "list_card_fields",
 		"create_card", "create_cards", "update_card", "move_card", "comment_card",
 		"finish_work",
 	} {
@@ -205,12 +230,12 @@ func TestBoardToolsRoundTrip(t *testing.T) {
 		}
 	}
 
-	// Where a card may go, and what putting one there sets off.
+	// Where a card may go: the board's own columns, by the names move_card takes.
 	columns, err := session.CallTool(t.Context(), &mcp.CallToolParams{Name: "list_columns"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if text := toolText(t, columns); !strings.Contains(text, "К агенту") || !strings.Contains(text, "session") {
+	if text := toolText(t, columns); !strings.Contains(text, "К агенту") {
 		t.Errorf("columns read back as %q", text)
 	}
 

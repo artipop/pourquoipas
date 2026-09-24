@@ -1,54 +1,27 @@
-// The Wails-generated Go bindings are PascalCase methods, not constructors.
-/* eslint-disable new-cap */
 import {Board} from '../../blocks/board'
 import mutator from '../../mutator'
 import {IntlShape} from '../../intl'
 
-import {goApp} from '../../goBridge'
-
-import {Automation, BOARD_PROP_COLUMNS, boardAutomationProperties, readBoardAutomation, readBoardSetup} from './automation'
+import {boardAutomationProperties, readBoardSetup} from './automation'
 
 // Turning a board somebody has built into a template other boards can start
 // from. The board part of it is Focalboard's own duplicate-as-template; what
-// this adds is the half that lives outside the board — the columns' behaviour
-// and the routes, which are registry entries of this machine and have to be
-// read back out of Go and written into the copy's own properties.
+// this adds is the two things the copy would otherwise lose — the board's own
+// name, and the setup questions it declares.
 //
-// Without that a "template" made from a working board arrives with the columns
-// drawn and nothing happening in them, which is the more confusing half of the
-// two to be missing.
+// It used to add a third: what each column does, read back out of the machine's
+// registry. There is no registry any more — a column is an option of the
+// board's own select, it travels with the copy like every other property, and
+// what happens in it is not configured at all.
 
 export function isSaveAsTemplateAvailable(): boolean {
-    return Boolean(goApp()?.ExportBoardAutomation)
-}
-
-// exportAutomation reads what the board runs. A build with no agent side, or a
-// board with nothing configured, gives an empty automation rather than an
-// error: the template is still worth making for its columns alone.
-export async function exportAutomation(boardId: string): Promise<Automation> {
-    const bindings = goApp()
-    if (!bindings?.ExportBoardAutomation) {
-        return {columns: []}
-    }
-    const raw = JSON.parse(await bindings.ExportBoardAutomation(boardId)) || {}
-    return {columns: raw[BOARD_PROP_COLUMNS] || []}
+    return true
 }
 
 // saveBoardAsTemplate copies the board as a template and gives the copy the
 // automation the original runs. It returns the template board, which is what
 // the editor then opens.
 export async function saveBoardAsTemplate(board: Board, intl: IntlShape): Promise<Board> {
-    const registry = await exportAutomation(board.id)
-
-    // A board's automation reaches the registry when something first reads it
-    // (SeedBoardAutomation), so a board made from a template and saved straight
-    // back has all of it on the board and none of it in the registry. Writing
-    // the registry's answer over the copy then erased the very thing the
-    // template was being made for — the copy carries the board's own keys,
-    // because duplicateBoard copies the properties too.
-    const carried = readBoardAutomation(board)
-    const automation = registry.columns.length > 0 ? registry : carried
-
     const copied = await mutator.duplicateBoard(
         board.id,
         intl.formatMessage({id: 'Mutator.new-template-from-board', defaultMessage: 'new template from board'}),
@@ -69,8 +42,8 @@ export async function saveBoardAsTemplate(board: Board, intl: IntlShape): Promis
     const updated: Board = {
         ...template,
         title: board.title || template.title,
-        properties: boardAutomationProperties(template, automation, readBoardSetup(board)),
+        properties: boardAutomationProperties(template, readBoardSetup(board)),
     }
-    await mutator.updateBoard(updated, template, 'template automation')
+    await mutator.updateBoard(updated, template, 'template setup')
     return updated
 }

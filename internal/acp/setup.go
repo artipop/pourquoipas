@@ -40,7 +40,6 @@ const (
 	SetupStepWorkdir = "project" // a folder on this machine an agent works in
 	SetupStepAgent   = "agent"   // the agent that picks a card up
 	SetupStepDeploy  = "deploy"  // a Dokku host to publish a branch to
-	SetupStepBrowser = "browser" // the MCP server a test session drives
 	SetupStepDone    = "done"    // no question: how to use what was set up
 )
 
@@ -91,7 +90,6 @@ var SetupStepDefs = []SetupStepDef{
 	{Kind: SetupStepWorkdir, Registry: "projects"},
 	{Kind: SetupStepAgent, Registry: "agents"},
 	{Kind: SetupStepDeploy, Registry: "deploys", Optional: true},
-	{Kind: SetupStepBrowser, Registry: "agentMCP", Optional: true},
 	{Kind: SetupStepDone},
 }
 
@@ -144,27 +142,15 @@ type SetupStep struct {
 type SetupPlan struct {
 	BoardID string      `json:"boardId"`
 	Steps   []SetupStep `json:"steps"`
-	// Declared says the board named these steps itself. When it did not, they
-	// were worked out from the automation it carries — which is a guess, and
-	// the difference is worth keeping visible.
+	// Declared says the board named these steps itself. When it did not, the
+	// plan is the ordinary one — which is a guess, and the difference is worth
+	// keeping visible.
 	Declared bool `json:"declared"`
-	// Automated says the board brings columns or routes of its own. A board
-	// that brings none is not one the wizard should open itself for; it can
-	// still be walked through from the menu.
+	// Automated says there is anything to set up at all: an agent registered on
+	// this machine, or a board that asks for steps of its own. A board on a
+	// machine with no agent is a kanban board, and the wizard does not open
+	// itself for one.
 	Automated bool `json:"automated"`
-	// AgentColumn is the column a card is dragged into to be worked on — the
-	// one thing every board has and every board names differently, and the last
-	// thing the wizard has to say.
-	AgentColumn string `json:"agentColumn,omitempty"`
-	// TestColumn is the column that tests, as this board calls it. The QA step
-	// names an agent for it, so the question can say which column it is about
-	// and the answer knows where to write the crew.
-	TestColumn string `json:"testColumn,omitempty"`
-	// WorkAgents is who already works this board's cards — the crew of its
-	// agent stages, when they agree on one. The step that asks reads it back so
-	// a wizard walked a second time opens on the answer it was given, rather
-	// than showing nobody chosen over a column that has somebody.
-	WorkAgents []string `json:"workAgents,omitempty"`
 	// Offered says the wizard has already opened itself for this board once.
 	// Closing it half-way answers nothing, but it is still an answer to "have
 	// you seen this?", and asking again on every launch is how a dialog becomes
@@ -194,15 +180,11 @@ func (m *Manager) SetupPlanFor(boardID string) SetupPlan {
 		return plan
 	}
 
-	declared, columns := m.boardSetupSources(boardID)
-	plan.Automated = len(columns) > 0
-
-	steps := setupSteps(declared, columns)
+	declared := m.boardSetup(boardID)
+	steps := setupSteps(declared)
 	plan.Declared = len(declared.Steps) > 0
+	plan.Automated = plan.Declared || len(m.Agents()) > 0
 
-	plan.AgentColumn = columnOfAction(columns, ColumnActionAgent)
-	plan.TestColumn = columnOfAction(columns, ColumnActionTest)
-	plan.WorkAgents = m.crewNames(crewOfAction(columns, ColumnActionAgent))
 	states := m.setupStates(boardID)
 	plan.Offered = states[setupWizardStep] != ""
 	for _, step := range steps {
@@ -220,8 +202,8 @@ func (m *Manager) SetupPlanFor(boardID string) SetupPlan {
 			Optional: optional,
 			Hint:     currentHint(step.Hint),
 			Status:   m.setupStatus(def, states),
-			Ready:    def.Registry != "" && m.registryFilled(def.Registry, columns),
-			Requires: setupRequirements(def.Kind, columns),
+			Ready:    def.Registry != "" && m.registryFilled(def.Registry),
+			Requires: setupRequirements(def.Kind),
 		})
 	}
 	return plan
@@ -250,76 +232,25 @@ func currentHint(hint string) string {
 	return hint
 }
 
-// boardSetupSources reads the three properties a template writes: what it asks
-// to be asked, and the automation the question would otherwise be inferred from.
-func (m *Manager) boardSetupSources(boardID string) (BoardSetup, []ColumnSpec) {
-	// What this board runs is what this board says it runs — its own registry
-	// entries, or the automation it still carries in its properties. The
-	// machine-wide entries (the ones migrated from the old config keys, which
-	// name no board at all) are deliberately not read here: they describe a
-	// board that deploys and tests, and reading them made every board ask for a
-	// folder under git, including one whose whole job is a shopping list.
-	columns := m.boardOwnAutomation(boardID)
-
+// boardSetup is what a board asks to be asked, in its own property. A board
+// that says nothing gets the ordinary plan.
+func (m *Manager) boardSetup(boardID string) BoardSetup {
 	var declared BoardSetup
 	props := m.boardProperties(boardID)
 	if raw, ok := boardProp(props, BoardPropSetup); ok {
 		if err := reinterpret(raw, &declared); err != nil {
 			m.log.Warn("acp: the board's setup steps are unreadable", "board", boardID, "err", err)
-			declared = BoardSetup{}
+			return BoardSetup{}
 		}
 	}
-	if len(columns) == 0 {
-		// Nothing has been taken into the registry yet — read what the board
-		// itself carries, which is what the first card move would adopt.
-		boardColumns, err := parseBoardAutomation(props)
-		if err != nil {
-			m.log.Warn("acp: the board's own settings are unreadable", "board", boardID, "err", err)
-		} else {
-			columns = boardColumns
-		}
-	}
-	if len(columns) == 0 {
-		// A board that brings nothing of its own is run by whatever the machine
-		// is configured with, so that is what it has to be set up for.
-		columns = m.BoardColumns(boardID)
-	}
-	return declared, columns
+	return declared
 }
 
-// boardOwnAutomation is the registry filtered to entries tagged with this board
-// — what was taken from the board itself, and nothing that merely applies to
-// every board.
-func (m *Manager) boardOwnAutomation(boardID string) []ColumnSpec {
-	if boardID == "" {
-		return nil
-	}
-	m.cfgMu.RLock()
-	defer m.cfgMu.RUnlock()
-	var columns []ColumnSpec
-	for _, c := range m.cfg.Columns {
-		if c.BoardID == boardID {
-			columns = append(columns, c)
-		}
-	}
-	return columns
-}
-
-// setupRequirements is what an answer to this step must satisfy, read off the
-// board's automation. Only git is asked for so far, and only by the two things
-// that cannot work without it: publishing a branch and testing what was
-// published.
-func setupRequirements(kind string, columns []ColumnSpec) []string {
-	if kind != SetupStepWorkdir {
-		return nil
-	}
-	for _, c := range columns {
-		if c.Action == ColumnActionDeploy || c.Action == ColumnActionTest {
-			return []string{SetupRequiresGit}
-		}
-	}
-	return nil
-}
+// setupRequirements is what an answer to this step must satisfy. Only git is
+// asked for, and only by the folder a deploy publishes from — which is a
+// question about the folder rather than about the board, so nothing here asks
+// a board of household chores to be a repository.
+func setupRequirements(string) []string { return nil }
 
 // CheckSetupAnswer says whether an answer fits the step it is answering, so the
 // question can be refused where it is asked rather than three steps later. It
@@ -340,191 +271,6 @@ func (m *Manager) CheckSetupAnswer(boardID, step, value string) error {
 		}
 	}
 	return nil
-}
-
-// columnOfAction is the column that does something, as this board calls it —
-// the column an agent works in, the column that tests.
-func columnOfAction(columns []ColumnSpec, action string) string {
-	for _, c := range columns {
-		if c.Action == action {
-			return c.Column
-		}
-	}
-	return ""
-}
-
-// crewOfAction is the crew every stage of this kind is worked by, and nothing
-// when they disagree — two columns crewed differently is an arrangement richer
-// than the one question the wizard asks, and showing one of the two as "the"
-// answer would be offering to overwrite the other on the way past.
-func crewOfAction(columns []ColumnSpec, action string) []string {
-	var crew []string
-	first := true
-	for _, c := range columns {
-		if c.Action != action {
-			continue
-		}
-		if first {
-			crew, first = c.AgentIDs, false
-			continue
-		}
-		if !sameCrew(crew, c.AgentIDs) {
-			return nil
-		}
-	}
-	return crew
-}
-
-// sameCrew compares two crews as the lists they are: order is not part of the
-// answer, but who is on them is.
-func sameCrew(a, b []string) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for _, name := range a {
-		found := false
-		for _, other := range b {
-			if strings.EqualFold(name, other) {
-				found = true
-				break
-			}
-		}
-		if !found {
-			return false
-		}
-	}
-	return true
-}
-
-// BoardAgentNames is every agent this board names anywhere in its automation —
-// the crew of a column or of a stage of a route, whatever that stage does. It
-// is what "the agents of this board" means to a person: the registry is the
-// machine's, and a board's own answer is who it puts to work on it.
-func (m *Manager) BoardAgentNames(boardID string) []string {
-	// The same reader the plan uses, and for the same reason: a board whose
-	// automation has not been taken into the registry yet still carries it in
-	// its own properties, and it names its agents there just as truthfully.
-	// Nothing here writes, so a card's assignee list costs no seeding.
-	_, columns := m.boardSetupSources(boardID)
-	var names []string
-	known := func(name string) bool {
-		for _, have := range names {
-			if strings.EqualFold(have, name) {
-				return true
-			}
-		}
-		return false
-	}
-	add := func(crew []string) {
-		for _, name := range crew {
-			if name = strings.TrimSpace(name); name != "" && !known(name) {
-				names = append(names, name)
-			}
-		}
-	}
-	for _, c := range columns {
-		add(m.crewNames(c.AgentIDs))
-		add(c.Agents) // names this machine could not resolve, kept as written
-	}
-	return names
-}
-
-// SetTestAgent answers the QA step: this agent tests this board, and it tests
-// with these servers.
-//
-// Both writes belong to that one answer. A test session refuses to start
-// without a browser MCP server on the agent it resolved (startSession), and
-// which agent it resolves is the column's business — so the server goes on the
-// agent, and that agent goes on the test column as its crew. Split, the browser
-// lands on one agent and the column runs another.
-//
-// The rest of the agent's entry is kept: the wizard knows about a browser and
-// nothing else, so rebuilding the entry from that would drop the model, the
-// environment and the proxy of an agent already set up.
-func (m *Manager) SetTestAgent(boardID, agentName string, servers MCPServerSet) error {
-	return m.setStageCrew(boardID, []string{agentName}, ColumnActionTest, servers)
-}
-
-// SetWorkAgents answers the agent step the same way, for the stages that work a
-// card rather than test it: these agents are the crew of this board's agent
-// columns.
-//
-// A crew, not one name, because that is what a stage holds and what a person
-// answering "who works this board's cards" may mean — two agents sharing
-// the column is an ordinary arrangement, and the engine already picks the free
-// one. An empty list is an answer too: it takes the crew off, and a board that
-// names nobody is back to offering every agent on the machine, which is what a
-// board that has never been asked does.
-func (m *Manager) SetWorkAgents(boardID string, names []string) error {
-	return m.setStageCrew(boardID, names, ColumnActionAgent, nil)
-}
-
-// setStageCrew is the half those two share: the crew written onto every stage
-// of this board that does `action` — a column of its own, or a node of a route
-// that does it over a column that does something else.
-func (m *Manager) setStageCrew(boardID string, names []string, action string, servers MCPServerSet) error {
-	// Every name is checked against the registry before anything is written: a
-	// name comes from the page, and a typo would otherwise leave the column
-	// crewed with somebody no session can resolve.
-	crew := make([]string, 0, len(names))
-	var entry AgentEntry
-	for _, name := range names {
-		found, ok := m.agentNamed(strings.TrimSpace(name))
-		if !ok {
-			return fmt.Errorf("агент %q не найден в реестре", strings.TrimSpace(name))
-		}
-		entry = found
-		// The page speaks names, because that is what a person picks; the id is
-		// resolved once, here, and it is the id that is stored.
-		crew = append(crew, found.ID)
-	}
-
-	// Read the board first: the wizard runs before any card has been moved, so
-	// the column may still be a property of the board rather than an entry of
-	// the registry. Seeding is idempotent, and SaveColumn does it anyway.
-	m.SeedBoard(boardID)
-	columns := m.boardOwnAutomation(boardID)
-
-	// The browser goes on the stage that tests, not on the agent that works it.
-	// It used to go on the agent, and that made setting up QA on one board an
-	// edit to an agent every other board also runs: an agent named in Russian given a browser
-	// here drove one everywhere. A stage is the narrower owner and the honest
-	// one — testing is what needs a browser, not the tester.
-	var placed bool
-	for _, spec := range columns {
-		if spec.Action != action {
-			continue
-		}
-		spec.AgentIDs = crewOrNone(crew)
-		if len(servers) > 0 {
-			spec.MCPServers = servers
-		}
-		if _, err := m.SaveColumn(spec); err != nil {
-			return err
-		}
-		placed = true
-	}
-	// A board with no such stage yet — the wizard was walked from the menu
-	// before the column existed. The answer still has to land somewhere, and
-	// the agent is where the browser used to live. A crew has nowhere else to
-	// go and is simply not written: there is no stage for it to be the crew of.
-	if !placed && len(servers) > 0 && entry.Name != "" {
-		entry.MCPServers = servers
-		if _, err := m.UpdateAgent(entry); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// crewOrNone keeps an empty crew empty rather than an empty list: nil is what
-// "nobody is named here" is stored as everywhere else, and a `[]` in the
-// board's JSON would read as an arrangement somebody made.
-func crewOrNone(crew []string) []string {
-	if len(crew) == 0 {
-		return nil
-	}
-	return crew
 }
 
 // agentNamed finds a registry entry by name, the way every other lookup does:
@@ -551,12 +297,11 @@ func (m *Manager) agentNamed(name string) (AgentEntry, bool) {
 // None of it makes a question an obligation. An inferred step keeps the closed
 // set's answer about being optional, because a stage nobody has configured runs
 // nothing and a person works the card there by hand.
-func setupSteps(declared BoardSetup, columns []ColumnSpec) []BoardSetupStep {
-	// A board with no stages at all has nothing to infer from, and inference
-	// answers that case by offering everything — a guess for a board that has
-	// said nothing, and exactly the wrong thing to lay over a board that has.
-	// So a declaration is the whole plan while there is nothing to read.
-	if len(declared.Steps) > 0 && len(columns) == 0 {
+func setupSteps(declared BoardSetup) []BoardSetupStep {
+	// A board that names its steps names the whole plan: what is left to infer
+	// is the same for every board, and laying it over a board that has said
+	// something would be answering a question nobody asked.
+	if len(declared.Steps) > 0 {
 		return append([]BoardSetupStep{{Kind: SetupStepName}}, declared.Steps...)
 	}
 
@@ -571,7 +316,7 @@ func setupSteps(declared BoardSetup, columns []ColumnSpec) []BoardSetupStep {
 		}
 		out = append(out, step)
 	}
-	for _, step := range impliedSetup(columns) {
+	for _, step := range impliedSetup() {
 		if step.Kind == SetupStepDone {
 			continue // last, after anything only the board can ask for
 		}
@@ -593,30 +338,23 @@ var inferredSetupKinds = map[string]bool{
 	SetupStepWorkdir: true,
 	SetupStepAgent:   true,
 	SetupStepDeploy:  true,
-	SetupStepBrowser: true,
 	SetupStepDone:    true,
 }
 
 // impliedSetup is what the board's own stages need. A board with no automation
 // at all rules nothing out, so it is offered every step — it has said nothing
 // about the machine either.
-func impliedSetup(columns []ColumnSpec) []BoardSetupStep {
-	actions := map[string]bool{}
-	for _, c := range columns {
-		actions[c.Action] = true
+func impliedSetup() []BoardSetupStep {
+	// Every board is asked its name, whatever it holds: it is the one question
+	// that is not about the machine, and a board has to be told apart from the
+	// others in the sidebar. The rest is what an agent needs to work a card of
+	// it at all — somewhere to work, and somebody to do it.
+	return []BoardSetupStep{
+		{Kind: SetupStepName},
+		{Kind: SetupStepWorkdir},
+		{Kind: SetupStepAgent},
+		{Kind: SetupStepDone},
 	}
-	// Every board is asked its name, whatever it runs: it is the one question
-	// that is not about the machine, and a board with no automation at all
-	// still has to be told apart from the others in the sidebar.
-	steps := []BoardSetupStep{{Kind: SetupStepName}, {Kind: SetupStepWorkdir}, {Kind: SetupStepAgent}}
-	blank := len(columns) == 0
-	if blank || actions[ColumnActionDeploy] {
-		steps = append(steps, BoardSetupStep{Kind: SetupStepDeploy})
-	}
-	if blank || actions[ColumnActionTest] {
-		steps = append(steps, BoardSetupStep{Kind: SetupStepBrowser})
-	}
-	return append(steps, BoardSetupStep{Kind: SetupStepDone})
 }
 
 // setupStatus answers a step from the machine first and the record second: a
@@ -638,7 +376,7 @@ func (m *Manager) setupStatus(def SetupStepDef, states map[string]string) string
 // next one set up, or every board after the first is created in silence, which
 // is what this used to do. The wizard shows it as "already registered" and lets
 // the step be passed with one click; the status stays this board's own answer.
-func (m *Manager) registryFilled(registry string, columns []ColumnSpec) bool {
+func (m *Manager) registryFilled(registry string) bool {
 	m.cfgMu.RLock()
 	defer m.cfgMu.RUnlock()
 	switch registry {
@@ -648,36 +386,10 @@ func (m *Manager) registryFilled(registry string, columns []ColumnSpec) bool {
 		return len(m.cfg.Agents) > 0
 	case "deploys":
 		return len(m.cfg.Deploys) > 0
-	case "agentMCP":
-		// Not a registry of its own: the browser is a server, and a server now
-		// has two owners. The board's own test stage carrying one answers the
-		// question first, because that is the answer this step writes and the
-		// narrower of the two; an agent carrying one answers it as before.
-		for _, servers := range stageServers(columns, ColumnActionTest) {
-			if len(servers) > 0 {
-				return true
-			}
-		}
-		for _, a := range m.cfg.Agents {
-			if len(a.MCPServers) > 0 {
-				return true
-			}
-		}
 	}
 	return false
 }
 
-// stageServers is the MCP sets of every column of one action on a board. Used
-// both to answer "is there a browser here" and to put one there.
-func stageServers(columns []ColumnSpec, action string) []MCPServerSet {
-	var out []MCPServerSet
-	for _, c := range columns {
-		if c.Action == action {
-			out = append(out, c.MCPServers)
-		}
-	}
-	return out
-}
 
 func (m *Manager) setupStates(boardID string) map[string]string {
 	out := map[string]string{}

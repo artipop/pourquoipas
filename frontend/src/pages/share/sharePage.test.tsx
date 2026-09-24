@@ -14,6 +14,7 @@ const inbox = {id: 'board-inbox', title: 'Входящие', icon: '📥', inbox
 
 function bindings(result: object = {created: 1}) {
     return {
+
         // The inbox listed last, as Go's alphabetical order may well put it.
         ListBoards: vi.fn().mockResolvedValue(JSON.stringify([home, work, inbox])),
         ShareItem: vi.fn().mockResolvedValue(JSON.stringify(result)),

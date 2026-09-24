@@ -97,7 +97,6 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
     // are reachable with no board open — which is the whole point of moving
     // them, and is exactly what a regression here would undo.
     describe('the menu holds what is true of this board', () => {
-
         beforeEach(() => {
             fakeGoSide({
                 ListAgents: vi.fn(),
@@ -161,7 +160,6 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
     // where an agent works was filed under columns and routes — and a fold
     // under a canvas is a place nobody opens.
     describe('a board offers the setup steps it asks for', () => {
-
         beforeEach(() => {
             fakeGoSide({
                 ListAgents: vi.fn(),
@@ -225,7 +223,6 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
     // about nothing else: it runs no routes, and exporting it or saving it as a
     // template is not what an inbox is for.
     describe('on «Входящие» the menu is the sources and nothing else', () => {
-
         beforeEach(() => {
             fakeGoSide({
                 ListSources: vi.fn().mockResolvedValue('[]'),

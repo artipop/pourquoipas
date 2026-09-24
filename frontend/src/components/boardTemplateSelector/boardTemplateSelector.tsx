@@ -61,8 +61,6 @@ type Props = {
 // simply not in a base binary, so their slugs match nothing and the filter
 // drops them. Which is the point of deciding an edition at compile time — a
 // page that knew would be a page that could be told otherwise.
-import {KEY_PREFIX} from '../acp/automation'
-
 const TEMPLATE_MARKER = 'template'
 const VISIBLE_TEMPLATE_SLUGS = [
     'developer-tasks',

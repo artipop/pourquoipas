@@ -13,6 +13,8 @@ import client from '../../octoClient'
 import mutator from '../../mutator'
 
 import {fakeGoSide} from '../../test/goSide'
+import {setAIEnabled} from '../../aiSwitch'
+import {invalidateAgentUsers} from '../../components/acp/agentAssignees'
 
 import PersonProperty from './property'
 
@@ -151,8 +153,8 @@ describe('properties/person', () => {
 
             userEvent.click(userProperty as Element)
 
-            // The list arrives a tick later: the options are narrowed to the
-            // agents the board names, and asking Go that is a promise.
+            // The list arrives a tick later: asking Go which of the board's
+            // people are agents is a promise.
             await waitFor(() => expect(renderResult.getByText('username-4')).not.toBeNull())
             expect(container).toMatchSnapshot()
 
@@ -205,8 +207,8 @@ describe('properties/person', () => {
 
             userEvent.click(userProperty as Element)
 
-            // The list arrives a tick later: the options are narrowed to the
-            // agents the board names, and asking Go that is a promise.
+            // The list arrives a tick later: asking Go which of the board's
+            // people are agents is a promise.
             await waitFor(() => expect(renderResult.getByText('username-4')).not.toBeNull())
             expect(container).toMatchSnapshot()
 
@@ -226,17 +228,16 @@ describe('properties/person', () => {
         }
     })
 
-    // The registry is the machine's, so every agent registered anywhere has an
-    // account on every board. What a board says about who works on it is the
-    // crew of its columns, and the assignee list is narrowed to that: an agent
-    // this board does not name is not offered, and a person is untouched.
-    test('a board that names its agents offers those and no other', async () => {
+    // With the agents switched off an agent is nobody to hand a card to, so it
+    // stops being offered; a person is untouched.
+    test('with the agents off no agent is offered, and a person still is', async () => {
         fakeGoSide({
-            BoardAgentUsers: vi.fn().mockResolvedValue(JSON.stringify({
-                board: ['username-4'],
-                all: ['username-4', 'username-5'],
-            })),
+            ListAgentAccounts: vi.fn().mockResolvedValue(JSON.stringify([
+                {name: 'клаус', username: 'username-4'},
+                {name: 'тестер', username: 'username-5'},
+            ])),
         })
+        setAIEnabled(false)
 
         const store = mockAppStore(state)
         const renderResult = render(() => wrapIntl(() =>
@@ -256,12 +257,12 @@ describe('properties/person', () => {
         const userProperty = renderResult.container.querySelector(".Person input[role='combobox']")
         userEvent.click(userProperty as Element)
 
-        await waitFor(() => expect(renderResult.getByText('username-4')).not.toBeNull())
+        await waitFor(() => expect(renderResult.getByText('username-1')).not.toBeNull())
+        expect(renderResult.queryByText('username-4')).toBeNull()
         expect(renderResult.queryByText('username-5')).toBeNull()
 
-        // A person is not an agent and is offered whatever the board names.
-        expect(renderResult.getByText('username-1')).not.toBeNull()
-
+        setAIEnabled(true)
+        invalidateAgentUsers()
         fakeGoSide()
     })
 })

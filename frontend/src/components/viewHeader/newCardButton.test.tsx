@@ -108,7 +108,6 @@ describe('components/viewHeader/newCardButton', () => {
     // offered where cards are made rather than among the board's settings,
     // which is where it used to be and where nobody looking for it would go.
     describe('talking a task over with an agent', () => {
-
         const openMenu = () => {
             render(() =>
                 wrapIntl(() =>

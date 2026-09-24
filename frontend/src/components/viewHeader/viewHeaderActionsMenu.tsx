@@ -1,4 +1,4 @@
-import {Loading, Show, createSignal, lazy} from 'solid-js'
+import {Show, createSignal} from 'solid-js'
 
 import {useIntl, IntlShape} from '../../intl'
 
