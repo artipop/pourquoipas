@@ -255,15 +255,15 @@
 
 <header class="masthead">
   <div class="masthead-inner">
-    <p class="kicker">xciii · один файл, 37 таблиц</p>
+    <p class="kicker">xciii · один файл, 35 таблиц</p>
     <h1>Схема базы<span class="dot">.</span></h1>
     <p class="standfirst">Всё, что знает приложение, — про карточку или доску, а карточка это строка
       в <code>blocks</code>. Поэтому база одна: доска (форк Focalboard) и наши таблицы рядом, с настоящими
       внешними ключами между ними.</p>
     <div class="stats">
-      <div class="stat"><b>37</b><span>таблиц</span></div>
-      <div class="stat"><b>25</b><span>внешних ключей</span></div>
-      <div class="stat"><b>17</b><span>из них CASCADE</span></div>
+      <div class="stat"><b>35</b><span>таблиц</span></div>
+      <div class="stat"><b>22</b><span>внешних ключей</span></div>
+      <div class="stat"><b>14</b><span>из них CASCADE</span></div>
       <div class="stat"><b>1</b><span>шаг миграции</span></div>
       <div class="stat"><b>3</b><span>диалекта</span></div>
     </div>
@@ -279,8 +279,8 @@
       <li><a href="#g2"><span class="nav-name">На что смотрят ключи</span><span class="nav-count">2</span></a></li>
       <li><a href="#g3"><span class="nav-name">Реестры</span><span class="nav-count">5</span></a></li>
       <li><a href="#g4"><span class="nav-name">Сессии</span><span class="nav-count">2</span></a></li>
-      <li><a href="#g5"><span class="nav-name">Очередь и остановки</span><span class="nav-count">2</span></a></li>
-      <li><a href="#g6"><span class="nav-name">Работа в папке</span><span class="nav-count">3</span></a></li>
+      <li><a href="#g5"><span class="nav-name">Остановки</span><span class="nav-count">1</span></a></li>
+      <li><a href="#g6"><span class="nav-name">Работа в папке</span><span class="nav-count">2</span></a></li>
       <li><a href="#g7"><span class="nav-name">Входящие</span><span class="nav-count">2</span></a></li>
       <li><a href="#g8"><span class="nav-name">Разбор входящих</span><span class="nav-count">2</span></a></li>
       <li><a href="#g9"><span class="nav-name">Защёлки</span><span class="nav-count">2</span></a></li>
@@ -626,33 +626,24 @@ erDiagram
         </figure>
       </section>
       <section class="group" id="g5">
-        <p class="eyebrow">2 таблиц · 3 ключа</p>
-        <h2>Очередь и остановки</h2>
-        <div class="prose"><p>Почему карточка стоит и чего ждёт. <code>card_stall</code> — одна текущая причина, а не журнал: «в колонке нет места» верно только пока верно, и комментарий пережил бы её шумом.</p></div>
+        <p class="eyebrow">1 таблиц · 1 ключ</p>
+        <h2>Остановки</h2>
+        <div class="prose"><p>Почему по карточке ничего не идёт. <code>card_stall</code> — одна текущая причина, а не журнал: «папку держит другая карточка» верно только пока, и комментарий пережил бы её шумом.</p></div>
         <figure class="plate">
           <pre class="mermaid">%%{init: {&#x27;theme&#x27;:&#x27;base&#x27;,&#x27;themeVariables&#x27;:{&#x27;fontFamily&#x27;:&#x27;ui-monospace, SFMono-Regular, Menlo, Consolas, monospace&#x27;,&#x27;fontSize&#x27;:&#x27;13px&#x27;,&#x27;primaryColor&#x27;:&#x27;#ffffff&#x27;,&#x27;primaryTextColor&#x27;:&#x27;#14171d&#x27;,&#x27;primaryBorderColor&#x27;:&#x27;#aab3bf&#x27;,&#x27;secondaryColor&#x27;:&#x27;#f4f6f8&#x27;,&#x27;tertiaryColor&#x27;:&#x27;#ffffff&#x27;,&#x27;lineColor&#x27;:&#x27;#7c8493&#x27;,&#x27;textColor&#x27;:&#x27;#14171d&#x27;,&#x27;nodeBorder&#x27;:&#x27;#aab3bf&#x27;,&#x27;mainBkg&#x27;:&#x27;#ffffff&#x27;,&#x27;attributeBackgroundColorOdd&#x27;:&#x27;#ffffff&#x27;,&#x27;attributeBackgroundColorEven&#x27;:&#x27;#f4f6f8&#x27;}}}%%
 erDiagram
-    board_ref ||--o{ stage_queue : &quot;board_id CASCADE&quot;
     card_ref ||--o{ card_stall : &quot;card_id CASCADE&quot;
-    card_ref ||--o{ stage_queue : &quot;card_id CASCADE&quot;
 
     card_stall {
         id card_id PK, FK
         name_64 node_id &quot;nullable&quot;
         text reason
         millis created_at
-    }
-    stage_queue {
-        id card_id PK, FK
-        id board_id FK &quot;nullable&quot;
-        name_128 column_key &quot;board|option — the queue belongs to one column of one board.&quot;
-        name_64 node_id &quot;nullable&quot;
-        millis queued_at
     }</pre>
         </figure>
       </section>
       <section class="group" id="g6">
-        <p class="eyebrow">3 таблиц · 5 ключей</p>
+        <p class="eyebrow">2 таблиц · 4 ключа</p>
         <h2>Работа в папке</h2>
         <div class="prose"><p><code>checkout</code> — git-состояние: где копия, какая ветка, от чего отрезана. Владелец — карточка либо доска («черновики доски»), ровно одна из двух колонок заполнена; обычная папка не пишет строки вовсе. <code>card_changes</code> — размер сделанного, числами: диф всегда читается из git заново, а эта строка нужна, чтобы знать, есть ли что читать, не запуская git на каждую карточку.</p></div>
         <figure class="plate">
@@ -662,7 +653,6 @@ erDiagram
     card_ref ||--o{ card_changes : &quot;card_id CASCADE&quot;
     card_ref ||--o{ checkout : &quot;card_id CASCADE&quot;
     workspace ||--o{ checkout : &quot;workspace_id RESTRICT&quot;
-    workspace ||--o{ vcs_seen : &quot;workspace_id CASCADE&quot;
 
     checkout {
         id id PK &quot;A surrogate, and the one place in this schema where that is right: the natural key would have to include a…&quot;
@@ -675,13 +665,6 @@ erDiagram
         name_255 base &quot;What the branch was cut from, and therefore what «merged» means.&quot;
         millis created_at
         millis released_at &quot;NULL means the checkout is live.&quot;
-    }
-    vcs_seen {
-        id workspace_id PK, FK
-        name_255 branch PK
-        name_32 kind PK
-        name_64 marker &quot;The commit the event refers to: the same state seen twice fires once.&quot;
-        millis created_at
     }
     card_changes {
         id card_id PK, FK

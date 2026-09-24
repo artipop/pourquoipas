@@ -95,7 +95,7 @@ func TestWhatBelongsToACardGoesWithIt(t *testing.T) {
 	}
 
 	for _, name := range []string{
-		"agent_session", "card_stall", "stage_queue",
+		"agent_session", "card_stall", "card_changes",
 	} {
 		tbl, ok := byName[name]
 		if !ok {
@@ -209,8 +209,6 @@ func TestTheCollapsedMigrationBuildsTheSchemaTheLadderBuilt(t *testing.T) {
 		"table sessions":        {tightenedKey},
 		"table teams":           {tightenedKey},
 		"table system_settings": {tightenedKey},
-		// The queue stopped naming the route a card was on.
-		"table stage_queue": {terminalsRemoved},
 		// A column's limit stopped being counted in one process's memory.
 		"table agent_session": {"column_key: which column's limit this run counts against"},
 		// Its one kind was a conversation cut off in a terminal.
@@ -221,6 +219,10 @@ func TestTheCollapsedMigrationBuildsTheSchemaTheLadderBuilt(t *testing.T) {
 		"table conversation": terminalsRemoved,
 		"table flow_state":   routesRemoved,
 		"table flow_event":   routesRemoved,
+		// The queue belonged to a column's limit, and a column runs nothing now.
+		"table stage_queue": routesRemoved,
+		// The watcher polled a branch to fire an edge; there are no edges.
+		"table vcs_seen": routesRemoved,
 	}
 
 	for name, w := range wantShape {

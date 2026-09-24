@@ -39,9 +39,7 @@ func appTables() []Table {
 		idempotency(),
 		cardStall(),
 		cardChanges(),
-		stageQueue(),
 		boardSetup(),
-		vcsSeen(),
 		checkout(),
 		sourceItem(),
 		sourceEvent(),
@@ -458,27 +456,6 @@ func cardChanges() Table {
 	}
 }
 
-// stage_queue is a card waiting for a free place in its column.
-func stageQueue() Table {
-	return Table{
-		Name: "stage_queue",
-		Why:  "A card waiting for its column to free up a place.",
-		Columns: []Column{
-			{Name: "card_id", Type: ID()},
-			{Name: "board_id", Type: ID(), Null: true},
-			{Name: "column_key", Type: Name(128),
-				Why: "board|option — the queue belongs to one column of one board."},
-			{Name: "node_id", Type: Name(64), Null: true},
-			{Name: "queued_at", Type: Millis()},
-		},
-		PK:  []string{"card_id"},
-		FKs: []FK{cardFK("stage_queue"), boardFK("stage_queue")},
-		Indexes: []Index{
-			{Name: "idx_stage_queue_column", Columns: []string{"column_key", "queued_at"}},
-		},
-	}
-}
-
 // board_setup is what the setup wizard has already asked about a board.
 func boardSetup() Table {
 	return Table{
@@ -501,29 +478,6 @@ func boardSetup() Table {
 			Values: []string{"pending", "done", "skipped", "offered"},
 		}},
 		FKs: []FK{boardFK("board_setup")},
-	}
-}
-
-// vcs_seen is the git watcher's latch.
-func vcsSeen() Table {
-	return Table{
-		Name: "vcs_seen",
-		Why: "This branch event has already been acted on. Keyed by the workspace\n" +
-			"rather than by its path: a folder somebody moved used to keep its\n" +
-			"latches, and MySQL would refuse a path in a key of any real length.",
-		Columns: []Column{
-			{Name: "workspace_id", Type: ID()},
-			{Name: "branch", Type: Name(255)},
-			{Name: "kind", Type: Name(32)},
-			{Name: "marker", Type: Name(64), Null: true,
-				Why: "The commit the event refers to: the same state seen twice fires once."},
-			{Name: "created_at", Type: Millis()},
-		},
-		PK: []string{"workspace_id", "branch", "kind"},
-		FKs: []FK{{
-			Name: "vcs_seen_workspace", Columns: []string{"workspace_id"},
-			RefTable: "workspace", RefCols: []string{"id"}, OnDelete: Cascade,
-		}},
 	}
 }
 

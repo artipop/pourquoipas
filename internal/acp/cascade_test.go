@@ -33,8 +33,8 @@ func enforcingStore(t *testing.T) (*Store, func(cardID string)) {
 // whole reason the tables moved into the board's database:
 // deleting a card is a real DELETE FROM blocks, this side never heard about it —
 // BlockChanged handles only notify.Update — so every deleted card left its
-// sessions, its stall and its queue slot behind for ever, in a file where no
-// foreign key could reach them.
+// sessions, its stall and its recorded changes behind for ever, in a file where
+// no foreign key could reach them.
 func TestADeletedCardTakesWhatWeKnewAboutIt(t *testing.T) {
 	st, deleteCard := enforcingStore(t)
 
@@ -47,9 +47,7 @@ func TestADeletedCardTakesWhatWeKnewAboutIt(t *testing.T) {
 	if err := st.SetStall(StallRecord{CardID: "card-1", Reason: "стоит"}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := st.EnqueueStage(QueuedStage{
-		CardID: "card-1", BoardID: "board-1", ColumnKey: "board-1|opt-work",
-	}); err != nil {
+	if err := st.SetCardChanges(CardChangesRecord{CardID: "card-1", BoardID: "board-1", Files: 2}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -61,8 +59,8 @@ func TestADeletedCardTakesWhatWeKnewAboutIt(t *testing.T) {
 	if _, ok, err := st.Stall("card-1"); err != nil || ok {
 		t.Errorf("the card's stall outlived it: %v %v", ok, err)
 	}
-	if _, ok, err := st.NextQueuedStage("board-1|opt-work"); err != nil || ok {
-		t.Errorf("the card's place in the queue outlived it: %v %v", ok, err)
+	if _, ok, err := st.CardChanges("card-1"); err != nil || ok {
+		t.Errorf("the card's recorded changes outlived it: %v %v", ok, err)
 	}
 }
 
@@ -221,8 +219,8 @@ func TestACardOnAnotherServerCanBeWrittenAbout(t *testing.T) {
 	if err := st.SetStall(StallRecord{CardID: "remote-card", Reason: "нет папки"}); err != nil {
 		t.Fatalf("a stall on a card of another board was refused: %v", err)
 	}
-	if _, err := st.EnqueueStage(QueuedStage{CardID: "remote-card", BoardID: "remote-board", ColumnKey: "remote-board|opt-work"}); err != nil {
-		t.Fatalf("a queue place on a card of another board was refused: %v", err)
+	if err := st.SetCardChanges(CardChangesRecord{CardID: "remote-card", BoardID: "remote-board", Files: 1}); err != nil {
+		t.Fatalf("a change count on a card of another board was refused: %v", err)
 	}
 
 	// And it is still owned: the client that hears the board say the card is
@@ -233,8 +231,8 @@ func TestACardOnAnotherServerCanBeWrittenAbout(t *testing.T) {
 	if _, ok, err := st.Stall("remote-card"); err != nil || ok {
 		t.Errorf("the stall outlived the card: %v %v", ok, err)
 	}
-	if _, ok, err := st.NextQueuedStage("remote-board|opt-work"); err != nil || ok {
-		t.Errorf("the queue place outlived the card: %v %v", ok, err)
+	if _, ok, err := st.CardChanges("remote-card"); err != nil || ok {
+		t.Errorf("the change count outlived the card: %v %v", ok, err)
 	}
 }
 

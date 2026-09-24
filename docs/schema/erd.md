@@ -375,30 +375,21 @@ erDiagram
     }
 ```
 
-## Очередь и остановки
+## Остановки
 
-Почему карточка стоит и чего ждёт. `card_stall` — одна текущая
-причина, а не журнал: «в колонке нет места» верно только пока верно,
+Почему по карточке ничего не идёт. `card_stall` — одна текущая
+причина, а не журнал: «папку держит другая карточка» верно только пока,
 и комментарий пережил бы её шумом.
 
 ```mermaid
 erDiagram
-    board_ref ||--o{ stage_queue : "board_id CASCADE"
     card_ref ||--o{ card_stall : "card_id CASCADE"
-    card_ref ||--o{ stage_queue : "card_id CASCADE"
 
     card_stall {
         id card_id PK, FK
         name_64 node_id "nullable"
         text reason
         millis created_at
-    }
-    stage_queue {
-        id card_id PK, FK
-        id board_id FK "nullable"
-        name_128 column_key "board|option — the queue belongs to one column of one board."
-        name_64 node_id "nullable"
-        millis queued_at
     }
 ```
 
@@ -417,7 +408,6 @@ erDiagram
     card_ref ||--o{ card_changes : "card_id CASCADE"
     card_ref ||--o{ checkout : "card_id CASCADE"
     workspace ||--o{ checkout : "workspace_id RESTRICT"
-    workspace ||--o{ vcs_seen : "workspace_id CASCADE"
 
     checkout {
         id id PK "A surrogate, and the one place in this schema where that is right: the natural key would have to include a…"
@@ -430,13 +420,6 @@ erDiagram
         name_255 base "What the branch was cut from, and therefore what «merged» means."
         millis created_at
         millis released_at "NULL means the checkout is live."
-    }
-    vcs_seen {
-        id workspace_id PK, FK
-        name_255 branch PK
-        name_32 kind PK
-        name_64 marker "The commit the event refers to: the same state seen twice fires once."
-        millis created_at
     }
     card_changes {
         id card_id PK, FK

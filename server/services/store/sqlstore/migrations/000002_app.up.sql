@@ -131,23 +131,11 @@ CREATE TABLE `card_stall` (`card_id` varchar NOT NULL, `node_id` varchar NULL, `
 --     only while a working copy does, and the committed half survives it.
 CREATE TABLE `card_changes` (`card_id` varchar NOT NULL, `branch` varchar NULL, `base` varchar NULL, `files` bigint NOT NULL, `added` bigint NOT NULL, `removed` bigint NOT NULL, `dirty` bigint NOT NULL, `computed_at` bigint NOT NULL, PRIMARY KEY (`card_id`), CONSTRAINT `card_changes_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE CASCADE);
 
--- A card waiting for its column to free up a place.
---   column_key: board|option — the queue belongs to one column of one board.
-CREATE TABLE `stage_queue` (`card_id` varchar NOT NULL, `board_id` varchar NULL, `column_key` varchar NOT NULL, `node_id` varchar NULL, `queued_at` bigint NOT NULL, PRIMARY KEY (`card_id`), CONSTRAINT `stage_queue_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE CASCADE, CONSTRAINT `stage_queue_board` FOREIGN KEY (`board_id`) REFERENCES `board_ref` (`board_id`) ON DELETE CASCADE);
-
-CREATE INDEX `idx_stage_queue_column` ON `stage_queue` (`column_key`, `queued_at`);
-
 -- Which setup questions a board has been asked. It is about this machine
 -- — the answers are folders and hosts here — so it cannot live in the
 -- browser's storage, which the desktop window forgets on every launch.
 --   changed_at: Was `at`. AT is a keyword in Postgres and a name not worth having.
 CREATE TABLE `board_setup` (`board_id` varchar NOT NULL, `step` varchar NOT NULL, `status` varchar NOT NULL, `changed_at` bigint NOT NULL, PRIMARY KEY (`board_id`, `step`), CONSTRAINT `board_setup_board` FOREIGN KEY (`board_id`) REFERENCES `board_ref` (`board_id`) ON DELETE CASCADE, CONSTRAINT `board_setup_status` CHECK (`status` IN ('pending', 'done', 'skipped', 'offered')));
-
--- This branch event has already been acted on. Keyed by the workspace
--- rather than by its path: a folder somebody moved used to keep its
--- latches, and MySQL would refuse a path in a key of any real length.
---   marker: The commit the event refers to: the same state seen twice fires once.
-CREATE TABLE `vcs_seen` (`workspace_id` varchar NOT NULL, `branch` varchar NOT NULL, `kind` varchar NOT NULL, `marker` varchar NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`workspace_id`, `branch`, `kind`), CONSTRAINT `vcs_seen_workspace` FOREIGN KEY (`workspace_id`) REFERENCES `workspace` (`id`) ON DELETE CASCADE);
 
 -- The directory and the branch one owner holds in one workspace. The
 -- owner is a card, or a board for a conversation with no card — two
@@ -207,14 +195,14 @@ CREATE TABLE `inbox_sort` (`id` varchar NOT NULL, `card_id` varchar NULL, `card_
 {{end}}
 
 {{if .mysql}}
--- Where a card's branch is published. Was the `deploys` array in
--- config.json, and a route's stage named it by name.
-CREATE TABLE `deploy_target` (`id` varchar(36) NOT NULL, `name` varchar(100) NOT NULL, `ssh_host` varchar(255) NOT NULL, `ssh_user` varchar(64) NULL, `ssh_port` bigint NULL, `ssh_key` text NULL, `base_app` varchar(100) NULL, `base_domain` varchar(255) NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`id`), UNIQUE INDEX `idx_deploy_target_name` (`name`)) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
-
 -- One route event, handled once. `key` was the column's name and is a
 -- reserved word in MySQL, so it is `token` — cheaper than backticks in
 -- every query for ever.
 CREATE TABLE `idempotency` (`token` varchar(255) NOT NULL, `session_id` varchar(36) NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`token`), INDEX `idx_idempotency_created` (`created_at`)) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
+
+-- Where a card's branch is published. Was the `deploys` array in
+-- config.json, and a route's stage named it by name.
+CREATE TABLE `deploy_target` (`id` varchar(36) NOT NULL, `name` varchar(100) NOT NULL, `ssh_host` varchar(255) NOT NULL, `ssh_user` varchar(64) NULL, `ssh_port` bigint NULL, `ssh_key` text NULL, `base_app` varchar(100) NULL, `base_domain` varchar(255) NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`id`), UNIQUE INDEX `idx_deploy_target_name` (`name`)) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
 
 -- Network settings several agents share, so they are edited in one
 -- place. Was the `proxies` array in config.json.
@@ -358,16 +346,6 @@ CREATE TABLE `source_event` (`id` varchar(36) NOT NULL, `source` varchar(100) NO
 --     to add.
 CREATE TABLE `source_item` (`source` varchar(100) NOT NULL, `external_id` varchar(255) NOT NULL, `version` varchar(255) NULL, `card_id` varchar(36) NULL, `created_at` bigint NOT NULL, `updated_at` bigint NOT NULL, PRIMARY KEY (`source`, `external_id`), INDEX `idx_source_item_card` (`card_id`), CONSTRAINT `source_item_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE SET NULL) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
 
--- A card waiting for its column to free up a place.
---   column_key: board|option — the queue belongs to one column of one board.
-CREATE TABLE `stage_queue` (`card_id` varchar(36) NOT NULL, `board_id` varchar(36) NULL, `column_key` varchar(128) NOT NULL, `node_id` varchar(64) NULL, `queued_at` bigint NOT NULL, PRIMARY KEY (`card_id`), INDEX `idx_stage_queue_column` (`column_key`, `queued_at`), CONSTRAINT `stage_queue_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE CASCADE, CONSTRAINT `stage_queue_board` FOREIGN KEY (`board_id`) REFERENCES `board_ref` (`board_id`) ON DELETE CASCADE) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
-
--- This branch event has already been acted on. Keyed by the workspace
--- rather than by its path: a folder somebody moved used to keep its
--- latches, and MySQL would refuse a path in a key of any real length.
---   marker: The commit the event refers to: the same state seen twice fires once.
-CREATE TABLE `vcs_seen` (`workspace_id` varchar(36) NOT NULL, `branch` varchar(255) NOT NULL, `kind` varchar(32) NOT NULL, `marker` varchar(64) NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`workspace_id`, `branch`, `kind`), CONSTRAINT `vcs_seen_workspace` FOREIGN KEY (`workspace_id`) REFERENCES `workspace` (`id`) ON DELETE CASCADE) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
-
 -- Which board a folder is offered to and how work happens in it there.
 -- Keyed by the pair rather than by the folder, because a folder marked
 -- «на всех досках» is one entry with a different answer per board: a copy
@@ -378,14 +356,6 @@ CREATE TABLE `workspace_board` (`workspace_id` varchar(36) NOT NULL, `board_id` 
 {{end}}
 
 {{if .postgres}}
--- Where a card's branch is published. Was the `deploys` array in
--- config.json, and a route's stage named it by name.
-CREATE TABLE "deploy_target" ("id" character varying(36) NOT NULL, "name" character varying(100) NOT NULL, "ssh_host" character varying(255) NOT NULL, "ssh_user" character varying(64) NULL, "ssh_port" bigint NULL, "ssh_key" text NULL, "base_app" character varying(100) NULL, "base_domain" character varying(255) NULL, "created_at" bigint NOT NULL, PRIMARY KEY ("id"));
-
--- Where a card's branch is published. Was the `deploys` array in
--- config.json, and a route's stage named it by name.
-CREATE UNIQUE INDEX "idx_deploy_target_name" ON "deploy_target" ("name");
-
 -- One route event, handled once. `key` was the column's name and is a
 -- reserved word in MySQL, so it is `token` — cheaper than backticks in
 -- every query for ever.
@@ -395,6 +365,14 @@ CREATE TABLE "idempotency" ("token" character varying(255) NOT NULL, "session_id
 -- reserved word in MySQL, so it is `token` — cheaper than backticks in
 -- every query for ever.
 CREATE INDEX "idx_idempotency_created" ON "idempotency" ("created_at");
+
+-- Where a card's branch is published. Was the `deploys` array in
+-- config.json, and a route's stage named it by name.
+CREATE TABLE "deploy_target" ("id" character varying(36) NOT NULL, "name" character varying(100) NOT NULL, "ssh_host" character varying(255) NOT NULL, "ssh_user" character varying(64) NULL, "ssh_port" bigint NULL, "ssh_key" text NULL, "base_app" character varying(100) NULL, "base_domain" character varying(255) NULL, "created_at" bigint NOT NULL, PRIMARY KEY ("id"));
+
+-- Where a card's branch is published. Was the `deploys` array in
+-- config.json, and a route's stage named it by name.
+CREATE UNIQUE INDEX "idx_deploy_target_name" ON "deploy_target" ("name");
 
 -- Network settings several agents share, so they are edited in one
 -- place. Was the `proxies` array in config.json.
@@ -653,20 +631,6 @@ CREATE TABLE "source_item" ("source" character varying(100) NOT NULL, "external_
 --   version: The service's own updated/etag: changed means there is something
 --     to add.
 CREATE INDEX "idx_source_item_card" ON "source_item" ("card_id");
-
--- A card waiting for its column to free up a place.
---   column_key: board|option — the queue belongs to one column of one board.
-CREATE TABLE "stage_queue" ("card_id" character varying(36) NOT NULL, "board_id" character varying(36) NULL, "column_key" character varying(128) NOT NULL, "node_id" character varying(64) NULL, "queued_at" bigint NOT NULL, PRIMARY KEY ("card_id"), CONSTRAINT "stage_queue_card" FOREIGN KEY ("card_id") REFERENCES "card_ref" ("card_id") ON DELETE CASCADE, CONSTRAINT "stage_queue_board" FOREIGN KEY ("board_id") REFERENCES "board_ref" ("board_id") ON DELETE CASCADE);
-
--- A card waiting for its column to free up a place.
---   column_key: board|option — the queue belongs to one column of one board.
-CREATE INDEX "idx_stage_queue_column" ON "stage_queue" ("column_key", "queued_at");
-
--- This branch event has already been acted on. Keyed by the workspace
--- rather than by its path: a folder somebody moved used to keep its
--- latches, and MySQL would refuse a path in a key of any real length.
---   marker: The commit the event refers to: the same state seen twice fires once.
-CREATE TABLE "vcs_seen" ("workspace_id" character varying(36) NOT NULL, "branch" character varying(255) NOT NULL, "kind" character varying(32) NOT NULL, "marker" character varying(64) NULL, "created_at" bigint NOT NULL, PRIMARY KEY ("workspace_id", "branch", "kind"), CONSTRAINT "vcs_seen_workspace" FOREIGN KEY ("workspace_id") REFERENCES "workspace" ("id") ON DELETE CASCADE);
 
 -- Which board a folder is offered to and how work happens in it there.
 -- Keyed by the pair rather than by the folder, because a folder marked

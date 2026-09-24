@@ -125,29 +125,6 @@ func (s *Store) SetupSteps(boardID string) ([]SetupStepState, error) {
 	return out, rows.Err()
 }
 
-// ClaimVCSEvent reports whether a folder event is new, and remembers it. A
-// watcher sees the same state on every poll — the branch stays merged — so the
-// event fires once per marker (the commit it refers to) instead of once a minute.
-func (s *Store) ClaimVCSEvent(workspaceID, branch, kind, marker string) (bool, error) {
-	var seen string
-	err := s.queryRow(`SELECT COALESCE(marker,'') FROM vcs_seen WHERE workspace_id=? AND branch=? AND kind=?`,
-		workspaceID, branch, kind).Scan(&seen)
-	switch {
-	case err == sql.ErrNoRows:
-	case err != nil:
-		return false, err
-	case seen == marker:
-		return false, nil
-	}
-	_, err = s.exec(`INSERT INTO vcs_seen (workspace_id, branch, kind, marker, created_at) VALUES (?,?,?,?,?)
-		ON CONFLICT(workspace_id, branch, kind) DO UPDATE SET marker=excluded.marker, created_at=excluded.created_at`,
-		workspaceID, branch, kind, marker, time.Now().UnixMilli())
-	if err != nil {
-		return false, err
-	}
-	return true, nil
-}
-
 // Every write that names a card or a board makes the row its foreign key points
 // at first — an upsert rather than a read, because a card this side has never
 // heard of is the ordinary case on the first write about it.
@@ -484,65 +461,6 @@ func scanSession(rows *sql.Rows) (SessionRecord, error) {
 		r.FinishedAt = &t
 	}
 	return r, nil
-}
-
-// QueuedStage is a card waiting for its column to free up a place.
-type QueuedStage struct {
-	CardID    string    `json:"cardId"`
-	BoardID   string    `json:"boardId"`
-	ColumnKey string    `json:"columnKey"`
-	NodeID    string    `json:"nodeId,omitempty"`
-	QueuedAt  time.Time `json:"queuedAt"`
-}
-
-// EnqueueStage remembers that a card is waiting for a place in its column.
-// Queueing the same card again keeps its original position: waiting longer must
-// not cost it its turn.
-func (s *Store) EnqueueStage(q QueuedStage) (bool, error) {
-	if err := s.ensureRefs(q.CardID, q.BoardID); err != nil {
-		return false, err
-	}
-	res, err := s.exec(`INSERT INTO stage_queue (card_id, board_id, column_key, node_id, queued_at)
-		VALUES (?,?,?,?,?) ON CONFLICT(card_id) DO NOTHING`,
-		q.CardID, nullable(q.BoardID), q.ColumnKey, q.NodeID, time.Now().UnixMilli())
-	if err != nil {
-		return false, err
-	}
-	n, err := res.RowsAffected()
-	return n > 0, err
-}
-
-// NextQueuedStage is the card that has waited longest for this column.
-func (s *Store) NextQueuedStage(columnKey string) (QueuedStage, bool, error) {
-	row := s.queryRow(`SELECT card_id, COALESCE(board_id,''), column_key, COALESCE(node_id,''), queued_at
-		FROM stage_queue WHERE column_key=? ORDER BY queued_at LIMIT 1`, columnKey)
-	var q QueuedStage
-	var at int64
-	err := row.Scan(&q.CardID, &q.BoardID, &q.ColumnKey, &q.NodeID, &at)
-	if err == sql.ErrNoRows {
-		return QueuedStage{}, false, nil
-	}
-	if err != nil {
-		return QueuedStage{}, false, err
-	}
-	q.QueuedAt = time.UnixMilli(at)
-	return q, true, nil
-}
-
-// StageQueued reports whether this card is waiting for a place in a column.
-func (s *Store) StageQueued(cardID string) (bool, error) {
-	var one int
-	err := s.queryRow(`SELECT 1 FROM stage_queue WHERE card_id=?`, cardID).Scan(&one)
-	if err == sql.ErrNoRows {
-		return false, nil
-	}
-	return err == nil, err
-}
-
-// DequeueStage forgets a waiting card — it started, or it left the column.
-func (s *Store) DequeueStage(cardID string) error {
-	_, err := s.exec(`DELETE FROM stage_queue WHERE card_id=?`, cardID)
-	return err
 }
 
 // LatestBranchForCard is the branch the card was last worked on: the worktree

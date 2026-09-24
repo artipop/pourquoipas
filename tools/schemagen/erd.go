@@ -248,11 +248,11 @@ func erdGroups() []erdGroup {
 			tables: pick(app, "agent_session", "session_event"),
 		},
 		{
-			title: "Очередь и остановки",
-			why: "Почему карточка стоит и чего ждёт. `card_stall` — одна текущая\n" +
-				"причина, а не журнал: «в колонке нет места» верно только пока верно,\n" +
+			title: "Остановки",
+			why: "Почему по карточке ничего не идёт. `card_stall` — одна текущая\n" +
+				"причина, а не журнал: «папку держит другая карточка» верно только пока,\n" +
 				"и комментарий пережил бы её шумом.",
-			tables: pick(app, "card_stall", "stage_queue"),
+			tables: pick(app, "card_stall"),
 		},
 		{
 			title: "Работа в папке",
@@ -262,7 +262,7 @@ func erdGroups() []erdGroup {
 				"`card_changes` — размер сделанного, числами: диф всегда читается из\n" +
 				"git заново, а эта строка нужна, чтобы знать, есть ли что читать, не\n" +
 				"запуская git на каждую карточку.",
-			tables: pick(app, "checkout", "vcs_seen", "card_changes"),
+			tables: pick(app, "checkout", "card_changes"),
 		},
 		{
 			title: "Входящие",
