@@ -34,13 +34,14 @@ directory has been driven end to end in a browser, not when tests pass.
 Most of the first run is built. None of it needs replacing.
 
 - **`boardSetupWizard.tsx` + `internal/acp/setup.go`** — the real first run.
-  Go resolves a plan out of what the board's automation implies and what the
-  machine already has: `project → agent → deploy? → browser? → source? →
-  done`. The board opens it itself. This is the spine; everything below
-  hangs off it.
-- **The templates carry content.** All three ship three cards, and every one
-  of them opens with a card called «С чего начать» whose body is prose about
-  how that board works. Explanation as data, in the
+  Four questions — name, folder, agent, done — and a board may declare its
+  own (`impliedSetup`, `BoardSetupPlan`; the Development template adds a
+  deploy host). The board opens it itself. This is the spine; everything
+  below hangs off it.
+- **The templates carry content.** Every one opens with a card called «Where
+  to start» («С чего начать») whose body is prose about how that board works
+  — and whose steps 3 and 4 still describe the terminal and the routes
+  (`docs/todo.md`, «Шаблоны объясняют доску, которой больше нет»). Explanation as data, in the
   board: it survives translation, it is editable, and it costs no UI.
 - **`tutorial_tour_tip/`** — the drawing half of a coach mark: a positioned
   bubble and a hole punched over a real element, measured from a selector.
@@ -71,8 +72,8 @@ Gone already (the fork shrink, `docs/fork-shrink-removed.md`): `pages/welcome/`,
 `POST /teams/{teamID}/onboard` with `server/app/onboarding.go`, and
 `static/boards-welcome*.png` with the other unreferenced upstream images.
 
-Left, all of it page code, so after the Solid 2 migration or coordinated with
-it: `frontend/src/components/onboardingTour/` (twelve steps and their tests), the
+Left, all of it page code, and nothing blocks it any more — the Solid 2
+migration it waited for is done: `frontend/src/components/onboardingTour/` (twelve steps and their tests), the
 gifs they import from `src/assets/`, and the old preferences
 (`onboardingTourStarted`, `onboardingTourStep`, `tourCategory`), which
 `centerPanel.tsx`, `boardsSwitcher.tsx` and `boardTemplateSelector.tsx` still
@@ -86,30 +87,34 @@ drawing code stays — step 4 uses it.
 
 The wizard's last step is `done` and only says so. Instead it should offer
 the one action that explains the product: **«Поставить первую задачу»** —
-one field, one sentence from the person, and the app makes a card in the
-board's trigger column and opens it.
+one field, one sentence from the person, and the app makes a card assigned to
+the agent the wizard just registered, puts it in a column and opens it.
 
-- The trigger column is already known: `columns` on the board says
-  which column starts an agent. No new configuration.
+- There is no trigger column any more: a card starts when it is **moved** into
+  a column and its assignee is an agent (`trigger.go`). So the first task is
+  a card made in the first column and then moved into the next, or a card made
+  straight into a column if creating one there counts as a move — which it has
+  to be checked whether it does. No new configuration either way.
 - The offer appears **only if the agent step passed**. The wizard already
   knows; an offer that fails because nothing is installed is worse than no
   offer at all.
 - **It spends the person's own quota**, so it asks first and says so.
-- A board with no agent column gets no offer. It ends by pointing at its own
-  «С чего начать» card instead.
+- A board whose wizard registered no agent gets no offer. It ends by pointing
+  at its own «Where to start» card instead.
 
 This is the highest-value piece and could ship alone.
 
 ### 3. Say what is happening while the first card runs
 
-Somebody watching a card they just created does not yet know that the card's
-terminal is where the agent talks, or that the column decides what happens
-next.
+Somebody watching a card they just created does not yet know that the agent
+answers with a comment on the card, asks its questions on the card itself, and
+moves the card on when it is done.
 
 One dismissible strip above the board while **their first card** is running:
-what the agent is doing, that the terminal button on the card is where its
-work is read, and that the column decides where the card goes after. It disappears when the card leaves
-the column, and never comes back.
+that the agent is working, that its result arrives as a comment and its
+questions under the case stamp, and that it will move the card to the column
+whose name says what happened. It disappears when the card leaves the column,
+and never comes back.
 
 Driven by the events already on the socket — the same ones
 `components/acp/attention.ts` subscribes to. No polling, no new API.
@@ -122,9 +127,9 @@ Tie each hint to its moment rather than to a position in a script:
 | Moment | What the hint says |
 |---|---|
 | An agent asks its first question | the amber dot, and that the options *are* the answer — on the card or from the notification |
-| A terminal opens for the first time | the agent's own CLI in this card's worktree, and it survives the window closing |
+| The agent moves a card for the first time | it picked the column by its name; renaming columns is how a person tells agents what the columns mean |
 | A card first arrives in «Входящие» | something outside brought this in; it waits here until you move it to the board it belongs on |
-| A route first sends a card back on failure | why that arrow points backwards |
+| «Changes» first appears on a card | what the agent changed in the folder, read from git |
 
 Each is independent, shown once, drawn with `tutorial_tour_tip/`.
 
@@ -139,7 +144,7 @@ One trap to remember, because it will bite again: `patchProps` used
 *merges* — a preference deleted server-side lived on in the page for ever.
 It reconciles now, and `appStore.test.ts` holds the line.
 
-### 5. Make «С чего начать» the reading surface — done
+### 5. Make «Where to start» the reading surface — done
 
 Every template opens with it now, written for that board's own work: the
 developer one got the card it never had, and each board ships two example
@@ -152,7 +157,7 @@ layered over it. Prose belongs there; the app itself stays short.
 
 ### 6. Only then, a settings entry
 
-Once hints exist as a set, **«Настройки» → «Приложение»** can carry a row
+Once hints exist as a set, Settings → «The app itself» can carry a row
 that clears `shownHints`, and it will mean something. Adding it before there
 was anything to replay is what produced a button that cleared four
 preferences and navigated to a route that no longer existed.

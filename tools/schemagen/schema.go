@@ -319,7 +319,7 @@ func boardFK(table string) FK {
 	}
 }
 
-// agent_session is a run over the protocol: a stage of a route, a deploy, a
+// agent_session is a run over the protocol: a card's work, a deploy, a
 // test, the short headless run that names a branch. A planning conversation is
 // not one: it is about no card and leaves no row.
 func agentSession() Table {

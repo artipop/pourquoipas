@@ -399,8 +399,8 @@ per driver.
 - **Absence is NULL** where a key looks (reads `COALESCE(...,'')`); journals use
   UUIDv7 ids, no autoincrement.
 - Tests get the schema from `internal/appschema`, never a copied DDL.
-- `conversation` and `agent_session` are two tables on purpose. The schema says
-  `workspace`/`checkout`; the Go side still says `WorkdirEntry`.
+- Every run is an `agent_session`; `conversation` went with the terminals. The
+  schema says `workspace`/`checkout`; the Go side still says `WorkdirEntry`.
 
 ## Conventions
 

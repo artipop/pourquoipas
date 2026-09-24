@@ -205,8 +205,7 @@ return value and so writes the branch away. `reconcile` returns nothing, and
 board empty with no error anywhere.
 
 React-only libraries were replaced rather than wrapped: `@dnd-kit/solid`,
-`@dschz/solid-flow` for the workflow canvas, `@solidjs/router`, `@formatjs/intl`
-behind our own `src/intl.tsx` (same `IntlShape`, same message ids), and headless
+`@solidjs/router`, `@formatjs/intl` behind our own `src/intl.tsx` (same `IntlShape`, same message ids), and headless
 Lexical with a typeahead menu of our own under `markdownEditorInput/plugins/`.
 
 **Anything drawn over the page is placed by `@floating-ui/dom`** — the menus,
@@ -650,10 +649,9 @@ interrupt, and the archive that carries every board in and out — is
 preference, «Агенты работают с карточками» in `settings/appPanel.tsx`). Off,
 the app is a kanban board and nothing on screen names an agent. The page does
 it at the gates it already had: every `is…Available()` of `components/acp`
-answers no, the setup plan keeps only the name (`withoutAgents`), a board has
-no routes (`useBoardFlows`), nothing waits (`useAttention`), the agents' card
-fields are hidden (`withoutAgentProperties` — the folder, the branch, the
-outcome) and the assignee field offers people only. Go reads the same key
+answers no, the setup plan keeps only the name (`withoutAgents`), nothing
+waits (`useAttention`), the agents' card fields are hidden
+(`withoutAgentProperties` — the folder and the branch) and the assignee field offers people only. Go reads the same key
 (`aiEnabled` in `uisettings.go`) through `Manager.SetSwitchedOff`: a card move
 is dropped before the engine sees it, the folder poll and agent sources stop,
 and `startSession` refuses whatever was already queued. What is running is
@@ -742,8 +740,7 @@ in for both while there was no site: somebody who opens «Руководство
 manual and not a source tree, and a bug report should not cost a person an
 account on a hosting service. The address is printed on the panel as well as put
 in the `mailto:`, since a webview that refuses to open one leaves nothing to
-copy. What a board *runs* — its columns and its routes — is
-`automationDialog.tsx`.
+copy.
 
 **What a board had to be asked before it can run is not that, and each question
 is its own item in the board's ⋯ menu**: «Системный промпт доски…»
@@ -999,11 +996,12 @@ has been asked about (`always`→worktree, `never`→branch).
 somebody's uncommitted work — tracked work, since untracked files survive a
 switch untouched and every checkout has some. Both refusals are **state, not
 failure** —
-`errWorkdirBusy`/`errWorkdirDirty` become the card's stall reason and the route
-keeps its place, instead of the card being carried off to «Заблокировано» by
-something that is not about the work. A merge is what frees the folder
-(`ReleaseMergedBranch`, from the VCS watcher); picking the next card up
-automatically is deliberately not built (`docs/deferred.md`).
+`errWorkdirBusy`/`errWorkdirDirty` become the card's stall reason and the card
+keeps its place, instead of being carried off to «Заблокировано» by something
+that is not about the work. A merge was what freed the folder
+(`ReleaseMergedBranch`, called by the VCS watcher); the watcher went with the
+routes and nothing frees it now, which is a bug (`docs/todo.md`). Picking the
+next card up automatically is deliberately not built (`docs/deferred.md`).
 
 **The branch is the product, the copy is the workshop.** After a stage finishes
 the directory is folded away (`FoldWorktree`) and the branch stays; the next
@@ -1035,10 +1033,11 @@ a person read the screen and retyped them — and it is what finishing ends with
 too, since a card carries what happens to it next in its own column.
 
 The surface is the board in the vocabulary a person uses: read it
-(`list_columns`, `list_flows`, `list_cards`, `get_card`), put work on it
-(`create_card`, `create_cards`), change it (`update_card`, `comment_card`), and
-carry a card on (`move_card`). Everything is **named, never identified** — a
-column, a folder, a route, an answer a stage waits for — because names are what
+(`list_columns`, `list_card_fields`, `list_cards`, `get_card`), put work on
+it (`create_card`, `create_cards`), change it (`update_card`, `comment_card`),
+carry a card on (`move_card`) and end the run (`finish_work`). Everything is
+**named, never identified** — a column, a folder, a field and its values —
+because names are what
 a person typed and ids are what the board's own REST API would have made an agent
 learn. A **card id** is the one exception, and it has a default: empty means the
 card the run stands on (the grant carries it), which is the card an agent working
@@ -1298,9 +1297,8 @@ from them are the person's and are untouched.
 ## One database, and the schema is written once
 
 Everything this application knows is about a card or a board, and both of those
-are rows in the board's database. So our tables are in it too — `conversation`,
-`agent_session`, `flow_state`, `card_stall`, `stage_queue`, `checkout`,
-`source_item` and the rest — rather than in files beside it, which is where they
+are rows in the board's database. So our tables are in it too —
+`agent_session`, `card_stall`, `checkout`, `source_item` and the rest — rather than in files beside it, which is where they
 began (`acp.db`, `sources.db`). `internal/acp` and `internal/sources` take a
 `*sql.DB` (`NewStore(db)`) and create nothing; `server.NewStore` hands
 back both the store and the handle under it, and `runServerWithLogger` carries
@@ -1416,7 +1414,7 @@ Two consequences worth knowing before touching a query. **Absence is NULL**
 wherever a key looks: a planning conversation has no card, and `''` is a card
 id that does not exist; the reads say `COALESCE(...,'')` because in Go absence
 here is the zero value. And **no
-journal has an autoincrement** any more — `session_event`, `flow_event` and
+journal has an autoincrement** any more — `session_event` and
 `source_event` take UUIDv7, which sorts by the moment it was made, so
 `ORDER BY id` still means "as it happened" and three spellings of
 `AUTO_INCREMENT` are gone. `session_event.seq` went with them.
@@ -1426,10 +1424,10 @@ drifts — the exact bug all of this is about. `internal/appschema` renders the
 same migration out of the same embedded filesystem onto a scratch file; that is
 the only thing it is for, and the running application never touches it.
 
-`conversation` and `agent_session` stay two tables on purpose. **A conversation
-outlives every process that drew it** — it is resumed, `claude --continue`, and
-the row is the conversation while the pty under it has changed three times —
-where a session is one run and one verdict. `docs/deferred.md` records the rest.
+Every run is an `agent_session`: one process, one turn, one verdict. There
+used to be a second table, `conversation`, for a terminal's CLI that outlived
+its process and was resumed with `claude --continue`; it went with the
+terminals, and a planning conversation leaves no row at all.
 
 **The registry's name is applied in the schema, and not yet in the code.** The
 tables say it: **`workspace`** is the named place, carrying the git *settings* —
