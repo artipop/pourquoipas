@@ -1,61 +1,46 @@
-import messages_ca from '../i18n/ca.json'
-import messages_de from '../i18n/de.json'
-import messages_el from '../i18n/el.json'
-import messages_en from '../i18n/en.json'
-import messages_es from '../i18n/es.json'
-import messages_fr from '../i18n/fr.json'
-import messages_id from '../i18n/id.json'
-import messages_it from '../i18n/it.json'
-import messages_ja from '../i18n/ja.json'
-import messages_nl from '../i18n/nl.json'
-import messages_oc from '../i18n/oc.json'
-import messages_ptBr from '../i18n/pt_BR.json'
-import messages_ru from '../i18n/ru.json'
-import messages_sv from '../i18n/sv.json'
-import messages_tr from '../i18n/tr.json'
-import messages_zhHans from '../i18n/zh_Hans.json'
-import messages_zhHant from '../i18n/zh_Hant.json'
+import {createSignal} from 'solid-js'
+
+import en from '../i18n/en.json'
 
 import {UserSettings} from './userSettings'
+import {languages} from './languages'
 
-const supportedLanguages = ['ca', 'de', 'el', 'en', 'es', 'fr', 'id', 'it', 'ja', 'nl', 'oc', 'pt-br', 'ru', 'sv', 'tr', 'zh-cn', 'zh-tw']
+const supportedLanguages: string[] = languages.map((l) => l.code)
 
-export function getMessages(lang: string): {[key: string]: string} {
-    switch (lang) {
-    case 'ca':
-        return messages_ca
-    case 'de':
-        return messages_de
-    case 'el':
-        return messages_el
-    case 'es':
-        return messages_es
-    case 'fr':
-        return messages_fr
-    case 'id':
-        return messages_id
-    case 'it':
-        return messages_it
-    case 'ja':
-        return messages_ja
-    case 'nl':
-        return messages_nl
-    case 'oc':
-        return messages_oc
-    case 'pt-br':
-        return messages_ptBr
-    case 'ru':
-        return messages_ru
-    case 'sv':
-        return messages_sv
-    case 'tr':
-        return messages_tr
-    case 'zh-cn':
-        return messages_zhHans
-    case 'zh-tw':
-        return messages_zhHant
+type Messages = {[key: string]: string}
+
+// Each catalogue is a chunk of its own, fetched when its language is asked
+// for: bundling all of them put every language into the main chunk whatever
+// the page was read in. English is the defaults and is always there.
+const catalogues = import.meta.glob<Messages>(['../i18n/*.json', '!../i18n/en.json', '!../i18n/languages.json'], {import: 'default'})
+
+const loaded = new Map<string, Messages>([['en', en]])
+
+// A catalogue arriving has to reach a page already drawn in English, so what
+// getMessages returns is tracked.
+const [arrivals, setArrivals] = createSignal(0)
+
+function fileOf(lang: string): string {
+    return languages.find((l) => l.code === lang)?.file ?? 'en'
+}
+
+// loadMessages fetches a language's catalogue once. Awaited before the first
+// render, so the page never paints in English first.
+export async function loadMessages(lang: string): Promise<void> {
+    const file = fileOf(lang)
+    const load = catalogues[`../i18n/${file}.json`]
+    if (loaded.has(file) || !load) {
+        return
     }
-    return messages_en
+    loaded.set(file, await load())
+    setArrivals((n) => n + 1)
+}
+
+// getMessages is the catalogue for a language, or English until it has
+// arrived.
+export function getMessages(lang: string): Messages {
+    arrivals()
+    return loaded.get(fileOf(lang)) ?? en
 }
 
 // getCurrentLanguage reads what the person picked — hydrated from the
@@ -79,4 +64,5 @@ export function getCurrentLanguage(): string {
 // the browser's copy alone would be gone with the next desktop launch.
 export function storeLanguage(lang: string): void {
     UserSettings.language = lang
+    loadMessages(lang)
 }

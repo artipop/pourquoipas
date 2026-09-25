@@ -1,7 +1,7 @@
 // The eslint new-cap rule takes the Go bindings' PascalCase for constructors.
 /* eslint-disable new-cap */
 import {createIntl, IntlShape} from './intl'
-import {getMessages} from './i18n'
+import {getMessages, loadMessages} from './i18n'
 import {goApp} from './goBridge'
 import {goSentences} from './goMessages'
 
@@ -74,6 +74,7 @@ export async function reportWords(lang: string): Promise<void> {
     if (!bindings?.UseWords) {
         return
     }
+    await loadMessages(lang)
     const intl = createIntl({locale: lang.split(/[_]/)[0], defaultLocale: 'en', messages: getMessages(lang)})
     try {
         await bindings.UseWords(JSON.stringify(goWords(intl)))

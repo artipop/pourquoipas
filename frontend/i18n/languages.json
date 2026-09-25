@@ -1,0 +1,87 @@
+[
+  {
+    "code": "en",
+    "file": "en",
+    "displayName": "English"
+  },
+  {
+    "code": "es",
+    "file": "es",
+    "displayName": "Español"
+  },
+  {
+    "code": "de",
+    "file": "de",
+    "displayName": "Deutsch"
+  },
+  {
+    "code": "ja",
+    "file": "ja",
+    "displayName": "日本語"
+  },
+  {
+    "code": "fr",
+    "file": "fr",
+    "displayName": "Français"
+  },
+  {
+    "code": "nl",
+    "file": "nl",
+    "displayName": "Nederlands"
+  },
+  {
+    "code": "ru",
+    "file": "ru",
+    "displayName": "Русский"
+  },
+  {
+    "code": "zh-tw",
+    "file": "zh_Hant",
+    "displayName": "中文 (繁體)"
+  },
+  {
+    "code": "zh-cn",
+    "file": "zh_Hans",
+    "displayName": "中文 (简体)"
+  },
+  {
+    "code": "tr",
+    "file": "tr",
+    "displayName": "Türkçe"
+  },
+  {
+    "code": "oc",
+    "file": "oc",
+    "displayName": "Occitan"
+  },
+  {
+    "code": "pt-br",
+    "file": "pt_BR",
+    "displayName": "Português (Brasil)"
+  },
+  {
+    "code": "ca",
+    "file": "ca",
+    "displayName": "Català"
+  },
+  {
+    "code": "el",
+    "file": "el",
+    "displayName": "Ελληνικά"
+  },
+  {
+    "code": "id",
+    "file": "id",
+    "displayName": "bahasa Indonesia"
+  },
+  {
+    "code": "it",
+    "file": "it",
+    "displayName": "Italiano"
+  },
+  {
+    "code": "sv",
+    "file": "sv",
+    "displayName": "Svenska"
+  }
+]

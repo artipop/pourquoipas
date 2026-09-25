@@ -6,7 +6,7 @@ import {initThemes} from './theme'
 import {importNativeAppSettings} from './nativeApp'
 import {hydrateUserSettings, reportLanguage} from './userSettings'
 import {reportWords} from './goWords'
-import {getCurrentLanguage} from './i18n'
+import {getCurrentLanguage, loadMessages} from './i18n'
 
 import {IUser} from './user'
 import {getMe} from './store/users'
@@ -67,7 +67,7 @@ async function boot() {
     // templates in a language (internal/boardadapter/templatetext.go). Awaited,
     // because it can mean those boards are replaced and everything read before
     // that is stale.
-    await reportLanguage(getCurrentLanguage())
+    await Promise.all([reportLanguage(getCurrentLanguage()), loadMessages(getCurrentLanguage())])
 
     // And the words Go draws for us — the menu bar, notifications, window
     // titles — in the same language. Not awaited: nothing on the page waits

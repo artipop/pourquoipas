@@ -1,11 +1,13 @@
 import {createIntl} from './intl'
-import {getMessages} from './i18n'
+import {getMessages, loadMessages} from './i18n'
 import {goWords, reportWords} from './goWords'
 import {fakeGoSide, goSide} from './test/goSide'
 
 const intlIn = (lang: string) => createIntl({locale: lang, defaultLocale: 'en', messages: getMessages(lang)})
 
 describe('goWords', () => {
+    beforeAll(() => loadMessages('ru'))
+
     afterEach(() => {
         fakeGoSide()
     })

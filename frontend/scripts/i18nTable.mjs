@@ -4,7 +4,7 @@
 //   node scripts/i18nTable.mjs export   → i18n/translations.csv
 //   node scripts/i18nTable.mjs import   ← i18n/translations.csv
 //
-// Only the languages i18n.tsx can actually switch to get a column: a
+// Only the languages the app can actually switch to (i18n/languages.json) get a column: a
 // translation for a language the app cannot select is work nobody will see.
 // English and Russian are the reference columns and are never written back —
 // en.json is generated from the source by `npm run i18n-extract`, and Russian
@@ -18,25 +18,12 @@ const here = path.dirname(fileURLToPath(import.meta.url))
 const i18nDir = path.join(here, '..', 'i18n')
 const csvPath = path.join(i18nDir, 'translations.csv')
 
-// Keyed by the file in i18n/, valued by what the language menu calls it, so a
-// translator gets a column heading rather than a file name.
-const languages = [
-    ['ca', 'Català'],
-    ['de', 'Deutsch'],
-    ['el', 'Ελληνικά'],
-    ['es', 'Español'],
-    ['fr', 'Français'],
-    ['id', 'Bahasa Indonesia'],
-    ['it', 'Italiano'],
-    ['ja', '日本語'],
-    ['nl', 'Nederlands'],
-    ['oc', 'Occitan'],
-    ['pt_BR', 'Português (Brasil)'],
-    ['sv', 'Svenska'],
-    ['tr', 'Türkçe'],
-    ['zh_Hans', '简体中文'],
-    ['zh_Hant', '繁體中文'],
-]
+// The files in i18n/ the language menu offers, with what it calls them, so a
+// translator gets a column heading rather than a file name. English and
+// Russian are the reference pair and are left out here.
+const languages = JSON.parse(fs.readFileSync(path.join(i18nDir, 'languages.json'), 'utf8')).
+    filter((l) => l.file !== 'en' && l.file !== 'ru').
+    map((l) => [l.file, l.displayName])
 
 function read(name) {
     const file = path.join(i18nDir, `${name}.json`)

@@ -3,7 +3,8 @@ import {createIntl} from '@formatjs/intl'
 import en from '../i18n/en.json'
 import ru from '../i18n/ru.json'
 
-import {getMessages} from './i18n'
+import {getMessages, loadMessages} from './i18n'
+import {languages} from './languages'
 
 // The arguments a message expects, read off the braces. A hand-rolled scanner
 // rather than the ICU parser, which is only in the tree as somebody else's
@@ -74,12 +75,18 @@ describe('the message catalogues', () => {
 
     // Every catalogue the language menu offers has to resolve to a catalogue,
     // or picking that language silently leaves the app in English.
-    test('every offered language resolves to messages of its own', () => {
-        const codes = ['ca', 'de', 'el', 'es', 'fr', 'id', 'it', 'ja', 'nl', 'oc', 'pt-br', 'ru', 'sv', 'tr', 'zh-cn', 'zh-tw']
-
-        for (const code of codes) {
+    test('every offered language resolves to messages of its own', async () => {
+        for (const {code} of languages.filter((l) => l.code !== 'en')) {
+            // eslint-disable-next-line no-await-in-loop
+            await loadMessages(code)
             expect(getMessages(code)).not.toBe(en)
         }
         expect(getMessages('en')).toBe(en)
+    })
+
+    // Until a catalogue has arrived the page reads English rather than
+    // nothing, and it is fetched only when its language is asked for.
+    test('a language not yet loaded reads as English', () => {
+        expect(getMessages('no-such-language')).toBe(en)
     })
 })
