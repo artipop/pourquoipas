@@ -149,3 +149,20 @@ func TestWithoutTheAppTheBridgeSaysSo(t *testing.T) {
 		t.Fatalf("endpoint %q, base %q, err %v", endpoint, base, err)
 	}
 }
+
+// A token that does not open the feed is said as that, with where to get one.
+func TestTheBridgeSaysTheTokenIsWrong(t *testing.T) {
+	mux := http.NewServeMux()
+	mux.Handle(Path, NewHandler(fakeLists{}, func(got string) bool { return got == "t0k" }))
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	t.Setenv(EnvToken, "wrong")
+	t.Setenv(EnvURL, srv.URL)
+
+	inR, _ := io.Pipe()
+	_, outW := io.Pipe()
+	err := ServeStdio(context.Background(), t.TempDir(), inR, outW)
+	if err == nil || !strings.Contains(err.Error(), "токен фида не подходит") {
+		t.Fatalf("err: %v", err)
+	}
+}

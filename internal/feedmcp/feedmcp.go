@@ -261,10 +261,14 @@ func ServeStdio(ctx context.Context, dataDir string, in io.ReadCloser, out io.Wr
 	if err != nil {
 		return err
 	}
+	httpClient := &http.Client{Transport: headers{token: token, base: base}}
+	if err := checkAccess(ctx, httpClient, endpoint); err != nil {
+		return err
+	}
 	client := mcp.NewClient(&mcp.Implementation{Name: ServerName + "-bridge", Version: version}, nil)
 	upstream, err := client.Connect(ctx, &mcp.StreamableClientTransport{
 		Endpoint:   endpoint,
-		HTTPClient: &http.Client{Transport: headers{token: token, base: base}},
+		HTTPClient: httpClient,
 	}, nil)
 	if err != nil {
 		return fmt.Errorf("не удалось подключиться к XCIII: %w", err)
@@ -283,6 +287,27 @@ func ServeStdio(ctx context.Context, dataDir string, in io.ReadCloser, out io.Wr
 		})
 	}
 	return srv.Run(ctx, &mcp.IOTransport{Reader: in, Writer: out})
+}
+
+// checkAccess asks once, before the MCP session, whether the feed answers and
+// takes the token. The session would find out too, but only as "Forbidden" or
+// a dial error three wrappers deep, and the other application shows whatever
+// this process says last — so it had better be what to do about it.
+func checkAccess(ctx context.Context, client *http.Client, endpoint string) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, strings.NewReader("{}"))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("XCIII не отвечает по адресу %s: %w", endpoint, err)
+	}
+	resp.Body.Close()
+	if resp.StatusCode == http.StatusForbidden {
+		return errors.New("токен фида не подходит: выдайте новый в настройках XCIII (Прочее → Доступ для других приложений)")
+	}
+	return nil
 }
 
 type headers struct{ token, base string }
