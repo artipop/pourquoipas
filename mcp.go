@@ -8,9 +8,11 @@ import (
 	"io"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/artipop/xciii/internal/dokku"
+	"github.com/artipop/xciii/internal/feedmcp"
 	"github.com/artipop/xciii/internal/sources"
 	"github.com/artipop/xciii/internal/sources/inbox"
 	"github.com/artipop/xciii/internal/sources/kaiten"
@@ -26,7 +28,7 @@ func maybeRunMCP(args []string) {
 		return
 	}
 	if len(args) < 2 {
-		fmt.Fprintf(os.Stderr, "usage: xciii mcp %s|%s|%s\n", dokku.ServerName, inbox.ServerName, kaiten.ServerName)
+		fmt.Fprintf(os.Stderr, "usage: xciii mcp %s|%s|%s|%s\n", dokku.ServerName, inbox.ServerName, kaiten.ServerName, feedmcp.ServerName)
 		os.Exit(2)
 	}
 	var err error
@@ -37,6 +39,8 @@ func maybeRunMCP(args []string) {
 		err = runInboxMCP()
 	case kaiten.ServerName:
 		err = runKaitenMCP()
+	case feedmcp.ServerName:
+		err = runFeedMCP()
 	default:
 		fmt.Fprintf(os.Stderr, "unknown MCP server %q (there are %q, %q and %q)\n",
 			args[1], dokku.ServerName, inbox.ServerName, kaiten.ServerName)
@@ -68,6 +72,23 @@ func runKaitenMCP() error {
 		Site:  os.Getenv(kaiten.EnvSite),
 		Token: os.Getenv(kaiten.EnvToken),
 	})
+}
+
+// runFeedMCP bridges one stdio session to the column feed of the running app,
+// or of the server XCIII_URL names. It is what another application starts to
+// read a board (XXVI's xciii.json manifest).
+func runFeedMCP() error {
+	dir, err := appDataDir("", 0o755)
+	if err != nil {
+		return err
+	}
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	if err := feedmcp.ServeStdio(ctx, dir, os.Stdin, os.Stdout); err != nil &&
+		!errors.Is(err, context.Canceled) && !errors.Is(err, io.EOF) && !strings.Contains(err.Error(), "server is closing") {
+		return err
+	}
+	return nil
 }
 
 func runDokkuMCP() error {

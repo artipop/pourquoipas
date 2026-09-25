@@ -14,7 +14,7 @@ Sections:
   [Moving](../transfer.md);
 - **"Other"** — the instruction for conversations without a card, "Notify me
   when an agent is waiting", "Fill a new card's folder in when the board has
-  only one", and install details. The section is gone while the AI is off
+  only one", ["Access for other applications"](#access-for-other-applications) and install details. The section is gone while the AI is off
   (see [AI agents](#ai-agents)).
 
 Sections this build does not support are not shown: on a machine without
@@ -139,6 +139,31 @@ the app is used in more than one language, and this text is read by a model.
 Yours can be in any language — like the board's system prompt and the cards
 themselves it is passed through as it is, and the agent answers in the language
 of what it was given.
+
+## Access for other applications
+
+Another application can take the cards of one column as its own tasks — XXVI
+does: a column of a board becomes a source of its inbox. It needs a token for
+that.
+
+1. Open the "Other" section and, in **"Access for other applications"**, press
+   **"Issue a token"**.
+2. The token appears below. It is shown once: only its hash is kept. Press
+   **"Copy"** and paste the token into the other application.
+3. In the other application, name the board and the column as they are written
+   on the board.
+
+An application with the token can only read the cards of a column: the title,
+the column, the values of the fields and when the card last changed. It cannot
+move or change cards.
+
+- **"New token"** issues the token again; the previous one stops working at
+  once.
+- **"Revoke"** closes access to everything that had the token.
+
+The cards are served by the app itself, so it has to be running on this
+machine. When XCIII is closed, the other application says that XCIII is not
+running.
 
 ## The settings file
 

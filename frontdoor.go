@@ -8,6 +8,8 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/artipop/xciii/internal/feedmcp"
 )
 
 // The front door is the origin the page actually talks to — the webview in a
@@ -47,6 +49,11 @@ func newFrontDoor(wails, acpRoutes, ingest, board http.Handler, allowedHost stri
 	// sends no Origin, so the guard costs it nothing and still keeps a browser
 	// out.
 	mux.Handle("/acp/board/", sameOrigin(acpRoutes, allowedHost))
+	// The column feed (feedaccess.go): a local process or a program on
+	// another machine, authenticated by the feed token. Same origin guard,
+	// free for the same reason — neither sends an Origin — and it keeps a page
+	// on some website from reading the board with a token it guessed.
+	mux.Handle(feedmcp.Path, sameOrigin(acpRoutes, allowedHost))
 	// The one route here that is *not* same-origin, and it cannot be: what
 	// posts to it is a script, a webhook or a phone, so its Origin is somebody
 	// else's or absent. Its own token is what stands in for the check — see

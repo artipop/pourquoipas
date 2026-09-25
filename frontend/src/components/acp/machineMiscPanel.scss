@@ -38,6 +38,23 @@
         font-size: 12px;
     }
 
+    .MachineMiscPanel__token {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+
+        .MachineMiscPanel__hint {
+            flex-basis: 100%;
+        }
+
+        code {
+            flex: 1;
+            min-width: 0;
+            overflow-wrap: anywhere;
+        }
+    }
+
     .MachineMiscPanel__error {
         color: rgb(var(--error-text-rgb));
     }

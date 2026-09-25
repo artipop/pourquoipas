@@ -36,6 +36,11 @@ const MachineMiscPanel = () => {
     const [namedBranches, setNamedBranches] = createSignal(false)
     const [error, setError] = createSignal('')
 
+    // Access for other applications (feedaccess.go). The token is shown once,
+    // right after it is issued: only its hash is kept.
+    const [feedIssued, setFeedIssued] = createSignal(false)
+    const [feedToken, setFeedToken] = createSignal('')
+
     // Kept by the install rather than by Go: nothing on that side reads it —
     // the card is made by the page.
     const [prefillFolder, setPrefillFolder] = createSignal(UserSettings.prefillCardFolder)
@@ -57,6 +62,9 @@ const MachineMiscPanel = () => {
                 if (bindings?.GetAgentNamedBranches) {
                     setNamedBranches(await bindings.GetAgentNamedBranches())
                 }
+                if (bindings?.FeedTokenIssued) {
+                    setFeedIssued(await bindings.FeedTokenIssued())
+                }
             } catch (e: any) {
                 setError(String(e?.message || e))
             }
@@ -69,6 +77,25 @@ const MachineMiscPanel = () => {
         setNamedBranches(on)
         try {
             await bindings?.SetAgentNamedBranches?.(on)
+        } catch (e: any) {
+            setError(String(e?.message || e))
+        }
+    }
+
+    const issueFeedToken = async () => {
+        try {
+            setFeedToken(await bindings!.IssueFeedToken())
+            setFeedIssued(true)
+        } catch (e: any) {
+            setError(String(e?.message || e))
+        }
+    }
+
+    const revokeFeedToken = async () => {
+        try {
+            await bindings!.RevokeFeedToken()
+            setFeedToken('')
+            setFeedIssued(false)
         } catch (e: any) {
             setError(String(e?.message || e))
         }
@@ -183,6 +210,45 @@ const MachineMiscPanel = () => {
                     <p class='MachineMiscPanel__hint'>
                         {intl.formatMessage({id: 'Machine.prefill-folder-hint', defaultMessage: 'The card gets the folder the moment it is made, and it can be changed or cleared like any other field. A board that offers several folders is never filled in — that is a question only you can answer.'})}
                     </p>
+                </Show>
+
+                {/* Another application reading a column of a board as its own
+                    inbox — XXVI does. A setting of the install, because the
+                    token opens every board on it. */}
+                <Show when={Boolean(bindings?.IssueFeedToken)}>
+                    <div class='MachineMiscPanel__setting'>
+                        <div class='MachineMiscPanel__fact'>
+                            <span class='MachineMiscPanel__factName'>
+                                {intl.formatMessage({id: 'Machine.feed', defaultMessage: 'Access for other applications'})}
+                            </span>
+                            <span class='MachineMiscPanel__factValue'>
+                                {feedIssued() ?
+                                    intl.formatMessage({id: 'Machine.feed-on', defaultMessage: 'A token is issued: an application that has it can read the cards of a column. Read only — it cannot move or change them.'}) :
+                                    intl.formatMessage({id: 'Machine.feed-off', defaultMessage: 'Other applications — XXVI, for one — can take the cards of a column as tasks. They need a token to do it.'})}
+                            </span>
+                        </div>
+                        <Show when={feedIssued()}>
+                            <Button onClick={revokeFeedToken}>
+                                {intl.formatMessage({id: 'Machine.feed-revoke', defaultMessage: 'Revoke'})}
+                            </Button>
+                        </Show>
+                        <Button onClick={issueFeedToken}>
+                            {feedIssued() ?
+                                intl.formatMessage({id: 'Machine.feed-reissue', defaultMessage: 'New token'}) :
+                                intl.formatMessage({id: 'Machine.feed-issue', defaultMessage: 'Issue a token'})}
+                        </Button>
+                    </div>
+                    <Show when={feedToken()}>
+                        <div class='MachineMiscPanel__token'>
+                            <span class='MachineMiscPanel__hint'>
+                                {intl.formatMessage({id: 'Machine.feed-token', defaultMessage: 'The token, shown once — paste it into the other application now. The previous one no longer works.'})}
+                            </span>
+                            <code>{feedToken()}</code>
+                            <Button onClick={() => navigator.clipboard?.writeText(feedToken())}>
+                                {intl.formatMessage({id: 'Sources.copy', defaultMessage: 'Copy'})}
+                            </Button>
+                        </div>
+                    </Show>
                 </Show>
 
                 {/* The guide, not docs/flows.md: this line used to name a file

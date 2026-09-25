@@ -254,7 +254,9 @@ func main() {
 	uiEvents := newEventRoutes()
 	// The board tools an agent calls back through, on the same subtree.
 	boardTools := newBoardToolRoutes()
-	acpSockets := newACPSockets(uiEvents, boardTools.Handler())
+	// The column feed other applications read, given its board below.
+	feed := &feedRoutes{}
+	acpSockets := newACPSockets(uiEvents, boardTools.Handler(), feed.Handler())
 	// The ingest endpoint, on the same terms: it is a route on the front door,
 	// and it is handed its manager once the board exists.
 	ingest := newSourceRoutes()
@@ -289,6 +291,7 @@ func main() {
 		lists.remote = remote.lists
 	}
 	app.board = lists
+	feed.SetLists(lists)
 
 	// The tailnet door publishes the same front door to the user's own tailnet,
 	// so a phone can reach the board. Off unless its settings file says

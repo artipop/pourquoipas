@@ -156,6 +156,13 @@ export function EndPlanning(id: string): $CancellablePromise<void> {
 }
 
 /**
+ * FeedTokenIssued says whether a token is out, never what it is.
+ */
+export function FeedTokenIssued(): $CancellablePromise<boolean> {
+    return $Call.ByID(916667287);
+}
+
+/**
  * FindAgentWorkdir returns the registry entry for a path — whichever board it
  * belongs to — or "" for a path nobody has added. The screens that add a folder
  * ask first, so "already added elsewhere" can be offered as a choice instead of
@@ -278,6 +285,14 @@ export function InstallAgentAdapter(kind: string): $CancellablePromise<string> {
  */
 export function InstallUpdate(): $CancellablePromise<void> {
     return $Call.ByID(2443992793);
+}
+
+/**
+ * IssueFeedToken makes a new token for other applications and returns it —
+ * the one time it is ever shown. The previous one stops working.
+ */
+export function IssueFeedToken(): $CancellablePromise<string> {
+    return $Call.ByID(284893505);
 }
 
 /**

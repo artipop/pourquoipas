@@ -15,6 +15,8 @@ import (
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
+
+	"github.com/artipop/xciii/internal/feedmcp"
 )
 
 // origin is the front door of a desktop build. A Wails desktop app has no HTTP
@@ -75,6 +77,14 @@ func (o *origin) ServeAssets(assetHandler http.Handler) error {
 	o.tailnet.publish(func(allowedHost string) http.Handler {
 		return newFrontDoor(assetHandler, o.acp, o.ingest, o.board, allowedHost, o.session)
 	})
+	// The port is new every launch, so the column feed's bridge learns it
+	// from a file (internal/feedmcp). A server build has an address that does
+	// not move and is given it instead.
+	if dir, err := appDataDir("", 0o755); err == nil {
+		if err := feedmcp.WriteHandoff(dir, "http://"+o.host()); err != nil {
+			log.Printf("feed: the address was not written: %v", err)
+		}
+	}
 	return nil
 }
 
@@ -111,6 +121,9 @@ func quietOptionalCustomJS(next http.Handler) http.Handler {
 const frontDoorDrain = 2 * time.Second
 
 func (o *origin) Stop() error {
+	if dir, err := appDataDir("", 0o755); err == nil {
+		feedmcp.RemoveHandoff(dir)
+	}
 	if o.server != nil {
 		ctx, cancel := context.WithTimeout(context.Background(), frontDoorDrain)
 		defer cancel()

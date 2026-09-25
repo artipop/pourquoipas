@@ -8,6 +8,8 @@ import (
 
 	"encoding/json"
 	"github.com/gorilla/websocket"
+
+	"github.com/artipop/xciii/internal/feedmcp"
 )
 
 // The agent events a page listens to — a session changed state, a terminal
@@ -41,10 +43,13 @@ func newEventRoutes() *eventRoutes {
 // subtree: it is the other end of the MCP server an agent runs, and it is
 // authenticated by a grant token rather than by the origin the request came
 // from (boardapi.go).
-func newACPSockets(events, boardTools http.Handler) http.Handler {
+func newACPSockets(events, boardTools, feed http.Handler) http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle("/acp/events/ws", events)
 	mux.Handle("/acp/board/", boardTools)
+	// The column feed another application reads (feedaccess.go). Its own
+	// token, not a grant: the reader is a program a person connected.
+	mux.Handle(feedmcp.Path, feed)
 	return mux
 }
 

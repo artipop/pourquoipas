@@ -1,0 +1,151 @@
+package feedmcp
+
+import (
+	"context"
+	"encoding/json"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/modelcontextprotocol/go-sdk/mcp"
+
+	"github.com/artipop/xciii/internal/boardmodel"
+)
+
+type fakeLists struct{}
+
+func (fakeLists) Boards(context.Context) ([]boardmodel.BoardSummary, error) {
+	return []boardmodel.BoardSummary{
+		{ID: "b1", Title: "Работа", Columns: []boardmodel.ColumnOption{{Value: "Входящие"}, {Value: "Сегодня"}, {Value: "Готово"}}},
+		{ID: "b2", Title: "Дом"},
+	}, nil
+}
+
+func (fakeLists) BoardCards(_ context.Context, boardID string) ([]boardmodel.CardSummary, error) {
+	if boardID != "b1" {
+		return nil, nil
+	}
+	return []boardmodel.CardSummary{
+		{ID: "c1", Title: "Починить логин", Column: "Сегодня", UpdateAt: 1700, Properties: map[string]string{"Статус": "Сегодня", "Проект": "xxvi"}},
+		{ID: "c2", Title: "Позвонить", Column: "Входящие", UpdateAt: 1600},
+		{ID: "c3", Title: "Обновить зависимости", Column: "сегодня", UpdateAt: 1500},
+	}, nil
+}
+
+// A column is found whatever the case it was typed in, and only its cards come
+// back, each versioned by its last change.
+func TestAColumnListsItsCards(t *testing.T) {
+	cards, err := ColumnCards(context.Background(), fakeLists{}, "работа", "Сегодня", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(cards) != 2 || cards[0].ID != "c1" || cards[1].ID != "c3" {
+		t.Fatalf("cards: %+v", cards)
+	}
+	if cards[0].Updated != "1700" || cards[0].Board != "Работа" || cards[0].Properties["Проект"] != "xxvi" {
+		t.Fatalf("card: %+v", cards[0])
+	}
+	// No stable address, no link: a desktop's port is gone by the next launch.
+	if cards[0].URL != "" {
+		t.Fatalf("a link to a random port: %q", cards[0].URL)
+	}
+}
+
+// A name typed into another application's form is answered with the names
+// there are.
+func TestAMissingBoardOrColumnSaysWhatThereIs(t *testing.T) {
+	_, err := ColumnCards(context.Background(), fakeLists{}, "Работа", "Завтра", "")
+	if err == nil || !strings.Contains(err.Error(), "Входящие, Сегодня, Готово") {
+		t.Fatalf("err: %v", err)
+	}
+	_, err = ColumnCards(context.Background(), fakeLists{}, "Хобби", "", "")
+	if err == nil || !strings.Contains(err.Error(), "Работа, Дом") {
+		t.Fatalf("err: %v", err)
+	}
+}
+
+func serve(t *testing.T, token string) *httptest.Server {
+	t.Helper()
+	srv := httptest.NewServer(NewHandler(fakeLists{}, func(got string) bool { return token != "" && got == token }))
+	t.Cleanup(srv.Close)
+	return srv
+}
+
+// Without the token a person issued, the feed says nothing at all.
+func TestTheFeedWantsItsToken(t *testing.T) {
+	srv := serve(t, "t0k")
+	resp, err := http.Post(srv.URL, "application/json", strings.NewReader(`{}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusForbidden {
+		t.Fatalf("status: %d", resp.StatusCode)
+	}
+}
+
+// The bridge end to end: stdio in, the feed over HTTP behind it, and the links
+// made against the address given — because it was given, it is stable.
+func TestTheBridgeReadsTheFeed(t *testing.T) {
+	mux := http.NewServeMux()
+	mux.Handle(Path, NewHandler(fakeLists{}, func(got string) bool { return got == "t0k" }))
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	t.Setenv(EnvToken, "t0k")
+	t.Setenv(EnvURL, srv.URL+"/")
+	endpoint, base, err := Endpoint(t.TempDir())
+	if err != nil || base != srv.URL || endpoint != srv.URL+Path {
+		t.Fatalf("endpoint %q, base %q, err %v", endpoint, base, err)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	inR, inW := io.Pipe()
+	outR, outW := io.Pipe()
+	done := make(chan error, 1)
+	go func() { done <- ServeStdio(ctx, t.TempDir(), inR, outW) }()
+
+	client := mcp.NewClient(&mcp.Implementation{Name: "test", Version: "1"}, nil)
+	session, err := client.Connect(ctx, &mcp.IOTransport{Reader: outR, Writer: inW}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer session.Close()
+	res, err := session.CallTool(ctx, &mcp.CallToolParams{
+		Name: "list_column_cards", Arguments: map[string]any{"board": "Работа", "column": "Входящие"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.IsError {
+		t.Fatalf("refused: %+v", res.Content[0])
+	}
+	var out struct {
+		Cards []Card `json:"cards"`
+	}
+	if err := json.Unmarshal([]byte(res.Content[0].(*mcp.TextContent).Text), &out); err != nil {
+		t.Fatal(err)
+	}
+	if len(out.Cards) != 1 || out.Cards[0].URL != srv.URL+"/team/0/b1/0/c2" {
+		t.Fatalf("cards: %+v", out.Cards)
+	}
+}
+
+// A desktop app not running is a sentence, not a connection error.
+func TestWithoutTheAppTheBridgeSaysSo(t *testing.T) {
+	t.Setenv(EnvURL, "")
+	if _, _, err := Endpoint(t.TempDir()); err == nil || !strings.Contains(err.Error(), "не запущен") {
+		t.Fatalf("err: %v", err)
+	}
+	dir := t.TempDir()
+	if err := WriteHandoff(dir, "http://127.0.0.1:5555"); err != nil {
+		t.Fatal(err)
+	}
+	endpoint, base, err := Endpoint(dir)
+	if err != nil || endpoint != "http://127.0.0.1:5555"+Path || base != "" {
+		t.Fatalf("endpoint %q, base %q, err %v", endpoint, base, err)
+	}
+}
