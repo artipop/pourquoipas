@@ -28,9 +28,9 @@ type ExitError struct {
 func (e *ExitError) Error() string {
 	out := strings.TrimSpace(e.Output)
 	if out == "" {
-		return fmt.Sprintf("команда завершилась с кодом %d", e.Code)
+		return fmt.Sprintf("the command exited with code %d", e.Code)
 	}
-	return fmt.Sprintf("команда завершилась с кодом %d: %s", e.Code, out)
+	return fmt.Sprintf("the command exited with code %d: %s", e.Code, out)
 }
 
 func (e *ExitError) Unwrap() error { return e.Err }
@@ -74,7 +74,7 @@ func New(t Target, project, branch string) (*Client, error) {
 		return nil, err
 	}
 	if t.BaseApp == "" {
-		return nil, fmt.Errorf("у цели не определено имя приложения: оно берётся из названия папки, задайте его явно (baseApp)")
+		return nil, fmt.Errorf("the target has no app name: it is taken from the folder's name, so set it explicitly (baseApp)")
 	}
 	return &Client{Target: t, Project: project, Branch: strings.TrimSpace(branch)}, nil
 }
@@ -111,7 +111,7 @@ func (c *Client) dokku(ctx context.Context, args ...string) (string, error) {
 	if err != nil {
 		var ee *ExitError
 		if errors.As(err, &ee) && ee.Code == sshConnectFailed {
-			return out, fmt.Errorf("не удалось подключиться к %s по ssh: %s", c.Target.SSHHost, strings.TrimSpace(firstLines(out, 5)))
+			return out, fmt.Errorf("could not connect to %s over ssh: %s", c.Target.SSHHost, strings.TrimSpace(firstLines(out, 5)))
 		}
 		return out, err
 	}
@@ -143,12 +143,12 @@ func (c *Client) EnsureApp(ctx context.Context, slug string) (created bool, err 
 	}
 	if !exists {
 		if _, err := c.dokku(ctx, "apps:create", app); err != nil {
-			return false, fmt.Errorf("не удалось создать приложение %s: %w", app, err)
+			return false, fmt.Errorf("could not create the app %s: %w", app, err)
 		}
 		created = true
 	}
 	if _, err := c.dokku(ctx, "domains:set", app, c.Target.Domain(slug)); err != nil {
-		return created, fmt.Errorf("не удалось назначить домен %s: %w", c.Target.Domain(slug), err)
+		return created, fmt.Errorf("could not assign the domain %s: %w", c.Target.Domain(slug), err)
 	}
 	return created, nil
 }
@@ -172,10 +172,10 @@ func (c *Client) Deploy(ctx context.Context, branch string) (Result, error) {
 		branch = c.Branch
 	}
 	if branch == "" {
-		return Result{}, fmt.Errorf("не указана ветка для деплоя")
+		return Result{}, fmt.Errorf("no branch to deploy was given")
 	}
 	if c.Project == "" {
-		return Result{}, fmt.Errorf("не задана локальная папка")
+		return Result{}, fmt.Errorf("no local folder is set")
 	}
 	slug := AppSlug(branch)
 	app := c.Target.AppName(slug)
@@ -192,9 +192,9 @@ func (c *Client) Deploy(ctx context.Context, branch string) (Result, error) {
 	res.PushLog = lastLines(out, 120)
 	if err != nil {
 		if ctx.Err() != nil {
-			return res, fmt.Errorf("деплой не уложился в отведённое время (%s); sessionTimeoutMinutes в конфиге агента должен быть больше: %w", c.Target.Timeout(), err)
+			return res, fmt.Errorf("the deploy did not finish in its time (%s); sessionTimeoutMinutes in the agent's config has to be larger: %w", c.Target.Timeout(), err)
 		}
-		return res, fmt.Errorf("git push в %s не прошёл: %w", app, err)
+		return res, fmt.Errorf("git push to %s failed: %w", app, err)
 	}
 
 	return res, nil
@@ -267,11 +267,11 @@ func CurrentBranch(ctx context.Context, run Runner, project string) (string, err
 	}
 	out, err := run(ctx, project, nil, "git", "rev-parse", "--abbrev-ref", "HEAD")
 	if err != nil {
-		return "", fmt.Errorf("не удалось определить текущую ветку в %s: %w", project, err)
+		return "", fmt.Errorf("could not tell the current branch in %s: %w", project, err)
 	}
 	branch := strings.TrimSpace(out)
 	if branch == "" || branch == "HEAD" {
-		return "", fmt.Errorf("папка %s не на ветке (detached HEAD) — укажи ветку явно", project)
+		return "", fmt.Errorf("the folder %s is not on a branch (detached HEAD): give the branch explicitly", project)
 	}
 	return branch, nil
 }

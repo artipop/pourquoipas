@@ -12,6 +12,7 @@ import {createLoader} from '../../hooks/loader'
 
 import {goApp} from '../../goBridge'
 import {aiEnabled} from '../../aiSwitch'
+import {goError} from '../../goMessages'
 
 import './boardPromptsDialog.scss'
 
@@ -48,7 +49,7 @@ const BoardPromptsDialog = (props: Props) => {
         try {
             return {text: bindings?.GetBoardPrompt ? await bindings.GetBoardPrompt(props.board.id) : '', error: ''}
         } catch (e) {
-            return {text: '', error: String(e)}
+            return {text: '', error: goError(intl, e)}
         }
     }, undefined as {text: string, error: string} | undefined)
 
@@ -69,7 +70,7 @@ const BoardPromptsDialog = (props: Props) => {
             await bindings.SetBoardPrompt(props.board.id, prompt())
             props.onClose()
         } catch (e) {
-            setSaveError(String(e))
+            setSaveError(goError(intl, e))
         } finally {
             setSaving(false)
         }

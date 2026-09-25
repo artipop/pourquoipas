@@ -5,6 +5,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+
+	"github.com/artipop/xciii/internal/apperr"
 )
 
 // Store keeps what the sorter has read about each board and what it decided
@@ -71,13 +73,14 @@ const (
 
 // Decision is one line of the sorter's log.
 type Decision struct {
-	ID        string    `json:"id"`
-	CardID    string    `json:"cardId,omitempty"`
-	CardTitle string    `json:"cardTitle,omitempty"`
-	BoardID   string    `json:"boardId,omitempty"`
-	Outcome   string    `json:"outcome"`
-	Reason    string    `json:"reason,omitempty"`
-	At        time.Time `json:"at"`
+	ID        string `json:"id"`
+	CardID    string `json:"cardId,omitempty"`
+	CardTitle string `json:"cardTitle,omitempty"`
+	BoardID   string `json:"boardId,omitempty"`
+	Outcome   string `json:"outcome"`
+	// Reason is the agent's own words, or a code where this app wrote it.
+	Reason *apperr.Message `json:"reason,omitempty"`
+	At     time.Time       `json:"at"`
 }
 
 // Record appends a decision and trims the log to decisionsKept.
@@ -94,9 +97,14 @@ func (s *Store) Record(d Decision) error {
 	if d.At.IsZero() {
 		d.At = time.Now()
 	}
-	if _, err := s.db.Exec(`INSERT INTO inbox_sort (id, card_id, card_title, board_id, outcome, reason, created_at)
-		VALUES (?,?,?,?,?,?,?)`,
-		d.ID, nullable(d.CardID), nullable(d.CardTitle), nullable(d.BoardID), d.Outcome, nullable(d.Reason), d.At.UnixMilli()); err != nil {
+	var reason apperr.Message
+	if d.Reason != nil {
+		reason = *d.Reason
+	}
+	text, code, args := reason.Columns()
+	if _, err := s.db.Exec(`INSERT INTO inbox_sort (id, card_id, card_title, board_id, outcome, reason, reason_code, reason_args, created_at)
+		VALUES (?,?,?,?,?,?,?,?,?)`,
+		d.ID, nullable(d.CardID), nullable(d.CardTitle), nullable(d.BoardID), d.Outcome, nullable(text), code, args, d.At.UnixMilli()); err != nil {
 		return err
 	}
 	_, err := s.db.Exec(`DELETE FROM inbox_sort WHERE id NOT IN (SELECT id FROM inbox_sort ORDER BY id DESC LIMIT ?)`, decisionsKept)
@@ -113,7 +121,7 @@ func (s *Store) Decisions(limit int) ([]Decision, error) {
 		limit = 50
 	}
 	rows, err := s.db.Query(`SELECT id, COALESCE(card_id,''), COALESCE(card_title,''), COALESCE(board_id,''),
-		outcome, COALESCE(reason,''), created_at FROM inbox_sort ORDER BY id DESC LIMIT ?`, limit)
+		outcome, COALESCE(reason,''), COALESCE(reason_code,''), COALESCE(reason_args,''), created_at FROM inbox_sort ORDER BY id DESC LIMIT ?`, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -122,8 +130,16 @@ func (s *Store) Decisions(limit int) ([]Decision, error) {
 	for rows.Next() {
 		var d Decision
 		var at int64
-		if err := rows.Scan(&d.ID, &d.CardID, &d.CardTitle, &d.BoardID, &d.Outcome, &d.Reason, &at); err != nil {
+		var text, code, args string
+		if err := rows.Scan(&d.ID, &d.CardID, &d.CardTitle, &d.BoardID, &d.Outcome, &text, &code, &args, &at); err != nil {
 			return nil, err
+		}
+		if text != "" || code != "" {
+			reason, err := apperr.FromColumns(text, code, args)
+			if err != nil {
+				return nil, err
+			}
+			d.Reason = &reason
 		}
 		d.At = time.UnixMilli(at)
 		out = append(out, d)

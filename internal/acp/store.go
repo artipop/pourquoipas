@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/artipop/xciii/internal/apperr"
 	"github.com/google/uuid"
 )
 
@@ -176,10 +177,12 @@ func (s *Store) ensureRefs(cardID, boardID string) error {
 // agent that could not start. One per card — a newer reason replaces the old
 // one, and any progress deletes it.
 type StallRecord struct {
-	CardID    string    `json:"cardId"`
-	NodeID    string    `json:"nodeId,omitempty"`
-	Reason    string    `json:"reason"`
-	CreatedAt time.Time `json:"createdAt"`
+	CardID string `json:"cardId"`
+	NodeID string `json:"nodeId,omitempty"`
+	// Reason is a code and its values, worded by the page; its English is kept
+	// beside them for a page that does not know the code.
+	Reason    apperr.Message `json:"reason"`
+	CreatedAt time.Time      `json:"createdAt"`
 }
 
 // SetStall records the reason, replacing whatever was there.
@@ -187,11 +190,13 @@ func (s *Store) SetStall(r StallRecord) error {
 	if err := s.ensureCardRef(r.CardID, ""); err != nil {
 		return err
 	}
-	_, err := s.exec(`INSERT INTO card_stall (card_id, node_id, reason, created_at)
-		VALUES (?,?,?,?)
+	text, code, args := r.Reason.Columns()
+	_, err := s.exec(`INSERT INTO card_stall (card_id, node_id, reason, reason_code, reason_args, created_at)
+		VALUES (?,?,?,?,?,?)
 		ON CONFLICT(card_id) DO UPDATE SET
-			node_id=excluded.node_id, reason=excluded.reason, created_at=excluded.created_at`,
-		r.CardID, r.NodeID, r.Reason, time.Now().UnixMilli())
+			node_id=excluded.node_id, reason=excluded.reason, reason_code=excluded.reason_code,
+			reason_args=excluded.reason_args, created_at=excluded.created_at`,
+		r.CardID, r.NodeID, text, code, args, time.Now().UnixMilli())
 	return err
 }
 
@@ -208,14 +213,19 @@ func (s *Store) ClearStall(cardID string) (bool, error) {
 
 // Stall returns the card's recorded reason, if it has one.
 func (s *Store) Stall(cardID string) (StallRecord, bool, error) {
-	row := s.queryRow(`SELECT card_id, COALESCE(node_id,''), reason, created_at FROM card_stall WHERE card_id=?`, cardID)
+	row := s.queryRow(`SELECT card_id, COALESCE(node_id,''), reason, COALESCE(reason_code,''), COALESCE(reason_args,''), created_at
+		FROM card_stall WHERE card_id=?`, cardID)
 	var r StallRecord
 	var created int64
-	err := row.Scan(&r.CardID, &r.NodeID, &r.Reason, &created)
+	var text, code, args string
+	err := row.Scan(&r.CardID, &r.NodeID, &text, &code, &args, &created)
 	if err == sql.ErrNoRows {
 		return StallRecord{}, false, nil
 	}
 	if err != nil {
+		return StallRecord{}, false, err
+	}
+	if r.Reason, err = apperr.FromColumns(text, code, args); err != nil {
 		return StallRecord{}, false, err
 	}
 	r.CreatedAt = time.UnixMilli(created)

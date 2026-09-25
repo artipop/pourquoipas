@@ -16,6 +16,8 @@ import {sendFlashMessage} from '../flashMessages'
 
 import {goApp} from '../../goBridge'
 
+import {goError} from '../../goMessages'
+
 import AgentQuickAdd from './agentQuickAdd'
 import {checkSetupAnswer, createSetupPlan, recordSetupStep, SetupStep, SetupStepKind, stepRequires} from './boardSetup'
 import {Workdir, fieldNames, syncWorkdirsToBoard, useWorkdirHere} from './workdirSync'
@@ -146,7 +148,7 @@ const BoardSetupWizard = (props: Props) => {
                 setRegistry(loaded)
             }
         } catch (e) {
-            setError(String(e))
+            setError(goError(intl, e))
         }
     }
 
@@ -182,7 +184,7 @@ const BoardSetupWizard = (props: Props) => {
             refreshPlan()
             setStep(after(answering))
         } catch (e) {
-            setError(String(e))
+            setError(goError(intl, e))
         } finally {
             setBusy(false)
         }
@@ -211,7 +213,7 @@ const BoardSetupWizard = (props: Props) => {
                 setTaken(JSON.parse(await bindings.FindAgentWorkdir?.(picked) || 'null'))
             }
         } catch (e) {
-            setError(String(e))
+            setError(goError(intl, e))
         }
     }
 
@@ -262,7 +264,7 @@ const BoardSetupWizard = (props: Props) => {
             try {
                 await bindings.SeedBoardAutomation(props.board.id)
             } catch (e) {
-                setError(String(e))
+                setError(goError(intl, e))
                 return
             }
         }

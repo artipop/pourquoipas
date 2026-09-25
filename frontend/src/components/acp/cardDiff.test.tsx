@@ -112,12 +112,12 @@ describe('components/acp/cardDiff', () => {
                 cardId: 'card-1',
                 committed: [],
                 uncommitted: [],
-                reason: 'по этой карточке ещё никто не работал: ни ветки, ни рабочей копии',
+                reason: {code: 'carddiff.not-started', text: 'Nobody has worked on this card yet'},
             })),
         })
         render(() => wrapIntl(() => <CardDiffView cardId='card-1'/>))
 
-        const note = await screen.findByText(/ещё никто не работал/)
+        const note = await screen.findByText(/Nobody has worked on this card yet: there is no branch/)
         expect(note).toHaveClass('CardDiff__empty')
     })
 

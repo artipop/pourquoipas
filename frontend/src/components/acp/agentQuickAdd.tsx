@@ -12,6 +12,8 @@ import {createLoader} from '../../hooks/loader'
 
 import {goApp} from '../../goBridge'
 
+import {goMessage} from '../../goMessages'
+
 import {AGENT_KINDS, AdapterStatus} from './agentsPanel'
 import {syncAgentsToBoard} from './agentSync'
 
@@ -122,7 +124,7 @@ const AgentQuickAdd = (props: Props) => {
 
             <Show when={adapter() && !adapter()!.ready}>
                 <div class='AgentQuickAdd__warning'>
-                    <span>{adapter()!.detail}</span>
+                    <span>{goMessage(intl, adapter()!.detail)}</span>
                     <Show when={adapter()!.package}>
                         <Button
                             onClick={installAdapter}

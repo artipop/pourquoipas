@@ -325,7 +325,7 @@ func boardFK(table string) FK {
 func agentSession() Table {
 	return Table{
 		Name: "agent_session",
-		Why: "A run of an agent over ACP. One process, one turn, one verdict.",
+		Why:  "A run of an agent over ACP. One process, one turn, one verdict.",
 		Columns: []Column{
 			{Name: "id", Type: ID()},
 			{Name: "card_id", Type: ID(), Null: true,
@@ -418,7 +418,12 @@ func cardStall() Table {
 		Columns: []Column{
 			{Name: "card_id", Type: ID()},
 			{Name: "node_id", Type: Name(64), Null: true},
+			// reason is the English; the page words reason_code with the
+			// values in reason_args (a JSON object), so the stall reads in the
+			// language of whoever looks (docs/i18n.md).
 			{Name: "reason", Type: Text()},
+			{Name: "reason_code", Type: Name(64), Null: true},
+			{Name: "reason_args", Type: Text(), Null: true},
 			{Name: "created_at", Type: Millis()},
 		},
 		PK:  []string{"card_id"},
@@ -588,7 +593,11 @@ func sourceEvent() Table {
 			{Name: "rule", Type: Name(100), Null: true},
 			{Name: "outcome", Type: Name(16)},
 			{Name: "card_id", Type: ID(), Null: true},
+			// detail is the English; detail_code and detail_args (a JSON
+			// object) are what the page words, for what this app wrote.
 			{Name: "detail", Type: Text(), Null: true},
+			{Name: "detail_code", Type: Name(64), Null: true},
+			{Name: "detail_args", Type: Text(), Null: true},
 			{Name: "created_at", Type: Millis()},
 		},
 		PK: []string{"id"},
@@ -647,6 +656,8 @@ func inboxSort() Table {
 				Why: "Where it went. NULL for a card left in the inbox."},
 			{Name: "outcome", Type: Name(16)},
 			{Name: "reason", Type: Text(), Null: true},
+			{Name: "reason_code", Type: Name(64), Null: true},
+			{Name: "reason_args", Type: Text(), Null: true},
 			{Name: "created_at", Type: Millis()},
 		},
 		PK: []string{"id"},

@@ -29,6 +29,8 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/artipop/xciii/internal/apperr"
 )
 
 // Config is one provider, as a plugin's manifest describes it.
@@ -62,18 +64,18 @@ func (t Token) Expired() bool {
 // browser, so a manifest that cannot work says so at once.
 func (c Config) Validate() error {
 	if strings.TrimSpace(c.ClientID) == "" {
-		return fmt.Errorf("в описании плагина нет clientId")
+		return fmt.Errorf("the plugin's description has no clientId")
 	}
 	for name, raw := range map[string]string{"authorizationUrl": c.AuthURL, "tokenUrl": c.TokenURL} {
 		u, err := url.Parse(strings.TrimSpace(raw))
 		if err != nil || u.Scheme == "" || u.Host == "" {
-			return fmt.Errorf("%s должен быть полным адресом, а не %q", name, raw)
+			return fmt.Errorf("%s has to be a full address, not %q", name, raw)
 		}
 		if u.Scheme != "https" && u.Hostname() != "127.0.0.1" && u.Hostname() != "localhost" {
 			// A provider reached over plain http would carry the code and the
 			// token in the clear. Loopback is allowed because that is how this
 			// is tested.
-			return fmt.Errorf("%s должен быть https", name)
+			return fmt.Errorf("%s has to be https", name)
 		}
 	}
 	return nil
@@ -96,7 +98,7 @@ func Authorize(ctx context.Context, cfg Config, openURL func(string) error) (Tok
 	// port on it, which is the whole point of the native-app flow.
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
-		return Token{}, fmt.Errorf("не удалось открыть локальный порт для ответа: %w", err)
+		return Token{}, fmt.Errorf("could not open a local port for the answer: %w", err)
 	}
 	defer listener.Close()
 	redirect := fmt.Sprintf("http://127.0.0.1:%d/callback", listener.Addr().(*net.TCPAddr).Port)
@@ -120,14 +122,14 @@ func Authorize(ctx context.Context, cfg Config, openURL func(string) error) (Tok
 	}()
 
 	if err := openURL(authorizeURL(cfg, redirect, state, verifier)); err != nil {
-		return Token{}, fmt.Errorf("не удалось открыть браузер: %w", err)
+		return Token{}, apperr.Wrap(err, "oauth.no-browser", "Could not open the browser")
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, authTimeout)
 	defer cancel()
 	select {
 	case <-ctx.Done():
-		return Token{}, fmt.Errorf("вход не был завершён за %s", authTimeout)
+		return Token{}, apperr.New("oauth.timeout", "The login was not finished within {timeout}", "timeout", authTimeout.String())
 	case answer := <-answers:
 		if answer.err != nil {
 			return Token{}, answer.err
@@ -144,7 +146,7 @@ func Authorize(ctx context.Context, cfg Config, openURL func(string) error) (Tok
 // Refresh trades a refresh token for a new access token.
 func Refresh(ctx context.Context, cfg Config, refreshToken string) (Token, error) {
 	if strings.TrimSpace(refreshToken) == "" {
-		return Token{}, fmt.Errorf("нет refresh-токена — нужен повторный вход")
+		return Token{}, apperr.New("oauth.no-refresh", "There is no refresh token: log in again")
 	}
 	token, err := exchange(ctx, cfg, url.Values{
 		"grant_type":    {"refresh_token"},
@@ -180,20 +182,20 @@ func callbackHandler(state string, answers chan<- callback) http.Handler {
 		case query.Get("state") != state:
 			// The one check that matters here: without it any page could send
 			// the browser to this port with a code of its own.
-			answer = callback{err: fmt.Errorf("ответ пришёл не на наш запрос")}
+			answer = callback{err: fmt.Errorf("the answer is not to our request")}
 		case query.Get("error") != "":
-			answer = callback{err: fmt.Errorf("сервис отказал: %s", firstNonEmpty(
+			answer = callback{err: fmt.Errorf("the service refused: %s", firstNonEmpty(
 				query.Get("error_description"), query.Get("error")))}
 		case answer.code == "":
-			answer = callback{err: fmt.Errorf("сервис не вернул код")}
+			answer = callback{err: fmt.Errorf("the service returned no code")}
 		}
 
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		if answer.err != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			fmt.Fprintf(w, page, "Не получилось", answer.err.Error())
+			fmt.Fprintf(w, page, "Login failed", answer.err.Error())
 		} else {
-			fmt.Fprintf(w, page, "Готово", "Можно закрыть эту вкладку и вернуться в приложение.")
+			fmt.Fprintf(w, page, "Done", "You can close this tab and go back to the app.")
 		}
 
 		select {
@@ -206,7 +208,7 @@ func callbackHandler(state string, answers chan<- callback) http.Handler {
 // The page the person is left looking at. Plain, self-contained and in their
 // language: it is the last thing the flow shows and the only part of it they
 // see of ours.
-const page = `<!doctype html><html lang="ru"><meta charset="utf-8">
+const page = `<!doctype html><html lang="en"><meta charset="utf-8">
 <title>%[1]s</title>
 <body style="font: 16px/1.5 system-ui, sans-serif; margin: 4rem auto; max-width: 30rem; color: #222">
 <h1 style="font-size: 1.25rem">%[1]s</h1><p>%[2]s</p>`
@@ -249,7 +251,7 @@ func exchange(ctx context.Context, cfg Config, form url.Values) (Token, error) {
 
 	resp, err := (&http.Client{Timeout: 30 * time.Second}).Do(req)
 	if err != nil {
-		return Token{}, fmt.Errorf("не удалось получить токен: %w", err)
+		return Token{}, fmt.Errorf("could not get a token: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -261,16 +263,16 @@ func exchange(ctx context.Context, cfg Config, form url.Values) (Token, error) {
 		ErrorDescription string `json:"error_description"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
-		return Token{}, fmt.Errorf("сервис ответил не тем, чего ждали (%s)", resp.Status)
+		return Token{}, fmt.Errorf("the service answered something unexpected (%s)", resp.Status)
 	}
 	if body.Error != "" {
-		return Token{}, fmt.Errorf("сервис отказал: %s", firstNonEmpty(body.ErrorDescription, body.Error))
+		return Token{}, fmt.Errorf("the service refused: %s", firstNonEmpty(body.ErrorDescription, body.Error))
 	}
 	if resp.StatusCode >= 400 {
-		return Token{}, fmt.Errorf("сервис ответил %s", resp.Status)
+		return Token{}, fmt.Errorf("the service answered %s", resp.Status)
 	}
 	if body.AccessToken == "" {
-		return Token{}, fmt.Errorf("сервис не вернул токен")
+		return Token{}, fmt.Errorf("the service returned no token")
 	}
 
 	token := Token{AccessToken: body.AccessToken, RefreshToken: body.RefreshToken}

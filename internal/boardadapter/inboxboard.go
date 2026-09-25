@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"sync/atomic"
 
+	"github.com/artipop/xciii/internal/boardmodel"
 	"github.com/artipop/xciii/server/app"
 	"github.com/artipop/xciii/server/model"
 	"github.com/artipop/xciii/server/utils"
@@ -19,8 +21,8 @@ import (
 // had looked at it, which is the decision the inbox exists to postpone.
 
 // InboxBoardProperty marks the board the app made to be the inbox. It is found
-// by this and never by title: a person may rename the board, and "Входящие" is
-// not a key (Russian never is).
+// by this and never by title: a person may rename the board, and its name is
+// not a key in any language.
 const InboxBoardProperty = "xciiiInbox"
 
 // The inbox's words, in the source language like the template files, and
@@ -35,7 +37,17 @@ const (
 )
 
 // inboxWords is what the inbox says to a person, for the catalogue guard.
-var inboxWords = []string{inboxTitle, inboxAuthor, inboxCreated}
+var inboxWords = []string{inboxTitle, inboxAuthor, inboxCreated, boardmodel.LinkPropertyTitle}
+
+// boardLanguage is the language the app gives names in, as main last told
+// EnsureInboxBoard or RelabelInboxBoard. A field made later — the link a source
+// brings — is named in it too.
+var boardLanguage atomic.Value
+
+func namingWords() func(string) string {
+	lang, _ := boardLanguage.Load().(string)
+	return TemplateWords(lang)
+}
 
 // inboxViewType is what the inbox is drawn as: a kanban grouped by who brought
 // the card, so each source is a column — the question a person has of an inbox
@@ -52,6 +64,9 @@ var inboxBoardMu sync.Mutex
 // are the person's; a later caller that finds none — the startup call failed —
 // makes it in the source language rather than losing what arrived.
 func EnsureInboxBoard(a *app.App, lang string) (string, error) {
+	if lang != "" {
+		boardLanguage.Store(lang)
+	}
 	inboxBoardMu.Lock()
 	defer inboxBoardMu.Unlock()
 	if id, ok, err := findInboxBoard(a); err != nil || ok {
@@ -165,6 +180,7 @@ var inboxPropertyWords = map[string]string{
 // the app's names, in any language a catalogue has: a board, view or field the
 // person renamed keeps their name.
 func RelabelInboxBoard(a *app.App, lang string) error {
+	boardLanguage.Store(lang)
 	inboxBoardMu.Lock()
 	defer inboxBoardMu.Unlock()
 	id, ok, err := findInboxBoard(a)

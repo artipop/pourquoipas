@@ -12,6 +12,8 @@ import Dialog from '../dialog'
 import {goApp} from '../../goBridge'
 import {aiEnabled} from '../../aiSwitch'
 
+import {goError} from '../../goMessages'
+
 import {
     BoardSetup,
     BoardSetupStep,
@@ -68,7 +70,7 @@ const TemplateEditor = (props: Props) => {
             try {
                 setDefs(JSON.parse(await bindings.ListSetupSteps()) || [])
             } catch (e) {
-                setError(String(e))
+                setError(goError(intl, e))
             }
         })()
     })
@@ -113,7 +115,7 @@ const TemplateEditor = (props: Props) => {
             props.onSaved?.()
             props.onClose()
         } catch (e) {
-            setError(String(e))
+            setError(goError(intl, e))
         }
     }
 

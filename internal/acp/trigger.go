@@ -1,13 +1,14 @@
 package acp
 
 import (
-	"errors"
 	"fmt"
 	"time"
+
+	"github.com/artipop/xciii/internal/apperr"
 )
 
 // errSwitchedOff is what a start refused by the switch says.
-var errSwitchedOff = errors.New("ИИ в приложении выключен")
+var errSwitchedOff = apperr.New("ai.off", "AI is switched off in the app")
 
 // triggerLoop consumes normalized card-move events and applies the trigger
 // policy: enter the trigger column → start a session (idempotently); leave it
@@ -74,7 +75,7 @@ func (m *Manager) handleEvent(ev CardMoved) {
 	s, err := m.startSession(ev, startOptions{agent: agent})
 	if err != nil {
 		m.log.Warn("acp: session not started", "card", ev.CardID, "err", err)
-		m.stallCard(ev.CardID, ev.ToColumn.OptionID, fmt.Sprintf("агент не запущен: %v", err))
+		m.stallCard(ev.CardID, ev.ToColumn.OptionID, apperr.MessageOf(err))
 		return
 	}
 	m.log.Info("acp: session started", "session", s.ID, "card", ev.CardID,
@@ -127,7 +128,7 @@ func (m *Manager) claimIdempotent(ev CardMoved, kind string) bool {
 // let go of its folder, so the next one does not collide with it over a working
 // copy. A card with nothing running costs nothing here.
 func (m *Manager) cancelForMove(ev CardMoved) {
-	if !m.CancelSessionForCard(ev.CardID, "карточку перенесли в другую колонку") {
+	if !m.CancelSessionForCard(ev.CardID, "the card was moved to another column") {
 		return
 	}
 	m.log.Info("acp: session cancelled by card move", "card", ev.CardID)
@@ -153,7 +154,7 @@ const cardIdleWait = 20 * time.Second
 // just not by us, and that is a state of affairs, not an event worth keeping.
 func (m *Manager) sayCardIsTaken(cardID, nodeID string, err AssignedToHumanError) {
 	m.log.Info("acp: card is assigned to a person, no agent started", "card", cardID, "assignee", err.Who)
-	m.stallCard(cardID, nodeID, fmt.Sprintf(
-		"%s — агент не запускается. Снимите исполнителя или назначьте агента, если работу должен взять он.",
-		err.Error()))
+	m.stallCard(cardID, nodeID, apperr.Say("stall.assigned-to-person",
+		"The card is assigned to {who}, so no agent starts. Remove the assignee, or assign an agent if one should take the work",
+		"who", err.Who))
 }

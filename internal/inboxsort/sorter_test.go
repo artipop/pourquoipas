@@ -148,7 +148,7 @@ func TestACardIsCarriedToTheBoardTheAgentChose(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(log) != 1 || log[0].Outcome != OutcomeMoved || log[0].BoardID != "home" || log[0].Reason != "Счёт за квартиру" {
+	if len(log) != 1 || log[0].Outcome != OutcomeMoved || log[0].BoardID != "home" || log[0].Reason == nil || log[0].Reason.Text != "Счёт за квартиру" {
 		t.Fatalf("the decision is not in the log as it was made: %+v", log)
 	}
 }

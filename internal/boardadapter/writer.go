@@ -135,7 +135,7 @@ func (w *Writer) MoveCardByOptionName(ctx context.Context, cardID, propertyName,
 	}
 	propID, optionID, ok := boardmodel.FindSelectOption(schema, propertyName, optionName)
 	if !ok {
-		return fmt.Errorf("на доске %s нет колонки %q в свойстве %q", board.ID, optionName, propertyName)
+		return fmt.Errorf("board %s has no column %q in the property %q", board.ID, optionName, propertyName)
 	}
 	return w.patchCard(ctx, cardID, &model.CardPatch{UpdatedProperties: map[string]any{propID: optionID}}, true)
 }
@@ -210,14 +210,14 @@ func (w *Writer) SetCardOption(ctx context.Context, cardID, propertyID, optionNa
 	}
 	def, ok := schema[propertyID]
 	if !ok {
-		return fmt.Errorf("на доске нет свойства с id %q", propertyID)
+		return fmt.Errorf("the board has no property with id %q", propertyID)
 	}
 	for oid, opt := range def.Options {
 		if strings.EqualFold(opt.Value, optionName) {
 			return w.patchCard(ctx, cardID, &model.CardPatch{UpdatedProperties: map[string]any{propertyID: oid}}, true)
 		}
 	}
-	return fmt.Errorf("у свойства %q нет значения %q", def.Name, optionName)
+	return fmt.Errorf("the property %q has no value %q", def.Name, optionName)
 }
 
 // SetCardFields writes named properties of a card: a select property gets the
@@ -246,7 +246,7 @@ func (w *Writer) SetCardFields(ctx context.Context, cardID string, fields map[st
 	for name, value := range fields {
 		propID, def, ok := boardmodel.FindPropertyByName(schema, name)
 		if !ok {
-			return fmt.Errorf("на доске нет свойства %q — посмотрите list_card_fields", name)
+			return fmt.Errorf("the board has no property %q: see list_card_fields", name)
 		}
 		if def.Type == "select" {
 			optionID := ""
@@ -257,7 +257,7 @@ func (w *Writer) SetCardFields(ctx context.Context, cardID string, fields map[st
 				}
 			}
 			if optionID == "" {
-				return fmt.Errorf("у свойства %q нет значения %q — допустимые перечислены в list_card_fields", name, value)
+				return fmt.Errorf("the property %q has no value %q: list_card_fields lists the allowed ones", name, value)
 			}
 			properties[propID] = optionID
 			continue
@@ -272,7 +272,7 @@ func (w *Writer) SetCardFields(ctx context.Context, cardID string, fields map[st
 func (w *Writer) AddCardProperty(ctx context.Context, cardID, name string) error {
 	name = strings.TrimSpace(name)
 	if name == "" {
-		return fmt.Errorf("у поля должно быть название")
+		return fmt.Errorf("a field needs a name")
 	}
 	card, err := w.cardBlock(cardID)
 	if err != nil {
@@ -366,7 +366,7 @@ func (w *Writer) ColumnProperty(ctx context.Context, boardID string) (string, er
 	}
 	name, ok := boardmodel.ColumnPropertyName(board, schema, views)
 	if !ok {
-		return "", fmt.Errorf("на доске %s нет свойства-колонок", boardID)
+		return "", fmt.Errorf("board %s has no column property", boardID)
 	}
 	return name, nil
 }
@@ -389,7 +389,7 @@ func (w *Writer) ensureLinkProperty(ctx context.Context, boardID string) (string
 	propID := utils.NewID(utils.IDTypeBlock)
 	prop := map[string]any{
 		"id":      propID,
-		"name":    boardmodel.LinkPropertyTitle,
+		"name":    namingWords()(boardmodel.LinkPropertyTitle),
 		"type":    "url",
 		"options": []any{},
 	}
@@ -460,7 +460,7 @@ func (w *Writer) CreateCard(ctx context.Context, spec acp.NewCard) (string, erro
 	if spec.Column != "" {
 		propID, optionID, ok := boardmodel.FindSelectOption(schema, spec.Property, spec.Column)
 		if !ok {
-			return "", fmt.Errorf("на доске %s нет колонки %q в свойстве %q", board.ID, spec.Column, spec.Property)
+			return "", fmt.Errorf("board %s has no column %q in the property %q", board.ID, spec.Column, spec.Property)
 		}
 		properties[propID] = optionID
 	}
@@ -505,10 +505,10 @@ func (w *Writer) CreateCard(ctx context.Context, spec acp.NewCard) (string, erro
 	if _, err := w.app.InsertBlocksAndNotify([]*model.Block{body}, w.author(ctx), true); err != nil {
 		// The card exists and is the point; a description that did not land is
 		// worth reporting, not worth pretending the card was never made.
-		return card.ID, fmt.Errorf("карточка создана, но описание не сохранилось: %w", err)
+		return card.ID, fmt.Errorf("the card was created, but its description was not saved: %w", err)
 	}
 	if err := w.appendContent(ctx, card.ID, body.ID); err != nil {
-		return card.ID, fmt.Errorf("карточка создана, но описание не встало в неё: %w", err)
+		return card.ID, fmt.Errorf("the card was created, but its description did not attach to it: %w", err)
 	}
 	return card.ID, nil
 }

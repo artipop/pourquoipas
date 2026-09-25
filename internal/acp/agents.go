@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 	"unicode"
+
+	"github.com/artipop/xciii/internal/apperr"
 )
 
 // Agent registry: named coding agents (claude/codex with their own prompt,
@@ -24,7 +26,7 @@ func (m *Manager) Agents() []AgentEntry {
 func validateAgent(a AgentEntry) (AgentEntry, error) {
 	a.Name = strings.TrimSpace(a.Name)
 	if a.Name == "" {
-		return AgentEntry{}, fmt.Errorf("имя агента не может быть пустым")
+		return AgentEntry{}, apperr.New("agents.no-name", "The agent needs a name")
 	}
 	// An empty element (a stray space in the UI input, a hand-edited config)
 	// would become an empty argv[0] and a confusing exec error.
@@ -39,11 +41,11 @@ func validateAgent(a AgentEntry) (AgentEntry, error) {
 	switch {
 	case a.Kind == AgentKindACP:
 		if len(a.Command) == 0 {
-			return AgentEntry{}, fmt.Errorf("для агента типа %q нужно задать команду запуска (argv ACP-агента)", AgentKindACP)
+			return AgentEntry{}, apperr.New("agents.no-command", "An agent of kind {kind} needs a launch command (the ACP agent's argv)", "kind", AgentKindACP)
 		}
 	case knownAdapter(a.Kind):
 	default:
-		return AgentEntry{}, fmt.Errorf("неизвестный тип агента %q (допустимо: %s)", a.Kind, strings.Join(AgentKinds, ", "))
+		return AgentEntry{}, apperr.New("agents.unknown-kind", "Unknown agent kind {kind} (one of: {kinds})", "kind", a.Kind, "kinds", strings.Join(AgentKinds, ", "))
 	}
 	cliArgs, err := validateCLIArgs(a)
 	if err != nil {
@@ -53,7 +55,7 @@ func validateAgent(a AgentEntry) (AgentEntry, error) {
 	a.Options = normalizeOptions(a.Options)
 	servers, err := validateMCPServers(a.MCPServers)
 	if err != nil {
-		return AgentEntry{}, fmt.Errorf("агент %q: %w", a.Name, err)
+		return AgentEntry{}, fmt.Errorf("agent %q: %w", a.Name, err)
 	}
 	a.MCPServers = servers
 	a.ProxyName = strings.TrimSpace(a.ProxyName)
@@ -70,30 +72,30 @@ func validateMCPServers(servers map[string]AgentMCPServer) (map[string]AgentMCPS
 	for name, srv := range servers {
 		name = strings.TrimSpace(name)
 		if name == "" {
-			return nil, fmt.Errorf("у MCP-сервера не задано имя")
+			return nil, apperr.New("mcp.no-name", "An MCP server has no name")
 		}
 		if !validMCPName(name) {
-			return nil, fmt.Errorf("имя MCP-сервера %q может состоять только из латиницы, цифр, дефиса и подчёркивания", name)
+			return nil, apperr.New("mcp.bad-name", "The MCP server name {name} may contain only Latin letters, digits, hyphens and underscores", "name", name)
 		}
 		for _, builtin := range builtinMCPNames {
 			if strings.EqualFold(name, builtin) {
-				return nil, fmt.Errorf("имя %q занято встроенным сервером", name)
+				return nil, apperr.New("mcp.name-builtin", "The name {name} belongs to a built-in server", "name", name)
 			}
 		}
 		for existing := range out {
 			if strings.EqualFold(existing, name) {
-				return nil, fmt.Errorf("MCP-сервер с именем %q уже задан", name)
+				return nil, apperr.New("mcp.duplicate", "There is already an MCP server named {name}", "name", name)
 			}
 		}
 
 		// A remote server is a normal thing to paste from a README, and it
 		// would otherwise fail as "no command" — which explains nothing.
 		if strings.TrimSpace(srv.URL) != "" || strings.EqualFold(strings.TrimSpace(srv.Type), "http") || strings.EqualFold(strings.TrimSpace(srv.Type), "sse") {
-			return nil, fmt.Errorf("сервер %q удалённый (url/type), а поддерживаются пока только локальные: command + args", name)
+			return nil, apperr.New("mcp.remote", "The server {name} is remote (url/type), and only local servers are supported so far: command + args", "name", name)
 		}
 		srv.Command = strings.TrimSpace(srv.Command)
 		if srv.Command == "" {
-			return nil, fmt.Errorf("для MCP-сервера %q не задана команда запуска (command)", name)
+			return nil, apperr.New("mcp.no-command", "The MCP server {name} has no launch command (command)", "name", name)
 		}
 		args := srv.Args[:0:0]
 		for _, arg := range srv.Args {
@@ -153,7 +155,7 @@ func (m *Manager) AddAgent(a AgentEntry) (AgentEntry, error) {
 	defer m.cfgMu.Unlock()
 	for _, e := range m.cfg.Agents {
 		if strings.EqualFold(e.Name, a.Name) {
-			return AgentEntry{}, fmt.Errorf("агент с именем %q уже существует", e.Name)
+			return AgentEntry{}, apperr.New("agents.duplicate", "An agent named {name} already exists", "name", e.Name)
 		}
 	}
 	if _, err := resolveNetworkIn(m.cfg.Proxies, a); err != nil {
@@ -287,7 +289,7 @@ func (m *Manager) UpdateAgent(a AgentEntry) (AgentEntry, error) {
 			}
 			if name := strings.TrimSpace(a.Name); !strings.EqualFold(e.Name, name) {
 				if _, taken := agentByName(m.cfg.Agents, name); taken {
-					return AgentEntry{}, fmt.Errorf("агент с именем %q уже существует", name)
+					return AgentEntry{}, apperr.New("agents.duplicate", "An agent named {name} already exists", "name", name)
 				}
 			}
 			// The account outlives the rename: it is the agent's identity on the
@@ -304,7 +306,7 @@ func (m *Manager) UpdateAgent(a AgentEntry) (AgentEntry, error) {
 			return a, m.persistConfigLocked()
 		}
 	}
-	return AgentEntry{}, fmt.Errorf("агент %q не найден", a.Name)
+	return AgentEntry{}, apperr.New("agents.not-found", "Agent {name} was not found", "name", a.Name)
 }
 
 // AgentUsers returns the registry as board accounts, in registry order.
@@ -328,7 +330,7 @@ func (m *Manager) AgentUsers() []AgentUser {
 // entry is gone.
 func (m *Manager) SyncAgentUsers(ctx context.Context, boardID string) ([]AgentUser, error) {
 	if m.users == nil {
-		return nil, fmt.Errorf("создание пользователей-агентов недоступно")
+		return nil, fmt.Errorf("creating agent accounts is not available")
 	}
 	agents := m.AgentUsers()
 	if len(agents) == 0 {
@@ -374,7 +376,7 @@ func (m *Manager) RemoveAgent(name string) error {
 	if _, err := m.primary().Users.RetireAgentUser(context.Background(), removed); err != nil {
 		// The entry is already gone; the account is the part left dangling, so
 		// say so rather than pretend the removal failed.
-		return fmt.Errorf("агент %q удалён из реестра, но его учётная запись осталась в участниках доски: %w", removed.Name, err)
+		return apperr.Wrap(err, "agents.account-left", "Agent {name} was removed from the registry, but its account is still a member of the board", "name", removed.Name)
 	}
 	return nil
 }
@@ -390,7 +392,7 @@ func (m *Manager) removeAgentEntry(name string) (AgentUser, error) {
 			return AgentUser{Name: e.Name, Username: AgentUsername(e.Name)}, m.persistConfigLocked()
 		}
 	}
-	return AgentUser{}, fmt.Errorf("агент %q не найден", name)
+	return AgentUser{}, apperr.New("agents.not-found", "Agent {name} was not found", "name", name)
 }
 
 // AgentUsername is the board username an agent is provisioned under: the
@@ -522,7 +524,7 @@ func (m *Manager) resolveSessionAgent(ev CardMoved, roster []string) (AgentEntry
 		return agents[0], false, nil
 	}
 	if len(agents) > 1 {
-		return AgentEntry{}, false, fmt.Errorf("не удалось выбрать агента: назначьте агента исполнителем карточки или укажите состав колонки (доступно: %s)", agentNames(agents))
+		return AgentEntry{}, false, apperr.New("agents.ambiguous", "Could not choose an agent: assign one to the card (there are: {agents})", "agents", agentNames(agents))
 	}
 
 	// Empty registry: fall back to the global AgentMode.
@@ -537,7 +539,7 @@ func (m *Manager) resolveSessionAgent(ev CardMoved, roster []string) (AgentEntry
 		command := append([]string(nil), m.cfg.AgentCommand...)
 		m.cfgMu.RUnlock()
 		if len(command) == 0 {
-			return AgentEntry{}, false, fmt.Errorf("agentMode = %q, но agentCommand пуст", agentModeCommand)
+			return AgentEntry{}, false, fmt.Errorf("agentMode = %q, but agentCommand is empty", agentModeCommand)
 		}
 		return AgentEntry{Name: kind, Kind: AgentKindACP, Command: command}, false, nil
 	}
@@ -561,7 +563,7 @@ func crewOf(roster []string, agents []AgentEntry) ([]AgentEntry, error) {
 	if len(crew) == 0 {
 		// The roster is ids, so there is nothing readable to name back: what
 		// the person can act on is which agents this machine does have.
-		return nil, fmt.Errorf("состав колонки не найден в реестре агентов (есть: %s)", agentNames(agents))
+		return nil, fmt.Errorf("the column's agents are not in the registry (there are: %s)", agentNames(agents))
 	}
 	return crew, nil
 }
@@ -601,7 +603,7 @@ type AssignedToHumanError struct {
 }
 
 func (e AssignedToHumanError) Error() string {
-	return fmt.Sprintf("карточка назначена на %s", e.Who)
+	return fmt.Sprintf("the card is assigned to %s", e.Who)
 }
 
 // humanAssignee is who took the card, when that is a person rather than an

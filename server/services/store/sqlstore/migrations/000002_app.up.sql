@@ -116,7 +116,7 @@ CREATE INDEX `idx_idempotency_created` ON `idempotency` (`created_at`);
 -- One current reason a card is not moving — not a journal. The reason is
 -- true only until somebody fixes what it is about, and a comment would
 -- outlive it as noise.
-CREATE TABLE `card_stall` (`card_id` varchar NOT NULL, `node_id` varchar NULL, `reason` text NOT NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`card_id`), CONSTRAINT `card_stall_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE CASCADE);
+CREATE TABLE `card_stall` (`card_id` varchar NOT NULL, `node_id` varchar NULL, `reason` text NOT NULL, `reason_code` varchar NULL, `reason_args` text NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`card_id`), CONSTRAINT `card_stall_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE CASCADE);
 
 -- How much a card's branch holds, in numbers. The diff itself is read
 -- from git every time and never from here — this is what the button
@@ -172,7 +172,7 @@ CREATE INDEX `idx_source_item_card` ON `source_item` (`card_id`);
 -- Why nothing happened — the only question anybody asks of a source.
 -- Deleting the card it produced does not delete the line: what a source
 -- decided is a fact about the source.
-CREATE TABLE `source_event` (`id` varchar NOT NULL, `source` varchar NOT NULL, `external_id` varchar NULL, `rule` varchar NULL, `outcome` varchar NOT NULL, `card_id` varchar NULL, `detail` text NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`id`), CONSTRAINT `source_event_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE SET NULL, CONSTRAINT `source_event_outcome` CHECK (`outcome` IN ('created', 'commented', 'inbox', 'dropped', 'failed', 'skipped')));
+CREATE TABLE `source_event` (`id` varchar NOT NULL, `source` varchar NOT NULL, `external_id` varchar NULL, `rule` varchar NULL, `outcome` varchar NOT NULL, `card_id` varchar NULL, `detail` text NULL, `detail_code` varchar NULL, `detail_args` text NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`id`), CONSTRAINT `source_event_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE SET NULL, CONSTRAINT `source_event_outcome` CHECK (`outcome` IN ('created', 'commented', 'inbox', 'dropped', 'failed', 'skipped')));
 
 CREATE INDEX `idx_source_event_source` ON `source_event` (`source`, `id`);
 
@@ -191,7 +191,7 @@ CREATE TABLE `board_summary` (`board_id` varchar NOT NULL, `summary` text NOT NU
 -- outlives the card and the board.
 --   card_title: What the card was called, so the log still reads once it is gone.
 --   board_id: Where it went. NULL for a card left in the inbox.
-CREATE TABLE `inbox_sort` (`id` varchar NOT NULL, `card_id` varchar NULL, `card_title` text NULL, `board_id` varchar NULL, `outcome` varchar NOT NULL, `reason` text NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`id`), CONSTRAINT `inbox_sort_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE SET NULL, CONSTRAINT `inbox_sort_board` FOREIGN KEY (`board_id`) REFERENCES `board_ref` (`board_id`) ON DELETE SET NULL, CONSTRAINT `inbox_sort_outcome` CHECK (`outcome` IN ('moved', 'kept', 'failed')));
+CREATE TABLE `inbox_sort` (`id` varchar NOT NULL, `card_id` varchar NULL, `card_title` text NULL, `board_id` varchar NULL, `outcome` varchar NOT NULL, `reason` text NULL, `reason_code` varchar NULL, `reason_args` text NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`id`), CONSTRAINT `inbox_sort_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE SET NULL, CONSTRAINT `inbox_sort_board` FOREIGN KEY (`board_id`) REFERENCES `board_ref` (`board_id`) ON DELETE SET NULL, CONSTRAINT `inbox_sort_outcome` CHECK (`outcome` IN ('moved', 'kept', 'failed')));
 {{end}}
 
 {{if .mysql}}
@@ -284,7 +284,7 @@ CREATE TABLE `card_changes` (`card_id` varchar(36) NOT NULL, `branch` varchar(25
 -- One current reason a card is not moving — not a journal. The reason is
 -- true only until somebody fixes what it is about, and a comment would
 -- outlive it as noise.
-CREATE TABLE `card_stall` (`card_id` varchar(36) NOT NULL, `node_id` varchar(64) NULL, `reason` text NOT NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`card_id`), CONSTRAINT `card_stall_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE CASCADE) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
+CREATE TABLE `card_stall` (`card_id` varchar(36) NOT NULL, `node_id` varchar(64) NULL, `reason` text NOT NULL, `reason_code` varchar(64) NULL, `reason_args` text NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`card_id`), CONSTRAINT `card_stall_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE CASCADE) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
 
 -- A named place an agent can work in. Was the `projects` array in
 -- config.json; a card points at it by id, which is also the id of the
@@ -327,7 +327,7 @@ CREATE TABLE `checkout` (`id` varchar(36) NOT NULL, `workspace_id` varchar(36) N
 -- outlives the card and the board.
 --   card_title: What the card was called, so the log still reads once it is gone.
 --   board_id: Where it went. NULL for a card left in the inbox.
-CREATE TABLE `inbox_sort` (`id` varchar(36) NOT NULL, `card_id` varchar(36) NULL, `card_title` text NULL, `board_id` varchar(36) NULL, `outcome` varchar(16) NOT NULL, `reason` text NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`id`), CONSTRAINT `inbox_sort_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE SET NULL, CONSTRAINT `inbox_sort_board` FOREIGN KEY (`board_id`) REFERENCES `board_ref` (`board_id`) ON DELETE SET NULL, CONSTRAINT `inbox_sort_outcome` CHECK (`outcome` IN ('moved', 'kept', 'failed'))) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
+CREATE TABLE `inbox_sort` (`id` varchar(36) NOT NULL, `card_id` varchar(36) NULL, `card_title` text NULL, `board_id` varchar(36) NULL, `outcome` varchar(16) NOT NULL, `reason` text NULL, `reason_code` varchar(64) NULL, `reason_args` text NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`id`), CONSTRAINT `inbox_sort_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE SET NULL, CONSTRAINT `inbox_sort_board` FOREIGN KEY (`board_id`) REFERENCES `board_ref` (`board_id`) ON DELETE SET NULL, CONSTRAINT `inbox_sort_outcome` CHECK (`outcome` IN ('moved', 'kept', 'failed'))) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
 
 -- What happened during a session, in order. The id is a UUIDv7 rather
 -- than an autoincrement: v7 sorts by time, so ORDER BY id still means
@@ -338,7 +338,7 @@ CREATE TABLE `session_event` (`id` varchar(36) NOT NULL, `session_id` varchar(36
 -- Why nothing happened — the only question anybody asks of a source.
 -- Deleting the card it produced does not delete the line: what a source
 -- decided is a fact about the source.
-CREATE TABLE `source_event` (`id` varchar(36) NOT NULL, `source` varchar(100) NOT NULL, `external_id` varchar(255) NULL, `rule` varchar(100) NULL, `outcome` varchar(16) NOT NULL, `card_id` varchar(36) NULL, `detail` text NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`id`), INDEX `idx_source_event_source` (`source`, `id`), CONSTRAINT `source_event_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE SET NULL, CONSTRAINT `source_event_outcome` CHECK (`outcome` IN ('created', 'commented', 'inbox', 'dropped', 'failed', 'skipped'))) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
+CREATE TABLE `source_event` (`id` varchar(36) NOT NULL, `source` varchar(100) NOT NULL, `external_id` varchar(255) NULL, `rule` varchar(100) NULL, `outcome` varchar(16) NOT NULL, `card_id` varchar(36) NULL, `detail` text NULL, `detail_code` varchar(64) NULL, `detail_args` text NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`id`), INDEX `idx_source_event_source` (`source`, `id`), CONSTRAINT `source_event_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE SET NULL, CONSTRAINT `source_event_outcome` CHECK (`outcome` IN ('created', 'commented', 'inbox', 'dropped', 'failed', 'skipped'))) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
 
 -- What a source has already brought. The same letter arriving twice adds
 -- to the card it made rather than making a second one.
@@ -482,7 +482,7 @@ CREATE TABLE "card_changes" ("card_id" character varying(36) NOT NULL, "branch" 
 -- One current reason a card is not moving — not a journal. The reason is
 -- true only until somebody fixes what it is about, and a comment would
 -- outlive it as noise.
-CREATE TABLE "card_stall" ("card_id" character varying(36) NOT NULL, "node_id" character varying(64) NULL, "reason" text NOT NULL, "created_at" bigint NOT NULL, PRIMARY KEY ("card_id"), CONSTRAINT "card_stall_card" FOREIGN KEY ("card_id") REFERENCES "card_ref" ("card_id") ON DELETE CASCADE);
+CREATE TABLE "card_stall" ("card_id" character varying(36) NOT NULL, "node_id" character varying(64) NULL, "reason" text NOT NULL, "reason_code" character varying(64) NULL, "reason_args" text NULL, "created_at" bigint NOT NULL, PRIMARY KEY ("card_id"), CONSTRAINT "card_stall_card" FOREIGN KEY ("card_id") REFERENCES "card_ref" ("card_id") ON DELETE CASCADE);
 
 -- A named place an agent can work in. Was the `projects` array in
 -- config.json; a card points at it by id, which is also the id of the
@@ -596,7 +596,7 @@ CREATE INDEX "idx_checkout_live" ON "checkout" ("workspace_id", "released_at");
 -- outlives the card and the board.
 --   card_title: What the card was called, so the log still reads once it is gone.
 --   board_id: Where it went. NULL for a card left in the inbox.
-CREATE TABLE "inbox_sort" ("id" character varying(36) NOT NULL, "card_id" character varying(36) NULL, "card_title" text NULL, "board_id" character varying(36) NULL, "outcome" character varying(16) NOT NULL, "reason" text NULL, "created_at" bigint NOT NULL, PRIMARY KEY ("id"), CONSTRAINT "inbox_sort_card" FOREIGN KEY ("card_id") REFERENCES "card_ref" ("card_id") ON DELETE SET NULL, CONSTRAINT "inbox_sort_board" FOREIGN KEY ("board_id") REFERENCES "board_ref" ("board_id") ON DELETE SET NULL, CONSTRAINT "inbox_sort_outcome" CHECK ("outcome" IN ('moved', 'kept', 'failed')));
+CREATE TABLE "inbox_sort" ("id" character varying(36) NOT NULL, "card_id" character varying(36) NULL, "card_title" text NULL, "board_id" character varying(36) NULL, "outcome" character varying(16) NOT NULL, "reason" text NULL, "reason_code" character varying(64) NULL, "reason_args" text NULL, "created_at" bigint NOT NULL, PRIMARY KEY ("id"), CONSTRAINT "inbox_sort_card" FOREIGN KEY ("card_id") REFERENCES "card_ref" ("card_id") ON DELETE SET NULL, CONSTRAINT "inbox_sort_board" FOREIGN KEY ("board_id") REFERENCES "board_ref" ("board_id") ON DELETE SET NULL, CONSTRAINT "inbox_sort_outcome" CHECK ("outcome" IN ('moved', 'kept', 'failed')));
 
 -- What happened during a session, in order. The id is a UUIDv7 rather
 -- than an autoincrement: v7 sorts by time, so ORDER BY id still means
@@ -613,7 +613,7 @@ CREATE INDEX "idx_session_event_session" ON "session_event" ("session_id", "id")
 -- Why nothing happened — the only question anybody asks of a source.
 -- Deleting the card it produced does not delete the line: what a source
 -- decided is a fact about the source.
-CREATE TABLE "source_event" ("id" character varying(36) NOT NULL, "source" character varying(100) NOT NULL, "external_id" character varying(255) NULL, "rule" character varying(100) NULL, "outcome" character varying(16) NOT NULL, "card_id" character varying(36) NULL, "detail" text NULL, "created_at" bigint NOT NULL, PRIMARY KEY ("id"), CONSTRAINT "source_event_card" FOREIGN KEY ("card_id") REFERENCES "card_ref" ("card_id") ON DELETE SET NULL, CONSTRAINT "source_event_outcome" CHECK ("outcome" IN ('created', 'commented', 'inbox', 'dropped', 'failed', 'skipped')));
+CREATE TABLE "source_event" ("id" character varying(36) NOT NULL, "source" character varying(100) NOT NULL, "external_id" character varying(255) NULL, "rule" character varying(100) NULL, "outcome" character varying(16) NOT NULL, "card_id" character varying(36) NULL, "detail" text NULL, "detail_code" character varying(64) NULL, "detail_args" text NULL, "created_at" bigint NOT NULL, PRIMARY KEY ("id"), CONSTRAINT "source_event_card" FOREIGN KEY ("card_id") REFERENCES "card_ref" ("card_id") ON DELETE SET NULL, CONSTRAINT "source_event_outcome" CHECK ("outcome" IN ('created', 'commented', 'inbox', 'dropped', 'failed', 'skipped')));
 
 -- Why nothing happened — the only question anybody asks of a source.
 -- Deleting the card it produced does not delete the line: what a source

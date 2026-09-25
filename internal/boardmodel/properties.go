@@ -35,14 +35,14 @@ func CardPatchFor(schema model.PropSchema, edit acp.CardEdit) (*model.CardPatch,
 	if edit.Column != "" {
 		propID, optionID, ok := FindSelectOption(schema, edit.Property, edit.Column)
 		if !ok {
-			return nil, fmt.Errorf("на доске нет колонки %q в свойстве %q", edit.Column, edit.Property)
+			return nil, fmt.Errorf("the board has no column %q in the property %q", edit.Column, edit.Property)
 		}
 		properties[propID] = optionID
 	}
 	for _, option := range edit.Options {
 		propID, optionID, ok := FindOptionByName(schema, option)
 		if !ok {
-			return nil, fmt.Errorf("на доске нет значения %q", option)
+			return nil, fmt.Errorf("the board has no value %q", option)
 		}
 		// The column is the edit's own field, so an option name that happens to
 		// match a column must not move the card somewhere nobody asked for.
@@ -51,7 +51,7 @@ func CardPatchFor(schema model.PropSchema, edit acp.CardEdit) (*model.CardPatch,
 		}
 	}
 	if patch.Title == nil && len(properties) == 0 {
-		return nil, fmt.Errorf("не сказано, что менять")
+		return nil, fmt.Errorf("nothing to change was given")
 	}
 	if len(properties) > 0 {
 		patch.UpdatedProperties = properties

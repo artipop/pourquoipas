@@ -60,7 +60,7 @@ func ReadOutcome(dir string) (Outcome, error) {
 	}
 	var o Outcome
 	if err := json.Unmarshal(b, &o); err != nil {
-		return Outcome{}, fmt.Errorf("не удалось разобрать %s: %w", OutcomeFile, err)
+		return Outcome{}, fmt.Errorf("could not read %s: %w", OutcomeFile, err)
 	}
 	return o, nil
 }

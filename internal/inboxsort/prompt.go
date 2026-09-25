@@ -134,7 +134,7 @@ func decodeJSON(answer string, open byte, v any) error {
 		}
 	}
 	if strings.TrimSpace(answer) == "" {
-		return errors.New("агент ничего не ответил")
+		return errors.New("the agent answered nothing")
 	}
-	return fmt.Errorf("в ответе нет JSON: %s", clip(oneLine(answer), 200))
+	return fmt.Errorf("the answer has no JSON: %s", clip(oneLine(answer), 200))
 }

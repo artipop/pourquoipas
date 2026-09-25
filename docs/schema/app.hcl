@@ -1167,6 +1167,14 @@ table "card_stall" {
     null = false
     type = text
   }
+  column "reason_code" {
+    null = true
+    type = varchar(64)
+  }
+  column "reason_args" {
+    null = true
+    type = text
+  }
   column "created_at" {
     null = false
     type = bigint
@@ -1391,6 +1399,14 @@ table "source_event" {
     null = true
     type = text
   }
+  column "detail_code" {
+    null = true
+    type = varchar(64)
+  }
+  column "detail_args" {
+    null = true
+    type = text
+  }
   column "created_at" {
     null = false
     type = bigint
@@ -1462,6 +1478,14 @@ table "inbox_sort" {
     type = varchar(16)
   }
   column "reason" {
+    null = true
+    type = text
+  }
+  column "reason_code" {
+    null = true
+    type = varchar(64)
+  }
+  column "reason_args" {
     null = true
     type = text
   }

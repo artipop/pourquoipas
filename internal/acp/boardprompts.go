@@ -52,7 +52,7 @@ func (m *Manager) BoardPrompt(boardID string) string {
 // routes: the instruction is about this board and has to travel with it.
 func (m *Manager) SetBoardPrompt(boardID, text string) error {
 	if strings.TrimSpace(boardID) == "" {
-		return fmt.Errorf("не указана доска")
+		return fmt.Errorf("no board given")
 	}
 	// Read the board before writing to it: the write below is the whole of
 	// this board's automation, and this is the one edit that can be the first

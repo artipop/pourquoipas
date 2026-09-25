@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/artipop/xciii/internal/acp"
+	"github.com/artipop/xciii/internal/apperr"
 )
 
 // The words Go draws itself: the menu bar, the OS notification and the titles
@@ -37,6 +38,11 @@ type uiWords struct {
 	// copy of it. A count past the list takes "other", which for the numbers a
 	// menu of waiting agents can reach is a moot point.
 	MoreWaits pluralWords `json:"moreWaits"`
+
+	// Messages are the page's sentences for the codes Go has to word by
+	// itself (apperr), keyed by code: a permission question reaches the OS
+	// notification without passing the page.
+	Messages map[string]string `json:"messages,omitempty"`
 }
 
 type pluralWords struct {
@@ -105,7 +111,24 @@ func mergeWords(base, got uiWords) uiWords {
 	if got.MoreWaits.Forms["other"] != "" {
 		base.MoreWaits = got.MoreWaits
 	}
+	if len(got.Messages) > 0 {
+		base.Messages = got.Messages
+	}
 	return base
+}
+
+// say words a Message in the page's language, or in the English it carries
+// when the page sent no sentence for its code.
+func (w uiWords) say(m apperr.Message) string {
+	sentence, ok := w.Messages[m.Code]
+	if !ok || m.Code == "" {
+		return m.Text
+	}
+	pairs := make([]string, 0, 2*len(m.Args))
+	for name, value := range m.Args {
+		pairs = append(pairs, "{"+name+"}", value)
+	}
+	return fill(sentence, pairs...)
 }
 
 // fill puts the values into a sentence's {name} slots.

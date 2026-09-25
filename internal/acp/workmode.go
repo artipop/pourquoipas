@@ -2,8 +2,9 @@ package acp
 
 import (
 	"errors"
-	"fmt"
 	"strings"
+
+	"github.com/artipop/xciii/internal/apperr"
 )
 
 // How work in a folder is arranged. A folder is what an agent is sent into; the
@@ -35,9 +36,9 @@ const (
 	WorkModeWorktree = "worktree"
 )
 
-var errNoBoard = errors.New("не указана доска")
+var errNoBoard = errors.New("no board given")
 
-var errBadWorkMode = errors.New("способ работы в репозитории — «worktree» (отдельное рабочее дерево на карточку) или «branch» (ветка в этой же папке)")
+var errBadWorkMode = errors.New(`the way to work in a repository is "worktree" (a working tree per card) or "branch" (a branch in this very folder)`)
 
 // DefaultBranchPrefix is what a card's branch is named with when the folder does
 // not say: nothing. It was `acp/` while the branch was the agent integration's
@@ -96,7 +97,7 @@ func (m *Manager) SetWorkdirMode(name, boardID, mode string) (WorkdirEntry, erro
 		m.cfg.Workdirs[i].Modes[boardID] = mode
 		return m.cfg.Workdirs[i], m.persistConfigLocked()
 	}
-	return WorkdirEntry{}, fmt.Errorf("папка %q не найдена", name)
+	return WorkdirEntry{}, apperr.New("folders.not-found", "Folder {name} was not found", "name", name)
 }
 
 // BranchPrefixFor is what the branches made in this folder are called.

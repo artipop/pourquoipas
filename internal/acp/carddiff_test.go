@@ -113,7 +113,7 @@ func TestTheDiffOfACardWithAWorkspaceIsWhatItsBranchAdds(t *testing.T) {
 	if len(d.Committed) != 1 || d.Committed[0].Path != "auth.go" {
 		t.Fatalf("what the branch adds is missing: %+v", d.Committed)
 	}
-	if d.Reason != "" {
+	if d.Reason != nil {
 		t.Errorf("a card with work to read said there was none: %q", d.Reason)
 	}
 }
@@ -147,7 +147,7 @@ func TestTheWorkIsStillReadableAfterTheCopyIsFoldedAway(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if d.Reason != "" {
+	if d.Reason != nil {
 		t.Fatalf("a folded copy read as nothing to show: %q", d.Reason)
 	}
 	if len(d.Committed) != 1 || d.Committed[0].Path != "auth.go" {

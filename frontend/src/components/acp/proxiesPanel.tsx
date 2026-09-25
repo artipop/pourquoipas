@@ -8,6 +8,7 @@ import Button from '../../widgets/buttons/button'
 
 import {goApp} from '../../goBridge'
 import {aiEnabled} from '../../aiSwitch'
+import {goError} from '../../goMessages'
 
 import './proxiesPanel.scss'
 
@@ -54,7 +55,7 @@ const ProxiesPanel = () => {
         try {
             setProxies(JSON.parse(await bindings.ListProxies()) || [])
         } catch (e) {
-            setError(String(e))
+            setError(goError(intl, e))
         }
     }
 
@@ -89,7 +90,7 @@ const ProxiesPanel = () => {
             setForm(null)
             await refresh()
         } catch (e) {
-            setError(String(e))
+            setError(goError(intl, e))
         }
     }
 
@@ -104,7 +105,7 @@ const ProxiesPanel = () => {
             await bindings.RemoveProxy(name)
             await refresh()
         } catch (e) {
-            setError(String(e))
+            setError(goError(intl, e))
         }
     }
 

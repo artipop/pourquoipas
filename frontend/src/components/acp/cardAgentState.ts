@@ -3,6 +3,7 @@
 import {Accessor, createSignal, Setter} from 'solid-js'
 
 import {goApp} from '../../goBridge'
+import type {GoMessage} from '../../goMessages'
 
 // What the Go side knows about the agent on a card: the session it ran, the
 // branch and worktree it left behind, and whether a terminal is open on it.
@@ -41,7 +42,7 @@ export type CardAgentState = {
 
     // Why the automation is doing nothing on this card, when it knows — the
     // same reason the route strip shows, for a card outside any route.
-    stall?: {reason?: string, nodeId?: string, createdAt?: string}
+    stall?: {reason?: GoMessage, nodeId?: string, createdAt?: string}
 
     // The card's conversations, one per node it has stood on: the current
     // node's first — what the panel opens — then the others, newest first.

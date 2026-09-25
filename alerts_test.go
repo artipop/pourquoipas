@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/artipop/xciii/internal/acp"
+	"github.com/artipop/xciii/internal/apperr"
 )
 
 func keys(waits []acp.Attention) []string {
@@ -149,5 +150,19 @@ func TestHiddenWaitsTakeThePluralFormThePageChose(t *testing.T) {
 	}
 	if got := hiddenWaitsLabel(englishWords, 4); got != "…and 4 more" {
 		t.Errorf("default: %q", got)
+	}
+}
+
+// A permission is worded by this side rather than by the agent, so it reaches
+// the notification as a code, and the page's sentence for it is the one used.
+func TestAPermissionIsAskedInThePagesWords(t *testing.T) {
+	ask := apperr.Say("question.allow-tool", "Allow {tool}?", "tool", "Bash")
+	a := acp.Attention{Key: "t1", Title: "Почини логин", Text: ask.Text, Say: &ask}
+	w := mergeWords(englishWords, uiWords{Messages: map[string]string{"question.allow-tool": "Разрешить {tool}?"}})
+	if got := alertBody(w, a); got != "Почини логин — Разрешить Bash?" {
+		t.Errorf("body = %q", got)
+	}
+	if got := alertBody(englishWords, a); got != "Почини логин — Allow Bash?" {
+		t.Errorf("without the page's words: %q", got)
 	}
 }

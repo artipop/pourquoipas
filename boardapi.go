@@ -50,7 +50,7 @@ func (b *boardToolRoutes) manager() *acp.Manager {
 func (b *boardToolRoutes) open(r *http.Request) (boardmcp.Board, error) {
 	mgr := b.manager()
 	if mgr == nil {
-		return nil, fmt.Errorf("агенты выключены")
+		return nil, fmt.Errorf("agents are off")
 	}
 	token := bearer(r)
 	if err := mgr.CheckBoardTools(token); err != nil {

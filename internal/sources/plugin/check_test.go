@@ -42,16 +42,16 @@ func TestTheQuietMistakesAreReported(t *testing.T) {
 			t.Errorf("не смертельная ошибка помечена смертельной: %s", f)
 		}
 		switch {
-		case strings.Contains(f.Message, "нет id"):
+		case strings.Contains(f.Message, "has no id"):
 			sawID = true
-		case strings.Contains(f.Message, "нет заголовка"):
+		case strings.Contains(f.Message, "has no title"):
 			sawTitle = true
 		case strings.Contains(f.Message, "cursor"):
 			sawCursor = true
 		}
 	}
 	if !sawID || !sawTitle || !sawCursor {
-		t.Fatalf("что-то не названо: id=%v title=%v cursor=%v (%+v)", sawID, sawTitle, sawCursor, got)
+		t.Fatalf("something went unnamed: id=%v title=%v cursor=%v (%+v)", sawID, sawTitle, sawCursor, got)
 	}
 }
 

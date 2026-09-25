@@ -13,6 +13,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/artipop/xciii/internal/apperr"
 	"github.com/artipop/xciii/internal/dokku"
 	"github.com/artipop/xciii/internal/secrets"
 )
@@ -236,7 +237,7 @@ func (m *Manager) recover() {
 		return
 	}
 	for _, r := range stale {
-		if err := m.store.SetSessionStatus(r.ID, StatusFailed, "прервано перезапуском приложения"); err != nil {
+		if err := m.store.SetSessionStatus(r.ID, StatusFailed, "interrupted by an app restart"); err != nil {
 			m.log.Warn("acp: recovery update failed", "session", r.ID, "err", err)
 			continue
 		}
@@ -318,7 +319,7 @@ func (m *Manager) startSession(ev CardMoved, opts startOptions) (*Session, error
 			return nil, resolveErr
 		}
 		if busy {
-			return nil, fmt.Errorf("агент занят другой карточкой")
+			return nil, apperr.New("agents.busy", "The agent is busy with another card")
 		}
 		agent = resolved
 	}
@@ -349,7 +350,7 @@ func (m *Manager) startSession(ev CardMoved, opts startOptions) (*Session, error
 		}
 		m.mu.Unlock()
 		if busyCard != "" {
-			return nil, fmt.Errorf("%w: в папке %s уже работает сессия другой карточки (%s) — дождитесь её завершения", errWorkdirBusy, workdirPath, busyCard)
+			return nil, apperr.Kind(errWorkdirBusy, "folders.busy-session", "Another card's session ({card}) is already working in the folder {dir}: wait for it to finish", "card", busyCard, "dir", workdirPath)
 		}
 	}
 	// A branch in the folder itself is held by one card until its branch is
@@ -469,13 +470,13 @@ func (m *Manager) CancelSessionForCard(cardID, reason string) bool {
 // where a deploy session always runs — reaches it.
 func (m *Manager) StartDeployForCard(cardID, branch string) (*Session, error) {
 	if m.reader == nil {
-		return nil, fmt.Errorf("чтение карточек недоступно")
+		return nil, fmt.Errorf("reading cards is not available")
 	}
 	ctx, cancel := context.WithTimeout(m.rootCtx, 10*time.Second)
 	defer cancel()
 	ev, err := m.forCard(cardID).Reader.CardByID(ctx, cardID)
 	if err != nil {
-		return nil, fmt.Errorf("не удалось прочитать карточку: %w", err)
+		return nil, fmt.Errorf("could not read the card: %w", err)
 	}
 	if b := strings.TrimSpace(branch); b != "" {
 		if ev.Props == nil {
@@ -498,18 +499,18 @@ func (m *Manager) planningWorkdir(name string) (WorkdirEntry, error) {
 			return r, nil
 		}
 	}
-	return WorkdirEntry{}, fmt.Errorf("папка %q не найдена в реестре", name)
+	return WorkdirEntry{}, apperr.New("folders.not-found", "Folder {name} was not found", "name", name)
 }
 
 // planningAgent picks the registry entry that will do the planning.
 func (m *Manager) planningAgent(name string) (AgentEntry, error) {
 	agents := m.Agents()
 	if len(agents) == 0 {
-		return AgentEntry{}, fmt.Errorf("не зарегистрировано ни одного агента (меню доски → «Агенты…»)")
+		return AgentEntry{}, apperr.New("agents.none", "No agents are registered (the board's menu, Agents…)")
 	}
 	if name == "" {
 		if len(agents) > 1 {
-			return AgentEntry{}, fmt.Errorf("укажи агента: зарегистрировано несколько")
+			return AgentEntry{}, apperr.New("agents.which", "Say which agent: several are registered")
 		}
 		return agents[0], nil
 	}
@@ -518,7 +519,7 @@ func (m *Manager) planningAgent(name string) (AgentEntry, error) {
 			return a, nil
 		}
 	}
-	return AgentEntry{}, fmt.Errorf("агент %q не найден в реестре", name)
+	return AgentEntry{}, apperr.New("agents.not-found", "Agent {name} was not found", "name", name)
 }
 
 // session looks up a live session by id.
@@ -710,7 +711,7 @@ func firstNonEmpty(vals ...string) string {
 // notFoundMsg may be empty, in which case the name itself is the message.
 func lookupBin(name, notFoundMsg string) (string, error) {
 	if notFoundMsg == "" {
-		notFoundMsg = fmt.Sprintf("не найден %s", name)
+		notFoundMsg = fmt.Sprintf("%s was not found", name)
 	}
 	if strings.ContainsRune(name, filepath.Separator) {
 		if _, err := os.Stat(name); err != nil {

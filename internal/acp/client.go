@@ -10,6 +10,8 @@ import (
 	"time"
 
 	acpsdk "github.com/coder/acp-go-sdk"
+
+	"github.com/artipop/xciii/internal/apperr"
 )
 
 // chunkFlushDelay batches streamed text before it reaches the UI: agents emit
@@ -106,9 +108,11 @@ func (c *sessionClient) RequestPermission(ctx context.Context, params acpsdk.Req
 		c.recordDecision(toolName, title, "allow", true)
 		return selectOption(params, acpsdk.PermissionOptionKindAllowOnce)
 	}
+	asked := permissionText(toolName, title)
 	answer := c.m.ask(ctx, c.s, Question{
 		Kind:    QuestionPermission,
-		Text:    permissionText(toolName, title),
+		Text:    asked.Text,
+		Say:     &asked,
 		Tool:    toolName,
 		Options: permissionOptions(params),
 	})
@@ -140,16 +144,16 @@ func (c *sessionClient) RequestPermission(ctx context.Context, params acpsdk.Req
 
 // permissionText is the question as a person reads it: what the agent is about
 // to do, in the agent's own words where it gave any.
-func permissionText(toolName, title string) string {
+func permissionText(toolName, title string) apperr.Message {
 	switch {
 	case title != "" && toolName != "":
-		return fmt.Sprintf("Разрешить %s: %s?", toolName, title)
+		return apperr.Say("question.allow-tool-title", "Allow {tool}: {title}?", "tool", toolName, "title", title)
 	case title != "":
-		return fmt.Sprintf("Разрешить: %s?", title)
+		return apperr.Say("question.allow-title", "Allow: {title}?", "title", title)
 	case toolName != "":
-		return fmt.Sprintf("Разрешить %s?", toolName)
+		return apperr.Say("question.allow-tool", "Allow {tool}?", "tool", toolName)
 	}
-	return "Разрешить действие агента?"
+	return apperr.Say("question.allow", "Allow the agent's action?")
 }
 
 // permissionOptions turns the agent's options into the card's buttons. The

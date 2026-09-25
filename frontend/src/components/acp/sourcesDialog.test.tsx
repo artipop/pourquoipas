@@ -105,7 +105,7 @@ describe('components/acp/sourcesDialog', () => {
             ])),
             ListSourcePlugins: vi.fn().mockResolvedValue('[]'),
             SourceStatuses: vi.fn().mockResolvedValue(JSON.stringify([
-                {source: 'kaiten', state: 'error', error: 'у MCP-сервера нет инструмента list_my_cards'},
+                {source: 'kaiten', state: 'error', error: {text: 'MCP server has no tool list_my_cards'}},
             ])),
         })
 

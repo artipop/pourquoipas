@@ -79,7 +79,7 @@ func Restore() (bool, error) {
 		if setErr := os.Setenv("PATH", merged); setErr != nil {
 			return false, setErr
 		}
-		return true, fmt.Errorf("PATH не удалось спросить у оболочки (%w), взяты обычные каталоги", err)
+		return true, fmt.Errorf("could not ask the shell for PATH (%w), took the usual directories", err)
 	}
 	merged := merge(shellPath, current)
 	if merged == current {
@@ -98,7 +98,7 @@ func Restore() (bool, error) {
 func loginShellPath() (string, error) {
 	shell := strings.TrimSpace(os.Getenv("SHELL"))
 	if shell == "" {
-		return "", fmt.Errorf("SHELL не задан")
+		return "", fmt.Errorf("SHELL is not set")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), queryTimeout)
 	defer cancel()
@@ -129,16 +129,16 @@ var runShell = func(ctx context.Context, shell string) ([]byte, error) {
 func extract(out string) (string, error) {
 	i := strings.Index(out, startMark)
 	if i < 0 {
-		return "", fmt.Errorf("оболочка не вернула PATH")
+		return "", fmt.Errorf("the shell returned no PATH")
 	}
 	rest := out[i+len(startMark):]
 	j := strings.Index(rest, endMark)
 	if j < 0 {
-		return "", fmt.Errorf("оболочка не вернула PATH")
+		return "", fmt.Errorf("the shell returned no PATH")
 	}
 	path := strings.TrimSpace(rest[:j])
 	if path == "" {
-		return "", fmt.Errorf("оболочка вернула пустой PATH")
+		return "", fmt.Errorf("the shell returned an empty PATH")
 	}
 	return path, nil
 }

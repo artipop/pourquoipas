@@ -20,6 +20,7 @@ import {
     attentionHeading,
     keyOf,
     useAttention,
+    questionText,
 } from './attention'
 import AttentionAnswers from './attentionAnswers'
 
@@ -131,7 +132,7 @@ const AttentionNotifications = () => {
                                     </span>
 
                                     <Show when={target.text}>
-                                        <span class='AttentionNotifications__question'>{target.text}</span>
+                                        <span class='AttentionNotifications__question'>{questionText(intl, target)}</span>
                                     </Show>
 
                                     {/* The answer belongs where the question is

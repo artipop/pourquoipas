@@ -1,6 +1,10 @@
 package acp
 
-import "sort"
+import (
+	"sort"
+
+	"github.com/artipop/xciii/internal/apperr"
+)
 
 // Attention is one thing waiting for a person, from either of the two places a
 // card can want one — see the reasons below. The card is what the UI shows it
@@ -21,6 +25,7 @@ type Attention struct {
 	// A question carries itself, so it can be answered where it is read.
 	QuestionID string           `json:"questionId,omitempty"`
 	Text       string           `json:"text,omitempty"`
+	Say        *apperr.Message  `json:"say,omitempty"`
 	Options    []QuestionOption `json:"options,omitempty"`
 	FreeText   bool             `json:"freeText,omitempty"`
 	// Awaiting is false in an event that says a wait ended; the list only ever
@@ -88,6 +93,7 @@ func (m *Manager) emitAttentionRecord(a Attention) {
 		"tool":       a.Tool,
 		"questionId": a.QuestionID,
 		"text":       a.Text,
+		"say":        a.Say,
 		"options":    a.Options,
 		"freeText":   a.FreeText,
 		"awaiting":   a.Awaiting,

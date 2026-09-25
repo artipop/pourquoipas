@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/artipop/xciii/internal/apperr"
 )
 
 // A workspace is what a folder hands out: a directory to work in and, when the
@@ -56,8 +58,8 @@ type WorkSpec struct {
 // the work: they are the folder saying "not now", and the answer is to wait or
 // to say so on the card (a stall), never to fail the card's task.
 var (
-	errWorkdirBusy  = errors.New("папка занята другой карточкой")
-	errWorkdirDirty = errors.New("в папке есть несохранённые изменения")
+	errWorkdirBusy  = errors.New("the folder is held by another card")
+	errWorkdirDirty = errors.New("the folder has unsaved changes")
 )
 
 // BoardOwner is the owner of a conversation that has no card: the board's own,
@@ -161,7 +163,7 @@ func (m *Manager) registerWorkedFolder(path string) string {
 // ordinary way this happens.
 func (m *Manager) freeWorkdirNameLocked(name string) string {
 	if name == "" || name == "." || name == string(filepath.Separator) {
-		name = "папка"
+		name = "folder"
 	}
 	taken := func(candidate string) bool {
 		for _, e := range m.cfg.Workdirs {
@@ -205,7 +207,7 @@ func (m *Manager) assignWorkspaceID(path string) string {
 func (m *Manager) ClaimWorkspace(spec WorkSpec) (Workspace, error) {
 	workdir := strings.TrimSpace(spec.Workdir)
 	if workdir == "" || strings.TrimSpace(spec.Owner) == "" {
-		return Workspace{}, fmt.Errorf("рабочее место требует папки и владельца")
+		return Workspace{}, fmt.Errorf("a workspace needs a folder and an owner")
 	}
 	// Two answers to one question, and the precedence is stated here because
 	// this is the only place that asks it. The checkout is the fact and wins
@@ -249,7 +251,7 @@ func (m *Manager) ClaimWorkspace(spec WorkSpec) (Workspace, error) {
 			return Workspace{}, cerr
 		}
 		if !clean {
-			return Workspace{}, fmt.Errorf("%w: %s", errWorkdirDirty, workdir)
+			return Workspace{}, apperr.Kind(errWorkdirDirty, "folders.dirty", "The folder {dir} has unsaved changes", "dir", workdir)
 		}
 		info, err = SwitchToBranch(m.rootCtx, workdir, branch, base)
 	}
@@ -392,7 +394,7 @@ func (m *Manager) folderIsFree(workdir, owner string) error {
 	// The reason says what will end it, because that is the only thing a
 	// person reading it off the card can act on — and nothing picks the card
 	// up by itself once it is free.
-	return fmt.Errorf("%w (%s) — освободится, когда её ветка будет влита в основную; после этого перенесите карточку ещё раз", errWorkdirBusy, held.Owner())
+	return apperr.Kind(errWorkdirBusy, "folders.busy-branch", "The folder is held by another card ({card}). It is let go when that card's branch is merged into the main one; move this card again after that", "card", held.Owner())
 }
 
 // cardIsWorking reports a live session of this card, of any kind.

@@ -165,7 +165,7 @@ func (m *Manager) probeAgentOptions(a AgentEntry) ([]AgentOption, error) {
 	argv := resolveArgv0(launch.argv)
 	proc, err := procgroup.Spawn(ctx, argv, cwd, env, drop...)
 	if err != nil {
-		return nil, fmt.Errorf("не удалось запустить агента %q: %w", argv[0], err)
+		return nil, fmt.Errorf("could not start the agent %q: %w", argv[0], err)
 	}
 	defer func() {
 		proc.KillGroup(2 * time.Second)
@@ -308,7 +308,7 @@ func configRequest(sess acpsdk.NewSessionResponse, id, want string) (*acpsdk.Set
 			sel := opt.Select
 			value, ok := matchConfigValue(sel.Options, want)
 			if !ok {
-				return nil, fmt.Errorf("агент не предлагает значения %q (есть: %s)", want, configValueIDs(sel.Options))
+				return nil, fmt.Errorf("the agent does not offer the value %q (there are: %s)", want, configValueIDs(sel.Options))
 			}
 			return &acpsdk.SetSessionConfigOptionRequest{
 				ValueId: &acpsdk.SetSessionConfigOptionValueId{
@@ -333,7 +333,7 @@ func configRequest(sess acpsdk.NewSessionResponse, id, want string) (*acpsdk.Set
 			}, nil
 		}
 	}
-	return nil, fmt.Errorf("агент не предлагает такой настройки")
+	return nil, fmt.Errorf("the agent offers no such setting")
 }
 
 // parseOptionBool reads a toggle written any of the ways it is stored: the
@@ -346,7 +346,7 @@ func parseOptionBool(value string) (bool, error) {
 	case "false", "off", "no", "0", "disabled":
 		return false, nil
 	}
-	return false, fmt.Errorf("значение %q не похоже на переключатель (on/off)", value)
+	return false, fmt.Errorf("the value %q is not a switch (on/off)", value)
 }
 
 // probeClient answers the agent during a capability probe. Nothing is prompted,

@@ -6,10 +6,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/artipop/xciii/internal/apperr"
 	"github.com/artipop/xciii/internal/procgroup"
 )
 
@@ -86,7 +88,7 @@ type Error struct {
 
 func (e *Error) Error() string {
 	if e.Field != "" {
-		return fmt.Sprintf("%s (поле %q)", e.Message, e.Field)
+		return fmt.Sprintf("%s (field %q)", e.Message, e.Field)
 	}
 	return e.Message
 }
@@ -105,11 +107,11 @@ const maxLine = 8 << 20 // 8 MiB
 // process is killed rather than left behind.
 func Dial(ctx context.Context, spec Spec, handler Handler) (*Client, error) {
 	if len(spec.Command) == 0 {
-		return nil, fmt.Errorf("у плагина не задана команда запуска")
+		return nil, fmt.Errorf("the plugin has no launch command")
 	}
 	proc, err := procgroup.Spawn(ctx, spec.Command, spec.Dir, spec.Env, spec.DropEnv...)
 	if err != nil {
-		return nil, fmt.Errorf("не удалось запустить плагин %s: %w", spec.Command[0], err)
+		return nil, fmt.Errorf("could not start the plugin %s: %w", spec.Command[0], err)
 	}
 	c := &Client{
 		proc:    proc,
@@ -135,8 +137,8 @@ func Dial(ctx context.Context, spec Spec, handler Handler) (*Client, error) {
 	// three messages later.
 	if result.ProtocolVersion > Version {
 		c.Close()
-		return nil, fmt.Errorf("плагин говорит на версии протокола %d, а это приложение понимает %d — обновите приложение",
-			result.ProtocolVersion, Version)
+		return nil, apperr.New("sources.protocol-newer", "The plugin speaks protocol version {plugin}, and this app understands {app}: update the app",
+			"plugin", strconv.Itoa(result.ProtocolVersion), "app", strconv.Itoa(Version))
 	}
 	c.caps = result.Capabilities
 	return c, nil
@@ -184,7 +186,7 @@ func (c *Client) call(ctx context.Context, method string, params any, out any) e
 	c.mu.Lock()
 	if c.closed && method != MethodShutdown {
 		c.mu.Unlock()
-		return fmt.Errorf("плагин уже остановлен")
+		return fmt.Errorf("the plugin has stopped")
 	}
 	c.nextID++
 	id := c.nextID
@@ -203,7 +205,7 @@ func (c *Client) call(ctx context.Context, method string, params any, out any) e
 		return ctx.Err()
 	case <-c.done:
 		c.forget(id)
-		return fmt.Errorf("%s: плагин завершился, не ответив", method)
+		return fmt.Errorf("%s: the plugin exited without answering", method)
 	case resp := <-reply:
 		if resp.Error != nil {
 			return toError(resp.Error)
@@ -212,7 +214,7 @@ func (c *Client) call(ctx context.Context, method string, params any, out any) e
 			return nil
 		}
 		if err := json.Unmarshal(resp.Result, out); err != nil {
-			return fmt.Errorf("%s: не удалось разобрать ответ: %w", method, err)
+			return fmt.Errorf("%s: could not read the answer: %w", method, err)
 		}
 		return nil
 	}
@@ -239,7 +241,7 @@ func (c *Client) read(r io.Reader) {
 		if err := json.Unmarshal([]byte(line), &msg); err != nil {
 			// A line that is not a message is not fatal: a plugin that prints
 			// to stdout by accident should cost that line and not the source.
-			c.notifyLog("warn", "плагин прислал не сообщение: "+truncate(line))
+			c.notifyLog("warn", "the plugin sent something that is not a message: "+truncate(line))
 			continue
 		}
 		if msg.ID != nil && msg.Method == "" {

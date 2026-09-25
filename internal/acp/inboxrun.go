@@ -56,7 +56,7 @@ func (m *Manager) RunInbox(ctx context.Context, run InboxRun) (string, error) {
 	}
 	agentName := strings.TrimSpace(run.Agent)
 	if agentName == "" {
-		return "", fmt.Errorf("не сказано, каким агентом опрашивать")
+		return "", fmt.Errorf("no agent to poll with was given")
 	}
 	agent, err := m.planningAgent(agentName)
 	if err != nil {
@@ -68,7 +68,7 @@ func (m *Manager) RunInbox(ctx context.Context, run InboxRun) (string, error) {
 	}
 	dir := strings.TrimSpace(run.Dir)
 	if dir == "" {
-		return "", fmt.Errorf("не сказано, где запускать агента")
+		return "", fmt.Errorf("no place to run the agent was given")
 	}
 
 	s := &Session{

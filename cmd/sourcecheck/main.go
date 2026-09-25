@@ -25,13 +25,13 @@ import (
 
 func main() {
 	var (
-		config  = flag.String("config", "", "поля плагина: ключ=значение, через запятую")
-		token   = flag.String("token", "", "токен, который приложение передало бы плагину")
-		dir     = flag.String("dir", "", "рабочий каталог плагина")
-		timeout = flag.Duration("timeout", 30*time.Second, "сколько ждать плагин целиком")
+		config  = flag.String("config", "", "plugin fields: key=value, comma-separated")
+		token   = flag.String("token", "", "the token the app would hand the plugin")
+		dir     = flag.String("dir", "", "the plugin's working directory")
+		timeout = flag.Duration("timeout", 30*time.Second, "how long to wait for the whole plugin")
 	)
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Использование: %s [флаги] -- команда запуска плагина\n\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "Usage: %s [flags] -- plugin launch command\n\n", os.Args[0])
 		flag.PrintDefaults()
 	}
 	flag.Parse()
@@ -50,7 +50,7 @@ func main() {
 		Timeout: *timeout,
 	})
 	if len(findings) == 0 {
-		fmt.Println("✓ плагин отвечает так, как приложение ожидает")
+		fmt.Println("✓ the plugin answers the way the app expects")
 		return
 	}
 

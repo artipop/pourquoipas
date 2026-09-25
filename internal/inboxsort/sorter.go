@@ -25,6 +25,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/artipop/xciii/internal/apperr"
 )
 
 // BoardInfo is a board as the sorter reads it.
@@ -109,9 +111,9 @@ const (
 )
 
 var (
-	errNoAgent       = errors.New("агенты недоступны: разбирать входящие некому")
-	errNoAgentChosen = errors.New("не выбран агент, который разбирает входящие")
-	errNoInbox       = errors.New("доски «Входящие» нет")
+	errNoAgent       = apperr.New("inboxsort.no-agents", "Agents are not available, so nobody can sort the inbox")
+	errNoAgentChosen = apperr.New("inboxsort.no-agent", "No agent is chosen to sort the inbox")
+	errNoInbox       = apperr.New("inboxsort.no-inbox", "There is no inbox board")
 )
 
 // New builds a sorter over a board and a store, reading its settings from
@@ -265,7 +267,7 @@ func (s *Sorter) sort(ctx context.Context, only map[string]bool) (Result, error)
 	}
 	cards, err := s.board.Cards(ctx, inbox)
 	if err != nil {
-		return Result{}, fmt.Errorf("карточки «Входящих»: %w", err)
+		return Result{}, fmt.Errorf("the inbox's cards: %w", err)
 	}
 	// Only what is still in the inbox: a person may have carried a card away
 	// while it waited in the queue, and a card the sorter no longer sees is
@@ -280,7 +282,7 @@ func (s *Sorter) sort(ctx context.Context, only map[string]bool) (Result, error)
 		return Result{}, nil
 	}
 	if len(targets) == 0 {
-		return Result{}, errors.New("кроме «Входящих» досок нет — разносить некуда")
+		return Result{}, apperr.New("inboxsort.no-boards", "There are no boards besides the inbox, so there is nowhere to carry cards")
 	}
 
 	views := s.readBoards(ctx, targets)
@@ -298,7 +300,7 @@ func (s *Sorter) sort(ctx context.Context, only map[string]bool) (Result, error)
 func (s *Sorter) targets(ctx context.Context) (string, []BoardInfo, error) {
 	boards, err := s.board.Boards(ctx)
 	if err != nil {
-		return "", nil, fmt.Errorf("список досок: %w", err)
+		return "", nil, fmt.Errorf("the list of boards: %w", err)
 	}
 	var inbox string
 	var targets []BoardInfo
@@ -414,6 +416,17 @@ func (s *Sorter) RefreshSummaries(ctx context.Context) error {
 	return s.refreshSummaries(ctx, agent, agentName, s.readBoards(ctx, targets), true)
 }
 
+func said(m apperr.Message) *apperr.Message { return &m }
+
+// agentSaid is the agent's reason, which is already in the conversation's
+// language, or nothing.
+func agentSaid(reason string) *apperr.Message {
+	if reason == "" {
+		return nil
+	}
+	return said(apperr.Plain(reason))
+}
+
 // decision is one entry of the agent's answer.
 type decision struct {
 	Card   string `json:"card"`
@@ -453,7 +466,7 @@ func (s *Sorter) sortBatch(ctx context.Context, agent Agent, agentName string, v
 	fail := func(err error) {
 		for _, c := range batch {
 			res.Failed++
-			s.record(Decision{CardID: c.ID, CardTitle: c.Title, Outcome: OutcomeFailed, Reason: err.Error()})
+			s.record(Decision{CardID: c.ID, CardTitle: c.Title, Outcome: OutcomeFailed, Reason: said(apperr.MessageOf(err))})
 		}
 	}
 	tctx, cancel := context.WithTimeout(ctx, turnTimeout)
@@ -465,7 +478,7 @@ func (s *Sorter) sortBatch(ctx context.Context, agent Agent, agentName string, v
 	}
 	var decisions []decision
 	if err := decodeJSON(answer, '[', &decisions); err != nil {
-		fail(fmt.Errorf("ответ агента не разобран: %w", err))
+		fail(apperr.Wrap(err, "inboxsort.bad-answer", "The agent's answer could not be read"))
 		return
 	}
 
@@ -481,22 +494,22 @@ func (s *Sorter) sortBatch(ctx context.Context, agent Agent, agentName string, v
 		target, ok := boardKeys[strings.TrimSpace(d.Board)]
 		if !ok {
 			res.Kept++
-			s.record(Decision{CardID: c.ID, CardTitle: c.Title, Outcome: OutcomeKept, Reason: reason})
+			s.record(Decision{CardID: c.ID, CardTitle: c.Title, Outcome: OutcomeKept, Reason: agentSaid(reason)})
 			continue
 		}
 		if err := s.board.FileCard(ctx, c.ID, target.ID); err != nil {
 			res.Failed++
 			s.record(Decision{CardID: c.ID, CardTitle: c.Title, BoardID: target.ID, Outcome: OutcomeFailed,
-				Reason: fmt.Sprintf("перенос не удался: %v", err)})
+				Reason: said(apperr.Say("inboxsort.move-failed", "The move failed: {error}", "error", err.Error()))})
 			continue
 		}
 		res.Moved++
-		s.record(Decision{CardID: c.ID, CardTitle: c.Title, BoardID: target.ID, Outcome: OutcomeMoved, Reason: reason})
+		s.record(Decision{CardID: c.ID, CardTitle: c.Title, BoardID: target.ID, Outcome: OutcomeMoved, Reason: agentSaid(reason)})
 	}
 	for i, c := range batch {
 		if !answered[i] {
 			res.Kept++
-			s.record(Decision{CardID: c.ID, CardTitle: c.Title, Outcome: OutcomeKept, Reason: "агент не ответил про эту карточку"})
+			s.record(Decision{CardID: c.ID, CardTitle: c.Title, Outcome: OutcomeKept, Reason: said(apperr.Say("inboxsort.no-answer", "The agent said nothing about this card"))})
 		}
 	}
 }
@@ -577,7 +590,7 @@ func (s *Sorter) State(ctx context.Context) (State, error) {
 // both.
 func (s *Sorter) SetBoardDescription(ctx context.Context, boardID, text string) error {
 	if strings.TrimSpace(boardID) == "" {
-		return errors.New("не сказано, какая доска")
+		return errors.New("no board given")
 	}
 	return s.board.SetDescription(ctx, boardID, strings.TrimSpace(text))
 }

@@ -10,12 +10,13 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 
 	"github.com/artipop/xciii/internal/acp"
+	"github.com/artipop/xciii/internal/apperr"
 	"github.com/artipop/xciii/internal/inboxsort"
 	"github.com/artipop/xciii/internal/sources"
 )
 
 // errACPDisabled is returned by bindings when the integration is off.
-var errACPDisabled = errors.New("интеграция агента выключена (см. конфиг acp)")
+var errACPDisabled = apperr.New("agents.off", "Agents are off in this install")
 
 // App is the bound service: every exported method is callable from the page,
 // through the bindings `wails3 task generate:bindings` writes into
@@ -108,7 +109,7 @@ func (a *App) CancelSession(cardID string) bool {
 	if a.mgr == nil {
 		return false
 	}
-	return a.mgr.CancelSessionForCard(cardID, "отменено пользователем")
+	return a.mgr.CancelSessionForCard(cardID, "cancelled by the user")
 }
 
 // ListAgentWorkdirs returns the folder registry as JSON, each entry carrying
@@ -614,7 +615,7 @@ func (a *App) GetTailnetAccess() (string, error) {
 // for either.
 func (a *App) SetTailnetAccess(entryJSON string) (string, error) {
 	if a.tailnet == nil {
-		return "", errors.New("доступ по tailnet недоступен")
+		return "", apperr.New("tailnet.unavailable", "Access over the tailnet is not available in this build")
 	}
 	var want struct {
 		Enabled  bool   `json:"enabled"`
@@ -975,7 +976,7 @@ func (a *App) cardDiffTitle(cardID string) string {
 
 // errSourcesDisabled is returned by the source bindings when the subsystem
 // could not be started at all — no data directory, an unreadable registry.
-var errSourcesDisabled = errors.New("источники недоступны")
+var errSourcesDisabled = apperr.New("sources.unavailable", "Sources are not available")
 
 // ListSources returns the source registry as JSON. It is one list and not a
 // board's: every source writes to the one inbox.
@@ -1088,7 +1089,7 @@ func (a *App) ResetSourceToken(name string) (string, error) {
 	}
 	entry, ok := a.sources.Source(name)
 	if !ok {
-		return "", errors.New("источник не найден")
+		return "", apperr.New("sources.not-found", "Source {name} was not found", "name", name)
 	}
 	token, err := sources.GenerateToken()
 	if err != nil {
@@ -1130,7 +1131,7 @@ func (a *App) SourceEvents(name string, limit int) (string, error) {
 
 // errNoBoard is returned by the board bindings when this build has no board to
 // read — a server that failed to come up, or a test.
-var errNoBoard = errors.New("доска недоступна")
+var errNoBoard = apperr.New("board.unavailable", "The board is not available")
 
 // The board, as the page at /m reads it.
 //
@@ -1164,7 +1165,7 @@ func (a *App) ListBoardCards(boardID string) (string, error) {
 		return "[]", nil
 	}
 	if strings.TrimSpace(boardID) == "" {
-		return "", errors.New("не сказано, какая доска")
+		return "", errors.New("no board given")
 	}
 	cards, err := a.board.BoardCards(context.Background(), boardID)
 	if err != nil {
@@ -1213,7 +1214,7 @@ func (a *App) MoveCardToBoard(cardID, boardID, column string) error {
 		return errNoBoard
 	}
 	if strings.TrimSpace(cardID) == "" || strings.TrimSpace(boardID) == "" {
-		return errors.New("не сказано, какую карточку и куда переносить")
+		return errors.New("no card or no board to move it to")
 	}
 	return a.board.MoveCardToBoard(context.Background(), cardID, boardID, column)
 }
@@ -1222,7 +1223,7 @@ func (a *App) MoveCardToBoard(cardID, boardID, column string) error {
 // carries arrivals on to the boards, what it has read about each board, and
 // what it decided.
 
-var errNoSorter = errors.New("разбор входящих недоступен: нет источников")
+var errNoSorter = apperr.New("inboxsort.unavailable", "Sorting the inbox is not available: sources are off")
 
 // GetInboxSorting returns everything the sorting dialog draws: the settings,
 // every board with its description and summary, and the recent decisions.
@@ -1314,10 +1315,10 @@ func (a *App) SetBoardDescription(boardID, text string) error {
 // delivery does, so the dialog can tell created from already there.
 func (a *App) ShareItem(boardID, title, url, note string) (string, error) {
 	if a.sources == nil {
-		return "", errors.New("источники недоступны")
+		return "", errSourcesDisabled
 	}
 	if strings.TrimSpace(title) == "" && strings.TrimSpace(url) == "" {
-		return "", errors.New("нечего сохранять: ни ссылки, ни заголовка")
+		return "", apperr.New("share.empty", "Nothing to save: there is neither a link nor a title")
 	}
 	// Registered on first use: a person who shares a link has not been asked to
 	// set up a source, and should not have to be.

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/artipop/xciii/internal/apperr"
 	"github.com/artipop/xciii/internal/sources/plugin"
 )
 
@@ -124,10 +125,10 @@ func (m *Manager) newAgentConn(entry SourceEntry, manifest Manifest) (conn, erro
 		return nil, err
 	}
 	if m.agentRunner() == nil {
-		return nil, fmt.Errorf("интеграция агента выключена, а источник %q читается агентом", entry.Name)
+		return nil, apperr.New("sources.agents-off", "Agents are off, and source {name} is read by an agent", "name", entry.Name)
 	}
 	if m.ingestBase() == "" {
-		return nil, fmt.Errorf("неизвестен адрес приёма, некуда складывать найденное")
+		return nil, fmt.Errorf("the intake address is unknown, so there is nowhere to file what is found")
 	}
 	return &agentConn{mgr: m, entry: entry, manifest: manifest, spec: spec}, nil
 }
@@ -151,18 +152,18 @@ func (c *agentConn) PollTimeout() time.Duration { return agentPollTimeout }
 func (c *agentConn) Poll(ctx context.Context, _ string) (plugin.PollResult, error) {
 	runner := c.mgr.agentRunner()
 	if runner == nil {
-		return plugin.PollResult{}, fmt.Errorf("интеграция агента выключена")
+		return plugin.PollResult{}, apperr.New("agents.off", "Agents are off in this install")
 	}
 	// A fresh token per turn, and only for the length of it: the agent's own
 	// process is handed the plaintext, so the shorter it is good for the
 	// better. Nothing else feeds this source, so nothing else is locked out.
 	token, err := c.mgr.IssueToken(c.entry.Name)
 	if err != nil {
-		return plugin.PollResult{}, fmt.Errorf("не удалось выдать токен приёма: %w", err)
+		return plugin.PollResult{}, fmt.Errorf("could not issue an intake token: %w", err)
 	}
 	self, err := os.Executable()
 	if err != nil {
-		return plugin.PollResult{}, fmt.Errorf("не удалось найти путь к приложению: %w", err)
+		return plugin.PollResult{}, fmt.Errorf("could not find the app's path: %w", err)
 	}
 
 	servers := []AgentServer{{

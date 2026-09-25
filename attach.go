@@ -10,6 +10,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/artipop/xciii/internal/apperr"
 	"github.com/artipop/xciii/internal/secrets"
 	"github.com/artipop/xciii/server/client"
 	"github.com/artipop/xciii/server/model"
@@ -176,15 +177,17 @@ func (c *attachController) selected() string {
 	return ""
 }
 
+var errAttachUnavailable = apperr.New("attach.unavailable", "Connecting to a server is not available in this build")
+
 // selectBoard remembers which board to show. The agents work both regardless.
 func (c *attachController) selectBoard(id string) (attachState, error) {
 	if c == nil {
-		return attachState{}, errors.New("подключение недоступно")
+		return attachState{}, errAttachUnavailable
 	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if id != "" && id != c.cfg.URL {
-		return attachState{}, fmt.Errorf("нет подключения к %s", id)
+		return attachState{}, apperr.New("attach.not-attached", "This desktop is not connected to {server}", "server", id)
 	}
 	next := c.cfg
 	next.Selected = id
@@ -205,32 +208,32 @@ func (c *attachController) selectBoard(id string) (attachState, error) {
 // the proxy has nowhere to point until there is an address.
 func (c *attachController) attach(rawURL, username, password string) (attachState, error) {
 	if c == nil {
-		return attachState{}, errors.New("подключение недоступно")
+		return attachState{}, errAttachUnavailable
 	}
 	origin, err := serverOrigin(rawURL)
 	if err != nil {
 		return attachState{}, err
 	}
 	if strings.TrimSpace(username) == "" {
-		return attachState{}, errors.New("нужно имя пользователя")
+		return attachState{}, apperr.New("attach.no-username", "Enter a username")
 	}
 
 	api := client.NewClient(origin, "")
 	login, resp := api.Login(&model.LoginRequest{Type: "normal", Username: username, Password: password})
 	if resp != nil && resp.Error != nil {
-		return attachState{}, fmt.Errorf("вход на %s: %w", origin, resp.Error)
+		return attachState{}, apperr.Wrap(resp.Error, "attach.login-failed", "Could not log in to {server}", "server", origin)
 	}
 	if login == nil || login.Token == "" {
-		return attachState{}, fmt.Errorf("сервер %s не выдал сессию", origin)
+		return attachState{}, apperr.New("attach.no-session", "{server} did not give a session", "server", origin)
 	}
 
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if c.vault == nil {
-		return attachState{}, errors.New("негде хранить сессию")
+		return attachState{}, apperr.New("attach.no-vault", "There is nowhere on this machine to keep the session")
 	}
 	if err := c.vault.Set(attachTokenKey, login.Token); err != nil {
-		return attachState{}, fmt.Errorf("сохранение сессии: %w", err)
+		return attachState{}, apperr.Wrap(err, "attach.save-session", "Could not save the session")
 	}
 	// Attaching selects it: showing this machine's own board after somebody
 	// just typed a server's address would be answering a different question.
@@ -247,7 +250,7 @@ func (c *attachController) attach(rawURL, username, password string) (attachStat
 // that was made there; what goes is this machine's way in.
 func (c *attachController) detach() (attachState, error) {
 	if c == nil {
-		return attachState{}, errors.New("подключение недоступно")
+		return attachState{}, errAttachUnavailable
 	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -269,7 +272,7 @@ func (c *attachController) detach() (attachState, error) {
 func serverOrigin(raw string) (string, error) {
 	raw = strings.TrimSpace(raw)
 	if raw == "" {
-		return "", errors.New("нужен адрес сервера")
+		return "", apperr.New("attach.no-address", "Enter the server's address")
 	}
 	if !strings.Contains(raw, "://") {
 		// Typing a bare host is the ordinary case, and https is the answer that
@@ -280,13 +283,13 @@ func serverOrigin(raw string) (string, error) {
 	}
 	parsed, err := url.Parse(raw)
 	if err != nil {
-		return "", fmt.Errorf("адрес %q: %w", raw, err)
+		return "", apperr.Wrap(err, "attach.bad-address", "{address} is not an address", "address", raw)
 	}
 	if parsed.Scheme != "http" && parsed.Scheme != "https" {
-		return "", fmt.Errorf("адрес %q: нужен http или https", raw)
+		return "", apperr.New("attach.bad-scheme", "{address}: the address has to start with http or https", "address", raw)
 	}
 	if parsed.Host == "" {
-		return "", fmt.Errorf("адрес %q: не указан хост", raw)
+		return "", apperr.New("attach.no-host", "{address}: the address has no host", "address", raw)
 	}
 	return parsed.Scheme + "://" + parsed.Host, nil
 }

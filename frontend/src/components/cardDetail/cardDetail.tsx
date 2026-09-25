@@ -31,7 +31,7 @@ import type {AppStore} from '../../store'
 
 import CaseStamp, {isCaseStampAvailable} from '../acp/caseStamp'
 import AttentionAnswers from '../acp/attentionAnswers'
-import {attentionHeading, useCardAttention} from '../acp/attention'
+import {attentionHeading, questionText, useCardAttention} from '../acp/attention'
 
 import {CardDetailProvider} from './cardDetailContext'
 import CardDetailContents from './cardDetailContents'
@@ -258,7 +258,7 @@ const CardDetail = (props: Props): JSX.Element => {
                         <div class='CardDetail__asking'>
                             <span class='CardDetail__askingHeading'>{attentionHeading(intl, wait())}</span>
                             <Show when={wait().text}>
-                                <span class='CardDetail__askingText'>{wait().text}</span>
+                                <span class='CardDetail__askingText'>{questionText(intl, wait())}</span>
                             </Show>
                             <AttentionAnswers target={wait()}/>
                         </div>

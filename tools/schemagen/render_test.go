@@ -193,6 +193,9 @@ func TestTheCollapsedMigrationBuildsTheSchemaTheLadderBuilt(t *testing.T) {
 	// The tables this schema deliberately differs from the ladder on, and why.
 	// Declared here rather than by editing the snapshot: the snapshot is what
 	// the ladder built and it stays true, so every deviation stays visible.
+	// What this app says in a row is kept as a code and its values beside the
+	// English, for the page to word (internal/apperr).
+	const wordedByThePage = "a code and values beside the English, for the page to word"
 	intendedTables := map[string][]string{
 		// Widened: utils.NewID was already overflowing varchar(26) by one
 		// character, and UUIDv7 needs 36.
@@ -212,7 +215,8 @@ func TestTheCollapsedMigrationBuildsTheSchemaTheLadderBuilt(t *testing.T) {
 		// A column's limit stopped being counted in one process's memory.
 		"table agent_session": {"column_key: which column's limit this run counts against"},
 		// Its one kind was a conversation cut off in a terminal.
-		"table card_stall": {terminalsRemoved},
+		"table card_stall":   {terminalsRemoved, wordedByThePage},
+		"table source_event": {wordedByThePage},
 	}
 	// Tables the ladder made that are gone on purpose.
 	intendedRemovals := map[string]string{

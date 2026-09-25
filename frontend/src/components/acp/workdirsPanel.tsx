@@ -12,6 +12,8 @@ import {sendFlashMessage} from '../flashMessages'
 import {goApp} from '../../goBridge'
 import {aiEnabled} from '../../aiSwitch'
 
+import {goError} from '../../goMessages'
+
 import {Workdir, fieldNames, findWorkdirProperty, syncWorkdirsToBoard, useWorkdirHere} from './workdirSync'
 
 import './workdirsPanel.scss'
@@ -95,7 +97,7 @@ const WorkdirsPanel = (props: Props) => {
                 })
             }
         } catch (e) {
-            setError(String(e))
+            setError(goError(intl, e))
         }
     }
 
@@ -110,7 +112,7 @@ const WorkdirsPanel = (props: Props) => {
             registry = JSON.parse(await bindings.ListAgentWorkdirs(props.board.id)) || []
             setWorkdirs(registry)
         } catch (e) {
-            setError(String(e))
+            setError(goError(intl, e))
             return
         }
 
@@ -148,7 +150,7 @@ const WorkdirsPanel = (props: Props) => {
             setPendingPath(path)
             setPendingName(path.split('/').filter(Boolean).pop() || '')
         } catch (e) {
-            setError(String(e))
+            setError(goError(intl, e))
         }
     }
 
@@ -164,7 +166,7 @@ const WorkdirsPanel = (props: Props) => {
             setPendingGlobal(false)
             await refresh()
         } catch (e) {
-            setError(String(e))
+            setError(goError(intl, e))
         }
     }
 
@@ -181,7 +183,7 @@ const WorkdirsPanel = (props: Props) => {
             setPendingName('')
             await refresh()
         } catch (e) {
-            setError(String(e))
+            setError(goError(intl, e))
         }
     }
 
@@ -194,7 +196,7 @@ const WorkdirsPanel = (props: Props) => {
             await bindings.AttachAgentWorkdir(name, props.board.id)
             await refresh()
         } catch (e) {
-            setError(String(e))
+            setError(goError(intl, e))
         }
     }
 
@@ -210,7 +212,7 @@ const WorkdirsPanel = (props: Props) => {
             await bindings.SetAgentWorkdirMode(name, props.board.id, mode)
             await refresh()
         } catch (e) {
-            setError(String(e))
+            setError(goError(intl, e))
         }
     }
 
@@ -225,7 +227,7 @@ const WorkdirsPanel = (props: Props) => {
             await bindings.SetAgentWorkdirBase(name, branch.trim())
             await refresh()
         } catch (e) {
-            setError(String(e))
+            setError(goError(intl, e))
         }
     }
 
@@ -239,7 +241,7 @@ const WorkdirsPanel = (props: Props) => {
             setRemoving('')
             await refresh()
         } catch (e) {
-            setError(String(e))
+            setError(goError(intl, e))
         }
     }
 

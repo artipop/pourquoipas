@@ -89,7 +89,7 @@ func LoadManifests(dir string) ([]Manifest, []error) {
 		if os.IsNotExist(err) {
 			return nil, nil
 		}
-		return nil, []error{fmt.Errorf("каталог манифестов %s: %w", dir, err)}
+		return nil, []error{fmt.Errorf("manifest directory %s: %w", dir, err)}
 	}
 	var (
 		out  []Manifest

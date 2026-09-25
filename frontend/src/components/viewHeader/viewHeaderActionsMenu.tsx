@@ -26,6 +26,7 @@ import InboxSortingDialog, {isInboxSortingAvailable} from '../acp/inboxSortingDi
 import TemplateEditor from '../acp/templateEditor'
 import {isSaveAsTemplateAvailable, saveBoardAsTemplate} from '../acp/saveAsTemplate'
 import {isInboxBoard} from '../acp/inboxView'
+import {goError} from '../../goMessages'
 
 // What this menu holds is what is true of *this board*, and only that. The
 // registries it used to open — agents, where to deploy, how to reach the
@@ -103,7 +104,7 @@ const ViewHeaderActionsMenu = (props: Props) => {
         try {
             setTemplate(await saveBoardAsTemplate(props.board, intl))
         } catch (e) {
-            sendFlashMessage({content: String(e), severity: 'high'})
+            sendFlashMessage({content: goError(intl, e), severity: 'high'})
         }
     }
 

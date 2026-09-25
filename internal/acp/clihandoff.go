@@ -1,8 +1,9 @@
 package acp
 
 import (
-	"fmt"
 	"strings"
+
+	"github.com/artipop/xciii/internal/apperr"
 )
 
 // Some agents are an adapter in front of a CLI, and the CLI can do things the
@@ -100,10 +101,10 @@ func validateCLIArgs(a AgentEntry) ([]string, error) {
 		return nil, nil
 	}
 	if _, ok := cliHandoffKind(a.Kind); !ok {
-		return nil, fmt.Errorf("агенту типа %q нельзя передать аргументы CLI: у его адаптера нет такого канала — используйте «Дополнительные аргументы» (они уходят в саму команду запуска)", a.Kind)
+		return nil, apperr.New("agents.cli-args-kind", "An agent of kind {kind} cannot be handed CLI arguments: its adapter has no way to pass them. Use the extra CLI arguments, which go into the launch command itself", "kind", a.Kind)
 	}
 	if !strings.HasPrefix(args[0], "-") {
-		return nil, fmt.Errorf("аргументы CLI должны начинаться с флага, например --remote-control (получено %q)", args[0])
+		return nil, apperr.New("agents.cli-args-flag", "CLI arguments have to start with a flag, for example --remote-control (got {got})", "got", args[0])
 	}
 	return args, nil
 }

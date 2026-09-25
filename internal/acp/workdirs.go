@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+
+	"github.com/artipop/xciii/internal/apperr"
 )
 
 // Folder registry: places an agent can work, edited from the desktop UI and
@@ -71,12 +73,12 @@ func (m *Manager) WorkdirsForBoard(boardID string) []WorkdirEntry {
 // target is a machine, and those describe the thing being deployed.
 func (m *Manager) AddWorkdir(name, path, boardID, kind string, global bool) (WorkdirEntry, error) {
 	if !filepath.IsAbs(path) {
-		return WorkdirEntry{}, fmt.Errorf("путь должен быть абсолютным: %s", path)
+		return WorkdirEntry{}, apperr.New("folders.not-absolute", "The path has to be absolute: {path}", "path", path)
 	}
 	clean := filepath.Clean(path)
 	info, err := os.Stat(clean)
 	if err != nil || !info.IsDir() {
-		return WorkdirEntry{}, fmt.Errorf("папка не найдена: %s", clean)
+		return WorkdirEntry{}, apperr.New("folders.missing", "There is no folder at {path}", "path", clean)
 	}
 	// A folder under git gets a branch of its own and every transition that
 	// waits for one; one without is an ordinary folder an agent works in, which
@@ -84,7 +86,7 @@ func (m *Manager) AddWorkdir(name, path, boardID, kind string, global bool) (Wor
 	// refused here (see IsGitWorkdir).
 	kind = strings.TrimSpace(strings.ToLower(kind))
 	if kind == WorkdirGit && !IsGitWorkdir(m.rootCtx, clean) {
-		return WorkdirEntry{}, fmt.Errorf("в папке %s нет git — этой доске нужен репозиторий: сделайте её репозиторием (git init) или выберите другую", clean)
+		return WorkdirEntry{}, apperr.New("setup.needs-git", "The folder {dir} has no git, and this board needs a repository: it publishes a branch or waits for one. Run `git init` or choose another folder", "dir", clean)
 	}
 	name = strings.TrimSpace(name)
 	if name == "" {
@@ -100,10 +102,10 @@ func (m *Manager) AddWorkdir(name, path, boardID, kind string, global bool) (Wor
 	// flag, and the error says so.
 	for _, r := range m.cfg.Workdirs {
 		if strings.EqualFold(r.Name, name) {
-			return WorkdirEntry{}, fmt.Errorf("имя %q уже занято (%s)", r.Name, r.Path)
+			return WorkdirEntry{}, apperr.New("folders.name-taken", "The name {name} is taken ({path})", "name", r.Name, "path", r.Path)
 		}
 		if filepath.Clean(r.Path) == clean {
-			return WorkdirEntry{}, fmt.Errorf("папка уже добавлена как %q — отметьте её общей, чтобы она была доступна и на этой доске", r.Name)
+			return WorkdirEntry{}, apperr.New("folders.added-elsewhere", "The folder is already added as {name}: mark it shared to have it on this board too", "name", r.Name)
 		}
 	}
 	entry := WorkdirEntry{ID: newWorkdirID(), Name: name, Path: clean, BoardID: boardID, Global: global, Kind: kind}
@@ -157,7 +159,7 @@ func (m *Manager) ShareWorkdir(name string) (WorkdirEntry, error) {
 		m.cfg.Workdirs[i].Global = true
 		return m.cfg.Workdirs[i], m.persistConfigLocked()
 	}
-	return WorkdirEntry{}, fmt.Errorf("папка %q не найдена", name)
+	return WorkdirEntry{}, apperr.New("folders.not-found", "Folder {name} was not found", "name", name)
 }
 
 // WorkdirAt is the registry entry for a path, whichever board it belongs to.
@@ -188,7 +190,7 @@ func (m *Manager) SetWorkdirBase(name, branch string) (WorkdirEntry, error) {
 		m.cfg.Workdirs[i].BaseBranch = strings.TrimSpace(branch)
 		return m.cfg.Workdirs[i], m.persistConfigLocked()
 	}
-	return WorkdirEntry{}, fmt.Errorf("папка %q не найдена", name)
+	return WorkdirEntry{}, apperr.New("folders.not-found", "Folder {name} was not found", "name", name)
 }
 
 // WorkdirStatus is a registry entry as a screen needs it: the entry, plus what
@@ -263,7 +265,7 @@ func (m *Manager) UnattachedWorkdirs() []WorkdirEntry {
 // does not have to be refused.
 func (m *Manager) AttachWorkdir(name, boardID string) (WorkdirEntry, error) {
 	if strings.TrimSpace(boardID) == "" {
-		return WorkdirEntry{}, fmt.Errorf("не указана доска")
+		return WorkdirEntry{}, fmt.Errorf("no board given")
 	}
 	m.cfgMu.Lock()
 	defer m.cfgMu.Unlock()
@@ -272,12 +274,12 @@ func (m *Manager) AttachWorkdir(name, boardID string) (WorkdirEntry, error) {
 			continue
 		}
 		if p.Attached() {
-			return WorkdirEntry{}, fmt.Errorf("папка %q уже принадлежит доске", p.Name)
+			return WorkdirEntry{}, apperr.New("folders.owned", "Folder {name} already belongs to a board", "name", p.Name)
 		}
 		m.cfg.Workdirs[i].BoardID = boardID
 		return m.cfg.Workdirs[i], m.persistConfigLocked()
 	}
-	return WorkdirEntry{}, fmt.Errorf("папка %q не найдена", name)
+	return WorkdirEntry{}, apperr.New("folders.not-found", "Folder {name} was not found", "name", name)
 }
 
 // RemoveWorkdir deletes a registry entry by name and persists the config.
@@ -290,7 +292,7 @@ func (m *Manager) RemoveWorkdir(name string) error {
 			return m.persistConfigLocked()
 		}
 	}
-	return fmt.Errorf("папка %q не найдена", name)
+	return apperr.New("folders.not-found", "Folder {name} was not found", "name", name)
 }
 
 func (m *Manager) persistConfigLocked() error {
@@ -299,14 +301,14 @@ func (m *Manager) persistConfigLocked() error {
 	// gives a test a registry that survives a restart without one.
 	if err := m.persistRegistriesLocked(); err != nil {
 		m.log.Error("acp: failed to persist the registries", "err", err)
-		return fmt.Errorf("не удалось сохранить реестры: %w", err)
+		return fmt.Errorf("could not save the registries: %w", err)
 	}
 	if m.cfgPath == "" {
 		return nil // tests / ephemeral configs
 	}
 	if err := SaveConfig(m.cfgPath, m.cfg); err != nil {
 		m.log.Error("acp: failed to persist config", "err", err)
-		return fmt.Errorf("не удалось сохранить конфиг: %w", err)
+		return fmt.Errorf("could not save the config: %w", err)
 	}
 	return nil
 }
@@ -321,12 +323,12 @@ func (m *Manager) resolveNamedWorkdir(name string) (string, error) {
 	for _, r := range workdirs {
 		if strings.EqualFold(strings.TrimSpace(name), r.Name) {
 			if info, err := os.Stat(r.Path); err != nil || !info.IsDir() {
-				return "", fmt.Errorf("папка %q указывает на несуществующий каталог %s", r.Name, r.Path)
+				return "", apperr.New("folders.gone", "Folder {name} points at {path}, which does not exist", "name", r.Name, "path", r.Path)
 			}
 			return r.Path, nil
 		}
 	}
-	return "", fmt.Errorf("папка %q не найдена в реестре (%s)", name, workdirNames(workdirs))
+	return "", apperr.New("folders.not-in-registry", "Folder {name} is not in the registry ({folders})", "name", name, "folders", workdirNames(workdirs))
 }
 
 // errNoWorkdir marks the refusals that mean "the card names no folder" — as
@@ -335,6 +337,8 @@ func (m *Manager) resolveNamedWorkdir(name string) (string, error) {
 // folder instead of refusing (a card can be talked over — wording, a plan —
 // before anybody decides where the work lives).
 type errNoWorkdir struct{ error }
+
+func (e errNoWorkdir) Unwrap() error { return e.error }
 
 // CardFolder answers where a conversation on this card would run: the folder
 // the card resolves, or nothing. The terminal panel reads it before starting
@@ -383,14 +387,14 @@ func (m *Manager) resolveWorkdir(ev CardMoved) (string, error) {
 	entry, ok := m.cardWorkdir(ev, workdirs)
 	if ok {
 		if info, err := os.Stat(entry.Path); err != nil || !info.IsDir() {
-			return "", fmt.Errorf("папка %q указывает на несуществующий каталог %s", entry.Name, entry.Path)
+			return "", apperr.New("folders.gone", "Folder {name} points at {path}, which does not exist", "name", entry.Name, "path", entry.Path)
 		}
 		return entry.Path, nil
 	}
 	if len(workdirs) == 0 {
-		return "", errNoWorkdir{fmt.Errorf("у карточки не заполнено поле «Папка» и в реестре нет ни одной папки (меню доски → «Папки…»)")}
+		return "", errNoWorkdir{apperr.New("folders.none", "The card names no folder, and there are no folders in the registry (the board's menu, Folders…)")}
 	}
-	return "", errNoWorkdir{fmt.Errorf("в поле «Папка» карточки не выбрана ни одна папка из реестра (%s)", workdirNames(workdirs))}
+	return "", errNoWorkdir{apperr.New("folders.unchosen", "The card's folder field names none of the registry's folders ({folders})", "folders", workdirNames(workdirs))}
 }
 
 // cardWorkdir is the registry entry a card points at, among the ones this board

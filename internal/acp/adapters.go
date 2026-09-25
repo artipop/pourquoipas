@@ -6,6 +6,8 @@ import (
 	"os/exec"
 	"strings"
 	"time"
+
+	"github.com/artipop/xciii/internal/apperr"
 )
 
 // Two of the kinds we support are reached through an adapter their vendor
@@ -33,7 +35,7 @@ type AdapterStatus struct {
 	// it works, only the first run pays for the download.
 	ViaNPX bool `json:"viaNpx,omitempty"`
 	// Detail says what is missing, in the words the user needs to act on.
-	Detail string `json:"detail,omitempty"`
+	Detail *apperr.Message `json:"detail,omitempty"`
 }
 
 // AdapterStatuses reports every kind we know how to launch, in the order the UI
@@ -58,19 +60,23 @@ func adapterStatus(kind string) AdapterStatus {
 		return st
 	}
 	if def.npmPackage == "" {
-		st.Detail = fmt.Sprintf("не найден %s — укажите binPath или command у агента", def.bin)
+		st.Detail = say(apperr.Say("adapter.not-found", "{bin} was not found: give the agent a binPath or a command", "bin", def.bin))
 		return st
 	}
 	if _, err := lookupBin("npx", ""); err == nil {
 		st.Ready, st.ViaNPX = true, true
-		st.Detail = fmt.Sprintf("%s не установлен — будет запускаться через npx (первый запуск дольше)", def.bin)
+		st.Detail = say(apperr.Say("adapter.via-npx", "{bin} is not installed, so it will be run through npx (the first run takes longer)", "bin", def.bin))
 		return st
 	}
 	// Nothing to offer: npm is how both adapters are published, and installing
 	// Node.js is not something to do behind the user's back.
-	st.Detail = fmt.Sprintf("не найден ни %s, ни npx — поставьте Node.js и выполните `npm install -g %s`", def.bin, def.npmPackage)
+	st.Detail = say(apperr.Say("adapter.missing", "Neither {bin} nor npx was found: install Node.js and run `npm install -g {package}`", "bin", def.bin, "package", def.npmPackage))
 	return st
 }
+
+// say is a Message where a field holds one only when there is something to
+// say.
+func say(m apperr.Message) *apperr.Message { return &m }
 
 // installTimeout bounds an adapter install. Both adapters pull a CLI of their
 // own along with them, so a slow link needs real time here.
@@ -83,11 +89,11 @@ const installTimeout = 10 * time.Minute
 func (m *Manager) InstallAdapter(kind string) (string, error) {
 	def, known := acpNative[kind]
 	if !known || def.npmPackage == "" {
-		return "", fmt.Errorf("для агента %q нечего устанавливать", kind)
+		return "", fmt.Errorf("agent kind %q has nothing to install", kind)
 	}
 	npm, err := lookupBin("npm", "")
 	if err != nil {
-		return "", fmt.Errorf("не найден npm — установите Node.js")
+		return "", apperr.New("adapter.no-npm", "npm was not found: install Node.js")
 	}
 	parent := m.rootCtx
 	if parent == nil {

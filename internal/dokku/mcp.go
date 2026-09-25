@@ -172,7 +172,7 @@ func recordOutcome(dir string, res Result, branch string, deployErr error) {
 		o.Error = deployErr.Error()
 	}
 	if err := WriteOutcome(dir, o); err != nil {
-		fmt.Fprintf(os.Stderr, "mcp dokku: не удалось записать %s: %v\n", OutcomeFile, err)
+		fmt.Fprintf(os.Stderr, "mcp dokku: could not write %s: %v\n", OutcomeFile, err)
 	}
 }
 

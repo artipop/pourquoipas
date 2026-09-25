@@ -17,6 +17,7 @@ import (
 	"github.com/artipop/xciii/server/services/notify"
 
 	"github.com/artipop/xciii/internal/acp"
+	"github.com/artipop/xciii/internal/apperr"
 	"github.com/artipop/xciii/internal/boardadapter"
 	"github.com/artipop/xciii/internal/inboxsort"
 	"github.com/artipop/xciii/internal/secrets"
@@ -369,11 +370,11 @@ func main() {
 		// what was wrong with it.
 		manifests, errs := sources.LoadManifests(filepath.Join(dir, sources.ManifestsDir))
 		for _, err := range errs {
-			log.Printf("sources: манифест не прочитан: %v", err)
+			log.Printf("sources: manifest not read: %v", err)
 		}
 		sourceMgr.SetCatalog(manifests)
 		if len(manifests) > 0 {
-			log.Printf("sources: %d манифест(ов) из %s", len(manifests), filepath.Join(dir, sources.ManifestsDir))
+			log.Printf("sources: %d manifest(s) from %s", len(manifests), filepath.Join(dir, sources.ManifestsDir))
 		}
 		sourceMgr.SetSecrets(vault)
 		// Plugins come up here and go down in shutdown below. A source fed over
@@ -490,6 +491,9 @@ func main() {
 		Services: []application.Service{
 			application.NewService(app),
 		},
+		// An error a person can act on reaches the page as a code and values
+		// rather than as a sentence (internal/apperr).
+		MarshalError: apperr.MarshalError,
 		Assets: application.AssetOptions{
 			Handler: handler,
 		},

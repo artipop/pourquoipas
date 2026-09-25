@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+
+	"github.com/artipop/xciii/internal/apperr"
 )
 
 // Planning is talking a task over with an agent before a card exists: a
@@ -70,7 +72,7 @@ func (m *Manager) StartPlanning(boardID, folderName, agentName string) (Planning
 		return PlanningInfo{}, errSwitchedOff
 	}
 	if strings.TrimSpace(boardID) == "" {
-		return PlanningInfo{}, fmt.Errorf("не сказано, на какой доске планировать")
+		return PlanningInfo{}, fmt.Errorf("no board to plan on was given")
 	}
 	workdir, err := m.planningWorkdir(folderName)
 	if err != nil {
@@ -91,7 +93,7 @@ func (m *Manager) StartPlanning(boardID, folderName, agentName string) (Planning
 		// drafts, the same place every conversation without one has.
 		cwd = m.boardFolder(boardID)
 		if err := os.MkdirAll(cwd, 0o755); err != nil {
-			return PlanningInfo{}, fmt.Errorf("не удалось создать черновики доски: %w", err)
+			return PlanningInfo{}, fmt.Errorf("could not create the board's drafts: %w", err)
 		}
 	}
 
@@ -204,11 +206,11 @@ func (m *Manager) runPlanning(ctx context.Context, chat *planningChat, opening s
 func (m *Manager) SayToPlanning(id, text string) error {
 	chat := m.planningChat(id)
 	if chat == nil {
-		return fmt.Errorf("разговор закончен")
+		return apperr.New("planning.over", "The conversation is over")
 	}
 	text = strings.TrimSpace(text)
 	if text == "" {
-		return fmt.Errorf("пустое сообщение")
+		return apperr.New("planning.empty", "The message is empty")
 	}
 	chat.mu.Lock()
 	if chat.err != "" && chat.s.Status().Terminal() {
@@ -225,7 +227,7 @@ func (m *Manager) SayToPlanning(id, text string) error {
 		chat.mu.Lock()
 		chat.messages = chat.messages[:len(chat.messages)-1]
 		chat.mu.Unlock()
-		return fmt.Errorf("агент ещё не ответил на предыдущие сообщения")
+		return apperr.New("planning.busy", "The agent has not answered the earlier messages yet")
 	}
 	m.emitPlanning(chat)
 	return nil

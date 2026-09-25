@@ -210,7 +210,7 @@ func serve(source Source, in io.Reader, out io.Writer) {
 
 func handlePoll(ctx context.Context, source Source, session *Session, out *json.Encoder, id *int64, raw json.RawMessage) {
 	if source.Poll == nil {
-		fail(out, id, &Error{Message: "плагин не умеет отвечать на poll"})
+		fail(out, id, &Error{Message: "the plugin cannot answer poll"})
 		return
 	}
 	var params protocol.PollParams

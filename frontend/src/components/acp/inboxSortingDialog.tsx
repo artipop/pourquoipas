@@ -8,6 +8,7 @@ import Button from '../../widgets/buttons/button'
 import Dialog from '../dialog'
 
 import {goApp} from '../../goBridge'
+import {GoMessage, goMessage} from '../../goMessages'
 
 import './inboxSortingDialog.scss'
 
@@ -36,7 +37,7 @@ export type SortingDecision = {
     cardTitle?: string
     boardId?: string
     outcome: 'moved' | 'kept' | 'failed'
-    reason?: string
+    reason?: GoMessage
     at: string
 }
 
@@ -265,7 +266,7 @@ const InboxSortingDialog = (props: Props) => {
                                     {' — '}
                                     {outcomeText(d)}
                                     <Show when={d.reason}>
-                                        <span class='InboxSortingDialog__reason'>{d.reason}</span>
+                                        <span class='InboxSortingDialog__reason'>{goMessage(intl, d.reason)}</span>
                                     </Show>
                                 </li>
                             )}

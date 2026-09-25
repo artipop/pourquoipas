@@ -103,7 +103,7 @@ describe('components/acp/agentsPanel', () => {
             GetAgentSystemPrompt: vi.fn().mockResolvedValue(''),
             SetAgentSystemPrompt: vi.fn(),
             ListAgentAdapters: vi.fn().mockResolvedValue(JSON.stringify([
-                {kind: 'claude', package: '@agentclientprotocol/claude-agent-acp', ready: false, detail: 'не найден claude-agent-acp'},
+                {kind: 'claude', package: '@agentclientprotocol/claude-agent-acp', ready: false, detail: {code: 'adapter.not-found', args: {bin: 'claude-agent-acp'}, text: 'claude-agent-acp was not found'}},
                 {kind: 'codex', package: '@agentclientprotocol/codex-acp', ready: true, path: '/usr/local/bin/codex-acp'},
             ])),
             InstallAgentAdapter: vi.fn().mockResolvedValue('added 1 package'),
@@ -121,14 +121,14 @@ describe('components/acp/agentsPanel', () => {
         userEvent.click(screen.getByRole('button', {name: 'Add agent…'}))
 
         // The default kind is claude, which this machine cannot start.
-        await waitFor(() => expect(screen.getByText('не найден claude-agent-acp')).toBeInTheDocument())
+        await waitFor(() => expect(screen.getByText('claude-agent-acp was not found: give the agent a binPath or a command')).toBeInTheDocument())
 
         userEvent.click(screen.getByRole('button', {name: 'Install adapter'}))
         await waitFor(() => expect(bindings.InstallAgentAdapter).toHaveBeenCalledWith('claude'))
 
         // An installed kind says nothing at all.
         chooseOption(screen.getByRole('button', {name: 'Kind'}), 'Codex')
-        await waitFor(() => expect(screen.queryByText('не найден claude-agent-acp')).not.toBeInTheDocument())
+        await waitFor(() => expect(screen.queryByText('claude-agent-acp was not found: give the agent a binPath or a command')).not.toBeInTheDocument())
     })
 
     test('offers the ACP-native kinds and saves one without a launch command', async () => {

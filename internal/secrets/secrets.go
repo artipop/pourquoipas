@@ -21,6 +21,8 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+
+	"github.com/artipop/xciii/internal/apperr"
 )
 
 // Store is the whole surface. A key is a name the caller chose (a source's
@@ -35,7 +37,7 @@ type Store interface {
 // rather than a formatted error so a caller can tell "no credential yet" from
 // "the store is broken", which are different situations: the first asks a
 // person to connect the source, the second is a bug.
-var ErrNotFound = fmt.Errorf("секрет не найден")
+var ErrNotFound = fmt.Errorf("secret not found")
 
 // FileStore keeps secrets in one JSON file. Safe for concurrent use.
 type FileStore struct {
@@ -69,7 +71,7 @@ func (s *FileStore) Get(key string) (string, error) {
 
 func (s *FileStore) Set(key, value string) error {
 	if strings.TrimSpace(key) == "" {
-		return fmt.Errorf("у секрета нет имени")
+		return fmt.Errorf("the secret has no name")
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -108,7 +110,7 @@ func (s *FileStore) loadLocked() error {
 			// A file that cannot be read is not quietly replaced: overwriting
 			// it would destroy every credential in it, and a person can still
 			// fix a file they are told about.
-			return fmt.Errorf("не удалось прочитать %s: %w", s.path, err)
+			return fmt.Errorf("could not read %s: %w", s.path, err)
 		}
 	}
 	s.loaded = true
@@ -158,11 +160,11 @@ func (e Env) Get(key string) (string, error) {
 // process is not a place to keep anything: what is written here is gone at
 // exit, and pretending otherwise would lose a token somebody typed.
 func (e Env) Set(string, string) error {
-	return fmt.Errorf("секрет из окружения нельзя изменить из приложения")
+	return apperr.New("secrets.env-readonly", "A secret from the environment cannot be changed from the app")
 }
 
 func (e Env) Delete(string) error {
-	return fmt.Errorf("секрет из окружения нельзя удалить из приложения")
+	return apperr.New("secrets.env-undeletable", "A secret from the environment cannot be deleted from the app")
 }
 
 func (e Env) name(key string) string {
@@ -205,7 +207,7 @@ func (c Chain) Set(key, value string) error {
 			return nil
 		}
 	}
-	return fmt.Errorf("секрет некуда сохранить")
+	return apperr.New("secrets.nowhere", "There is nowhere on this machine to keep the secret")
 }
 
 func (c Chain) Delete(key string) error {

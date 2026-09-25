@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/artipop/xciii/internal/apperr"
 	"github.com/artipop/xciii/internal/dokku"
 )
 
@@ -194,7 +195,7 @@ func (s *AgentMCPServer) UnmarshalJSON(data []byte) error {
 	}
 	var argv []string
 	if err := json.Unmarshal(raw.Command, &argv); err != nil {
-		return fmt.Errorf("\"command\" должен быть строкой или списком аргументов, а не %s", raw.Command)
+		return fmt.Errorf("\"command\" has to be a string or a list of arguments, not %s", raw.Command)
 	}
 	if len(argv) == 0 {
 		return nil
@@ -238,7 +239,7 @@ func (s *MCPServerSet) UnmarshalJSON(data []byte) error {
 			}
 			name := strings.TrimSpace(named.Name)
 			if name == "" {
-				return fmt.Errorf("mcpServers: у сервера №%d нет имени — добавьте \"name\" или запишите их объектом {\"имя\": {…}}", i+1)
+				return fmt.Errorf("mcpServers: server #%d has no name: add \"name\" or write them as an object {\"name\": {…}}", i+1)
 			}
 			var server AgentMCPServer
 			if err := json.Unmarshal(item, &server); err != nil {
@@ -299,10 +300,10 @@ func (n NetworkSettings) ProxyURL() (string, error) {
 	}
 	u, err := url.Parse(raw)
 	if err != nil {
-		return "", fmt.Errorf("не удалось разобрать адрес прокси %q: %w", raw, err)
+		return "", apperr.Wrap(err, "proxies.bad-address", "Could not read the proxy address {address}", "address", raw)
 	}
 	if u.Scheme == "" || u.Host == "" {
-		return "", fmt.Errorf("в адресе прокси %q не хватает схемы или хоста, например http://%s", raw, raw)
+		return "", apperr.New("proxies.no-scheme", "The proxy address {address} lacks a scheme or a host, for example http://{address}", "address", raw)
 	}
 	if user := strings.TrimSpace(n.Username); user != "" {
 		if n.Password == "" {
@@ -381,7 +382,7 @@ func (n NetworkSettings) Validate(kind string) (NetworkSettings, error) {
 	n.CACert = strings.TrimSpace(n.CACert)
 	n.Username = strings.TrimSpace(n.Username)
 	if n.Proxy == "" && (n.Username != "" || n.Password != "") {
-		return n, fmt.Errorf("логин/пароль заданы без адреса прокси")
+		return n, apperr.New("proxies.credentials-alone", "A login and a password are given without a proxy address")
 	}
 	if n.Proxy != "" {
 		// The CLIs read the proxy variables as URLs; a bare host:port is
@@ -392,7 +393,7 @@ func (n NetworkSettings) Validate(kind string) (NetworkSettings, error) {
 		// Claude Code documents no SOCKS support (code.claude.com/docs/en/network-config),
 		// so a socks:// value would be accepted here and then quietly ignored.
 		if kind == AgentKindClaude && strings.HasPrefix(strings.ToLower(n.Proxy), "socks") {
-			return n, fmt.Errorf("Claude Code не поддерживает SOCKS-прокси: укажи http(s):// или заверни CLI в команду запуска (command)")
+			return n, apperr.New("proxies.socks-claude", "Claude Code does not support SOCKS proxies: give an http(s):// address, or wrap the CLI in a launch command (command)")
 		}
 	}
 	return n, nil

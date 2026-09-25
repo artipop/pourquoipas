@@ -38,6 +38,7 @@ describe('components/sidebar/boardSourceSwitcher', () => {
         fakeGoSide({
             GetServerAttachment: vi.fn().mockResolvedValue(JSON.stringify({
                 selected: 'https://board.example.com',
+
                 // The title Go sends for this machine is not what is drawn:
                 // the page names it in its own language.
                 sources: [{id: '', title: 'from Go'}, {id: 'https://board.example.com', title: 'https://board.example.com'}],

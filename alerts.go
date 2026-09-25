@@ -76,7 +76,11 @@ func alertBody(w uiWords, a acp.Attention) string {
 	if title := strings.TrimSpace(a.Title); title != "" {
 		parts = append(parts, title)
 	}
-	if text := strings.TrimSpace(a.Text); text != "" {
+	text := a.Text
+	if a.Say != nil {
+		text = w.say(*a.Say)
+	}
+	if text := strings.TrimSpace(text); text != "" {
 		parts = append(parts, text)
 	}
 	if len(parts) == 0 {

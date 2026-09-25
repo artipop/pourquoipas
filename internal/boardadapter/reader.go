@@ -69,7 +69,7 @@ func (w *Writer) columnsOf(board *model.Board) (string, []Column, error) {
 	}
 	name, ok := boardmodel.ColumnPropertyName(board, schema, views)
 	if !ok {
-		return "", nil, fmt.Errorf("на доске %s нет свойства-колонок", board.ID)
+		return "", nil, fmt.Errorf("board %s has no column property", board.ID)
 	}
 	prop, ok := boardmodel.FindCardProperty(board.CardProperties, name)
 	if !ok {
@@ -185,7 +185,7 @@ func (w *Writer) MoveCardToBoard(ctx context.Context, cardID, toBoardID, column 
 	if _, err := w.app.MoveCardToBoard(cardID, toBoardID, model.SingleUser); err != nil {
 		card, readErr := w.cardBlock(cardID)
 		if readErr != nil || card.BoardID != toBoardID {
-			return fmt.Errorf("перенос карточки %s на доску %s: %w", cardID, toBoardID, err)
+			return fmt.Errorf("moving card %s to board %s: %w", cardID, toBoardID, err)
 		}
 	}
 	if strings.TrimSpace(column) == "" {
@@ -205,11 +205,11 @@ func (w *Writer) MoveCardToBoard(ctx context.Context, cardID, toBoardID, column 
 	}
 	property, ok := boardmodel.ColumnPropertyName(board, schema, views)
 	if !ok {
-		return fmt.Errorf("на доске %s нет свойства-колонок", toBoardID)
+		return fmt.Errorf("board %s has no column property", toBoardID)
 	}
 	propID, optionID, ok := boardmodel.FindSelectOption(schema, property, column)
 	if !ok {
-		return fmt.Errorf("на доске %s нет колонки %q", toBoardID, column)
+		return fmt.Errorf("board %s has no column %q", toBoardID, column)
 	}
 	patch := &model.CardPatch{UpdatedProperties: map[string]any{propID: optionID}}
 	_, err = w.app.PatchCard(patch, cardID, model.SingleUser, false)

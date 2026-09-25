@@ -104,11 +104,11 @@ type rpcError struct {
 // process is killed rather than left behind.
 func Dial(ctx context.Context, spec Spec) (*Client, error) {
 	if len(spec.Command) == 0 {
-		return nil, fmt.Errorf("не сказано, чем запускать MCP-сервер")
+		return nil, fmt.Errorf("no command to run the MCP server with")
 	}
 	proc, err := procgroup.Spawn(ctx, spec.Command, spec.Dir, spec.Env, spec.DropEnv...)
 	if err != nil {
-		return nil, fmt.Errorf("не удалось запустить MCP-сервер %s: %w", spec.Command[0], err)
+		return nil, fmt.Errorf("could not start the MCP server %s: %w", spec.Command[0], err)
 	}
 	c := &Client{
 		proc:    proc,
@@ -201,15 +201,15 @@ func (c *Client) CallTool(ctx context.Context, name string, args map[string]any)
 	}
 	if result.IsError {
 		if text == "" {
-			text = "инструмент отказал, не сказав почему"
+			text = "the tool refused without saying why"
 		}
 		return nil, fmt.Errorf("%s: %s", name, text)
 	}
 	if text == "" {
-		return nil, fmt.Errorf("%s: сервер ничего не вернул", name)
+		return nil, fmt.Errorf("%s: the server returned nothing", name)
 	}
 	if !json.Valid([]byte(text)) {
-		return nil, fmt.Errorf("%s: ответ не JSON: %s", name, truncate(text))
+		return nil, fmt.Errorf("%s: the answer is not JSON: %s", name, truncate(text))
 	}
 	return json.RawMessage(text), nil
 }
@@ -237,7 +237,7 @@ func (c *Client) call(ctx context.Context, method string, params any, out any) e
 	c.mu.Lock()
 	if c.closed {
 		c.mu.Unlock()
-		return fmt.Errorf("MCP-сервер уже остановлен")
+		return fmt.Errorf("the MCP server has stopped")
 	}
 	c.nextID++
 	id := c.nextID
@@ -256,7 +256,7 @@ func (c *Client) call(ctx context.Context, method string, params any, out any) e
 		return ctx.Err()
 	case <-c.done:
 		c.forget(id)
-		return fmt.Errorf("%s: MCP-сервер завершился, не ответив", method)
+		return fmt.Errorf("%s: the MCP server exited without answering", method)
 	case resp := <-reply:
 		if resp.Error != nil {
 			return fmt.Errorf("%s: %s", method, resp.Error.Message)
@@ -265,7 +265,7 @@ func (c *Client) call(ctx context.Context, method string, params any, out any) e
 			return nil
 		}
 		if err := json.Unmarshal(resp.Result, out); err != nil {
-			return fmt.Errorf("%s: не удалось разобрать ответ: %w", method, err)
+			return fmt.Errorf("%s: could not read the answer: %w", method, err)
 		}
 		return nil
 	}

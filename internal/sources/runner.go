@@ -3,11 +3,11 @@ package sources
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/artipop/xciii/internal/apperr"
 	"github.com/artipop/xciii/internal/sources/plugin"
 )
 
@@ -44,13 +44,22 @@ const (
 	StateError       State = "error"
 )
 
+// said is an error as a source's status or event says it.
+func said(err error) *apperr.Message {
+	m := apperr.MessageOf(err)
+	return &m
+}
+
+// say is a Message where a field holds one only when there is something to say.
+func say(m apperr.Message) *apperr.Message { return &m }
+
 // Status is one source's state, as the UI shows it.
 type Status struct {
-	Source   string     `json:"source"`
-	State    State      `json:"state"`
-	LastPoll *time.Time `json:"lastPoll,omitempty"`
-	LastItem *time.Time `json:"lastItem,omitempty"`
-	Error    string     `json:"error,omitempty"`
+	Source   string          `json:"source"`
+	State    State           `json:"state"`
+	LastPoll *time.Time      `json:"lastPoll,omitempty"`
+	LastItem *time.Time      `json:"lastItem,omitempty"`
+	Error    *apperr.Message `json:"error,omitempty"`
 }
 
 // conn is the half of plugin.Client the runner uses. It is an interface so a
@@ -220,7 +229,7 @@ func (m *Manager) stopSource(name string) {
 func (m *Manager) loop(ctx context.Context, entry SourceEntry) {
 	manifest, ok := m.Plugin(entry.Plugin)
 	if !ok {
-		m.fail(entry.Name, fmt.Errorf("плагин %q не зарегистрирован", entry.Plugin))
+		m.fail(entry.Name, apperr.New("sources.plugin-unknown", "Plugin {name} is not registered", "name", entry.Plugin))
 		return
 	}
 
@@ -245,7 +254,7 @@ func (m *Manager) loop(ctx context.Context, entry SourceEntry) {
 	caps := client.Capabilities()
 	m.setStatus(entry.Name, func(s *Status) {
 		s.State = StateRunning
-		s.Error = ""
+		s.Error = nil
 	})
 
 	// A plugin that only pushes has nothing to be asked for: it talks when it
@@ -292,7 +301,7 @@ func (m *Manager) loop(ctx context.Context, entry SourceEntry) {
 			now := time.Now()
 			s.LastPoll = &now
 			s.State = StateRunning
-			s.Error = ""
+			s.Error = nil
 		})
 		m.deliverRaw(ctx, entry.Name, result.Items)
 
@@ -329,25 +338,25 @@ func (m *Manager) afterPollError(entry SourceEntry, err error, wait time.Duratio
 		// the source stops until a person deals with it.
 		m.setStatus(entry.Name, func(s *Status) {
 			s.State = StateNeedsReauth
-			s.Error = pluginErr.Error()
+			s.Error = said(pluginErr)
 		})
-		m.record(EventRecord{Source: entry.Name, Outcome: OutcomeFailed, Detail: pluginErr.Error()})
+		m.record(EventRecord{Source: entry.Name, Outcome: OutcomeFailed, Detail: said(pluginErr)})
 		return 0, true
 	case pluginErr != nil && !pluginErr.Retryable():
 		// A bad field cannot fix itself either, but the plugin is still alive,
 		// so the loop waits rather than exits: the config may be corrected.
 		m.setStatus(entry.Name, func(s *Status) {
 			s.State = StateError
-			s.Error = pluginErr.Error()
+			s.Error = said(pluginErr)
 		})
-		m.record(EventRecord{Source: entry.Name, Outcome: OutcomeFailed, Detail: pluginErr.Error()})
+		m.record(EventRecord{Source: entry.Name, Outcome: OutcomeFailed, Detail: said(pluginErr)})
 		return maxBackoff, false
 	}
 
-	m.log.Warn("sources: опрос не удался", "source", entry.Name, "err", err)
+	m.log.Warn("sources: poll failed", "source", entry.Name, "err", err)
 	m.setStatus(entry.Name, func(s *Status) {
 		s.State = StateError
-		s.Error = err.Error()
+		s.Error = said(err)
 	})
 	// The backoff doubles the schedule, not the wait that produced the error:
 	// the first poll of a source happens immediately, and doubling nothing is
@@ -374,7 +383,7 @@ func (m *Manager) deliverRaw(ctx context.Context, source string, raw []json.RawM
 		var item Item
 		if err := json.Unmarshal(payload, &item); err != nil {
 			m.record(EventRecord{Source: source, Outcome: OutcomeFailed,
-				Detail: "плагин прислал запись, которую не удалось разобрать: " + err.Error()})
+				Detail: say(apperr.Say("sources.bad-item", "The plugin sent an item that could not be read: {error}", "error", err.Error()))})
 			continue
 		}
 		item.Raw = payload
@@ -384,7 +393,7 @@ func (m *Manager) deliverRaw(ctx context.Context, source string, raw []json.RawM
 		return
 	}
 	if _, err := m.Deliver(ctx, source, items); err != nil {
-		m.log.Warn("sources: не удалось разложить принесённое", "source", source, "err", err)
+		m.log.Warn("sources: could not file what was brought", "source", source, "err", err)
 	}
 	m.setStatus(source, func(s *Status) {
 		now := time.Now()
@@ -427,23 +436,23 @@ func (h *pluginHandler) Items(items []json.RawMessage, cursor string) {
 func (h *pluginHandler) Log(level, message string) {
 	// A plugin's log lives with the source's own events, because that is where
 	// somebody looks when nothing happened.
-	h.mgr.record(EventRecord{Source: h.source, Outcome: OutcomeFailed, Detail: level + ": " + message})
+	h.mgr.record(EventRecord{Source: h.source, Outcome: OutcomeFailed, Detail: say(apperr.Plain(level + ": " + message))})
 }
 
 func (h *pluginHandler) NeedsReauth(reason string) {
 	h.mgr.setStatus(h.source, func(s *Status) {
 		s.State = StateNeedsReauth
-		s.Error = reason
+		s.Error = say(apperr.Plain(reason))
 	})
 }
 
 func (m *Manager) fail(source string, err error) {
-	m.log.Warn("sources: источник не поднялся", "source", source, "err", err)
+	m.log.Warn("sources: the source did not come up", "source", source, "err", err)
 	m.setStatus(source, func(s *Status) {
 		s.State = StateError
-		s.Error = err.Error()
+		s.Error = said(err)
 	})
-	m.record(EventRecord{Source: source, Outcome: OutcomeFailed, Detail: err.Error()})
+	m.record(EventRecord{Source: source, Outcome: OutcomeFailed, Detail: said(err)})
 }
 
 func (m *Manager) rootContext() context.Context {
@@ -592,5 +601,5 @@ func (m *Manager) RemovePlugin(name string) error {
 			return m.persistLocked()
 		}
 	}
-	return fmt.Errorf("плагин %q не найден", name)
+	return apperr.New("sources.plugin-not-found", "Plugin {name} was not found", "name", name)
 }

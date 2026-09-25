@@ -11,6 +11,8 @@ import {sendFlashMessage} from '../flashMessages'
 import {goApp} from '../../goBridge'
 import {aiEnabled} from '../../aiSwitch'
 
+import {GoMessage, goError, goMessage} from '../../goMessages'
+
 import {ProxyEntry} from './proxiesPanel'
 import PromptField from './promptField'
 import {MCPServers, mcpServersPlaceholder, serversToText, textToServers} from './mcpServers'
@@ -116,7 +118,7 @@ export type AdapterStatus = {
     path?: string
     ready: boolean
     viaNpx?: boolean
-    detail?: string
+    detail?: GoMessage
 }
 
 // Launch command placeholders per kind. Every kind is an ACP agent spawned over
@@ -274,7 +276,7 @@ const AgentsPanel = () => {
                 setAdapters(JSON.parse(await bindings.ListAgentAdapters()) || [])
             }
         } catch (e) {
-            setError(String(e))
+            setError(goError(intl, e))
         }
     }
 
@@ -301,7 +303,7 @@ const AgentsPanel = () => {
             })
             await refresh()
         } catch (e) {
-            setError(String(e))
+            setError(goError(intl, e))
         } finally {
             setInstalling('')
         }
@@ -353,7 +355,7 @@ const AgentsPanel = () => {
             // adapter, no account), and everything else here still saves.
             setAgentOptions([])
             setProbed(false)
-            setProbeError(String(e))
+            setProbeError(goError(intl, e))
         } finally {
             if (token === probeToken) {
                 setProbing(false)
@@ -445,7 +447,7 @@ const AgentsPanel = () => {
             closeForm()
             await refresh()
         } catch (e) {
-            setError(String(e))
+            setError(goError(intl, e))
         }
     }
 
@@ -458,7 +460,7 @@ const AgentsPanel = () => {
             await bindings.RemoveAgent(name)
             await refresh()
         } catch (e) {
-            setError(String(e))
+            setError(goError(intl, e))
         }
     }
 
@@ -525,7 +527,7 @@ const AgentsPanel = () => {
                         </div>
                         <Show when={adapter() && (!adapter()!.ready || adapter()!.viaNpx)}>
                             <div class={`AgentsPanel__adapter${adapter()!.ready ? '' : ' AgentsPanel__adapter--missing'}`}>
-                                <span>{adapter()!.detail}</span>
+                                <span>{goMessage(intl, adapter()!.detail)}</span>
                                 <Show when={adapter()!.package && bindings?.InstallAgentAdapter}>
                                     <Button
                                         onClick={installAdapter}

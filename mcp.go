@@ -38,7 +38,7 @@ func maybeRunMCP(args []string) {
 	case kaiten.ServerName:
 		err = runKaitenMCP()
 	default:
-		fmt.Fprintf(os.Stderr, "неизвестный MCP-сервер %q (есть %q, %q и %q)\n",
+		fmt.Fprintf(os.Stderr, "unknown MCP server %q (there are %q, %q and %q)\n",
 			args[1], dokku.ServerName, inbox.ServerName, kaiten.ServerName)
 		os.Exit(2)
 	}
@@ -73,11 +73,11 @@ func runKaitenMCP() error {
 func runDokkuMCP() error {
 	raw := os.Getenv(dokku.EnvTarget)
 	if raw == "" {
-		return fmt.Errorf("не задан %s", dokku.EnvTarget)
+		return fmt.Errorf("%s is not set", dokku.EnvTarget)
 	}
 	var target dokku.Target
 	if err := json.Unmarshal([]byte(raw), &target); err != nil {
-		return fmt.Errorf("не удалось разобрать %s: %w", dokku.EnvTarget, err)
+		return fmt.Errorf("could not read %s: %w", dokku.EnvTarget, err)
 	}
 	cl, err := dokku.New(target, os.Getenv(dokku.EnvRepo), os.Getenv(dokku.EnvBranch))
 	if err != nil {

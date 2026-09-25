@@ -16,6 +16,8 @@ import (
 	"tailscale.com/client/local"
 	"tailscale.com/ipn/ipnstate"
 	"tailscale.com/tsnet"
+
+	"github.com/artipop/xciii/internal/apperr"
 )
 
 // The tailnet door is the same front door, published a second time — as a node
@@ -186,7 +188,7 @@ func (c *tailnetController) update(next tailnetSettings) (tailnetState, error) {
 		return tailnetState{Status: "off"}, errors.New("tailnet: unavailable")
 	}
 	if next.Enabled && strings.TrimSpace(next.Hostname) == "" {
-		return c.status(), errors.New("укажите имя машины в сети")
+		return c.status(), apperr.New("tailnet.no-hostname", "Enter the machine's name on the tailnet")
 	}
 	if err := saveTailnetSettings(c.path, next); err != nil {
 		return c.status(), err

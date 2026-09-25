@@ -8,6 +8,7 @@ import Button from '../../widgets/buttons/button'
 
 import {goApp} from '../../goBridge'
 import {aiEnabled} from '../../aiSwitch'
+import {goError} from '../../goMessages'
 
 import './deployTargetsPanel.scss'
 
@@ -71,7 +72,7 @@ const DeployTargetsPanel = (props: Props) => {
         try {
             setTargets(JSON.parse(await bindings.ListDeployTargets()) || [])
         } catch (e) {
-            setError(String(e))
+            setError(goError(intl, e))
         }
     }
 
@@ -107,7 +108,7 @@ const DeployTargetsPanel = (props: Props) => {
             await refresh()
             props.onChange?.()
         } catch (e) {
-            setError(String(e))
+            setError(goError(intl, e))
         }
     }
 
@@ -123,7 +124,7 @@ const DeployTargetsPanel = (props: Props) => {
             await refresh()
             props.onChange?.()
         } catch (e) {
-            setError(String(e))
+            setError(goError(intl, e))
         }
     }
 

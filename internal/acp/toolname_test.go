@@ -123,10 +123,10 @@ func TestAdapterStatusesExplainWhatIsMissing(t *testing.T) {
 		if st.Package == "" {
 			t.Errorf("%s should name the package that provides it", kind)
 		}
-		if !st.Ready && st.Detail == "" {
+		if !st.Ready && st.Detail == nil {
 			t.Errorf("%s is not ready and does not say why", kind)
 		}
-		if st.Ready && st.ViaNPX && !strings.Contains(st.Detail, "npx") {
+		if st.Ready && st.ViaNPX && (st.Detail == nil || !strings.Contains(st.Detail.Text, "npx")) {
 			t.Errorf("%s runs through npx and should say so: %q", kind, st.Detail)
 		}
 	}

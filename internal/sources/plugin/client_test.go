@@ -261,7 +261,7 @@ func TestAPluginFromANewerBuildIsRefusedAtOnce(t *testing.T) {
 		client.Close()
 		t.Fatal("a newer protocol version was accepted")
 	}
-	if !strings.Contains(err.Error(), "обновите приложение") {
+	if !strings.Contains(err.Error(), "update the app") {
 		t.Fatalf("the error does not say what to do: %v", err)
 	}
 }
@@ -302,7 +302,7 @@ func TestAStrayLineOnStdoutCostsOnlyThatLine(t *testing.T) {
 	defer rec.mu.Unlock()
 	var warned bool
 	for _, line := range rec.logs {
-		if strings.Contains(line, "не сообщение") {
+		if strings.Contains(line, "not a message") {
 			warned = true
 		}
 	}

@@ -57,11 +57,11 @@ func sessionMCPServers(s *Session, _ Config) ([]mcpServerSpec, error) {
 	if s.Deploy != nil {
 		self, err := os.Executable()
 		if err != nil {
-			return nil, fmt.Errorf("не удалось определить путь к приложению для MCP-сервера: %w", err)
+			return nil, fmt.Errorf("could not find the app's path for the MCP server: %w", err)
 		}
 		target, err := json.Marshal(s.Deploy.Target)
 		if err != nil {
-			return nil, fmt.Errorf("не удалось сериализовать цель деплоя: %w", err)
+			return nil, fmt.Errorf("could not serialise the deploy target: %w", err)
 		}
 		specs = append([]mcpServerSpec{{
 			Name:    dokku.ServerName,

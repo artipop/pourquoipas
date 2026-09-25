@@ -453,8 +453,8 @@ func TestABranchInTheFolderItselfHoldsItUntilTheCardIsDone(t *testing.T) {
 		return ok
 	})
 	stall, _, _ := m.store.Stall("cardB")
-	if !strings.Contains(stall.Reason, "занята") {
-		t.Errorf("expected the folder-is-held reason, got %q", stall.Reason)
+	if !strings.HasPrefix(stall.Reason.Code, "folders.busy") {
+		t.Errorf("expected the folder-is-held reason, got %+v", stall.Reason)
 	}
 	if got := writer.cardComments("cardB"); len(got) != 0 {
 		t.Errorf("a failed start must not comment on the card: %q", got)
@@ -534,8 +534,9 @@ func TestAFolderTheRegistryHasNotGotStallsTheCard(t *testing.T) {
 		return ok
 	})
 	stall, _, _ := m.store.Stall("card3")
-	if !strings.Contains(stall.Reason, "агент не запущен") {
-		t.Errorf("expected a clear reason, got %q", stall.Reason)
+	// A code, so the page says it in the reader's language.
+	if stall.Reason.Code == "" || stall.Reason.Text == "" {
+		t.Errorf("expected a coded reason, got %+v", stall.Reason)
 	}
 	if got := writer.cardComments("card3"); len(got) != 0 {
 		t.Errorf("a failed start must not comment on the card: %q", got)
@@ -746,7 +747,7 @@ func TestTwoQuestionsOnOneCardStayApart(t *testing.T) {
 		go func(tool string) {
 			answered <- m.ask(context.Background(), s, Question{
 				Kind:    QuestionPermission,
-				Text:    permissionText(tool, ""),
+				Text:    permissionText(tool, "").Text,
 				Tool:    tool,
 				Options: []QuestionOption{{ID: "yes", Label: "Да", Kind: "allow_once"}},
 			})

@@ -68,23 +68,23 @@ func (s *sourceRoutes) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	if r.Method != http.MethodPost {
 		w.Header().Set("Allow", http.MethodPost)
-		http.Error(w, "источники принимают только POST", http.StatusMethodNotAllowed)
+		http.Error(w, "sources accept POST only", http.StatusMethodNotAllowed)
 		return
 	}
 	mgr := s.manager()
 	if mgr == nil {
-		http.Error(w, "источники выключены", http.StatusServiceUnavailable)
+		http.Error(w, "sources are off", http.StatusServiceUnavailable)
 		return
 	}
 	entry, found := mgr.Source(name)
 	if !found {
-		http.Error(w, "нет такого источника", http.StatusNotFound)
+		http.Error(w, "no such source", http.StatusNotFound)
 		return
 	}
 	if !entry.CheckToken(bearerToken(r)) {
 		// The same answer whether the token is wrong or the source has none, so
 		// the endpoint does not report which sources are ready to be tried.
-		http.Error(w, "неверный токен источника", http.StatusUnauthorized)
+		http.Error(w, "wrong source token", http.StatusUnauthorized)
 		return
 	}
 
@@ -94,7 +94,7 @@ func (s *sourceRoutes) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if len(items) == 0 {
-		http.Error(w, "в запросе нет ни одной записи", http.StatusBadRequest)
+		http.Error(w, "the request carries no items", http.StatusBadRequest)
 		return
 	}
 

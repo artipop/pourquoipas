@@ -8,6 +8,7 @@ import Button from '../../widgets/buttons/button'
 import Dialog from '../dialog'
 
 import {goApp} from '../../goBridge'
+import {GoMessage, goMessage} from '../../goMessages'
 
 import './sourcesDialog.scss'
 
@@ -52,7 +53,7 @@ export type SourcePlugin = {
 export type SourceStatus = {
     source: string
     state: string
-    error?: string
+    error?: GoMessage
     lastPoll?: string
 }
 
@@ -63,7 +64,7 @@ export type SourceEvent = {
     rule?: string
     outcome: string
     cardId?: string
-    detail?: string
+    detail?: GoMessage
     createdAt: string
 }
 
@@ -314,9 +315,9 @@ const SourcesDialog = (props: Props) => {
                                     {source.plugin}
                                     {' · '}
                                     {stateText(statusOf(source.name)?.state)}
-                                    <Show when={statusOf(source.name)?.error}>
+                                    <Show when={goMessage(intl, statusOf(source.name)?.error)}>
                                         {' — '}
-                                        {statusOf(source.name)?.error}
+                                        {goMessage(intl, statusOf(source.name)?.error)}
                                     </Show>
                                 </span>
                             </Show>
@@ -459,7 +460,7 @@ const SourcesDialog = (props: Props) => {
                                         <span class={`SourcesDialog__outcome SourcesDialog__outcome--${event.outcome}`}>
                                             {outcomeText(event.outcome)}
                                         </span>
-                                        <span class='SourcesDialog__eventDetail'>{event.detail || event.rule || event.externalId}</span>
+                                        <span class='SourcesDialog__eventDetail'>{goMessage(intl, event.detail) || event.rule || event.externalId}</span>
                                     </div>
                                 )}
                             </For>

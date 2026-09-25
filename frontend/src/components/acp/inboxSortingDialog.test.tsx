@@ -22,7 +22,7 @@ const state = (over: Record<string, unknown> = {}) => JSON.stringify({
         {id: 'home', title: 'Дом', description: 'Покупки и ремонт', summary: 'Бытовые дела по квартире.', cardCount: 3},
     ],
     decisions: [
-        {id: '1', cardTitle: 'Счёт за свет', boardId: 'home', outcome: 'moved', reason: 'Счёт за квартиру', at: '2026-09-22T10:00:00Z'},
+        {id: '1', cardTitle: 'Счёт за свет', boardId: 'home', outcome: 'moved', reason: {text: 'Счёт за квартиру'}, at: '2026-09-22T10:00:00Z'},
     ],
     ...over,
 })

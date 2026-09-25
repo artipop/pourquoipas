@@ -38,14 +38,14 @@ func (b *EventsBackend) EnsureAgentUsers(ctx context.Context, boardID string, ag
 		return nil, fmt.Errorf("board app is not ready")
 	}
 	if boardID == "" {
-		return nil, fmt.Errorf("не указана доска")
+		return nil, fmt.Errorf("no board given")
 	}
 	board, err := a.GetBoard(boardID)
 	if err != nil {
 		return nil, fmt.Errorf("get board %s: %w", boardID, err)
 	}
 	if board == nil {
-		return nil, fmt.Errorf("доска %s не найдена", boardID)
+		return nil, fmt.Errorf("board %s was not found", boardID)
 	}
 
 	out := make([]acp.AgentUser, 0, len(agents))
@@ -68,7 +68,7 @@ func (b *EventsBackend) EnsureAgentUsers(ctx context.Context, boardID string, ag
 			SchemeViewer:    true,
 		}
 		if _, err := a.AddMemberToBoard(member); err != nil {
-			return out, fmt.Errorf("добавление %q в участники доски: %w", agent.Username, err)
+			return out, fmt.Errorf("adding %q to the board's members: %w", agent.Username, err)
 		}
 		out = append(out, agent)
 	}
@@ -117,7 +117,7 @@ func (b *EventsBackend) ensureAccount(agent acp.AgentUser) (acp.AgentUser, error
 
 	user, err := a.GetUserByUsername(agent.Username)
 	if err != nil {
-		return agent, fmt.Errorf("поиск пользователя %q: %w", agent.Username, err)
+		return agent, fmt.Errorf("looking up user %q: %w", agent.Username, err)
 	}
 	if user == nil {
 		password, err := randomPassword()
@@ -129,10 +129,10 @@ func (b *EventsBackend) ensureAccount(agent acp.AgentUser) (acp.AgentUser, error
 		// door rather than the person one, so that provisioning an agent can
 		// never claim an install nobody has registered on yet.
 		if err := a.RegisterMachineUser(agent.Username, agent.Username+"@"+agentEmailDomain, password, model.UserKindAgent); err != nil {
-			return agent, fmt.Errorf("создание пользователя %q: %w", agent.Username, err)
+			return agent, fmt.Errorf("creating user %q: %w", agent.Username, err)
 		}
 		if user, err = a.GetUserByUsername(agent.Username); err != nil || user == nil {
-			return agent, fmt.Errorf("пользователь %q создан, но не найден: %w", agent.Username, err)
+			return agent, fmt.Errorf("user %q was created but not found: %w", agent.Username, err)
 		}
 		agent.Created = true
 	}
@@ -161,7 +161,7 @@ func (b *EventsBackend) AssignCardAgent(ctx context.Context, cardID string, agen
 		return err
 	}
 	if agent.UserID == "" {
-		return fmt.Errorf("у агента %q нет учётной записи на доске", agent.Name)
+		return fmt.Errorf("agent %q has no account on the board", agent.Name)
 	}
 
 	block, err := a.GetBlockByID(cardID)
@@ -235,7 +235,7 @@ func (w *Writer) EnsureSourceUser(ctx context.Context, boardID, source string) (
 	username := sourceUsername(source)
 	user, err := w.app.GetUserByUsername(username)
 	if err != nil {
-		return "", fmt.Errorf("поиск пользователя %q: %w", username, err)
+		return "", fmt.Errorf("looking up user %q: %w", username, err)
 	}
 	if user == nil {
 		password, err := randomPassword()
@@ -245,10 +245,10 @@ func (w *Writer) EnsureSourceUser(ctx context.Context, boardID, source string) (
 		// The account exists to be named, not to be logged into. The machine
 		// door, for the reason EnsureAgentAccounts gives.
 		if err := w.app.RegisterMachineUser(username, username+"@"+sourceEmailDomain, password, model.UserKindSource); err != nil {
-			return "", fmt.Errorf("создание пользователя %q: %w", username, err)
+			return "", fmt.Errorf("creating user %q: %w", username, err)
 		}
 		if user, err = w.app.GetUserByUsername(username); err != nil || user == nil {
-			return "", fmt.Errorf("пользователь %q создан, но не найден: %w", username, err)
+			return "", fmt.Errorf("user %q was created but not found: %w", username, err)
 		}
 	}
 
@@ -261,7 +261,7 @@ func (w *Writer) EnsureSourceUser(ctx context.Context, boardID, source string) (
 		SchemeViewer:    true,
 	}
 	if _, err := w.app.AddMemberToBoard(member); err != nil {
-		return "", fmt.Errorf("добавление %q в участники доски: %w", username, err)
+		return "", fmt.Errorf("adding %q to the board's members: %w", username, err)
 	}
 	return user.ID, nil
 }
@@ -306,7 +306,7 @@ func (b *EventsBackend) RetireAgentUser(ctx context.Context, agent acp.AgentUser
 
 	user, err := a.GetUserByUsername(agent.Username)
 	if err != nil {
-		return 0, fmt.Errorf("поиск пользователя %q: %w", agent.Username, err)
+		return 0, fmt.Errorf("looking up user %q: %w", agent.Username, err)
 	}
 	if user == nil {
 		return 0, nil // never provisioned; nothing to take away
@@ -314,12 +314,12 @@ func (b *EventsBackend) RetireAgentUser(ctx context.Context, agent acp.AgentUser
 
 	members, err := a.GetMembersForUser(user.ID)
 	if err != nil {
-		return 0, fmt.Errorf("список досок пользователя %q: %w", agent.Username, err)
+		return 0, fmt.Errorf("boards of user %q: %w", agent.Username, err)
 	}
 	removed := 0
 	for _, member := range members {
 		if err := a.DeleteBoardMember(member.BoardID, user.ID); err != nil {
-			return removed, fmt.Errorf("удаление %q из участников доски %s: %w", agent.Username, member.BoardID, err)
+			return removed, fmt.Errorf("removing %q from the members of board %s: %w", agent.Username, member.BoardID, err)
 		}
 		removed++
 	}
@@ -331,7 +331,7 @@ func (b *EventsBackend) RetireAgentUser(ctx context.Context, agent acp.AgentUser
 func randomPassword() (string, error) {
 	buf := make([]byte, 24)
 	if _, err := rand.Read(buf); err != nil {
-		return "", fmt.Errorf("не удалось сгенерировать пароль: %w", err)
+		return "", fmt.Errorf("could not generate a password: %w", err)
 	}
 	return hex.EncodeToString(buf), nil
 }

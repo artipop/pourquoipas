@@ -159,7 +159,7 @@ func (m *Manager) sessionBoardServer(s *Session, caps acpsdk.AgentCapabilities) 
 // the HTTP end answers a call with before it reads a body.
 func (m *Manager) CheckBoardTools(token string) error {
 	if _, ok := m.boardGrant(token); !ok {
-		return fmt.Errorf("нет доступа к доске")
+		return fmt.Errorf("no access to the board")
 	}
 	return nil
 }
@@ -179,7 +179,7 @@ type BoardToolColumn struct {
 func (m *Manager) BoardToolColumns(token string) ([]BoardToolColumn, error) {
 	g, ok := m.boardGrant(token)
 	if !ok {
-		return nil, fmt.Errorf("нет доступа к доске")
+		return nil, fmt.Errorf("no access to the board")
 	}
 	names := m.boardColumnNames(g.BoardID)
 	out := make([]BoardToolColumn, 0, len(names))
@@ -226,10 +226,10 @@ type BoardToolField struct {
 func (m *Manager) BoardToolFields(ctx context.Context, token string) ([]BoardToolField, error) {
 	g, ok := m.boardGrant(token)
 	if !ok {
-		return nil, fmt.Errorf("нет доступа к доске")
+		return nil, fmt.Errorf("no access to the board")
 	}
 	if m.meta == nil {
-		return nil, fmt.Errorf("доска недоступна")
+		return nil, fmt.Errorf("the board is not available")
 	}
 	props, err := m.meta.CardProperties(ctx, g.BoardID)
 	if err != nil {
@@ -268,10 +268,10 @@ func writableProperty(kind string) bool {
 func (m *Manager) BoardToolCards(ctx context.Context, token, column string) ([]BoardToolCard, error) {
 	g, ok := m.boardGrant(token)
 	if !ok {
-		return nil, fmt.Errorf("нет доступа к доске")
+		return nil, fmt.Errorf("no access to the board")
 	}
 	if m.reader == nil {
-		return nil, fmt.Errorf("доска недоступна")
+		return nil, fmt.Errorf("the board is not available")
 	}
 	events, err := m.forBoard(g.BoardID).Reader.CardsForBoard(ctx, g.BoardID)
 	if err != nil {
@@ -326,10 +326,10 @@ func (m *Manager) UpdateCardFromTools(ctx context.Context, token, cardID string,
 		return err
 	}
 	if m.writer == nil {
-		return fmt.Errorf("доска недоступна")
+		return fmt.Errorf("the board is not available")
 	}
 	if strings.TrimSpace(edit.Title) == "" && strings.TrimSpace(edit.Column) == "" && len(edit.Options) == 0 {
-		return fmt.Errorf("не сказано, что менять")
+		return fmt.Errorf("nothing to change was given")
 	}
 	edit.Property = g.Property
 	if err := m.forCard(ev.CardID).Writer.UpdateCard(m.asGrantedAgent(ctx, g), ev.CardID, edit); err != nil {
@@ -355,15 +355,15 @@ func (m *Manager) SetFieldsFromTools(ctx context.Context, token, cardID string, 
 		return err
 	}
 	if len(fields) == 0 {
-		return fmt.Errorf("не сказано, что записать")
+		return fmt.Errorf("nothing to write was given")
 	}
 	if g.Property != "" {
 		if _, taken := fieldsHave(fields, g.Property); taken {
-			return fmt.Errorf("колонка (%s) меняется не здесь: карточку двигает move_card", g.Property)
+			return fmt.Errorf("the column (%s) is not changed here: move_card moves the card", g.Property)
 		}
 	}
 	if m.writer == nil {
-		return fmt.Errorf("доска недоступна")
+		return fmt.Errorf("the board is not available")
 	}
 	writer := m.forCard(ev.CardID).Writer
 	ctx = m.asGrantedAgent(ctx, g)
@@ -373,7 +373,7 @@ func (m *Manager) SetFieldsFromTools(ctx context.Context, token, cardID string, 
 	}
 	for name := range fields {
 		if strings.TrimSpace(name) == "" {
-			return fmt.Errorf("у поля должно быть название")
+			return fmt.Errorf("a field needs a name")
 		}
 		if known[strings.ToLower(name)] {
 			continue
@@ -399,10 +399,10 @@ func (m *Manager) CommentFromTools(ctx context.Context, token, cardID, text stri
 		return err
 	}
 	if strings.TrimSpace(text) == "" {
-		return fmt.Errorf("пустой комментарий")
+		return fmt.Errorf("the comment is empty")
 	}
 	if m.writer == nil {
-		return fmt.Errorf("доска недоступна")
+		return fmt.Errorf("the board is not available")
 	}
 	if err := m.forCard(ev.CardID).Writer.AddComment(m.asGrantedAgent(ctx, g), ev.CardID, text); err != nil {
 		return err
@@ -422,13 +422,13 @@ func (m *Manager) CommentFromTools(ctx context.Context, token, cardID, text stri
 func (m *Manager) CreateCardFromTools(ctx context.Context, token string, card NewCard) (string, error) {
 	g, ok := m.boardGrant(token)
 	if !ok {
-		return "", fmt.Errorf("нет доступа к доске")
+		return "", fmt.Errorf("no access to the board")
 	}
 	if strings.TrimSpace(card.Title) == "" {
-		return "", fmt.Errorf("у карточки должен быть заголовок")
+		return "", fmt.Errorf("a card needs a title")
 	}
 	if m.writer == nil {
-		return "", fmt.Errorf("доска недоступна")
+		return "", fmt.Errorf("the board is not available")
 	}
 	card.BoardID = g.BoardID
 	card.Property = g.Property
@@ -449,24 +449,24 @@ func (m *Manager) CreateCardFromTools(ctx context.Context, token string, card Ne
 func (m *Manager) grantedCard(ctx context.Context, token, cardID string) (BoardGrant, CardMoved, error) {
 	g, ok := m.boardGrant(token)
 	if !ok {
-		return BoardGrant{}, CardMoved{}, fmt.Errorf("нет доступа к доске")
+		return BoardGrant{}, CardMoved{}, fmt.Errorf("no access to the board")
 	}
 	cardID = strings.TrimSpace(cardID)
 	if cardID == "" {
 		cardID = g.CardID
 	}
 	if cardID == "" {
-		return g, CardMoved{}, fmt.Errorf("не сказано, о какой карточке речь")
+		return g, CardMoved{}, fmt.Errorf("no card was given")
 	}
 	if m.reader == nil {
-		return g, CardMoved{}, fmt.Errorf("доска недоступна")
+		return g, CardMoved{}, fmt.Errorf("the board is not available")
 	}
 	ev, err := m.forCard(cardID).Reader.CardByID(ctx, cardID)
 	if err != nil {
-		return g, CardMoved{}, fmt.Errorf("карточка %s не найдена", cardID)
+		return g, CardMoved{}, fmt.Errorf("card %s was not found", cardID)
 	}
 	if ev.BoardID != g.BoardID {
-		return g, CardMoved{}, fmt.Errorf("карточка %s не на этой доске", cardID)
+		return g, CardMoved{}, fmt.Errorf("card %s is not on this board", cardID)
 	}
 	return g, ev, nil
 }

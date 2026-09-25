@@ -62,7 +62,7 @@ func Check(ctx context.Context, opts CheckOptions) []Finding {
 		Command:     opts.Command,
 		Dir:         opts.Dir,
 		Env:         opts.Env,
-		Source:      SourceInfo{Name: "проверка", Config: opts.Config},
+		Source:      SourceInfo{Name: "check", Config: opts.Config},
 		Credentials: Credentials{AccessToken: opts.Token},
 		Host:        HostInfo{Name: "XCIII", Version: "check"},
 	}, collector)
@@ -74,10 +74,10 @@ func Check(ctx context.Context, opts CheckOptions) []Finding {
 
 	caps := client.Capabilities()
 	if !caps.Poll && !caps.Push {
-		add(true, "initialize", "плагин не умеет ни poll, ни push — он никогда ничего не принесёт")
+		add(true, "initialize", "the plugin can neither poll nor push, so it will never bring anything")
 	}
 	if caps.Cursor && !caps.Poll {
-		add(false, "initialize", "объявлен cursor без poll: курсор передаётся только в poll, так что он ни на что не влияет")
+		add(false, "initialize", "cursor is declared without poll: the cursor is only passed to poll, so it changes nothing")
 	}
 
 	if caps.Poll {
@@ -86,14 +86,14 @@ func Check(ctx context.Context, opts CheckOptions) []Finding {
 		// A watcher has nothing to be asked for, so the only thing to check is
 		// that it says something within a reasonable time.
 		if !collector.sawAnything(2 * time.Second) {
-			add(false, "push", "плагин объявил push, но за две секунды не прислал ничего — это нормально, если сейчас нечему приходить")
+			add(false, "push", "the plugin declared push but sent nothing in two seconds; that is fine if there is nothing to send right now")
 		}
 	}
 
 	// Refreshing a token must not require a restart, so every plugin has to
 	// accept the message even if it needs no credentials.
 	if err := client.UpdateCredentials(ctx, Credentials{AccessToken: opts.Token}); err != nil {
-		add(false, "credentials/update", "плагин не принял обновление токена: %v", err)
+		add(false, "credentials/update", "the plugin did not accept a token update: %v", err)
 	}
 	return findings
 }
@@ -116,9 +116,9 @@ func checkPoll(ctx context.Context, client *Client, caps Capabilities) []Finding
 		case pluginErr == nil:
 			add(true, "poll", "%v", err)
 		case pluginErr.Kind == "":
-			add(false, "poll", "отказ без вида (data.kind): приложение не может решить, приходить ли снова — %v", err)
+			add(false, "poll", "a refusal without a kind (data.kind): the app cannot decide whether to ask again: %v", err)
 		default:
-			add(false, "poll", "плагин отказал: %v", err)
+			add(false, "poll", "the plugin refused: %v", err)
 		}
 		return findings
 	}
@@ -129,14 +129,14 @@ func checkPoll(ctx context.Context, client *Client, caps Capabilities) []Finding
 			Title string `json:"title"`
 		}
 		if err := json.Unmarshal(raw, &item); err != nil {
-			add(true, "poll", "запись №%d не разбирается: %v", i+1, err)
+			add(true, "poll", "item #%d cannot be read: %v", i+1, err)
 			continue
 		}
 		if strings.TrimSpace(item.ID) == "" {
-			add(false, "poll", "у записи №%d нет id — приложение посчитает его по содержимому, и запись, у которой изменился текст, станет второй карточкой", i+1)
+			add(false, "poll", "item #%d has no id: the app will derive one from the content, and an item whose text changes will become a second card", i+1)
 		}
 		if strings.TrimSpace(item.Title) == "" {
-			add(false, "poll", "у записи №%d нет заголовка — карточка будет называться «Без заголовка»", i+1)
+			add(false, "poll", "item #%d has no title: the card will be called Untitled", i+1)
 		}
 	}
 
@@ -144,18 +144,18 @@ func checkPoll(ctx context.Context, client *Client, caps Capabilities) []Finding
 		return findings
 	}
 	if first.Cursor == "" {
-		add(false, "poll", "объявлен cursor, но poll его не вернул: приложению нечего передать обратно, и плагин каждый раз будет отдавать всё заново")
+		add(false, "poll", "cursor is declared but poll did not return one: the app has nothing to pass back, and the plugin will return everything every time")
 		return findings
 	}
 	// The cursor has to be taken back: a plugin that ignores it re-reads its
 	// whole history on every poll, which only shows up as duplicates much later.
 	second, err := client.Poll(ctx, first.Cursor)
 	if err != nil {
-		add(false, "poll", "второй опрос с курсором не удался: %v", err)
+		add(false, "poll", "the second poll with the cursor failed: %v", err)
 		return findings
 	}
 	if len(second.Items) > 0 && sameItems(first.Items, second.Items) {
-		add(false, "poll", "с курсором плагин вернул те же записи: похоже, курсор не учитывается")
+		add(false, "poll", "with the cursor the plugin returned the same items: the cursor seems to be ignored")
 	}
 	return findings
 }

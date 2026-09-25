@@ -7,6 +7,8 @@ import (
 	"os/exec"
 	"strings"
 	"time"
+
+	"github.com/artipop/xciii/internal/apperr"
 )
 
 // A card's work read by eye. A route can put a card on a stage where nothing
@@ -53,7 +55,7 @@ type CardDiff struct {
 	// Reason says why there is nothing here, in words a person can act on: no
 	// work started, work on another machine, the folder is not a repository.
 	// Not an error — "nothing to show" is an ordinary state of a card.
-	Reason string `json:"reason,omitempty"`
+	Reason *apperr.Message `json:"reason,omitempty"`
 }
 
 // DiffFile is one file's change, patch and all. The counts are read off the
@@ -74,7 +76,7 @@ type DiffFile struct {
 // CardDiff reads the card's work off the disk it lives on.
 func (m *Manager) CardDiff(cardID string) (CardDiff, error) {
 	if cardID == "" {
-		return CardDiff{}, fmt.Errorf("не указана карточка")
+		return CardDiff{}, fmt.Errorf("no card given")
 	}
 	out := CardDiff{CardID: cardID, Committed: []DiffFile{}, Uncommitted: []DiffFile{}}
 	where, err := m.cardGitPlace(cardID)
@@ -82,8 +84,8 @@ func (m *Manager) CardDiff(cardID string) (CardDiff, error) {
 		return out, err
 	}
 	out.Branch, out.Base, out.Dir, out.Mode = where.branch, where.base, where.dir, where.mode
-	if where.reason != "" {
-		out.Reason = where.reason
+	if !where.reason.IsZero() {
+		out.Reason = &where.reason
 		return out, nil
 	}
 
@@ -100,7 +102,8 @@ func (m *Manager) CardDiff(cardID string) (CardDiff, error) {
 		out.Uncommitted = append(out.Uncommitted, untrackedFiles(ctx, where.dir)...)
 	}
 	if len(out.Committed) == 0 && len(out.Uncommitted) == 0 {
-		out.Reason = "по этой карточке пока ничего не изменено"
+		nothing := apperr.Say("carddiff.nothing-changed", "Nothing has been changed on this card yet")
+		out.Reason = &nothing
 	}
 	m.recordCardChanges(cardID, "", out)
 	return out, nil
@@ -124,7 +127,7 @@ type gitPlace struct {
 	branch string
 	base   string
 	mode   string
-	reason string
+	reason apperr.Message
 }
 
 // span is what to diff, in git's own words: three dots, so the answer is what
@@ -154,20 +157,20 @@ func (m *Manager) cardGitPlace(cardID string) (gitPlace, error) {
 		// has not started, and work that started somewhere else. CardWork knows
 		// which (Started without Here is a card that travelled).
 		if m.CardWork(cardID).Started {
-			out.reason = "работа над этой карточкой начата на другой машине — здесь её рабочей копии нет"
+			out.reason = apperr.Say("carddiff.elsewhere", "Work on this card started on another machine, and its working copy is not here")
 		} else {
-			out.reason = "по этой карточке ещё никто не работал: ни ветки, ни рабочей копии"
+			out.reason = apperr.Say("carddiff.not-started", "Nobody has worked on this card yet: there is no branch and no working copy")
 		}
 		return out, nil
 	}
 	if !isDir(out.dir) {
-		out.reason = fmt.Sprintf("папки %s больше нет на диске", out.dir)
+		out.reason = apperr.Say("carddiff.folder-gone", "The folder {dir} is no longer on the disk", "dir", out.dir)
 		return out, nil
 	}
 	ctx, cancel := context.WithTimeout(m.rootOr(), cardDiffTimeout)
 	defer cancel()
 	if !IsGitWorkdir(ctx, out.dir) {
-		out.reason = fmt.Sprintf("папка %s — не git-репозиторий, смотреть изменения не по чему", out.dir)
+		out.reason = apperr.Say("carddiff.not-git", "The folder {dir} is not a git repository, so there are no changes to show", "dir", out.dir)
 	}
 	return out, nil
 }
@@ -394,7 +397,7 @@ func (m *Manager) recordCardChanges(cardID, boardID string, d CardDiff) {
 // folder gone with it.
 func (m *Manager) countCardChanges(cardID, boardID string) (CardChangesRecord, bool) {
 	where, err := m.cardGitPlace(cardID)
-	if err != nil || where.reason != "" {
+	if err != nil || !where.reason.IsZero() {
 		return CardChangesRecord{}, false
 	}
 	ctx, cancel := context.WithTimeout(m.rootOr(), cardDiffTimeout)

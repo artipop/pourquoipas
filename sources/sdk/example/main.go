@@ -31,8 +31,8 @@ func main() {
 				Items: []sdk.Item{{
 					ExternalID: "example-1",
 					Version:    "1",
-					Title:      "Пример записи от плагина",
-					Body:       "Всё, что делает плагин, — возвращает такие записи.",
+					Title:      "An example item from a plugin",
+					Body:       "All a plugin does is return items like this one.",
 					At:         time.Now(),
 					Props:      map[string]string{"app": "example"},
 				}},

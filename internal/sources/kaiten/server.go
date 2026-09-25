@@ -53,7 +53,7 @@ func (c Config) Validate() (Config, error) {
 	c.Site = strings.TrimSuffix(strings.TrimSpace(c.Site), "/")
 	c.Token = strings.TrimSpace(c.Token)
 	if c.Site == "" {
-		return c, fmt.Errorf("не задан адрес Kaiten (%s)", EnvSite)
+		return c, fmt.Errorf("the Kaiten address is not set (%s)", EnvSite)
 	}
 	if !strings.HasPrefix(c.Site, "http://") && !strings.HasPrefix(c.Site, "https://") {
 		// A person types "company.kaiten.ru" more often than the scheme, and
@@ -61,7 +61,7 @@ func (c Config) Validate() (Config, error) {
 		c.Site = "https://" + c.Site
 	}
 	if c.Token == "" {
-		return c, fmt.Errorf("не задан токен Kaiten (%s)", EnvToken)
+		return c, fmt.Errorf("the Kaiten token is not set (%s)", EnvToken)
 	}
 	return c, nil
 }
@@ -216,7 +216,7 @@ func currentUserID(ctx context.Context, client *http.Client, cfg Config) (int, e
 		return 0, err
 	}
 	if me.ID == 0 {
-		return 0, fmt.Errorf("Kaiten не сказал, чей это токен")
+		return 0, fmt.Errorf("Kaiten did not say whose token this is")
 	}
 	return me.ID, nil
 }
@@ -238,7 +238,7 @@ func get(ctx context.Context, client *http.Client, cfg Config, path string, out 
 	if resp.StatusCode != http.StatusOK {
 		// The status is the whole of the diagnosis here — 401 is a token, 404 is
 		// a site — so it goes back in the words the dialog will show.
-		return fmt.Errorf("Kaiten ответил %d на %s: %s", resp.StatusCode, path, strings.TrimSpace(truncate(string(body))))
+		return fmt.Errorf("Kaiten answered %d to %s: %s", resp.StatusCode, path, strings.TrimSpace(truncate(string(body))))
 	}
 	return json.Unmarshal(body, out)
 }

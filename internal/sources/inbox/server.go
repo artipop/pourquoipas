@@ -34,7 +34,7 @@ const ServerName = "inbox"
 // version tracks the tool surface, not the app.
 const version = "0.1.0"
 
-const instructions = `The tool that files what you found into «Входящие», the inbox.
+const instructions = `The tool that files what you found into the inbox.
 File everything you found, even when it looks like it has been brought in before:
 repeats are dropped by the (id, version) pair on the application's side. Take the
 identifier from the service itself and never invent one — an invented id means a
@@ -56,11 +56,11 @@ func (c Config) Validate() (Config, error) {
 	c.Token = strings.TrimSpace(c.Token)
 	switch {
 	case c.BaseURL == "":
-		return c, fmt.Errorf("не задан адрес приёма")
+		return c, fmt.Errorf("no intake address is set")
 	case c.Source == "":
-		return c, fmt.Errorf("не задано имя источника")
+		return c, fmt.Errorf("no source name is set")
 	case c.Token == "":
-		return c, fmt.Errorf("не задан токен источника")
+		return c, fmt.Errorf("no source token is set")
 	}
 	return c, nil
 }
@@ -79,7 +79,7 @@ type fileInput struct {
 	Title   string            `json:"title" jsonschema:"the title of the card this becomes"`
 	Body    string            `json:"body,omitempty" jsonschema:"the description, in markdown"`
 	URL     string            `json:"url,omitempty" jsonschema:"a link to the record in the service"`
-	Props   map[string]string `json:"props,omitempty" jsonschema:"the card's properties by name, for example {\"Ссылка\": \"…\"}"`
+	Props   map[string]string `json:"props,omitempty" jsonschema:"the card's properties by name, for example {\"Link\": \"…\"}"`
 	Labels  []string          `json:"labels,omitempty" jsonschema:"the record's labels; the source's rules may fire on them"`
 }
 
@@ -90,13 +90,13 @@ func NewServer(cfg Config, client *http.Client) *mcp.Server {
 		client = &http.Client{Timeout: 30 * time.Second}
 	}
 	srv := mcp.NewServer(
-		&mcp.Implementation{Name: ServerName, Title: "Входящие XCIII", Version: version},
+		&mcp.Implementation{Name: ServerName, Title: "XCIII inbox", Version: version},
 		&mcp.ServerOptions{Instructions: instructions},
 	)
 
 	mcp.AddTool(srv, &mcp.Tool{
 		Name:        "file_item",
-		Description: "File what you found into «Входящие», the inbox. Repeats are safe: the same (id, version) pair does not create a second card.",
+		Description: "File what you found into the inbox. Repeats are safe: the same (id, version) pair does not create a second card.",
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, in fileInput) (*mcp.CallToolResult, any, error) {
 		if strings.TrimSpace(in.Title) == "" && strings.TrimSpace(in.URL) == "" {
 			return errorResult("there is nothing to file: neither a title nor a link"), nil, nil

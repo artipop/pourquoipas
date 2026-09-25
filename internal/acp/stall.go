@@ -1,5 +1,7 @@
 package acp
 
+import "github.com/artipop/xciii/internal/apperr"
+
 // Why a card is standing still, said where the card already says where it
 // stands — on its route strip — rather than in its comments.
 //
@@ -17,13 +19,13 @@ package acp
 // stallCard records why nothing started and nudges every open view of the
 // card. nodeID is the stage the reason belongs to, empty for a standalone
 // trigger column.
-func (m *Manager) stallCard(cardID, nodeID, reason string) {
+func (m *Manager) stallCard(cardID, nodeID string, reason apperr.Message) {
 	if err := m.store.SetStall(StallRecord{CardID: cardID, NodeID: nodeID, Reason: reason}); err != nil {
 		m.log.Warn("acp: cannot record why the card stalled", "card", cardID, "err", err)
 		return
 	}
-	m.log.Info("acp: card stalled", "card", cardID, "node", nodeID, "reason", reason)
-	m.emitStall(cardID, reason)
+	m.log.Info("acp: card stalled", "card", cardID, "node", nodeID, "reason", reason.Text)
+	m.emitStall(cardID, &reason)
 }
 
 // stallCardSoft records the reason only when none is recorded. It is for the
@@ -31,7 +33,7 @@ func (m *Manager) stallCard(cardID, nodeID, reason string) {
 // start raises a failed stage, and a route with no failure edge would then report
 // the missing edge — over the reason the person actually needs. The first
 // reason is the root cause; any progress deletes it and lets a later one in.
-func (m *Manager) stallCardSoft(cardID, nodeID, reason string) {
+func (m *Manager) stallCardSoft(cardID, nodeID string, reason apperr.Message) {
 	if _, ok, _ := m.store.Stall(cardID); ok {
 		return
 	}
@@ -48,13 +50,13 @@ func (m *Manager) clearStall(cardID string) {
 		return
 	}
 	if changed {
-		m.emitStall(cardID, "")
+		m.emitStall(cardID, nil)
 	}
 }
 
 // emitStall rides the session event: the strip and the card's panels already
 // refetch on it, and a stall is session state — the session there isn't.
-func (m *Manager) emitStall(cardID, reason string) {
+func (m *Manager) emitStall(cardID string, reason *apperr.Message) {
 	m.ui.Emit(EventSession, map[string]any{
 		"cardId": cardID,
 		"stall":  reason,

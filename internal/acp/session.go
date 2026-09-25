@@ -12,6 +12,7 @@ import (
 
 	acpsdk "github.com/coder/acp-go-sdk"
 
+	"github.com/artipop/xciii/internal/apperr"
 	"github.com/artipop/xciii/internal/dokku"
 	"github.com/artipop/xciii/internal/procgroup"
 )
@@ -220,7 +221,7 @@ func (m *Manager) runSession(s *Session) {
 	defer m.releaseSession(s)
 
 	if m.rootCtx.Err() != nil {
-		m.finishSession(s, StatusCancelled, "приложение завершается")
+		m.finishSession(s, StatusCancelled, "the app is closing")
 		return
 	}
 
@@ -233,7 +234,7 @@ func (m *Manager) runSession(s *Session) {
 		// failed stage that carries the card off to the blocked column.
 		if errors.Is(err, errWorkdirBusy) || errors.Is(err, errWorkdirDirty) {
 			m.finishSession(s, StatusCancelled, err.Error())
-			m.stallCard(s.CardID, s.NodeID, err.Error())
+			m.stallCard(s.CardID, s.NodeID, apperr.MessageOf(err))
 			return
 		}
 		m.finishSession(s, StatusFailed, err.Error())
@@ -365,7 +366,7 @@ func (m *Manager) runCardTask(s *Session, conn *acpsdk.ClientSideConnection, acp
 	m.commentFirstTurn(s, finalText, err)
 
 	if m.rootCtx.Err() != nil {
-		m.finishSession(s, StatusCancelled, "приложение завершается")
+		m.finishSession(s, StatusCancelled, "the app is closing")
 	}
 }
 
@@ -384,14 +385,14 @@ func (m *Manager) commentFirstTurn(s *Session, finalText string, err error) {
 		// A cancelled turn ends with StopReason "cancelled", not an error.
 		// Nothing is said on the card: somebody pressed the button a second
 		// ago and the card's own status already says it was cancelled.
-		m.finishSession(s, StatusCancelled, "сессия отменена")
+		m.finishSession(s, StatusCancelled, "the session was cancelled")
 	case err != nil:
 		m.finishSession(s, StatusFailed, err.Error())
 		m.comment(s, failComment(s, err.Error()))
 		m.applyDeployOutcome(s)
 	default:
 		if r, reported := s.stageReport(); reported && !r.ok {
-			m.finishSession(s, StatusFailed, "агент не смог закончить работу")
+			m.finishSession(s, StatusFailed, "the agent could not finish the work")
 			if !s.hasCommented() {
 				m.comment(s, failComment(s, firstNonEmpty(r.summary, "агент не смог закончить работу")))
 			}
@@ -550,7 +551,7 @@ func (m *Manager) runTurn(s *Session, conn *acpsdk.ClientSideConnection, acpSess
 	})
 	if err != nil {
 		if ctx.Err() == context.DeadlineExceeded && !s.wasCancelled() {
-			return "", fmt.Errorf("таймаут хода (%s)", m.cfg.SessionTimeout())
+			return "", fmt.Errorf("the turn timed out (%s)", m.cfg.SessionTimeout())
 		}
 		return "", fmt.Errorf("session/prompt: %w", err)
 	}
@@ -617,7 +618,7 @@ func (m *Manager) agentLaunch(a AgentEntry) (launch, error) {
 			argv = append(argv, def.modelArgs(a.Model)...)
 		}
 	default:
-		return launch{}, fmt.Errorf("у агента %q (тип %s) нет команды запуска", a.Name, a.Kind)
+		return launch{}, apperr.New("agents.no-launch", "Agent {name} ({kind}) has no launch command", "name", a.Name, "kind", a.Kind)
 	}
 	l := launch{argv: append(argv, a.Args...), dropEnv: def.dropEnv, mode: def.mode}
 	// A model asked for through the environment is set whichever way the agent
@@ -653,13 +654,12 @@ func (m *Manager) adapterArgv(kind, override string) ([]string, error) {
 		return nil, fmt.Errorf("binPath %s: %w", override, err)
 	}
 	if def.npmPackage == "" {
-		return nil, fmt.Errorf("не найден %s — укажите binPath или command у агента", def.bin)
+		return nil, apperr.New("adapter.not-found", "{bin} was not found: give the agent a binPath or a command", "bin", def.bin)
 	}
 	if npx, err := lookupBin("npx", ""); err == nil {
 		return []string{npx, "--yes", def.npmPackage}, nil
 	}
-	return nil, fmt.Errorf("не найден %s: установите его командой `npm install -g %s` "+
-		"(или поставьте Node.js, тогда адаптер запустится через npx)", def.bin, def.npmPackage)
+	return nil, apperr.New("adapter.not-installed", "{bin} was not found: install it with `npm install -g {package}` (or install Node.js, and the adapter will run through npx)", "bin", def.bin, "package", def.npmPackage)
 }
 
 // connectACPAgent spawns the agent over stdio and talks pure ACP to it. The
@@ -667,7 +667,7 @@ func (m *Manager) adapterArgv(kind, override string) ([]string, error) {
 // protocol for every kind.
 func (m *Manager) connectACPAgent(ctx context.Context, s *Session, l launch) (*acpsdk.ClientSideConnection, func(), error) {
 	if len(l.argv) == 0 {
-		return nil, nil, fmt.Errorf("пустая команда запуска агента")
+		return nil, nil, fmt.Errorf("the agent's launch command is empty")
 	}
 	env, drop := spawnEnv(s.Agent, s.Net)
 	// The kind's own variables sit under the agent's, which is what lets an

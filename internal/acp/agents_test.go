@@ -605,7 +605,7 @@ func TestAgentMCPServersValidation(t *testing.T) {
 	_, err = validateAgent(AgentEntry{Name: "a", Kind: "claude", MCPServers: map[string]AgentMCPServer{
 		"remote": {Type: "http", URL: "https://mcp.example.com"},
 	}})
-	if err == nil || !strings.Contains(err.Error(), "удалённый") {
+	if err == nil || !strings.Contains(err.Error(), "remote") {
 		t.Errorf("unhelpful error for a remote server: %v", err)
 	}
 }

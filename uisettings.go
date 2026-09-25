@@ -2,7 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
 	"log"
 	"os"
 	"path/filepath"
@@ -214,7 +214,7 @@ func (a *App) UseLanguage(lang string) error {
 func (a *App) SetUIPreference(key, value string) error {
 	key = strings.TrimSpace(key)
 	if key == "" || len(key) > 64 {
-		return fmt.Errorf("некорректный ключ настройки")
+		return errors.New("ui settings: bad key")
 	}
 	// A preference used to be a word — a language, a theme's name, a
 	// do-not-show-again. One of them is now a list: the themes a person wrote,
@@ -222,7 +222,7 @@ func (a *App) SetUIPreference(key, value string) error {
 	// This is still a runaway backstop rather than a schema; it is just set
 	// where a real answer can fit under it.
 	if len(value) > 512*1024 {
-		return fmt.Errorf("значение настройки слишком велико")
+		return errors.New("ui settings: value too large")
 	}
 	uiSettingsMu.Lock()
 	defer uiSettingsMu.Unlock()

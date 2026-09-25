@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/artipop/xciii/internal/apperr"
 	"github.com/google/uuid"
 )
 
@@ -124,14 +125,16 @@ const (
 // and what came of it. It answers the only question anybody asks of a source —
 // why nothing happened — the way flow_event answers it for routes.
 type EventRecord struct {
-	ID         string    `json:"id"`
-	Source     string    `json:"source"`
-	ExternalID string    `json:"externalId,omitempty"`
-	Rule       string    `json:"rule,omitempty"`
-	Outcome    string    `json:"outcome"`
-	CardID     string    `json:"cardId,omitempty"`
-	Detail     string    `json:"detail,omitempty"`
-	CreatedAt  time.Time `json:"createdAt"`
+	ID         string `json:"id"`
+	Source     string `json:"source"`
+	ExternalID string `json:"externalId,omitempty"`
+	Rule       string `json:"rule,omitempty"`
+	Outcome    string `json:"outcome"`
+	CardID     string `json:"cardId,omitempty"`
+	// Detail says why, as a code the page words, where this app wrote it;
+	// what a plugin said comes as it is.
+	Detail    *apperr.Message `json:"detail,omitempty"`
+	CreatedAt time.Time       `json:"createdAt"`
 }
 
 // AppendEvent records one decision.
@@ -139,9 +142,14 @@ func (s *Store) AppendEvent(r EventRecord) error {
 	if err := s.ensureCardRef(r.CardID, ""); err != nil {
 		return err
 	}
-	_, err := s.exec(`INSERT INTO source_event (id, source, external_id, rule, outcome, card_id, detail, created_at)
-		VALUES (?,?,?,?,?,?,?,?)`,
-		newID(), r.Source, r.ExternalID, r.Rule, r.Outcome, nullable(r.CardID), r.Detail, time.Now().UnixMilli())
+	var detail apperr.Message
+	if r.Detail != nil {
+		detail = *r.Detail
+	}
+	text, code, args := detail.Columns()
+	_, err := s.exec(`INSERT INTO source_event (id, source, external_id, rule, outcome, card_id, detail, detail_code, detail_args, created_at)
+		VALUES (?,?,?,?,?,?,?,?,?,?)`,
+		newID(), r.Source, r.ExternalID, r.Rule, r.Outcome, nullable(r.CardID), nullable(text), code, args, time.Now().UnixMilli())
 	return err
 }
 
@@ -150,7 +158,8 @@ func (s *Store) Events(source string, limit int) ([]EventRecord, error) {
 	if limit <= 0 {
 		limit = 50
 	}
-	rows, err := s.query(`SELECT id, source, COALESCE(external_id,''), COALESCE(rule,''), outcome, COALESCE(card_id,''), COALESCE(detail,''), created_at
+	rows, err := s.query(`SELECT id, source, COALESCE(external_id,''), COALESCE(rule,''), outcome, COALESCE(card_id,''), COALESCE(detail,''),
+		COALESCE(detail_code,''), COALESCE(detail_args,''), created_at
 		FROM source_event WHERE source=? ORDER BY id DESC LIMIT ?`, source, limit)
 	if err != nil {
 		return nil, err
@@ -160,9 +169,17 @@ func (s *Store) Events(source string, limit int) ([]EventRecord, error) {
 	for rows.Next() {
 		var r EventRecord
 		var created int64
+		var text, code, args string
 		if err := rows.Scan(&r.ID, &r.Source, &r.ExternalID, &r.Rule, &r.Outcome,
-			&r.CardID, &r.Detail, &created); err != nil {
+			&r.CardID, &text, &code, &args, &created); err != nil {
 			return nil, err
+		}
+		if text != "" || code != "" {
+			detail, err := apperr.FromColumns(text, code, args)
+			if err != nil {
+				return nil, err
+			}
+			r.Detail = &detail
 		}
 		r.CreatedAt = time.UnixMilli(created)
 		out = append(out, r)

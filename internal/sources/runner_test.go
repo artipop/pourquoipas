@@ -167,7 +167,7 @@ func TestADeadCredentialStopsTheSourceAndSaysSo(t *testing.T) {
 	defer m.Stop(time.Second)
 
 	waitFor(t, func() bool { return m.Status("телефон").State == StateNeedsReauth })
-	if got := m.Status("телефон"); got.Error == "" {
+	if got := m.Status("телефон"); got.Error == nil || got.Error.Text == "" {
 		t.Fatalf("status says nothing about why: %+v", got)
 	}
 	// Stopped, not slowed: one attempt and no more.
@@ -357,7 +357,7 @@ func TestAFailureToStartIsNotSilent(t *testing.T) {
 	defer m.Stop(time.Second)
 
 	waitFor(t, func() bool { return m.Status("телефон").State == StateError })
-	if got := m.Status("телефон").Error; got == "" {
+	if got := m.Status("телефон").Error; got == nil || got.Text == "" {
 		t.Fatal("the status does not say what went wrong")
 	}
 }

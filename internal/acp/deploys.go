@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/artipop/xciii/internal/apperr"
 	"github.com/artipop/xciii/internal/dokku"
 )
 
@@ -27,17 +28,17 @@ func (m *Manager) Deploys() []DeployEntry {
 func validateDeploy(d DeployEntry) (DeployEntry, error) {
 	d.Name = strings.TrimSpace(d.Name)
 	if d.Name == "" {
-		return DeployEntry{}, fmt.Errorf("имя цели не может быть пустым")
+		return DeployEntry{}, apperr.New("deploys.no-name", "The target needs a name")
 	}
 	target, err := d.Target.Validate()
 	if err != nil {
-		return DeployEntry{}, fmt.Errorf("цель %q: %w", d.Name, err)
+		return DeployEntry{}, fmt.Errorf("target %q: %w", d.Name, err)
 	}
 	d.Target = target
 
 	if key := strings.TrimSpace(d.SSHKey); key != "" {
 		if _, err := os.Stat(key); err != nil {
-			return DeployEntry{}, fmt.Errorf("ssh-ключ не найден: %s", key)
+			return DeployEntry{}, apperr.New("deploys.no-key", "The SSH key was not found: {path}", "path", key)
 		}
 	}
 	return d, nil
@@ -53,7 +54,7 @@ func (m *Manager) AddDeploy(d DeployEntry) (DeployEntry, error) {
 	}
 	for _, e := range m.cfg.Deploys {
 		if strings.EqualFold(e.Name, d.Name) {
-			return DeployEntry{}, fmt.Errorf("цель с именем %q уже существует", e.Name)
+			return DeployEntry{}, apperr.New("deploys.duplicate", "A target named {name} already exists", "name", e.Name)
 		}
 	}
 	m.cfg.Deploys = append(m.cfg.Deploys, d)
@@ -83,14 +84,14 @@ func (m *Manager) UpdateDeploy(d DeployEntry) (DeployEntry, error) {
 		}
 		if name := strings.TrimSpace(d.Name); !strings.EqualFold(e.Name, name) {
 			if _, taken := deployByName(m.cfg.Deploys, name); taken {
-				return DeployEntry{}, fmt.Errorf("цель с именем %q уже существует", name)
+				return DeployEntry{}, apperr.New("deploys.duplicate", "A target named {name} already exists", "name", name)
 			}
 		}
 		d.ID = e.ID
 		m.cfg.Deploys[i] = d
 		return d, m.persistConfigLocked()
 	}
-	return DeployEntry{}, fmt.Errorf("цель %q не найдена", d.Name)
+	return DeployEntry{}, apperr.New("deploys.not-found", "Target {name} was not found", "name", d.Name)
 }
 
 // sameDeployEntry is which registry row an edit is about: the id when the
@@ -114,7 +115,7 @@ func (m *Manager) RemoveDeploy(name string) error {
 			return m.persistConfigLocked()
 		}
 	}
-	return fmt.Errorf("цель %q не найдена", name)
+	return apperr.New("deploys.not-found", "Target {name} was not found", "name", name)
 }
 
 // resolveDeployTarget maps a card to a Dokku destination: a select/multiSelect
@@ -127,7 +128,7 @@ func (m *Manager) resolveDeployTarget(ev CardMoved) (DeployEntry, error) {
 	m.cfgMu.RUnlock()
 
 	if len(deploys) == 0 {
-		return DeployEntry{}, fmt.Errorf("не настроено ни одной цели деплоя (меню доски → «Цели деплоя…»)")
+		return DeployEntry{}, apperr.New("deploys.none", "No deploy targets are set up (the board's menu, Deploy targets…)")
 	}
 	for _, opt := range ev.OptionNames {
 		for _, d := range deploys {
@@ -139,7 +140,7 @@ func (m *Manager) resolveDeployTarget(ev CardMoved) (DeployEntry, error) {
 	if len(deploys) == 1 {
 		return deploys[0], nil
 	}
-	return DeployEntry{}, fmt.Errorf("не понятно, куда деплоить: тег карточки не совпал ни с одной целью из реестра (%s)", deployNames(deploys))
+	return DeployEntry{}, apperr.New("deploys.no-match", "Nowhere to deploy: the card's tag matches no target in the registry ({targets})", "targets", deployNames(deploys))
 }
 
 // resolveDeploy gathers what a deploy session needs: the target and the branch
@@ -154,7 +155,7 @@ func (m *Manager) resolveDeploy(ev CardMoved, workdirPath string, deploy bool, p
 	// has none. Said here rather than three steps later, where it would read as
 	// "branch not found" on a card that never had one.
 	if !IsGitWorkdir(m.rootCtx, workdirPath) {
-		return nil, "", fmt.Errorf("папка %s не под git — публиковать нечего: деплой работает с веткой", workdirPath)
+		return nil, "", apperr.New("deploys.not-git", "The folder {dir} is not under git, so there is nothing to publish: a deploy works with a branch", "dir", workdirPath)
 	}
 	target, err := m.resolveDeployTargetPinned(ev, pinned)
 	if err != nil {
@@ -199,7 +200,7 @@ func (m *Manager) resolveDeployTargetPinned(ev CardMoved, id string) (DeployEntr
 	// carried here from another machine points at a target nobody registered.
 	// Saying which id it is helps nobody; saying what this machine has is the
 	// half a person can act on.
-	return DeployEntry{}, fmt.Errorf("цель деплоя, назначенная этой стадии, не найдена в реестре машины (есть: %s)", deployNames(deploys))
+	return DeployEntry{}, apperr.New("deploys.stage-target-missing", "The deploy target this stage names is not in this machine's registry (there are: {targets})", "targets", deployNames(deploys))
 }
 
 // deployAppName is what a target without an explicit base app names its apps
@@ -274,7 +275,7 @@ func (m *Manager) artifactsDir(sessionID string) (string, error) {
 	}
 	dir := filepath.Join(root, sessionID)
 	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return "", fmt.Errorf("не удалось создать каталог артефактов: %w", err)
+		return "", fmt.Errorf("could not create the artifacts directory: %w", err)
 	}
 	return dir, nil
 }

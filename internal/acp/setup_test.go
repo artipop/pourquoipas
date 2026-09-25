@@ -319,18 +319,3 @@ func TestTheOfferIsRememberedAcrossRestarts(t *testing.T) {
 		t.Fatal("the offer did not survive the restart")
 	}
 }
-
-// A hint is the app's own sentence, shipped in a template, and a board made
-// from that template carries its own copy — so fixing the wording in the
-// template alone would leave every board already made saying the old thing.
-func TestARetiredHintIsReplacedOnBoardsThatCarryIt(t *testing.T) {
-	const retired = "Репозиторий с кодом: агент работает в отдельном worktree и оставляет ветку."
-
-	if got := currentHint(retired); got == retired || got == "" {
-		t.Errorf("the retired hint came back as %q", got)
-	}
-	// A sentence somebody wrote is theirs, whatever it says.
-	if got := currentHint("папка с моими заметками"); got != "папка с моими заметками" {
-		t.Errorf("a board's own hint was rewritten to %q", got)
-	}
-}

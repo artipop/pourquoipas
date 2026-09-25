@@ -2,10 +2,10 @@ package boardclient
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 
+	"github.com/artipop/xciii/internal/apperr"
 	"github.com/artipop/xciii/server/model"
 	"github.com/artipop/xciii/server/utils"
 
@@ -31,7 +31,7 @@ func NewSourceWriter(c *Client) *SourceWriter { return &SourceWriter{c} }
 // sources run on, and a server's board is only ever the one the share dialog
 // picked (sourcesByBoard asks the local board).
 func (w *SourceWriter) InboxBoard(context.Context) (string, error) {
-	return "", errors.New("«Входящие» — доска этой машины, а не сервера")
+	return "", apperr.New("inbox.local-only", "The inbox is this machine's board, not the server's")
 }
 
 // CreateCard puts a card a source brought on the board, in its first column.

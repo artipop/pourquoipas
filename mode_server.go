@@ -14,6 +14,8 @@ import (
 	"strconv"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
+
+	"github.com/artipop/xciii/internal/apperr"
 )
 
 // origin is the front door of a server build. Here Wails runs an HTTP server of
@@ -160,5 +162,5 @@ func closeShareWindow(_ *application.App) {}
 // pickDirectory has no native dialog to open. Saying so is the point: an empty
 // path would reach the UI as a cancelled picker and look like a bug.
 func pickDirectory(_ *application.App, _ string) (string, error) {
-	return "", errors.New("выбор папки недоступен в серверном режиме: впишите путь вручную")
+	return "", apperr.New("folders.no-picker", "A server has no folder picker: type the path")
 }

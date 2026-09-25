@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/artipop/xciii/internal/apperr"
 )
 
 // A board arrives knowing how the work on it is organised. What it cannot know
@@ -200,36 +202,13 @@ func (m *Manager) SetupPlanFor(boardID string) SetupPlan {
 		plan.Steps = append(plan.Steps, SetupStep{
 			Kind:     def.Kind,
 			Optional: optional,
-			Hint:     currentHint(step.Hint),
+			Hint:     strings.TrimSpace(step.Hint),
 			Status:   m.setupStatus(def, states),
 			Ready:    def.Registry != "" && m.registryFilled(def.Registry),
 			Requires: setupRequirements(def.Kind),
 		})
 	}
 	return plan
-}
-
-// retiredHints are sentences the templates shipped and no longer say. A board
-// made from a template carries its own copy of them, so a wording fixed in the
-// template would go on being wrong on every board already made — and this is
-// the app's own sentence, not a person's, exactly as the name of a field this
-// app creates is. Matched whole, so a hint somebody edited is theirs and stays.
-//
-// Deletable once boards made before the wording changed are gone; each entry
-// says what it was fixing.
-var retiredHints = map[string]string{
-	// Said what the machinery does — a worktree of its own — and how a
-	// repository is worked in is now the board's own answer rather than a fact
-	// about the step. What the step needs to know is what to point at.
-	"Репозиторий с кодом: агент работает в отдельном worktree и оставляет ветку.": "Папка с файлами по проекту или git-репозиторий",
-}
-
-func currentHint(hint string) string {
-	hint = strings.TrimSpace(hint)
-	if current, ok := retiredHints[hint]; ok {
-		return current
-	}
-	return hint
 }
 
 // boardSetup is what a board asks to be asked, in its own property. A board
@@ -258,7 +237,7 @@ func setupRequirements(string) []string { return nil }
 // needs no change at all.
 func (m *Manager) CheckSetupAnswer(boardID, step, value string) error {
 	if _, ok := SetupStepDefinition(step); !ok {
-		return fmt.Errorf("неизвестный шаг настройки %q", step)
+		return fmt.Errorf("unknown setup step %q", step)
 	}
 	for _, s := range m.SetupPlanFor(boardID).Steps {
 		if s.Kind != step {
@@ -266,7 +245,7 @@ func (m *Manager) CheckSetupAnswer(boardID, step, value string) error {
 		}
 		for _, req := range s.Requires {
 			if req == SetupRequiresGit && !IsGitWorkdir(m.rootCtx, value) {
-				return fmt.Errorf("в папке %s нет git, а этой доске нужен репозиторий: она публикует ветку или ждёт её — выполните `git init` или выберите другую папку", value)
+				return apperr.New("setup.needs-git", "The folder {dir} has no git, and this board needs a repository: it publishes a branch or waits for one. Run `git init` or choose another folder", "dir", value)
 			}
 		}
 	}
@@ -421,12 +400,12 @@ func (m *Manager) MarkSetupOffered(boardID string) error {
 // but only a person can say they meant to leave it empty.
 func (m *Manager) RecordSetupStep(boardID, step, status string) error {
 	if _, ok := SetupStepDefinition(step); !ok {
-		return fmt.Errorf("неизвестный шаг настройки %q", step)
+		return fmt.Errorf("unknown setup step %q", step)
 	}
 	switch status {
 	case SetupPending, SetupDone, SetupSkipped:
 	default:
-		return fmt.Errorf("неизвестное состояние шага %q", status)
+		return fmt.Errorf("unknown step state %q", status)
 	}
 	if m.store == nil {
 		return nil

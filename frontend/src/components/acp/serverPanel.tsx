@@ -6,6 +6,7 @@ import {useIntl} from '../../intl'
 import Button from '../../widgets/buttons/button'
 
 import {goApp} from '../../goBridge'
+import {goError} from '../../goMessages'
 
 import './serverPanel.scss'
 
@@ -48,7 +49,7 @@ const ServerPanel = () => {
         try {
             setState(JSON.parse(await bindings.GetServerAttachment()) as AttachState)
         } catch (e) {
-            setError(String(e))
+            setError(goError(intl, e))
         }
     }
 
@@ -79,7 +80,7 @@ const ServerPanel = () => {
             setState(next)
             setPassword('')
         } catch (e) {
-            setError(String(e))
+            setError(goError(intl, e))
         } finally {
             setBusy(false)
         }
@@ -94,7 +95,7 @@ const ServerPanel = () => {
         try {
             setState(JSON.parse(await bindings.DetachServer()) as AttachState)
         } catch (e) {
-            setError(String(e))
+            setError(goError(intl, e))
         } finally {
             setBusy(false)
         }

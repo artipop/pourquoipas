@@ -69,7 +69,7 @@ func (c *Client) MoveCardByOptionName(_ context.Context, cardID, propertyName, o
 	}
 	propID, optionID, ok := boardmodel.FindSelectOption(schema, propertyName, optionName)
 	if !ok {
-		return fmt.Errorf("на доске %s нет колонки %q в свойстве %q", boardID, optionName, propertyName)
+		return fmt.Errorf("board %s has no column %q in the property %q", boardID, optionName, propertyName)
 	}
 	return c.patchCard(cardID, &model.CardPatch{UpdatedProperties: map[string]any{propID: optionID}}, true)
 }
@@ -110,14 +110,14 @@ func (c *Client) SetCardOption(_ context.Context, cardID, propertyID, optionName
 	}
 	def, ok := schema[propertyID]
 	if !ok {
-		return fmt.Errorf("на доске нет свойства с id %q", propertyID)
+		return fmt.Errorf("the board has no property with id %q", propertyID)
 	}
 	for oid, opt := range def.Options {
 		if strings.EqualFold(opt.Value, optionName) {
 			return c.patchCard(cardID, &model.CardPatch{UpdatedProperties: map[string]any{propertyID: oid}}, true)
 		}
 	}
-	return fmt.Errorf("у свойства %q нет значения %q", def.Name, optionName)
+	return fmt.Errorf("the property %q has no value %q", def.Name, optionName)
 }
 
 // SetCardFields writes named properties: a select gets the option whose name
@@ -134,7 +134,7 @@ func (c *Client) SetCardFields(_ context.Context, cardID string, fields map[stri
 	for name, value := range fields {
 		propID, def, ok := boardmodel.FindPropertyByName(schema, name)
 		if !ok {
-			return fmt.Errorf("на доске нет свойства %q — посмотрите list_card_fields", name)
+			return fmt.Errorf("the board has no property %q: see list_card_fields", name)
 		}
 		if def.Type == "select" {
 			optionID := ""
@@ -145,7 +145,7 @@ func (c *Client) SetCardFields(_ context.Context, cardID string, fields map[stri
 				}
 			}
 			if optionID == "" {
-				return fmt.Errorf("у свойства %q нет значения %q — допустимые перечислены в list_card_fields", name, value)
+				return fmt.Errorf("the property %q has no value %q: list_card_fields lists the allowed ones", name, value)
 			}
 			properties[propID] = optionID
 			continue
@@ -160,7 +160,7 @@ func (c *Client) SetCardFields(_ context.Context, cardID string, fields map[stri
 func (c *Client) AddCardProperty(_ context.Context, cardID, name string) error {
 	name = strings.TrimSpace(name)
 	if name == "" {
-		return fmt.Errorf("у поля должно быть название")
+		return fmt.Errorf("a field needs a name")
 	}
 	boardID, err := c.boardOfCard(cardID)
 	if err != nil {

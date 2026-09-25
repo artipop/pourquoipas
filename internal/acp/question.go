@@ -2,12 +2,13 @@ package acp
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
+
+	"github.com/artipop/xciii/internal/apperr"
 )
 
 // A question is an agent asking the person whose card it is working, and
@@ -52,7 +53,10 @@ type Question struct {
 	Kind      QuestionKind `json:"kind"`
 	// Text is the question itself: the tool call's title for a permission, the
 	// agent's message for a form.
-	Text    string           `json:"text"`
+	Text string `json:"text"`
+	// Say is Text as a code for the page to word, where this side wrote Text
+	// rather than the agent (a permission).
+	Say     *apperr.Message  `json:"say,omitempty"`
 	Tool    string           `json:"tool,omitempty"`
 	Options []QuestionOption `json:"options,omitempty"`
 	// FreeText says an answer may be typed instead of chosen. The claude
@@ -167,7 +171,7 @@ func (m *Manager) AnswerQuestion(id string, ans Answer) error {
 	pending, ok := m.questions[id]
 	m.questionsMu.Unlock()
 	if !ok {
-		return fmt.Errorf("вопрос %s уже неактуален", id)
+		return apperr.New("question.gone", "This question is no longer open")
 	}
 	select {
 	case pending.reply <- ans:
@@ -175,7 +179,7 @@ func (m *Manager) AnswerQuestion(id string, ans Answer) error {
 	default:
 		// Buffered by one and removed by the asker, so a full channel means an
 		// answer is already on its way.
-		return fmt.Errorf("на этот вопрос уже отвечают")
+		return apperr.New("question.answering", "This question is already being answered")
 	}
 }
 
@@ -225,6 +229,7 @@ func (q Question) attention() Attention {
 		Tool:       q.Tool,
 		QuestionID: q.ID,
 		Text:       q.Text,
+		Say:        q.Say,
 		Options:    q.Options,
 		FreeText:   q.FreeText,
 		Awaiting:   true,

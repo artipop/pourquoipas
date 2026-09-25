@@ -165,7 +165,7 @@ func TestAnAnswerToSomebodyElsesRequestIsRefused(t *testing.T) {
 	}
 
 	_, err := Authorize(context.Background(), provider.config(), open)
-	if err == nil || !strings.Contains(err.Error(), "не на наш запрос") {
+	if err == nil || !strings.Contains(err.Error(), "not to our request") {
 		t.Fatalf("err = %v", err)
 	}
 }

@@ -53,7 +53,7 @@ func (c *Client) ensureAccount(agent acp.AgentUser) (acp.AgentUser, error) {
 // makes the name resolve in its person picker without searching for it.
 func (c *Client) EnsureAgentUsers(_ context.Context, boardID string, agents []acp.AgentUser) ([]acp.AgentUser, error) {
 	if boardID == "" {
-		return nil, fmt.Errorf("не указана доска")
+		return nil, fmt.Errorf("no board given")
 	}
 	out := make([]acp.AgentUser, 0, len(agents))
 	for _, agent := range agents {
@@ -72,7 +72,7 @@ func (c *Client) EnsureAgentUsers(_ context.Context, boardID string, agents []ac
 			SchemeViewer:    true,
 		}
 		if _, resp := c.api.AddMemberToBoard(member); resp != nil && resp.Error != nil {
-			return out, fmt.Errorf("добавление %q в участники доски: %w", filled.Username, resp.Error)
+			return out, fmt.Errorf("adding %q to the board's members: %w", filled.Username, resp.Error)
 		}
 		out = append(out, filled)
 	}
@@ -113,7 +113,7 @@ func (c *Client) RetireAgentUser(_ context.Context, agent acp.AgentUser) (int, e
 				continue
 			}
 			if _, resp := c.api.DeleteBoardMember(member); resp != nil && resp.Error != nil {
-				return removed, fmt.Errorf("удаление %q из участников доски %s: %w", agent.Username, board.ID, resp.Error)
+				return removed, fmt.Errorf("removing %q from the members of board %s: %w", agent.Username, board.ID, resp.Error)
 			}
 			removed++
 		}
@@ -129,7 +129,7 @@ func (c *Client) AssignCardAgent(_ context.Context, cardID string, agent acp.Age
 		return err
 	}
 	if filled.UserID == "" {
-		return fmt.Errorf("у агента %q нет учётной записи на доске", agent.Name)
+		return fmt.Errorf("agent %q has no account on the board", agent.Name)
 	}
 
 	_, schema, err := c.cardSchema(cardID)

@@ -1,11 +1,11 @@
 // The Wails-generated Go bindings are PascalCase methods, not constructors.
-/* eslint-disable new-cap */
+
 import {For, Show, createEffect, createSignal, onSettled} from 'solid-js'
 
 import {useIntl} from '../../intl'
 import type {IntlShape} from '../../intl'
 import {onAgentEvent} from '../../components/acp/agentEvents'
-import {attentionHeading, useAttention} from '../../components/acp/attention'
+import {attentionHeading, questionText, useAttention} from '../../components/acp/attention'
 import AttentionAnswers from '../../components/acp/attentionAnswers'
 import {aiEnabled} from '../../aiSwitch'
 
@@ -129,7 +129,7 @@ const MobilePage = () => {
                                     </span>
 
                                     <Show when={target.text}>
-                                        <p class='MobilePage__question'>{target.text}</p>
+                                        <p class='MobilePage__question'>{questionText(intl, target)}</p>
                                     </Show>
 
                                     {/* Answered here, which on a phone is the

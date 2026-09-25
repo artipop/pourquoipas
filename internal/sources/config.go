@@ -11,6 +11,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/artipop/xciii/internal/apperr"
 )
 
 // The registry lives in its own file beside the ACP one, for the reason the
@@ -244,45 +246,45 @@ func (p Manifest) MCPOr() MCPSpec {
 func (p Manifest) Validate() (Manifest, error) {
 	p.Name = strings.TrimSpace(p.Name)
 	if p.Name == "" {
-		return p, fmt.Errorf("у плагина нет имени")
+		return p, apperr.New("sources.plugin-no-name", "The plugin has no name")
 	}
 	p.Command = strings.TrimSpace(p.Command)
 	if p.Command == "" {
-		return p, fmt.Errorf("плагин %q: не сказано, чем его запускать (command)", p.Name)
+		return p, apperr.New("sources.plugin-no-command", "Plugin {name} does not say how to run it (command)", "name", p.Name)
 	}
 	p.Kind = strings.ToLower(strings.TrimSpace(p.Kind))
 	switch p.Kind {
 	case "", KindPlugin:
 		p.Kind = ""
 		if p.MCP != nil || p.Agent != nil {
-			return p, fmt.Errorf("плагин %q: отображение mcp/agent у плагина, говорящего на нашем протоколе", p.Name)
+			return p, fmt.Errorf("plugin %q: an mcp/agent mapping on a plugin that speaks our protocol", p.Name)
 		}
 	case KindMCP:
 		spec, err := p.MCPOr().Validate()
 		if err != nil {
-			return p, fmt.Errorf("плагин %q: %w", p.Name, err)
+			return p, fmt.Errorf("plugin %q: %w", p.Name, err)
 		}
 		p.MCP = &spec
 	case KindAgent:
 		spec, err := p.AgentOr().Validate()
 		if err != nil {
-			return p, fmt.Errorf("плагин %q: %w", p.Name, err)
+			return p, fmt.Errorf("plugin %q: %w", p.Name, err)
 		}
 		p.Agent = &spec
 	default:
-		return p, fmt.Errorf("плагин %q: непонятный вид %q (%s, %s или %s)",
+		return p, fmt.Errorf("plugin %q: unknown kind %q (%s, %s or %s)",
 			p.Name, p.Kind, KindPlugin, KindMCP, KindAgent)
 	}
 	for i, f := range p.Fields {
 		if strings.TrimSpace(f.Key) == "" {
-			return p, fmt.Errorf("плагин %q: у поля №%d нет ключа", p.Name, i+1)
+			return p, fmt.Errorf("plugin %q: field #%d has no key", p.Name, i+1)
 		}
 		if f.Type == "" {
 			p.Fields[i].Type = "string"
 			continue
 		}
 		if !contains(FieldTypes, f.Type) {
-			return p, fmt.Errorf("плагин %q, поле %q: непонятный тип %q (%s)",
+			return p, fmt.Errorf("plugin %q, field %q: unknown type %q (%s)",
 				p.Name, f.Key, f.Type, strings.Join(FieldTypes, ", "))
 		}
 	}
@@ -297,7 +299,7 @@ func (p Manifest) Argv() ([]string, error) {
 	if command == SelfCommand {
 		self, err := os.Executable()
 		if err != nil {
-			return nil, fmt.Errorf("плагин %q: не удалось найти путь к приложению: %w", p.Name, err)
+			return nil, fmt.Errorf("plugin %q: could not find the app's path: %w", p.Name, err)
 		}
 		command = self
 	}
@@ -328,19 +330,19 @@ type Config struct {
 func (s SourceEntry) Validate() (SourceEntry, error) {
 	s.Name = strings.TrimSpace(s.Name)
 	if s.Name == "" {
-		return s, fmt.Errorf("у источника нет имени")
+		return s, apperr.New("sources.no-name", "The source needs a name")
 	}
 	s.Plugin = strings.TrimSpace(s.Plugin)
 	s.Update = strings.TrimSpace(s.Update)
 	if s.Update != "" && s.Update != UpdateComment && s.Update != UpdateIgnore {
-		return s, fmt.Errorf("источник %q: непонятная политика обновления %q (%s или %s)",
+		return s, fmt.Errorf("source %q: unknown update policy %q (%s or %s)",
 			s.Name, s.Update, UpdateComment, UpdateIgnore)
 	}
 	rules := make([]Rule, 0, len(s.Rules))
 	for i, r := range s.Rules {
 		valid, err := r.Validate()
 		if err != nil {
-			return s, fmt.Errorf("источник %q, правило №%d: %w", s.Name, i+1, err)
+			return s, fmt.Errorf("source %q, rule #%d: %w", s.Name, i+1, err)
 		}
 		rules = append(rules, valid)
 	}
@@ -358,7 +360,7 @@ func (r Rule) Validate() (Rule, error) {
 		r.Then = ActionCard
 	}
 	if r.Then != ActionCard && r.Then != ActionComment && r.Then != ActionDrop {
-		return r, fmt.Errorf("непонятное действие %q (%s)", r.Then, strings.Join(Actions, ", "))
+		return r, fmt.Errorf("unknown action %q (%s)", r.Then, strings.Join(Actions, ", "))
 	}
 	for _, expr := range []string{r.When.Title, r.When.Body} {
 		if err := checkRegexp(expr); err != nil {
@@ -367,7 +369,7 @@ func (r Rule) Validate() (Rule, error) {
 	}
 	for prop, expr := range r.When.Props {
 		if err := checkRegexp(expr); err != nil {
-			return r, fmt.Errorf("свойство %q: %w", prop, err)
+			return r, fmt.Errorf("property %q: %w", prop, err)
 		}
 	}
 	return r, nil
@@ -378,7 +380,7 @@ func checkRegexp(expr string) error {
 		return nil
 	}
 	if _, err := compileMatch(expr); err != nil {
-		return fmt.Errorf("не удалось разобрать выражение %q: %w", expr, err)
+		return apperr.Wrap(err, "sources.bad-expression", "Could not read the expression {expression}", "expression", expr)
 	}
 	return nil
 }
@@ -448,11 +450,11 @@ type AgentSpec struct {
 func (s AgentSpec) Validate() (AgentSpec, error) {
 	s.Agent = strings.TrimSpace(s.Agent)
 	if s.Agent == "" {
-		return s, fmt.Errorf("не сказано, каким агентом опрашивать (agent.agent)")
+		return s, apperr.New("sources.no-agent", "No agent is chosen to read the source")
 	}
 	s.Task = strings.TrimSpace(s.Task)
 	if s.Task == "" {
-		return s, fmt.Errorf("не сказано, что спрашивать у сервиса (agent.task)")
+		return s, apperr.New("sources.no-task", "The source does not say what to ask the service")
 	}
 	return s, nil
 }

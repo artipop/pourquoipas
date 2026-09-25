@@ -5,13 +5,13 @@ import (
 	_ "embed"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 	"sync"
 	"time"
 
+	"github.com/artipop/xciii/internal/apperr"
 	"github.com/artipop/xciii/internal/edition"
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/updater"
@@ -450,7 +450,7 @@ func (c *updateController) skip() error {
 	version := c.state.AvailableVersion
 	c.mu.Unlock()
 	if version == "" {
-		return errors.New("нечего пропускать: обновление не найдено")
+		return apperr.New("updates.nothing-to-skip", "There is no update to skip")
 	}
 
 	c.up.SkipVersion(version)
@@ -473,7 +473,7 @@ func (c *updateController) skip() error {
 	return nil
 }
 
-var errUpdatesUnavailable = errors.New("обновление этой сборки не поддерживается")
+var errUpdatesUnavailable = apperr.New("updates.unavailable", "This build does not update itself")
 
 // check asks the feed. It returns as soon as the request is under way: the
 // answer arrives as the event, so the panel draws the checking state from the same
@@ -525,7 +525,7 @@ func (c *updateController) restart() error {
 		return errUpdatesUnavailable
 	}
 	if err := c.up.Restart(context.Background()); err != nil {
-		return fmt.Errorf("не удалось перезапустить: %w", err)
+		return apperr.Wrap(err, "updates.restart-failed", "Could not restart")
 	}
 	return nil
 }

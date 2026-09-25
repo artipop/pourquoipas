@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/artipop/xciii/internal/apperr"
 	"github.com/artipop/xciii/internal/appschema"
 )
 
@@ -44,7 +45,7 @@ func TestADeletedCardTakesWhatWeKnewAboutIt(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if err := st.SetStall(StallRecord{CardID: "card-1", Reason: "стоит"}); err != nil {
+	if err := st.SetStall(StallRecord{CardID: "card-1", Reason: apperr.Plain("stands")}); err != nil {
 		t.Fatal(err)
 	}
 	if err := st.SetCardChanges(CardChangesRecord{CardID: "card-1", BoardID: "board-1", Files: 2}); err != nil {
@@ -216,7 +217,7 @@ func TestACardOnAnotherServerCanBeWrittenAbout(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := st.SetStall(StallRecord{CardID: "remote-card", Reason: "нет папки"}); err != nil {
+	if err := st.SetStall(StallRecord{CardID: "remote-card", Reason: apperr.Plain("no folder")}); err != nil {
 		t.Fatalf("a stall on a card of another board was refused: %v", err)
 	}
 	if err := st.SetCardChanges(CardChangesRecord{CardID: "remote-card", BoardID: "remote-board", Files: 1}); err != nil {
@@ -253,7 +254,7 @@ func TestWritingAboutACardMakesItsRefOnTheWay(t *testing.T) {
 	}
 	st := NewStore(db)
 
-	if err := st.SetStall(StallRecord{CardID: "card-9", Reason: "нет папки"}); err != nil {
+	if err := st.SetStall(StallRecord{CardID: "card-9", Reason: apperr.Plain("no folder")}); err != nil {
 		t.Fatalf("the first write about a card was refused: %v", err)
 	}
 
@@ -264,5 +265,23 @@ func TestWritingAboutACardMakesItsRefOnTheWay(t *testing.T) {
 	}
 	if _, ok, err := st.Stall("card-9"); err != nil || ok {
 		t.Errorf("what we knew about the card outlived the card: %v %v", ok, err)
+	}
+}
+
+// The reason a card stands still is kept as a code and its values, so the page
+// words it in the language of whoever reads it, and the English beside them
+// for a page that does not know the code.
+func TestAStallKeepsItsCodeAndValues(t *testing.T) {
+	st, _ := enforcingStore(t)
+	why := apperr.Say("folders.dirty", "The folder {dir} has unsaved changes", "dir", "/work/web")
+	if err := st.SetStall(StallRecord{CardID: "card-1", Reason: why}); err != nil {
+		t.Fatal(err)
+	}
+	got, ok, err := st.Stall("card-1")
+	if err != nil || !ok {
+		t.Fatalf("stall: %v %v", ok, err)
+	}
+	if got.Reason.Code != why.Code || got.Reason.Args["dir"] != "/work/web" || got.Reason.Text != why.Text {
+		t.Errorf("got %+v, want %+v", got.Reason, why)
 	}
 }

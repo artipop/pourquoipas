@@ -89,20 +89,20 @@ func (s *Session) hasCommented() bool {
 func (m *Manager) FinishWorkFromTools(token string, ok bool, summary string, fields map[string]string) error {
 	g, found := m.boardGrant(token)
 	if !found {
-		return fmt.Errorf("нет доступа к доске")
+		return fmt.Errorf("no access to the board")
 	}
 	s := m.session(g.SessionID)
 	if s == nil || s.CardID == "" {
-		return fmt.Errorf("за этим разговором нет карточки: сказать здесь «работа закончена» некому")
+		return fmt.Errorf("there is no card behind this conversation, so there is nobody to tell that the work is finished")
 	}
 	if len(fields) > 0 {
 		if g.Property != "" {
 			if _, taken := fieldsHave(fields, g.Property); taken {
-				return fmt.Errorf("колонка (%s) меняется не здесь: карточку двигает сам исход работы, либо move_card", g.Property)
+				return fmt.Errorf("the column (%s) is not changed here: move_card moves the card", g.Property)
 			}
 		}
 		if m.writer == nil {
-			return fmt.Errorf("доска недоступна")
+			return fmt.Errorf("the board is not available")
 		}
 		ctx, cancel := context.WithTimeout(m.rootCtx, 10*time.Second)
 		defer cancel()
@@ -111,7 +111,7 @@ func (m *Manager) FinishWorkFromTools(token string, ok bool, summary string, fie
 		}
 	}
 	if !s.setReport(stageReport{ok: ok, summary: strings.TrimSpace(summary)}) {
-		return fmt.Errorf("об окончании работы уже сказано")
+		return fmt.Errorf("the end of the work was already reported")
 	}
 	return nil
 }

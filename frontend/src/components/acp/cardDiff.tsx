@@ -11,6 +11,8 @@ import {createLoader} from '../../hooks/loader'
 import {goApp} from '../../goBridge'
 import {aiEnabled} from '../../aiSwitch'
 
+import {GoMessage, goError, goMessage} from '../../goMessages'
+
 import {onAgentEvent} from './agentEvents'
 
 import './cardDiff.scss'
@@ -45,7 +47,7 @@ export type CardDiffData = {
     mode?: string
     committed: DiffFile[]
     uncommitted: DiffFile[]
-    reason?: string
+    reason?: GoMessage
 }
 
 export function isCardDiffAvailable(): boolean {
@@ -201,7 +203,7 @@ export const CardDiffView = (props: {cardId: string}) => {
         } catch (e) {
             // The diff already on screen stays under the error: a folder that
             // failed to read once has not stopped holding what it held.
-            return {diff: reading()?.diff, error: String((e as Error)?.message || e)}
+            return {diff: reading()?.diff, error: goError(intl, e)}
         }
     }, undefined as {diff?: CardDiffData, error: string} | undefined, () => props.cardId)
     const diff = () => reading()?.diff
@@ -307,7 +309,7 @@ export const CardDiffView = (props: {cardId: string}) => {
                     one it is — not started, started elsewhere, folder gone. It is
                     drawn as a note and never as an error. */}
                 <Show when={!error() && diff()?.reason}>
-                    <div class='CardDiff__empty'>{diff()!.reason}</div>
+                    <div class='CardDiff__empty'>{goMessage(intl, diff()!.reason)}</div>
                 </Show>
 
                 <Show when={(diff()?.committed.length || 0) > 0}>

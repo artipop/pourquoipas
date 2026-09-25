@@ -76,4 +76,4 @@ func CardSourceOf(block *model.Block) (CardSource, bool) {
 // brought. Like AuthorPropertyTitle it is a name given at creation and never a
 // key: the property is found by its *type*, so a board that calls it "Link", or
 // whose owner renamed it, keeps working and does not grow a second one.
-const LinkPropertyTitle = "Ссылка"
+const LinkPropertyTitle = "Link"

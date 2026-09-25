@@ -1,8 +1,9 @@
 package acp
 
 import (
-	"fmt"
 	"strings"
+
+	"github.com/artipop/xciii/internal/apperr"
 )
 
 // Proxy registry: named network configurations (proxy URL, bypass list, CA
@@ -21,7 +22,7 @@ func (m *Manager) Proxies() []ProxyEntry {
 func validateProxy(p ProxyEntry) (ProxyEntry, error) {
 	p.Name = strings.TrimSpace(p.Name)
 	if p.Name == "" {
-		return ProxyEntry{}, fmt.Errorf("имя конфигурации не может быть пустым")
+		return ProxyEntry{}, apperr.New("proxies.no-name", "The configuration needs a name")
 	}
 	net, err := p.NetworkSettings.Validate("") // kind-specific checks happen per agent
 	if err != nil {
@@ -29,7 +30,7 @@ func validateProxy(p ProxyEntry) (ProxyEntry, error) {
 	}
 	p.NetworkSettings = net
 	if p.IsZero() {
-		return ProxyEntry{}, fmt.Errorf("конфигурация %q пустая: задай прокси, список исключений или CA-сертификат", p.Name)
+		return ProxyEntry{}, apperr.New("proxies.empty", "The configuration {name} is empty: give it a proxy, a list of exceptions or a CA certificate", "name", p.Name)
 	}
 	return p, nil
 }
@@ -44,7 +45,7 @@ func (m *Manager) AddProxy(p ProxyEntry) (ProxyEntry, error) {
 	defer m.cfgMu.Unlock()
 	for _, e := range m.cfg.Proxies {
 		if strings.EqualFold(e.Name, p.Name) {
-			return ProxyEntry{}, fmt.Errorf("конфигурация с именем %q уже существует", e.Name)
+			return ProxyEntry{}, apperr.New("proxies.duplicate", "A configuration named {name} already exists", "name", e.Name)
 		}
 	}
 	m.cfg.Proxies = append(m.cfg.Proxies, p)
@@ -73,19 +74,19 @@ func (m *Manager) UpdateProxy(p ProxyEntry) (ProxyEntry, error) {
 				continue
 			}
 			if _, err := p.NetworkSettings.Validate(a.Kind); err != nil {
-				return ProxyEntry{}, fmt.Errorf("агент %q (%s) не сможет использовать эту конфигурацию: %w", a.Name, a.Kind, err)
+				return ProxyEntry{}, apperr.Wrap(err, "proxies.agent-cannot", "Agent {name} ({kind}) could not use this configuration", "name", a.Name, "kind", a.Kind)
 			}
 		}
 		if name := strings.TrimSpace(p.Name); !strings.EqualFold(e.Name, name) {
 			if _, taken := proxyByName(m.cfg.Proxies, name); taken {
-				return ProxyEntry{}, fmt.Errorf("конфигурация с именем %q уже существует", name)
+				return ProxyEntry{}, apperr.New("proxies.duplicate", "A configuration named {name} already exists", "name", name)
 			}
 		}
 		p.ID = e.ID
 		m.cfg.Proxies[i] = p
 		return p, m.persistConfigLocked()
 	}
-	return ProxyEntry{}, fmt.Errorf("конфигурация %q не найдена", p.Name)
+	return ProxyEntry{}, apperr.New("proxies.not-found", "Configuration {name} was not found", "name", p.Name)
 }
 
 // RemoveProxy deletes an entry by name, refusing while agents still reference
@@ -101,7 +102,7 @@ func (m *Manager) RemoveProxy(name string) error {
 		}
 	}
 	if len(used) > 0 {
-		return fmt.Errorf("конфигурацию %q используют агенты: %s — сначала переключи их", name, strings.Join(used, ", "))
+		return apperr.New("proxies.in-use", "Agents use the configuration {name}: {agents}. Switch them to another one first", "name", name, "agents", strings.Join(used, ", "))
 	}
 	for i, e := range m.cfg.Proxies {
 		if strings.EqualFold(e.Name, name) {
@@ -109,7 +110,7 @@ func (m *Manager) RemoveProxy(name string) error {
 			return m.persistConfigLocked()
 		}
 	}
-	return fmt.Errorf("конфигурация %q не найдена", name)
+	return apperr.New("proxies.not-found", "Configuration {name} was not found", "name", name)
 }
 
 // resolveNetwork returns the network settings an agent runs with: the registry
@@ -137,13 +138,13 @@ func resolveNetworkIn(proxies []ProxyEntry, a AgentEntry) (NetworkSettings, erro
 	if p, ok := proxyByName(proxies, name); ok {
 		return p.NetworkSettings.Validate(a.Kind)
 	}
-	return NetworkSettings{}, fmt.Errorf("прокси-конфигурация агента %q не найдена в реестре (есть: %s)", a.Name, proxyNames(proxies))
+	if len(proxies) == 0 {
+		return NetworkSettings{}, apperr.New("proxies.agent-missing-none", "The proxy configuration of agent {name} is not in the registry, and the registry is empty", "name", a.Name)
+	}
+	return NetworkSettings{}, apperr.New("proxies.agent-missing", "The proxy configuration of agent {name} is not in the registry (there are: {proxies})", "name", a.Name, "proxies", proxyNames(proxies))
 }
 
 func proxyNames(proxies []ProxyEntry) string {
-	if len(proxies) == 0 {
-		return "реестр пуст"
-	}
 	names := make([]string, len(proxies))
 	for i, p := range proxies {
 		names[i] = p.Name

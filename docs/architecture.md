@@ -527,7 +527,9 @@ is true only until somebody fixes the registry or moves the card, and a comment
 outlives it as noise (`«Агент не запущен: …»` from SINGLE-USER was the reading
 experience this replaces). One stall record per card (`card_stall`, `stall.go`)
 holds the current reason: replaced by a newer reason, deleted by any progress,
-and handed to the card via `GetCardAgent.stall`.
+and handed to the card via `GetCardAgent.stall`. The reason is a code and its
+values beside the English (`reason_code`, `reason_args`), which the page words
+in its own language (`internal/apperr`, `docs/i18n.md`).
 
 **The board is one projection and the only one.** A column is an option of the
 board's own select property, and which property that is is recorded on the board

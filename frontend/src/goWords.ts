@@ -3,6 +3,7 @@
 import {createIntl, IntlShape} from './intl'
 import {getMessages} from './i18n'
 import {goApp} from './goBridge'
+import {goSentences} from './goMessages'
 
 // The words the Go side draws on this page's behalf: the menu bar, the OS
 // notification and the titles of the windows it opens (gowords.go). They are
@@ -28,6 +29,7 @@ export type GoWords = {
     diffWindow: string
     shareWindow: string
     moreWaits: PluralWords
+    messages: Record<string, string>
 }
 
 // pluralWords turns a message with a {count} into what Go can use without a
@@ -61,6 +63,7 @@ export function goWords(intl: IntlShape): GoWords {
         diffWindow: intl.formatMessage({id: 'CardDiff.window-title', defaultMessage: 'Changes · {title}'}, {title: '{title}'}),
         shareWindow: intl.formatMessage({id: 'Share.title', defaultMessage: 'Save to a board'}),
         moreWaits: pluralWords(intl, (count) => intl.formatMessage({id: 'Tray.more', defaultMessage: '…and {count} more'}, {count})),
+        messages: goSentences(intl),
     }
 }
 

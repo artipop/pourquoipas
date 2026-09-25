@@ -7,6 +7,9 @@ import {UserSettings} from '../../userSettings'
 import {goApp} from '../../goBridge'
 import {aiEnabled} from '../../aiSwitch'
 
+import {GoMessage, goMessage} from '../../goMessages'
+import type {IntlShape} from '../../intl'
+
 import {onAgentEvent} from './agentEvents'
 
 // Which cards are waiting for a person.
@@ -44,6 +47,9 @@ export type Attention = {
     // A question carries itself, so it can be answered where it is read.
     questionId?: string
     text?: string
+
+    // say is text as a code, where the app worded the question (a permission).
+    say?: GoMessage
     options?: QuestionOption[]
     freeText?: boolean
     awaiting: boolean
@@ -176,6 +182,12 @@ export async function ackWait(target: Attention): Promise<void> {
 
 type Formatter = {
     formatMessage: (descriptor: {id: string, defaultMessage: string}, values?: Record<string, string>) => string
+}
+
+// questionText is what the agent is asking, in this page's language where the
+// app worded it.
+export function questionText(intl: IntlShape, target: Attention): string {
+    return target.say ? goMessage(intl, target.say) : target.text || ''
 }
 
 // attentionHeading is the one sentence a wait is worth, wherever it is shown —

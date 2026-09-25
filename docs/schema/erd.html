@@ -638,6 +638,8 @@ erDiagram
         id card_id PK, FK
         name_64 node_id &quot;nullable&quot;
         text reason
+        name_64 reason_code &quot;nullable&quot;
+        text reason_args &quot;nullable&quot;
         millis created_at
     }</pre>
         </figure>
@@ -704,6 +706,8 @@ erDiagram
         name_16 outcome &quot;created | commented | inbox | dropped | failed | skipped&quot;
         id card_id FK &quot;nullable&quot;
         text detail &quot;nullable&quot;
+        name_64 detail_code &quot;nullable&quot;
+        text detail_args &quot;nullable&quot;
         millis created_at
     }</pre>
         </figure>
@@ -733,6 +737,8 @@ erDiagram
         id board_id FK &quot;Where it went. NULL for a card left in the inbox.&quot;
         name_16 outcome &quot;moved | kept | failed&quot;
         text reason &quot;nullable&quot;
+        name_64 reason_code &quot;nullable&quot;
+        text reason_args &quot;nullable&quot;
         millis created_at
     }</pre>
         </figure>

@@ -82,7 +82,7 @@ func (s SortBoard) FileCard(ctx context.Context, cardID, boardID string) error {
 		// See Writer.MoveCardToBoard: a move that reports failure may have
 		// landed, and only the card can say.
 		if moved, readErr := s.w.cardBlock(cardID); readErr != nil || moved.BoardID != boardID {
-			return fmt.Errorf("перенос карточки %s на доску %s: %w", cardID, boardID, err)
+			return fmt.Errorf("moving card %s to board %s: %w", cardID, boardID, err)
 		}
 	}
 
@@ -132,7 +132,7 @@ func (s SortBoard) linkOf(card *model.Block) string {
 func (s SortBoard) SetDescription(_ context.Context, boardID, text string) error {
 	patch := &model.BoardPatch{Description: &text}
 	if _, err := s.w.app.PatchBoard(patch, boardID, model.SingleUser); err != nil {
-		return fmt.Errorf("описание доски %s: %w", boardID, err)
+		return fmt.Errorf("description of board %s: %w", boardID, err)
 	}
 	return nil
 }

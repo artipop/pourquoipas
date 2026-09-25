@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/artipop/xciii/internal/apperr"
 	"github.com/artipop/xciii/internal/secrets"
 )
 
@@ -161,7 +162,7 @@ func (m *Manager) insertEntry(valid SourceEntry) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if _, exists := findSource(m.cfg.Sources, valid.Name); exists {
-		return fmt.Errorf("источник %q уже есть", valid.Name)
+		return apperr.New("sources.duplicate", "There is already a source named {name}", "name", valid.Name)
 	}
 	m.cfg.Sources = append(m.cfg.Sources, valid)
 	return m.persistLocked()
@@ -181,7 +182,7 @@ func (m *Manager) ensureInbox() {
 	ctx, cancel := context.WithTimeout(context.Background(), boardWriteTimeout)
 	defer cancel()
 	if _, err := m.writer.InboxBoard(ctx); err != nil {
-		m.log.Warn("sources: не удалось завести доску «Входящие»", "err", err)
+		m.log.Warn("sources: could not make the inbox board", "err", err)
 	}
 }
 
@@ -211,7 +212,7 @@ func (m *Manager) replaceEntry(valid SourceEntry) error {
 			return m.persistLocked()
 		}
 	}
-	return fmt.Errorf("источник %q не найден", valid.Name)
+	return apperr.New("sources.not-found", "Source {name} was not found", "name", valid.Name)
 }
 
 // IssueToken mints a new ingest token for a source and returns it — the only
@@ -237,7 +238,7 @@ func (m *Manager) IssueToken(name string) (string, error) {
 			return token, nil
 		}
 	}
-	return "", fmt.Errorf("источник %q не найден", name)
+	return "", apperr.New("sources.not-found", "Source {name} was not found", "name", name)
 }
 
 // RemoveSource deletes a source and everything it remembered.
@@ -261,7 +262,7 @@ func (m *Manager) RemoveSource(name string) error {
 			return nil
 		}
 	}
-	return fmt.Errorf("источник %q не найден", name)
+	return apperr.New("sources.not-found", "Source {name} was not found", "name", name)
 }
 
 // persistLocked writes the registry. Like the ACP one, it does nothing without
@@ -297,13 +298,13 @@ type Result struct {
 func (m *Manager) Deliver(ctx context.Context, sourceName string, items []Item) (Result, error) {
 	entry, ok := m.Source(sourceName)
 	if !ok {
-		return Result{}, fmt.Errorf("источник %q не найден", sourceName)
+		return Result{}, apperr.New("sources.not-found", "Source {name} was not found", "name", sourceName)
 	}
 	if !entry.Enabled {
-		return Result{}, fmt.Errorf("источник %q выключен", entry.Name)
+		return Result{}, apperr.New("sources.off", "Source {name} is switched off", "name", entry.Name)
 	}
 	if m.writer == nil {
-		return Result{}, fmt.Errorf("доска недоступна")
+		return Result{}, fmt.Errorf("the board is not available")
 	}
 
 	var res Result
@@ -311,10 +312,10 @@ func (m *Manager) Deliver(ctx context.Context, sourceName string, items []Item) 
 	for _, it := range items {
 		if err := m.deliverOne(ctx, scope, entry, it, &res); err != nil {
 			res.Failed++
-			m.log.Warn("sources: не удалось обработать элемент",
+			m.log.Warn("sources: could not handle an item",
 				"source", entry.Name, "item", it.ExternalID, "err", err)
 			m.record(EventRecord{Source: entry.Name, ExternalID: it.ExternalID,
-				Outcome: OutcomeFailed, Detail: err.Error()})
+				Outcome: OutcomeFailed, Detail: said(err)})
 		}
 	}
 	return res, nil
@@ -338,7 +339,7 @@ func (m *Manager) inboxBoard(ctx context.Context, d *delivery) (string, error) {
 	defer cancel()
 	id, err := m.writer.InboxBoard(bctx)
 	if err != nil {
-		return "", fmt.Errorf("доска «Входящие»: %w", err)
+		return "", fmt.Errorf("the inbox board: %w", err)
 	}
 	d.inbox = id
 	return id, nil
@@ -372,7 +373,7 @@ func (m *Manager) updateCard(ctx context.Context, entry SourceEntry, it Item, ca
 	wctx, cancel := context.WithTimeout(ctx, boardWriteTimeout)
 	defer cancel()
 	if err := m.writer.AddComment(wctx, cardID, updateComment(it)); err != nil {
-		return fmt.Errorf("комментарий на карточку %s: %w", cardID, err)
+		return fmt.Errorf("comment on card %s: %w", cardID, err)
 	}
 	res.Commented++
 	m.record(EventRecord{Source: entry.Name, ExternalID: it.ExternalID,
@@ -395,7 +396,7 @@ func (m *Manager) createCard(ctx context.Context, d *delivery, entry SourceEntry
 		// and said so, rather than silently doing nothing.
 		res.Dropped++
 		m.record(EventRecord{Source: entry.Name, ExternalID: it.ExternalID, Rule: rule.Name,
-			Outcome: OutcomeDropped, Detail: "правило комментирует, но карточки ещё нет"})
+			Outcome: OutcomeDropped, Detail: say(apperr.Say("sources.comment-no-card", "The rule comments, but there is no card yet"))})
 		return m.remember(entry.Name, it, "")
 	case !matched && entry.Noisy:
 		// A stream of notifications is mostly noise: there a rule is a
@@ -431,7 +432,7 @@ func (m *Manager) createCard(ctx context.Context, d *delivery, entry SourceEntry
 	defer cancel()
 	cardID, err := m.writer.CreateCard(wctx, boardID, spec)
 	if err != nil {
-		return fmt.Errorf("создание карточки: %w", err)
+		return fmt.Errorf("creating the card: %w", err)
 	}
 	// Remembered at once: the card exists, and losing track of it here would
 	// create a second one on the next delivery.
@@ -465,7 +466,7 @@ func (m *Manager) boardFor(ctx context.Context, d *delivery, entry SourceEntry, 
 		return m.inboxBoard(ctx, d)
 	}
 	if !entry.PickBoard {
-		return "", fmt.Errorf("источник %q не выбирает доску, а элемент назвал %q", entry.Name, chosen)
+		return "", fmt.Errorf("source %q does not choose a board, and the item named %q", entry.Name, chosen)
 	}
 	return chosen, nil
 }
@@ -504,7 +505,7 @@ func (m *Manager) stateOf(ctx context.Context, d *delivery, entry SourceEntry, i
 		// The board could not be asked, so this machine does not know. Treating
 		// that as "never seen" would make a second card; treating it as an
 		// error leaves the item for the next poll, which is the poll's job.
-		return ItemNew, "", fmt.Errorf("спросить доску про элемент %s: %w", it.ExternalID, err)
+		return ItemNew, "", fmt.Errorf("asking the board about item %s: %w", it.ExternalID, err)
 	}
 	if !ok {
 		return ItemNew, "", nil
@@ -516,7 +517,7 @@ func (m *Manager) stateOf(ctx context.Context, d *delivery, entry SourceEntry, i
 		return ItemChanged, cardID, nil
 	}
 	if err := m.remember(entry.Name, it, cardID); err != nil {
-		m.log.Warn("sources: не удалось запомнить элемент, известный доске", "source", entry.Name, "err", err)
+		m.log.Warn("sources: could not remember an item the board knows", "source", entry.Name, "err", err)
 	}
 	return ItemSeen, cardID, nil
 }
@@ -533,7 +534,7 @@ func (m *Manager) record(r EventRecord) {
 		return
 	}
 	if err := m.store.AppendEvent(r); err != nil {
-		m.log.Warn("sources: не удалось записать событие", "source", r.Source, "err", err)
+		m.log.Warn("sources: could not record an event", "source", r.Source, "err", err)
 		return
 	}
 	if err := m.store.PruneEvents(r.Source, eventsKept); err != nil {

@@ -3,10 +3,10 @@ package sources
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"strings"
 	"time"
 
+	"github.com/artipop/xciii/internal/apperr"
 	"github.com/artipop/xciii/internal/oauth"
 	"github.com/artipop/xciii/internal/secrets"
 )
@@ -45,18 +45,18 @@ func secretRefFor(name string) string { return "source/" + name }
 func (m *Manager) Connect(ctx context.Context, name string, openURL func(string) error) error {
 	entry, ok := m.Source(name)
 	if !ok {
-		return fmt.Errorf("источник %q не найден", name)
+		return apperr.New("sources.not-found", "Source {name} was not found", "name", name)
 	}
 	manifest, ok := m.Plugin(entry.Plugin)
 	if !ok {
-		return fmt.Errorf("плагин %q не зарегистрирован", entry.Plugin)
+		return apperr.New("sources.plugin-unknown", "Plugin {name} is not registered", "name", entry.Plugin)
 	}
 	if manifest.Auth == nil || !strings.EqualFold(manifest.Auth.Type, "oauth2") {
-		return fmt.Errorf("плагину %q не нужен вход через сервис", manifest.Name)
+		return apperr.New("sources.no-login", "Plugin {name} needs no login to a service", "name", manifest.Name)
 	}
 	store := m.secretStore()
 	if store == nil {
-		return fmt.Errorf("негде хранить токен")
+		return apperr.New("sources.no-vault", "There is nowhere on this machine to keep the token")
 	}
 
 	token, err := oauth.Authorize(ctx, oauth.Config{
@@ -81,10 +81,10 @@ func (m *Manager) Connect(ctx context.Context, name string, openURL func(string)
 	}
 	m.setStatus(entry.Name, func(s *Status) {
 		s.State = StateOff
-		s.Error = ""
+		s.Error = nil
 	})
 	m.record(EventRecord{Source: entry.Name, Outcome: OutcomeCommented,
-		Detail: "источник подключён к сервису"})
+		Detail: say(apperr.Say("sources.connected", "The source is connected to the service"))})
 	return nil
 }
 
@@ -93,7 +93,7 @@ func (m *Manager) Connect(ctx context.Context, name string, openURL func(string)
 func (m *Manager) Disconnect(name string) error {
 	entry, ok := m.Source(name)
 	if !ok {
-		return fmt.Errorf("источник %q не найден", name)
+		return apperr.New("sources.not-found", "Source {name} was not found", "name", name)
 	}
 	if store := m.secretStore(); store != nil && entry.SecretRef != "" {
 		if err := store.Delete(entry.SecretRef); err != nil {
@@ -102,7 +102,7 @@ func (m *Manager) Disconnect(name string) error {
 	}
 	m.setStatus(entry.Name, func(s *Status) {
 		s.State = StateNeedsReauth
-		s.Error = "источник отключён от сервиса"
+		s.Error = say(apperr.Say("sources.disconnected", "The source is disconnected from the service"))
 	})
 	return nil
 }
@@ -118,7 +118,7 @@ func (m *Manager) refreshedToken(ctx context.Context, entry SourceEntry) (stored
 	token, err := loadToken(store, entry.SecretRef)
 	if err != nil {
 		if err != secrets.ErrNotFound {
-			m.log.Warn("sources: не удалось прочитать токен", "source", entry.Name, "err", err)
+			m.log.Warn("sources: could not read the token", "source", entry.Name, "err", err)
 		}
 		return storedToken{}, false
 	}
@@ -139,16 +139,16 @@ func (m *Manager) refreshedToken(ctx context.Context, entry SourceEntry) (stored
 	if err != nil {
 		// The old token may still have a few minutes in it, so it is handed
 		// over rather than withheld; the plugin will say so if it does not.
-		m.log.Warn("sources: не удалось обновить токен", "source", entry.Name, "err", err)
+		m.log.Warn("sources: could not refresh the token", "source", entry.Name, "err", err)
 		m.setStatus(entry.Name, func(s *Status) {
 			s.State = StateNeedsReauth
-			s.Error = "не удалось обновить токен: " + err.Error()
+			s.Error = say(apperr.Say("sources.token-refresh", "Could not refresh the token: {error}", "error", err.Error()))
 		})
 		return token, true
 	}
 	renewedStored := storedToken{Access: renewed.AccessToken, Refresh: renewed.RefreshToken, Expires: renewed.ExpiresAt}
 	if err := saveToken(store, entry.SecretRef, renewed); err != nil {
-		m.log.Warn("sources: не удалось сохранить обновлённый токен", "source", entry.Name, "err", err)
+		m.log.Warn("sources: could not save the refreshed token", "source", entry.Name, "err", err)
 	}
 	return renewedStored, true
 }
@@ -199,14 +199,14 @@ func (m *Manager) secretStore() secrets.Store {
 func (m *Manager) SetToken(name, token string) error {
 	entry, ok := m.Source(name)
 	if !ok {
-		return fmt.Errorf("источник %q не найден", name)
+		return apperr.New("sources.not-found", "Source {name} was not found", "name", name)
 	}
 	if strings.TrimSpace(token) == "" {
-		return fmt.Errorf("пустой токен")
+		return apperr.New("sources.empty-token", "The token is empty")
 	}
 	store := m.secretStore()
 	if store == nil {
-		return fmt.Errorf("негде хранить токен")
+		return apperr.New("sources.no-vault", "There is nowhere on this machine to keep the token")
 	}
 	ref := secretRefFor(entry.Name)
 	if err := store.Set(ref, strings.TrimSpace(token)); err != nil {

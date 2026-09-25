@@ -17,11 +17,13 @@ package dokku
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
 	"net"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
+
+	"github.com/artipop/xciii/internal/apperr"
 )
 
 // The whole app name is one DNS label — <baseApp>-<slug>.<baseDomain> — and a
@@ -73,24 +75,24 @@ func (t Target) Validate() (Target, error) {
 	t.BaseDomain = strings.ToLower(strings.Trim(strings.TrimSpace(t.BaseDomain), "."))
 
 	if t.SSHHost == "" {
-		return t, fmt.Errorf("не задан адрес Dokku-хоста")
+		return t, apperr.New("dokku.no-host", "The Dokku host's address is not set")
 	}
 	if t.BaseApp != "" && !validAppName(t.BaseApp) {
-		return t, fmt.Errorf("имя приложения %q должно начинаться с буквы и состоять из латиницы, цифр и дефисов", t.BaseApp)
+		return t, apperr.New("dokku.bad-app", "The app name {name} has to start with a letter and contain only Latin letters, digits and hyphens", "name", t.BaseApp)
 	}
 	if strings.ContainsAny(t.BaseDomain, " /:") {
-		return t, fmt.Errorf("домен превью %q выглядит неверно: нужен только домен, например example.com", t.BaseDomain)
+		return t, apperr.New("dokku.bad-domain", "The preview domain {domain} looks wrong: give only the domain, for example example.com", "domain", t.BaseDomain)
 	}
 	// Without a domain of its own the ssh host is the domain, which an address
 	// cannot be built from.
 	if t.BaseDomain == "" && net.ParseIP(t.SSHHost) != nil {
-		return t, fmt.Errorf("хост задан ip-адресом (%s), поэтому нужен домен превью", t.SSHHost)
+		return t, apperr.New("dokku.ip-needs-domain", "The host is an IP address ({host}), so a preview domain is needed", "host", t.SSHHost)
 	}
 	if t.SSHPort < 0 || t.SSHPort > 65535 {
-		return t, fmt.Errorf("некорректный ssh-порт %d", t.SSHPort)
+		return t, apperr.New("dokku.bad-port", "The SSH port {port} is not valid", "port", strconv.Itoa(t.SSHPort))
 	}
 	if t.SSHKey != "" && !filepath.IsAbs(t.SSHKey) {
-		return t, fmt.Errorf("путь к ssh-ключу должен быть абсолютным: %s", t.SSHKey)
+		return t, apperr.New("dokku.key-not-absolute", "The path to the SSH key has to be absolute: {path}", "path", t.SSHKey)
 	}
 	return t, nil
 }

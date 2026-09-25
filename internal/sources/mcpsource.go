@@ -82,12 +82,12 @@ type ItemTemplate struct {
 func (s MCPSpec) Validate() (MCPSpec, error) {
 	s.Tool = strings.TrimSpace(s.Tool)
 	if s.Tool == "" {
-		return s, fmt.Errorf("не сказано, какой инструмент MCP-сервера читать (mcp.tool)")
+		return s, fmt.Errorf("no MCP tool to read was given (mcp.tool)")
 	}
 	s.ItemsAt = strings.TrimSpace(s.ItemsAt)
 	s.Item.Title = strings.TrimSpace(s.Item.Title)
 	if s.Item.Title == "" {
-		return s, fmt.Errorf("инструмент %q: не сказано, что в записи заголовок (mcp.item.title)", s.Tool)
+		return s, fmt.Errorf("tool %q: no title path was given (mcp.item.title)", s.Tool)
 	}
 	// The id may be left out — an item without one is identified by the hash of
 	// what it says (Item.WithFallbackID), which is what every source with no
@@ -96,7 +96,7 @@ func (s MCPSpec) Validate() (MCPSpec, error) {
 	s.Item.ID = strings.TrimSpace(s.Item.ID)
 	s.Item.Version = strings.TrimSpace(s.Item.Version)
 	if s.Item.ID == "" && s.Item.Version != "" {
-		return s, fmt.Errorf("инструмент %q: версия без id ничего не опознаёт (mcp.item.id)", s.Tool)
+		return s, fmt.Errorf("tool %q: a version without an id identifies nothing (mcp.item.id)", s.Tool)
 	}
 	return s, nil
 }
@@ -153,7 +153,7 @@ func dialMCP(ctx context.Context, entry SourceEntry, manifest Manifest, cred plu
 	}
 	if !hasTool(tools, spec.Tool) {
 		client.Close()
-		return nil, fmt.Errorf("у MCP-сервера %q нет инструмента %q (есть: %s)",
+		return nil, fmt.Errorf("MCP server %q has no tool %q (there are: %s)",
 			manifest.Name, spec.Tool, strings.Join(toolNames(tools), ", "))
 	}
 	return &mcpConn{client: client, spec: spec, entry: entry}, nil
@@ -221,7 +221,7 @@ func (s MCPSpec) renderArguments(entry SourceEntry) (map[string]any, error) {
 	for name, tmpl := range s.Arguments {
 		value, err := renderOver(tmpl, entry)
 		if err != nil {
-			return nil, fmt.Errorf("аргумент %q: %w", name, err)
+			return nil, fmt.Errorf("argument %q: %w", name, err)
 		}
 		if value = strings.TrimSpace(value); value == "" {
 			// An argument that came out empty is one the person did not fill
@@ -272,7 +272,7 @@ func (t ItemTemplate) render(row any) (json.RawMessage, error) {
 		*field.into = strings.TrimSpace(value)
 	}
 	if item.Title == "" {
-		return nil, fmt.Errorf("в записи нет заголовка")
+		return nil, fmt.Errorf("the item has no title")
 	}
 	if t.At != "" {
 		if at, err := renderOver(t.At, row); err == nil {
@@ -347,11 +347,11 @@ func rowsAt(payload json.RawMessage, path string) ([]any, error) {
 		}
 		object, ok := value.(map[string]any)
 		if !ok {
-			return nil, fmt.Errorf("по пути %q нет объекта", path)
+			return nil, fmt.Errorf("no object at %q", path)
 		}
 		value, ok = object[step]
 		if !ok {
-			return nil, fmt.Errorf("в ответе нет %q", path)
+			return nil, fmt.Errorf("the answer has no %q", path)
 		}
 	}
 	switch rows := value.(type) {
@@ -362,7 +362,7 @@ func rowsAt(payload json.RawMessage, path string) ([]any, error) {
 	case nil:
 		return nil, nil
 	default:
-		return nil, fmt.Errorf("по пути %q не список записей", path)
+		return nil, fmt.Errorf("%q is not a list of items", path)
 	}
 }
 
@@ -374,7 +374,7 @@ func (p Manifest) RenderEnv(entry SourceEntry) (map[string]string, error) {
 	for name, tmpl := range p.Env {
 		value, err := renderOver(tmpl, entry)
 		if err != nil {
-			return nil, fmt.Errorf("переменная %q: %w", name, err)
+			return nil, fmt.Errorf("variable %q: %w", name, err)
 		}
 		if value = strings.TrimSpace(value); value != "" {
 			out[name] = value
