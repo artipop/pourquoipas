@@ -1,19 +1,12 @@
 import {createIntl} from './intl'
-<<<<<<< Updated upstream
-import {getMessages} from './i18n'
-=======
 import {getMessages, loadMessages} from './i18n'
->>>>>>> Stashed changes
 import {goError, goMessage, goSentences} from './goMessages'
 
 const intlIn = (lang: string) => createIntl({locale: lang, defaultLocale: 'en', messages: getMessages(lang)})
 
 describe('goMessages', () => {
-<<<<<<< Updated upstream
-=======
     beforeAll(() => loadMessages('ru'))
 
->>>>>>> Stashed changes
     // Go says a code and its values; the sentence is ours, in the reader's
     // language.
     test('word a code in the page\'s language', () => {
