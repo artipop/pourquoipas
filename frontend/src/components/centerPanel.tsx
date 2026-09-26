@@ -32,9 +32,6 @@ import {
     getOnboardingTourStep,
 } from '../store/users'
 
-import {UserConfigPatch} from '../user'
-
-import octoClient from '../octoClient'
 import {aiEnabled} from '../aiSwitch'
 
 import ShareBoardButton from './shareBoard/shareBoardButton'
@@ -49,11 +46,15 @@ import Kanban from './kanban/kanban'
 import Table from './table/table'
 
 import Gallery from './gallery/gallery'
-import {BoardTourSteps, FINISHED, TOUR_BOARD, TOUR_CARD} from './onboardingTour'
+import {FINISHED, TOUR_BOARD, TOUR_CARD} from './onboardingTour'
+import {patchPreferences, startTour, useOnTourBoard} from './onboardingTour/tourState'
 import ShareBoardTourStep from './onboardingTour/shareBoard/shareBoard'
 import BoardSetupWizard from './acp/boardSetupWizard'
 import {createSetupPlan, markSetupOffered, shouldOfferSetup} from './acp/boardSetup'
+import {personProperty} from './acp/attentionAudience'
+import FirstRunStrip from './onboardingHints/firstRunStrip'
 import {soleWorkdirOption} from './acp/workdirSync'
+import {agentAccountId, firstTaskCard, firstTaskColumns} from './acp/firstTask'
 
 // FullCalendar is half a megabyte of source, and a board opens on its kanban:
 // the calendar arrives when somebody switches to it.
@@ -251,44 +252,56 @@ const CenterPanel = (props: Props) => {
 
     const addEmptyCardAndShow = () => addCard('', true)
 
+    // What the setup wizard's last page offers (docs/onboarding.md). The first
+    // task needs two columns and a person field; without them it is not
+    // offered at all.
+    const firstColumns = () => firstTaskColumns(props.board, props.groupByProperty, groups().visible.map((g) => g.option))
+    const firstTaskOffer = () => {
+        const columns = firstColumns()
+        if (!columns || !personProperty(props.board)) {
+            return undefined
+        }
+        return {column: columns.to.value, start: startFirstTask}
+    }
+
+    const startFirstTask = async (title: string, agent: string) => {
+        const columns = firstColumns()
+        const userId = await agentAccountId(props.board.id, agent)
+        const card = columns && userId ? firstTaskCard(props.board, columns, title, userId, newCardProperties(columns.from.id)) : undefined
+        if (!columns || !card) {
+            throw new Error(intl.formatMessage({id: 'BoardSetup.first-task-failed', defaultMessage: 'The card could not be made: the board needs two columns and a field for who works on a card.'}))
+        }
+        const made = createCard(await mutator.insertBlock(props.board.id, card, 'first task'))
+        await mutator.changeViewCardOrder(props.board.id, props.activeView.id, props.activeView.fields.cardOrder, [...props.activeView.fields.cardOrder, made.id], 'first task')
+        await mutator.changePropertyValue(props.board.id, made, columns.property.id, columns.to.id, 'first task')
+        showCard(made.id)
+    }
+
+    // The card a board made from a template opens with, marked so rather than
+    // found by its title.
+    const readFirstCard = () => {
+        const card = props.cards.find((c) => c.fields.readFirst)
+        return card ? {title: card.title, open: () => showCard(card.id)} : undefined
+    }
+
+    const showTour = () => {
+        const userId = me()?.id
+        if (userId) {
+            startTour(userId, props.board.id, actions.users.patchProps)
+        }
+    }
+
+    // The card's tips are done and the card is closed: the board's own start,
+    // on the tour's board and no other.
+    const onTourBoard = useOnTourBoard()
     const shouldStartBoardsTour = (): boolean => {
-        const isOnboardingBoard = props.board.title === 'Welcome to Boards!'
-        const isTourStarted = onboardingTourStarted()
         const completedCardsTour = onboardingTourCategory() === TOUR_CARD && onboardingTourStep() === FINISHED.toString()
-        const noCardOpen = !currentCard()
-
-        return isOnboardingBoard && isTourStarted && completedCardsTour && noCardOpen
+        return onTourBoard() && onboardingTourStarted() && completedCardsTour && !currentCard()
     }
 
-    const prepareBoardsTour = async () => {
-        if (!me()?.id) {
-            return
-        }
-
-        const patch: UserConfigPatch = {
-            updatedFields: {
-                tourCategory: TOUR_BOARD,
-                onboardingTourStep: BoardTourSteps.ADD_VIEW.toString(),
-            },
-        }
-
-        const patchedProps = await octoClient.patchUserConfig(me()!.id, patch)
-        if (patchedProps) {
-            actions.users.patchProps(patchedProps)
-        }
-    }
-
-    const startBoardsTour = async () => {
-        if (!shouldStartBoardsTour()) {
-            return
-        }
-
-        await prepareBoardsTour()
-    }
-
-    createEffect(shouldStartBoardsTour, (should) => {
-        if (should) {
-            startBoardsTour()
+    createEffect(() => (shouldStartBoardsTour() ? me()?.id : undefined), (userId) => {
+        if (userId) {
+            patchPreferences(userId, {tourCategory: TOUR_BOARD, onboardingTourStep: '0'}, actions.users.patchProps)
         }
     })
 
@@ -436,6 +449,9 @@ const CenterPanel = (props: Props) => {
                             setShowSetup(false)
                             refreshPlan()
                         }}
+                        firstTask={firstTaskOffer()}
+                        readFirst={readFirstCard()}
+                        onShowTour={showTour}
                     />
                 </RootPortal>
             </Show>
@@ -484,6 +500,11 @@ const CenterPanel = (props: Props) => {
                     addCardTemplate={addCardTemplate}
                     editCardTemplate={editCardTemplate}
                     readonly={props.readonly}
+                />
+                <FirstRunStrip
+                    cards={props.cards}
+                    columnPropertyId={firstColumns()?.property.id}
+                    readFirst={readFirstCard()}
                 />
             </div>
 

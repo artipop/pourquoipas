@@ -1,5 +1,7 @@
 import {Board} from '../../blocks/board'
 
+import InboxTourStep from '../onboardingTour/inbox/inbox'
+
 import './sidebarBoardItem.scss'
 
 type Props = {
@@ -27,6 +29,7 @@ const SidebarInboxItem = (props: Props) => (
         >
             {props.board.title}
         </div>
+        <InboxTourStep/>
     </div>
 )
 

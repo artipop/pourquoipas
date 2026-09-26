@@ -1,0 +1,10 @@
+.InboxTourStep {
+    &.tutorial-tour-tip__pulsating-dot-ctr {
+        right: 8px;
+        top: calc(50% - 7px);
+    }
+
+    .tutorial-tour-tip__overlay {
+        cursor: pointer;
+    }
+}

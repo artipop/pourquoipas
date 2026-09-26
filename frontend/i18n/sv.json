@@ -172,8 +172,6 @@
   "OnboardingTour.AddComments.Title": "Lägg till kommentarer",
   "OnboardingTour.AddDescription.Body": "Lägg till en beskrivning till kortet så ditt team vet vad kortet handlar om.",
   "OnboardingTour.AddDescription.Title": "Lägg till beskrivning",
-  "OnboardingTour.AddProperties.Body": "Lägg till egenskaper till korten för att göra dem mer informativa.",
-  "OnboardingTour.AddProperties.Title": "Lägg till egenskaper",
   "OnboardingTour.AddView.Body": "Gå hit för att skapa en ny vy för att organisera ditt Board med hjälp av olika layouter.",
   "OnboardingTour.AddView.Title": "Lägg till en ny vy",
   "OnboardingTour.CopyLink.Body": "Du kan dela dina kort med ditt team genom att kopiera länken och klistra in den i en kanal, ett direktmeddelande eller ett gruppmeddelande.",

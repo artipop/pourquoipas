@@ -15,8 +15,6 @@ import {getMe} from '../../store/users'
 import {useHasCurrentBoardPermissions} from '../../hooks/permissions'
 import {Permission} from '../../constants'
 
-import AddCommentTourStep from '../onboardingTour/addComments/addComments'
-
 import Comment from './comment'
 
 import './commentsList.scss'
@@ -83,7 +81,6 @@ const CommentsList = (props: Props) => {
                         </Button>
                     </Show>
 
-                    <AddCommentTourStep/>
                 </div>
             </Show>
 

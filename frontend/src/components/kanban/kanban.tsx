@@ -23,6 +23,8 @@ import BoardPermissionGate from '../permissions/boardPermissionGate'
 
 import {withoutAgentProperties} from '../acp/agentProperties'
 
+import ColumnsTourStep from '../onboardingTour/columns/columns'
+
 import KanbanCard from './kanbanCard'
 import KanbanColumn from './kanbanColumn'
 import KanbanColumnHeader from './kanbanColumnHeader'
@@ -264,6 +266,8 @@ const Kanban = (props: Props) => {
                     </div>
                 </Show>
 
+                <ColumnsTourStep/>
+
                 <Show when={!props.readonly && !columnsAreFacts()}>
                     <BoardPermissionGate permissions={[Permission.ManageBoardProperties]}>
                         <div class='octo-board-header-cell narrow'>
@@ -290,7 +294,7 @@ const Kanban = (props: Props) => {
                 {/* Columns */}
 
                 <For each={props.visibleGroups}>
-                    {(group) => (
+                    {(group, groupIndex) => (
                         <>
                             <KanbanColumn
                                 accepts={!columnsAreFacts()}
@@ -301,6 +305,7 @@ const Kanban = (props: Props) => {
                                         <KanbanCard
                                             card={card}
                                             index={cardIndex()}
+                                            onboarding={groupIndex() === 0 && cardIndex() === 0}
                                             groupId={group.option.id || 'empty'}
                                             board={props.board}
                                             visiblePropertyTemplates={visiblePropertyTemplates()}

@@ -37,6 +37,7 @@ const ru = {
             {
                 text: 'Доска',
                 items: [
+                    {text: 'Первый запуск', link: '/start'},
                     {text: 'Название, описание, меню', link: '/board'},
                     {text: 'Агент на карточке', link: '/agent'},
                     {text: 'Папки и ветки', link: '/folders'},
@@ -122,6 +123,7 @@ const en = {
             {
                 text: 'The board',
                 items: [
+                    {text: 'First run', link: '/en/start'},
                     {text: 'Title, description, menu', link: '/en/board'},
                     {text: 'The agent on a card', link: '/en/agent'},
                     {text: 'Folders and branches', link: '/en/folders'},

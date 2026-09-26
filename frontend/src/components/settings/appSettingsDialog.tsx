@@ -54,7 +54,7 @@ type Section = {
     // A component, not rendered JSX: switching sections has to build the panel
     // again, because a panel reads its registry when it mounts and that is how
     // it picks up what another section just changed.
-    body: Component
+    body: Component<{onClose?: () => void}>
 }
 
 type Props = {
@@ -161,7 +161,10 @@ const AppSettingsDialog = (props: Props) => {
                         {(entry) => (
                             <>
                                 <h3 class='AppSettingsDialog__panelTitle'>{entry().name()}</h3>
-                                <Dynamic component={entry().body}/>
+                                <Dynamic
+                                    component={entry().body}
+                                    onClose={props.onClose}
+                                />
                             </>
                         )}
                     </Show>

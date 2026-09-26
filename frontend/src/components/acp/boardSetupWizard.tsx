@@ -10,6 +10,8 @@ import {listBoards} from '../../bindings/boards'
 import {createLoader} from '../../hooks/loader'
 import mutator from '../../mutator'
 import Button from '../../widgets/buttons/button'
+import Select from '../../widgets/select'
+import {aiEnabled} from '../../aiSwitch'
 import Dialog from '../dialog'
 
 import {sendFlashMessage} from '../flashMessages'
@@ -50,9 +52,28 @@ export async function readRegistry(boardId: string): Promise<Registry | null> {
     return {workdirs: JSON.parse(workdirs) || [], agents: JSON.parse(agents) || []}
 }
 
+// The last page's ways on, each given by the board that opened the wizard,
+// which is where the view, the columns and the router are.
 type Props = {
     board: Board
     onClose: () => void
+
+    // A first card for an agent: made in the first column and moved into the
+    // one named here, which is what starts it. Absent when the board has no
+    // two columns to move a card between.
+    firstTask?: {
+        column: string
+        start: (title: string, agent: string) => Promise<void>
+    }
+
+    // The board's own «Where to start» card, when it has one.
+    readFirst?: {
+        title: string
+        open: () => void
+    }
+
+    // Starts the board's tour here.
+    onShowTour?: () => void
 }
 
 const STEP_NAME: SetupStepKind = 'name'
@@ -274,6 +295,30 @@ const BoardSetupWizard = (props: Props) => {
     const hasWorkdir = () => registry().workdirs.length > 0
     const hasAgent = () => registry().agents.length > 0
 
+    // The first task (docs/onboarding.md): the one action that shows what the
+    // board is for. Offered only when there is an agent to give it to — an
+    // offer that fails because nothing is registered is worse than none.
+    const [taskTitle, setTaskTitle] = createSignal('')
+    const [taskAgent, setTaskAgent] = createSignal('')
+    const offersFirstTask = () => aiEnabled() && hasAgent() && Boolean(props.firstTask)
+
+    // The agent the card goes to: the one picked, or the last one registered,
+    // which on a first run is the one this wizard has just added.
+    const chosenAgent = () => taskAgent() || registry().agents[registry().agents.length - 1]?.name || ''
+
+    const startFirstTask = async () => {
+        setError('')
+        setBusy(true)
+        try {
+            await props.firstTask!.start(taskTitle().trim(), chosenAgent())
+            await finish()
+        } catch (e) {
+            setError(String(e))
+        } finally {
+            setBusy(false)
+        }
+    }
+
     // Whether the folder step has something to answer with: one already on this
     // board, one picked and named, or one somebody else registered and offered
     // for use here.
@@ -488,6 +533,40 @@ const BoardSetupWizard = (props: Props) => {
             return (
                 <div class='BoardSetupWizard__step'>
                     <p>{intl.formatMessage({id: 'BoardSetup.done-how', defaultMessage: 'Assign a card to an agent and drag it into another column: the move is what starts the work. The agent reads the card, does it, writes what it did in a comment and moves the card on itself.'})}</p>
+                    <Show
+                        when={offersFirstTask()}
+                        fallback={
+                            <Show when={props.readFirst}>
+                                {(guide) => <p>{intl.formatMessage({id: 'BoardSetup.read-first', defaultMessage: 'How this board is meant to be used is written on its card “{title}”.'}, {title: guide().title})}</p>}
+                            </Show>
+                        }
+                    >
+                        <label>
+                            {intl.formatMessage({id: 'BoardSetup.first-task', defaultMessage: 'Your first task, in one sentence'})}
+                            <input
+                                value={taskTitle()}
+                                placeholder={intl.formatMessage({id: 'BoardSetup.first-task-placeholder', defaultMessage: 'What should the agent do?'})}
+                                onInput={(e) => setTaskTitle(e.currentTarget.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && taskTitle().trim() && !busy()) {
+                                        startFirstTask()
+                                    }
+                                }}
+                            />
+                        </label>
+                        <Show when={registry().agents.length > 1}>
+                            <Select
+                                value={chosenAgent()}
+                                options={registry().agents.map((a) => ({value: a.name, label: a.name}))}
+                                onChange={setTaskAgent}
+                                label={intl.formatMessage({id: 'BoardSetup.first-task-agent', defaultMessage: 'Agent'})}
+                            />
+                        </Show>
+                        <p>{intl.formatMessage({
+                            id: 'BoardSetup.first-task-how',
+                            defaultMessage: 'The app makes a card assigned to {agent} and moves it into “{column}”, which starts the agent at once. The agent runs under your own account with its provider and uses that account’s quota.',
+                        }, {agent: chosenAgent(), column: props.firstTask?.column || ''})}</p>
+                    </Show>
                 </div>
             )
         }
@@ -571,12 +650,51 @@ const BoardSetupWizard = (props: Props) => {
             )
         default:
             return (
-                <Button
-                    emphasis='primary'
-                    onClick={finish}
-                >
-                    {intl.formatMessage({id: 'BoardSetup.finish', defaultMessage: 'Done'})}
-                </Button>
+                <>
+                    <Show when={offersFirstTask()}>
+                        <Button
+                            emphasis='primary'
+                            disabled={busy() || !taskTitle().trim()}
+                            onClick={startFirstTask}
+                        >
+                            {intl.formatMessage({id: 'BoardSetup.first-task-start', defaultMessage: 'Set the first task'})}
+                        </Button>
+                    </Show>
+                    <Show when={!offersFirstTask() && props.readFirst}>
+                        {(guide) => (
+                            <Button
+                                emphasis='primary'
+                                onClick={async () => {
+                                    // Read before closing: the wizard is gone after.
+                                    const open = guide().open
+                                    await finish()
+                                    open()
+                                }}
+                            >
+                                {intl.formatMessage({id: 'BoardSetup.open-read-first', defaultMessage: 'Open “{title}”'}, {title: guide().title})}
+                            </Button>
+                        )}
+                    </Show>
+                    <Show when={props.onShowTour}>
+                        {(showTour) => (
+                            <Button
+                                onClick={async () => {
+                                    const show = showTour()
+                                    await finish()
+                                    show()
+                                }}
+                            >
+                                {intl.formatMessage({id: 'BoardSetup.show-tour', defaultMessage: 'Show how the board works'})}
+                            </Button>
+                        )}
+                    </Show>
+                    <Button
+                        emphasis={offersFirstTask() || props.readFirst ? undefined : 'primary'}
+                        onClick={finish}
+                    >
+                        {intl.formatMessage({id: 'BoardSetup.finish', defaultMessage: 'Done'})}
+                    </Button>
+                </>
             )
         }
     }

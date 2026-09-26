@@ -112,9 +112,8 @@ viper с ~25 пакетами ушёл из `go.mod` (`docs/fork-shrink-removed.
 `boards-screenshots.png`, `boards-welcome*.png`, `onboardingBg.jpg`,
 `upgrade.png`, `app-bar-icon.png`. Картинки, которые импортирует бандл, не
 копируются второй раз: Vite кладёт их в `dist/assets` с хешем. `dist` — 8,4 МБ
-вместо 18. Гифки тура остаются в `src/assets/`, пока тур не переделан
-(`onboarding-plan.md`, шаг 1): на них интерфейс Focalboard, и большую часть
-уберут вместе с его подсказками.
+вместо 18. Гифки тура с интерфейсом Focalboard удалены вместе с переделкой
+тура ([onboarding.md](onboarding.md)).
 
 ### ~~3. Главный чанк: что сделать ленивым~~ — сделано 2026-09-16
 

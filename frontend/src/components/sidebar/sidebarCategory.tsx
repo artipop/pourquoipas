@@ -28,15 +28,11 @@ import CreateCategory from '../createCategory/createCategory'
 import {useAppSelector} from '../../store/hooks'
 import {useRouteMatch} from '../../hooks/routerMatch'
 import {isInboxBoard} from '../acp/inboxView'
-import {
-    getOnboardingTourCategory,
-    getOnboardingTourStep,
-} from '../../store/users'
-
 import {getCurrentCard} from '../../store/cards'
 import {Utils} from '../../utils'
 
-import {TOUR_SIDEBAR, SidebarTourSteps, TOUR_BOARD, FINISHED} from '../../components/onboardingTour/index'
+import {TOUR_SIDEBAR, SidebarTourSteps} from '../../components/onboardingTour/index'
+import {useTourAt} from '../../components/onboardingTour/tourState'
 
 import {getCurrentTeam} from '../../store/teams'
 
@@ -98,8 +94,8 @@ const SidebarCategory = (props: Props) => {
     const [showCreateCategoryModal, setShowCreateCategoryModal] = createSignal(false)
     const [showUpdateCategoryModal, setShowUpdateCategoryModal] = createSignal(false)
 
-    const onboardingTourCategory = useAppSelector(getOnboardingTourCategory)
-    const onboardingTourStep = useAppSelector(getOnboardingTourStep)
+    const atSidebarCategories = useTourAt(TOUR_SIDEBAR, SidebarTourSteps.SIDE_BAR)
+    const atManageCategories = useTourAt(TOUR_SIDEBAR, SidebarTourSteps.MANAGE_CATEGORIES)
     const currentCard = useAppSelector(getCurrentCard)
     const noCardOpen = () => !currentCard()
     const team = useAppSelector(getCurrentTeam)
@@ -141,15 +137,9 @@ const SidebarCategory = (props: Props) => {
 
     const [boardDraggingOver, setBoardDraggingOver] = createSignal<boolean>(false)
 
-    const shouldViewSidebarTour = () => props.boards.length !== 0 &&
-                                  noCardOpen() &&
-                                  (onboardingTourCategory() === TOUR_SIDEBAR || onboardingTourCategory() === TOUR_BOARD) &&
-                                  ((onboardingTourCategory() === TOUR_SIDEBAR && onboardingTourStep() === SidebarTourSteps.SIDE_BAR.toString()) || (onboardingTourCategory() === TOUR_BOARD && onboardingTourStep() === FINISHED.toString()))
+    const shouldViewSidebarTour = () => props.boards.length !== 0 && noCardOpen() && atSidebarCategories()
 
-    const shouldViewManageCatergoriesTour = () => props.boards.length !== 0 &&
-                                            noCardOpen() &&
-                                            onboardingTourCategory() === TOUR_SIDEBAR &&
-                                            onboardingTourStep() === SidebarTourSteps.MANAGE_CATEGORIES.toString()
+    const shouldViewManageCatergoriesTour = () => props.boards.length !== 0 && noCardOpen() && atManageCategories()
 
     createEffect(shouldViewManageCatergoriesTour, (shouldView) => {
         if (shouldView && props.index === 0) {

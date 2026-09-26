@@ -138,49 +138,63 @@ exports[`components/boardTemplateSelector/boardTemplateSelectorPreview > should 
         </div>
         <!---->
         <div
-          class="ModalWrapper"
+          class="ViewHeader__actions"
         >
           <div
-            aria-label="View header menu"
-            class="MenuWrapper"
-            role="button"
-          >
-            <button
-              type="button"
-            >
-              <i
-                class="CompassIcon icon-dots-horizontal OptionsIcon"
-              />
-            </button>
-            <!---->
-            
-            <!---->
-          </div>
-        </div>
-        <div
-          class="ButtonWithMenu"
-        >
-          <div
-            class="button-text"
-          >
-            New
-          </div>
-          <div
-            aria-label="menuwrapper"
-            class="MenuWrapper"
-            role="button"
+            class="ModalWrapper"
           >
             <div
-              class="button-dropdown"
+              aria-label="View header menu"
+              class="MenuWrapper"
+              role="button"
             >
-              <i
-                class="CompassIcon icon-chevron-down DropdownIcon"
-              />
+              <button
+                type="button"
+              >
+                <i
+                  class="CompassIcon icon-dots-horizontal OptionsIcon"
+                />
+              </button>
+              <!---->
+              
+              <!---->
             </div>
-            <!---->
-            
-            <!---->
           </div>
+          <!---->
+          
+          <!---->
+        </div>
+        <div
+          class="ViewHeader__newCard"
+        >
+          <div
+            class="ButtonWithMenu"
+          >
+            <div
+              class="button-text"
+            >
+              New
+            </div>
+            <div
+              aria-label="menuwrapper"
+              class="MenuWrapper"
+              role="button"
+            >
+              <div
+                class="button-dropdown"
+              >
+                <i
+                  class="CompassIcon icon-chevron-down DropdownIcon"
+                />
+              </div>
+              <!---->
+              
+              <!---->
+            </div>
+          </div>
+          <!---->
+          
+          <!---->
         </div>
         <!---->
       </div>
@@ -388,6 +402,8 @@ exports[`components/boardTemplateSelector/boardTemplateSelectorPreview > should 
         <!---->
         
         <!---->
+        
+        <!---->
         <div
           class="octo-board-header-cell narrow"
         >
@@ -414,7 +430,7 @@ exports[`components/boardTemplateSelector/boardTemplateSelectorPreview > should 
           class="octo-board-column"
         >
           <div
-            class="KanbanCard"
+            class="KanbanCard onboardingCard"
             style="opacity: 1;"
           >
             
@@ -479,6 +495,13 @@ exports[`components/boardTemplateSelector/boardTemplateSelectorPreview > should 
               
               <!---->
             </div>
+            <!---->
+            
+            <!---->
+            
+            <!---->
+            <!---->
+            
             <!---->
             
             <!---->

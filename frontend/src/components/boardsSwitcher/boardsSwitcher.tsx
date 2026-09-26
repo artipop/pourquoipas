@@ -7,10 +7,6 @@ import Search from '../../widgets/icons/search'
 import CreateCategory from '../createCategory/createCategory'
 import {useAppSelector} from '../../store/hooks'
 
-import {
-    getOnboardingTourCategory,
-    getOnboardingTourStep,
-} from '../../store/users'
 import {getCurrentCard} from '../../store/cards'
 
 import './boardsSwitcher.scss'
@@ -18,6 +14,7 @@ import BoardSwitcherDialog from '../boardsSwitcherDialog/boardSwitcherDialog'
 import {Utils} from '../../utils'
 import {Constants} from '../../constants'
 import {TOUR_SIDEBAR, SidebarTourSteps} from '../../components/onboardingTour'
+import {useTourAt} from '../../components/onboardingTour/tourState'
 
 import SearchForBoardsTourStep from '../../components/onboardingTour/searchForBoards/searchForBoards'
 
@@ -25,15 +22,13 @@ const BoardsSwitcher = (): JSX.Element => {
     const intl = useIntl()
 
     const [showSwitcher, setShowSwitcher] = createSignal<boolean>(false)
-    const onboardingTourCategory = useAppSelector(getOnboardingTourCategory)
+    const atSearch = useTourAt(TOUR_SIDEBAR, SidebarTourSteps.SEARCH_FOR_BOARDS)
     const [showCreateCategoryModal, setShowCreateCategoryModal] = createSignal(false)
-    const onboardingTourStep = useAppSelector(getOnboardingTourStep)
     const currentCard = useAppSelector(getCurrentCard)
     const noCardOpen = () => !currentCard()
 
     const shouldViewSearchForBoardsTour = () => noCardOpen() &&
-                                       onboardingTourCategory() === TOUR_SIDEBAR &&
-                                       onboardingTourStep() === SidebarTourSteps.SEARCH_FOR_BOARDS.toString()
+                                       atSearch()
 
     // We need this keyboard handling (copied from Mattermost webapp) instead of
     // `useHotkeys`, which deliberately leaves a shortcut alone while the user is

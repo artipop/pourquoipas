@@ -5,8 +5,6 @@ import {FormattedMessage} from '../../../intl'
 import {useMeasurePunchouts} from '../../tutorial_tour_tip/hooks'
 
 import './add_view.scss'
-import {Utils} from '../../../utils'
-import changeViews from '../../../assets/changeViews.gif'
 
 import {BoardTourSteps, TOUR_BOARD} from '../index'
 import TourTipRenderer from '../tourTipRenderer/tourTipRenderer'
@@ -37,7 +35,6 @@ const AddViewTourStep = (): JSX.Element => {
             punchout={punchout()}
             classname='AddViewTourStep'
             placement={'bottom-start'}
-            imageURL={Utils.buildURL(changeViews, true)}
             hideBackdrop={false}
         />
     )

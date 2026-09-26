@@ -1,7 +1,8 @@
 import {createSignal, onSettled} from 'solid-js'
 import type {Accessor} from 'solid-js'
 
-import {FINISHED, TourCategoriesMapToSteps, TOUR_ORDER} from '../onboardingTour'
+import {FINISHED, TOUR_ORDER, tourSteps as stepsOf} from '../onboardingTour'
+import {useTourFlags} from '../onboardingTour/tourState'
 import {useAppSelector, useAppStore} from '../../store/hooks'
 import {getMe, getOnboardingTourStep} from '../../store/users'
 import {UserConfigPatch} from '../../user'
@@ -10,7 +11,7 @@ import {Utils, KeyCodes} from '../../utils'
 
 export interface TutorialTourTipManager {
     show: Accessor<boolean>
-    tourSteps: Record<string, number>
+    tourSteps: () => Record<string, number>
     getLastStep: () => number
     handleOpen: (e: MouseEvent) => void
     handleHide: (e?: MouseEvent) => void
@@ -42,7 +43,11 @@ const useTutorialTourTipManager = ({
     preventDefault,
 }: TutorialTourTipManagerProps): TutorialTourTipManager => {
     const [show, setShow] = createSignal(false)
-    const tourSteps = TourCategoriesMapToSteps[tutorialCategory]
+
+    // Read when asked, not once: which steps a category has follows the
+    // switches, and the agents can be turned off with a tip on screen.
+    const flags = useTourFlags()
+    const tourSteps = () => stepsOf(tutorialCategory, flags())
 
     const {actions} = useAppStore()
     const me = useAppSelector(getMe)
@@ -154,13 +159,7 @@ const useTutorialTourTipManager = ({
     }
 
     const getLastStep = () => {
-        return Object.values(tourSteps).reduce((maxStep, candidateMaxStep) => {
-            // ignore the "opt out" FINISHED step as the max step.
-            if (candidateMaxStep > maxStep && candidateMaxStep !== tourSteps.FINISHED) {
-                return candidateMaxStep
-            }
-            return maxStep
-        }, Number.MIN_SAFE_INTEGER)
+        return Object.values(tourSteps()).reduce((maxStep, candidateMaxStep) => Math.max(maxStep, candidateMaxStep), Number.MIN_SAFE_INTEGER)
     }
 
     const handleSendToNextTour = (currentTourCategory: string): Promise<void> => {

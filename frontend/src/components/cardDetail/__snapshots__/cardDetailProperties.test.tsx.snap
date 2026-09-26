@@ -59,6 +59,10 @@ exports[`components/cardDetail/CardDetailProperties > cancel on delete dialog sh
         </span>
       </div>
       <!---->
+      
+      <!---->
+      
+      <!---->
     </div>
     <div
       class="octo-propertyrow"
@@ -94,6 +98,10 @@ exports[`components/cardDetail/CardDetailProperties > cancel on delete dialog sh
         title="1234"
       />
       <!---->
+      
+      <!---->
+      
+      <!---->
     </div>
     <!---->
     
@@ -123,9 +131,6 @@ exports[`components/cardDetail/CardDetailProperties > cancel on delete dialog sh
         
         <!---->
       </div>
-      <!---->
-      
-      <!---->
     </div>
     <!---->
   </div>
@@ -191,6 +196,10 @@ exports[`components/cardDetail/CardDetailProperties > should match snapshot 1`] 
         </span>
       </div>
       <!---->
+      
+      <!---->
+      
+      <!---->
     </div>
     <div
       class="octo-propertyrow"
@@ -226,6 +235,10 @@ exports[`components/cardDetail/CardDetailProperties > should match snapshot 1`] 
         title="1234"
       />
       <!---->
+      
+      <!---->
+      
+      <!---->
     </div>
     <!---->
     
@@ -255,9 +268,6 @@ exports[`components/cardDetail/CardDetailProperties > should match snapshot 1`] 
         
         <!---->
       </div>
-      <!---->
-      
-      <!---->
     </div>
     <!---->
   </div>
@@ -323,6 +333,10 @@ exports[`components/cardDetail/CardDetailProperties > should show property types
         </span>
       </div>
       <!---->
+      
+      <!---->
+      
+      <!---->
     </div>
     <div
       class="octo-propertyrow"
@@ -357,6 +371,10 @@ exports[`components/cardDetail/CardDetailProperties > should show property types
         placeholder="Empty"
         title="1234"
       />
+      <!---->
+      
+      <!---->
+      
       <!---->
     </div>
     <!---->
@@ -856,9 +874,6 @@ exports[`components/cardDetail/CardDetailProperties > should show property types
         </div>
         <!---->
       </div>
-      <!---->
-      
-      <!---->
     </div>
     <!---->
   </div>

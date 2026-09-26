@@ -370,52 +370,69 @@ exports[`src/components/workspace > return workspace and showcard 1`] = `
             </div>
             <!---->
             <div
-              class="ModalWrapper"
+              class="ViewHeader__actions"
             >
               <div
-                aria-label="View header menu"
-                class="MenuWrapper"
-                role="button"
-              >
-                <button
-                  type="button"
-                >
-                  <i
-                    class="CompassIcon icon-dots-horizontal OptionsIcon"
-                  />
-                </button>
-                <!---->
-                
-                <!---->
-              </div>
-            </div>
-            <div
-              class="ButtonWithMenu"
-            >
-              <div
-                class="button-text"
-              >
-                New
-              </div>
-              <div
-                aria-label="menuwrapper"
-                class="MenuWrapper"
-                role="button"
+                class="ModalWrapper"
               >
                 <div
-                  class="button-dropdown"
+                  aria-label="View header menu"
+                  class="MenuWrapper"
+                  role="button"
                 >
-                  <i
-                    class="CompassIcon icon-chevron-down DropdownIcon"
-                  />
+                  <button
+                    type="button"
+                  >
+                    <i
+                      class="CompassIcon icon-dots-horizontal OptionsIcon"
+                    />
+                  </button>
+                  <!---->
+                  
+                  <!---->
                 </div>
-                <!---->
-                
-                <!---->
               </div>
+              <!---->
+              
+              <!---->
+            </div>
+            <div
+              class="ViewHeader__newCard"
+            >
+              <div
+                class="ButtonWithMenu"
+              >
+                <div
+                  class="button-text"
+                >
+                  New
+                </div>
+                <div
+                  aria-label="menuwrapper"
+                  class="MenuWrapper"
+                  role="button"
+                >
+                  <div
+                    class="button-dropdown"
+                  >
+                    <i
+                      class="CompassIcon icon-chevron-down DropdownIcon"
+                    />
+                  </div>
+                  <!---->
+                  
+                  <!---->
+                </div>
+              </div>
+              <!---->
+              
+              <!---->
             </div>
             <!---->
           </div>
+          <!---->
+          
+          <!---->
         </div>
         <div
           class="Kanban"
@@ -553,6 +570,8 @@ exports[`src/components/workspace > return workspace and showcard 1`] = `
             <!---->
             
             <!---->
+            
+            <!---->
             <div
               class="octo-board-header-cell narrow"
             >
@@ -579,7 +598,7 @@ exports[`src/components/workspace > return workspace and showcard 1`] = `
               class="octo-board-column"
             >
               <div
-                class="KanbanCard"
+                class="KanbanCard onboardingCard"
                 style="opacity: 1;"
               >
                 
@@ -644,6 +663,13 @@ exports[`src/components/workspace > return workspace and showcard 1`] = `
                   
                   <!---->
                 </div>
+                <!---->
+                
+                <!---->
+                
+                <!---->
+                <!---->
+                
                 <!---->
                 
                 <!---->
@@ -721,6 +747,14 @@ exports[`src/components/workspace > return workspace and showcard 1`] = `
                 <!---->
                 
                 <!---->
+                
+                <!---->
+                
+                <!---->
+                
+                <!---->
+                
+                <!---->
               </div>
               <div
                 class="KanbanCard"
@@ -788,6 +822,14 @@ exports[`src/components/workspace > return workspace and showcard 1`] = `
                   
                   <!---->
                 </div>
+                <!---->
+                
+                <!---->
+                
+                <!---->
+                
+                <!---->
+                
                 <!---->
                 
                 <!---->
@@ -987,6 +1029,9 @@ exports[`src/components/workspace > return workspace readonly and showcard 1`] =
             
             <!---->
           </div>
+          <!---->
+          
+          <!---->
         </div>
         <div
           class="Kanban"
@@ -1083,6 +1128,8 @@ exports[`src/components/workspace > return workspace readonly and showcard 1`] =
             <!---->
             
             <!---->
+            
+            <!---->
           </div>
           <div
             class="octo-board-body"
@@ -1092,7 +1139,7 @@ exports[`src/components/workspace > return workspace readonly and showcard 1`] =
               class="octo-board-column"
             >
               <div
-                class="KanbanCard"
+                class="KanbanCard onboardingCard"
                 style="opacity: 1;"
               >
                 
@@ -1142,6 +1189,13 @@ exports[`src/components/workspace > return workspace readonly and showcard 1`] =
                   
                   <!---->
                 </div>
+                <!---->
+                
+                <!---->
+                
+                <!---->
+                <!---->
+                
                 <!---->
                 
                 <!---->
@@ -1204,6 +1258,14 @@ exports[`src/components/workspace > return workspace readonly and showcard 1`] =
                 <!---->
                 
                 <!---->
+                
+                <!---->
+                
+                <!---->
+                
+                <!---->
+                
+                <!---->
               </div>
               <div
                 class="KanbanCard"
@@ -1256,6 +1318,14 @@ exports[`src/components/workspace > return workspace readonly and showcard 1`] =
                   
                   <!---->
                 </div>
+                <!---->
+                
+                <!---->
+                
+                <!---->
+                
+                <!---->
+                
                 <!---->
                 
                 <!---->
@@ -1735,52 +1805,69 @@ exports[`src/components/workspace > should match snapshot 1`] = `
             </div>
             <!---->
             <div
-              class="ModalWrapper"
+              class="ViewHeader__actions"
             >
               <div
-                aria-label="View header menu"
-                class="MenuWrapper"
-                role="button"
-              >
-                <button
-                  type="button"
-                >
-                  <i
-                    class="CompassIcon icon-dots-horizontal OptionsIcon"
-                  />
-                </button>
-                <!---->
-                
-                <!---->
-              </div>
-            </div>
-            <div
-              class="ButtonWithMenu"
-            >
-              <div
-                class="button-text"
-              >
-                New
-              </div>
-              <div
-                aria-label="menuwrapper"
-                class="MenuWrapper"
-                role="button"
+                class="ModalWrapper"
               >
                 <div
-                  class="button-dropdown"
+                  aria-label="View header menu"
+                  class="MenuWrapper"
+                  role="button"
                 >
-                  <i
-                    class="CompassIcon icon-chevron-down DropdownIcon"
-                  />
+                  <button
+                    type="button"
+                  >
+                    <i
+                      class="CompassIcon icon-dots-horizontal OptionsIcon"
+                    />
+                  </button>
+                  <!---->
+                  
+                  <!---->
                 </div>
-                <!---->
-                
-                <!---->
               </div>
+              <!---->
+              
+              <!---->
+            </div>
+            <div
+              class="ViewHeader__newCard"
+            >
+              <div
+                class="ButtonWithMenu"
+              >
+                <div
+                  class="button-text"
+                >
+                  New
+                </div>
+                <div
+                  aria-label="menuwrapper"
+                  class="MenuWrapper"
+                  role="button"
+                >
+                  <div
+                    class="button-dropdown"
+                  >
+                    <i
+                      class="CompassIcon icon-chevron-down DropdownIcon"
+                    />
+                  </div>
+                  <!---->
+                  
+                  <!---->
+                </div>
+              </div>
+              <!---->
+              
+              <!---->
             </div>
             <!---->
           </div>
+          <!---->
+          
+          <!---->
         </div>
         <div
           class="Kanban"
@@ -1918,6 +2005,8 @@ exports[`src/components/workspace > should match snapshot 1`] = `
             <!---->
             
             <!---->
+            
+            <!---->
             <div
               class="octo-board-header-cell narrow"
             >
@@ -1944,7 +2033,7 @@ exports[`src/components/workspace > should match snapshot 1`] = `
               class="octo-board-column"
             >
               <div
-                class="KanbanCard"
+                class="KanbanCard onboardingCard"
                 style="opacity: 1;"
               >
                 
@@ -2009,6 +2098,13 @@ exports[`src/components/workspace > should match snapshot 1`] = `
                   
                   <!---->
                 </div>
+                <!---->
+                
+                <!---->
+                
+                <!---->
+                <!---->
+                
                 <!---->
                 
                 <!---->
@@ -2086,6 +2182,14 @@ exports[`src/components/workspace > should match snapshot 1`] = `
                 <!---->
                 
                 <!---->
+                
+                <!---->
+                
+                <!---->
+                
+                <!---->
+                
+                <!---->
               </div>
               <div
                 class="KanbanCard"
@@ -2153,6 +2257,14 @@ exports[`src/components/workspace > should match snapshot 1`] = `
                   
                   <!---->
                 </div>
+                <!---->
+                
+                <!---->
+                
+                <!---->
+                
+                <!---->
+                
                 <!---->
                 
                 <!---->
@@ -2352,6 +2464,9 @@ exports[`src/components/workspace > should match snapshot with readonly 1`] = `
             
             <!---->
           </div>
+          <!---->
+          
+          <!---->
         </div>
         <div
           class="Kanban"
@@ -2448,6 +2563,8 @@ exports[`src/components/workspace > should match snapshot with readonly 1`] = `
             <!---->
             
             <!---->
+            
+            <!---->
           </div>
           <div
             class="octo-board-body"
@@ -2457,7 +2574,7 @@ exports[`src/components/workspace > should match snapshot with readonly 1`] = `
               class="octo-board-column"
             >
               <div
-                class="KanbanCard"
+                class="KanbanCard onboardingCard"
                 style="opacity: 1;"
               >
                 
@@ -2507,6 +2624,13 @@ exports[`src/components/workspace > should match snapshot with readonly 1`] = `
                   
                   <!---->
                 </div>
+                <!---->
+                
+                <!---->
+                
+                <!---->
+                <!---->
+                
                 <!---->
                 
                 <!---->
@@ -2569,6 +2693,14 @@ exports[`src/components/workspace > should match snapshot with readonly 1`] = `
                 <!---->
                 
                 <!---->
+                
+                <!---->
+                
+                <!---->
+                
+                <!---->
+                
+                <!---->
               </div>
               <div
                 class="KanbanCard"
@@ -2621,6 +2753,14 @@ exports[`src/components/workspace > should match snapshot with readonly 1`] = `
                   
                   <!---->
                 </div>
+                <!---->
+                
+                <!---->
+                
+                <!---->
+                
+                <!---->
+                
                 <!---->
                 
                 <!---->

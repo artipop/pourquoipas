@@ -172,8 +172,6 @@
   "OnboardingTour.AddComments.Title": "コメントを追加する",
   "OnboardingTour.AddDescription.Body": "カードに説明を追加し、チームメイトに何のカードかわかるようにしましょう。",
   "OnboardingTour.AddDescription.Title": "説明を追加する",
-  "OnboardingTour.AddProperties.Body": "カードに様々なプロパティを追加することで、より便利になります。",
-  "OnboardingTour.AddProperties.Title": "プロパティを追加する",
   "OnboardingTour.AddView.Body": "異なるレイアウトでBoardを整理するための新しいビューを作成するには、ここに移動します。",
   "OnboardingTour.AddView.Title": "新しいビューを追加する",
   "OnboardingTour.CopyLink.Body": "リンクをコピーしてチャンネル、ダイレクトメッセージ、グループメッセージに貼り付けることで、カードをチームメイトと共有することができます。",

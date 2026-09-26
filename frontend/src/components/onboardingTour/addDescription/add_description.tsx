@@ -5,8 +5,6 @@ import {FormattedMessage} from '../../../intl'
 import {useMeasurePunchouts} from '../../tutorial_tour_tip/hooks'
 
 import './add_description.scss'
-import {Utils} from '../../../utils'
-import addDescription from '../../../assets/addDescription.png'
 
 import {CardTourSteps, TOUR_CARD} from '../index'
 import TourTipRenderer from '../tourTipRenderer/tourTipRenderer'
@@ -25,7 +23,7 @@ const AddDescriptionTourStep = (): JSX.Element | null => {
         />
     )
 
-    const punchout = useMeasurePunchouts(['.octo-content div:nth-child(1)'])
+    const punchout = useMeasurePunchouts(['.octo-content'])
 
     return (
         <TourTipRenderer
@@ -37,7 +35,6 @@ const AddDescriptionTourStep = (): JSX.Element | null => {
             punchout={punchout()}
             classname='AddDescriptionTourStep'
             placement={'top-start'}
-            imageURL={Utils.buildURL(addDescription, true)}
             hideBackdrop={true}
         />
     )

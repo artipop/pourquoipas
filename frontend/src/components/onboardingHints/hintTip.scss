@@ -1,0 +1,12 @@
+// Where a hint's dot sits against what it is mounted in.
+.HintTip {
+    &--card {
+        right: 10px;
+        bottom: 10px;
+    }
+
+    &--button {
+        left: -20px;
+        top: 26px;
+    }
+}

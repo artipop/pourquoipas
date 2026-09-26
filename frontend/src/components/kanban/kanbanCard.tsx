@@ -20,11 +20,18 @@ import {attentionHeading, useCardAttention} from '../acp/attention'
 import {findWorkdirProperty} from '../acp/workdirSync'
 import {aiEnabled} from '../../aiSwitch'
 import {cardAsText} from '../../cardText'
-import {useAppStore} from '../../store/hooks'
+import {useAppSelector, useAppStore} from '../../store/hooks'
+import {getBoardUsers} from '../../store/users'
+import {createLoader} from '../../hooks/loader'
+import {isInboxBoard} from '../acp/inboxView'
+import {loadAgentUsers} from '../acp/agentAssignees'
+import HintTip from '../onboardingHints/hintTip'
+import {HINT_AGENT_MOVE, HINT_INBOX, HINT_QUESTION, cardMovedFrom} from '../onboardingHints/hints'
 import {getCardContents} from '../../store/contents'
 import GripIcon from '../../widgets/icons/grip'
-
-export const OnboardingCardClassName = 'onboardingCard'
+import {OnboardingCardClassName} from '../onboardingTour'
+import OpenCardTourStep from '../onboardingTour/openCard/open_card'
+import CopyLinkTourStep from '../onboardingTour/copyLink/copy_link'
 
 type Props = {
     card: Card
@@ -48,6 +55,10 @@ type Props = {
     // put — the inbox view, grouped by who brought the card. It is not the same as
     // readonly: the card still opens, and its menu still works.
     dragDisabled?: boolean
+
+    // The board's first card, which the tour's first tip points at: on a board
+    // made from a template that is «Where to start».
+    onboarding?: boolean
 }
 
 const KanbanCard = (props: Props) => {
@@ -92,6 +103,15 @@ const KanbanCard = (props: Props) => {
     const attention = useCardAttention(() => props.card.id)
     const agentTitle = () => (attention() ? attentionHeading(intl, attention()!) : '')
     const showsAgent = () => aiEnabled() && Boolean(attention())
+
+    // The hints a card can carry (docs/onboarding.md). An agent's move is told
+    // apart from a person's by who last wrote the card: an agent's writes are
+    // signed with its own account.
+    const boardUsers = useAppSelector(getBoardUsers)
+    const [agentUsers] = createLoader(() => loadAgentUsers(), [] as string[])
+    const movedFrom = cardMovedFrom(props.card.id, props.groupId)
+    const movedByAgent = () => aiEnabled() && Boolean(movedFrom) &&
+        agentUsers().includes(boardUsers()[props.card.modifiedBy]?.username || '')
 
     const openCard = (e: MouseEvent) => {
         // The card is a click target of its own; this is the same destination
@@ -177,7 +197,7 @@ const KanbanCard = (props: Props) => {
         <>
             <div
                 ref={props.readonly || props.dragDisabled ? undefined : cardRef}
-                class={[classes(), {'KanbanCard--agent': showsAgent()}]}
+                class={[classes(), {'KanbanCard--agent': showsAgent(), [OnboardingCardClassName]: Boolean(props.onboarding)}]}
                 style={{opacity: isDragging() ? 0.5 : 1}}
                 onClick={handleOnClick}
             >
@@ -290,6 +310,34 @@ const KanbanCard = (props: Props) => {
                 <Show when={props.visibleBadges}>
                     <CardBadges card={props.card}/>
                 </Show>
+                <Show when={props.onboarding}>
+                    <OpenCardTourStep/>
+                    <CopyLinkTourStep/>
+                </Show>
+                <HintTip
+                    id={HINT_QUESTION}
+                    wanted={showsAgent()}
+                    class='HintTip--card'
+                    placement='right-end'
+                    title={intl.formatMessage({id: 'Hint.question.title', defaultMessage: 'The agent is asking'})}
+                    body={intl.formatMessage({id: 'Hint.question.body', defaultMessage: 'The agent working this card has stopped to ask something, and waits until somebody answers. Open the card: the question is under its title, and choosing one of the options is the answer. The notification about it answers the same way.'})}
+                />
+                <HintTip
+                    id={HINT_AGENT_MOVE}
+                    wanted={movedByAgent()}
+                    class='HintTip--card'
+                    placement='right-end'
+                    title={intl.formatMessage({id: 'Hint.agent-move.title', defaultMessage: 'The agent moved the card'})}
+                    body={intl.formatMessage({id: 'Hint.agent-move.body', defaultMessage: 'It chose this column by its name, as the one that says what happened. Renaming the columns is how you tell agents what each of them means.'})}
+                />
+                <HintTip
+                    id={HINT_INBOX}
+                    wanted={Boolean(props.onboarding) && isInboxBoard(props.board)}
+                    class='HintTip--card'
+                    placement='right-end'
+                    title={intl.formatMessage({id: 'Hint.inbox.title', defaultMessage: 'A card from outside'})}
+                    body={intl.formatMessage({id: 'Hint.inbox.body', defaultMessage: 'Something outside the app brought this card in: mail, a tracker, the share menu or a script. It waits here until you move it to the board it belongs on, with “Move to a board…” in its menu.'})}
+                />
             </div>
 
             <Show when={showConfirmationDialogBox()}>

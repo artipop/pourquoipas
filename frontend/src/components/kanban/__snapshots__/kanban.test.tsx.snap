@@ -152,6 +152,8 @@ exports[`src/component/kanban/kanban > return kanban and change title on KanbanC
         Hidden columns
       </div>
       <!---->
+      
+      <!---->
       <div
         class="octo-board-header-cell narrow"
       >
@@ -178,7 +180,7 @@ exports[`src/component/kanban/kanban > return kanban and change title on KanbanC
         class="octo-board-column"
       >
         <div
-          class="KanbanCard"
+          class="KanbanCard onboardingCard"
           style="opacity: 1;"
         >
           
@@ -231,6 +233,13 @@ exports[`src/component/kanban/kanban > return kanban and change title on KanbanC
               title
             </div>
           </div>
+          <!---->
+          
+          <!---->
+          
+          <!---->
+          <!---->
+          
           <!---->
           
           <!---->
@@ -291,6 +300,14 @@ exports[`src/component/kanban/kanban > return kanban and change title on KanbanC
               title
             </div>
           </div>
+          <!---->
+          
+          <!---->
+          
+          <!---->
+          
+          <!---->
+          
           <!---->
           
           <!---->
@@ -367,6 +384,14 @@ exports[`src/component/kanban/kanban > return kanban and change title on KanbanC
               title
             </div>
           </div>
+          <!---->
+          
+          <!---->
+          
+          <!---->
+          
+          <!---->
+          
           <!---->
           
           <!---->
@@ -496,8 +521,8 @@ exports[`src/component/kanban/kanban > return kanban and click on KanbanCalculat
                 <!---->
                 
                 <input
-                  aria-activedescendant="cl-22-option-0"
-                  aria-controls="cl-22"
+                  aria-activedescendant="cl-61-option-0"
+                  aria-controls="cl-61"
                   aria-expanded="true"
                   autocomplete="off"
                   class="Combobox__input CalculationOptions__input"
@@ -513,7 +538,7 @@ exports[`src/component/kanban/kanban > return kanban and click on KanbanCalculat
             >
               <div
                 class="CalculationOptions__menu-list"
-                id="cl-22"
+                id="cl-61"
                 role="listbox"
               >
                 
@@ -521,7 +546,7 @@ exports[`src/component/kanban/kanban > return kanban and click on KanbanCalculat
                 <div
                   aria-selected="true"
                   class="CalculationOptions__option CalculationOptions__option--is-focused CalculationOptions__option--is-selected"
-                  id="cl-22-option-0"
+                  id="cl-61-option-0"
                   role="option"
                 >
                   <div
@@ -539,7 +564,7 @@ exports[`src/component/kanban/kanban > return kanban and click on KanbanCalculat
                 <div
                   aria-selected="false"
                   class="CalculationOptions__option"
-                  id="cl-22-option-1"
+                  id="cl-61-option-1"
                   role="option"
                 >
                   <div
@@ -559,7 +584,7 @@ exports[`src/component/kanban/kanban > return kanban and click on KanbanCalculat
                 <div
                   aria-selected="false"
                   class="CalculationOptions__option"
-                  id="cl-22-option-2"
+                  id="cl-61-option-2"
                   role="option"
                 >
                   <div
@@ -579,7 +604,7 @@ exports[`src/component/kanban/kanban > return kanban and click on KanbanCalculat
                 <div
                   aria-selected="false"
                   class="CalculationOptions__option"
-                  id="cl-22-option-3"
+                  id="cl-61-option-3"
                   role="option"
                 >
                   <div
@@ -599,7 +624,7 @@ exports[`src/component/kanban/kanban > return kanban and click on KanbanCalculat
                 <div
                   aria-selected="false"
                   class="CalculationOptions__option"
-                  id="cl-22-option-4"
+                  id="cl-61-option-4"
                   role="option"
                 >
                   <div
@@ -619,7 +644,7 @@ exports[`src/component/kanban/kanban > return kanban and click on KanbanCalculat
                 <div
                   aria-selected="false"
                   class="CalculationOptions__option"
-                  id="cl-22-option-5"
+                  id="cl-61-option-5"
                   role="option"
                 >
                   <div
@@ -639,7 +664,7 @@ exports[`src/component/kanban/kanban > return kanban and click on KanbanCalculat
                 <div
                   aria-selected="false"
                   class="CalculationOptions__option"
-                  id="cl-22-option-6"
+                  id="cl-61-option-6"
                   role="option"
                 >
                   <div
@@ -762,6 +787,8 @@ exports[`src/component/kanban/kanban > return kanban and click on KanbanCalculat
         Hidden columns
       </div>
       <!---->
+      
+      <!---->
       <div
         class="octo-board-header-cell narrow"
       >
@@ -788,7 +815,7 @@ exports[`src/component/kanban/kanban > return kanban and click on KanbanCalculat
         class="octo-board-column"
       >
         <div
-          class="KanbanCard"
+          class="KanbanCard onboardingCard"
           style="opacity: 1;"
         >
           
@@ -841,6 +868,13 @@ exports[`src/component/kanban/kanban > return kanban and click on KanbanCalculat
               title
             </div>
           </div>
+          <!---->
+          
+          <!---->
+          
+          <!---->
+          <!---->
+          
           <!---->
           
           <!---->
@@ -901,6 +935,14 @@ exports[`src/component/kanban/kanban > return kanban and click on KanbanCalculat
               title
             </div>
           </div>
+          <!---->
+          
+          <!---->
+          
+          <!---->
+          
+          <!---->
+          
           <!---->
           
           <!---->
@@ -977,6 +1019,14 @@ exports[`src/component/kanban/kanban > return kanban and click on KanbanCalculat
               title
             </div>
           </div>
+          <!---->
+          
+          <!---->
+          
+          <!---->
+          
+          <!---->
+          
           <!---->
           
           <!---->
@@ -1183,6 +1233,8 @@ exports[`src/component/kanban/kanban > should match snapshot 1`] = `
         Hidden columns
       </div>
       <!---->
+      
+      <!---->
       <div
         class="octo-board-header-cell narrow"
       >
@@ -1209,7 +1261,7 @@ exports[`src/component/kanban/kanban > should match snapshot 1`] = `
         class="octo-board-column"
       >
         <div
-          class="KanbanCard"
+          class="KanbanCard onboardingCard"
           style="opacity: 1;"
         >
           
@@ -1262,6 +1314,13 @@ exports[`src/component/kanban/kanban > should match snapshot 1`] = `
               title
             </div>
           </div>
+          <!---->
+          
+          <!---->
+          
+          <!---->
+          <!---->
+          
           <!---->
           
           <!---->
@@ -1322,6 +1381,14 @@ exports[`src/component/kanban/kanban > should match snapshot 1`] = `
               title
             </div>
           </div>
+          <!---->
+          
+          <!---->
+          
+          <!---->
+          
+          <!---->
+          
           <!---->
           
           <!---->
@@ -1398,6 +1465,14 @@ exports[`src/component/kanban/kanban > should match snapshot 1`] = `
               title
             </div>
           </div>
+          <!---->
+          
+          <!---->
+          
+          <!---->
+          
+          <!---->
+          
           <!---->
           
           <!---->
@@ -1562,6 +1637,8 @@ exports[`src/component/kanban/kanban > should match snapshot without permissions
       <!---->
       
       <!---->
+      
+      <!---->
     </div>
     <div
       class="octo-board-body"
@@ -1571,7 +1648,7 @@ exports[`src/component/kanban/kanban > should match snapshot without permissions
         class="octo-board-column"
       >
         <div
-          class="KanbanCard"
+          class="KanbanCard onboardingCard"
           style="opacity: 1;"
         >
           
@@ -1624,6 +1701,13 @@ exports[`src/component/kanban/kanban > should match snapshot without permissions
               title
             </div>
           </div>
+          <!---->
+          
+          <!---->
+          
+          <!---->
+          <!---->
+          
           <!---->
           
           <!---->
@@ -1684,6 +1768,14 @@ exports[`src/component/kanban/kanban > should match snapshot without permissions
               title
             </div>
           </div>
+          <!---->
+          
+          <!---->
+          
+          <!---->
+          
+          <!---->
+          
           <!---->
           
           <!---->
@@ -1748,6 +1840,14 @@ exports[`src/component/kanban/kanban > should match snapshot without permissions
               title
             </div>
           </div>
+          <!---->
+          
+          <!---->
+          
+          <!---->
+          
+          <!---->
+          
           <!---->
           
           <!---->

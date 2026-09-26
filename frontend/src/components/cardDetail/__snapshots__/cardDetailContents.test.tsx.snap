@@ -5,6 +5,7 @@ exports[`components/cardDetail/cardDetailContents > should match snapshot 1`] = 
   <div
     class="octo-content CardDetailContents"
   >
+    
     <div
       class="octo-block"
     >
@@ -33,6 +34,8 @@ exports[`components/cardDetail/cardDetailContents > should match snapshot after 
   <div
     class="octo-content"
   >
+    
+    <!---->
     <div>
       <div
         class="addToRow "
@@ -226,6 +229,7 @@ exports[`components/cardDetail/cardDetailContents > should match snapshot after 
         style="width:94%;height:10px;margin-left:48px"
       />
     </div>
+    <!---->
   </div>
 </div>
 `;
@@ -235,6 +239,8 @@ exports[`components/cardDetail/cardDetailContents > should match snapshot after 
   <div
     class="octo-content"
   >
+    
+    <!---->
     <div>
       <div
         class="addToRow "
@@ -370,6 +376,7 @@ exports[`components/cardDetail/cardDetailContents > should match snapshot after 
       />
       <!---->
     </div>
+    <!---->
   </div>
 </div>
 `;
@@ -379,6 +386,8 @@ exports[`components/cardDetail/cardDetailContents > should match snapshot after 
   <div
     class="octo-content"
   >
+    
+    <!---->
     <div>
       <div
         class="addToRow "
@@ -514,6 +523,7 @@ exports[`components/cardDetail/cardDetailContents > should match snapshot after 
       />
       <!---->
     </div>
+    <!---->
   </div>
 </div>
 `;
@@ -523,6 +533,8 @@ exports[`components/cardDetail/cardDetailContents > should match snapshot with c
   <div
     class="octo-content"
   >
+    
+    <!---->
     <div>
       <div
         class="addToRow "
@@ -592,6 +604,7 @@ exports[`components/cardDetail/cardDetailContents > should match snapshot with c
       />
       <!---->
     </div>
+    <!---->
   </div>
 </div>
 `;
@@ -601,6 +614,8 @@ exports[`components/cardDetail/cardDetailContents > should match snapshot with c
   <div
     class="octo-content"
   >
+    
+    <!---->
     <div>
       <div
         class="addToRow "
@@ -794,6 +809,7 @@ exports[`components/cardDetail/cardDetailContents > should match snapshot with c
         style="width:94%;height:10px;margin-left:48px"
       />
     </div>
+    <!---->
   </div>
 </div>
 `;

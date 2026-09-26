@@ -206,53 +206,70 @@ exports[`components/centerPanel > return centerPanel and > click on card to show
         </div>
         <!---->
         <div
-          class="ModalWrapper"
+          class="ViewHeader__actions"
         >
           <div
-            aria-label="View header menu"
-            class="MenuWrapper"
-            role="button"
-          >
-            <button
-              class="IconButton"
-              type="button"
-            >
-              <i
-                class="CompassIcon icon-dots-horizontal OptionsIcon"
-              />
-            </button>
-            <!---->
-            
-            <!---->
-          </div>
-        </div>
-        <div
-          class="ButtonWithMenu"
-        >
-          <div
-            class="button-text"
-          >
-            New
-          </div>
-          <div
-            aria-label="menuwrapper"
-            class="MenuWrapper"
-            role="button"
+            class="ModalWrapper"
           >
             <div
-              class="button-dropdown"
+              aria-label="View header menu"
+              class="MenuWrapper"
+              role="button"
             >
-              <i
-                class="CompassIcon icon-chevron-down DropdownIcon"
-              />
+              <button
+                class="IconButton"
+                type="button"
+              >
+                <i
+                  class="CompassIcon icon-dots-horizontal OptionsIcon"
+                />
+              </button>
+              <!---->
+              
+              <!---->
             </div>
-            <!---->
-            
-            <!---->
           </div>
+          <!---->
+          
+          <!---->
+        </div>
+        <div
+          class="ViewHeader__newCard"
+        >
+          <div
+            class="ButtonWithMenu"
+          >
+            <div
+              class="button-text"
+            >
+              New
+            </div>
+            <div
+              aria-label="menuwrapper"
+              class="MenuWrapper"
+              role="button"
+            >
+              <div
+                class="button-dropdown"
+              >
+                <i
+                  class="CompassIcon icon-chevron-down DropdownIcon"
+                />
+              </div>
+              <!---->
+              
+              <!---->
+            </div>
+          </div>
+          <!---->
+          
+          <!---->
         </div>
         <!---->
       </div>
+      <!---->
+      
+      <!---->
     </div>
     <div
       class="Kanban"
@@ -464,6 +481,8 @@ exports[`components/centerPanel > return centerPanel and > click on card to show
         <!---->
         
         <!---->
+        
+        <!---->
         <div
           class="octo-board-header-cell narrow"
         >
@@ -512,7 +531,25 @@ exports[`components/centerPanel > return centerPanel and > click on card to show
             style="opacity: 1;"
           >
             
-            <!---->
+            <span
+              aria-label="Drag the card into another app, such as a terminal"
+              class="KanbanCard__dragOut"
+              draggable="true"
+              title="Drag the card into another app, such as a terminal"
+            >
+              <svg
+                class="GripIcon Icon"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M0 0h24v24H0V0z"
+                  fill="none"
+                />
+                <path
+                  d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"
+                />
+              </svg>
+            </span>
             <div
               aria-label="menuwrapper"
               class="MenuWrapper optionsMenu"
@@ -549,13 +586,39 @@ exports[`components/centerPanel > return centerPanel and > click on card to show
             <!---->
             
             <!---->
+            
+            <!---->
+            
+            <!---->
+            
+            <!---->
+            
+            <!---->
           </div>
           <div
             class="KanbanCard"
             style="opacity: 1;"
           >
             
-            <!---->
+            <span
+              aria-label="Drag the card into another app, such as a terminal"
+              class="KanbanCard__dragOut"
+              draggable="true"
+              title="Drag the card into another app, such as a terminal"
+            >
+              <svg
+                class="GripIcon Icon"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M0 0h24v24H0V0z"
+                  fill="none"
+                />
+                <path
+                  d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"
+                />
+              </svg>
+            </span>
             <div
               aria-label="menuwrapper"
               class="MenuWrapper optionsMenu"
@@ -587,6 +650,14 @@ exports[`components/centerPanel > return centerPanel and > click on card to show
                 card2
               </div>
             </div>
+            <!---->
+            
+            <!---->
+            
+            <!---->
+            
+            <!---->
+            
             <!---->
             
             <!---->
@@ -840,53 +911,70 @@ exports[`components/centerPanel > return centerPanel and > click on new card to 
         </div>
         <!---->
         <div
-          class="ModalWrapper"
+          class="ViewHeader__actions"
         >
           <div
-            aria-label="View header menu"
-            class="MenuWrapper"
-            role="button"
-          >
-            <button
-              class="IconButton"
-              type="button"
-            >
-              <i
-                class="CompassIcon icon-dots-horizontal OptionsIcon"
-              />
-            </button>
-            <!---->
-            
-            <!---->
-          </div>
-        </div>
-        <div
-          class="ButtonWithMenu"
-        >
-          <div
-            class="button-text"
-          >
-            New
-          </div>
-          <div
-            aria-label="menuwrapper"
-            class="MenuWrapper"
-            role="button"
+            class="ModalWrapper"
           >
             <div
-              class="button-dropdown"
+              aria-label="View header menu"
+              class="MenuWrapper"
+              role="button"
             >
-              <i
-                class="CompassIcon icon-chevron-down DropdownIcon"
-              />
+              <button
+                class="IconButton"
+                type="button"
+              >
+                <i
+                  class="CompassIcon icon-dots-horizontal OptionsIcon"
+                />
+              </button>
+              <!---->
+              
+              <!---->
             </div>
-            <!---->
-            
-            <!---->
           </div>
+          <!---->
+          
+          <!---->
+        </div>
+        <div
+          class="ViewHeader__newCard"
+        >
+          <div
+            class="ButtonWithMenu"
+          >
+            <div
+              class="button-text"
+            >
+              New
+            </div>
+            <div
+              aria-label="menuwrapper"
+              class="MenuWrapper"
+              role="button"
+            >
+              <div
+                class="button-dropdown"
+              >
+                <i
+                  class="CompassIcon icon-chevron-down DropdownIcon"
+                />
+              </div>
+              <!---->
+              
+              <!---->
+            </div>
+          </div>
+          <!---->
+          
+          <!---->
         </div>
         <!---->
       </div>
+      <!---->
+      
+      <!---->
     </div>
     <div
       class="Table"
@@ -1506,6 +1594,9 @@ exports[`components/centerPanel > return centerPanel and > press touch 1 with re
         
         <!---->
       </div>
+      <!---->
+      
+      <!---->
     </div>
     <div
       class="Table"
@@ -2052,53 +2143,70 @@ exports[`components/centerPanel > return centerPanel and > press touch ctrl+d fo
         </div>
         <!---->
         <div
-          class="ModalWrapper"
+          class="ViewHeader__actions"
         >
           <div
-            aria-label="View header menu"
-            class="MenuWrapper"
-            role="button"
-          >
-            <button
-              class="IconButton"
-              type="button"
-            >
-              <i
-                class="CompassIcon icon-dots-horizontal OptionsIcon"
-              />
-            </button>
-            <!---->
-            
-            <!---->
-          </div>
-        </div>
-        <div
-          class="ButtonWithMenu"
-        >
-          <div
-            class="button-text"
-          >
-            New
-          </div>
-          <div
-            aria-label="menuwrapper"
-            class="MenuWrapper"
-            role="button"
+            class="ModalWrapper"
           >
             <div
-              class="button-dropdown"
+              aria-label="View header menu"
+              class="MenuWrapper"
+              role="button"
             >
-              <i
-                class="CompassIcon icon-chevron-down DropdownIcon"
-              />
+              <button
+                class="IconButton"
+                type="button"
+              >
+                <i
+                  class="CompassIcon icon-dots-horizontal OptionsIcon"
+                />
+              </button>
+              <!---->
+              
+              <!---->
             </div>
-            <!---->
-            
-            <!---->
           </div>
+          <!---->
+          
+          <!---->
+        </div>
+        <div
+          class="ViewHeader__newCard"
+        >
+          <div
+            class="ButtonWithMenu"
+          >
+            <div
+              class="button-text"
+            >
+              New
+            </div>
+            <div
+              aria-label="menuwrapper"
+              class="MenuWrapper"
+              role="button"
+            >
+              <div
+                class="button-dropdown"
+              >
+                <i
+                  class="CompassIcon icon-chevron-down DropdownIcon"
+                />
+              </div>
+              <!---->
+              
+              <!---->
+            </div>
+          </div>
+          <!---->
+          
+          <!---->
         </div>
         <!---->
       </div>
+      <!---->
+      
+      <!---->
     </div>
     <div
       class="Table"
@@ -2783,53 +2891,70 @@ exports[`components/centerPanel > return centerPanel and > press touch del for o
         </div>
         <!---->
         <div
-          class="ModalWrapper"
+          class="ViewHeader__actions"
         >
           <div
-            aria-label="View header menu"
-            class="MenuWrapper"
-            role="button"
-          >
-            <button
-              class="IconButton"
-              type="button"
-            >
-              <i
-                class="CompassIcon icon-dots-horizontal OptionsIcon"
-              />
-            </button>
-            <!---->
-            
-            <!---->
-          </div>
-        </div>
-        <div
-          class="ButtonWithMenu"
-        >
-          <div
-            class="button-text"
-          >
-            New
-          </div>
-          <div
-            aria-label="menuwrapper"
-            class="MenuWrapper"
-            role="button"
+            class="ModalWrapper"
           >
             <div
-              class="button-dropdown"
+              aria-label="View header menu"
+              class="MenuWrapper"
+              role="button"
             >
-              <i
-                class="CompassIcon icon-chevron-down DropdownIcon"
-              />
+              <button
+                class="IconButton"
+                type="button"
+              >
+                <i
+                  class="CompassIcon icon-dots-horizontal OptionsIcon"
+                />
+              </button>
+              <!---->
+              
+              <!---->
             </div>
-            <!---->
-            
-            <!---->
           </div>
+          <!---->
+          
+          <!---->
+        </div>
+        <div
+          class="ViewHeader__newCard"
+        >
+          <div
+            class="ButtonWithMenu"
+          >
+            <div
+              class="button-text"
+            >
+              New
+            </div>
+            <div
+              aria-label="menuwrapper"
+              class="MenuWrapper"
+              role="button"
+            >
+              <div
+                class="button-dropdown"
+              >
+                <i
+                  class="CompassIcon icon-chevron-down DropdownIcon"
+                />
+              </div>
+              <!---->
+              
+              <!---->
+            </div>
+          </div>
+          <!---->
+          
+          <!---->
         </div>
         <!---->
       </div>
+      <!---->
+      
+      <!---->
     </div>
     <div
       class="Table"
@@ -3514,53 +3639,70 @@ exports[`components/centerPanel > return centerPanel and > press touch esc for o
         </div>
         <!---->
         <div
-          class="ModalWrapper"
+          class="ViewHeader__actions"
         >
           <div
-            aria-label="View header menu"
-            class="MenuWrapper"
-            role="button"
-          >
-            <button
-              class="IconButton"
-              type="button"
-            >
-              <i
-                class="CompassIcon icon-dots-horizontal OptionsIcon"
-              />
-            </button>
-            <!---->
-            
-            <!---->
-          </div>
-        </div>
-        <div
-          class="ButtonWithMenu"
-        >
-          <div
-            class="button-text"
-          >
-            New
-          </div>
-          <div
-            aria-label="menuwrapper"
-            class="MenuWrapper"
-            role="button"
+            class="ModalWrapper"
           >
             <div
-              class="button-dropdown"
+              aria-label="View header menu"
+              class="MenuWrapper"
+              role="button"
             >
-              <i
-                class="CompassIcon icon-chevron-down DropdownIcon"
-              />
+              <button
+                class="IconButton"
+                type="button"
+              >
+                <i
+                  class="CompassIcon icon-dots-horizontal OptionsIcon"
+                />
+              </button>
+              <!---->
+              
+              <!---->
             </div>
-            <!---->
-            
-            <!---->
           </div>
+          <!---->
+          
+          <!---->
+        </div>
+        <div
+          class="ViewHeader__newCard"
+        >
+          <div
+            class="ButtonWithMenu"
+          >
+            <div
+              class="button-text"
+            >
+              New
+            </div>
+            <div
+              aria-label="menuwrapper"
+              class="MenuWrapper"
+              role="button"
+            >
+              <div
+                class="button-dropdown"
+              >
+                <i
+                  class="CompassIcon icon-chevron-down DropdownIcon"
+                />
+              </div>
+              <!---->
+              
+              <!---->
+            </div>
+          </div>
+          <!---->
+          
+          <!---->
         </div>
         <!---->
       </div>
+      <!---->
+      
+      <!---->
     </div>
     <div
       class="Table"
@@ -4245,53 +4387,70 @@ exports[`components/centerPanel > return centerPanel and > press touch esc for o
         </div>
         <!---->
         <div
-          class="ModalWrapper"
+          class="ViewHeader__actions"
         >
           <div
-            aria-label="View header menu"
-            class="MenuWrapper"
-            role="button"
-          >
-            <button
-              class="IconButton"
-              type="button"
-            >
-              <i
-                class="CompassIcon icon-dots-horizontal OptionsIcon"
-              />
-            </button>
-            <!---->
-            
-            <!---->
-          </div>
-        </div>
-        <div
-          class="ButtonWithMenu"
-        >
-          <div
-            class="button-text"
-          >
-            New
-          </div>
-          <div
-            aria-label="menuwrapper"
-            class="MenuWrapper"
-            role="button"
+            class="ModalWrapper"
           >
             <div
-              class="button-dropdown"
+              aria-label="View header menu"
+              class="MenuWrapper"
+              role="button"
             >
-              <i
-                class="CompassIcon icon-chevron-down DropdownIcon"
-              />
+              <button
+                class="IconButton"
+                type="button"
+              >
+                <i
+                  class="CompassIcon icon-dots-horizontal OptionsIcon"
+                />
+              </button>
+              <!---->
+              
+              <!---->
             </div>
-            <!---->
-            
-            <!---->
           </div>
+          <!---->
+          
+          <!---->
+        </div>
+        <div
+          class="ViewHeader__newCard"
+        >
+          <div
+            class="ButtonWithMenu"
+          >
+            <div
+              class="button-text"
+            >
+              New
+            </div>
+            <div
+              aria-label="menuwrapper"
+              class="MenuWrapper"
+              role="button"
+            >
+              <div
+                class="button-dropdown"
+              >
+                <i
+                  class="CompassIcon icon-chevron-down DropdownIcon"
+                />
+              </div>
+              <!---->
+              
+              <!---->
+            </div>
+          </div>
+          <!---->
+          
+          <!---->
         </div>
         <!---->
       </div>
+      <!---->
+      
+      <!---->
     </div>
     <div
       class="Table"
@@ -4976,53 +5135,70 @@ exports[`components/centerPanel > return centerPanel and > press touch esc for t
         </div>
         <!---->
         <div
-          class="ModalWrapper"
+          class="ViewHeader__actions"
         >
           <div
-            aria-label="View header menu"
-            class="MenuWrapper"
-            role="button"
-          >
-            <button
-              class="IconButton"
-              type="button"
-            >
-              <i
-                class="CompassIcon icon-dots-horizontal OptionsIcon"
-              />
-            </button>
-            <!---->
-            
-            <!---->
-          </div>
-        </div>
-        <div
-          class="ButtonWithMenu"
-        >
-          <div
-            class="button-text"
-          >
-            New
-          </div>
-          <div
-            aria-label="menuwrapper"
-            class="MenuWrapper"
-            role="button"
+            class="ModalWrapper"
           >
             <div
-              class="button-dropdown"
+              aria-label="View header menu"
+              class="MenuWrapper"
+              role="button"
             >
-              <i
-                class="CompassIcon icon-chevron-down DropdownIcon"
-              />
+              <button
+                class="IconButton"
+                type="button"
+              >
+                <i
+                  class="CompassIcon icon-dots-horizontal OptionsIcon"
+                />
+              </button>
+              <!---->
+              
+              <!---->
             </div>
-            <!---->
-            
-            <!---->
           </div>
+          <!---->
+          
+          <!---->
+        </div>
+        <div
+          class="ViewHeader__newCard"
+        >
+          <div
+            class="ButtonWithMenu"
+          >
+            <div
+              class="button-text"
+            >
+              New
+            </div>
+            <div
+              aria-label="menuwrapper"
+              class="MenuWrapper"
+              role="button"
+            >
+              <div
+                class="button-dropdown"
+              >
+                <i
+                  class="CompassIcon icon-chevron-down DropdownIcon"
+                />
+              </div>
+              <!---->
+              
+              <!---->
+            </div>
+          </div>
+          <!---->
+          
+          <!---->
         </div>
         <!---->
       </div>
+      <!---->
+      
+      <!---->
     </div>
     <div
       class="Table"
@@ -5707,53 +5883,70 @@ exports[`components/centerPanel > return centerPanel and > press touch esc for t
         </div>
         <!---->
         <div
-          class="ModalWrapper"
+          class="ViewHeader__actions"
         >
           <div
-            aria-label="View header menu"
-            class="MenuWrapper"
-            role="button"
-          >
-            <button
-              class="IconButton"
-              type="button"
-            >
-              <i
-                class="CompassIcon icon-dots-horizontal OptionsIcon"
-              />
-            </button>
-            <!---->
-            
-            <!---->
-          </div>
-        </div>
-        <div
-          class="ButtonWithMenu"
-        >
-          <div
-            class="button-text"
-          >
-            New
-          </div>
-          <div
-            aria-label="menuwrapper"
-            class="MenuWrapper"
-            role="button"
+            class="ModalWrapper"
           >
             <div
-              class="button-dropdown"
+              aria-label="View header menu"
+              class="MenuWrapper"
+              role="button"
             >
-              <i
-                class="CompassIcon icon-chevron-down DropdownIcon"
-              />
+              <button
+                class="IconButton"
+                type="button"
+              >
+                <i
+                  class="CompassIcon icon-dots-horizontal OptionsIcon"
+                />
+              </button>
+              <!---->
+              
+              <!---->
             </div>
-            <!---->
-            
-            <!---->
           </div>
+          <!---->
+          
+          <!---->
+        </div>
+        <div
+          class="ViewHeader__newCard"
+        >
+          <div
+            class="ButtonWithMenu"
+          >
+            <div
+              class="button-text"
+            >
+              New
+            </div>
+            <div
+              aria-label="menuwrapper"
+              class="MenuWrapper"
+              role="button"
+            >
+              <div
+                class="button-dropdown"
+              >
+                <i
+                  class="CompassIcon icon-chevron-down DropdownIcon"
+                />
+              </div>
+              <!---->
+              
+              <!---->
+            </div>
+          </div>
+          <!---->
+          
+          <!---->
         </div>
         <!---->
       </div>
+      <!---->
+      
+      <!---->
     </div>
     <div
       class="Table"
@@ -6438,53 +6631,70 @@ exports[`components/centerPanel > return centerPanel and > press touch esc for t
         </div>
         <!---->
         <div
-          class="ModalWrapper"
+          class="ViewHeader__actions"
         >
           <div
-            aria-label="View header menu"
-            class="MenuWrapper"
-            role="button"
-          >
-            <button
-              class="IconButton"
-              type="button"
-            >
-              <i
-                class="CompassIcon icon-dots-horizontal OptionsIcon"
-              />
-            </button>
-            <!---->
-            
-            <!---->
-          </div>
-        </div>
-        <div
-          class="ButtonWithMenu"
-        >
-          <div
-            class="button-text"
-          >
-            New
-          </div>
-          <div
-            aria-label="menuwrapper"
-            class="MenuWrapper"
-            role="button"
+            class="ModalWrapper"
           >
             <div
-              class="button-dropdown"
+              aria-label="View header menu"
+              class="MenuWrapper"
+              role="button"
             >
-              <i
-                class="CompassIcon icon-chevron-down DropdownIcon"
-              />
+              <button
+                class="IconButton"
+                type="button"
+              >
+                <i
+                  class="CompassIcon icon-dots-horizontal OptionsIcon"
+                />
+              </button>
+              <!---->
+              
+              <!---->
             </div>
-            <!---->
-            
-            <!---->
           </div>
+          <!---->
+          
+          <!---->
+        </div>
+        <div
+          class="ViewHeader__newCard"
+        >
+          <div
+            class="ButtonWithMenu"
+          >
+            <div
+              class="button-text"
+            >
+              New
+            </div>
+            <div
+              aria-label="menuwrapper"
+              class="MenuWrapper"
+              role="button"
+            >
+              <div
+                class="button-dropdown"
+              >
+                <i
+                  class="CompassIcon icon-chevron-down DropdownIcon"
+                />
+              </div>
+              <!---->
+              
+              <!---->
+            </div>
+          </div>
+          <!---->
+          
+          <!---->
         </div>
         <!---->
       </div>
+      <!---->
+      
+      <!---->
     </div>
     <div
       class="Table"
@@ -7169,53 +7379,70 @@ exports[`components/centerPanel > return centerPanel and > select one card and c
         </div>
         <!---->
         <div
-          class="ModalWrapper"
+          class="ViewHeader__actions"
         >
           <div
-            aria-label="View header menu"
-            class="MenuWrapper"
-            role="button"
-          >
-            <button
-              class="IconButton"
-              type="button"
-            >
-              <i
-                class="CompassIcon icon-dots-horizontal OptionsIcon"
-              />
-            </button>
-            <!---->
-            
-            <!---->
-          </div>
-        </div>
-        <div
-          class="ButtonWithMenu"
-        >
-          <div
-            class="button-text"
-          >
-            New
-          </div>
-          <div
-            aria-label="menuwrapper"
-            class="MenuWrapper"
-            role="button"
+            class="ModalWrapper"
           >
             <div
-              class="button-dropdown"
+              aria-label="View header menu"
+              class="MenuWrapper"
+              role="button"
             >
-              <i
-                class="CompassIcon icon-chevron-down DropdownIcon"
-              />
+              <button
+                class="IconButton"
+                type="button"
+              >
+                <i
+                  class="CompassIcon icon-dots-horizontal OptionsIcon"
+                />
+              </button>
+              <!---->
+              
+              <!---->
             </div>
-            <!---->
-            
-            <!---->
           </div>
+          <!---->
+          
+          <!---->
+        </div>
+        <div
+          class="ViewHeader__newCard"
+        >
+          <div
+            class="ButtonWithMenu"
+          >
+            <div
+              class="button-text"
+            >
+              New
+            </div>
+            <div
+              aria-label="menuwrapper"
+              class="MenuWrapper"
+              role="button"
+            >
+              <div
+                class="button-dropdown"
+              >
+                <i
+                  class="CompassIcon icon-chevron-down DropdownIcon"
+                />
+              </div>
+              <!---->
+              
+              <!---->
+            </div>
+          </div>
+          <!---->
+          
+          <!---->
         </div>
         <!---->
       </div>
+      <!---->
+      
+      <!---->
     </div>
     <div
       class="Table"
@@ -7900,53 +8127,70 @@ exports[`components/centerPanel > return centerPanel and > select one card and c
         </div>
         <!---->
         <div
-          class="ModalWrapper"
+          class="ViewHeader__actions"
         >
           <div
-            aria-label="View header menu"
-            class="MenuWrapper"
-            role="button"
-          >
-            <button
-              class="IconButton"
-              type="button"
-            >
-              <i
-                class="CompassIcon icon-dots-horizontal OptionsIcon"
-              />
-            </button>
-            <!---->
-            
-            <!---->
-          </div>
-        </div>
-        <div
-          class="ButtonWithMenu"
-        >
-          <div
-            class="button-text"
-          >
-            New
-          </div>
-          <div
-            aria-label="menuwrapper"
-            class="MenuWrapper"
-            role="button"
+            class="ModalWrapper"
           >
             <div
-              class="button-dropdown"
+              aria-label="View header menu"
+              class="MenuWrapper"
+              role="button"
             >
-              <i
-                class="CompassIcon icon-chevron-down DropdownIcon"
-              />
+              <button
+                class="IconButton"
+                type="button"
+              >
+                <i
+                  class="CompassIcon icon-dots-horizontal OptionsIcon"
+                />
+              </button>
+              <!---->
+              
+              <!---->
             </div>
-            <!---->
-            
-            <!---->
           </div>
+          <!---->
+          
+          <!---->
+        </div>
+        <div
+          class="ViewHeader__newCard"
+        >
+          <div
+            class="ButtonWithMenu"
+          >
+            <div
+              class="button-text"
+            >
+              New
+            </div>
+            <div
+              aria-label="menuwrapper"
+              class="MenuWrapper"
+              role="button"
+            >
+              <div
+                class="button-dropdown"
+              >
+                <i
+                  class="CompassIcon icon-chevron-down DropdownIcon"
+                />
+              </div>
+              <!---->
+              
+              <!---->
+            </div>
+          </div>
+          <!---->
+          
+          <!---->
         </div>
         <!---->
       </div>
+      <!---->
+      
+      <!---->
     </div>
     <div
       class="Table"
@@ -8631,53 +8875,70 @@ exports[`components/centerPanel > should match snapshot for Gallery 1`] = `
         </div>
         <!---->
         <div
-          class="ModalWrapper"
+          class="ViewHeader__actions"
         >
           <div
-            aria-label="View header menu"
-            class="MenuWrapper"
-            role="button"
-          >
-            <button
-              class="IconButton"
-              type="button"
-            >
-              <i
-                class="CompassIcon icon-dots-horizontal OptionsIcon"
-              />
-            </button>
-            <!---->
-            
-            <!---->
-          </div>
-        </div>
-        <div
-          class="ButtonWithMenu"
-        >
-          <div
-            class="button-text"
-          >
-            New
-          </div>
-          <div
-            aria-label="menuwrapper"
-            class="MenuWrapper"
-            role="button"
+            class="ModalWrapper"
           >
             <div
-              class="button-dropdown"
+              aria-label="View header menu"
+              class="MenuWrapper"
+              role="button"
             >
-              <i
-                class="CompassIcon icon-chevron-down DropdownIcon"
-              />
+              <button
+                class="IconButton"
+                type="button"
+              >
+                <i
+                  class="CompassIcon icon-dots-horizontal OptionsIcon"
+                />
+              </button>
+              <!---->
+              
+              <!---->
             </div>
-            <!---->
-            
-            <!---->
           </div>
+          <!---->
+          
+          <!---->
+        </div>
+        <div
+          class="ViewHeader__newCard"
+        >
+          <div
+            class="ButtonWithMenu"
+          >
+            <div
+              class="button-text"
+            >
+              New
+            </div>
+            <div
+              aria-label="menuwrapper"
+              class="MenuWrapper"
+              role="button"
+            >
+              <div
+                class="button-dropdown"
+              >
+                <i
+                  class="CompassIcon icon-chevron-down DropdownIcon"
+                />
+              </div>
+              <!---->
+              
+              <!---->
+            </div>
+          </div>
+          <!---->
+          
+          <!---->
         </div>
         <!---->
       </div>
+      <!---->
+      
+      <!---->
     </div>
     <div
       class="Gallery"
@@ -8939,53 +9200,70 @@ exports[`components/centerPanel > should match snapshot for Kanban 1`] = `
         </div>
         <!---->
         <div
-          class="ModalWrapper"
+          class="ViewHeader__actions"
         >
           <div
-            aria-label="View header menu"
-            class="MenuWrapper"
-            role="button"
-          >
-            <button
-              class="IconButton"
-              type="button"
-            >
-              <i
-                class="CompassIcon icon-dots-horizontal OptionsIcon"
-              />
-            </button>
-            <!---->
-            
-            <!---->
-          </div>
-        </div>
-        <div
-          class="ButtonWithMenu"
-        >
-          <div
-            class="button-text"
-          >
-            New
-          </div>
-          <div
-            aria-label="menuwrapper"
-            class="MenuWrapper"
-            role="button"
+            class="ModalWrapper"
           >
             <div
-              class="button-dropdown"
+              aria-label="View header menu"
+              class="MenuWrapper"
+              role="button"
             >
-              <i
-                class="CompassIcon icon-chevron-down DropdownIcon"
-              />
+              <button
+                class="IconButton"
+                type="button"
+              >
+                <i
+                  class="CompassIcon icon-dots-horizontal OptionsIcon"
+                />
+              </button>
+              <!---->
+              
+              <!---->
             </div>
-            <!---->
-            
-            <!---->
           </div>
+          <!---->
+          
+          <!---->
+        </div>
+        <div
+          class="ViewHeader__newCard"
+        >
+          <div
+            class="ButtonWithMenu"
+          >
+            <div
+              class="button-text"
+            >
+              New
+            </div>
+            <div
+              aria-label="menuwrapper"
+              class="MenuWrapper"
+              role="button"
+            >
+              <div
+                class="button-dropdown"
+              >
+                <i
+                  class="CompassIcon icon-chevron-down DropdownIcon"
+                />
+              </div>
+              <!---->
+              
+              <!---->
+            </div>
+          </div>
+          <!---->
+          
+          <!---->
         </div>
         <!---->
       </div>
+      <!---->
+      
+      <!---->
     </div>
     <div
       class="Kanban"
@@ -9197,6 +9475,8 @@ exports[`components/centerPanel > should match snapshot for Kanban 1`] = `
         <!---->
         
         <!---->
+        
+        <!---->
         <div
           class="octo-board-header-cell narrow"
         >
@@ -9245,7 +9525,25 @@ exports[`components/centerPanel > should match snapshot for Kanban 1`] = `
             style="opacity: 1;"
           >
             
-            <!---->
+            <span
+              aria-label="Drag the card into another app, such as a terminal"
+              class="KanbanCard__dragOut"
+              draggable="true"
+              title="Drag the card into another app, such as a terminal"
+            >
+              <svg
+                class="GripIcon Icon"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M0 0h24v24H0V0z"
+                  fill="none"
+                />
+                <path
+                  d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"
+                />
+              </svg>
+            </span>
             <div
               aria-label="menuwrapper"
               class="MenuWrapper optionsMenu"
@@ -9277,6 +9575,14 @@ exports[`components/centerPanel > should match snapshot for Kanban 1`] = `
                 card1
               </div>
             </div>
+            <!---->
+            
+            <!---->
+            
+            <!---->
+            
+            <!---->
+            
             <!---->
             
             <!---->
@@ -9530,53 +9836,70 @@ exports[`components/centerPanel > should match snapshot for Kanban, not shared 1
         </div>
         <!---->
         <div
-          class="ModalWrapper"
+          class="ViewHeader__actions"
         >
           <div
-            aria-label="View header menu"
-            class="MenuWrapper"
-            role="button"
-          >
-            <button
-              class="IconButton"
-              type="button"
-            >
-              <i
-                class="CompassIcon icon-dots-horizontal OptionsIcon"
-              />
-            </button>
-            <!---->
-            
-            <!---->
-          </div>
-        </div>
-        <div
-          class="ButtonWithMenu"
-        >
-          <div
-            class="button-text"
-          >
-            New
-          </div>
-          <div
-            aria-label="menuwrapper"
-            class="MenuWrapper"
-            role="button"
+            class="ModalWrapper"
           >
             <div
-              class="button-dropdown"
+              aria-label="View header menu"
+              class="MenuWrapper"
+              role="button"
             >
-              <i
-                class="CompassIcon icon-chevron-down DropdownIcon"
-              />
+              <button
+                class="IconButton"
+                type="button"
+              >
+                <i
+                  class="CompassIcon icon-dots-horizontal OptionsIcon"
+                />
+              </button>
+              <!---->
+              
+              <!---->
             </div>
-            <!---->
-            
-            <!---->
           </div>
+          <!---->
+          
+          <!---->
+        </div>
+        <div
+          class="ViewHeader__newCard"
+        >
+          <div
+            class="ButtonWithMenu"
+          >
+            <div
+              class="button-text"
+            >
+              New
+            </div>
+            <div
+              aria-label="menuwrapper"
+              class="MenuWrapper"
+              role="button"
+            >
+              <div
+                class="button-dropdown"
+              >
+                <i
+                  class="CompassIcon icon-chevron-down DropdownIcon"
+                />
+              </div>
+              <!---->
+              
+              <!---->
+            </div>
+          </div>
+          <!---->
+          
+          <!---->
         </div>
         <!---->
       </div>
+      <!---->
+      
+      <!---->
     </div>
     <div
       class="Kanban"
@@ -9788,6 +10111,8 @@ exports[`components/centerPanel > should match snapshot for Kanban, not shared 1
         <!---->
         
         <!---->
+        
+        <!---->
         <div
           class="octo-board-header-cell narrow"
         >
@@ -9836,7 +10161,25 @@ exports[`components/centerPanel > should match snapshot for Kanban, not shared 1
             style="opacity: 1;"
           >
             
-            <!---->
+            <span
+              aria-label="Drag the card into another app, such as a terminal"
+              class="KanbanCard__dragOut"
+              draggable="true"
+              title="Drag the card into another app, such as a terminal"
+            >
+              <svg
+                class="GripIcon Icon"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M0 0h24v24H0V0z"
+                  fill="none"
+                />
+                <path
+                  d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"
+                />
+              </svg>
+            </span>
             <div
               aria-label="menuwrapper"
               class="MenuWrapper optionsMenu"
@@ -9868,6 +10211,14 @@ exports[`components/centerPanel > should match snapshot for Kanban, not shared 1
                 card1
               </div>
             </div>
+            <!---->
+            
+            <!---->
+            
+            <!---->
+            
+            <!---->
+            
             <!---->
             
             <!---->
@@ -10121,53 +10472,70 @@ exports[`components/centerPanel > should match snapshot for Table 1`] = `
         </div>
         <!---->
         <div
-          class="ModalWrapper"
+          class="ViewHeader__actions"
         >
           <div
-            aria-label="View header menu"
-            class="MenuWrapper"
-            role="button"
-          >
-            <button
-              class="IconButton"
-              type="button"
-            >
-              <i
-                class="CompassIcon icon-dots-horizontal OptionsIcon"
-              />
-            </button>
-            <!---->
-            
-            <!---->
-          </div>
-        </div>
-        <div
-          class="ButtonWithMenu"
-        >
-          <div
-            class="button-text"
-          >
-            New
-          </div>
-          <div
-            aria-label="menuwrapper"
-            class="MenuWrapper"
-            role="button"
+            class="ModalWrapper"
           >
             <div
-              class="button-dropdown"
+              aria-label="View header menu"
+              class="MenuWrapper"
+              role="button"
             >
-              <i
-                class="CompassIcon icon-chevron-down DropdownIcon"
-              />
+              <button
+                class="IconButton"
+                type="button"
+              >
+                <i
+                  class="CompassIcon icon-dots-horizontal OptionsIcon"
+                />
+              </button>
+              <!---->
+              
+              <!---->
             </div>
-            <!---->
-            
-            <!---->
           </div>
+          <!---->
+          
+          <!---->
+        </div>
+        <div
+          class="ViewHeader__newCard"
+        >
+          <div
+            class="ButtonWithMenu"
+          >
+            <div
+              class="button-text"
+            >
+              New
+            </div>
+            <div
+              aria-label="menuwrapper"
+              class="MenuWrapper"
+              role="button"
+            >
+              <div
+                class="button-dropdown"
+              >
+                <i
+                  class="CompassIcon icon-chevron-down DropdownIcon"
+                />
+              </div>
+              <!---->
+              
+              <!---->
+            </div>
+          </div>
+          <!---->
+          
+          <!---->
         </div>
         <!---->
       </div>
+      <!---->
+      
+      <!---->
     </div>
     <div
       class="Table"

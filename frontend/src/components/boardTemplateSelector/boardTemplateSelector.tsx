@@ -13,7 +13,6 @@ import {Board} from '../../blocks/board'
 import IconButton from '../../widgets/buttons/iconButton'
 import CloseIcon from '../../widgets/icons/close'
 import Button from '../../widgets/buttons/button'
-import octoClient from '../../octoClient'
 import mutator from '../../mutator'
 import {getTemplates, getCurrentBoardId} from '../../store/boards'
 import {getCurrentTeam, Team} from '../../store/teams'
@@ -21,10 +20,6 @@ import {getGlobalTemplates} from '../../store/globalTemplates'
 import {useAppSelector, useAppStore} from '../../store/hooks'
 
 import './boardTemplateSelector.scss'
-import {OnboardingBoardTitle} from '../cardDetail/cardDetail'
-import {IUser, UserConfigPatch} from '../../user'
-import {getMe} from '../../store/users'
-import {BaseTourSteps, TOUR_BASE} from '../onboardingTour'
 
 import {Utils} from '../../utils'
 
@@ -102,7 +97,6 @@ const BoardTemplateSelector = (props: Props) => {
     const intl = useIntl()
     const navigate = useNavigate()
     const match = useRouteMatch()
-    const me = useAppSelector<IUser|null>(getMe)
 
     useHotkeys('esc', () => props.onClose?.())
 
@@ -177,26 +171,6 @@ const BoardTemplateSelector = (props: Props) => {
         return [...ours, ...mine]
     })
 
-    const resetTour = async () => {
-        const user = me()
-        if (!user) {
-            return
-        }
-
-        const patch: UserConfigPatch = {
-            updatedFields: {
-                onboardingTourStarted: '1',
-                onboardingTourStep: BaseTourSteps.OPEN_A_CARD.toString(),
-                tourCategory: TOUR_BASE,
-            },
-        }
-
-        const patchedProps = await octoClient.patchUserConfig(user.id, patch)
-        if (patchedProps) {
-            actions.users.patchProps(patchedProps)
-        }
-    }
-
     const [activeTemplate, setActiveTemplate] = createSignal<Board>(allTemplates()[0])
 
     // The pencil used to open the template as a board, which shows its cards
@@ -213,9 +187,6 @@ const BoardTemplateSelector = (props: Props) => {
     const handleUseTemplate = async () => {
         const template = activeTemplate()
         await mutator.addBoardFromTemplate(currentTeam()?.id || Constants.globalTeamId, intl, showBoard, () => showBoard(currentBoardId()), template.id, currentTeam()?.id)
-        if (template.title === OnboardingBoardTitle) {
-            resetTour()
-        }
     }
 
     return (

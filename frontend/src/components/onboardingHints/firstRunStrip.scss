@@ -1,0 +1,17 @@
+// A line of plain information over the board, as wide as the header it sits in.
+.FirstRunStrip {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 8px 0 0;
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    background: rgba(var(--button-bg-rgb), 0.08);
+    color: rgb(var(--center-channel-color-rgb));
+    font-size: 14px;
+    line-height: 20px;
+
+    &__text {
+        flex: 1 1 auto;
+    }
+}

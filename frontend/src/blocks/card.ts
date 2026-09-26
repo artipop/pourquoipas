@@ -3,6 +3,11 @@ import {Block, createBlock} from './block'
 type CardFields = {
     icon?: string
     isTemplate?: boolean
+
+    // The card a board made from a template opens with, the one that says how
+    // the board works («Where to start»). A mark rather than a title, because
+    // nothing is found by its name; the onboarding points at it.
+    readFirst?: boolean
     properties: Record<string, string | string[]>
     contentOrder: Array<string | string[]>
 }
@@ -32,6 +37,7 @@ function createCard(block?: Block): Card {
             properties: {...(block?.fields.properties || {})},
             contentOrder,
             isTemplate: block?.fields.isTemplate || false,
+            ...(block?.fields.readFirst ? {readFirst: true} : {}),
         },
     }
 }

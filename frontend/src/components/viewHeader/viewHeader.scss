@@ -111,3 +111,11 @@
         height: 100%;
     }
 }
+
+// Wrappers the tour's dots are placed against; they add nothing to the row.
+.ViewHeader__actions,
+.ViewHeader__newCard {
+    position: relative;
+    display: flex;
+    align-items: center;
+}

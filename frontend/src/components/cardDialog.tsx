@@ -40,6 +40,9 @@ import CardDetail from './cardDetail/cardDetail'
 import Dialog from './dialog'
 
 import CardActionsMenu from './cardActionsMenu/cardActionsMenu'
+import AddCommentTourStep from './onboardingTour/addComments/addComments'
+import HintTip from './onboardingHints/hintTip'
+import {HINT_CHANGES} from './onboardingHints/hints'
 import './cardDialog.scss'
 
 type Props = {
@@ -265,7 +268,7 @@ const CardDialog = (props: Props): JSX.Element => {
         <Show when={teamMode() && Boolean(card()) && !isTemplate()}>
             <Button
                 icon={<CompassIcon icon='message-text-outline'/>}
-                class='cardFollowBtn cardFollowBtn--attach'
+                class='cardFollowBtn cardFollowBtn--attach cardFollowBtn--comments'
                 emphasis='gray'
                 size='medium'
                 active={side() === 'comments'}
@@ -273,6 +276,13 @@ const CardDialog = (props: Props): JSX.Element => {
             >
                 {intl.formatMessage({id: 'CardComments.title', defaultMessage: 'Comments'})}
             </Button>
+
+            {/* On the button, not in the panel: the panel is closed until
+                somebody opens it, and a tip inside it held the tour at a step
+                nobody could see. */}
+            <span class='cardDialog__tourAnchor'>
+                <AddCommentTourStep/>
+            </span>
         </Show>
     )
 
@@ -298,6 +308,16 @@ const CardDialog = (props: Props): JSX.Element => {
             >
                 {intl.formatMessage({id: 'CardDiff.title', defaultMessage: 'Changes'})}
             </Button>
+            <span class='cardDialog__tourAnchor'>
+                <HintTip
+                    id={HINT_CHANGES}
+                    wanted={true}
+                    class='HintTip--button'
+                    placement='bottom-end'
+                    title={intl.formatMessage({id: 'Hint.changes.title', defaultMessage: 'What the agent changed'})}
+                    body={intl.formatMessage({id: 'Hint.changes.body', defaultMessage: 'The changes the agent made in the folder, read from git: what is committed on the card’s branch and what is not committed yet.'})}
+                />
+            </span>
         </Show>
     )
 

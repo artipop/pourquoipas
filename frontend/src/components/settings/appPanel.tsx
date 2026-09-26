@@ -3,7 +3,10 @@ import {For, Show, createSignal} from 'solid-js'
 import {useIntl} from '../../intl'
 
 import {Constants} from '../../constants'
-import {useAppStore} from '../../store/hooks'
+import {useAppSelector, useAppStore} from '../../store/hooks'
+import {getCurrentBoard} from '../../store/boards'
+import {getMe} from '../../store/users'
+import {patchPreferences, startTour} from '../onboardingTour/tourState'
 import CheckIcon from '../../widgets/icons/check'
 import Select, {SelectOption} from '../../widgets/select'
 import Switch from '../../widgets/switch'
@@ -80,9 +83,25 @@ const NEW_THEME = '+new'
 // browser build has no Go side and nothing to switch off.
 const hasAgentSide = (): boolean => Boolean(goApp()?.ListAgents)
 
-const AppPanel = () => {
+const AppPanel = (props: {onClose?: () => void}) => {
     const intl = useIntl()
     const {actions} = useAppStore()
+
+    // The tour again, and every hint with it: the tour on the board that is
+    // open, the hints wherever their moments come. With no board open there is
+    // nowhere for the tour to run.
+    const me = useAppSelector(getMe)
+    const board = useAppSelector(getCurrentBoard)
+    const showTourAgain = async () => {
+        const userId = me()?.id
+        const boardId = board()?.id
+        if (!userId || !boardId) {
+            return
+        }
+        await patchPreferences(userId, {shownHints: '[]'}, actions.users.patchProps)
+        await startTour(userId, boardId, actions.users.patchProps)
+        props.onClose?.()
+    }
 
     // The theme module writes the tokens onto the document element and is not
     // reactive, so what is current is kept here, seeded with what startup
@@ -493,6 +512,28 @@ const AppPanel = () => {
                         >
                             {intl.formatMessage({id: 'Settings.help-open', defaultMessage: 'Open'})}
                         </a>
+                    </div>
+
+                    <div class='AppPanel__action'>
+                        <div class='AppPanel__actionText'>
+                            <span class='AppPanel__actionName'>
+                                {intl.formatMessage({id: 'Settings.tour', defaultMessage: 'The tour'})}
+                            </span>
+                            <span class='AppPanel__actionHint'>
+                                {intl.formatMessage({
+                                    id: 'Settings.tour-hint',
+                                    defaultMessage: 'Shows how the board works again, tip by tip, on the board that is open, and brings back the hints that have been put away.',
+                                })}
+                            </span>
+                        </div>
+                        <button
+                            type='button'
+                            class='AppPanel__actionLink'
+                            disabled={!board()?.id}
+                            onClick={showTourAgain}
+                        >
+                            {intl.formatMessage({id: 'Settings.tour-start', defaultMessage: 'Show'})}
+                        </button>
                     </div>
 
                     {/* The one thing in the old corner that was about the

@@ -1,4 +1,4 @@
-import {Show, createEffect, createSignal, onSettled} from 'solid-js'
+import {Show, createEffect, createSignal} from 'solid-js'
 
 import {FormattedMessage, useIntl} from '../../intl'
 
@@ -19,18 +19,11 @@ import ModalWrapper from '../modalWrapper'
 import {useAppSelector} from '../../store/hooks'
 import {Permission} from '../../constants'
 import {useHasCurrentBoardPermissions} from '../../hooks/permissions'
-import {
-    getOnboardingTourCategory,
-    getOnboardingTourStarted,
-    getOnboardingTourStep,
-} from '../../store/users'
-import {
-    BoardTourSteps,
-    TOUR_BOARD,
-    TourCategoriesMapToSteps,
-} from '../onboardingTour'
-import {OnboardingBoardTitle} from '../cardDetail/cardDetail'
+import {BoardTourSteps, TOUR_BOARD} from '../onboardingTour'
+import {useOnTourBoard, useTourAt} from '../onboardingTour/tourState'
 import AddViewTourStep from '../onboardingTour/addView/add_view'
+import BoardMenuTourStep from '../onboardingTour/boardMenu/board_menu'
+import PlanTaskTourStep from '../onboardingTour/planTask/plan_task'
 import {getCurrentCard} from '../../store/cards'
 import BoardPermissionGate from '../permissions/boardPermissionGate'
 
@@ -75,19 +68,13 @@ const ViewHeader = (props: Props) => {
 
     const hasFilter = () => props.activeView.fields.filter && props.activeView.fields.filter.filters?.length > 0
 
-    const isOnboardingBoard = () => props.board.title === OnboardingBoardTitle
-    const onboardingTourStarted = useAppSelector(getOnboardingTourStarted)
-    const onboardingTourCategory = useAppSelector(getOnboardingTourCategory)
-    const onboardingTourStep = useAppSelector(getOnboardingTourStep)
+    const onTourBoard = useOnTourBoard()
+    const atAddView = useTourAt(TOUR_BOARD, BoardTourSteps.ADD_VIEW)
 
     const currentCard = useAppSelector(getCurrentCard)
     const noCardOpen = () => !currentCard()
 
-    const showTourBaseCondition = () => isOnboardingBoard() &&
-        onboardingTourStarted() &&
-        noCardOpen() &&
-        onboardingTourCategory() === TOUR_BOARD &&
-        onboardingTourStep() === BoardTourSteps.ADD_VIEW.toString()
+    const showTourBaseCondition = () => onTourBoard() && noCardOpen() && atAddView()
 
     const [delayComplete, setDelayComplete] = createSignal(false)
 
@@ -97,14 +84,6 @@ const ViewHeader = (props: Props) => {
         }
         const timeout = setTimeout(() => setDelayComplete(true), 800)
         return () => clearTimeout(timeout)
-    })
-
-    onSettled(() => {
-        if (!BoardTourSteps.SHARE_BOARD) {
-            BoardTourSteps.SHARE_BOARD = 2
-        }
-
-        TourCategoriesMapToSteps[TOUR_BOARD] = BoardTourSteps
     })
 
     const showAddViewTourStep = () => showTourBaseCondition() && delayComplete()
@@ -268,22 +247,28 @@ const ViewHeader = (props: Props) => {
             {/* Options menu */}
 
             <Show when={!props.readonly}>
-                <ViewHeaderActionsMenu
-                    board={props.board}
-                    activeView={props.activeView}
-                    cards={props.cards}
-                />
+                <div class='ViewHeader__actions'>
+                    <ViewHeaderActionsMenu
+                        board={props.board}
+                        activeView={props.activeView}
+                        cards={props.cards}
+                    />
+                    <BoardMenuTourStep/>
+                </div>
 
                 {/* New card button */}
 
                 <BoardPermissionGate permissions={[Permission.ManageBoardCards]}>
-                    <NewCardButton
-                        board={props.board}
-                        addCard={props.addCard}
-                        addCardFromTemplate={props.addCardFromTemplate}
-                        addCardTemplate={props.addCardTemplate}
-                        editCardTemplate={props.editCardTemplate}
-                    />
+                    <div class='ViewHeader__newCard'>
+                        <NewCardButton
+                            board={props.board}
+                            addCard={props.addCard}
+                            addCardFromTemplate={props.addCardFromTemplate}
+                            addCardTemplate={props.addCardTemplate}
+                            editCardTemplate={props.editCardTemplate}
+                        />
+                        <PlanTaskTourStep/>
+                    </div>
                 </BoardPermissionGate>
             </Show>
         </div>

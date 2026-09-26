@@ -7,17 +7,18 @@ import {ClientConfig} from '../../../config/clientConfig'
 import {getClientConfig} from '../../../store/clientConfig'
 
 import {useAppSelector} from '../../../store/hooks'
-import {getCurrentBoard} from '../../../store/boards'
 import {getCurrentCard} from '../../../store/cards'
-import {OnboardingBoardTitle, OnboardingCardTitle} from '../../cardDetail/cardDetail'
-import {getOnboardingTourCategory, getOnboardingTourStarted, getOnboardingTourStep} from '../../../store/users'
 import TourTip from '../../tutorial_tour_tip/tutorial_tour_tip'
 import {TutorialTourTipPunchout} from '../../tutorial_tour_tip/tutorial_tour_tip_backdrop'
+import {tourStepNumber} from '../index'
+import {useOnTourBoard, useTourAt, useTourFlags} from '../tourState'
 
 type Props = {
     requireCard: boolean
     category: string
-    step: number
+
+    // The step's name (index.ts); its number depends on what is switched on.
+    step: string
     screen: JSX.Element
     title: JSX.Element
     punchout: TutorialTourTipPunchout | null | undefined
@@ -31,34 +32,32 @@ type Props = {
 }
 
 const TourTipRenderer = (props: Props): JSX.Element | null => {
-    const board = useAppSelector(getCurrentBoard)
     const clientConfig = useAppSelector<ClientConfig>(getClientConfig)
-
-    const onboardingTourStarted = useAppSelector(getOnboardingTourStarted)
-    const onboardingTourCategory = useAppSelector(getOnboardingTourCategory)
-    const onboardingTourStep = useAppSelector(getOnboardingTourStep)
+    const flags = useTourFlags()
+    const onTourBoard = useOnTourBoard()
+    const at = useTourAt(props.category, props.step)
     const currentCard = useAppSelector((state) => (props.requireCard ? getCurrentCard(state) : null))
 
-    const isOnboardingBoard = () => (props.showForce ? true : Boolean(board() && board()!.title === OnboardingBoardTitle))
     const disableTour = () => clientConfig()?.featureFlags?.disableTour || false
 
+    // A card tip is drawn over whichever card is open on the tour's board: the
+    // base tip points at the board's first card, but nothing asks what it is
+    // called.
     const showTourTip = () => {
-        const showTour = !disableTour() && isOnboardingBoard() && onboardingTourStarted() && onboardingTourCategory() === props.category
-        let show = showTour && onboardingTourStep() === props.step.toString()
+        let show = !disableTour() && (props.showForce || onTourBoard()) && at()
         if (props.requireCard) {
-            show = show && Boolean(currentCard() && currentCard()!.title === OnboardingCardTitle)
+            show = show && Boolean(currentCard())
         }
         return show
     }
 
-    const currentStep = () => parseInt(onboardingTourStep(), 10)
     return (
         <Show when={showTourTip()}>
             <TourTip
                 screen={props.screen}
                 title={props.title}
                 punchOut={props.punchout}
-                step={currentStep()}
+                step={tourStepNumber(props.category, props.step, flags())}
                 tutorialCategory={props.category}
                 placement={props.placement}
                 class={props.classname}

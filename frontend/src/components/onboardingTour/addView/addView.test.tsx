@@ -5,8 +5,11 @@ import {AppStoreProvider} from '../../../store'
 
 import AddViewTourStep from './add_view'
 
-describe('components/onboardingTour/addComments/AddViewTourStep', () => {
-    const state = {
+// The tip about adding a view. The tour runs on the board it was started on, found
+// by id: it used to look for a board called «Welcome to Boards!», which no
+// template was, and nobody ever saw it.
+describe('components/onboardingTour/AddViewTourStep', () => {
+    const stateOn = (tourBoard: string) => ({
         users: {
             me: {
                 id: 'user_id_1',
@@ -14,44 +17,36 @@ describe('components/onboardingTour/addComments/AddViewTourStep', () => {
             myConfig: {
                 onboardingTourStarted: {value: true},
                 tourCategory: {value: 'board'},
-                onboardingTourStep: {value: '0'},
+                onboardingTourStep: {value: '3'},
+                tourBoard: {value: tourBoard},
             },
         },
         boards: {
             boards: {
-                board_id_1: {title: 'Welcome to Boards!'},
+                board_id_1: {id: 'board_id_1', title: 'Any board'},
             },
             current: 'board_id_1',
         },
         clientConfig: {
-            value: {},
+            value: {teamMode: false},
         },
-    }
-    let store = mockAppStore(state)
-
-    beforeEach(() => {
-        store = mockAppStore(state)
     })
 
-    test('before hover', () => {
-        const component = () => wrapIntl(() =>
-            <AppStoreProvider store={store}>
-                <AddViewTourStep/>
-            </AppStoreProvider>,
-        )
-        const {container} = render(component)
-        expect(container).toMatchSnapshot()
+    const renderOn = (tourBoard: string) => render(() => wrapIntl(() =>
+        <AppStoreProvider store={mockAppStore(stateOn(tourBoard))}>
+            <AddViewTourStep/>
+        </AppStoreProvider>,
+    ))
+
+    test('is drawn on the board the tour runs on, whatever it is called', () => {
+        renderOn('board_id_1')
+
+        // The dot and the box.
+        expect(document.querySelectorAll('.AddViewTourStep')).toHaveLength(2)
     })
 
-    test('after hover', () => {
-        const component = () => wrapIntl(() =>
-            <AppStoreProvider store={store}>
-                <AddViewTourStep/>
-            </AppStoreProvider>,
-        )
-        render(component)
-        const elements = document.querySelectorAll('.AddViewTourStep')
-        expect(elements.length).toBe(2)
-        expect(elements[1]).toMatchSnapshot()
+    test('is not drawn on any other board', () => {
+        renderOn('another_board')
+        expect(document.querySelectorAll('.AddViewTourStep')).toHaveLength(0)
     })
 })

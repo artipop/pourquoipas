@@ -463,4 +463,66 @@ describe('components/acp/boardSetupWizard', () => {
         await waitFor(() => expect(screen.getByRole('button', {name: 'Done'})).toBeInTheDocument())
         expect(screen.queryByRole('button', {name: 'I’ll find my way around'})).toBeNull()
     })
+
+    // The last page is where the product is shown rather than described: one
+    // sentence becomes a card an agent starts on (docs/onboarding.md).
+    describe('the last page', () => {
+        const renderLast = (props: Partial<Parameters<typeof BoardSetupWizard>[0]> = {}) => {
+            const onClose = vi.fn()
+            render(() => wrapIntl(() =>
+                <BoardSetupWizard
+                    board={testBoard}
+                    onClose={onClose}
+                    {...props}
+                />,
+            ))
+            return onClose
+        }
+
+        test('offers a first task for the agent just registered, and hands it over', async () => {
+            stubBindings({
+                BoardSetupPlan: vi.fn().mockResolvedValue(plan(['done'])),
+                ListAgents: vi.fn().mockResolvedValue(JSON.stringify([{name: 'Claude', kind: 'claude'}])),
+            })
+            const start = vi.fn().mockResolvedValue(undefined)
+            const onClose = renderLast({firstTask: {column: 'In progress', start}})
+
+            const field = await screen.findByLabelText('Your first task, in one sentence')
+            expect(screen.getByText(/moves it into “In progress”/)).toBeInTheDocument()
+            fireEvent.input(field, {target: {value: '  Fix the build  '}})
+            userEvent.click(screen.getByRole('button', {name: 'Set the first task'}))
+
+            await waitFor(() => expect(start).toHaveBeenCalledWith('Fix the build', 'Claude'))
+            await waitFor(() => expect(onClose).toHaveBeenCalled())
+        })
+
+        // An offer that fails because nothing is installed is worse than none:
+        // the page points at the board's own explanation instead.
+        test('without an agent offers no first task, and opens the first card of the board', async () => {
+            stubBindings({BoardSetupPlan: vi.fn().mockResolvedValue(plan(['done']))})
+            const open = vi.fn()
+            const onClose = renderLast({
+                firstTask: {column: 'In progress', start: vi.fn()},
+                readFirst: {title: 'Where to start', open},
+            })
+
+            const button = await screen.findByRole('button', {name: 'Open “Where to start”'})
+            expect(screen.queryByLabelText('Your first task, in one sentence')).toBeNull()
+            userEvent.click(button)
+
+            await waitFor(() => expect(open).toHaveBeenCalled())
+            expect(onClose).toHaveBeenCalled()
+        })
+
+        test('starts the tour on this board', async () => {
+            stubBindings({BoardSetupPlan: vi.fn().mockResolvedValue(plan(['done']))})
+            const onShowTour = vi.fn()
+            const onClose = renderLast({onShowTour})
+
+            userEvent.click(await screen.findByRole('button', {name: 'Show how the board works'}))
+
+            await waitFor(() => expect(onShowTour).toHaveBeenCalled())
+            expect(onClose).toHaveBeenCalled()
+        })
+    })
 })

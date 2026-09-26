@@ -15,7 +15,12 @@ import {
     THEME_FAMILIES,
 } from '../../theme'
 
+import octoClient from '../../octoClient'
+
 import AppPanel from './appPanel'
+
+vi.mock('../../octoClient')
+const mockedOctoClient = vi.mocked(octoClient)
 
 describe('components/settings/appPanel', () => {
     let store = mockAppStore({})
@@ -320,5 +325,40 @@ describe('components/settings/appPanel', () => {
         open()
 
         expect(screen.getByText(`Bugs and requests go by email, to ${Constants.feedbackEmail}.`)).toBeInTheDocument()
+    })
+
+    // The tour again, and the hints with it, on the board that is open: the
+    // row exists now that there is a tour to replay and a set of hints to
+    // clear, rather than a button that navigated to a route that was gone.
+    test('shows the tour again on the open board, with every hint back', async () => {
+        mockedOctoClient.patchUserConfig.mockResolvedValue([])
+        store = mockAppStore({
+            users: {me: {id: 'user_id_1'}, myConfig: {}},
+            boards: {boards: {board_1: {id: 'board_1', title: 'Any board'}}, current: 'board_1'},
+        })
+        const onClose = vi.fn()
+        render(() => wrapIntl(() =>
+            <AppStoreProvider store={store}>
+                <TestRouter>
+                    <AppPanel onClose={onClose}/>
+                </TestRouter>
+            </AppStoreProvider>,
+        ))
+
+        userEvent.click(screen.getByRole('button', {name: 'Show'}))
+
+        await waitFor(() => expect(onClose).toHaveBeenCalled())
+        expect(mockedOctoClient.patchUserConfig).toHaveBeenCalledWith('user_id_1', {updatedFields: {shownHints: '[]'}})
+        expect(mockedOctoClient.patchUserConfig).toHaveBeenCalledWith('user_id_1', {updatedFields: {
+            onboardingTourStarted: '1',
+            tourCategory: 'onboarding',
+            onboardingTourStep: '0',
+            tourBoard: 'board_1',
+        }})
+    })
+
+    test('has no tour to show with no board open', () => {
+        open()
+        expect(screen.getByRole('button', {name: 'Show'})).toBeDisabled()
     })
 })

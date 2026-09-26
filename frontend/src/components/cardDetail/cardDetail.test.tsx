@@ -174,12 +174,16 @@ describe('components/cardDetail/CardDetail', () => {
         await waitFor(() => expect(AnswerQuestion).toHaveBeenCalledWith('question-1', 'allow', ''))
     })
 
-    test('should show add properties tour tip', async () => {
+    // The card's first tip is about the field that decides whether an agent
+    // works the card, on the board the tour runs on — found by its id, whatever
+    // it and the card are called.
+    test('should show the assignee tour tip', async () => {
         const welcomeBoard = TestBlockFactory.createBoard()
-        welcomeBoard.title = 'Welcome to Boards!'
+        welcomeBoard.title = 'Any board'
+        welcomeBoard.cardProperties = [...welcomeBoard.cardProperties, {id: 'who', name: 'Who is on it', type: 'person', options: []}]
 
         const welcomeCard = TestBlockFactory.createCard(welcomeBoard)
-        welcomeCard.title = 'Create a new card'
+        welcomeCard.title = 'Any card'
 
         const store = mockAppStore({
             users: {
@@ -191,6 +195,7 @@ describe('components/cardDetail/CardDetail', () => {
                     onboardingTourStarted: {value: true},
                     tourCategory: {value: 'card'},
                     onboardingTourStep: {value: '0'},
+                    tourBoard: {value: welcomeBoard.id},
                 },
                 boardUsers: {
                     'user-id-1': {username: 'username_1'},
@@ -246,9 +251,9 @@ describe('components/cardDetail/CardDetail', () => {
 
         expect(container).toBeDefined()
         expect(container).not.toBeNull()
-        const tourTip = document.querySelectorAll('.AddPropertiesTourStep')
+        const tourTip = document.querySelectorAll('.AssignAgentTourStep')
         expect(tourTip.length).toBe(2)
-        expect(tourTip[1]).toMatchSnapshot()
+        expect(tourTip[1]).toHaveTextContent('Who works on the card')
 
         // moving to next step
         mockedOctoClient.patchUserConfig.mockResolvedValueOnce([])
@@ -269,10 +274,10 @@ describe('components/cardDetail/CardDetail', () => {
 
     test('should show add description tour tip', async () => {
         const welcomeBoard = TestBlockFactory.createBoard()
-        welcomeBoard.title = 'Welcome to Boards!'
+        welcomeBoard.title = 'Any board'
 
         const welcomeCard = TestBlockFactory.createCard(welcomeBoard)
-        welcomeCard.title = 'Create a new card'
+        welcomeCard.title = 'Any card'
         const state = {
             users: {
                 me: {
@@ -283,6 +288,7 @@ describe('components/cardDetail/CardDetail', () => {
                     onboardingTourStarted: {value: true},
                     tourCategory: {value: 'card'},
                     onboardingTourStep: {value: '2'},
+                    tourBoard: {value: welcomeBoard.id},
                 },
                 boardUsers: {
                     'user-id-1': {username: 'username_1'},
@@ -347,9 +353,11 @@ describe('components/cardDetail/CardDetail', () => {
 
         const tourTip = document.querySelectorAll('.AddDescriptionTourStep')
         expect(tourTip.length).toBe(2)
-        expect(tourTip[1]).toMatchSnapshot()
+        expect(tourTip[1]).toHaveTextContent('Description')
 
-        // moving to next step
+        // On a desktop of one there are no comments, so the description is
+        // the card's last tip and «Done» finishes the card's part.
+
         mockedOctoClient.patchUserConfig.mockResolvedValueOnce([])
 
         const nextBtn = document!.querySelector('.tipNextButton')

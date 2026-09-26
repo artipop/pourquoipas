@@ -19,7 +19,9 @@ import ConfirmationDialogBox, {ConfirmationDialogBoxProps} from '../confirmation
 import {sendFlashMessage} from '../flashMessages'
 import Menu from '../../widgets/menu'
 import {IDType, Utils} from '../../utils'
-import AddPropertiesTourStep from '../onboardingTour/addProperties/add_properties'
+import AssignAgentTourStep from '../onboardingTour/assignAgent/assign_agent'
+import PickFolderTourStep from '../onboardingTour/pickFolder/pick_folder'
+import {useStartCardTour} from '../onboardingTour/tourState'
 import {Permission} from '../../constants'
 import {useHasCurrentBoardPermissions} from '../../hooks/permissions'
 import propRegistry from '../../properties'
@@ -29,6 +31,7 @@ import {boardBranchProperty} from '../acp/automation'
 import {cardAgentState} from '../acp/cardAgentState'
 import {findWorkdirProperty} from '../acp/workdirSync'
 import {withoutAgentProperties} from '../acp/agentProperties'
+import {personProperty} from '../acp/attentionAudience'
 
 type Props = {
     board: Board
@@ -44,6 +47,13 @@ const CardDetailProperties = (props: Props) => {
     const canEditBoardProperties = useHasCurrentBoardPermissions([Permission.ManageBoardProperties])
     const canEditBoardCards = useHasCurrentBoardPermissions([Permission.ManageBoardCards])
     const intl = useIntl()
+
+    // An open card is what moves the tour from the board to the card.
+    useStartCardTour()
+
+    // The two rows the card's part of the tour points at: who works the card,
+    // found by type as everywhere else, and the board's folder field.
+    const isAssigneeProperty = (t: IPropertyTemplate) => t.id === personProperty(props.board)?.id
 
     // The branch field is the machine's record — where the card's work lives —
     // and the card knows *what kind* of place that is. The board records which
@@ -185,7 +195,10 @@ const CardDetailProperties = (props: Props) => {
                 {(propertyTemplate: IPropertyTemplate) => (
                     <>
                         <div
-                            class='octo-propertyrow'
+                            class={['octo-propertyrow', {
+                                'octo-propertyrow--assignee': isAssigneeProperty(propertyTemplate),
+                                'octo-propertyrow--folder': isWorkdirProperty(propertyTemplate),
+                            }]}
                         >
                             <Show
                                 when={!props.readonly && canEditBoardProperties() && !isBranchProperty(propertyTemplate)}
@@ -219,6 +232,12 @@ const CardDetailProperties = (props: Props) => {
                                 propertyTemplate={propertyTemplate}
                                 showEmptyPlaceholder={true}
                             />
+                            <Show when={isAssigneeProperty(propertyTemplate)}>
+                                <AssignAgentTourStep/>
+                            </Show>
+                            <Show when={isWorkdirProperty(propertyTemplate)}>
+                                <PickFolderTourStep/>
+                            </Show>
                         </div>
 
                         {/* Under the row rather than beside the value: the row is
@@ -285,7 +304,6 @@ const CardDetailProperties = (props: Props) => {
                         </Button>
                     </MenuWrapper>
 
-                    <AddPropertiesTourStep/>
                 </div>
             </Show>
         </div>

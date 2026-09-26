@@ -5,8 +5,6 @@ import {FormattedMessage} from '../../../intl'
 import {useMeasurePunchouts} from '../../tutorial_tour_tip/hooks'
 
 import './add_comments.scss'
-import {Utils} from '../../../utils'
-import addComment from '../../../assets/comment.gif'
 
 import {CardTourSteps, TOUR_CARD} from '../index'
 import TourTipRenderer from '../tourTipRenderer/tourTipRenderer'
@@ -21,11 +19,11 @@ const AddCommentTourStep = (): JSX.Element | null => {
     const screen = (
         <FormattedMessage
             id='OnboardingTour.AddComments.Body'
-            defaultMessage='The comments hold everything that has happened to the card. The agent working it writes here too: what it did and what it is asking.'
+            defaultMessage='Comments are where people talk about the card. When the agent finishes, it writes here what it did.'
         />
     )
 
-    const punchout = useMeasurePunchouts(['.CommentsList__new'])
+    const punchout = useMeasurePunchouts(['.cardFollowBtn--comments'])
 
     return (
         <TourTipRenderer
@@ -36,8 +34,7 @@ const AddCommentTourStep = (): JSX.Element | null => {
             title={title}
             punchout={punchout()}
             classname='AddCommentTourStep'
-            placement={'right-end'}
-            imageURL={Utils.buildURL(addComment, true)}
+            placement={'bottom-end'}
             hideBackdrop={true}
         />
     )

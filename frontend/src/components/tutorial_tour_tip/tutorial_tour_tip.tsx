@@ -71,7 +71,7 @@ type TourTipBoxProps = {
 //
 // The translation goes on the positioner and the entrance animation on the box
 // inside it, so the two never fight over `transform`.
-const TourTipBox = (props: TourTipBoxProps): JSX.Element => {
+export const TourTipBox = (props: TourTipBoxProps): JSX.Element => {
     const [positioner, setPositioner] = createSignal<HTMLDivElement | null>(null)
     const [arrowElement, setArrowElement] = createSignal<HTMLDivElement | null>(null)
     const [position, setPosition] = createSignal<TipPosition | null>(null)
@@ -227,7 +227,7 @@ const TutorialTourTip = (props: Props): JSX.Element => {
         )
     }
 
-    const dotIndexes = () => (!props.singleTip && tourSteps ? Object.values(tourSteps).map((_, i) => i) : [])
+    const dotIndexes = () => (props.singleTip ? [] : Object.values(tourSteps()).map((_, i) => i))
 
     const content = (
         <div

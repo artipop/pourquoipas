@@ -1,20 +1,10 @@
-import {onSettled} from 'solid-js'
 import type {JSX} from '@solidjs/web'
 
 import {FormattedMessage} from '../../../intl'
 
 import {useMeasurePunchouts} from '../../tutorial_tour_tip/hooks'
 import TourTipRenderer from '../tourTipRenderer/tourTipRenderer'
-import {TOUR_BOARD, TOUR_SIDEBAR, SidebarTourSteps, FINISHED} from '../index'
-import {useAppSelector, useAppStore} from '../../../store/hooks'
-import {
-    getMe,
-    getOnboardingTourCategory,
-    getOnboardingTourStep,
-} from '../../../store/users'
-import {IUser, UserConfigPatch} from '../../../user'
-import mutator from '../../../mutator'
-import {Constants} from '../../../constants'
+import {TOUR_SIDEBAR, SidebarTourSteps} from '../index'
 
 import './sidebarCategories.scss'
 
@@ -38,40 +28,6 @@ const SidebarCategoriesTourStep = (): JSX.Element => {
     )
 
     const punchout = useMeasurePunchouts(['.SidebarCategory'])
-
-    const me = useAppSelector<IUser|null>(getMe)
-    const {actions} = useAppStore()
-    const onboardingTourCategory = useAppSelector(getOnboardingTourCategory)
-    const onboardingTourStep = useAppSelector(getOnboardingTourStep)
-
-    onSettled(() => {
-        async function task() {
-            const user = me()
-            if (!user) {
-                return
-            }
-
-            const should = onboardingTourCategory() === TOUR_BOARD &&
-                           onboardingTourStep() === FINISHED.toString()
-
-            if (!should) {
-                return
-            }
-
-            const patch: UserConfigPatch = {}
-            patch.updatedFields = {}
-            patch.updatedFields.tourCategory = TOUR_SIDEBAR
-            patch.updatedFields.onboardingTourStep = SidebarTourSteps.SIDE_BAR.toString()
-            patch.updatedFields.lastWelcomeVersion = Constants.versionString
-
-            const updatedProps = await mutator.patchUserConfig(user.id, patch)
-            if (updatedProps) {
-                actions.users.patchProps(updatedProps)
-            }
-        }
-
-        task()
-    })
 
     return (
         <TourTipRenderer

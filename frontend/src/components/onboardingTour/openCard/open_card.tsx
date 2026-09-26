@@ -4,10 +4,9 @@ import {FormattedMessage} from '../../../intl'
 
 import {useMeasurePunchouts} from '../../tutorial_tour_tip/hooks'
 
-import {BaseTourSteps, TOUR_BASE} from '../index'
+import {BaseTourSteps, OnboardingCardClassName, TOUR_BASE} from '../index'
 
 import './open_card.scss'
-import {OnboardingCardClassName} from '../../kanban/kanbanCard'
 import TourTipRenderer from '../tourTipRenderer/tourTipRenderer'
 
 const OpenCardTourStep = (): JSX.Element | null => {

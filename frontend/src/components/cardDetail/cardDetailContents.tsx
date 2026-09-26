@@ -163,6 +163,7 @@ const CardDetailContents = (props: Props) => {
             when={props.contents.length}
             fallback={
                 <div class='octo-content CardDetailContents'>
+                    <AddDescriptionTourStep/>
                     <div class='octo-block'>
                         <div class='octo-block-margin'/>
                         <Show when={!props.readonly}>
@@ -182,6 +183,9 @@ const CardDetailContents = (props: Props) => {
             }
         >
             <div class='octo-content'>
+                {/* Once per card, over the content whatever it holds: a card
+                    with no description yet is where the tour is most needed. */}
+                <AddDescriptionTourStep/>
                 <For each={props.contents}>
                     {(block, x) => (
                         <>
@@ -193,9 +197,6 @@ const CardDetailContents = (props: Props) => {
                                 intl={intl}
                                 readonly={props.readonly}
                             />
-                            <Show when={x() === 0}>
-                                <AddDescriptionTourStep/>
-                            </Show>
                         </>
                     )}
                 </For>

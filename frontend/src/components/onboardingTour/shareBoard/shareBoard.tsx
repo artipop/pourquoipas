@@ -5,8 +5,6 @@ import {FormattedMessage} from '../../../intl'
 import {useMeasurePunchouts} from '../../tutorial_tour_tip/hooks'
 
 import './shareBoard.scss'
-import {Utils} from '../../../utils'
-import shareBoard from '../../../assets/share.gif'
 
 import {BoardTourSteps, TOUR_BOARD} from '../index'
 import TourTipRenderer from '../tourTipRenderer/tourTipRenderer'
@@ -27,10 +25,6 @@ const ShareBoardTourStep = (): JSX.Element | null => {
 
     const punchout = useMeasurePunchouts(['.ShareBoardButton > button'])
 
-    if (!BoardTourSteps.SHARE_BOARD) {
-        return null
-    }
-
     return (
         <TourTipRenderer
             requireCard={false}
@@ -41,7 +35,6 @@ const ShareBoardTourStep = (): JSX.Element | null => {
             punchout={punchout()}
             classname='ShareBoardTourStep'
             placement={'bottom-end'}
-            imageURL={Utils.buildURL(shareBoard, true)}
             hideBackdrop={true}
         />
     )

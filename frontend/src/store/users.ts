@@ -133,3 +133,26 @@ export const getOnboardingTourCategory = (state: RootState): string => {
     return myConfig.tourCategory ? myConfig.tourCategory.value : ''
 }
 
+// The board the tour runs on, by id. Written when the tour starts, so the tour
+// is on whatever board somebody was shown it from, whatever that board is
+// called.
+export const getTourBoard = (state: RootState): string => {
+    const myConfig = getMyConfig(state)
+    return myConfig.tourBoard ? String(myConfig.tourBoard.value || '') : ''
+}
+
+// The hints already shown, as a set of ids. A set rather than a counter: hints
+// arrive at moments of their own, in no order, and one can be added, removed
+// or shown again without touching the others (docs/onboarding.md).
+export const getShownHints = (state: RootState): string[] => {
+    const raw = getMyConfig(state).shownHints?.value
+    if (typeof raw !== 'string' || !raw) {
+        return []
+    }
+    try {
+        const parsed = JSON.parse(raw)
+        return Array.isArray(parsed) ? parsed.filter((id) => typeof id === 'string') : []
+    } catch {
+        return []
+    }
+}

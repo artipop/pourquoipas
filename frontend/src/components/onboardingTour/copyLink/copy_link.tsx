@@ -5,11 +5,8 @@ import {FormattedMessage} from '../../../intl'
 import {useMeasurePunchouts} from '../../tutorial_tour_tip/hooks'
 
 import './copy_link.scss'
-import {Utils} from '../../../utils'
-import copyLink from '../../../assets/copyLink.gif'
 
-import {BoardTourSteps, TOUR_BOARD} from '../index'
-import {OnboardingCardClassName} from '../../kanban/kanbanCard'
+import {BoardTourSteps, OnboardingCardClassName, TOUR_BOARD} from '../index'
 import TourTipRenderer from '../tourTipRenderer/tourTipRenderer'
 
 const CopyLinkTourStep = (): JSX.Element | null => {
@@ -38,7 +35,6 @@ const CopyLinkTourStep = (): JSX.Element | null => {
             punchout={punchout()}
             classname='CopyLinkTourStep'
             placement={'right-start'}
-            imageURL={Utils.buildURL(copyLink, true)}
             hideBackdrop={true}
         />
     )

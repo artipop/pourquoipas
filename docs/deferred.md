@@ -6,7 +6,7 @@
 
 Открытые вопросы, у которых есть исполнитель, живут не здесь: в
 [todo.md](todo.md) и в своих планах — [card-deps.md](card-deps.md),
-[onboarding-plan.md](onboarding-plan.md), [cloud-runners.md](cloud-runners.md),
+[onboarding.md](onboarding.md), [cloud-runners.md](cloud-runners.md),
 [build-speed-plan.md](build-speed-plan.md), [sql-dialects.md](sql-dialects.md).
 
 ## Свойства в шаблонах, и шаблоны карточек поверх них
@@ -156,13 +156,10 @@ DERP-релеи остаются на месте — клиент тот же с
 
 ## Картинки апстрима
 
-В `frontend/src/assets/` лежат гифки и картинка тура (`addProperty.gif`,
-`changeViews.gif`, `comment.gif`, `copyLink.gif`, `share.gif`,
-`addDescription.png`) — скриншоты Mattermost Boards, оставшиеся от апстрима:
-вкладки Channels и Playbooks, синяя шапка. Слова «Focalboard» на них нет,
-поэтому переименование их не тронуло. Уйти они должны вместе с туром, который
-разбирает [onboarding-plan.md](onboarding-plan.md), — отдельно удалять нет
-смысла.
+Гифки и картинка тура (`addProperty.gif`, `changeViews.gif`, `comment.gif`,
+`copyLink.gif`, `share.gif`, `addDescription.png`) были скриншотами Mattermost
+Boards и удалены, когда тур переделали ([onboarding.md](onboarding.md)):
+подсказки тура идут без картинок, пока их не снимут с этого приложения.
 
 Остальные картинки апстрима (`boards-welcome*.png`, `boards-screenshots.png`,
 `app-bar-icon.png`, `upgrade.png`, `onboardingBg.jpg` и 3,7 МБ
