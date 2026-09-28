@@ -516,16 +516,25 @@ func TestRapidMovesStartOneSession(t *testing.T) {
 	}
 }
 
+// staleFolderMove is a move of a card whose folder field names a folder the
+// registry no longer has — removed since the card was given it.
+func staleFolderMove(m *Manager, cardID, from, to string) CardMoved {
+	m.SetBoardMeta(&fakeBoardMeta{props: map[string]any{BoardPropProject: "prop-folder"}})
+	ev := moveEvent(cardID, from, to)
+	ev.OptionNames = nil
+	ev.SelectedOptions = []Column{{PropertyID: "prop-folder", OptionID: "wd-removed", Name: "такой папки нет"}}
+	return ev
+}
+
 // A card that names a folder the registry has not got stops, and says so where
 // a person will see it. It used to be able to name a path outright, and the
 // failure then was the path being wrong; now the only way to be wrong is to
-// name a folder nobody registered.
+// name a folder nobody registered. A card that names none is not wrong at all:
+// it is worked in its drafts (TestACardWithNoFolderIsWorkedInItsOwnDrafts).
 func TestAFolderTheRegistryHasNotGotStallsTheCard(t *testing.T) {
 	m, writer, events, _ := testManager(t, fakeClaudeHappy, nil)
 
-	ev := moveEvent("card3", "opt-backlog", "opt-agent")
-	ev.OptionNames = []string{"такой папки нет"}
-	events.ch <- ev
+	events.ch <- staleFolderMove(m, "card3", "opt-backlog", "opt-agent")
 
 	// the "agent did not start" comment was the comment this whole design grew out of: a
 	// resolution failure is state, and the card shows it while it is true.
@@ -551,17 +560,17 @@ func TestAFolderTheRegistryHasNotGotStallsTheCard(t *testing.T) {
 func TestStallClearsWhenTheSessionStarts(t *testing.T) {
 	m, _, events, _ := testManager(t, fakeClaudeHappy, nil)
 
-	stalling := moveEvent("cardStall", "opt-backlog", "opt-agent")
-	stalling.OptionNames = []string{"такой папки нет"}
-	events.ch <- stalling
+	events.ch <- staleFolderMove(m, "cardStall", "opt-backlog", "opt-agent")
 	waitFor(t, 5*time.Second, "the stall record appears", func() bool {
 		_, ok, _ := m.store.Stall("cardStall")
 		return ok
 	})
 
-	// The registry got fixed; the card is dragged in again, from elsewhere so
-	// idempotency does not swallow the move.
-	events.ch <- moveEvent("cardStall", "opt-review", "opt-agent")
+	// The stale folder is taken off the card; it is dragged in again, from
+	// elsewhere so idempotency does not swallow the move.
+	fixed := moveEvent("cardStall", "opt-review", "opt-agent")
+	fixed.OptionNames = nil
+	events.ch <- fixed
 	waitFor(t, 15*time.Second, "the session starts and the stall clears", func() bool {
 		sessions, _, err := m.store.SessionsForCard("cardStall")
 		if err != nil || len(sessions) == 0 {

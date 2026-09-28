@@ -56,23 +56,19 @@ wizard that asks anyway reads as a broken feature. So the template names the
 steps — from the closed set the app implements, because a template that could
 invent a question would be a program:
 
-- **Папка, в которой работать** — the project an agent writes in;
 - **Агент, который берёт карточки**;
 - **Куда деплоить** — only for a template that asks for it;
 - **Как этим пользоваться** — asks nothing; it is the last page.
 
 Each step takes a line of the template's own beside the usual explanation
-(«Папка с заметками по дому, подойдёт любая»), and an optional step can be marked
-as one that cannot be skipped.
+(«Агент, который составляет списки»), and an optional step can be marked as one
+that cannot be skipped.
 
-A template that names nothing gets the four steps every board has — name,
-folder, agent, done — which is the sensible default and what the shipped
-templates other than «Разработка» rely on. *«Назвать шаги»* takes over from that
+A template that names nothing gets the three steps every board has — name,
+agent, done — which is the sensible default. The folder is not a step: a card
+picks or adds it in its «Папка» field, and a template declaring the old
+`project` step has it dropped. *«Назвать шаги»* takes over from that
 default; *«Снова выводить из автоматизации»* hands it back.
-
-Whether a folder has to be a git repository is asked for by the step itself
-(`requires: ["git"]`), and the wizard refuses a folder without it where the
-question is asked.
 
 ## What the wizard asks first
 

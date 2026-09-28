@@ -15,7 +15,7 @@ import {aiEnabled} from '../../aiSwitch'
 // renders it; it works nothing out for itself, because a second opinion here
 // would be a second answer to drift from the first.
 
-export type SetupStepKind = 'name' | 'project' | 'agent' | 'deploy' | 'browser' | 'done'
+export type SetupStepKind = 'name' | 'agent' | 'deploy' | 'browser' | 'done'
 export type SetupStepStatus = 'pending' | 'done' | 'skipped'
 
 export type SetupStep = {
@@ -24,15 +24,10 @@ export type SetupStep = {
     hint?: string
     status: SetupStepStatus
 
-    // The machine can already answer this step — there is a folder, an agent.
+    // The machine can already answer this step — there is an agent.
     // Not the same as this board having answered it: the registries are the
     // machine's, and every board is asked for itself.
     ready?: boolean
-
-    // What an answer has to satisfy — 'git' so far, asked for only by a board
-    // that publishes a branch or waits for one. Go enforces it in
-    // checkSetupAnswer; the page carries it to say so before it is answered.
-    requires?: string[]
 }
 
 export type SetupPlan = {
@@ -104,20 +99,6 @@ export async function recordSetupStep(boardId: string, step: SetupStepKind, stat
         return
     }
     await bindings.RecordBoardSetupStep(boardId, step, status)
-}
-
-// checkSetupAnswer asks Go whether an answer fits the step, and throws what it
-// says when it does not — the same wording the card would have got later.
-export async function checkSetupAnswer(boardId: string, step: SetupStepKind, value: string): Promise<void> {
-    const bindings = goApp()
-    if (!bindings?.CheckBoardSetupAnswer || !boardId) {
-        return
-    }
-    await bindings.CheckBoardSetupAnswer(boardId, step, value)
-}
-
-export function stepRequires(step: SetupStep | undefined, requirement: string): boolean {
-    return Boolean(step?.requires?.includes(requirement))
 }
 
 export function planHasStep(plan: SetupPlan | undefined, kind: SetupStepKind): boolean {

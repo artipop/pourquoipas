@@ -254,8 +254,6 @@ const TemplateEditor = (props: Props) => {
 // stepTitle names a setup step the way the wizard asks it.
 export function stepTitle(intl: IntlShape, kind: string): string {
     switch (kind) {
-    case 'project':
-        return intl.formatMessage({id: 'TemplateEditor.step-project', defaultMessage: 'A folder to work in'})
     case 'agent':
         return intl.formatMessage({id: 'TemplateEditor.step-agent', defaultMessage: 'An agent to pick cards up'})
     case 'deploy':

@@ -106,6 +106,8 @@ exports[`components/cardDetail/CardDetailProperties > cancel on delete dialog sh
     <!---->
     
     <!---->
+    
+    <!---->
     <div
       class="octo-propertyname add-property"
     >
@@ -243,6 +245,8 @@ exports[`components/cardDetail/CardDetailProperties > should match snapshot 1`] 
     <!---->
     
     <!---->
+    
+    <!---->
     <div
       class="octo-propertyname add-property"
     >
@@ -377,6 +381,8 @@ exports[`components/cardDetail/CardDetailProperties > should show property types
       
       <!---->
     </div>
+    <!---->
+    
     <!---->
     
     <!---->

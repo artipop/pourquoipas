@@ -5,8 +5,9 @@ setup, the first task, the tour of the board and the hints.
 
 ## The last step of the setup
 
-A new board opens with the setup wizard: name, folder, agent. Its last step,
-**"Ready"**, has three actions.
+A new board opens with the setup wizard: name and agent. The wizard does not ask
+for a folder — it is chosen on the card, in its «Folder» field (see [Folders and
+branches](./folders.md)). Its last step, **"Ready"**, has three actions.
 
 - **"Set the first task"**. Write what needs doing in the **"Your first task, in
   one sentence"** field and press the button. The app makes a card in the first

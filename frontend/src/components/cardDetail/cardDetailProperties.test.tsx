@@ -1,4 +1,4 @@
-import {render, screen} from '@solidjs/testing-library'
+import {render, screen, waitFor} from '@solidjs/testing-library'
 import userEvent from '@testing-library/user-event'
 
 import '@testing-library/jest-dom'
@@ -8,6 +8,7 @@ import {mockAppStore, wrapIntl} from '../../testUtils'
 import {AppStoreProvider} from '../../store'
 import {TestBlockFactory} from '../../test/testBlockFactory'
 import mutator from '../../mutator'
+import {fakeGoSide} from '../../test/goSide'
 import propsRegistry from '../../properties'
 import {PropertyType} from '../../properties/types'
 
@@ -226,6 +227,48 @@ describe('components/cardDetail/CardDetailProperties', () => {
             expect(container.querySelector('.octo-propertyvalue--readonly')).toBeNull()
             expect(container.querySelector('.octo-propertyhint')).toBeNull()
         })
+
+        // The card is where a folder is chosen now, so the list is the board's
+        // folders and the way to add one — not a free-text option, which would
+        // be a folder the card names and no agent can find.
+        it('offers the board’s folders, and a way to add another', async () => {
+            fakeGoSide({PickDirectory: vi.fn(), AddAgentWorkdir: vi.fn(), ListAgentWorkdirs: vi.fn()})
+            renderFolderCard()
+
+            userEvent.click(screen.getByRole('button', {name: 'Card folder'}))
+            expect(await screen.findByRole('button', {name: 'Add a folder…'})).toBeInTheDocument()
+
+            userEvent.click(screen.getByRole('button', {name: 'beta'}))
+            await waitFor(() => expect(mockedMutator.changePropertyValue).toHaveBeenCalledWith(folderBoard.id, expect.anything(), 'prop_folder', 'opt_beta'))
+            fakeGoSide()
+        })
+    })
+
+    // A board that has never had a folder has no field for one. The card
+    // still offers to add one, because the card is the only place asked.
+    it('on a board with no folder field, the card still offers to add a folder', async () => {
+        fakeGoSide({PickDirectory: vi.fn(), AddAgentWorkdir: vi.fn(), ListAgentWorkdirs: vi.fn()})
+        const bare = TestBlockFactory.createBoard()
+        bare.cardProperties = []
+        bare.properties = {}
+        const bareCard = TestBlockFactory.createCard(bare)
+        render(() => wrapIntl(() =>
+            <AppStoreProvider store={store}>
+                <CardDetailProperties
+                    board={bare}
+                    card={bareCard}
+                    cards={[bareCard]}
+                    activeView={view}
+                    views={views}
+                    readonly={false}
+                />
+            </AppStoreProvider>,
+        ))
+
+        expect(screen.getByText('Not chosen')).toBeInTheDocument()
+        userEvent.click(screen.getByRole('button', {name: 'Card folder'}))
+        expect(await screen.findByRole('button', {name: 'Add a folder…'})).toBeInTheDocument()
+        fakeGoSide()
     })
 
     it('should match snapshot', async () => {

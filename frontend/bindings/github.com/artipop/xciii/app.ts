@@ -124,16 +124,6 @@ export function CancelSession(cardID: string): $CancellablePromise<boolean> {
 }
 
 /**
- * CheckBoardSetupAnswer says whether an answer fits the step it answers on this
- * board — a folder under git for a board that publishes a branch or waits for
- * one, and any requirement a step grows later. Called before the answer is
- * filed, so the question can refuse it where it was asked.
- */
-export function CheckBoardSetupAnswer(boardID: string, step: string, value: string): $CancellablePromise<void> {
-    return $Call.ByID(2394306312, boardID, step, value);
-}
-
-/**
  * CheckForUpdate asks the release feed. It returns as soon as the request is
  * away: what was found arrives as the acp:update event, which is the same way
  * the panel hears about a check nobody started.

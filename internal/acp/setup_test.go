@@ -68,8 +68,8 @@ func equal(a, b []string) bool {
 func TestATemplateIsAskedForNothing(t *testing.T) {
 	asks := boardProps(t, map[string]any{
 		BoardPropSetup: BoardSetup{Steps: []BoardSetupStep{
-			{Kind: SetupStepWorkdir},
 			{Kind: SetupStepAgent},
+			{Kind: SetupStepDeploy},
 		}},
 	})
 	m := setupManager(t, asks)
@@ -119,7 +119,7 @@ func TestEveryBoardIsAskedItsNameFirst(t *testing.T) {
 func TestABoardAsksForTheStepsItNames(t *testing.T) {
 	m := setupManager(t, boardProps(t, map[string]any{
 		BoardPropSetup: BoardSetup{Steps: []BoardSetupStep{
-			{Kind: SetupStepWorkdir, Hint: "Папка с домашними заметками"},
+			{Kind: SetupStepDeploy, Hint: "The Dokku host the previews go to"},
 			{Kind: SetupStepAgent},
 			{Kind: SetupStepDone},
 		}},
@@ -129,7 +129,7 @@ func TestABoardAsksForTheStepsItNames(t *testing.T) {
 	if !plan.Declared {
 		t.Error("the plan does not say the board asked for it")
 	}
-	if want := []string{SetupStepName, SetupStepWorkdir, SetupStepAgent, SetupStepDone}; !equal(kinds(plan), want) {
+	if want := []string{SetupStepName, SetupStepDeploy, SetupStepAgent, SetupStepDone}; !equal(kinds(plan), want) {
 		t.Fatalf("steps %v, expected %v", kinds(plan), want)
 	}
 	if plan.Steps[1].Hint == "" {
@@ -142,14 +142,34 @@ func TestABoardAsksForTheStepsItNames(t *testing.T) {
 func TestAStepThisBuildCannotDoIsLeftOut(t *testing.T) {
 	m := setupManager(t, boardProps(t, map[string]any{
 		BoardPropSetup: BoardSetup{Steps: []BoardSetupStep{
-			{Kind: SetupStepWorkdir},
+			{Kind: SetupStepAgent},
 			{Kind: "telepathy"},
 			{Kind: SetupStepDone},
 		}},
 	}))
 
-	if want := []string{SetupStepName, SetupStepWorkdir, SetupStepDone}; !equal(kinds(m.SetupPlanFor("board1")), want) {
+	if want := []string{SetupStepName, SetupStepAgent, SetupStepDone}; !equal(kinds(m.SetupPlanFor("board1")), want) {
 		t.Fatalf("steps %v, expected %v", kinds(m.SetupPlanFor("board1")), want)
+	}
+}
+
+// The folder is asked on the card now, and every board made before carries it
+// in its own declaration. Such a board must stop asking it, and must not be
+// logged as a board from a newer app on every read of its plan.
+func TestABoardThatStillDeclaresTheFolderIsNotAskedIt(t *testing.T) {
+	m := setupManager(t, boardProps(t, map[string]any{
+		BoardPropSetup: BoardSetup{Steps: []BoardSetupStep{
+			{Kind: "project", Hint: "A folder for the agent's notes"},
+			{Kind: SetupStepAgent},
+			{Kind: SetupStepDone},
+		}},
+	}))
+
+	if want := []string{SetupStepName, SetupStepAgent, SetupStepDone}; !equal(kinds(m.SetupPlanFor("board1")), want) {
+		t.Fatalf("steps %v, expected %v", kinds(m.SetupPlanFor("board1")), want)
+	}
+	if want := []string{SetupStepName, SetupStepAgent, SetupStepDone}; !equal(kinds(setupManager(t, nil).SetupPlanFor("board1")), want) {
+		t.Errorf("a board that said nothing is asked %v, expected %v", kinds(setupManager(t, nil).SetupPlanFor("board1")), want)
 	}
 }
 
@@ -174,7 +194,7 @@ func TestAFilledRegistryOffersAnAnswerRatherThanBeingOne(t *testing.T) {
 
 	// The name step is not in this list: nothing on the machine can answer
 	// "what is this board called", so it has no registry and is never ready.
-	for _, kind := range []string{SetupStepWorkdir, SetupStepAgent} {
+	for _, kind := range []string{SetupStepAgent} {
 		if first[kind].Status != SetupPending {
 			t.Errorf("%s: %q — a board nobody set up counts as set up", kind, first[kind].Status)
 		}
@@ -208,16 +228,16 @@ func TestAFilledRegistryOffersAnAnswerRatherThanBeingOne(t *testing.T) {
 	}
 
 	// Answering it for one board leaves the next one asking.
-	for _, kind := range []string{SetupStepName, SetupStepWorkdir, SetupStepAgent} {
+	for _, kind := range []string{SetupStepName, SetupStepAgent} {
 		if err := m.RecordSetupStep("board1", kind, SetupDone); err != nil {
 			t.Fatal(err)
 		}
 	}
-	if got := byKind("board1")[SetupStepWorkdir].Status; got != SetupDone {
-		t.Errorf("board1 project after answering: %q", got)
+	if got := byKind("board1")[SetupStepAgent].Status; got != SetupDone {
+		t.Errorf("board1 agent after answering: %q", got)
 	}
-	if got := byKind("board2")[SetupStepWorkdir].Status; got != SetupPending {
-		t.Errorf("board2 project: %q — one board's answer stood in for another's", got)
+	if got := byKind("board2")[SetupStepAgent].Status; got != SetupPending {
+		t.Errorf("board2 agent: %q — one board's answer stood in for another's", got)
 	}
 }
 
@@ -267,15 +287,6 @@ func TestABoardCanMakeAnOptionalStepRequired(t *testing.T) {
 			}
 		}
 	}
-}
-
-func requirementsOf(plan SetupPlan, kind string) []string {
-	for _, s := range plan.Steps {
-		if s.Kind == kind {
-			return s.Requires
-		}
-	}
-	return nil
 }
 
 // Having been offered the wizard has to outlive the run it happened in. It used

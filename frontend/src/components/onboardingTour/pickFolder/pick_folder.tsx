@@ -19,7 +19,7 @@ const PickFolderTourStep = (): JSX.Element => {
     const screen = (
         <FormattedMessage
             id='OnboardingTour.PickFolder.Body'
-            defaultMessage='The folder on your machine the agent works in. A board with one folder fills it in by itself; once the agent has started, the field stays as it is.'
+            defaultMessage='The folder on your machine the agent works in. Add one here and every card of the board can pick it; a board with one folder fills it in by itself. A card without a folder is worked in the board’s drafts. Once the agent has started, the field stays as it is.'
         />
     )
 

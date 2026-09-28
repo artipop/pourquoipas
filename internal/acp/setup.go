@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"strings"
 	"time"
-
-	"github.com/artipop/xciii/internal/apperr"
 )
 
 // A board arrives knowing how the work on it is organised. What it cannot know
@@ -38,12 +36,21 @@ const (
 	// second one made from the developer template is a second the developer template in the
 	// sidebar, and the moment to say what this one is for is the moment it is
 	// made.
-	SetupStepName    = "name"
-	SetupStepWorkdir = "project" // a folder on this machine an agent works in
-	SetupStepAgent   = "agent"   // the agent that picks a card up
-	SetupStepDeploy  = "deploy"  // a Dokku host to publish a branch to
-	SetupStepDone    = "done"    // no question: how to use what was set up
+	SetupStepName   = "name"
+	SetupStepAgent  = "agent"  // the agent that picks a card up
+	SetupStepDeploy = "deploy" // a Dokku host to publish a branch to
+	SetupStepDone   = "done"   // no question: how to use what was set up
 )
+
+// retiredSetupSteps are kinds this app used to ask and no longer does. Every
+// board made before carries them in its declaration, so they are dropped in
+// silence rather than warned about as a step from a newer app.
+//
+// "project" was the folder. A card without one works in the board's drafts
+// folder, so the question stopped being one the board could not do without,
+// and it is asked where it has an answer: on the card, whose folder field adds
+// a folder the first time one is wanted (docs/decisions.md).
+var retiredSetupSteps = map[string]bool{"project": true}
 
 // Setup step status.
 const (
@@ -60,15 +67,6 @@ const (
 // refusal lasted exactly one run.
 const setupWizardStep = "wizard"
 
-// Setup requirements: what an answer to a step has to satisfy on this machine.
-// A closed set like the steps themselves, and derived from what the board's
-// automation actually does rather than named by anybody: a board that publishes
-// a branch or waits for one needs a folder under git, and a board that does
-// neither must not be asked to make its folder of notes into a repository.
-const (
-	SetupRequiresGit = "git"
-)
-
 // SetupStepDef describes one step the app can actually carry out. The list
 // doubles as the wizard's shape, so the UI can never offer a step there is no
 // registry behind.
@@ -83,13 +81,12 @@ type SetupStepDef struct {
 }
 
 // SetupStepDefs is the closed set, in the order a wizard walks them. The order
-// is the order the work needs them in: an agent has nowhere to work without a
-// folder, and neither publishing nor testing means anything without an agent.
+// is the order the work needs them in: publishing means nothing without an
+// agent.
 var SetupStepDefs = []SetupStepDef{
 	// No registry: what answers it is the board itself, so there is nothing on
 	// this machine that could have answered it already.
 	{Kind: SetupStepName},
-	{Kind: SetupStepWorkdir, Registry: "projects"},
 	{Kind: SetupStepAgent, Registry: "agents"},
 	{Kind: SetupStepDeploy, Registry: "deploys", Optional: true},
 	{Kind: SetupStepDone},
@@ -116,7 +113,7 @@ type BoardSetup struct {
 type BoardSetupStep struct {
 	Kind string `json:"kind"`
 	// Hint is a sentence of the board's own, shown beside the step's usual
-	// explanation — "the folder with your household notes", say. It is text and
+	// explanation — "the agent that writes your newsletter", say. It is text and
 	// nothing else: a board cannot describe a field, only comment on one.
 	Hint string `json:"hint,omitempty"`
 	// Required overrides an optional step for this board: a board whose route
@@ -134,10 +131,6 @@ type SetupStep struct {
 	// Ready says this machine can already answer the step, however this board
 	// has answered it — see registryFilled.
 	Ready bool `json:"ready"`
-	// Requires is what an answer has to satisfy — the closed set above. It is
-	// carried in the plan so the question can say so before it is answered,
-	// and enforced by CheckSetupAnswer when it is.
-	Requires []string `json:"requires,omitempty"`
 }
 
 // SetupPlan is the whole answer to "what should this board ask for".
@@ -190,6 +183,9 @@ func (m *Manager) SetupPlanFor(boardID string) SetupPlan {
 	states := m.setupStates(boardID)
 	plan.Offered = states[setupWizardStep] != ""
 	for _, step := range steps {
+		if retiredSetupSteps[strings.ToLower(strings.TrimSpace(step.Kind))] {
+			continue
+		}
 		def, ok := SetupStepDefinition(step.Kind)
 		if !ok {
 			// A board asking for something this build cannot do is not an
@@ -205,7 +201,6 @@ func (m *Manager) SetupPlanFor(boardID string) SetupPlan {
 			Hint:     strings.TrimSpace(step.Hint),
 			Status:   m.setupStatus(def, states),
 			Ready:    def.Registry != "" && m.registryFilled(def.Registry),
-			Requires: setupRequirements(def.Kind),
 		})
 	}
 	return plan
@@ -223,33 +218,6 @@ func (m *Manager) boardSetup(boardID string) BoardSetup {
 		}
 	}
 	return declared
-}
-
-// setupRequirements is what an answer to this step must satisfy. Only git is
-// asked for, and only by the folder a deploy publishes from — which is a
-// question about the folder rather than about the board, so nothing here asks
-// a board of household chores to be a repository.
-func setupRequirements(string) []string { return nil }
-
-// CheckSetupAnswer says whether an answer fits the step it is answering, so the
-// question can be refused where it is asked rather than three steps later. It
-// is the general form on purpose: a step gains a requirement here and the page
-// needs no change at all.
-func (m *Manager) CheckSetupAnswer(boardID, step, value string) error {
-	if _, ok := SetupStepDefinition(step); !ok {
-		return fmt.Errorf("unknown setup step %q", step)
-	}
-	for _, s := range m.SetupPlanFor(boardID).Steps {
-		if s.Kind != step {
-			continue
-		}
-		for _, req := range s.Requires {
-			if req == SetupRequiresGit && !IsGitWorkdir(m.rootCtx, value) {
-				return apperr.New("setup.needs-git", "The folder {dir} has no git, and this board needs a repository: it publishes a branch or waits for one. Run `git init` or choose another folder", "dir", value)
-			}
-		}
-	}
-	return nil
 }
 
 // agentNamed finds a registry entry by name, the way every other lookup does:
@@ -313,11 +281,10 @@ func setupSteps(declared BoardSetup) []BoardSetupStep {
 // stages. Anything else a board declares is kept because nothing else could
 // have produced it.
 var inferredSetupKinds = map[string]bool{
-	SetupStepName:    true,
-	SetupStepWorkdir: true,
-	SetupStepAgent:   true,
-	SetupStepDeploy:  true,
-	SetupStepDone:    true,
+	SetupStepName:   true,
+	SetupStepAgent:  true,
+	SetupStepDeploy: true,
+	SetupStepDone:   true,
 }
 
 // impliedSetup is what the board's own stages need. A board with no automation
@@ -327,10 +294,10 @@ func impliedSetup() []BoardSetupStep {
 	// Every board is asked its name, whatever it holds: it is the one question
 	// that is not about the machine, and a board has to be told apart from the
 	// others in the sidebar. The rest is what an agent needs to work a card of
-	// it at all — somewhere to work, and somebody to do it.
+	// it at all: somebody to do it. Where is the card's question, not the
+	// board's — without an answer it works in the board's drafts folder.
 	return []BoardSetupStep{
 		{Kind: SetupStepName},
-		{Kind: SetupStepWorkdir},
 		{Kind: SetupStepAgent},
 		{Kind: SetupStepDone},
 	}
@@ -350,7 +317,7 @@ func (m *Manager) setupStatus(def SetupStepDef, states map[string]string) string
 }
 
 // registryFilled says the machine can already answer this step — there is a
-// folder, an agent, somewhere to deploy to, a browser. It is deliberately not
+// agent, somewhere to deploy to. It is deliberately not
 // the same as the step being *answered*: setting up one board must not mark the
 // next one set up, or every board after the first is created in silence, which
 // is what this used to do. The wizard shows it as "already registered" and lets
@@ -359,8 +326,6 @@ func (m *Manager) registryFilled(registry string) bool {
 	m.cfgMu.RLock()
 	defer m.cfgMu.RUnlock()
 	switch registry {
-	case "projects":
-		return len(m.cfg.Workdirs) > 0
 	case "agents":
 		return len(m.cfg.Agents) > 0
 	case "deploys":

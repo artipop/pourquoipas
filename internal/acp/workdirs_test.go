@@ -2,6 +2,7 @@ package acp
 
 import (
 	"context"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -44,8 +45,7 @@ func TestAddRemoveProjectPersists(t *testing.T) {
 	}
 	// A folder that is not under git is a folder too: what git buys is
 	// worktrees and branch-driven transitions, and a board of personal tasks
-	// wants neither. Which board needs it is asked by the setup plan
-	// (setupRequirements), not by the registry.
+	// wants neither.
 	notes := t.TempDir()
 	if _, err := m.AddWorkdir("notes", notes, "board1", "", false); err != nil {
 		t.Errorf("an ordinary folder was refused: %v", err)
@@ -272,6 +272,56 @@ func TestTriggerSessionViaTag(t *testing.T) {
 	// the machinery that ran it.
 	if got := writer.cardComments("card10"); len(got) != 1 || !strings.Contains(got[0], "Агент завершил работу") {
 		t.Errorf("expected one closing comment, got %v", got)
+	}
+}
+
+// The folder is asked on the card now, not when the board is made, so a card
+// nobody has given one is the ordinary first card, and the first task the
+// wizard sets is one. It has to run: in drafts of its own, kept after the run,
+// because that is where what the agent wrote is.
+func TestACardWithNoFolderIsWorkedInItsOwnDrafts(t *testing.T) {
+	m, _, events, _ := testManager(t, fakeClaudeHappy, func(cfg *Config) { cfg.Workdirs = nil })
+
+	ev := moveEvent("cardBare", "opt-backlog", "opt-agent")
+	ev.OptionNames = nil
+	events.ch <- ev
+
+	waitFor(t, 15*time.Second, "the folderless card's session to finish", func() bool {
+		sessions, _, err := m.store.SessionsForCard("cardBare")
+		return err == nil && len(sessions) == 1 && sessions[0].Status == StatusDone
+	})
+	drafts := filepath.Join(m.boardFolder("board1"), "cards", "cardBare")
+	sessions, _, _ := m.store.SessionsForCard("cardBare")
+	if sessions[0].Cwd != drafts {
+		t.Errorf("worked in %q, want the card's drafts %q", sessions[0].Cwd, drafts)
+	}
+	if info, err := os.Stat(drafts); err != nil || !info.IsDir() {
+		t.Errorf("the card's drafts are gone after the run: %v", err)
+	}
+}
+
+// A folder the card names and the board no longer offers is a choice gone
+// stale. Quietly working in the drafts instead would put the work somewhere
+// nobody chose, so the card is refused and says why.
+func TestACardWhoseFolderIsGoneIsNotSentToTheDrafts(t *testing.T) {
+	m := registryManager(t, "")
+	m.SetBoardMeta(&fakeBoardMeta{props: map[string]any{BoardPropProject: "prop-folder"}})
+
+	named := CardMoved{
+		BoardID:         "board1",
+		CardID:          "card1",
+		Props:           map[string]string{},
+		SelectedOptions: []Column{{PropertyID: "prop-folder", OptionID: "wd-removed", Name: "notes"}},
+	}
+	_, err := m.resolveWorkdir(named)
+	var none errNoWorkdir
+	if err == nil || errors.As(err, &none) {
+		t.Errorf("a card naming a removed folder counts as naming none: %v", err)
+	}
+
+	bare := CardMoved{BoardID: "board1", CardID: "card2", Props: map[string]string{}}
+	if _, err := m.resolveWorkdir(bare); !errors.As(err, &none) {
+		t.Errorf("a card naming nothing is not told apart: %v", err)
 	}
 }
 

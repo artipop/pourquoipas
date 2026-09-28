@@ -332,10 +332,11 @@ func (m *Manager) resolveNamedWorkdir(name string) (string, error) {
 }
 
 // errNoWorkdir marks the refusals that mean "the card names no folder" — as
-// opposed to a folder it names being broken. A session cannot run without one;
-// a terminal is a conversation first, and StartCardTerminal opens it without a
-// folder instead of refusing (a card can be talked over — wording, a plan —
-// before anybody decides where the work lives).
+// opposed to a folder it names being broken. A card's session runs in its own
+// drafts instead (cardDrafts); a terminal is a conversation first, and
+// StartCardTerminal opens it without a folder instead of refusing (a card can
+// be talked over — wording, a plan — before anybody decides where the work
+// lives). A deploy is refused: it publishes a branch, and drafts have none.
 type errNoWorkdir struct{ error }
 
 func (e errNoWorkdir) Unwrap() error { return e.error }
@@ -391,6 +392,13 @@ func (m *Manager) resolveWorkdir(ev CardMoved) (string, error) {
 		}
 		return entry.Path, nil
 	}
+	// A folder the card does name and this board does not offer is somebody's
+	// choice gone stale — removed from the registry, or taken off this board.
+	// Working in the drafts instead would put the work where nobody asked for
+	// it, so that stays a refusal the card shows.
+	if m.cardNamesFolder(ev) {
+		return "", apperr.New("folders.unchosen", "The card's folder field names none of the registry's folders ({folders})", "folders", workdirNames(workdirs))
+	}
 	if len(workdirs) == 0 {
 		return "", errNoWorkdir{apperr.New("folders.none", "The card names no folder, and there are no folders in the registry (the board's menu, Folders…)")}
 	}
@@ -429,6 +437,21 @@ func (m *Manager) cardWorkdir(ev CardMoved, workdirs []WorkdirEntry) (WorkdirEnt
 		}
 	}
 	return WorkdirEntry{}, false
+}
+
+// cardNamesFolder says the card's folder field holds a value at all, whatever
+// it points at. A board that recorded no folder field names none.
+func (m *Manager) cardNamesFolder(ev CardMoved) bool {
+	propID := m.boardProperty(ev.BoardID, BoardPropProject)
+	if propID == "" {
+		return false
+	}
+	for _, sel := range ev.SelectedOptions {
+		if sel.PropertyID == propID && sel.OptionID != "" {
+			return true
+		}
+	}
+	return false
 }
 
 func matchWorkdirName(workdirs []WorkdirEntry, name string) (WorkdirEntry, bool) {

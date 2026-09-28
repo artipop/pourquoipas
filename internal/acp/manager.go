@@ -2,6 +2,7 @@ package acp
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -295,6 +296,13 @@ func (m *Manager) startSession(ev CardMoved, opts startOptions) (*Session, error
 		// An explicit choice wins: the console offers one exactly when the card
 		// itself does not say which folder it is about.
 		workdirPath, err = m.resolveNamedWorkdir(opts.folderName)
+	}
+	// No folder is an answer, not a failure: the folder is asked on the card,
+	// and a card nobody has given one is worked in drafts of its own. Not a
+	// deploy — it publishes a branch, and drafts have none.
+	var noFolder errNoWorkdir
+	if errors.As(err, &noFolder) && !opts.deploy {
+		workdirPath, err = m.cardDrafts(ev.BoardID, ev.CardID)
 	}
 	if err != nil {
 		return nil, err

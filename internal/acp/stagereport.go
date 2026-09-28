@@ -3,6 +3,7 @@ package acp
 import (
 	"context"
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -146,6 +147,23 @@ func (m *Manager) boardFolder(boardID string) string {
 		return ""
 	}
 	return filepath.Join(filepath.Dir(m.cfg.WorktreeDir), "boards", boardID)
+}
+
+// cardDrafts is where a card that names no folder is worked: a directory of
+// its own inside the board's drafts. Its own, because an ordinary folder is
+// held by one session at a time, and one shared directory would let a board
+// run a single folderless card at once. Inside the drafts, because what the
+// agent writes has to outlive the run — a scratch directory removed at the end
+// took the result with it — and be where the board's other drafts are.
+func (m *Manager) cardDrafts(boardID, cardID string) (string, error) {
+	if boardID == "" || cardID == "" {
+		return "", fmt.Errorf("a card's drafts need a board and a card")
+	}
+	dir := filepath.Join(m.boardFolder(boardID), "cards", cardID)
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return "", fmt.Errorf("could not create the card's drafts: %w", err)
+	}
+	return dir, nil
 }
 
 // gitLines runs git in dir and returns its non-empty output lines, nil on any

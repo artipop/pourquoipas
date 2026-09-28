@@ -269,9 +269,12 @@ server.
   `docs/themes.md`), shipped as pairs (light/dark) with `themeMode` choosing the
   half; `_tokens.scss` is the first paint and a test holds it equal to the
   shipped configs.
-- **Board setup is four questions** — name, folder, agent, done (`impliedSetup`,
+- **Board setup is three questions** — name, agent, done (`impliedSetup`,
   `BoardSetupPlan`) — and a board may declare its own (`BoardPropSetup`). The
-  first is the board's name, unique case-insensitively (`boardTitle.ts`).
+  first is the board's name, unique case-insensitively (`boardTitle.ts`). **The
+  folder is the card's question**, added from its «Папка» field
+  (`cardFolder.ts`); a card without one is worked in its own drafts
+  (`cardDrafts`).
   **Every question may be left unanswered** ("relaxed mode", a word and not a
   flag): the default must be sayable in one sentence where the question is asked
   and must keep a person able to work.

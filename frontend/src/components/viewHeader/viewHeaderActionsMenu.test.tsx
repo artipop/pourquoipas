@@ -170,7 +170,6 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
                 GetBoardPrompt: vi.fn().mockResolvedValue(''),
                 BoardSetupPlan: vi.fn().mockResolvedValue(JSON.stringify({
                     steps: [
-                        {kind: 'project', optional: false, status: 'pending'},
                         {kind: 'agent', optional: false, status: 'pending'},
                         {kind: 'deploy', optional: true, status: 'pending'},
                     ],
@@ -193,6 +192,8 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
             fakeGoSide()
         })
 
+        // No step asks for a folder any more — a card does — so the folders
+        // are offered wherever agents work.
         test('the folders and the deploy targets are each their own item', async () => {
             await waitFor(() => expect(screen.getByRole('button', {name: 'Folders…'})).toBeInTheDocument())
             expect(screen.getByRole('button', {name: 'Where to deploy…'})).toBeInTheDocument()

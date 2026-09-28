@@ -182,9 +182,9 @@ describe('components/centerPanel', () => {
         })
 
         test('opens by itself for a board that has not been through it', async () => {
-            stubPlan([{kind: 'project', optional: false, status: 'pending'}, {kind: 'done', optional: false, status: 'done'}])
+            stubPlan([{kind: 'name', optional: false, status: 'pending'}, {kind: 'done', optional: false, status: 'done'}])
             renderPanel()
-            await waitFor(() => expect(screen.getByText('Set up this board: Folder')).toBeInTheDocument())
+            await waitFor(() => expect(screen.getByText('Set up this board: Name')).toBeInTheDocument())
         })
 
         // Closing it half-way is an answer to "have you seen this?", not to any
@@ -196,26 +196,26 @@ describe('components/centerPanel', () => {
         // the app serves itself on a fresh port, and therefore a fresh origin,
         // every launch.
         test('does not open twice, and nothing nags afterwards', async () => {
-            stubPlan([{kind: 'project', optional: false, status: 'pending'}, {kind: 'done', optional: false, status: 'done'}])
+            stubPlan([{kind: 'name', optional: false, status: 'pending'}, {kind: 'done', optional: false, status: 'done'}])
             const first = renderPanel()
-            await waitFor(() => expect(screen.getByText('Set up this board: Folder')).toBeInTheDocument())
+            await waitFor(() => expect(screen.getByText('Set up this board: Name')).toBeInTheDocument())
             await waitFor(() => expect(goSide.MarkBoardSetupOffered).toHaveBeenCalledWith(setupBoard.id))
             first.unmount()
 
             localStorage.clear()
             renderPanel()
-            await waitFor(() => expect(screen.queryByText('Set up this board: Folder')).toBeNull())
+            await waitFor(() => expect(screen.queryByText('Set up this board: Name')).toBeNull())
             expect(screen.queryByText('This board is not set up yet')).toBeNull()
         })
 
         // The soft way out is a button, and it says how to come back.
         test('leaving through «Разберусь сам» closes the wizard', async () => {
-            stubPlan([{kind: 'project', optional: false, status: 'pending'}, {kind: 'done', optional: false, status: 'done'}])
+            stubPlan([{kind: 'name', optional: false, status: 'pending'}, {kind: 'done', optional: false, status: 'done'}])
             renderPanel()
-            await waitFor(() => expect(screen.getByText('Set up this board: Folder')).toBeInTheDocument())
+            await waitFor(() => expect(screen.getByText('Set up this board: Name')).toBeInTheDocument())
 
             screen.getByText('I’ll find my way around').click()
-            await waitFor(() => expect(screen.queryByText('Set up this board: Folder')).toBeNull())
+            await waitFor(() => expect(screen.queryByText('Set up this board: Name')).toBeNull())
         })
     })
     test('should match snapshot for Kanban, not shared', () => {

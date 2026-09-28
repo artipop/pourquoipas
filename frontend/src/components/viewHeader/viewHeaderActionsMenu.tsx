@@ -136,7 +136,11 @@ const ViewHeaderActionsMenu = (props: Props) => {
                                     />
                                 </Show>
 
-                                <Show when={asks('project')}>
+                                {/* No setup step asks for a folder any more — a card
+                                    does — so the folders are offered wherever
+                                    agents work, which is where a card can name
+                                    one. */}
+                                <Show when={asks('agent')}>
                                     <Menu.Text
                                         id='workdirs'
                                         name={intl.formatMessage({id: 'ViewHeader.workdirs', defaultMessage: 'Folders…'})}
@@ -148,8 +152,8 @@ const ViewHeaderActionsMenu = (props: Props) => {
                                     machine's, like the deploy hosts under it,
                                     and it is offered here for the same reason:
                                     it means nothing on a board no agent works.
-                                    In the order the setup asks — the folder,
-                                    then who works in it, then where it goes. */}
+                                    In the order the work needs them — the
+                                    folder, who works in it, where it goes. */}
                                 <Show when={isAgentsDialogAvailable() && asks('agent')}>
                                     <Menu.Text
                                         id='agents'

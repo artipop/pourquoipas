@@ -26,12 +26,16 @@ import {Permission} from '../../constants'
 import {useHasCurrentBoardPermissions} from '../../hooks/permissions'
 import propRegistry from '../../properties'
 import {PropertyType} from '../../properties/types'
+import {aiEnabled} from '../../aiSwitch'
 
 import {boardBranchProperty} from '../acp/automation'
 import {cardAgentState} from '../acp/cardAgentState'
-import {findWorkdirProperty} from '../acp/workdirSync'
+import {fieldNames, findWorkdirProperty} from '../acp/workdirSync'
+import {canAddFolder} from '../acp/cardFolder'
 import {withoutAgentProperties} from '../acp/agentProperties'
 import {personProperty} from '../acp/attentionAudience'
+
+import CardFolderValue from './cardFolderValue'
 
 type Props = {
     board: Board
@@ -89,6 +93,8 @@ const CardDetailProperties = (props: Props) => {
     // workspace does not.
     const workElsewhere = () => Boolean(agentState().work?.started && !agentState().work?.here)
     const isWorkdirProperty = (t: IPropertyTemplate) => t.id !== '' && t.id === workdirProperty()?.id
+    const offerFolderRow = () => aiEnabled() && canAddFolder() && !workdirProperty() &&
+        !props.readonly && canEditBoardProperties() && canEditBoardCards()
     const lockedFolderName = () => {
         const property = workdirProperty()
         const value = property && props.card.fields.properties[property.id]
@@ -223,15 +229,25 @@ const CardDetailProperties = (props: Props) => {
                                     <div class='octo-propertyname'><Button>{propertyTemplate.name}</Button></div>
                                 </MenuWrapper>
                             </Show>
-                            <PropertyValueElement
-                                readOnly={props.readonly || !canEditBoardCards() ||
-                                isBranchProperty(propertyTemplate) ||
-                                (isWorkdirProperty(propertyTemplate) && workdirLocked())}
-                                card={props.card}
-                                board={props.board}
-                                propertyTemplate={propertyTemplate}
-                                showEmptyPlaceholder={true}
-                            />
+                            <Show
+                                when={isWorkdirProperty(propertyTemplate)}
+                                fallback={
+                                    <PropertyValueElement
+                                        readOnly={props.readonly || !canEditBoardCards() || isBranchProperty(propertyTemplate)}
+                                        card={props.card}
+                                        board={props.board}
+                                        propertyTemplate={propertyTemplate}
+                                        showEmptyPlaceholder={true}
+                                    />
+                                }
+                            >
+                                <CardFolderValue
+                                    board={props.board}
+                                    card={props.card}
+                                    property={propertyTemplate}
+                                    readOnly={props.readonly || !canEditBoardCards() || workdirLocked()}
+                                />
+                            </Show>
                             <Show when={isAssigneeProperty(propertyTemplate)}>
                                 <AssignAgentTourStep/>
                             </Show>
@@ -268,6 +284,21 @@ const CardDetailProperties = (props: Props) => {
                     </>
                 )}
             </For>
+
+            {/* A board that has never had a folder has no field for one, and
+                the card is where a folder is asked now: the row stands in for
+                the field until the first folder added from it makes one. */}
+            <Show when={offerFolderRow()}>
+                <div class='octo-propertyrow octo-propertyrow--folder'>
+                    <div class='octo-propertyname octo-propertyname--readonly'>{fieldNames(intl).folder}</div>
+                    <CardFolderValue
+                        board={props.board}
+                        card={props.card}
+                        readOnly={false}
+                    />
+                    <PickFolderTourStep/>
+                </div>
+            </Show>
 
             <Show when={showConfirmationDialog()}>
                 <ConfirmationDialogBox

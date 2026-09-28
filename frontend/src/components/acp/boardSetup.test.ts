@@ -4,7 +4,6 @@ import {
     NO_SETUP,
     SetupPlan,
     SetupStep,
-    checkSetupAnswer,
     isBoardSetupAvailable,
     markSetupOffered,
     planHasStep,
@@ -12,7 +11,6 @@ import {
     recordSetupStep,
     setupNeeded,
     shouldOfferSetup,
-    stepRequires,
 } from './boardSetup'
 
 function plan(steps: Array<Partial<SetupStep>>, extra: Partial<SetupPlan> = {}): SetupPlan {
@@ -20,7 +18,7 @@ function plan(steps: Array<Partial<SetupStep>>, extra: Partial<SetupPlan> = {}):
         boardId: 'board-1',
         declared: true,
         automated: true,
-        steps: steps.map((step) => ({kind: 'project', optional: false, status: 'pending', ...step} as SetupStep)),
+        steps: steps.map((step) => ({kind: 'agent', optional: false, status: 'pending', ...step} as SetupStep)),
         ...extra,
     }
 }
@@ -41,7 +39,7 @@ describe('components/acp/boardSetup', () => {
     })
 
     test('the plan comes from Go, and a board with no id is not asked for one', async () => {
-        const BoardSetupPlan = vi.fn().mockResolvedValue(JSON.stringify(plan([{kind: 'project'}])))
+        const BoardSetupPlan = vi.fn().mockResolvedValue(JSON.stringify(plan([{kind: 'agent'}])))
         fakeGoSide({BoardSetupPlan})
 
         expect((await readSetupPlan('board-1')).steps).toHaveLength(1)
@@ -54,14 +52,14 @@ describe('components/acp/boardSetup', () => {
     // What the board is still missing, and therefore what the header reminder
     // reads: a question nobody may skip that nobody has answered.
     test('setup is needed while a step nobody may skip is unanswered', () => {
-        expect(setupNeeded(plan([{kind: 'project', status: 'pending'}]))).toBe(true)
-        expect(setupNeeded(plan([{kind: 'project', status: 'done'}]))).toBe(false)
+        expect(setupNeeded(plan([{kind: 'agent', status: 'pending'}]))).toBe(true)
+        expect(setupNeeded(plan([{kind: 'agent', status: 'done'}]))).toBe(false)
 
         // A skippable question left unanswered is not the board being unset up.
         expect(setupNeeded(plan([{kind: 'deploy', optional: true, status: 'pending'}]))).toBe(false)
 
         // Neither is a board that runs nothing of its own.
-        expect(setupNeeded(plan([{kind: 'project'}], {automated: false}))).toBe(false)
+        expect(setupNeeded(plan([{kind: 'agent'}], {automated: false}))).toBe(false)
         expect(setupNeeded(undefined)).toBe(false)
     })
 
@@ -69,7 +67,7 @@ describe('components/acp/boardSetup', () => {
     // desktop app takes a fresh port every launch, so the page's own storage is
     // keyed by an origin that does not survive a restart.
     test('the wizard offers itself once per board, and Go is what remembers it', async () => {
-        const pending = plan([{kind: 'project', status: 'pending'}])
+        const pending = plan([{kind: 'agent', status: 'pending'}])
         expect(shouldOfferSetup(pending)).toBe(true)
         expect(shouldOfferSetup({...pending, offered: true})).toBe(false)
 
@@ -87,23 +85,9 @@ describe('components/acp/boardSetup', () => {
     })
 
     test('a step the board never asks for is not a setting worth offering', () => {
-        const chores = plan([{kind: 'project'}, {kind: 'agent'}, {kind: 'done'}])
-        expect(planHasStep(chores, 'project')).toBe(true)
+        const chores = plan([{kind: 'agent'}, {kind: 'done'}])
+        expect(planHasStep(chores, 'agent')).toBe(true)
         expect(planHasStep(chores, 'deploy')).toBe(false)
         expect(planHasStep(undefined, 'deploy')).toBe(false)
-    })
-
-    // Git is a requirement of the board's automation, not of the app: the page
-    // only carries what Go said and asks it to check the answer.
-    test('a step may require something of its answer', async () => {
-        const needsGit = plan([{kind: 'project', requires: ['git']}])
-        expect(stepRequires(needsGit.steps[0], 'git')).toBe(true)
-        expect(stepRequires(plan([{kind: 'project'}]).steps[0], 'git')).toBe(false)
-        expect(stepRequires(undefined, 'git')).toBe(false)
-
-        const CheckBoardSetupAnswer = vi.fn().mockRejectedValue('в каталоге /tmp/notes нет git-репозитория')
-        fakeGoSide({CheckBoardSetupAnswer})
-        await expect(checkSetupAnswer('board-1', 'project', '/tmp/notes')).rejects.toBeTruthy()
-        expect(CheckBoardSetupAnswer).toHaveBeenCalledWith('board-1', 'project', '/tmp/notes')
     })
 })

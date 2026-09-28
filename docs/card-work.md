@@ -70,8 +70,10 @@ on this machine (⋯ menu → «Папки…»). What the agent gets depends on
   branch is written onto the card and is what survives; the working copy is
   folded away when the run ends and remade from the branch next time.
 - **an ordinary folder** — the folder itself, as it is.
-- **no folder at all** — a scratch directory, and the agent is told nothing about
-  a branch.
+- **no folder at all** — the card's own drafts, a directory under the board's
+  drafts that is kept after the run, and the agent is told nothing about a
+  branch. A folder the card names and the board no longer has is not this: the
+  card stalls and says so.
 
 A card with work started cannot change its folder: the field goes read-only.
 

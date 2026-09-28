@@ -21,15 +21,15 @@ import {goApp} from '../../goBridge'
 import {goError} from '../../goMessages'
 
 import AgentQuickAdd from './agentQuickAdd'
-import {checkSetupAnswer, createSetupPlan, recordSetupStep, SetupStep, SetupStepKind, stepRequires} from './boardSetup'
-import {Workdir, fieldNames, syncWorkdirsToBoard, useWorkdirHere} from './workdirSync'
+import {createSetupPlan, recordSetupStep, SetupStep, SetupStepKind} from './boardSetup'
 
 import './boardSetupWizard.scss'
 
 // A board made from a template arrives knowing how the work is organised — its
 // columns, its routes, the fields a card picks a folder and an agent with.
-// What it cannot know is the machine: which agent runs, in which folder, where
-// it deploys, what it tests with. That lives in the desktop registries.
+// What it cannot know is the machine: which agent runs, where it deploys. That
+// lives in the desktop registries. Which folder is not asked here: it is the
+// card's question, answered on the card (docs/decisions.md).
 //
 // Which questions this board has is not decided here: Go resolves them into a
 // plan (internal/acp/setup.go) out of what the board asks for, what its
@@ -38,18 +38,16 @@ import './boardSetupWizard.scss'
 
 type Registry = {
     agents: Array<{name: string, kind: string}>
-    workdirs: Array<{name: string, path: string}>
 }
 
 // readRegistry is what the steps show back: the names already registered. The
 // plan says whether a question is answered; this says what the answer was.
-export async function readRegistry(boardId: string): Promise<Registry | null> {
+export async function readRegistry(): Promise<Registry | null> {
     const bindings = goApp()
-    if (!bindings?.ListAgentWorkdirs || !bindings.ListAgents) {
+    if (!bindings?.ListAgents) {
         return null
     }
-    const [workdirs, agents] = await Promise.all([bindings.ListAgentWorkdirs(boardId), bindings.ListAgents()])
-    return {workdirs: JSON.parse(workdirs) || [], agents: JSON.parse(agents) || []}
+    return {agents: JSON.parse(await bindings.ListAgents()) || []}
 }
 
 // The last page's ways on, each given by the board that opened the wizard,
@@ -77,7 +75,6 @@ type Props = {
 }
 
 const STEP_NAME: SetupStepKind = 'name'
-const STEP_WORKDIR: SetupStepKind = 'project'
 const STEP_AGENT: SetupStepKind = 'agent'
 const STEP_DEPLOY: SetupStepKind = 'deploy'
 const STEP_DONE: SetupStepKind = 'done'
@@ -87,8 +84,8 @@ const BoardSetupWizard = (props: Props) => {
     const bindings = goApp()
 
     const [plan, refreshPlan] = createSetupPlan(() => props.board)
-    const [step, setStep] = createSignal<SetupStepKind>(STEP_WORKDIR)
-    const [registry, setRegistry] = createSignal<Registry>({agents: [], workdirs: []})
+    const [step, setStep] = createSignal<SetupStepKind>(STEP_NAME)
+    const [registry, setRegistry] = createSignal<Registry>({agents: []})
     const [error, setError] = createSignal('')
     const [busy, setBusy] = createSignal(false)
 
@@ -117,21 +114,12 @@ const BoardSetupWizard = (props: Props) => {
         setStep(after(kind))
     }
 
-    // Step 1: a folder.
-    const [workdirPath, setWorkdirPath] = createSignal('')
-    const [workdirName, setWorkdirName] = createSignal('')
-
-    // A folder already in the registry, picked again — offered rather than
-    // refused (see the folders panel).
-    const [taken, setTaken] = createSignal<Workdir | null>(null)
-    const basename = (path: string) => path.split('/').filter(Boolean).pop() || ''
-
-    // Step 3: an agent registered on this machine. Which agent works a card is
+    // An agent registered on this machine. Which agent works a card is
     // the card's own «Кто занимается», so the step asks for nothing beyond one
     // existing at all.
     const [addingAgent, setAddingAgent] = createSignal(false)
 
-    // Step 1: what this board is called. It arrives named after the template it
+    // What this board is called. It arrives named after the template it
     // was made from, so the field opens on that and on the whole of it
     // selected — the answer is usually a replacement, not an edit.
     const [boardName, setBoardName] = createSignal(props.board.title)
@@ -159,12 +147,12 @@ const BoardSetupWizard = (props: Props) => {
         }
     }, STEP_NAME)
 
-    // Step 3: a Dokku host.
+    // A Dokku host.
     const [deploy, setDeploy] = createSignal({name: '', sshHost: '', sshUser: '', sshKey: '', baseDomain: ''})
 
     const refresh = async () => {
         try {
-            const loaded = await readRegistry(props.board.id)
+            const loaded = await readRegistry()
             if (loaded) {
                 setRegistry(loaded)
             }
@@ -211,62 +199,9 @@ const BoardSetupWizard = (props: Props) => {
         }
     }
 
-    // Passing a step the machine can already answer — there is a folder, an
-    // agent — is answering it too, and has to be recorded as one.
+    // Passing a step the machine can already answer — there is an agent — is
+    // answering it too, and has to be recorded as one.
     const pass = (answering: SetupStepKind) => run(async () => {}, answering)
-
-    const pickWorkdir = async () => {
-        if (!bindings?.PickDirectory) {
-            return
-        }
-        setError('')
-        try {
-            const picked = await bindings.PickDirectory(intl.formatMessage({id: 'BoardSetup.pick-folder', defaultMessage: 'Choose a folder'}))
-            if (picked) {
-                // The name follows the folder while nobody has typed one: it
-                // was filled in from the last pick, so picking again must
-                // refill it — a second choice with the first one's name is a
-                // folder registered under the wrong word. A name somebody
-                // actually typed is theirs and survives the change.
-                const previous = basename(workdirPath())
-                setWorkdirName((current) => (!current || current === previous ? basename(picked) : current))
-                setWorkdirPath(picked)
-                setTaken(JSON.parse(await bindings.FindAgentWorkdir?.(picked) || 'null'))
-            }
-        } catch (e) {
-            setError(goError(intl, e))
-        }
-    }
-
-    // The folder is already somebody's: using it here is one call and no new
-    // registry entry, and the step is answered by it just the same.
-    const useTakenWorkdir = () => run(async () => {
-        const entry = taken()
-        if (entry) {
-            await useWorkdirHere(entry, props.board.id)
-            setTaken(null)
-        }
-        await syncWorkdirsToBoard(props.board, JSON.parse(await bindings!.ListAgentWorkdirs(props.board.id)) || [], fieldNames(intl))
-    }, STEP_WORKDIR)
-
-    const addWorkdir = () => run(async () => {
-        // Asked before it is filed: a board that publishes a branch needs a
-        // folder under git, and this is where that can still be answered.
-        await checkSetupAnswer(props.board.id, STEP_WORKDIR, workdirPath())
-
-        // Filed as a repository when that is what was asked for, so the answer
-        // outlives the question: a folder that stops being one later says so
-        // instead of quietly becoming an ordinary folder on a board whose
-        // every route waits for a branch.
-        const kind = stepRequires(stepAt(STEP_WORKDIR), 'git') ? 'git' : ''
-        await bindings!.AddAgentWorkdir!(workdirName().trim(), workdirPath(), props.board.id, kind, false)
-
-        // And onto the board, because the registry alone is not an answer: a
-        // card names its folder with an option of the board's own field, so a
-        // folder added here and nowhere else left the person who had just
-        // answered this question with nothing to pick on the card.
-        await syncWorkdirsToBoard(props.board, JSON.parse(await bindings!.ListAgentWorkdirs(props.board.id)) || [], fieldNames(intl))
-    }, STEP_WORKDIR)
 
     const addDeploy = () => run(async () => {
         await bindings!.AddDeployTarget!(JSON.stringify({
@@ -292,7 +227,6 @@ const BoardSetupWizard = (props: Props) => {
         props.onClose()
     }
 
-    const hasWorkdir = () => registry().workdirs.length > 0
     const hasAgent = () => registry().agents.length > 0
 
     // The first task (docs/onboarding.md): the one action that shows what the
@@ -318,11 +252,6 @@ const BoardSetupWizard = (props: Props) => {
             setBusy(false)
         }
     }
-
-    // Whether the folder step has something to answer with: one already on this
-    // board, one picked and named, or one somebody else registered and offered
-    // for use here.
-    const workdirAnswered = () => Boolean(taken()) || hasWorkdir() || Boolean(workdirPath() && workdirName().trim())
 
     const body = () => {
         switch (step()) {
@@ -362,57 +291,6 @@ const BoardSetupWizard = (props: Props) => {
                     <p class='BoardSetupWizard__hint'>
                         {intl.formatMessage({id: 'BoardSetup.description-why', defaultMessage: 'The agent that sorts the inbox reads the description to decide which cards to move to this board. You can leave it empty and add it later in the inbox sorting settings.'})}
                     </p>
-                </div>
-            )
-        case STEP_WORKDIR:
-            return (
-                <div class='BoardSetupWizard__step'>
-                    <p>{intl.formatMessage({id: 'BoardSetup.folder-why', defaultMessage: 'An agent works in a folder on your machine. A card is matched to one by its folder field, which this fills in for you.'})}</p>
-                    <Show when={stepRequires(stepAt(STEP_WORKDIR), 'git')}>
-                        <p class='BoardSetupWizard__hint'>
-                            {intl.formatMessage({id: 'BoardSetup.folder-git', defaultMessage: 'This board publishes a branch or waits for one, so its folder has to be a git repository. A board that does neither takes any folder.'})}
-                        </p>
-                    </Show>
-                    <Show when={hasWorkdir()}>
-                        <div class='BoardSetupWizard__known'>
-                            {intl.formatMessage({id: 'BoardSetup.folder-known', defaultMessage: 'Already registered: {names}'}, {names: registry().workdirs.map((r) => r.name).join(', ')})}
-                        </div>
-                    </Show>
-
-                    {/* What passing costs, said where it can be acted on: a
-                        card with no folder can still be talked over — that
-                        conversation opens in the board's drafts folder — but a
-                        stage of a route has nowhere to work and waits. */}
-                    <Show when={!workdirAnswered()}>
-                        <p class='BoardSetupWizard__hint'>
-                            {intl.formatMessage({id: 'BoardSetup.folder-skip', defaultMessage: 'This can be answered later. Without a folder the agent still runs — in a scratch directory of its own — and a task can still be discussed in the board’s drafts.'})}
-                        </p>
-                    </Show>
-                    <Button onClick={pickWorkdir}>
-                        {intl.formatMessage({id: 'BoardSetup.choose-folder', defaultMessage: 'Choose a folder…'})}
-                    </Button>
-                    {/* Already added, on this board or another: an offer, not
-                        a refusal — the person picked the folder they meant. */}
-                    <Show when={taken()}>
-                        {(entry) => (
-                            <div class='BoardSetupWizard__known'>
-                                {intl.formatMessage(
-                                    {id: 'Workdirs.already-added', defaultMessage: 'This folder is already added as "{name}". Use it on this board too?'},
-                                    {name: entry().name},
-                                )}
-                            </div>
-                        )}
-                    </Show>
-                    <Show when={workdirPath() && !taken()}>
-                        <span class='BoardSetupWizard__path'>{workdirPath()}</span>
-                        <label>
-                            {intl.formatMessage({id: 'BoardSetup.folder-name', defaultMessage: 'Name'})}
-                            <input
-                                value={workdirName()}
-                                onInput={(e) => setWorkdirName(e.currentTarget.value)}
-                            />
-                        </label>
-                    </Show>
                 </div>
             )
         case STEP_AGENT:
@@ -533,6 +411,11 @@ const BoardSetupWizard = (props: Props) => {
             return (
                 <div class='BoardSetupWizard__step'>
                     <p>{intl.formatMessage({id: 'BoardSetup.done-how', defaultMessage: 'Assign a card to an agent and drag it into another column: the move is what starts the work. The agent reads the card, does it, writes what it did in a comment and moves the card on itself.'})}</p>
+
+                    {/* Where the work happens is not asked by the wizard any
+                        more, so it is said here, once, where the next thing a
+                        person does is make a card. */}
+                    <p class='BoardSetupWizard__hint'>{intl.formatMessage({id: 'BoardSetup.folder-on-card', defaultMessage: 'The agent works in the folder chosen in the card’s “Folder” field. A folder is added from that field and is then offered on every card of the board. A card without a folder is worked in the board’s drafts.'})}</p>
                     <Show
                         when={offersFirstTask()}
                         fallback={
@@ -586,37 +469,6 @@ const BoardSetupWizard = (props: Props) => {
                 >
                     {intl.formatMessage({id: 'BoardSetup.next', defaultMessage: 'Next'})}
                 </Button>
-            )
-        case STEP_WORKDIR:
-            return (
-                <>
-                    <Button
-                        emphasis='primary'
-                        disabled={busy() || !workdirAnswered()}
-                        onClick={() => {
-                        // Three answers behind one button: use the folder that
-                        // is already registered, add the one just picked, or —
-                        // with a folder already on this board — pass the step.
-                            if (taken()) {
-                                return useTakenWorkdir()
-                            }
-                            return workdirPath() && workdirName().trim() ? addWorkdir() : pass(STEP_WORKDIR)
-                        }}
-                    >
-                        {taken() ? intl.formatMessage({id: 'Workdirs.use-here', defaultMessage: 'Use it here'}) : intl.formatMessage({id: 'BoardSetup.next', defaultMessage: 'Next'})}
-                    </Button>
-
-                    {/* Offered exactly when there is no answer to give, which is
-                    when «Дальше» is disabled: until this, somebody without the
-                    folder to hand had to leave the whole wizard to reach the
-                    questions after it. What a board gives up by passing is said
-                    on the step itself. */}
-                    <Show when={!workdirAnswered()}>
-                        <Button onClick={() => skip(STEP_WORKDIR)}>
-                            {intl.formatMessage({id: 'BoardSetup.skip', defaultMessage: 'Skip'})}
-                        </Button>
-                    </Show>
-                </>
             )
         case STEP_AGENT:
 
@@ -703,8 +555,6 @@ const BoardSetupWizard = (props: Props) => {
         switch (of) {
         case STEP_NAME:
             return intl.formatMessage({id: 'BoardSetup.step-name', defaultMessage: 'Name'})
-        case STEP_WORKDIR:
-            return intl.formatMessage({id: 'BoardSetup.step-folder', defaultMessage: 'Folder'})
         case STEP_AGENT:
             return intl.formatMessage({id: 'BoardSetup.step-agent', defaultMessage: 'Agent'})
         case STEP_DEPLOY:
@@ -733,7 +583,7 @@ const BoardSetupWizard = (props: Props) => {
                 </ol>
 
                 {/* The board's own sentence about this step, when it has one:
-                    "the folder with your household notes" says more than any
+                    "the agent that writes your newsletter" says more than any
                     wording of ours that has to fit every board. */}
                 <Show when={stepAt(step())?.hint}>
                     <p class='BoardSetupWizard__hint'>{stepAt(step())!.hint}</p>

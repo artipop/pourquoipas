@@ -57,7 +57,6 @@ describe('the AI switch', () => {
             automated: true,
             steps: [
                 {kind: 'name', optional: false, status: 'pending'},
-                {kind: 'project', optional: false, status: 'pending'},
                 {kind: 'agent', optional: false, status: 'pending'},
             ],
         })

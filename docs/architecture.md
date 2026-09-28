@@ -763,10 +763,15 @@ on screen are two boards with the same name whatever the bytes say. The wizard
 reads the other names through `listBoards()` rather than the store, so it needs
 no provider around it in a test.
 
-**Four questions are every board's** (`impliedSetup`): its name, a folder, an
-agent, and the last screen saying what to do with what was set up. They are what
-an agent needs to work a card at all — somewhere to work, and somebody to do it
-— and nothing about a board implies more than that any more. A board may ask for
+**Three questions are every board's** (`impliedSetup`): its name, an agent, and
+the last screen saying what to do with what was set up. The agent is what a card
+needs to be worked at all, and nothing about a board implies more than that any
+more. **The folder is not a board question**: it is asked on the card, whose
+«Папка» field lists the board's folders and adds one («Добавить папку…»,
+`cardFolderValue.tsx` over `acp/cardFolder.ts`) — registered for the board,
+mirrored into the field, set on the card. A board declaring the retired
+`project` step has it dropped in silence (`retiredSetupSteps`), since every
+board made before carries it (docs/decisions.md). A board may ask for
 others of its own in `setup` (`BoardPropSetup`): a deploy host, and whatever the
 closed set grows later. The set is closed on purpose — a board that could
 declare arbitrary fields would be a program, and nothing on this side could
@@ -774,7 +779,7 @@ promise the answer fits the registry it is going into.
 
 It used to be read off the board's stages, which is how a step could be *implied*
 at all: a route with a deploy stage needed somewhere to deploy to. With the
-routes gone there is nothing to infer from, so the four are asked of everybody
+routes gone there is nothing to infer from, so the three are asked of everybody
 and the rest is the board's to declare.
 
 **Relaxed mode is the word for that, and for the moment it is a word and not a
@@ -791,8 +796,12 @@ time.
 
 What it means today, question by question:
 
-- **no folder** — the session runs in a scratch directory of its own, and a
-  planning conversation reads «черновики доски» (`<dataDir>/boards/<boardID>`);
+- **no folder** — the card's session runs in drafts of its own,
+  `<dataDir>/boards/<boardID>/cards/<cardID>` (`cardDrafts`), kept after the
+  run because what the agent wrote is there; a planning conversation reads
+  «черновики доски» (`<dataDir>/boards/<boardID>`). A folder the card *names*
+  and the board no longer offers is not "no folder": that stays a stall
+  (`folders.unchosen`), since the drafts would be somewhere nobody chose;
 - **nobody assigned** — nothing starts, and the card sits in the column
   somebody put it in. The assignee field offers every agent on the machine, so
   answering it is one click on the card;

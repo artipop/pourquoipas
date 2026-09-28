@@ -1,8 +1,27 @@
 # Folders and branches
 
-An agent always works in some folder on your machine. The list of them is in the
-board's menu → **"Folders…"**. A card picks one of them with its «Folder» field —
-one, because a card has one working copy and one branch.
+An agent always works in some folder on your machine. A card picks one folder
+with its «Folder» field — one, because a card has one working copy and one
+branch.
+
+## The folder on the card
+
+A folder is chosen on the card itself: click the value of the «Folder» field. The
+list has this board's folders, **"Add a folder…"** under them and, when a folder
+is already chosen, **"No folder"**.
+
+**"Add a folder…"** opens a folder picker. The folder you pick is added to the
+board under its own name and put on the card at once. From then on it is in the
+list on every card of the board — there is no need to add it again. If the
+folder is already added on another board, the app does not add it twice but
+makes it shared. If the name is already taken by another folder, a number is
+added to it: `app 2`.
+
+On a board that has no «Folder» field yet, the card still has a «Folder» row
+reading **"Not chosen"**; the first folder added makes the field.
+
+The full list of folders, renaming them and their settings are in the board's
+menu → **"Folders…"**.
 
 When the board has only one folder, a new card is given it straight away: there
 is nothing to choose between, and the field is filled in where you can see it. A
@@ -11,8 +30,8 @@ switch is in Settings → "Other".
 
 A card shows its folder on its face on the board, as a line with a folder icon
 under the title. An empty field draws no line. «The board’s drafts» never appears
-there: that is where a conversation stands when the card has not named a folder,
-not an answer the card gives.
+there: that is where a card that has not named a folder is worked, not an answer
+the card gives.
 
 **The folder cannot be changed once work has started.** As soon as a working
 copy or a branch has been taken for the card, the field stops being editable and
@@ -22,14 +41,15 @@ it there. This holds on another machine too: the card carries its branch in the
 «Branch» field, so the work is known about there even when the copy itself is
 not.
 
-**Without a folder the agent still runs** — it gets a scratch directory with
-nothing to read and nothing to commit. For a card that needs code, pick the
-folder first: the «Folder» field is on the card itself.
+**Without a folder the agent still runs** — in the board's drafts, in a directory
+of the card's own. The directory stays after the run: what the agent wrote is
+there. It has no code and no branch, so for a card that needs code, pick a
+folder. If the field names a folder that has since been taken off the list, the
+agent does not start and the card says why: pick another folder or **"No
+folder"**.
 
-Which items a board's menu has is decided by the template it was made from: the
-«Development» board asks about a folder, a deploy host and a browser, so its menu
-has "Folders…" and "Where to deploy…"; the «Personal» board asks about a folder
-alone.
+"Folders…" is in the menu of every board agents work on; "Where to deploy…" is
+on a board that asked for it.
 
 Every folder in the list is a card of its own: the name, the path under it,
 and — for a repository — its two settings.
