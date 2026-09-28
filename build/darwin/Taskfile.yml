@@ -205,23 +205,14 @@ tasks:
       # under the hood — an app extension has no main() of its own, the entry
       # point is Foundation's.
       - mkdir -p "{{.APPEX}}/Contents/MacOS"
+      # arm64 only: the Command Line Tools for macOS 27 ship the Swift
+      # compatibility libraries without x86_64, so an x86_64 slice no longer
+      # links there.
       - >-
         xcrun swiftc -target arm64-apple-macos12.0 -parse-as-library -O
-        -o "{{.APPEX}}/Contents/MacOS/ShareExtension-arm64"
+        -o "{{.APPEX}}/Contents/MacOS/ShareExtension"
         build/darwin/share-extension/ShareViewController.swift
         -framework Cocoa -Xlinker -e -Xlinker _NSExtensionMain
-      - >-
-        xcrun swiftc -target x86_64-apple-macos12.0 -parse-as-library -O
-        -o "{{.APPEX}}/Contents/MacOS/ShareExtension-x86_64"
-        build/darwin/share-extension/ShareViewController.swift
-        -framework Cocoa -Xlinker -e -Xlinker _NSExtensionMain
-      # Both architectures whatever the app was built for: the extension is
-      # loaded by the system, not by us, and a Rosetta host would refuse a
-      # single-architecture one.
-      - >-
-        lipo -create -output "{{.APPEX}}/Contents/MacOS/ShareExtension"
-        "{{.APPEX}}/Contents/MacOS/ShareExtension-arm64" "{{.APPEX}}/Contents/MacOS/ShareExtension-x86_64"
-      - rm "{{.APPEX}}/Contents/MacOS/ShareExtension-arm64" "{{.APPEX}}/Contents/MacOS/ShareExtension-x86_64"
       - cp build/darwin/share-extension/Info.plist "{{.APPEX}}/Contents/Info.plist"
       # Signed here, before the app around it: a signature covers what is
       # nested inside it, so signing outside-in would either drop these
