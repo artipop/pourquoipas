@@ -120,7 +120,11 @@ func TestProxyCredentialsComposeAndStayOutOfSight(t *testing.T) {
 
 	// The password is percent-encoded into the URL, so it survives characters
 	// that would otherwise break parsing.
-	got, err := m.Proxies()[0].ProxyURL()
+	net, err := m.resolveNetwork(AgentEntry{Name: "x", Kind: "codex", ProxyName: "office"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := net.ProxyURL()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -130,7 +134,7 @@ func TestProxyCredentialsComposeAndStayOutOfSight(t *testing.T) {
 	}
 
 	// …and that composed URL is what the agent process actually gets.
-	env, _ := spawnEnv(AgentEntry{}, m.Proxies()[0].NetworkSettings)
+	env := spawnEnv(AgentEntry{}, net)
 	var seen bool
 	for _, kv := range env {
 		if kv == "HTTPS_PROXY="+want {
@@ -151,7 +155,6 @@ func TestProxyCredentialsComposeAndStayOutOfSight(t *testing.T) {
 
 	// A CLI echoing the proxy URL back must not leak the password into a card
 	// comment, in either form.
-	net := m.Proxies()[0].NetworkSettings
 	reason := "failed to connect to " + want + " (p@ss:w/rd #1)"
 	redacted := net.redactProxySecret(reason)
 	for _, secret := range []string{"p@ss:w/rd #1", "p%40ss%3Aw%2Frd%20%231"} {

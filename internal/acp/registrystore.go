@@ -122,22 +122,25 @@ func (s *Store) DeleteWorkspace(id string) error {
 }
 
 // SaveProxy writes one named network configuration, giving it an id if it
-// arrived without one.
+// arrived without one. The password is not written: it is kept in the secret
+// store under proxySecretKey (proxysecret.go), and the column is only ever read
+// — for a row written before that — and cleared once the secret has moved.
 func (s *Store) SaveProxy(e ProxyEntry) (ProxyEntry, error) {
 	if e.ID == "" {
 		e.ID = newID()
 	}
-	_, err := s.exec(`INSERT INTO proxy (id, name, url, no_proxy, ca_cert, username, password, created_at)
-		VALUES (?,?,?,?,?,?,?,?)
+	_, err := s.exec(`INSERT INTO proxy (id, name, url, no_proxy, ca_cert, username, created_at)
+		VALUES (?,?,?,?,?,?,?)
 		ON CONFLICT(id) DO UPDATE SET
 			name=excluded.name, url=excluded.url, no_proxy=excluded.no_proxy,
-			ca_cert=excluded.ca_cert, username=excluded.username, password=excluded.password`,
+			ca_cert=excluded.ca_cert, username=excluded.username`,
 		e.ID, e.Name, nullable(e.Proxy), nullable(e.NoProxy), nullable(e.CACert),
-		nullable(e.Username), nullable(e.Password), time.Now().UnixMilli())
+		nullable(e.Username), time.Now().UnixMilli())
 	return e, err
 }
 
-// Proxies is the registry.
+// Proxies is the registry. Password is whatever the legacy column still holds,
+// which is empty for every row that has been through adoptProxySecrets.
 func (s *Store) Proxies() ([]ProxyEntry, error) {
 	rows, err := s.query(`SELECT id, name, COALESCE(url,''), COALESCE(no_proxy,''),
 		COALESCE(ca_cert,''), COALESCE(username,''), COALESCE(password,'')
@@ -156,6 +159,12 @@ func (s *Store) Proxies() ([]ProxyEntry, error) {
 		out = append(out, e)
 	}
 	return out, rows.Err()
+}
+
+// clearProxyPassword empties the legacy column once the secret is in the store.
+func (s *Store) clearProxyPassword(id string) error {
+	_, err := s.exec(`UPDATE proxy SET password=NULL WHERE id=?`, id)
+	return err
 }
 
 // DeleteProxy removes one. An agent pointing at it is set to no proxy by the

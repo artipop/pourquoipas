@@ -22,7 +22,10 @@ export type ProxyEntry = {
     noProxy?: string
     caCert?: string
     username?: string
+    // Sent on a save and never received: the password is kept in the system
+    // keychain, and the list only says whether there is one.
     password?: string
+    passwordSet?: boolean
 }
 
 // displayProxy hides any credentials the URL itself carries, so the list never
@@ -170,11 +173,12 @@ const ProxiesPanel = () => {
                             />
                         </label>
                         <label>
-                            {intl.formatMessage({id: 'Proxies.password', defaultMessage: 'Password (optional) — stored in the local config file'})}
+                            {intl.formatMessage({id: 'Proxies.password', defaultMessage: 'Password (optional) — stored in the system keychain'})}
                             <input
                                 type='password'
                                 value={form()!.password || ''}
                                 autocomplete='new-password'
+                                placeholder={form()!.passwordSet ? intl.formatMessage({id: 'Proxies.password-keep', defaultMessage: 'Leave empty to keep the current password'}) : ''}
                                 onInput={(e) => updateForm({password: e.currentTarget.value})}
                             />
                         </label>
@@ -187,7 +191,7 @@ const ProxiesPanel = () => {
                             />
                         </label>
                         <label>
-                            {intl.formatMessage({id: 'Proxies.caCert', defaultMessage: 'CA bundle — PEM for a TLS-inspecting proxy'})}
+                            {intl.formatMessage({id: 'Proxies.caCert', defaultMessage: 'Path to the CA file (PEM) of a TLS-inspecting proxy'})}
                             <input
                                 value={form()!.caCert || ''}
                                 placeholder={'/etc/ssl/my-ca.pem'}

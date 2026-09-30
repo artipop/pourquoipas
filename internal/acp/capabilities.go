@@ -164,11 +164,10 @@ func (m *Manager) probeAgentOptions(a AgentEntry) ([]AgentOption, error) {
 	ctx, cancel := context.WithTimeout(parent, probeTimeout)
 	defer cancel()
 
-	env, drop := spawnEnv(a, net)
+	env := spawnEnv(a, net)
 	env = append(append([]string{}, launch.env...), env...)
-	drop = append(drop, launch.dropEnv...)
 	argv := resolveArgv0(launch.argv)
-	proc, err := procgroup.Spawn(ctx, argv, cwd, env, drop...)
+	proc, err := procgroup.Spawn(ctx, argv, cwd, env, launch.dropEnv...)
 	if err != nil {
 		return nil, fmt.Errorf("could not start the agent %q: %w", argv[0], err)
 	}

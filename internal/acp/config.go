@@ -282,14 +282,13 @@ func (s *MCPServerSet) UnmarshalJSON(data []byte) error {
 type NetworkSettings struct {
 	Proxy   string `json:"proxy,omitempty"`   // http(s)/socks5 URL → HTTP(S)_PROXY, ALL_PROXY
 	NoProxy string `json:"noProxy,omitempty"` // comma-separated hosts/suffixes → NO_PROXY
-	CACert  string `json:"caCert,omitempty"`  // PEM bundle for a TLS-inspecting proxy
+	CACert  string `json:"caCert,omitempty"`  // path to the PEM file of a TLS-inspecting proxy: the variables it fills take a file, not its text
 
 	// Username/Password are the proxy's basic-auth credentials, kept apart from
 	// the URL so they are entered raw (percent-encoding is applied when the URL
-	// is composed), masked in the UI and never rendered in a proxy list. They
-	// still live in the config file, which is why SaveConfig keeps it 0600; to
-	// keep the secret out of it entirely, point Proxy at a local relay that
-	// holds the credentials itself (cntlm, px).
+	// is composed). The password is the secret store's, never the table's or the
+	// file's (proxysecret.go), and is never sent to the window: it comes in
+	// with a save and stays empty on the way out.
 	Username string `json:"username,omitempty"`
 	Password string `json:"password,omitempty"`
 }
@@ -350,6 +349,9 @@ type ProxyEntry struct {
 	ID   string `json:"id,omitempty"`
 	Name string `json:"name"` // shown on screen; matches AgentEntry.ProxyName
 	NetworkSettings
+	// PasswordSet is how the window learns there is a password without being
+	// given it. Output only.
+	PasswordSet bool `json:"passwordSet,omitempty"`
 }
 
 // IsZero reports whether nothing is configured.
@@ -384,7 +386,7 @@ func (n NetworkSettings) Validate(kind string) (NetworkSettings, error) {
 	return n, nil
 }
 
-// proxyEnvNames are the variables spawnEnv manages when Proxy is set. Both
+// proxyEnvNames are the variables spawnEnv sets when Proxy is set. Both
 // cases are covered: Node-based CLIs (claude, gemini) read the upper-case ones,
 // most Rust/Go/curl-based ones accept either.
 var proxyEnvNames = []string{
@@ -392,23 +394,22 @@ var proxyEnvNames = []string{
 	"http_proxy", "https_proxy", "all_proxy",
 }
 
-// caCertEnvNames map a PEM bundle onto the per-runtime variables: Node
+// caCertEnvNames map the path of a PEM file onto the per-runtime variables: Node
 // (claude/gemini), Rust/Python (codex and friends), curl.
 var caCertEnvNames = []string{
 	"NODE_EXTRA_CA_CERTS", "SSL_CERT_FILE", "REQUESTS_CA_BUNDLE", "CURL_CA_BUNDLE",
 }
 
-// spawnEnv returns the "KEY=value" pairs injected into the agent process and
-// the names dropped from the inherited environment first, so the agent's own
-// values win over whatever the desktop app itself was launched with. net is the
-// resolved network configuration; it is expanded first and the agent's Env map
-// last, so Env can override or blank out any of it (an empty value means
-// "present but empty", which is how an agent opts out of an inherited proxy).
-func spawnEnv(a AgentEntry, net NetworkSettings) (env []string, drop []string) {
-	add := func(k, v string) {
-		env = append(env, k+"="+v)
-		drop = append(drop, k)
-	}
+// spawnEnv returns the "KEY=value" pairs appended to the agent process's
+// environment. The child's environment keeps the last value of a name, so what
+// is appended here wins over whatever the desktop app itself was launched with
+// and needs no list of names to remove first. net is the resolved network
+// configuration; it is expanded first and the agent's Env map last, so Env can
+// override or blank out any of it (an empty value means "present but empty",
+// which is how an agent opts out of an inherited proxy).
+func spawnEnv(a AgentEntry, net NetworkSettings) []string {
+	var env []string
+	add := func(k, v string) { env = append(env, k+"="+v) }
 	// Validate has already rejected an unparseable address, so a late error
 	// here would only mean a hand-edited config: fall back to the raw value.
 	proxy, err := net.ProxyURL()
@@ -419,7 +420,7 @@ func spawnEnv(a AgentEntry, net NetworkSettings) (env []string, drop []string) {
 		for _, k := range proxyEnvNames {
 			add(k, proxy)
 		}
-		// Managed as a pair: an inherited NO_PROXY must not leak into an agent
+		// Set as a pair: an inherited NO_PROXY must not leak into an agent
 		// that goes through its own proxy.
 		add("NO_PROXY", net.NoProxy)
 		add("no_proxy", net.NoProxy)
@@ -435,7 +436,7 @@ func spawnEnv(a AgentEntry, net NetworkSettings) (env []string, drop []string) {
 	for k, v := range a.Env {
 		add(k, v)
 	}
-	return env, drop
+	return env
 }
 
 // Agent kinds. Every one of them is an ACP agent spawned over stdio and talked

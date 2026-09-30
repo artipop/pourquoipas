@@ -159,6 +159,11 @@ func NewManager(cfg Config, cfgPath string, st *Store, w BoardWriter, ui UIEmitt
 // still arrive through the environment, and most folders need none at all.
 func (m *Manager) SetSecrets(v secrets.Store) {
 	m.vault = v
+	// The registries were read when the manager was made, before there was a
+	// store to ask for the proxies' passwords.
+	m.cfgMu.Lock()
+	m.adoptProxySecrets()
+	m.cfgMu.Unlock()
 }
 
 // SetSwitchedOff supplies the app-wide AI switch. While it answers true

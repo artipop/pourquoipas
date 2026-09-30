@@ -9,9 +9,9 @@
 // server build. That file keeps values in plain text, at 0600, and says so.
 //
 // Encrypting that file with a key lying beside it on the same disk would be
-// theatre, and the app already keeps proxy passwords and a GitHub token in a
-// config file at 0600 — so it is not a new exposure, but it is not the end
-// state either.
+// theatre, so the server's file is the honest floor: a proxy password or a
+// GitHub token never sits in a settings file or a database column, only here or
+// in the system store.
 package secrets
 
 import (
@@ -137,6 +137,44 @@ func (s *FileStore) saveLocked() error {
 		return err
 	}
 	return os.Rename(temp, s.path)
+}
+
+// MemoryStore keeps secrets in a map, for tests and for a build that has
+// nowhere to put them. Safe for concurrent use.
+type MemoryStore struct {
+	mu     sync.Mutex
+	values map[string]string
+}
+
+var _ Store = (*MemoryStore)(nil)
+
+func NewMemoryStore() *MemoryStore { return &MemoryStore{values: map[string]string{}} }
+
+func (s *MemoryStore) Get(key string) (string, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	value, ok := s.values[key]
+	if !ok {
+		return "", ErrNotFound
+	}
+	return value, nil
+}
+
+func (s *MemoryStore) Set(key, value string) error {
+	if strings.TrimSpace(key) == "" {
+		return fmt.Errorf("у секрета нет имени")
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.values[key] = value
+	return nil
+}
+
+func (s *MemoryStore) Delete(key string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	delete(s.values, key)
+	return nil
 }
 
 // Env is a read-only store over the environment, for a credential given to the

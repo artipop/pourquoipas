@@ -8,6 +8,8 @@ import (
 	"strings"
 	"sync"
 	"testing"
+
+	"github.com/artipop/pourquoipas/internal/secrets"
 )
 
 func agentManager(t *testing.T, cfgPath string, agents ...AgentEntry) *Manager {
@@ -22,6 +24,8 @@ func agentManager(t *testing.T, cfgPath string, agents ...AgentEntry) *Manager {
 		t.Fatal(err)
 	}
 	m := NewManager(cfg, cfgPath, store, newFakeWriter(), &fakeEmitter{}, nil)
+	// Where a proxy's password goes; a manager with no store refuses to keep one.
+	m.SetSecrets(secrets.NewMemoryStore())
 	// Through the registry rather than straight into the struct: the id is
 	// minted by the store, and a crew points at ids now — an agent that never
 	// went through a save has nothing for a column to name.
@@ -40,6 +44,7 @@ func agentManager(t *testing.T, cfgPath string, agents ...AgentEntry) *Manager {
 func reloaded(t *testing.T, m *Manager) Config {
 	t.Helper()
 	next := NewManager(DefaultConfig(t.TempDir()), "", m.store, newFakeWriter(), &fakeEmitter{}, nil)
+	next.vault = m.vault
 	next.cfgMu.Lock()
 	defer next.cfgMu.Unlock()
 	if err := next.loadRegistriesLocked(); err != nil {
@@ -194,36 +199,28 @@ func TestAgentLaunch(t *testing.T) {
 }
 
 func TestAgentSpawnEnvProxy(t *testing.T) {
-	envOf := func(a AgentEntry, net NetworkSettings) (map[string]string, map[string]bool) {
-		env, drop := spawnEnv(a, net)
+	envOf := func(a AgentEntry, net NetworkSettings) map[string]string {
 		vals := map[string]string{}
-		for _, kv := range env {
+		for _, kv := range spawnEnv(a, net) {
 			eq := strings.Index(kv, "=")
 			vals[kv[:eq]] = kv[eq+1:] // later entries win, as they do in the child env
 		}
-		dropped := map[string]bool{}
-		for _, k := range drop {
-			dropped[k] = true
-		}
-		return vals, dropped
+		return vals
 	}
 
 	// A proxy expands to both cases and manages NO_PROXY as its pair.
-	vals, dropped := envOf(AgentEntry{}, NetworkSettings{Proxy: "http://proxy.example.com:8080", NoProxy: "git.internal,localhost"})
+	vals := envOf(AgentEntry{}, NetworkSettings{Proxy: "http://proxy.example.com:8080", NoProxy: "git.internal,localhost"})
 	for _, k := range proxyEnvNames {
 		if vals[k] != "http://proxy.example.com:8080" {
 			t.Errorf("%s = %q, want the proxy URL", k, vals[k])
-		}
-		if !dropped[k] {
-			t.Errorf("%s should be dropped from the inherited env", k)
 		}
 	}
 	if vals["NO_PROXY"] != "git.internal,localhost" || vals["no_proxy"] != "git.internal,localhost" {
 		t.Errorf("NO_PROXY = %q/%q", vals["NO_PROXY"], vals["no_proxy"])
 	}
 
-	// A CA bundle reaches every runtime's variable.
-	vals, _ = envOf(AgentEntry{}, NetworkSettings{CACert: "/etc/my-ca.pem"})
+	// A CA file reaches every runtime's variable.
+	vals = envOf(AgentEntry{}, NetworkSettings{CACert: "/etc/my-ca.pem"})
 	for _, k := range caCertEnvNames {
 		if vals[k] != "/etc/my-ca.pem" {
 			t.Errorf("%s = %q, want the CA path", k, vals[k])
@@ -235,7 +232,7 @@ func TestAgentSpawnEnvProxy(t *testing.T) {
 
 	// The explicit env map wins over the expanded settings, including blanking
 	// a proxy out; unrelated inherited proxy vars are still overridden.
-	vals, dropped = envOf(
+	vals = envOf(
 		AgentEntry{Env: map[string]string{"HTTPS_PROXY": "", "CODEX_HOME": "/tmp/a"}},
 		NetworkSettings{Proxy: "http://proxy.example.com:8080"},
 	)
@@ -245,12 +242,9 @@ func TestAgentSpawnEnvProxy(t *testing.T) {
 	if vals["HTTP_PROXY"] != "http://proxy.example.com:8080" || vals["CODEX_HOME"] != "/tmp/a" {
 		t.Errorf("unexpected env: %v", vals)
 	}
-	if !dropped["CODEX_HOME"] || !dropped["HTTPS_PROXY"] {
-		t.Error("agent env keys must be dropped from the inherited env")
-	}
 
 	// NoProxy alone does not invent a proxy.
-	vals, _ = envOf(AgentEntry{}, NetworkSettings{NoProxy: "*.internal"})
+	vals = envOf(AgentEntry{}, NetworkSettings{NoProxy: "*.internal"})
 	if vals["NO_PROXY"] != "*.internal" {
 		t.Errorf("NO_PROXY = %q", vals["NO_PROXY"])
 	}

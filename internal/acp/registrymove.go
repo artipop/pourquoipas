@@ -52,6 +52,7 @@ func (m *Manager) loadRegistriesLocked() error {
 	m.cfg.Workdirs = workspaces
 	m.cfg.Agents = agents
 	m.cfg.Proxies = proxies
+	m.adoptProxySecrets()
 	// An agent saved before proxies had ids still names its configuration; fold
 	// it once, here, so nothing downstream has to know the name was ever a way
 	// of pointing at one.
@@ -108,6 +109,14 @@ func (m *Manager) persistRegistriesLocked() error {
 			continue
 		}
 		adopt("proxy", m.cfg.Proxies[i].Name, &m.cfg.Proxies[i].ID)
+		if m.cfg.Proxies[i].ID == "" {
+			m.cfg.Proxies[i].ID = newID()
+		}
+		// The secret before the row, so a refusal leaves no row naming a
+		// password that was never kept.
+		if err := m.keepProxyPassword(m.cfg.Proxies[i]); err != nil {
+			return err
+		}
 		saved, err := m.store.SaveProxy(m.cfg.Proxies[i])
 		if err != nil {
 			return fmt.Errorf("save the proxy %q: %w", m.cfg.Proxies[i].Name, err)
@@ -115,7 +124,14 @@ func (m *Manager) persistRegistriesLocked() error {
 		m.cfg.Proxies[i] = saved
 		proxyIDs[saved.Name] = saved.ID
 	}
-	if err := m.pruneRegistry("proxy", proxyIDs, m.store.DeleteProxy); err != nil {
+	removeProxy := func(id string) error {
+		if err := m.store.DeleteProxy(id); err != nil {
+			return err
+		}
+		m.forgetProxyPassword(id)
+		return nil
+	}
+	if err := m.pruneRegistry("proxy", proxyIDs, removeProxy); err != nil {
 		return err
 	}
 

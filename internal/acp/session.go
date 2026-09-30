@@ -701,13 +701,12 @@ func (m *Manager) connectACPAgent(ctx context.Context, s *Session, l launch) (*a
 	if len(l.argv) == 0 {
 		return nil, nil, fmt.Errorf("the agent's launch command is empty")
 	}
-	env, drop := spawnEnv(s.Agent, s.Net)
+	env := spawnEnv(s.Agent, s.Net)
 	// The kind's own variables sit under the agent's, which is what lets an
 	// entry override a model the table would have set.
 	env = append(append([]string{}, l.env...), env...)
-	drop = append(drop, l.dropEnv...)
 	argv := resolveArgv0(l.argv)
-	proc, err := procgroup.Spawn(m.rootCtx, argv, s.Worktree.Path, env, drop...)
+	proc, err := procgroup.Spawn(m.rootCtx, argv, s.Worktree.Path, env, l.dropEnv...)
 	if err != nil {
 		return nil, nil, fmt.Errorf("spawn agent %q: %w", argv[0], err)
 	}

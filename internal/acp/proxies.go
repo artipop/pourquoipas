@@ -7,15 +7,21 @@ import (
 )
 
 // Proxy registry: named network configurations (proxy URL, bypass list, CA
-// bundle), edited from the desktop UI and persisted into the config file.
+// file), edited from the desktop UI and kept in the `proxy` table; the password
+// is the secret store's (proxysecret.go).
 // Agents reference an entry by name instead of carrying their own settings, so
 // one configuration serves several agents and is changed in a single place.
 
-// Proxies returns a snapshot of the registry.
+// Proxies returns a snapshot of the registry for the window: no passwords, only
+// whether there is one. A session reads them through resolveNetwork.
 func (m *Manager) Proxies() []ProxyEntry {
 	m.cfgMu.RLock()
 	defer m.cfgMu.RUnlock()
-	return append([]ProxyEntry(nil), m.cfg.Proxies...)
+	out := make([]ProxyEntry, len(m.cfg.Proxies))
+	for i, p := range m.cfg.Proxies {
+		out[i] = withoutPassword(p)
+	}
+	return out
 }
 
 // validateProxy normalizes and checks a registry entry.
@@ -49,7 +55,11 @@ func (m *Manager) AddProxy(p ProxyEntry) (ProxyEntry, error) {
 		}
 	}
 	m.cfg.Proxies = append(m.cfg.Proxies, p)
-	return p, m.persistConfigLocked()
+	if err := m.persistConfigLocked(); err != nil {
+		return ProxyEntry{}, err
+	}
+	// The id is minted by the save.
+	return withoutPassword(m.cfg.Proxies[len(m.cfg.Proxies)-1]), nil
 }
 
 // UpdateProxy replaces an existing entry and persists. Agents referencing it are
@@ -69,6 +79,7 @@ func (m *Manager) UpdateProxy(p ProxyEntry) (ProxyEntry, error) {
 		if !sameProxyEntry(e, p) {
 			continue
 		}
+		p.Password = keptPassword(e, p)
 		for _, a := range m.cfg.Agents {
 			if !usesProxy(a, e) {
 				continue
@@ -84,7 +95,10 @@ func (m *Manager) UpdateProxy(p ProxyEntry) (ProxyEntry, error) {
 		}
 		p.ID = e.ID
 		m.cfg.Proxies[i] = p
-		return p, m.persistConfigLocked()
+		if err := m.persistConfigLocked(); err != nil {
+			return ProxyEntry{}, err
+		}
+		return withoutPassword(p), nil
 	}
 	return ProxyEntry{}, apperr.New("proxies.not-found", "Configuration {name} was not found", "name", p.Name)
 }
