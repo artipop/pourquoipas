@@ -546,6 +546,13 @@ export function RestartToUpdate(): $CancellablePromise<void> {
 }
 
 /**
+ * RevokeFeedToken closes the feed to everything that reads it.
+ */
+export function RevokeFeedToken(): $CancellablePromise<void> {
+    return $Call.ByID(1768963580);
+}
+
+/**
  * SayToPlanning is a person's message: the conversation's next turn.
  */
 export function SayToPlanning(id: string, text: string): $CancellablePromise<void> {
