@@ -17,7 +17,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/rivo/uniseg v0.4.7
 	github.com/stretchr/testify v1.11.1
-	github.com/wailsapp/wails/v3 v3.0.0-beta.22
+	github.com/wailsapp/wails/v3 v3.0.0-beta.27
 	github.com/wiggin77/merror v1.0.5
 	github.com/zalando/go-keyring v0.2.8
 	golang.org/x/crypto v0.54.0

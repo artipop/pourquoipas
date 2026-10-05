@@ -2,7 +2,7 @@ module github.com/artipop/xciii/mobile
 
 go 1.26.5
 
-require github.com/wailsapp/wails/v3 v3.0.0-beta.22
+require github.com/wailsapp/wails/v3 v3.0.0-beta.27
 
 require (
 	github.com/adrg/xdg v0.5.3 // indirect
