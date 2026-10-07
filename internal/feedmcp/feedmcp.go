@@ -96,7 +96,36 @@ func NewServer(lists Lists, base string) *mcp.Server {
 		}
 		return &mcp.CallToolResult{Content: []mcp.Content{&mcp.TextContent{Text: string(out)}}}, nil, nil
 	})
+	mcp.AddTool(srv, &mcp.Tool{
+		Name:        "list_boards",
+		Description: "The boards, as JSON: {boards: [{id, title}]}.",
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, _ struct{}) (*mcp.CallToolResult, any, error) {
+		return jsonResult("boards", func() (any, error) { return Boards(ctx, lists) })
+	})
+	mcp.AddTool(srv, &mcp.Tool{
+		Name:        "list_columns",
+		Description: "The columns of one board, as JSON: {columns: [{name}]}.",
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, in columnsInput) (*mcp.CallToolResult, any, error) {
+		return jsonResult("columns", func() (any, error) { return Columns(ctx, lists, in.Board) })
+	})
 	return srv
+}
+
+type columnsInput struct {
+	Board string `json:"board" jsonschema:"the board, by its title or id"`
+}
+
+// jsonResult answers a tool with {key: rows}, or with the error as the answer.
+func jsonResult(key string, rows func() (any, error)) (*mcp.CallToolResult, any, error) {
+	value, err := rows()
+	if err != nil {
+		return errorResult(err), nil, nil
+	}
+	out, err := json.Marshal(map[string]any{key: value})
+	if err != nil {
+		return errorResult(err), nil, nil
+	}
+	return &mcp.CallToolResult{Content: []mcp.Content{&mcp.TextContent{Text: string(out)}}}, nil, nil
 }
 
 // ColumnCards lists a column. A board or a column that is not there is an
@@ -107,20 +136,9 @@ func ColumnCards(ctx context.Context, lists Lists, board, column, base string) (
 	if board == "" {
 		return nil, errors.New("не сказано, какая доска")
 	}
-	boards, err := lists.Boards(ctx)
+	found, err := findBoard(ctx, lists, board)
 	if err != nil {
 		return nil, err
-	}
-	var found *boardmodel.BoardSummary
-	titles := make([]string, 0, len(boards))
-	for i := range boards {
-		titles = append(titles, boards[i].Title)
-		if boards[i].ID == board || strings.EqualFold(boards[i].Title, board) {
-			found = &boards[i]
-		}
-	}
-	if found == nil {
-		return nil, fmt.Errorf("доски «%s» нет (есть: %s)", board, strings.Join(titles, ", "))
 	}
 	if column != "" && len(found.Columns) > 0 {
 		names := make([]string, 0, len(found.Columns))
@@ -157,6 +175,66 @@ func ColumnCards(ctx context.Context, lists Lists, board, column, base string) (
 		out = append(out, card)
 	}
 	return out, nil
+}
+
+// BoardRow is one board of the list another application offers to choose from.
+type BoardRow struct {
+	ID    string `json:"id"`
+	Title string `json:"title"`
+}
+
+// ColumnRow is one column of a board.
+type ColumnRow struct {
+	Name string `json:"name"`
+}
+
+// Boards lists the boards, so a form in another application can offer them
+// rather than ask for a name to be typed.
+func Boards(ctx context.Context, lists Lists) ([]BoardRow, error) {
+	boards, err := lists.Boards(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]BoardRow, 0, len(boards))
+	for _, b := range boards {
+		out = append(out, BoardRow{ID: b.ID, Title: b.Title})
+	}
+	return out, nil
+}
+
+// Columns lists the columns of one board, by the names the board shows.
+func Columns(ctx context.Context, lists Lists, board string) ([]ColumnRow, error) {
+	board = strings.TrimSpace(board)
+	if board == "" {
+		return nil, errors.New("не сказано, какая доска")
+	}
+	found, err := findBoard(ctx, lists, board)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]ColumnRow, 0, len(found.Columns))
+	for _, c := range found.Columns {
+		out = append(out, ColumnRow{Name: c.Value})
+	}
+	return out, nil
+}
+
+// findBoard finds a board by title or id. One that is not there is an error
+// naming the boards that are: the name is typed into another application's
+// form, and the list is the answer to the typo.
+func findBoard(ctx context.Context, lists Lists, board string) (*boardmodel.BoardSummary, error) {
+	boards, err := lists.Boards(ctx)
+	if err != nil {
+		return nil, err
+	}
+	titles := make([]string, 0, len(boards))
+	for i := range boards {
+		titles = append(titles, boards[i].Title)
+		if boards[i].ID == board || strings.EqualFold(boards[i].Title, board) {
+			return &boards[i], nil
+		}
+	}
+	return nil, fmt.Errorf("доски «%s» нет (есть: %s)", board, strings.Join(titles, ", "))
 }
 
 // NewHandler serves the feed to whoever holds a token check accepts.

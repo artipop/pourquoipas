@@ -166,3 +166,54 @@ func TestTheBridgeSaysTheTokenIsWrong(t *testing.T) {
 		t.Fatalf("err: %v", err)
 	}
 }
+
+// A form in another application offers boards and, for the one chosen, its
+// columns, by the names the board shows.
+func TestBoardsAndColumnsAreListed(t *testing.T) {
+	boards, err := Boards(context.Background(), fakeLists{})
+	if err != nil || len(boards) != 2 || boards[0].Title != "Работа" || boards[1].ID != "b2" {
+		t.Fatalf("boards: %+v, %v", boards, err)
+	}
+	columns, err := Columns(context.Background(), fakeLists{}, "работа")
+	if err != nil || len(columns) != 3 || columns[1].Name != "Сегодня" {
+		t.Fatalf("columns: %+v, %v", columns, err)
+	}
+	// A board with no columns of its own is a list, not an error.
+	if columns, err = Columns(context.Background(), fakeLists{}, "Дом"); err != nil || len(columns) != 0 {
+		t.Fatalf("columns of a board without any: %+v, %v", columns, err)
+	}
+	if _, err = Columns(context.Background(), fakeLists{}, "Хобби"); err == nil || !strings.Contains(err.Error(), "Работа, Дом") {
+		t.Fatalf("err: %v", err)
+	}
+}
+
+// The same lists reach the caller over MCP, as JSON with the key the manifest
+// reads them at.
+func TestTheListsAreTools(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	serverT, clientT := mcp.NewInMemoryTransports()
+	srv := NewServer(fakeLists{}, "")
+	if _, err := srv.Connect(ctx, serverT, nil); err != nil {
+		t.Fatal(err)
+	}
+	client := mcp.NewClient(&mcp.Implementation{Name: "test", Version: "1"}, nil)
+	session, err := client.Connect(ctx, clientT, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer session.Close()
+	text := func(name string, args map[string]any) string {
+		res, err := session.CallTool(ctx, &mcp.CallToolParams{Name: name, Arguments: args})
+		if err != nil || res.IsError {
+			t.Fatalf("%s: %v %+v", name, err, res)
+		}
+		return res.Content[0].(*mcp.TextContent).Text
+	}
+	if got := text("list_boards", nil); !strings.Contains(got, `"boards":[{"id":"b1","title":"Работа"}`) {
+		t.Fatalf("boards: %s", got)
+	}
+	if got := text("list_columns", map[string]any{"board": "Работа"}); got != `{"columns":[{"name":"Входящие"},{"name":"Сегодня"},{"name":"Готово"}]}` {
+		t.Fatalf("columns: %s", got)
+	}
+}
