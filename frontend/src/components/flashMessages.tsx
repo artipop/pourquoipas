@@ -1,7 +1,6 @@
-import {Show, createSignal, onSettled} from 'solid-js'
+import {Show, createEffect, createSignal} from 'solid-js'
 import type {Component} from 'solid-js'
 import type {JSX} from '@solidjs/web'
-import {createNanoEvents} from 'nanoevents'
 
 import {useIntl} from '../intl'
 
@@ -21,10 +20,14 @@ export type FlashMessage = {
     milliseconds?: number
 }
 
-const emitter = createNanoEvents()
+// A fresh request also restarts the timer when the same message is sent again.
+// Release JSX content when the last renderer goes away.
+const [request, setRequest] = createSignal<{message: FlashMessage} | null>(null, {
+    unobserved: () => setRequest(null),
+})
 
 export function sendFlashMessage(message: FlashMessage): void {
-    emitter.emit('message', message)
+    setRequest({message})
 }
 
 type Props = {
@@ -35,42 +38,30 @@ export const FlashMessages: Component<Props> = (props) => {
     const intl = useIntl()
     const [message, setMessage] = createSignal<FlashMessage|null>(null)
     const [fadeOut, setFadeOut] = createSignal(false)
-    let timeoutId: ReturnType<typeof setTimeout>|null = null
+    let handleClick: () => void = () => undefined
 
-    const handleTimeout = (): void => {
-        setMessage(null)
+    // Only new requests are events: remounting must not replay the previous
+    // message. Solid owns the subscription and cancels the current timer both
+    // on the next request and on disposal.
+    createEffect(request, (sent) => {
+        if (!sent) {
+            return undefined
+        }
+        setMessage(sent.message)
         setFadeOut(false)
-    }
-
-    const handleFadeOut = (): void => {
-        setFadeOut(true)
-        timeoutId = setTimeout(handleTimeout, 200)
-    }
-
-    const handleClick = (): void => {
-        if (timeoutId) {
+        let timeoutId: ReturnType<typeof setTimeout>
+        const fade = () => {
             clearTimeout(timeoutId)
-            timeoutId = null
+            setFadeOut(true)
+            timeoutId = setTimeout(() => {
+                setMessage(null)
+                setFadeOut(false)
+            }, 200)
         }
-        handleFadeOut()
-    }
-
-    onSettled(() => {
-        let isSubscribed = true
-        emitter.on('message', (newMessage: FlashMessage) => {
-            if (isSubscribed) {
-                if (timeoutId) {
-                    clearTimeout(timeoutId)
-                    timeoutId = null
-                }
-                timeoutId = setTimeout(handleFadeOut, (newMessage.milliseconds ?? props.milliseconds) - 200)
-                setMessage(newMessage)
-            }
-        })
-        return () => {
-            isSubscribed = false
-        }
-    })
+        handleClick = fade
+        timeoutId = setTimeout(fade, Math.max(0, (sent.message.milliseconds ?? props.milliseconds) - 200))
+        return () => clearTimeout(timeoutId)
+    }, {defer: true})
 
     // Read as a message that may already be gone: while anything async is
     // being asked again, Solid 2 lets a binding in here run once more after

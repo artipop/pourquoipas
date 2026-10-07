@@ -9,6 +9,7 @@ import type {Plugin} from 'vite'
 import solid from '@solidjs/vite-plugin'
 
 import {solid1Compat} from './solid1/plugin'
+import {noParserAlias, precompileCatalogues} from './i18n/plugin'
 
 const root = path.dirname(fileURLToPath(import.meta.url))
 const outDir = path.join(root, 'dist')
@@ -48,7 +49,7 @@ function emptyDist(): Plugin {
     }
 }
 
-export default defineConfig(({mode}) => {
+export default defineConfig(({mode, command}) => {
     const isProduction = mode === 'production'
 
     return {
@@ -66,11 +67,18 @@ export default defineConfig(({mode}) => {
                 ast: true,
                 idInterpolationPattern: '[sha512:contenthash:base64:6]',
             }),
+            precompileCatalogues(path.join(root, 'i18n')),
             solid1Compat(),
             solid(),
             appHtml(),
             emptyDist(),
         ],
+
+        // Builds contain AST catalogues and AST defaults. The dev server keeps
+        // its runtime parser so editing source messages and HMR stay simple.
+        resolve: {
+            alias: command === 'build' ? [noParserAlias] : [],
+        },
 
         build: {
             outDir,
@@ -84,6 +92,27 @@ export default defineConfig(({mode}) => {
             target: 'es2019',
             sourcemap: !isProduction,
             minify: isProduction,
+            rollupOptions: {
+                output: {
+
+                    // Share the eagerly used libraries across routes without
+                    // pulling the lazy calendar, editor or emoji packages in.
+                    manualChunks(id) {
+                        // The Solid 1 bridge belongs with dnd-kit; leaving it
+                        // in the entry would introduce a vendor/entry cycle.
+                        if (id.includes('/solid1/')) {
+                            return 'vendor'
+                        }
+                        const packageName = id.match(/\/node_modules\/((?:@[^/]+\/)?[^/]+)/)?.[1]
+                        const runtimePackages = ['solid-js', 'marked', '@wailsio/runtime']
+                        const runtimeScopes = ['@solidjs/', '@dnd-kit/', '@formatjs/', '@floating-ui/']
+                        if (packageName && (runtimePackages.includes(packageName) || runtimeScopes.some((scope) => packageName.startsWith(scope)))) {
+                            return 'vendor'
+                        }
+                        return undefined
+                    },
+                },
+            },
         },
 
         experimental: {

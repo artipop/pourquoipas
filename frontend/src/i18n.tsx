@@ -4,10 +4,9 @@ import en from '../i18n/en.json'
 
 import {UserSettings} from './userSettings'
 import {languages} from './languages'
+import type {Messages} from './intl'
 
 const supportedLanguages: string[] = languages.map((l) => l.code)
-
-type Messages = {[key: string]: string}
 
 // Each catalogue is a chunk of its own, fetched when its language is asked
 // for: bundling all of them put every language into the main chunk whatever

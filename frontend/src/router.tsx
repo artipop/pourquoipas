@@ -2,7 +2,6 @@ import {Component, Loading, createEffect, lazy, onSettled} from 'solid-js'
 import {createRouter, useLocation, useNavigate, useParams} from '@solidjs/router'
 import type {JSX} from '@solidjs/web'
 
-import BoardPage from './pages/boardPage/boardPage'
 import ChangePasswordPage from './pages/changePasswordPage'
 import ErrorPage from './pages/errorPage'
 import LoginPage from './pages/loginPage'
@@ -12,6 +11,15 @@ import octoClient from './octoClient'
 import {getGlobalError} from './store/globalError'
 import {useAppSelector, useAppStore} from './store/hooks'
 import fbRoute from './route'
+
+// Auth and auxiliary windows do not need the board's workspace UI.
+const BoardPage = lazy(() => import('./pages/boardPage/boardPage'))
+
+const BoardRoute: Component<{readonly?: boolean}> = (props) => (
+    <Loading fallback={null}>
+        <BoardPage readonly={props.readonly}/>
+    </Loading>
+)
 
 // A card's changes in a window of their own: its own route, so the window is
 // just a URL, and lazily loaded because the board's own window never draws it.
@@ -109,14 +117,14 @@ const routes = [
 
     fbRoute({
         path: ['/team/:teamId/shared/:boardId?/:viewId?/:cardId?', '/shared/:boardId?/:viewId?/:cardId?'],
-        component: () => <BoardPage readonly={true}/>,
+        component: () => <BoardRoute readonly={true}/>,
     }),
 
     fbRoute({
         loginRequired: true,
         path: '/board/:boardId?/:viewId?/:cardId?',
         getOriginalPath: ({boardId, viewId, cardId}) => `/board/${Utils.buildOriginalPath('', boardId, viewId, cardId)}`,
-        component: BoardPage,
+        component: BoardRoute,
     }),
     fbRoute({
         path: '/workspace/:workspaceId/shared/:boardId?/:viewId?/:cardId?',
@@ -130,7 +138,7 @@ const routes = [
         loginRequired: true,
         path: '/team/:teamId/:boardId?/:viewId?/:cardId?',
         getOriginalPath: ({teamId, boardId, viewId, cardId}) => `/team/${Utils.buildOriginalPath(teamId, boardId, viewId, cardId)}`,
-        component: BoardPage,
+        component: BoardRoute,
     }),
 
     fbRoute({
@@ -143,7 +151,7 @@ const routes = [
             }
             return ''
         },
-        component: BoardPage,
+        component: BoardRoute,
     }),
 ]
 

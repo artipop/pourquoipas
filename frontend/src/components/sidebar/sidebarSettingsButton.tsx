@@ -1,14 +1,15 @@
-import {Show, createEffect, createSignal} from 'solid-js'
+import {Loading, Show, createEffect, createSignal, lazy} from 'solid-js'
 
 import {FormattedMessage, useIntl} from '../../intl'
 
 import SettingsIcon from '../../widgets/icons/settings'
 import RootPortal from '../rootPortal'
-import AppSettingsDialog from '../settings/appSettingsDialog'
 import {updateWaiting, useUpdateState} from '../settings/updates'
 import {requestedSettings, settingsOpened} from '../settings/openSettings'
 
 import './sidebarSettingsButton.scss'
+
+const AppSettingsDialog = lazy(() => import('../settings/appSettingsDialog'))
 
 // The foot of the sidebar used to be a menu with a submenu of a submenu in it:
 // import, export, language, theme, notifications and "this machine…", which is
@@ -67,10 +68,12 @@ const SidebarSettingsButton = () => {
                 which is invisible on the light theme's paper. */}
             <Show when={showSettings()}>
                 <RootPortal>
-                    <AppSettingsDialog
-                        section={section()}
-                        onClose={() => setShowSettings(false)}
-                    />
+                    <Loading fallback={null}>
+                        <AppSettingsDialog
+                            section={section()}
+                            onClose={() => setShowSettings(false)}
+                        />
+                    </Loading>
                 </RootPortal>
             </Show>
         </div>

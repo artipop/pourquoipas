@@ -20,6 +20,86 @@ afterEach(() => {
 })
 
 describe('components/flashMessages', () => {
+    test('mounting does not replay a request sent without a renderer', () => {
+        sendFlashMessage({content: 'Before mount', severity: 'normal'})
+        flush()
+
+        render(() => wrapIntl(() => <FlashMessages milliseconds={2000}/>))
+        expect(screen.queryByText('Before mount')).toBeNull()
+
+        sendFlashMessage({content: 'After mount', severity: 'normal'})
+        flush()
+        expect(screen.getByText('After mount')).toBeVisible()
+    })
+
+    test('sending the same message object again restarts its lifetime', () => {
+        render(() => wrapIntl(() => <FlashMessages milliseconds={2000}/>))
+        const message = {content: 'Again', severity: 'normal' as const}
+
+        sendFlashMessage(message)
+        flush()
+        vi.advanceTimersByTime(1000)
+
+        sendFlashMessage(message)
+        flush()
+        vi.advanceTimersByTime(1100)
+        expect(screen.getByText('Again')).toBeVisible()
+
+        vi.advanceTimersByTime(900)
+        expect(screen.queryByText('Again')).toBeNull()
+    })
+
+    test('a new message interrupts the old fade and starts fully visible', () => {
+        render(() => wrapIntl(() => <FlashMessages milliseconds={2000}/>))
+        sendFlashMessage({content: 'First', severity: 'normal'})
+        flush()
+        vi.advanceTimersByTime(1800)
+        expect(screen.getByText('First')).toHaveClass('flashOut')
+
+        sendFlashMessage({content: 'Second', severity: 'high'})
+        flush()
+        expect(screen.queryByText('First')).toBeNull()
+        expect(screen.getByText('Second')).toHaveClass('flashIn')
+
+        vi.advanceTimersByTime(200)
+        expect(screen.getByText('Second')).toBeVisible()
+        vi.advanceTimersByTime(1800)
+        expect(screen.queryByText('Second')).toBeNull()
+    })
+
+    test('disposing one renderer leaves the other subscribed', () => {
+        const first = render(() => wrapIntl(() => <FlashMessages milliseconds={2000}/>))
+        render(() => wrapIntl(() => <FlashMessages milliseconds={2000}/>))
+        sendFlashMessage({content: 'Together', severity: 'normal'})
+        flush()
+        expect(screen.getAllByText('Together')).toHaveLength(2)
+
+        first.unmount()
+        sendFlashMessage({content: 'Still mounted', severity: 'normal'})
+        flush()
+        expect(screen.getByText('Still mounted')).toBeVisible()
+
+        vi.advanceTimersByTime(2000)
+        expect(screen.queryByText('Still mounted')).toBeNull()
+    })
+
+    test('unmounting clears the active timer and stops receiving messages', () => {
+        const {unmount} = render(() =>
+            wrapIntl(() => <FlashMessages milliseconds={2000}/>),
+        )
+
+        sendFlashMessage({content: 'First', severity: 'normal'})
+        flush()
+        expect(vi.getTimerCount()).toBe(1)
+
+        unmount()
+        expect(vi.getTimerCount()).toBe(0)
+
+        sendFlashMessage({content: 'After unmount', severity: 'normal'})
+        flush()
+        expect(vi.getTimerCount()).toBe(0)
+    })
+
     // Something on the page being asked again is the ordinary state of a
     // board, and a message running out meanwhile once halted the whole page:
     // Solid 2 ran the class binding once more with the message already null.

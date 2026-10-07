@@ -14,6 +14,9 @@ import type {JSX} from '@solidjs/web'
 
 export type {IntlShape, MessageDescriptor}
 
+// Source/test catalogues are strings; Vite compiles build catalogues to AST.
+export type Messages = IntlShape['messages']
+
 // react-intl rendered rich-text chunks as React nodes; here a chunk is JSX.
 type MessageValues = Record<string, string | number | boolean | Date | JSX.Element | ((chunks: JSX.Element[]) => JSX.Element)> | undefined
 
@@ -27,7 +30,7 @@ export const createIntl = formatjsCreateIntl
 
 type ProviderProps = {
     locale: string
-    messages: Record<string, string>
+    messages: Messages
 }
 
 export const IntlProvider: ParentComponent<ProviderProps> = (props) => {

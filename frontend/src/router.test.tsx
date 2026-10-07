@@ -9,7 +9,7 @@ import FocalboardRouter from './router'
 // changed, a phone would silently get an empty board instead of the page
 // written for it, and nothing else in the suite would notice.
 
-vi.mock('./pages/boardPage/boardPage', () => ({default: () => <div>{'the board'}</div>}))
+vi.mock('./pages/boardPage/boardPage', () => ({default: (props: {readonly?: boolean}) => <div>{props.readonly ? 'the shared board' : 'the board'}</div>}))
 vi.mock('./pages/mobile/mobilePage', () => ({default: () => <div>{'the phone page'}</div>}))
 vi.mock('./components/acp/diffPage', () => ({default: () => <div>{'the diff'}</div>}))
 vi.mock('./pages/share/sharePage', () => ({default: () => <div>{'the share dialog'}</div>}))
@@ -50,5 +50,17 @@ describe('router', () => {
         renderAt('/79dfb64e-9a41-4d69-9e0e-27dfd4f5f9d3')
 
         expect(await screen.findByText('the board')).toBeInTheDocument()
+    })
+
+    it.each(['/board/board-1', '/team/team-1/board-1'])('loads the board at %s', async (path) => {
+        renderAt(path)
+
+        expect(await screen.findByText('the board')).toBeInTheDocument()
+    })
+
+    it.each(['/shared/board-1', '/team/team-1/shared/board-1'])('loads the shared board read-only at %s', async (path) => {
+        renderAt(path)
+
+        expect(await screen.findByText('the shared board')).toBeInTheDocument()
     })
 })
