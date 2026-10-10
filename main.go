@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	_ "embed"
 	"errors"
 	"fmt"
 	"log"
@@ -24,15 +23,6 @@ import (
 	"github.com/artipop/xciii/internal/sources"
 	"github.com/artipop/xciii/internal/userpath"
 )
-
-// appIcon is the window's and the taskbar's icon when the executable carries
-// none. A Windows build made by the task gets it as a resource (the .syso
-// generate:syso writes and removes again), and Wails reads that first; a plain
-// `go build` has no resource, and without this the window came up with the
-// blank default icon.
-//
-//go:embed build/appicon.png
-var appIcon []byte
 
 // appDataDir returns one of this install's own directories, made if it is not
 // there. The install is named by appDirName, which is what keeps a development
@@ -490,7 +480,6 @@ func main() {
 	wapp := application.New(application.Options{
 		Name:        "XCIII",
 		Description: "Boards with coding agents",
-		Icon:        appIcon,
 		Services: []application.Service{
 			application.NewService(app),
 		},
