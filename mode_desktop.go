@@ -81,7 +81,11 @@ func (o *origin) ServeAssets(assetHandler http.Handler) error {
 	// from a file (internal/feedmcp). A server build has an address that does
 	// not move and is given it instead.
 	if dir, err := appDataDir("", 0o755); err == nil {
-		if err := feedmcp.WriteHandoff(dir, "http://"+o.host()); err != nil {
+		secret, err := newLocalFeedSecret()
+		if err == nil {
+			err = feedmcp.WriteHandoff(dir, "http://"+o.host(), secret)
+		}
+		if err != nil {
 			log.Printf("feed: the address was not written: %v", err)
 		}
 	}
@@ -124,6 +128,7 @@ func (o *origin) Stop() error {
 	if dir, err := appDataDir("", 0o755); err == nil {
 		feedmcp.RemoveHandoff(dir)
 	}
+	dropLocalFeedSecret()
 	if o.server != nil {
 		ctx, cancel := context.WithTimeout(context.Background(), frontDoorDrain)
 		defer cancel()

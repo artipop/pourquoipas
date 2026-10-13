@@ -96,7 +96,7 @@ func TestTheBridgeReadsTheFeed(t *testing.T) {
 	defer srv.Close()
 	t.Setenv(EnvToken, "t0k")
 	t.Setenv(EnvURL, srv.URL+"/")
-	endpoint, base, err := Endpoint(t.TempDir())
+	endpoint, base, _, err := Endpoint(t.TempDir())
 	if err != nil || base != srv.URL || endpoint != srv.URL+Path {
 		t.Fatalf("endpoint %q, base %q, err %v", endpoint, base, err)
 	}
@@ -137,16 +137,16 @@ func TestTheBridgeReadsTheFeed(t *testing.T) {
 // A desktop app not running is a sentence, not a connection error.
 func TestWithoutTheAppTheBridgeSaysSo(t *testing.T) {
 	t.Setenv(EnvURL, "")
-	if _, _, err := Endpoint(t.TempDir()); err == nil || !strings.Contains(err.Error(), "не запущен") {
+	if _, _, _, err := Endpoint(t.TempDir()); err == nil || !strings.Contains(err.Error(), "не запущен") {
 		t.Fatalf("err: %v", err)
 	}
 	dir := t.TempDir()
-	if err := WriteHandoff(dir, "http://127.0.0.1:5555"); err != nil {
+	if err := WriteHandoff(dir, "http://127.0.0.1:5555", "s3cret"); err != nil {
 		t.Fatal(err)
 	}
-	endpoint, base, err := Endpoint(dir)
-	if err != nil || endpoint != "http://127.0.0.1:5555"+Path || base != "" {
-		t.Fatalf("endpoint %q, base %q, err %v", endpoint, base, err)
+	endpoint, base, secret, err := Endpoint(dir)
+	if err != nil || endpoint != "http://127.0.0.1:5555"+Path || base != "" || secret != "s3cret" {
+		t.Fatalf("endpoint %q, base %q, secret %q, err %v", endpoint, base, secret, err)
 	}
 }
 
@@ -215,5 +215,47 @@ func TestTheListsAreTools(t *testing.T) {
 	}
 	if got := text("list_columns", map[string]any{"board": "Работа"}); got != `{"columns":[{"name":"Входящие"},{"name":"Сегодня"},{"name":"Готово"}]}` {
 		t.Fatalf("columns: %s", got)
+	}
+}
+
+// On the same machine nobody carries a token: the bridge takes the one the app
+// left beside its address, and a token that was issued still wins over it.
+func TestTheBridgeTakesTheSecretTheAppLeft(t *testing.T) {
+	mux := http.NewServeMux()
+	mux.Handle(Path, NewHandler(fakeLists{}, func(got string) bool { return got == "run-secret" }))
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	dir := t.TempDir()
+	if err := WriteHandoff(dir, srv.URL, "run-secret"); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv(EnvToken, "")
+	t.Setenv(EnvURL, "")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	inR, inW := io.Pipe()
+	outR, outW := io.Pipe()
+	go func() { _ = ServeStdio(ctx, dir, inR, outW) }()
+	client := mcp.NewClient(&mcp.Implementation{Name: "test", Version: "1"}, nil)
+	session, err := client.Connect(ctx, &mcp.IOTransport{Reader: outR, Writer: inW}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer session.Close()
+	res, err := session.CallTool(ctx, &mcp.CallToolParams{Name: "list_boards"})
+	if err != nil || res.IsError {
+		t.Fatalf("list_boards: %v %+v", err, res)
+	}
+
+	// A secret left by a run that is over opens nothing, and says what to do.
+	if err := WriteHandoff(dir, srv.URL, "last-weeks"); err != nil {
+		t.Fatal(err)
+	}
+	inR2, _ := io.Pipe()
+	_, outW2 := io.Pipe()
+	err = ServeStdio(context.Background(), dir, inR2, outW2)
+	if err == nil || !strings.Contains(err.Error(), "перезапустите XCIII") {
+		t.Fatalf("err: %v", err)
 	}
 }

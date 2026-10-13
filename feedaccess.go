@@ -68,8 +68,46 @@ func checkFeedToken(token string) bool {
 	if token == "" {
 		return false
 	}
+	if secret := localFeedSecret(); secret != "" && subtle.ConstantTimeCompare([]byte(token), []byte(secret)) == 1 {
+		return true
+	}
 	hash := readFeedAccess().TokenHash
 	return hash != "" && subtle.ConstantTimeCompare([]byte(sources.HashToken(token)), []byte(hash)) == 1
+}
+
+// The secret of this run, for the reader that is on this machine. It is never
+// stored: it exists in memory and in the handoff file, and a restart makes
+// another, so it opens nothing that outlives the app.
+var (
+	localSecretMu sync.RWMutex
+	localSecret   string
+)
+
+func localFeedSecret() string {
+	localSecretMu.RLock()
+	defer localSecretMu.RUnlock()
+	return localSecret
+}
+
+// newLocalFeedSecret makes the secret of this run, or returns the one made.
+func newLocalFeedSecret() (string, error) {
+	localSecretMu.Lock()
+	defer localSecretMu.Unlock()
+	if localSecret != "" {
+		return localSecret, nil
+	}
+	secret, err := sources.GenerateToken()
+	if err != nil {
+		return "", err
+	}
+	localSecret = secret
+	return secret, nil
+}
+
+func dropLocalFeedSecret() {
+	localSecretMu.Lock()
+	defer localSecretMu.Unlock()
+	localSecret = ""
 }
 
 // IssueFeedToken makes a new token for other applications and returns it —
