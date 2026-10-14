@@ -11,6 +11,17 @@ function TextInputOption(props: TextInputOptionProps): JSX.Element {
     let nameTextbox: HTMLInputElement | undefined
     const [value, setValue] = createSignal(props.initialValue)
 
+    // Enter confirms and closes the menu, and Chrome blurs a focused input as
+    // it is removed, so the same value would be confirmed a second time on the
+    // way out — a property renamed twice.
+    let confirmed: string | undefined
+    const confirm = () => {
+        if (value() !== confirmed) {
+            confirmed = value()
+            props.onConfirmValue(value())
+        }
+    }
+
     onSettled(() => {
         nameTextbox?.focus()
         nameTextbox?.setSelectionRange(0, value().length)
@@ -31,10 +42,10 @@ function TextInputOption(props: TextInputOptionProps): JSX.Element {
             }}
             value={value()}
             title={value()}
-            onBlur={() => props.onConfirmValue(value())}
+            onBlur={confirm}
             onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === 'Escape') {
-                    props.onConfirmValue(value())
+                    confirm()
                     e.stopPropagation()
                     if (e.key === 'Enter') {
                         (e.target as HTMLElement).dispatchEvent(new Event('menuItemClicked'))
