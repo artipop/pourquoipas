@@ -7,6 +7,7 @@ import Menu from '../../widgets/menu'
 import MenuWrapper from '../../widgets/menuWrapper'
 import CompassIcon from '../../widgets/icons/compassIcon'
 import {goApp} from '../../goBridge'
+import {Utils} from '../../utils'
 import {aiEnabled} from '../../aiSwitch'
 import {createLoader} from '../../hooks/loader'
 
@@ -66,7 +67,7 @@ const BoardSourceSwitcher = () => {
         // them fetched against the board it loaded from. Reloading is the
         // honest way to change that; absorbing it would be a screen showing one
         // board's cards under another's name.
-        window.location.reload()
+        Utils.reloadPage()
     }
 
     return (

@@ -109,6 +109,12 @@ class Utils {
         return ret
     }
 
+    // A page's location cannot be stubbed in a browser, and a test that
+    // reloads its own page ends the run, so a reload goes through here.
+    static reloadPage(): void {
+        window.location.reload()
+    }
+
     static getProfilePicture(userId?: string): string {
         const defaultImageUrl = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" style="fill: rgb(192, 192, 192);"><rect width="100" height="100" /></svg>'
 
