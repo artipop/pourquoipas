@@ -65,6 +65,10 @@ export default [
             ...mattermostBase.rules,
             ...solid.configs.recommended.rules,
 
+            // Solid 2 exports reconcile from the package root; this rule still
+            // rewrites it to the removed solid-js/store entry point.
+            'solid/imports': 'off',
+
             // The codebase writes `import type {...}` as its own line, which the
             // core rule counts as a duplicate of the value import above it.
             'no-duplicate-imports': ['error', {allowSeparateTypeImports: true}],

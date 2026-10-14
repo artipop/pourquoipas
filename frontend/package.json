@@ -48,13 +48,13 @@
     "@lexical/utils": "0.49.0",
     "@mattermost/compass-icons": "^0.1.39",
     "@solidjs/router": "^2.0.0-next.17",
-    "@solidjs/web": "^2.0.0-rc.1",
+    "@solidjs/web": "2.0.0-rc.8",
     "@wailsio/runtime": "3.0.0-beta.27",
     "emoji-mart": "^5.6.0",
     "lexical": "0.49.0",
     "marked": "^4.0.12",
     "nanoevents": "^5.1.13",
-    "solid-js": "^2.0.0-rc.1"
+    "solid-js": "2.0.0-rc.8"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
@@ -70,7 +70,7 @@
     "@types/marked": "^4.0.3",
     "@typescript-eslint/eslint-plugin": "^8.65.0",
     "@typescript-eslint/parser": "^8.65.0",
-    "@vitest/coverage-v8": "^4.1.10",
+    "@vitest/coverage-v8": "^4.1.11",
     "autoprefixer": "^10.5.4",
     "cypress": "^15.19.0",
     "cypress-failed-log": "^2.9.5",
@@ -85,11 +85,14 @@
     "jsdom": "^30.0.1",
     "sass": "^1.102.0",
     "start-server-and-test": "^3.0.11",
-    "stylelint": "^17.14.1",
+    "stylelint": "^17.16.0",
     "stylelint-config-sass-guidelines": "^13.0.0",
     "typescript": "^5.9.3",
     "vite": "^7.3.6",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.11"
+  },
+  "overrides": {
+    "@solidjs/signals": "2.0.0-rc.8"
   },
   "allowScripts": {
     "@parcel/watcher": false,
