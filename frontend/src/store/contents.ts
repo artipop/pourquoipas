@@ -1,5 +1,3 @@
-import {storePath} from 'solid-js'
-
 import {ContentBlock} from '../blocks/contentBlock'
 import {Block} from '../blocks/block'
 
@@ -69,7 +67,9 @@ export const createContentsActions = ({setState}: StoreContext) => ({
         })
     },
     setContents(next: ContentsState) {
-        setState(storePath('contents', next))
+        setState((draft) => {
+            draft.contents = next
+        })
     },
 })
 

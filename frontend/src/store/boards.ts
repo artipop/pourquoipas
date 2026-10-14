@@ -1,5 +1,3 @@
-import {storePath} from 'solid-js'
-
 import {Board, BoardMember} from '../blocks/board'
 import {IUser} from '../user'
 
@@ -63,10 +61,14 @@ export const createBoardsActions = (ctx: StoreContext) => {
 
     const actions = {
         setCurrent(boardId: string) {
-            setState(storePath('boards', 'current', boardId))
+            setState((draft) => {
+                draft.boards.current = boardId
+            })
         },
         setLinkToChannel(channelId: string) {
-            setState(storePath('boards', 'linkToChannel', channelId))
+            setState((draft) => {
+                draft.boards.linkToChannel = channelId
+            })
         },
         updateBoards(boards: Board[]) {
             setState(({boards: s}) => {
@@ -104,20 +106,26 @@ export const createBoardsActions = (ctx: StoreContext) => {
         // The full-load slices of this domain, called by the cross-domain
         // loaders in initialLoad.ts.
         setBoardsAndTemplates(boards: Board[], templates: Board[]) {
-            setState(storePath('boards', 'boards', boards.reduce((acc: {[key: string]: Board}, b) => {
-                acc[b.id] = b
-                return acc
-            }, {})))
-            setState(storePath('boards', 'templates', templates.reduce((acc: {[key: string]: Board}, b) => {
-                acc[b.id] = b
-                return acc
-            }, {})))
+            setState((draft) => {
+                draft.boards.boards = boards.reduce((acc: {[key: string]: Board}, b) => {
+                    acc[b.id] = b
+                    return acc
+                }, {})
+            })
+            setState((draft) => {
+                draft.boards.templates = templates.reduce((acc: {[key: string]: Board}, b) => {
+                    acc[b.id] = b
+                    return acc
+                }, {})
+            })
         },
         setMyBoardMemberships(members: BoardMember[]) {
-            setState(storePath('boards', 'myBoardMemberships', members.reduce((acc: {[key: string]: BoardMember}, m) => {
-                acc[m.boardId] = m
-                return acc
-            }, {})))
+            setState((draft) => {
+                draft.boards.myBoardMemberships = members.reduce((acc: {[key: string]: BoardMember}, m) => {
+                    acc[m.boardId] = m
+                    return acc
+                }, {})
+            })
         },
         async fetchBoardMembers({teamId, boardId}: {teamId: string, boardId: string}, setBoardUsers: (users: IUser[]) => void): Promise<void> {
             const members = await deps.client.getBoardMembers(teamId, boardId)
@@ -137,7 +145,9 @@ export const createBoardsActions = (ctx: StoreContext) => {
                 acc[val.userId] = val
                 return acc
             }, {})
-            setState(storePath('boards', 'membersInBoards', membersBoardId, boardMembersMap))
+            setState((draft) => {
+                draft.boards.membersInBoards[membersBoardId] = boardMembersMap
+            })
         },
         async updateMembersEnsuringBoardsAndUsers(
             members: BoardMember[],

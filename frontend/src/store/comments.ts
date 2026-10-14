@@ -1,5 +1,3 @@
-import {storePath} from 'solid-js'
-
 import {CommentBlock} from '../blocks/commentBlock'
 import {Block} from '../blocks/block'
 
@@ -67,7 +65,9 @@ export const createCommentsActions = ({setState}: StoreContext) => ({
         })
     },
     setComments(next: CommentsState) {
-        setState(storePath('comments', next))
+        setState((draft) => {
+            draft.comments = next
+        })
     },
 })
 

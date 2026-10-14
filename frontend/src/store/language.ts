@@ -1,5 +1,3 @@
-import {storePath} from 'solid-js'
-
 import {getCurrentLanguage, storeLanguage as i18nStoreLanguage} from '../i18n'
 import {reportWords} from '../goWords'
 
@@ -17,11 +15,15 @@ export const createLanguageActions = ({setState}: StoreContext) => ({
     // already hydrated localStorage from the install's own memory
     // (ui-settings.json), so this read is the right answer, not a guess.
     fetchLanguage() {
-        setState(storePath('language', 'value', getCurrentLanguage()))
+        setState((draft) => {
+            draft.language.value = getCurrentLanguage()
+        })
     },
     storeLanguage(lang: string) {
         i18nStoreLanguage(lang)
-        setState(storePath('language', 'value', lang))
+        setState((draft) => {
+            draft.language.value = lang
+        })
         reportWords(lang)
     },
 })

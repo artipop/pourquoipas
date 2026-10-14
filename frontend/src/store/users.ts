@@ -1,4 +1,4 @@
-import {reconcile, storePath} from 'solid-js'
+import {reconcile} from 'solid-js'
 
 import {IUser, parseUserProps, UserPreference} from '../user'
 import {Subscription} from '../wsclient'
@@ -25,14 +25,20 @@ export const initialUsersState = (): UsersState => ({
 
 export const createUsersActions = ({setState, deps}: StoreContext) => ({
     setMe(me: IUser|null) {
-        setState(storePath('users', 'me', me))
-        setState(storePath('users', 'loggedIn', Boolean(me)))
+        setState((draft) => {
+            draft.users.me = me
+        })
+        setState((draft) => {
+            draft.users.loggedIn = Boolean(me)
+        })
     },
     setBoardUsers(users: IUser[]) {
-        setState(storePath('users', 'boardUsers', users.reduce((acc: {[key: string]: IUser}, user: IUser) => {
-            acc[user.id] = user
-            return acc
-        }, {})))
+        setState((draft) => {
+            draft.users.boardUsers = users.reduce((acc: {[key: string]: IUser}, user: IUser) => {
+                acc[user.id] = user
+                return acc
+            }, {})
+        })
     },
     addBoardUsers(users: IUser[]) {
         setState(({users: {boardUsers}}) => {
@@ -49,10 +55,14 @@ export const createUsersActions = ({setState, deps}: StoreContext) => ({
         })
     },
     followBlock(subscription: Subscription) {
-        setState(storePath('users', 'blockSubscriptions', (subs) => [...subs, subscription]))
+        setState((draft) => {
+            draft.users.blockSubscriptions = [...draft.users.blockSubscriptions, subscription]
+        })
     },
     unfollowBlock(subscription: Subscription) {
-        setState(storePath('users', 'blockSubscriptions', (subs) => subs.filter((s) => s.blockId !== subscription.blockId)))
+        setState((draft) => {
+            draft.users.blockSubscriptions = draft.users.blockSubscriptions.filter((s) => s.blockId !== subscription.blockId)
+        })
     },
 
     // The response carries every preference the person has left, so it replaces
@@ -71,17 +81,27 @@ export const createUsersActions = ({setState, deps}: StoreContext) => ({
                 deps.client.getMe(),
                 deps.client.getMyConfig(),
             ])
-            setState(storePath('users', 'me', me || null))
-            setState(storePath('users', 'loggedIn', Boolean(me)))
+            setState((draft) => {
+                draft.users.me = me || null
+            })
+            setState((draft) => {
+                draft.users.loggedIn = Boolean(me)
+            })
             if (myConfig) {
                 setState((draft) => {
                     reconcile(parseUserProps(myConfig))(draft.users.myConfig)
                 })
             }
         } catch (e) {
-            setState(storePath('users', 'me', null))
-            setState(storePath('users', 'loggedIn', false))
-            setState(storePath('users', 'myConfig', {}))
+            setState((draft) => {
+                draft.users.me = null
+            })
+            setState((draft) => {
+                draft.users.loggedIn = false
+            })
+            setState((draft) => {
+                draft.users.myConfig = {}
+            })
         }
     },
 
@@ -90,9 +110,14 @@ export const createUsersActions = ({setState, deps}: StoreContext) => ({
     // nobody follows anything, so nobody is told (docs/teamwork.md).
     async fetchUserBlockSubscriptions(userId: string): Promise<void> {
         try {
-            setState(storePath('users', 'blockSubscriptions', await deps.client.getUserBlockSubscriptions(userId)))
+            const subscriptions = await deps.client.getUserBlockSubscriptions(userId)
+            setState((draft) => {
+                draft.users.blockSubscriptions = subscriptions
+            })
         } catch (e) {
-            setState(storePath('users', 'blockSubscriptions', []))
+            setState((draft) => {
+                draft.users.blockSubscriptions = []
+            })
         }
     },
 })

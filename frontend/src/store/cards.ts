@@ -1,5 +1,3 @@
-import {storePath} from 'solid-js'
-
 import {Card} from '../blocks/card'
 import {IUser} from '../user'
 import {Board} from '../blocks/board'
@@ -48,13 +46,19 @@ export const cardsFromBlocks = (blocks: Block[]): {cards: {[key: string]: Card},
 
 export const createCardsActions = ({setState}: StoreContext) => ({
     setCurrent(cardId: string) {
-        setState(storePath('cards', 'current', cardId))
+        setState((draft) => {
+            draft.cards.current = cardId
+        })
     },
     addCard(card: Card) {
-        setState(storePath('cards', 'cards', card.id, card))
+        setState((draft) => {
+            draft.cards.cards[card.id] = card
+        })
     },
     addTemplate(template: Card) {
-        setState(storePath('cards', 'templates', template.id, template))
+        setState((draft) => {
+            draft.cards.templates[template.id] = template
+        })
     },
     updateCards(cards: Card[]) {
         setState(({cards: s}) => {
@@ -71,8 +75,12 @@ export const createCardsActions = ({setState}: StoreContext) => ({
         })
     },
     setCardsAndTemplates(cards: {[key: string]: Card}, templates: {[key: string]: Card}) {
-        setState(storePath('cards', 'cards', cards))
-        setState(storePath('cards', 'templates', templates))
+        setState((draft) => {
+            draft.cards.cards = cards
+        })
+        setState((draft) => {
+            draft.cards.templates = templates
+        })
     },
 })
 

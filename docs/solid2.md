@@ -45,8 +45,9 @@ Mostly mechanical:
 - `solid-js/web` → `@solidjs/web`; the `JSX` namespace comes from there too.
 - `solid-js/store` → `solid-js`; `produce` is gone, so every call site is a
   draft callback (`setState(({sidebar}) => …)`), and every plain path setter
-  is wrapped in `storePath`. A `reconcile` is **not** a plain path setter — see
-  below.
+  was wrapped in `storePath`. A `reconcile` is **not** a plain path setter — see
+  below. The path setters were later rewritten as draft callbacks too, so the
+  store has one way to write and `storePath` is not used.
 - `batch` is gone: Solid 2 batches until the microtask drains, so the wrapper
   was dropped and the body lifted.
 - `onMount` → `onSettled`, which refuses `onCleanup` inside it — a cleanup is

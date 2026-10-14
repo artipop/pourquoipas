@@ -1,5 +1,3 @@
-import {storePath} from 'solid-js'
-
 import {Utils} from '../utils'
 
 import type {StoreContext} from './context'
@@ -135,7 +133,8 @@ export const createSidebarActions = ({setState, deps}: StoreContext) => ({
             return
         }
 
-        setState(storePath('sidebar', 'categoryAttributes', (categoryAttributes) => {
+        setState((draft) => {
+            const categoryAttributes = draft.sidebar.categoryAttributes
             const categoryById = new Map<string, CategoryBoards>()
             categoryAttributes.forEach((categoryBoards: CategoryBoards) => categoryById.set(categoryBoards.id, categoryBoards))
 
@@ -149,8 +148,8 @@ export const createSidebarActions = ({setState, deps}: StoreContext) => ({
                 newOrderedCategories.push(category)
             })
 
-            return newOrderedCategories
-        }))
+            draft.sidebar.categoryAttributes = newOrderedCategories
+        })
     },
     updateCategoryBoardsOrder(reorderData: CategoryBoardsReorderData) {
         if (reorderData.boardsMetadata.length === 0) {
@@ -174,18 +173,22 @@ export const createSidebarActions = ({setState, deps}: StoreContext) => ({
     },
     async fetchSidebarCategories(teamID: string): Promise<void> {
         const categoryAttributes = await deps.client.getSidebarCategories(teamID) || []
-        setState(storePath('sidebar', 'categoryAttributes', categoryAttributes))
-        setState(storePath('sidebar', 'hiddenBoardIDs', categoryAttributes.flatMap(
-            (ca) => {
-                return ca.boardMetadata.reduce((collector, m) => {
-                    if (m.hidden) {
-                        collector.push(m.boardID)
-                    }
+        setState((draft) => {
+            draft.sidebar.categoryAttributes = categoryAttributes
+        })
+        setState((draft) => {
+            draft.sidebar.hiddenBoardIDs = categoryAttributes.flatMap(
+                (ca) => {
+                    return ca.boardMetadata.reduce((collector, m) => {
+                        if (m.hidden) {
+                            collector.push(m.boardID)
+                        }
 
-                    return collector
-                }, [] as string[])
-            },
-        )))
+                        return collector
+                    }, [] as string[])
+                },
+            )
+        })
     },
 })
 

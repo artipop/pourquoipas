@@ -175,8 +175,8 @@ describe('createAppStore', () => {
     })
 
     // What opening a board fetches has to arrive in the store. It once did not:
-    // every branch of the load went through storePath with reconcile, and
-    // storePath keeps an updater's return value — reconcile returns nothing,
+    // every branch of the load went through a nested-path updater with reconcile, and
+    // that updater kept reconcile's return value — reconcile returns nothing,
     // so the board loaded and was then written away, and the page drew an
     // empty board with no error anywhere.
     test('a board opened is in the store with its views and cards', async () => {

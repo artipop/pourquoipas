@@ -168,11 +168,10 @@ is a board server with cgo SQLite; the phone app is a window per machine onto
   rewrites what `@solidjs/web` itself imports. It goes when dnd-kit ships Solid 2.
 - State is `src/store`: `createAppStore(deps, initialState)`, per-domain action
   methods, no dispatch, no thunk; clients arrive through `deps` so tests pass
-  mocks. A path write goes through `storePath`; a mutation in place — a
-  `produce`-style body or a `reconcile` — is a draft callback
-  (`setState((d) => { reconcile(x)(d.boards.boards) })`), **never `storePath`**,
-  which takes an updater's return value and so writes the branch away.
-  `storePath(…, reconcile(x))` emptied every board once, silently.
+  mocks. **Every write is a draft callback** (`setState((d) => { d.cards.current
+  = id })`, `setState((d) => { reconcile(x)(d.boards.boards) })`); `storePath`
+  is not used. It takes an updater's return value and so writes the branch
+  away: `storePath(…, reconcile(x))` emptied every board once, silently.
 - **Anything drawn over the page is placed by `@floating-ui/dom`** (`autoUpdate`
   + `computePosition`, written as a `transform`, `position: fixed`). So `left`,
   `right` and percentage widths in a call site's CSS mean the viewport; a list

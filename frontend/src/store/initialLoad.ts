@@ -1,4 +1,4 @@
-import {reconcile, storePath} from 'solid-js'
+import {reconcile} from 'solid-js'
 
 import {Subscription} from '../wsclient'
 import {ErrorId} from '../errors'
@@ -77,29 +77,43 @@ export const createInitialLoadActions = (ctx: StoreContext) => {
                     throw new Error(ErrorId.TeamUndefined)
                 }
 
-                setState(storePath('teams', 'current', team))
-                setState(storePath('teams', 'allTeams', [...teams].sort((a, b) => (a.title < b.title ? -1 : 1))))
+                setState((draft) => {
+                    draft.teams.current = team
+                })
+                setState((draft) => {
+                    draft.teams.allTeams = [...teams].sort((a, b) => (a.title < b.title ? -1 : 1))
+                })
 
-                setState(storePath('boards', 'boards', boards.reduce((acc: {[key: string]: Board}, b: Board) => {
-                    acc[b.id] = b
-                    return acc
-                }, {})))
-                setState(storePath('boards', 'templates', boardTemplates.reduce((acc: {[key: string]: Board}, b: Board) => {
-                    acc[b.id] = b
-                    return acc
-                }, {})))
-                setState(storePath('boards', 'myBoardMemberships', boardsMemberships.reduce((acc: {[key: string]: typeof boardsMemberships[0]}, m) => {
-                    acc[m.boardId] = m
-                    return acc
-                }, {})))
+                setState((draft) => {
+                    draft.boards.boards = boards.reduce((acc: {[key: string]: Board}, b: Board) => {
+                        acc[b.id] = b
+                        return acc
+                    }, {})
+                })
+                setState((draft) => {
+                    draft.boards.templates = boardTemplates.reduce((acc: {[key: string]: Board}, b: Board) => {
+                        acc[b.id] = b
+                        return acc
+                    }, {})
+                })
+                setState((draft) => {
+                    draft.boards.myBoardMemberships = boardsMemberships.reduce((acc: {[key: string]: typeof boardsMemberships[0]}, m) => {
+                        acc[m.boardId] = m
+                        return acc
+                    }, {})
+                })
 
                 if (myConfig) {
-                    setState(storePath('users', 'myConfig', parseUserProps(myConfig)))
+                    setState((draft) => {
+                        draft.users.myConfig = parseUserProps(myConfig)
+                    })
                 }
 
                 return {team, teams, boards, boardsMemberships, boardTemplates, myConfig}
             } catch (e) {
-                setState(storePath('globalError', 'value', (e as Error).message || ''))
+                setState((draft) => {
+                    draft.globalError.value = (e as Error).message || ''
+                })
                 throw e
             }
         },
@@ -133,7 +147,9 @@ export const createInitialLoadActions = (ctx: StoreContext) => {
 
                 return {board, blocks}
             } catch (e) {
-                setState(storePath('globalError', 'value', (e as Error).message || ''))
+                setState((draft) => {
+                    draft.globalError.value = (e as Error).message || ''
+                })
                 throw e
             }
         },

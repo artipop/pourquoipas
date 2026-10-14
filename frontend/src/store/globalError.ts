@@ -1,5 +1,3 @@
-import {storePath} from 'solid-js'
-
 import type {StoreContext} from './context'
 
 import type {RootState} from './index'
@@ -10,7 +8,9 @@ export const initialGlobalErrorState = (): GlobalErrorState => ({value: ''})
 
 export const createGlobalErrorActions = ({setState}: StoreContext) => ({
     setGlobalError(message: string) {
-        setState(storePath('globalError', 'value', message))
+        setState((draft) => {
+            draft.globalError.value = message
+        })
     },
 })
 

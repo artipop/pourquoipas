@@ -1,5 +1,3 @@
-import {storePath} from 'solid-js'
-
 import {Utils} from '../utils'
 
 import type {StoreContext} from './context'
@@ -30,7 +28,9 @@ const byTitle = (a: Team, b: Team) => (a.title < b.title ? -1 : 1)
 
 export const createTeamsActions = ({state, setState, deps}: StoreContext) => ({
     setTeam(teamID: string) {
-        setState(storePath('teams', 'currentId', teamID))
+        setState((draft) => {
+            draft.teams.currentId = teamID
+        })
         const team = state.teams.allTeams.find((t) => t.id === teamID)
         if (!team) {
             Utils.log(`Unable to find team in store. TeamID: ${teamID}`)
@@ -39,25 +39,35 @@ export const createTeamsActions = ({state, setState, deps}: StoreContext) => ({
         if (state.teams.current === team) {
             return
         }
-        setState(storePath('teams', 'current', team))
+        setState((draft) => {
+            draft.teams.current = team
+        })
     },
     async fetchTeams(): Promise<void> {
         const teams = await deps.client.getTeams()
-        setState(storePath('teams', 'allTeams', [...teams].sort(byTitle)))
+        setState((draft) => {
+            draft.teams.allTeams = [...teams].sort(byTitle)
+        })
     },
     async regenerateSignupToken(): Promise<void> {
         await deps.client.regenerateTeamSignupToken()
     },
     async refreshCurrentTeam(): Promise<void> {
         const team = await deps.client.getTeam()
-        setState(storePath('teams', 'current', team))
+        setState((draft) => {
+            draft.teams.current = team
+        })
     },
 
     // The initialLoad slice of this domain: the current team and the sorted
     // team list arrive together.
     applyInitialLoad(team: Team, teams: Team[]) {
-        setState(storePath('teams', 'current', team))
-        setState(storePath('teams', 'allTeams', [...teams].sort(byTitle)))
+        setState((draft) => {
+            draft.teams.current = team
+        })
+        setState((draft) => {
+            draft.teams.allTeams = [...teams].sort(byTitle)
+        })
     },
 })
 

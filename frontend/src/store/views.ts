@@ -1,5 +1,3 @@
-import {storePath} from 'solid-js'
-
 import {BoardView, createBoardView} from '../blocks/boardView'
 import {Block} from '../blocks/block'
 import {Utils} from '../utils'
@@ -96,7 +94,9 @@ export const viewsFromBlocks = (blocks: Block[]): {[key: string]: BoardView} => 
 
 export const createViewsActions = ({setState}: StoreContext) => ({
     setCurrent(viewId: string) {
-        setState(storePath('views', 'current', viewId))
+        setState((draft) => {
+            draft.views.current = viewId
+        })
     },
     updateViews(views: BoardView[]) {
         setState(({views: {views: stateViews}}) => {
@@ -110,10 +110,14 @@ export const createViewsActions = ({setState}: StoreContext) => ({
         })
     },
     updateView(view: BoardView) {
-        setState(storePath('views', 'views', view.id, view))
+        setState((draft) => {
+            draft.views.views[view.id] = view
+        })
     },
     setViews(views: {[key: string]: BoardView}) {
-        setState(storePath('views', 'views', views))
+        setState((draft) => {
+            draft.views.views = views
+        })
     },
 })
 

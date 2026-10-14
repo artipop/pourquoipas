@@ -1,5 +1,3 @@
-import {storePath} from 'solid-js'
-
 import {Board} from '../blocks/board'
 import {Constants} from '../constants'
 
@@ -22,7 +20,9 @@ export const createGlobalTemplatesActions = ({setState, deps}: StoreContext) => 
         // back with nothing used to throw here, and `|| []` on the far side of
         // `.sort` could never have caught it.
         const templates = await deps.client.getTeamTemplates(Constants.globalTeamId) || []
-        setState(storePath('globalTemplates', 'value', templates.sort((a, b) => a.title.localeCompare(b.title))))
+        setState((draft) => {
+            draft.globalTemplates.value = templates.sort((a, b) => a.title.localeCompare(b.title))
+        })
 
         // And the board list is pruned of the install's templates this answer
         // no longer names. The selector reads both sources as one pool, and a
@@ -35,15 +35,16 @@ export const createGlobalTemplatesActions = ({setState, deps}: StoreContext) => 
         // Only what the install made (`SYSTEM_USER`): somebody's own template
         // lives wherever they made it, and this answer is about one team.
         const live = new Set(templates.map((board) => board.id))
-        setState(storePath('boards', 'templates', (held) => {
+        setState((draft) => {
+            const held = draft.boards.templates
             const kept: {[key: string]: Board} = {}
             for (const [id, board] of Object.entries(held)) {
                 if (board.createdBy !== SYSTEM_USER || live.has(id)) {
                     kept[id] = board
                 }
             }
-            return kept
-        }))
+            draft.boards.templates = kept
+        })
     },
 })
 

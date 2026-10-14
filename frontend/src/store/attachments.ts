@@ -1,5 +1,3 @@
-import {storePath} from 'solid-js'
-
 import {AttachmentBlock} from '../blocks/attachmentBlock'
 import {Block} from '../blocks/block'
 
@@ -58,10 +56,14 @@ export const createAttachmentsActions = ({setState}: StoreContext) => ({
         })
     },
     updateUploadPrecent(payload: {blockId: string, uploadPercent: number}) {
-        setState(storePath('attachments', 'attachments', payload.blockId, 'uploadingPercent', payload.uploadPercent))
+        setState((draft) => {
+            draft.attachments.attachments[payload.blockId].uploadingPercent = payload.uploadPercent
+        })
     },
     setAttachments(next: AttachmentsState) {
-        setState(storePath('attachments', next))
+        setState((draft) => {
+            draft.attachments = next
+        })
     },
 })
 
