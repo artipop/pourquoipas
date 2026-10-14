@@ -27,10 +27,8 @@ window.requestIdleCallback.toString()
 ```
 
 `[native code]` — WebKit научился, и `src/polyfills.ts` можно выносить целиком
-вместе с вызовом в `main.tsx` и в `src/test/reactFlowEnvironment.ts` (jsdom своего
-`requestIdleCallback` тоже не имеет, так что тестам шим нужен, даже когда вебвью
-он уже не нужен — выносить только вместе с проверкой, что сюита зелёная). Стрелочная
-функция — обход ещё держит.
+вместе с вызовом в `main.tsx` (набор идёт в Chromium, где `requestIdleCallback`
+свой). Стрелочная функция — обход ещё держит.
 
 ## Размеры хэндлов у Solid Flow
 

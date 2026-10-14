@@ -109,7 +109,10 @@ Three things follow.
   the page's own now (`installGoBridge`), since the bootstrap had reached Go
   through the global. A test does not reach the runtime at all: the setup file
   mocks the bindings module for the whole suite (`src/test/goSideMock.ts`), and
-  a test that wants a Go side installs its methods with `fakeGoSide`. Before
+  a test that wants a Go side installs its methods with `fakeGoSide`. In
+  browser mode a mocked module exports a fixed set of names, so every binding
+  is a forwarder, present as in a real build, and one the fake left out
+  answers a promise of undefined. Before
   this the bindings were put at `window.go.main.App` and forty test files wrote
   their fakes there, which kept the call sites untouched and the old seam
   alive.
@@ -259,7 +262,8 @@ share an id**: dnd-kit's registry is a map keyed by id, so a category that
 registered its sortable and its boards drop zone both under the category id had
 no drop target of its own. `hooks/sortable.tsx` carries the rest of the
 reasoning; `sortableDrag.test.tsx` and `sidebarDrag.test.tsx` drive real drags
-in jsdom and are the guards.
+with the browser's mouse over real layout (`src/test/drag.ts`) and are the
+guards.
 Several widgets survived the rewrite untouched because their logic already sat
 in a plain module under a thin wrapper — `hotkeys.ts`, `calendar.ts`,
 `combobox.ts` beside `widgets/calendar.tsx` and `widgets/combobox.tsx`; keep new

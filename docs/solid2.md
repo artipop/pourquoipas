@@ -202,10 +202,9 @@ wrapper.
   new errors are concentrated in files where TypeScript gives up and reports
   captured bindings as `never`; the build (esbuild) and the linter are the
   gates this repository actually runs.
-- **Nothing has been driven in a browser.** The build is green and the suite
-  is green; a real pass over drag-and-drop, the route canvas and the
-  calendar is still owed, and jsdom does no layout — see the note about
-  verifying UI in a real browser.
+- **The suite runs in Chromium** (vitest browser mode), so layout, hover and
+  drag-and-drop are driven there; a pass over the installed app — a WKWebView,
+  not Chromium — is still owed for the route canvas and the calendar.
 - Solid 2 is at **rc.1** and `@solidjs/router` at `2.0.0-next.17`. Both are
   pinned; neither is a version to float.
 

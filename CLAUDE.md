@@ -74,8 +74,12 @@ code builds a headless server (`-tags server`) that serves the board to a browse
 
 Tests:
 
-- `npm test` in `frontend/` — vitest under jsdom, no coverage (`npm run
-  test:coverage` for it), `npm run updatesnapshot` to rewrite snapshots.
+- `npm test` in `frontend/` — vitest in browser mode, headless Chromium
+  through Playwright (`npx playwright install chromium` once), no coverage
+  (`npm run test:coverage` for it), `npm run updatesnapshot` to rewrite
+  snapshots. Real CSS and layout apply: a control shown on hover is found after
+  `hoverOver`, a menu placed by floating-ui after `findBy…`, a drag is
+  `src/test/drag.ts`. `docs/frontend.md` has the traps.
 - `go test ./...` — no tags needed. `go vet -tags server .` checks the headless
   build, which has files of its own. `./...` also walks `frontend/node_modules`;
   that noise is cosmetic.
