@@ -1,6 +1,6 @@
 import {fireEvent, render, screen} from '@solidjs/testing-library'
 
-import {mockAppStore, mockDOM, wrapDNDIntl} from '../testUtils'
+import {mockAppStore, wrapDNDIntl} from '../testUtils'
 import {AppStoreProvider} from '../store'
 
 import {TestBlockFactory} from '../test/testBlockFactory'
@@ -10,7 +10,6 @@ import {MarkdownEditor} from './markdownEditor'
 vi.mock('../utils')
 
 describe('components/markdownEditor', () => {
-    beforeAll(mockDOM)
     beforeEach(vi.clearAllMocks)
 
     const board1 = TestBlockFactory.createBoard()

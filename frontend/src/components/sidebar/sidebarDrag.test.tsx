@@ -5,24 +5,18 @@
 // those only move when a dnd-kit plugin this application deliberately leaves
 // out is installed. sidebar.test.tsx pins the mapping from a finished operation
 // to a drop; only a real drag says the operation arrives at it at all.
-import {render} from '@solidjs/testing-library'
+import {render, waitFor} from '@solidjs/testing-library'
 
 import {TestRouter, mockAppStore, mockMatchMedia, wrapDNDIntl} from '../../testUtils'
 import {AppStoreProvider} from '../../store'
 import {TestBlockFactory} from '../../test/testBlockFactory'
-import {setupDragEnvironment, setRect, drag} from '../../test/dragEnvironment'
+import {drag} from '../../test/drag'
 import octoClient from '../../octoClient'
 
 import Sidebar from './sidebar'
 
 vi.mock('../../octoClient')
 const mockedOctoClient = vi.mocked(octoClient)
-
-setupDragEnvironment()
-
-// Solid needs no act(): events propagate synchronously. The helper still takes a
-// wrapper so the same code serves suites that need one; this is it.
-const act = async (fn: () => Promise<void>): Promise<unknown> => fn()
 
 describe('components/sidebar dragging', () => {
     const boards = ['board1', 'board2', 'board3'].map((id) => {
@@ -31,8 +25,6 @@ describe('components/sidebar dragging', () => {
         board.title = id
         return board
     })
-
-    const rowHeight = 40
 
     beforeAll(() => {
         mockMatchMedia({matches: true})
@@ -45,7 +37,7 @@ describe('components/sidebar dragging', () => {
     // Three categories under one another, the first holding two boards, the
     // second one, the third none -- an empty category being the only place
     // where the category's own drop zone is what a board can land on.
-    function setup() {
+    async function setup() {
         const categories = [
             {id: 'category1', boardIDs: ['board1', 'board2']},
             {id: 'category2', boardIDs: ['board3']},
@@ -89,37 +81,14 @@ describe('components/sidebar dragging', () => {
             </AppStoreProvider>,
         ))
 
-        // Nothing lays anything out in jsdom, so the sidebar is given the
-        // geometry it would have had: a header row per category, a row per
-        // board under it. The rectangle goes on the element dnd-kit was handed
-        // -- the wrapper carrying the sortable ref, not the visible row inside
-        // it -- and the boards are measured last, so that where the two overlap
-        // the board is what the pointer finds.
+        // The sidebar draws its categories once the refetch is in.
+        await waitFor(() => expect(container.querySelectorAll('.SidebarBoardItem')).toHaveLength(3))
+
+        // dnd-kit was handed the wrapper carrying the sortable ref, not the
+        // visible row inside it.
         const areas = Array.from(container.querySelectorAll('.categoryBoardsDroppableArea'))
         const rows = Array.from(container.querySelectorAll('.SidebarBoardItem')).map((row) => row.parentElement!)
-
-        let y = 0
-        const categoryTops: number[] = []
-        const rowTops = new Map<string, number>()
-        categories.forEach((category, index) => {
-            const top = y
-            categoryTops.push(top)
-            const height = rowHeight * (1 + category.boardMetadata.length)
-            setRect(areas[index].parentElement!.parentElement!, {x: 0, y: top, width: 200, height})
-            setRect(areas[index], {x: 0, y: top, width: 200, height})
-            category.boardMetadata.forEach((metadata, boardIndex) => {
-                rowTops.set(metadata.boardID, top + (rowHeight * (boardIndex + 1)))
-            })
-            y = top + height
-        })
         const headers = Array.from(container.querySelectorAll('.octo-sidebar-item.category'))
-        headers.forEach((header, index) => {
-            setRect(header, {x: 0, y: categoryTops[index], width: 200, height: rowHeight})
-        })
-        rows.forEach((row) => {
-            const id = row.querySelector('.octo-sidebar-title')!.getAttribute('title')!
-            setRect(row, {x: 0, y: rowTops.get(id)!, width: 200, height: rowHeight})
-        })
 
         const boardRow = (id: string) => rows[boards.findIndex((board) => board.id === id)]
         const categoryOf = (index: number) => ({
@@ -127,20 +96,20 @@ describe('components/sidebar dragging', () => {
             header: headers[index],
         })
 
-        return {boardRow, categoryOf, categoryTops, rowTops, container}
+        return {boardRow, categoryOf}
     }
 
     // A row shares its category's drop zone, and a pointer intersection scores
     // 1/distance-to-centre, so the aim has to be nearer the row's middle than
     // the category's or which of the two is the target comes down to a tie
     // broken by measurement order. Both halves of board3 satisfy that here.
-    const upperHalfOf = (top: number) => top + ((rowHeight * 3) / 8)
-    const lowerHalfOf = (top: number) => top + ((rowHeight * 3) / 4)
+    const upperHalfOf = (row: Element) => ({x: row.clientWidth / 2, y: (row.clientHeight * 3) / 8})
+    const lowerHalfOf = (row: Element) => ({x: row.clientWidth / 2, y: (row.clientHeight * 3) / 4})
 
     it('moves a board into another category', async () => {
-        const {boardRow, rowTops} = setup()
+        const {boardRow} = await setup()
 
-        await drag(act, boardRow('board1'), {x: 100, y: upperHalfOf(rowTops.get('board3')!)})
+        await drag(boardRow('board1'), boardRow('board3'), {at: upperHalfOf(boardRow('board3'))})
 
         expect(mockedOctoClient.moveBoardToCategory).toHaveBeenCalledWith('team-id', 'board1', 'category2', 'category1')
         expect(mockedOctoClient.reorderSidebarCategoryBoards).toHaveBeenCalledWith('team-id', 'category2', ['board1', 'board3'])
@@ -149,9 +118,9 @@ describe('components/sidebar dragging', () => {
     // Released over the bottom of board3 rather than the top of it, which is the
     // whole difference between landing above it and landing below it.
     it('puts a board under the one it was dropped on the lower half of', async () => {
-        const {boardRow, rowTops} = setup()
+        const {boardRow} = await setup()
 
-        await drag(act, boardRow('board1'), {x: 100, y: lowerHalfOf(rowTops.get('board3')!)})
+        await drag(boardRow('board1'), boardRow('board3'), {at: lowerHalfOf(boardRow('board3'))})
 
         expect(mockedOctoClient.moveBoardToCategory).toHaveBeenCalledWith('team-id', 'board1', 'category2', 'category1')
         expect(mockedOctoClient.reorderSidebarCategoryBoards).toHaveBeenCalledWith('team-id', 'category2', ['board3', 'board1'])
@@ -162,18 +131,18 @@ describe('components/sidebar dragging', () => {
     // own sortable -- so this is also what says the two no longer evict each
     // other from dnd-kit's registry.
     it('moves a board into a category that holds none', async () => {
-        const {boardRow, categoryTops} = setup()
+        const {boardRow, categoryOf} = await setup()
 
-        await drag(act, boardRow('board1'), {x: 100, y: categoryTops[2] + 20})
+        await drag(boardRow('board1'), categoryOf(2).header)
 
         expect(mockedOctoClient.moveBoardToCategory).toHaveBeenCalledWith('team-id', 'board1', 'category3', 'category1')
         expect(mockedOctoClient.reorderSidebarCategoryBoards).toHaveBeenCalledWith('team-id', 'category3', ['board1'])
     })
 
     it('reorders boards within one category', async () => {
-        const {boardRow, rowTops} = setup()
+        const {boardRow} = await setup()
 
-        await drag(act, boardRow('board1'), {x: 100, y: rowTops.get('board2')! + 20})
+        await drag(boardRow('board1'), boardRow('board2'))
 
         expect(mockedOctoClient.moveBoardToCategory).not.toHaveBeenCalled()
         expect(mockedOctoClient.reorderSidebarCategoryBoards).toHaveBeenCalledWith('team-id', 'category1', ['board2', 'board1'])
@@ -182,10 +151,10 @@ describe('components/sidebar dragging', () => {
     // A category is dragged by its title row: its middle is a board inside it,
     // which is what a press there would pick up instead.
     it('reorders the categories themselves', async () => {
-        const {categoryOf, categoryTops} = setup()
+        const {categoryOf} = await setup()
 
         const first = categoryOf(0)
-        await drag(act, first.wrapper, {x: 100, y: categoryTops[1] + 20}, first.header)
+        await drag(first.wrapper, categoryOf(1).header, {grip: first.header})
 
         expect(mockedOctoClient.reorderSidebarCategories).toHaveBeenCalledWith('team-id', ['category2', 'category1', 'category3'])
     })

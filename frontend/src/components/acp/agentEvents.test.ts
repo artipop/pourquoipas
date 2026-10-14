@@ -2,7 +2,7 @@ import {fakeGoSide} from '../../test/goSide'
 
 import {onAgentEvent} from './agentEvents'
 
-const anyGlobal = global as any
+const anyGlobal = globalThis as any
 
 // A socket a test can open, drop and inspect. It stands in for the polyfill in
 // src/test, which connects to nothing on purpose.

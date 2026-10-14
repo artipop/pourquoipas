@@ -2,10 +2,9 @@ import type {DragEndEvent} from '@dnd-kit/dom'
 
 import {dispatchDrop} from './sortable'
 
-// Only the dispatch is testable here. Everything around it -- which droppable a
-// pointer is over, whether a press became a drag -- needs real pointer events
-// and real element geometry, and jsdom has neither. Those live in the browser
-// tests marked TODO(react-19).
+// The dispatch on its own. Everything around it -- which droppable a pointer is
+// over, whether a press became a drag -- is driven with a real mouse in
+// sortableDrag.test.tsx.
 function dragEnd(options: {
     from?: unknown
     to?: unknown

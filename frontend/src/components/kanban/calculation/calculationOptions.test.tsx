@@ -51,11 +51,14 @@ describe('components/kanban/calculations/KanbanCalculationOptions', () => {
             />,
         )
 
-        const {container, getByText} = render(component)
+        const {getByText} = render(component)
         const countUniqueValuesOption = getByText('Count Unique Values')
         expect(countUniqueValuesOption).toBeDefined()
         userEvent.hover(countUniqueValuesOption)
-        expect(container).toMatchSnapshot()
+
+        // The submenu offers the properties to count. Not snapshotted: it is
+        // placed beside its option, at coordinates that are the machine's.
+        expect(getByText('Status')).toBeInTheDocument()
     })
 
     test('duplicate property types', () => {

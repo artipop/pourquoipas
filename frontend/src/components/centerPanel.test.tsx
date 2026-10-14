@@ -1,7 +1,7 @@
 import {fireEvent, render, screen, waitFor, within} from '@solidjs/testing-library'
 import userEvent from '@testing-library/user-event'
 
-import {TestRouter, mockAppStore, mockDOM, wrapDNDIntl} from '../testUtils'
+import {TestRouter, mockAppStore, wrapDNDIntl} from '../testUtils'
 import {AppStoreProvider} from '../store'
 import {TestBlockFactory} from '../test/testBlockFactory'
 import {Board, IPropertyTemplate} from '../blocks/board'
@@ -127,7 +127,6 @@ describe('components/centerPanel', () => {
     mockedOctoClient.searchTeamUsers.mockResolvedValue(Object.values(state.users.boardUsers) as IUser[])
     const store = mockAppStore(state)
     beforeAll(() => {
-        mockDOM()
         console.error = vi.fn()
     })
     beforeEach(() => {

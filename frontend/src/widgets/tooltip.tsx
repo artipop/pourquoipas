@@ -44,8 +44,8 @@ function Tooltip(props: Props): JSX.Element {
             return undefined
         }
 
-        // An anchor with no box is one nothing has laid out — jsdom, or a
-        // wrapper off screen. Placing against it would put the bubble in the
+        // An anchor with no box is one nothing has laid out — a wrapper not
+        // displayed, or off screen. Placing against it would put the bubble in the
         // corner of the screen rather than leave it where the stylesheet did.
         const reference = host
         const stop = autoUpdate(reference, floating, () => {

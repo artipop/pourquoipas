@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import '@testing-library/jest-dom'
 
 import {wrapIntl} from '../../testUtils'
+import {Utils} from '../../utils'
 
 import {fakeGoSide, goSide} from '../../test/goSide'
 
@@ -45,8 +46,7 @@ describe('components/sidebar/boardSourceSwitcher', () => {
             })),
             SelectBoardSource: vi.fn().mockResolvedValue('{}'),
         })
-        const reload = vi.fn()
-        Object.defineProperty(window, 'location', {value: {reload}, writable: true})
+        const reload = vi.spyOn(Utils, 'reloadPage').mockImplementation(() => {})
 
         const {container} = open()
         await waitFor(() => expect(container.querySelector('.BoardSourceSwitcher__title')).toBeTruthy())

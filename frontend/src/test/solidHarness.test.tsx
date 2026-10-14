@@ -18,7 +18,7 @@ const Counter = () => {
     )
 }
 
-test('a signal update re-renders in jsdom', async () => {
+test('a signal update re-renders on the test page', async () => {
     render(() => <Counter/>)
     const button = screen.getByRole('button')
     expect(button).toHaveTextContent('clicks: 0')

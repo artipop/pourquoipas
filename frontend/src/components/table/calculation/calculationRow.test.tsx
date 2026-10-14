@@ -9,7 +9,7 @@ import {ColumnResizeProvider} from '../tableColumnResizeContext'
 
 import CalculationRow from './calculationRow'
 
-global.fetch = FetchMock.fn
+globalThis.fetch = FetchMock.fn
 
 beforeEach(() => {
     FetchMock.fn.mockReset()

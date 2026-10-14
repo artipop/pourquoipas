@@ -100,8 +100,8 @@ const Menu: Component<Props> & {
 
         const floating = root
         const stop = autoUpdate(anchor, floating, () => {
-            // An anchor with no box is one nothing has laid out — jsdom, or a
-            // wrapper off screen. Placing against it would put the menu in the
+            // An anchor with no box is one nothing has laid out — a wrapper
+            // not displayed, or off screen. Placing against it would put the menu in the
             // corner of the screen rather than leave it where the stylesheet
             // did.
             const box = anchor.getBoundingClientRect()

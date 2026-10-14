@@ -442,8 +442,15 @@ exports[`src/components/workspace > return workspace and showcard 1`] = `
             id="mainBoardHeader"
           >
             <div
+              aria-describedby="dnd-kit-description-2"
+              aria-disabled="false"
+              aria-grabbed="false"
+              aria-pressed="false"
+              aria-roledescription="draggable"
               class="octo-board-header-cell KanbanColumnHeader"
+              role="button"
               style="opacity: 1;"
+              tabindex="0"
             >
               <span
                 class="Label empty "
@@ -503,8 +510,15 @@ exports[`src/components/workspace > return workspace and showcard 1`] = `
               <!---->
             </div>
             <div
+              aria-describedby="dnd-kit-description-2"
+              aria-disabled="false"
+              aria-grabbed="false"
+              aria-pressed="false"
+              aria-roledescription="draggable"
               class="octo-board-header-cell KanbanColumnHeader"
+              role="button"
               style="opacity: 1;"
+              tabindex="0"
             >
               
               <!---->
@@ -598,8 +612,15 @@ exports[`src/components/workspace > return workspace and showcard 1`] = `
               class="octo-board-column"
             >
               <div
+                aria-describedby="dnd-kit-description-2"
+                aria-disabled="false"
+                aria-grabbed="false"
+                aria-pressed="false"
+                aria-roledescription="draggable"
                 class="KanbanCard onboardingCard"
+                role="button"
                 style="opacity: 1;"
+                tabindex="0"
               >
                 
                 <span
@@ -677,8 +698,15 @@ exports[`src/components/workspace > return workspace and showcard 1`] = `
                 <!---->
               </div>
               <div
+                aria-describedby="dnd-kit-description-2"
+                aria-disabled="false"
+                aria-grabbed="false"
+                aria-pressed="false"
+                aria-roledescription="draggable"
                 class="KanbanCard"
+                role="button"
                 style="opacity: 1;"
+                tabindex="0"
               >
                 
                 <span
@@ -757,8 +785,15 @@ exports[`src/components/workspace > return workspace and showcard 1`] = `
                 <!---->
               </div>
               <div
+                aria-describedby="dnd-kit-description-2"
+                aria-disabled="false"
+                aria-grabbed="false"
+                aria-pressed="false"
+                aria-roledescription="draggable"
                 class="KanbanCard"
+                role="button"
                 style="opacity: 1;"
+                tabindex="0"
               >
                 
                 <span
@@ -1041,8 +1076,15 @@ exports[`src/components/workspace > return workspace readonly and showcard 1`] =
             id="mainBoardHeader"
           >
             <div
+              aria-describedby="dnd-kit-description-3"
+              aria-disabled="false"
+              aria-grabbed="false"
+              aria-pressed="false"
+              aria-roledescription="draggable"
               class="octo-board-header-cell KanbanColumnHeader"
+              role="button"
               style="opacity: 1;"
+              tabindex="0"
             >
               <span
                 class="Label empty "
@@ -1080,8 +1122,15 @@ exports[`src/components/workspace > return workspace readonly and showcard 1`] =
               <!---->
             </div>
             <div
+              aria-describedby="dnd-kit-description-3"
+              aria-disabled="false"
+              aria-grabbed="false"
+              aria-pressed="false"
+              aria-roledescription="draggable"
               class="octo-board-header-cell KanbanColumnHeader"
+              role="button"
               style="opacity: 1;"
+              tabindex="0"
             >
               
               <!---->
@@ -1497,7 +1546,15 @@ exports[`src/components/workspace > should match snapshot 1`] = `
       >
         
         <!---->
-        <div>
+        <div
+          aria-describedby="dnd-kit-description-0"
+          aria-disabled="false"
+          aria-grabbed="true"
+          aria-pressed="true"
+          aria-roledescription="draggable"
+          role="button"
+          tabindex="0"
+        >
           <div
             class="SidebarCategory"
           >
@@ -1877,8 +1934,15 @@ exports[`src/components/workspace > should match snapshot 1`] = `
             id="mainBoardHeader"
           >
             <div
+              aria-describedby="dnd-kit-description-0"
+              aria-disabled="false"
+              aria-grabbed="false"
+              aria-pressed="false"
+              aria-roledescription="draggable"
               class="octo-board-header-cell KanbanColumnHeader"
+              role="button"
               style="opacity: 1;"
+              tabindex="0"
             >
               <span
                 class="Label empty "
@@ -1938,8 +2002,15 @@ exports[`src/components/workspace > should match snapshot 1`] = `
               <!---->
             </div>
             <div
+              aria-describedby="dnd-kit-description-0"
+              aria-disabled="false"
+              aria-grabbed="false"
+              aria-pressed="false"
+              aria-roledescription="draggable"
               class="octo-board-header-cell KanbanColumnHeader"
+              role="button"
               style="opacity: 1;"
+              tabindex="0"
             >
               
               <!---->
@@ -2033,8 +2104,15 @@ exports[`src/components/workspace > should match snapshot 1`] = `
               class="octo-board-column"
             >
               <div
+                aria-describedby="dnd-kit-description-0"
+                aria-disabled="false"
+                aria-grabbed="false"
+                aria-pressed="false"
+                aria-roledescription="draggable"
                 class="KanbanCard onboardingCard"
+                role="button"
                 style="opacity: 1;"
+                tabindex="0"
               >
                 
                 <span
@@ -2112,8 +2190,15 @@ exports[`src/components/workspace > should match snapshot 1`] = `
                 <!---->
               </div>
               <div
+                aria-describedby="dnd-kit-description-0"
+                aria-disabled="false"
+                aria-grabbed="false"
+                aria-pressed="false"
+                aria-roledescription="draggable"
                 class="KanbanCard"
+                role="button"
                 style="opacity: 1;"
+                tabindex="0"
               >
                 
                 <span
@@ -2192,8 +2277,15 @@ exports[`src/components/workspace > should match snapshot 1`] = `
                 <!---->
               </div>
               <div
+                aria-describedby="dnd-kit-description-0"
+                aria-disabled="false"
+                aria-grabbed="false"
+                aria-pressed="false"
+                aria-roledescription="draggable"
                 class="KanbanCard"
+                role="button"
                 style="opacity: 1;"
+                tabindex="0"
               >
                 
                 <span
@@ -2476,8 +2568,15 @@ exports[`src/components/workspace > should match snapshot with readonly 1`] = `
             id="mainBoardHeader"
           >
             <div
+              aria-describedby="dnd-kit-description-1"
+              aria-disabled="false"
+              aria-grabbed="false"
+              aria-pressed="false"
+              aria-roledescription="draggable"
               class="octo-board-header-cell KanbanColumnHeader"
+              role="button"
               style="opacity: 1;"
+              tabindex="0"
             >
               <span
                 class="Label empty "
@@ -2515,8 +2614,15 @@ exports[`src/components/workspace > should match snapshot with readonly 1`] = `
               <!---->
             </div>
             <div
+              aria-describedby="dnd-kit-description-1"
+              aria-disabled="false"
+              aria-grabbed="false"
+              aria-pressed="false"
+              aria-roledescription="draggable"
               class="octo-board-header-cell KanbanColumnHeader"
+              role="button"
               style="opacity: 1;"
+              tabindex="0"
             >
               
               <!---->

@@ -2,14 +2,10 @@ import '@testing-library/jest-dom'
 import {render} from '@solidjs/testing-library'
 
 import {TestBlockFactory} from '../../test/testBlockFactory'
-import {mockAppStore, mockDOM, wrapIntl} from '../../testUtils'
+import {mockAppStore, wrapIntl} from '../../testUtils'
 import {AppStoreProvider} from '../../store'
 
 import CardActionsMenu from './cardActionsMenu'
-
-beforeAll(() => {
-    mockDOM()
-})
 
 describe('components/cardActionsMenu', () => {
     const board = TestBlockFactory.createBoard()

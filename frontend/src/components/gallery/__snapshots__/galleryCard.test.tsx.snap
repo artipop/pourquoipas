@@ -38,8 +38,15 @@ exports[`src/components/gallery/GalleryCard > with a comment content > return Ga
 exports[`src/components/gallery/GalleryCard > with a comment content > should match snapshot 1`] = `
 <div>
   <div
+    aria-describedby="dnd-kit-description-8"
+    aria-disabled="false"
+    aria-grabbed="false"
+    aria-pressed="false"
+    aria-roledescription="draggable"
     class="GalleryCard selected"
+    role="button"
     style="opacity: 1;"
+    tabindex="0"
   >
     <div
       aria-label="menuwrapper"
@@ -271,8 +278,15 @@ exports[`src/components/gallery/GalleryCard > with a comment content > should ma
 exports[`src/components/gallery/GalleryCard > with an image content > should match snapshot 1`] = `
 <div>
   <div
+    aria-describedby="dnd-kit-description-6"
+    aria-disabled="false"
+    aria-grabbed="false"
+    aria-pressed="false"
+    aria-roledescription="draggable"
     class="GalleryCard selected"
+    role="button"
     style="opacity: 1;"
+    tabindex="0"
   >
     <div
       aria-label="menuwrapper"
@@ -476,7 +490,13 @@ exports[`src/components/gallery/GalleryCard > with an image content > should mat
     <!---->
     <div
       class="gallery-image"
-    />
+    >
+      <img
+        alt=""
+        class="ImageElement"
+        src="test.jpg"
+      />
+    </div>
     <!---->
     <div
       class="gallery-title"
@@ -543,8 +563,15 @@ exports[`src/components/gallery/GalleryCard > with many contents > return Galler
 exports[`src/components/gallery/GalleryCard > with many contents > should match snapshot 1`] = `
 <div>
   <div
+    aria-describedby="dnd-kit-description-10"
+    aria-disabled="false"
+    aria-grabbed="false"
+    aria-pressed="false"
+    aria-roledescription="draggable"
     class="GalleryCard selected"
+    role="button"
     style="opacity: 1;"
+    tabindex="0"
   >
     <div
       aria-label="menuwrapper"
@@ -780,8 +807,15 @@ exports[`src/components/gallery/GalleryCard > with many contents > should match 
 exports[`src/components/gallery/GalleryCard > with many images content > should match snapshot with only first image 1`] = `
 <div>
   <div
+    aria-describedby="dnd-kit-description-7"
+    aria-disabled="false"
+    aria-grabbed="false"
+    aria-pressed="false"
+    aria-roledescription="draggable"
     class="GalleryCard selected"
+    role="button"
     style="opacity: 1;"
+    tabindex="0"
   >
     <div
       aria-label="menuwrapper"
@@ -985,7 +1019,13 @@ exports[`src/components/gallery/GalleryCard > with many images content > should 
     <!---->
     <div
       class="gallery-image"
-    />
+    >
+      <img
+        alt=""
+        class="ImageElement"
+        src="test.jpg"
+      />
+    </div>
     <!---->
     <div
       class="gallery-title"
@@ -1013,8 +1053,15 @@ exports[`src/components/gallery/GalleryCard > with many images content > should 
 exports[`src/components/gallery/GalleryCard > without block content > return GalleryCard and cancel 1`] = `
 <div>
   <div
+    aria-describedby="dnd-kit-description-5"
+    aria-disabled="false"
+    aria-grabbed="false"
+    aria-pressed="false"
+    aria-roledescription="draggable"
     class="GalleryCard selected"
+    role="button"
     style="opacity: 1;"
+    tabindex="0"
   >
     <div
       aria-label="menuwrapper"
@@ -1063,8 +1110,15 @@ exports[`src/components/gallery/GalleryCard > without block content > return Gal
 exports[`src/components/gallery/GalleryCard > without block content > return GalleryCard and copy link 1`] = `
 <div>
   <div
+    aria-describedby="dnd-kit-description-4"
+    aria-disabled="false"
+    aria-grabbed="false"
+    aria-pressed="false"
+    aria-roledescription="draggable"
     class="GalleryCard selected"
+    role="button"
     style="opacity: 1;"
+    tabindex="0"
   >
     <div
       aria-label="menuwrapper"
@@ -1113,8 +1167,15 @@ exports[`src/components/gallery/GalleryCard > without block content > return Gal
 exports[`src/components/gallery/GalleryCard > without block content > return GalleryCard and delete card 1`] = `
 <div>
   <div
+    aria-describedby="dnd-kit-description-2"
+    aria-disabled="false"
+    aria-grabbed="false"
+    aria-pressed="false"
+    aria-roledescription="draggable"
     class="GalleryCard selected"
+    role="button"
     style="opacity: 1;"
+    tabindex="0"
   >
     <div
       aria-label="menuwrapper"
@@ -1250,8 +1311,15 @@ exports[`src/components/gallery/GalleryCard > without block content > return Gal
 exports[`src/components/gallery/GalleryCard > without block content > return GalleryCard and duplicate card 1`] = `
 <div>
   <div
+    aria-describedby="dnd-kit-description-3"
+    aria-disabled="false"
+    aria-grabbed="false"
+    aria-pressed="false"
+    aria-roledescription="draggable"
     class="GalleryCard selected"
+    role="button"
     style="opacity: 1;"
+    tabindex="0"
   >
     <div
       aria-label="menuwrapper"
@@ -1300,8 +1368,15 @@ exports[`src/components/gallery/GalleryCard > without block content > return Gal
 exports[`src/components/gallery/GalleryCard > without block content > should match snapshot 1`] = `
 <div>
   <div
+    aria-describedby="dnd-kit-description-0"
+    aria-disabled="false"
+    aria-grabbed="false"
+    aria-pressed="false"
+    aria-roledescription="draggable"
     class="GalleryCard selected"
+    role="button"
     style="opacity: 1;"
+    tabindex="0"
   >
     <div
       aria-label="menuwrapper"

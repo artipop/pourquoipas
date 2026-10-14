@@ -18,8 +18,8 @@ export const goSide: Record<string, any> = new Proxy({}, {
 
 // fakeGoSide puts a Go side behind the page answering with these methods,
 // replacing whatever an earlier test installed; with no argument there is
-// none, as in a test that never asked. A method left out answers undefined,
-// which is what a call site's optional call sees.
+// none, as in a test that never asked. A method left out answers a promise
+// of undefined (goSideMock.ts).
 export function fakeGoSide(bindings?: Record<string, any>): void {
     installed = bindings ?? {}
     const w = window as unknown as IAppWindow

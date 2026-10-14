@@ -100,8 +100,7 @@ export function newCustomTheme(): CustomTheme {
 }
 
 function wantsDark(mode: ThemeMode): boolean {
-    // Asked only when it is the answer: `matchMedia` is one of the things a
-    // jsdom without it does not have, and a stated polarity has no business
+    // Asked only when it is the answer: a stated polarity has no business
     // consulting the machine's preference.
     return mode === 'dark' || (mode === 'system' && prefersDark())
 }

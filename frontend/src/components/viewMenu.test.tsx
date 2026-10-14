@@ -8,7 +8,7 @@ import {AppStoreProvider} from '../store'
 
 import ViewMenu from './viewMenu'
 
-global.fetch = FetchMock.fn
+globalThis.fetch = FetchMock.fn
 
 beforeEach(() => {
     FetchMock.fn.mockReset()

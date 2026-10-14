@@ -9,7 +9,7 @@ import {AppStoreProvider} from '../../store'
 import {ColumnResizeProvider} from './tableColumnResizeContext'
 import TableRows from './tableRows'
 
-global.fetch = FetchMock.fn
+globalThis.fetch = FetchMock.fn
 
 beforeEach(() => {
     FetchMock.fn.mockReset()

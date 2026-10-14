@@ -5,7 +5,7 @@ import userEvent from '@testing-library/user-event'
 import mutator from '../mutator'
 import {Utils} from '../utils'
 import {TestBlockFactory} from '../test/testBlockFactory'
-import {mockAppStore, mockDOM, wrapIntl} from '../testUtils'
+import {mockAppStore, wrapIntl} from '../testUtils'
 import {AppStoreProvider} from '../store'
 
 import ViewTitle from './viewTitle'
@@ -16,10 +16,6 @@ vi.mock('../utils')
 const mockedMutator = vi.mocked(mutator)
 const mockedUtils = vi.mocked(Utils)
 mockedUtils.createGuid.mockReturnValue('test-id')
-
-beforeAll(() => {
-    mockDOM()
-})
 
 describe('components/viewTitle', () => {
     const board = TestBlockFactory.createBoard()

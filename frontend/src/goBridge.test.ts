@@ -37,7 +37,7 @@ describe('goBridge', () => {
         inApp.href = `${window.location.origin}/board/1`
         document.body.append(outward, inApp)
 
-        // jsdom cannot navigate; the page would, and that is not under test.
+        // Followed, it would navigate the test's own page away.
         inApp.addEventListener('click', (e) => e.preventDefault())
 
         expect(click(outward).defaultPrevented).toBe(true)

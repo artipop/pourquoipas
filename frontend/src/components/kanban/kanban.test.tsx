@@ -4,14 +4,15 @@ import userEvent from '@testing-library/user-event'
 
 import {IPropertyOption, IPropertyTemplate} from '../../blocks/board'
 import {TestBlockFactory} from '../../test/testBlockFactory'
-import {TestRouter, mockAppStore, mockDOM, wrapDNDIntl} from '../../testUtils'
+import {TestRouter, mockAppStore, wrapDNDIntl} from '../../testUtils'
+import {drag} from '../../test/drag'
 import {AppStoreProvider} from '../../store'
 import {Utils} from '../../utils'
 import {mutator} from '../../mutator'
 
 import Kanban from './kanban'
 
-global.fetch = vi.fn()
+globalThis.fetch = vi.fn()
 vi.mock('../../utils')
 const mockedUtils = vi.mocked(Utils)
 
@@ -23,6 +24,7 @@ const mockedUtils = vi.mocked(Utils)
 const mockedchangePropertyOptionValue = vi.spyOn(mutator, 'changePropertyOptionValue').mockResolvedValue(undefined)
 const mockedChangeViewCardOrder = vi.spyOn(mutator, 'changeViewCardOrder').mockResolvedValue(undefined)
 const mockedinsertPropertyOption = vi.spyOn(mutator, 'insertPropertyOption').mockResolvedValue(undefined)
+const mockedChangePropertyValue = vi.spyOn(mutator, 'changePropertyValue').mockResolvedValue(undefined)
 
 describe('src/component/kanban/kanban', () => {
     const board = TestBlockFactory.createBoard()
@@ -103,7 +105,6 @@ describe('src/component/kanban/kanban', () => {
     const store = mockAppStore(state)
     beforeAll(() => {
         console.error = vi.fn()
-        mockDOM()
     })
     beforeEach(vi.clearAllMocks)
     test('should match snapshot', () => {
@@ -245,9 +246,7 @@ describe('src/component/kanban/kanban', () => {
         expect(container).toMatchSnapshot()
     })
 
-    // TODO(react-19): see docs/npm-dependency-warnings.md -- drives react-dnd HTML5 drag events, which dnd-kit does not listen to
-    // eslint-disable-next-line no-only-tests/no-only-tests
-    test.skip('return kanban and drag card to other card ', async () => {
+    test('return kanban and drag card to other card ', async () => {
         const {container} = render(() => wrapDNDIntl(() =>
             <AppStoreProvider store={store}>
                 <Kanban
@@ -283,20 +282,13 @@ describe('src/component/kanban/kanban', () => {
         const cardsElement = container.querySelectorAll('.KanbanCard')
         expect(cardsElement).not.toBeNull()
         expect(cardsElement).toHaveLength(3)
-        fireEvent.dragStart(cardsElement[0])
-        fireEvent.dragEnter(cardsElement[1])
-        fireEvent.dragOver(cardsElement[1])
-        fireEvent.drop(cardsElement[1])
-        expect(mockedUtils.log).toHaveBeenCalled()
+        await drag(cardsElement[0], cardsElement[1])
 
-        await waitFor(async () => {
-            expect(mockedChangeViewCardOrder).toHaveBeenCalled()
-        })
+        await waitFor(() => expect(mockedChangeViewCardOrder).toHaveBeenCalled())
+        expect(mockedChangePropertyValue).not.toHaveBeenCalled()
     })
 
-    // TODO(react-19): see docs/npm-dependency-warnings.md -- drives react-dnd HTML5 drag events, which dnd-kit does not listen to
-    // eslint-disable-next-line no-only-tests/no-only-tests
-    test.skip('return kanban and change card column', async () => {
+    test('return kanban and change card column', async () => {
         const {container} = render(() => wrapDNDIntl(() =>
             <AppStoreProvider store={store}>
                 <Kanban
@@ -334,18 +326,12 @@ describe('src/component/kanban/kanban', () => {
         expect(cardsElement).toHaveLength(3)
         const columnQ2Element = container.querySelector('.octo-board-column:nth-child(2)')
         expect(columnQ2Element).toBeDefined()
-        fireEvent.dragStart(cardsElement[0])
-        fireEvent.dragEnter(columnQ2Element!)
-        fireEvent.dragOver(columnQ2Element!)
-        fireEvent.drop(columnQ2Element!)
-        await waitFor(async () => {
-            expect(mockedChangeViewCardOrder).toHaveBeenCalled()
-        })
+        await drag(cardsElement[0], columnQ2Element!)
+
+        await waitFor(() => expect(mockedChangePropertyValue).toHaveBeenCalledWith(board.id, card1, groupProperty.id, optionQ2.id, expect.anything()))
     })
 
-    // TODO(react-19): see docs/npm-dependency-warnings.md -- drives react-dnd HTML5 drag events, which dnd-kit does not listen to
-    // eslint-disable-next-line no-only-tests/no-only-tests
-    test.skip('return kanban and change card column to hidden column', async () => {
+    test('return kanban and change card column to hidden column', async () => {
         const {container} = render(() => wrapDNDIntl(() =>
             <AppStoreProvider store={store}>
                 <Kanban
@@ -383,13 +369,9 @@ describe('src/component/kanban/kanban', () => {
         expect(cardsElement).toHaveLength(3)
         const columnQ3Element = container.querySelector('.octo-board-hidden-item')
         expect(columnQ3Element).toBeDefined()
-        fireEvent.dragStart(cardsElement[0]!)
-        fireEvent.dragEnter(columnQ3Element!)
-        fireEvent.dragOver(columnQ3Element!)
-        fireEvent.drop(columnQ3Element!)
-        await waitFor(async () => {
-            expect(mockedChangeViewCardOrder).toHaveBeenCalled()
-        })
+        await drag(cardsElement[0], columnQ3Element!)
+
+        await waitFor(() => expect(mockedChangePropertyValue).toHaveBeenCalledWith(board.id, card1, groupProperty.id, optionQ3.id, expect.anything()))
     })
     test('return kanban and click on New', () => {
         const mockedAddCard = vi.fn()
@@ -635,7 +617,6 @@ describe('src/component/kanban/kanban', () => {
     const store = mockAppStore(state)
     beforeAll(() => {
         console.error = vi.fn()
-        mockDOM()
     })
     beforeEach(vi.clearAllMocks)
     test('return kanban and click on New if view have already have defaultTemplateId', () => {

@@ -54,6 +54,11 @@ describe('components/calendar/toolbar', () => {
         vi.clearAllMocks()
     })
 
+    // The day the card is drawn on, as the calendar dates its cells. Asked
+    // rather than snapshotted: the calendar sizes its grid in pixels from the
+    // fonts of the machine.
+    const dayOfCard = (container: HTMLElement) => container.querySelector('.fc-event')?.closest('[data-date]')?.getAttribute('data-date')
+
     test('return calendar, no date property', async () => {
         const {container} = render(() =>
             wrapIntl(() =>
@@ -80,7 +85,7 @@ describe('components/calendar/toolbar', () => {
             }
         }
         expect(container.querySelector('.dateContainer.with-plus')).not.toBeNull()
-        expect(container).toMatchSnapshot()
+        expect(dayOfCard(container)).toBe('2021-10-05')
     })
 
     test('return calendar, with date property not set', async () => {
@@ -103,7 +108,7 @@ describe('components/calendar/toolbar', () => {
         )
 
         await calendarBuilt()
-        expect(container).toMatchSnapshot()
+        expect(dayOfCard(container)).toBe('2021-10-05')
     })
 
     test('return calendar, with date property set', async () => {
@@ -127,7 +132,7 @@ describe('components/calendar/toolbar', () => {
         )
 
         await calendarBuilt()
-        expect(container).toMatchSnapshot()
+        expect(dayOfCard(container)).toBe('2021-10-20')
     })
 
     test('return calendar, without permissions', async () => {
@@ -150,7 +155,7 @@ describe('components/calendar/toolbar', () => {
 
         await calendarBuilt()
         expect(container.querySelector('.dateContainer.with-plus')).toBeNull()
-        expect(container).toMatchSnapshot()
+        expect(dayOfCard(container)).toBe('2021-10-05')
     })
 
     // Week or month is the view's own answer, so it comes back with the view

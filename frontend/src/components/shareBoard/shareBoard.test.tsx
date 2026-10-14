@@ -179,6 +179,18 @@ describe('src/components/shareBoard/shareBoard', () => {
         w.baseURL = oldBaseURL
     })
 
+    // The link is built from the page's own address, which in the test runner
+    // carries the runner's port and session, so what is checked is the part
+    // the dialog writes: the path and the read token.
+    const shownLink = () => {
+        const link = document.querySelector('a.shareUrl') as HTMLAnchorElement | null
+        if (!link) {
+            return null
+        }
+        const url = new URL(link.href)
+        return {path: url.pathname, token: url.searchParams.get('r')}
+    }
+
     test('should match snapshot', async () => {
         const sharing: ISharing = {
             id: '',
@@ -186,7 +198,7 @@ describe('src/components/shareBoard/shareBoard', () => {
             token: '',
         }
         mockedOctoClient.getSharing.mockResolvedValue(sharing)
-        const {container} = render(() =>
+        render(() =>
             wrapDNDIntl(() =>
                 <AppStoreProvider store={store}>
                     <ShareBoard
@@ -197,7 +209,8 @@ describe('src/components/shareBoard/shareBoard', () => {
         {wrapper: TestRouter},
         )
 
-        expect(container).toMatchSnapshot()
+        expect(screen.getByRole('heading', {name: 'Share Board'})).toBeInTheDocument()
+        await waitFor(() => expect(shownLink()).toEqual({path: '/undefined', token: null}))
         const shareButton = screen.getByRole('button', {name: 'Share'})
         expect(shareButton).toBeDefined()
         const closeButton = screen.getByRole('button', {name: 'Close dialog'})
@@ -212,7 +225,7 @@ describe('src/components/shareBoard/shareBoard', () => {
         }
         mockedOctoClient.getSharing.mockResolvedValue(sharing)
 
-        const {container} = render(() =>
+        render(() =>
             wrapDNDIntl(() =>
                 <AppStoreProvider store={store}>
                     <ShareBoard
@@ -225,7 +238,7 @@ describe('src/components/shareBoard/shareBoard', () => {
         const copyLinkElement = screen.getByTitle('Copy link')
         expect(copyLinkElement).toBeDefined()
 
-        expect(container).toMatchSnapshot()
+        await waitFor(() => expect(shownLink()).toEqual({path: '/undefined', token: null}))
     })
 
     test('return shareBoard and click Copy link', async () => {
@@ -236,7 +249,7 @@ describe('src/components/shareBoard/shareBoard', () => {
         }
         mockedOctoClient.getSharing.mockResolvedValue(sharing)
 
-        const {container} = render(() =>
+        render(() =>
             wrapDNDIntl(() =>
                 <AppStoreProvider store={store}>
                     <ShareBoard
@@ -247,7 +260,7 @@ describe('src/components/shareBoard/shareBoard', () => {
         {wrapper: TestRouter},
         )
 
-        expect(container).toMatchSnapshot()
+        await waitFor(() => expect(shownLink()).toEqual({path: '/undefined', token: null}))
 
         const copyLinkElement = screen.getByTitle('Copy link')
         expect(copyLinkElement).toBeDefined()
@@ -255,7 +268,7 @@ describe('src/components/shareBoard/shareBoard', () => {
         userEvent.click(copyLinkElement!)
 
         expect(mockedUtils.copyTextToClipboard).toHaveBeenCalledTimes(1)
-        expect(container).toMatchSnapshot()
+        expect(mockedUtils.copyTextToClipboard).toHaveBeenCalledWith((document.querySelector('a.shareUrl') as HTMLAnchorElement).href)
 
         const copiedLinkElement = screen.getByText('Copied!')
         expect(copiedLinkElement).toBeDefined()
@@ -272,7 +285,7 @@ describe('src/components/shareBoard/shareBoard', () => {
         }
         mockedOctoClient.getSharing.mockResolvedValue(sharing)
 
-        const {container} = render(() =>
+        render(() =>
             wrapDNDIntl(() =>
                 <AppStoreProvider store={store}>
                     <ShareBoard
@@ -298,7 +311,7 @@ describe('src/components/shareBoard/shareBoard', () => {
         userEvent.click(regenerateTokenElement)
         vi.runOnlyPendingTimers()
         expect(mockedOctoClient.setSharing).toHaveBeenCalledTimes(1)
-        expect(container).toMatchSnapshot()
+        await waitFor(() => expect(shownLink()).toEqual({path: '/undefined', token: 'anotherToken'}))
     })
 
     test('return shareBoard, and click switch', async () => {
@@ -333,12 +346,10 @@ describe('src/components/shareBoard/shareBoard', () => {
 
         // the re-read after the toggle sits behind the awaited setSharing
         await waitFor(() => expect(mockedOctoClient.getSharing).toHaveBeenCalledTimes(2))
-        expect(container).toMatchSnapshot()
+        expect(shownLink()).toEqual({path: '/undefined', token: 'oneToken'})
     })
 
-    // TODO(react-19): see docs/npm-dependency-warnings.md -- asserted on a race: React 17 clicked before getSharing resolved
-    // eslint-disable-next-line no-only-tests/no-only-tests
-    test.skip('return shareBoardComponent and click Switch without sharing', async () => {
+    test('return shareBoardComponent and click Switch without sharing', async () => {
         const sharing: ISharing = {
             id: '',
             enabled: false,
@@ -346,7 +357,7 @@ describe('src/components/shareBoard/shareBoard', () => {
         }
         mockedOctoClient.getSharing.mockResolvedValue(sharing)
         mockedUtils.createGuid.mockReturnValue('aToken')
-        const result = render(() =>
+        const {container} = render(() =>
             wrapDNDIntl(() =>
                 <AppStoreProvider store={store}>
                     <ShareBoard
@@ -356,40 +367,28 @@ describe('src/components/shareBoard/shareBoard', () => {
                 </AppStoreProvider>),
         {wrapper: TestRouter},
         )
-        const container = result.container
         mockedOctoClient.getSharing.mockResolvedValue({
             id: boardId,
             enabled: true,
             token: 'aToken',
         })
 
-        // React 19 commits when the act callback returns, so the rendered tree
-        // is only queryable from a second one.
         const publishButton = screen.getByRole('button', {name: 'Publish'})
         expect(publishButton).toBeDefined()
         userEvent.click(publishButton)
         vi.runOnlyPendingTimers()
 
-        // The switch only exists once publishing has committed.
         const switchElement = container?.querySelector('.Switch')
         expect(switchElement).toBeDefined()
         userEvent.click(switchElement!)
         vi.runOnlyPendingTimers()
-        result?.rerender(() =>
-            wrapDNDIntl(() =>
-                <AppStoreProvider store={store}>
-                    <ShareBoard
-                        onClose={vi.fn()}
-                        enableSharedBoards={true}
-                    />
-                </AppStoreProvider>))
 
         expect(mockedOctoClient.setSharing).toHaveBeenCalledTimes(1)
 
         // the re-read after the toggle sits behind the awaited setSharing
         await waitFor(() => expect(mockedOctoClient.getSharing).toHaveBeenCalledTimes(2))
         expect(mockedUtils.createGuid).toHaveBeenCalledTimes(1)
-        expect(container).toMatchSnapshot()
+        await waitFor(() => expect(shownLink()).toEqual({path: '/undefined', token: 'aToken'}))
     })
 
     test('should match snapshot with sharing and without workspaceId and subpath', async () => {
@@ -404,7 +403,7 @@ describe('src/components/shareBoard/shareBoard', () => {
             viewId,
         }
         mockedOctoClient.getSharing.mockResolvedValue(sharing)
-        const {container} = render(() => wrapDNDIntl(() =>
+        render(() => wrapDNDIntl(() =>
             <AppStoreProvider store={store}>
                 <ShareBoard
                     onClose={vi.fn()}
@@ -412,7 +411,7 @@ describe('src/components/shareBoard/shareBoard', () => {
                 />
             </AppStoreProvider>),
         {wrapper: TestRouter})
-        expect(container).toMatchSnapshot()
+        await waitFor(() => expect(shownLink()).toEqual({path: '/test-subpath/plugins/boardsundefined', token: null}))
     })
 
     test('should match snapshot with sharing and subpath', async () => {
@@ -423,7 +422,7 @@ describe('src/components/shareBoard/shareBoard', () => {
             token: 'oneToken',
         }
         mockedOctoClient.getSharing.mockResolvedValue(sharing)
-        const {container} = render(() => wrapDNDIntl(() =>
+        render(() => wrapDNDIntl(() =>
             <AppStoreProvider store={store}>
                 <ShareBoard
                     onClose={vi.fn()}
@@ -431,7 +430,7 @@ describe('src/components/shareBoard/shareBoard', () => {
                 />
             </AppStoreProvider>),
         {wrapper: TestRouter})
-        expect(container).toMatchSnapshot()
+        await waitFor(() => expect(shownLink()).toEqual({path: '/test-subpath/plugins/boardsundefined', token: null}))
     })
 
     test('return shareBoard and click Select', async () => {
@@ -451,7 +450,7 @@ describe('src/components/shareBoard/shareBoard', () => {
         ]
         mockedOctoClient.searchTeamUsers.mockResolvedValue(users)
 
-        const {container} = render(() =>
+        render(() =>
             wrapDNDIntl(() =>
                 <AppStoreProvider store={store}>
                     <ShareBoard
@@ -462,13 +461,14 @@ describe('src/components/shareBoard/shareBoard', () => {
         {wrapper: TestRouter},
         )
 
-        expect(container).toMatchSnapshot()
-        const selectElement = await screen.findByText('Search for people')
-        expect(selectElement).toBeDefined()
+        // The placeholder lets a click through to the field it stands in.
+        await screen.findByText('Search for people')
+        userEvent.click(screen.getByRole('combobox'))
 
-        userEvent.click(selectElement!)
-
-        expect(container).toMatchSnapshot()
+        // The team's people are offered.
+        await waitFor(() => expect(screen.getByRole('combobox')).toHaveAttribute('aria-expanded', 'true'))
+        expect(await screen.findByText('username_1')).toBeInTheDocument()
+        expect(screen.getByText('username_4')).toBeInTheDocument()
     })
 
     test('return shareBoard and click Select, non-plugin mode', async () => {
@@ -486,7 +486,7 @@ describe('src/components/shareBoard/shareBoard', () => {
         ]
         mockedOctoClient.searchTeamUsers.mockResolvedValue(users)
 
-        const {container} = render(() =>
+        render(() =>
             wrapDNDIntl(() =>
                 <AppStoreProvider store={store}>
                     <ShareBoard
@@ -497,13 +497,14 @@ describe('src/components/shareBoard/shareBoard', () => {
         {wrapper: TestRouter},
         )
 
-        expect(container).toMatchSnapshot()
-        const selectElement = await screen.findByText('Search for people')
-        expect(selectElement).toBeDefined()
+        // The placeholder lets a click through to the field it stands in.
+        await screen.findByText('Search for people')
+        userEvent.click(screen.getByRole('combobox'))
 
-        userEvent.click(selectElement!)
-
-        expect(container).toMatchSnapshot()
+        // The team's people are offered.
+        await waitFor(() => expect(screen.getByRole('combobox')).toHaveAttribute('aria-expanded', 'true'))
+        expect(await screen.findByText('username_1')).toBeInTheDocument()
+        expect(screen.getByText('username_4')).toBeInTheDocument()
     })
 
     test('should match snapshot, with template', async () => {
@@ -577,10 +578,10 @@ describe('src/components/shareBoard/shareBoard', () => {
         )
 
         expect(container).toMatchSnapshot()
-        const selectElement = await screen.findByText('Search for people')
-        expect(selectElement).toBeDefined()
 
-        userEvent.click(selectElement!)
+        // The placeholder lets a click through to the field it stands in.
+        await screen.findByText('Search for people')
+        userEvent.click(screen.getByRole('combobox'))
 
         expect(container).toMatchSnapshot()
     })

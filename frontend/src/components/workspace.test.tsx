@@ -6,7 +6,7 @@ import userEvent from '@testing-library/user-event'
 import {IUser} from '../user'
 import octoClient from '../octoClient'
 import {TestBlockFactory} from '../test/testBlockFactory'
-import {TestRouter, mockAppStore, mockDOM, mockMatchMedia, wrapDNDIntl} from '../testUtils'
+import {TestRouter, mockAppStore, mockMatchMedia, wrapDNDIntl} from '../testUtils'
 import {AppStoreProvider} from '../store'
 import {Constants} from '../constants'
 import {Utils} from '../utils'
@@ -161,7 +161,6 @@ describe('src/components/workspace', () => {
     mockedOctoClient.searchTeamUsers.mockResolvedValue(Object.values(state.users.boardUsers))
     const store = mockAppStore(state, {client: mockedOctoClient as any})
     beforeAll(() => {
-        mockDOM()
         mockMatchMedia({matches: true})
     })
     beforeEach(() => {
@@ -313,103 +312,5 @@ describe('src/components/workspace', () => {
         flush()
         vi.runOnlyPendingTimers()
         await waitFor(() => expect(result.container.textContent).toContain('Create a board'))
-    })
-
-    // TODO(react-19): see docs/npm-dependency-warnings.md -- tooltip count depends on effect timing that React 19 changed
-    // eslint-disable-next-line no-only-tests/no-only-tests
-    test.skip('show add new view tooltip', async () => {
-        const welcomeBoard = TestBlockFactory.createBoard()
-        welcomeBoard.title = 'Welcome to Boards!'
-
-        const onboardingCard = TestBlockFactory.createCard(welcomeBoard)
-        onboardingCard.id = 'card1'
-        onboardingCard.title = 'Create a new card'
-        onboardingCard.boardId = welcomeBoard.id
-
-        const localState = {
-            teams: {
-                current: {id: 'team-id', title: 'Test Team'},
-            },
-            users: {
-                me: {
-                    id: 'user-id-1',
-                    username: 'username_1',
-                    email: '',
-                    nickname: '',
-                    firstname: '',
-                    lastname: '',
-                    create_at: 0,
-                    update_at: 0,
-                    is_bot: false,
-                    roles: 'system_user',
-                },
-                myConfig: {
-                    welcomePageViewed: {value: '1'},
-                    onboardingTourStarted: {value: true},
-                    tourCategory: {value: 'board'},
-                    onboardingTourStep: {value: '0'},
-                },
-                boardUsers: {[me.id]: me},
-                blockSubscriptions: [],
-            },
-            boards: {
-                current: welcomeBoard.id,
-                boards: {
-                    [welcomeBoard.id]: welcomeBoard,
-                },
-                templates: [],
-                myBoardMemberships: {
-                    [welcomeBoard.id]: {userId: 'user_id_1', schemeAdmin: true},
-                },
-            },
-            globalTemplates: {
-                value: [],
-            },
-            views: {
-                views: {
-                    [activeView.id]: activeView,
-                },
-                current: activeView.id,
-            },
-            cards: {
-                templates: [],
-                cards: [onboardingCard, card1, card2, card3],
-            },
-            searchText: {},
-            clientConfig: {
-                value: {
-                    enablePublicSharedBoards: true,
-                    teammateNameDisplay: 'username',
-                    teamMode: true,
-                },
-            },
-            contents: {
-                contents: {},
-            },
-            comments: {
-                comments: {},
-            },
-            sidebar: {
-                categoryAttributes: [
-                    categoryAttribute1,
-                ],
-                hiddenBoardIDs: [],
-            },
-        }
-        const localStore = mockAppStore(localState, {client: mockedOctoClient as any})
-
-        render(() => wrapDNDIntl(() =>
-            <AppStoreProvider store={localStore}>
-                <Workspace readonly={false}/>
-            </AppStoreProvider>,
-        ), {wrapper: TestRouter})
-
-        vi.runOnlyPendingTimers()
-
-        await waitFor(() => expect(document.querySelectorAll('.AddViewTourStep')).toBeDefined(), {timeout: 5000})
-
-        const elements = document.querySelectorAll('.AddViewTourStep')
-        expect(elements.length).toBe(2)
-        expect(elements[1]).toMatchSnapshot()
     })
 })

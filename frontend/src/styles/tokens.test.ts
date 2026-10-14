@@ -1,6 +1,3 @@
-import {readdirSync, readFileSync} from 'fs'
-import {join} from 'path'
-
 import {themeVars, Vars} from './tokensSource'
 
 // The palette is one file, and this is what keeps it honest. Every pair below
@@ -61,15 +58,8 @@ function over(fg: [number, number, number], bg: [number, number, number], alpha:
     return [0, 1, 2].map((i) => (alpha * fg[i]) + ((1 - alpha) * bg[i])) as [number, number, number]
 }
 
-function stylesheets(dir: string): string[] {
-    return readdirSync(dir, {withFileTypes: true}).flatMap((entry) => {
-        const path = join(dir, entry.name)
-        if (entry.isDirectory()) {
-            return stylesheets(path)
-        }
-        return entry.name.endsWith('.scss') ? [path] : []
-    })
-}
+// Every stylesheet of the page, as text, keyed by its path.
+const stylesheets = import.meta.glob<string>('/src/**/*.scss', {query: '?raw', import: 'default', eager: true})
 
 const AA = 4.5
 
@@ -102,8 +92,8 @@ describe('styles/tokens', () => {
         const dark = themeVars(true)
         const undefinedTokens = new Map<string, string[]>()
 
-        for (const file of stylesheets(__dirname.replace(/\/styles$/, ''))) {
-            const body = readFileSync(file, 'utf8').replace(/\/\/.*$/gm, '')
+        for (const [file, text] of Object.entries(stylesheets)) {
+            const body = text.replace(/\/\/.*$/gm, '')
             if (file.endsWith('_tokens.scss')) {
                 continue
             }

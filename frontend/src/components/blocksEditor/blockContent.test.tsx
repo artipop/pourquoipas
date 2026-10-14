@@ -1,14 +1,12 @@
 import {render, screen, fireEvent} from '@solidjs/testing-library'
 
-import {mockAppStore, mockDOM, wrapDNDIntl} from '../../testUtils'
+import {mockAppStore, wrapDNDIntl} from '../../testUtils'
 import {AppStoreProvider} from '../../store'
 import {TestBlockFactory} from '../../test/testBlockFactory'
 
 import BlockContent from './blockContent'
 
 describe('components/blocksEditor/blockContent', () => {
-    beforeEach(mockDOM)
-
     const block = {id: '1', value: 'Title', contentType: 'h1'}
 
     const board1 = TestBlockFactory.createBoard()

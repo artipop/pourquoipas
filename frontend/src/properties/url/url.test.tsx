@@ -3,7 +3,7 @@ import {render, screen} from '@solidjs/testing-library'
 import '@testing-library/jest-dom'
 import userEvent from '@testing-library/user-event'
 
-import {wrapIntl} from '../../testUtils'
+import {hoverOver, wrapIntl} from '../../testUtils'
 import {TestBlockFactory} from '../../test/testBlockFactory'
 import {Utils} from '../../utils'
 import {sendFlashMessage} from '../../components/flashMessages'
@@ -82,7 +82,7 @@ describe('properties/link', () => {
         expect(mockedMutator.changePropertyValue).toHaveBeenCalledWith(board.id, card, propertyTemplate.id, url)
     })
 
-    it('should allow to edit link url', () => {
+    it('should allow to edit link url', async () => {
         render(() =>
             wrapIntl(() =>
                 <Url
@@ -92,6 +92,7 @@ describe('properties/link', () => {
             ),
         )
 
+        await hoverOver(document.querySelector('.URLProperty')!)
         userEvent.click(screen.getByRole('button', {name: 'Edit'}))
         const newURL = 'https://deffun.com'
         const input = screen.getByRole('textbox')
@@ -100,7 +101,7 @@ describe('properties/link', () => {
         expect(mockedMutator.changePropertyValue).toHaveBeenCalledWith(board.id, card, propertyTemplate.id, newURL)
     })
 
-    it('should allow to copy url', () => {
+    it('should allow to copy url', async () => {
         const url = 'https://mattermost.com'
         render(() =>
             wrapIntl(() =>
@@ -110,6 +111,7 @@ describe('properties/link', () => {
                 />,
             ),
         )
+        await hoverOver(document.querySelector('.URLProperty')!)
         userEvent.click(screen.getByRole('button', {name: 'Copy'}))
         expect(mockedCopy).toHaveBeenCalledWith(url)
         expect(mockedSendFlashMessage).toHaveBeenCalledWith({content: 'Copied!', severity: 'high'})

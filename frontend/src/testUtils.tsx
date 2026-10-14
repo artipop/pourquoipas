@@ -2,11 +2,14 @@ import type {ParentComponent} from 'solid-js'
 import type {JSX} from '@solidjs/web'
 import {createRouter, memoryHistory} from '@solidjs/router'
 import {fireEvent, within} from '@solidjs/testing-library'
+import {onTestFinished} from 'vitest'
+import {page, userEvent as pointer} from 'vitest/browser'
 
 import {IntlProvider} from './intl'
 import {SortableProvider} from './hooks/sortable'
 import {Block} from './blocks/block'
 import {AppStore, AppStoreProvider, RootState, createAppStore} from './store'
+import {pointerMoved} from './test/pointer'
 import type {StoreDeps} from './store/context'
 
 // Children arrive as thunks: JSX passed as a plain argument is created before
@@ -40,6 +43,22 @@ export const wrapRBDNDContext = (children?: () => JSX.Element): JSX.Element => {
 }
 
 export const wrapRBDNDDroppable = (children?: () => JSX.Element): JSX.Element => wrapRBDNDContext(children)
+
+// Moves the real pointer onto an element, so `:hover` rules apply. A control
+// the stylesheet shows only on hover — a card's menu button — is not there for
+// a query until then, as it is not there for a person.
+export async function hoverOver(element: Element): Promise<void> {
+    pointerMoved()
+    await pointer.hover(element)
+}
+
+// What a narrow screen adds — a menu's Cancel, a modal's Close — the
+// stylesheet hides in a desktop window, which is what the suite runs in. A
+// test of one holds a phone's viewport for as long as it runs.
+export async function onAPhone(): Promise<void> {
+    await page.viewport(390, 844)
+    onTestFinished(() => page.viewport(1024, 768))
+}
 
 // A memory router around a component that only needs the router to exist —
 // links, useNavigate, useRouteMatch. The wildcard route matches whatever path
@@ -79,25 +98,9 @@ export const wrapStore = (store: AppStore, children?: () => JSX.Element): JSX.El
     </AppStoreProvider>
 )
 
-export function mockDOM(): void {
-    window.focus = vi.fn()
-    document.createRange = () => {
-        const range = new Range()
-        range.getBoundingClientRect = vi.fn()
-        range.getClientRects = () => {
-            return {
-                item: () => null,
-                length: 0,
-                [Symbol.iterator]: vi.fn(),
-            }
-        }
-        return range
-    }
-}
 export function mockMatchMedia(result: {matches: boolean}): void {
-    // We check if system preference is dark or light theme.
-    // This is required to provide it's definition since
-    // window.matchMedia doesn't exist in Jest.
+    // What the machine is said to prefer — a dark theme, a coarse pointer —
+    // decided by the test rather than by the browser it happens to run in.
     Object.defineProperty(window, 'matchMedia', {
         writable: true,
         value: vi.fn().mockImplementation(() => {

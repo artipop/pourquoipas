@@ -4,7 +4,7 @@ import '@testing-library/jest-dom'
 
 import {TextBlock} from '../../blocks/textBlock'
 
-import {mockAppStore, mockDOM, wrapDNDIntl} from '../../testUtils'
+import {mockAppStore, wrapDNDIntl} from '../../testUtils'
 import {AppStoreProvider} from '../../store'
 
 import {Utils} from '../../utils'
@@ -32,10 +32,6 @@ const defaultBlock: TextBlock = {
     deleteAt: 0,
 }
 describe('components/content/TextElement', () => {
-    beforeAll(() => {
-        mockDOM()
-    })
-
     const board1 = TestBlockFactory.createBoard()
     board1.id = 'board-id-1'
 

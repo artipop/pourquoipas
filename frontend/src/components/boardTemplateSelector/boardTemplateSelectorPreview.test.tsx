@@ -1,7 +1,7 @@
 import {render, waitFor} from '@solidjs/testing-library'
 
 import {IPropertyTemplate} from '../../blocks/board'
-import {TestRouter, mockAppStore, mockDOM, wrapDNDIntl} from '../../testUtils'
+import {TestRouter, mockAppStore, wrapDNDIntl} from '../../testUtils'
 import {AppStoreProvider} from '../../store'
 
 import {TestBlockFactory} from '../../test/testBlockFactory'
@@ -81,7 +81,6 @@ describe('components/boardTemplateSelector/boardTemplateSelectorPreview', () => 
     const globalTemplateTitle = 'Template Global'
     const boardTitle = 'Board 1'
     let store: ReturnType<typeof mockAppStore>
-    beforeAll(mockDOM)
     beforeEach(() => {
         vi.clearAllMocks()
 

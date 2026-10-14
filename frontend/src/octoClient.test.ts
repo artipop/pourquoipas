@@ -6,7 +6,7 @@ import {createCard} from './blocks/card'
 import octoClient from './octoClient'
 import {FetchMock} from './test/fetchMock'
 
-global.fetch = FetchMock.fn
+globalThis.fetch = FetchMock.fn
 
 beforeEach(() => {
     FetchMock.fn.mockReset()
@@ -72,7 +72,7 @@ test('OctoClient: GetFileInfo', async () => {
     await octoClient.getFileInfo('board-id', 'file-id')
     expect(FetchMock.fn).toHaveBeenCalledTimes(1)
     expect(FetchMock.fn).toHaveBeenCalledWith(
-        'http://localhost/api/v0/files/teams/0/board-id/file-id/info',
+        `${window.location.origin}/api/v0/files/teams/0/board-id/file-id/info`,
         expect.objectContaining({
             headers: {
                 Accept: 'application/json',

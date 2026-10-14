@@ -112,9 +112,15 @@ describe('widgets/PropertyMenu', () => {
                 onDelete={callback}
             />,
         )
-        const {container, getByText} = render(component)
+        const {getByText} = render(component)
         const menuOpen = getByText(/Type: Text/i)
         fireEvent.click(menuOpen)
-        expect(container).toMatchSnapshot()
+
+        // Every type a property can be changed to. Not snapshotted: the list
+        // is placed in the window, and its height is the machine's.
+        expect(getByText('Change property type')).toBeInTheDocument()
+        for (const type of ['Text', 'Number', 'Email', 'Phone', 'URL', 'Select', 'Multi select', 'Date', 'Person', 'Multi person', 'Checkbox', 'Created time', 'Created by', 'Last updated time', 'Last updated by']) {
+            expect(getByText(type)).toBeInTheDocument()
+        }
     })
 })

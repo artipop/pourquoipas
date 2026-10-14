@@ -7,7 +7,7 @@ import userEvent from '@testing-library/user-event'
 
 import {Utils} from '../utils'
 import {TestBlockFactory} from '../test/testBlockFactory'
-import {mockAppStore, mockDOM, wrapDNDIntl} from '../testUtils'
+import {mockAppStore, wrapDNDIntl, hoverOver} from '../testUtils'
 import {AppStoreProvider} from '../store'
 
 import mutator from '../mutator'
@@ -20,8 +20,6 @@ import {CardDetailContext, CardDetailContextType} from './cardDetail/cardDetailC
 vi.mock('../mutator')
 vi.mock('../utils')
 vi.mock('../octoClient')
-
-beforeAll(mockDOM)
 
 describe('components/contentBlock', () => {
     const mockedMutator = vi.mocked(mutator)
@@ -178,6 +176,7 @@ describe('components/contentBlock', () => {
                 cords={{x: 1, y: 0, z: 0}}
             />,
         ))
+        await hoverOver(document.querySelector('.ContentBlock')!)
         const buttonElement = screen.getByRole('button', {name: 'menuwrapper'})
         userEvent.click(buttonElement)
 
@@ -195,6 +194,7 @@ describe('components/contentBlock', () => {
                 cords={{x: 1, y: 0, z: 0}}
             />,
         ))
+        await hoverOver(document.querySelector('.ContentBlock')!)
         const buttonElement = screen.getByRole('button', {name: 'menuwrapper'})
         userEvent.click(buttonElement)
         const buttonMoveUp = screen.getByRole('button', {name: 'Move up'})
@@ -214,6 +214,7 @@ describe('components/contentBlock', () => {
                 cords={{x: 1, y: 0, z: 0}}
             />,
         ))
+        await hoverOver(document.querySelector('.ContentBlock')!)
         const buttonElement = screen.getByRole('button', {name: 'menuwrapper'})
         userEvent.click(buttonElement)
         const buttonMoveUp = screen.getByRole('button', {name: 'Move down'})
@@ -233,6 +234,7 @@ describe('components/contentBlock', () => {
                 cords={{x: 1, y: -1, z: 0}}
             />,
         ))
+        await hoverOver(document.querySelector('.ContentBlock')!)
         const buttonElement = screen.getByRole('button', {name: 'menuwrapper'})
         userEvent.click(buttonElement)
         const buttonMoveUp = screen.getByRole('button', {name: 'Delete'})
@@ -252,6 +254,7 @@ describe('components/contentBlock', () => {
                 cords={{x: 1, y: 0, z: 0}}
             />,
         ))
+        await hoverOver(document.querySelector('.ContentBlock')!)
         const buttonElement = screen.getByRole('button', {name: 'menuwrapper'})
         userEvent.click(buttonElement)
         const buttonMoveUp = screen.getByRole('button', {name: 'Delete'})

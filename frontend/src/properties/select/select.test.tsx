@@ -1,4 +1,4 @@
-import {render, screen} from '@solidjs/testing-library'
+import {render, screen, waitFor} from '@solidjs/testing-library'
 import '@testing-library/jest-dom'
 
 import userEvent from '@testing-library/user-event'
@@ -170,7 +170,7 @@ describe('properties/select', () => {
         expect(mockedMutator.changePropertyValue).toHaveBeenCalledWith(board.id, card, propertyTemplate.id, '')
     })
 
-    it('can create new option', () => {
+    it('can create new option', async () => {
         const propertyTemplate = selectPropertyTemplate()
         const initialOption = propertyTemplate.options[0]
         const newOption = 'new-option'
@@ -193,7 +193,10 @@ describe('properties/select', () => {
         userEvent.type(screen.getByRole('combobox', {name: /value selector/i}), `${newOption}{enter}`)
 
         expect(mockedMutator.insertPropertyOption).toHaveBeenCalledWith(board.id, board.cardProperties, propertyTemplate, expect.objectContaining({value: newOption}), 'add property option')
-        expect(mockedMutator.changePropertyValue).toHaveBeenCalledWith(board.id, card, propertyTemplate.id, 'option-3')
+
+        // The card is given the option just made, once it exists.
+        const created = mockedMutator.insertPropertyOption.mock.calls[0][3]
+        await waitFor(() => expect(mockedMutator.changePropertyValue).toHaveBeenCalledWith(board.id, card, propertyTemplate.id, created.id))
     })
 
     // On the card the chosen option is a chip you can take off, the way the

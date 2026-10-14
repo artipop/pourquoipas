@@ -7,7 +7,7 @@ import {IUser} from '../user'
 import {Utils} from '../utils'
 import octoClient from '../octoClient'
 import {TestBlockFactory} from '../test/testBlockFactory'
-import {mockAppStore, mockDOM, wrapDNDIntl} from '../testUtils'
+import {mockAppStore, wrapDNDIntl} from '../testUtils'
 import {AppStoreProvider} from '../store'
 
 import {fakeGoSide} from '../test/goSide'
@@ -29,9 +29,6 @@ const mockedMutator = vi.mocked(mutator)
 const mockedOctoClient = vi.mocked(octoClient)
 mockedUtils.createGuid.mockReturnValue('test-id')
 
-beforeAll(() => {
-    mockDOM()
-})
 describe('components/cardDialog', () => {
     const board = TestBlockFactory.createBoard()
     board.cardProperties = []
@@ -94,8 +91,21 @@ describe('components/cardDialog', () => {
     beforeEach(() => {
         vi.clearAllMocks()
     })
+
+    // What a person who may edit the card is offered and one who may not is
+    // not. Asked of the page rather than snapshotted: the title box is sized
+    // to its text, and that height is the fonts of the machine.
+    const expectCardEditable = (editable: boolean) => {
+        const title = document.querySelector('textarea.EditableArea.title') as HTMLTextAreaElement
+        expect(title.readOnly).toBe(!editable)
+        for (const offer of ['Add a property', 'Add content']) {
+            expect(Boolean(screen.queryByText(offer))).toBe(editable)
+        }
+    }
+    const cardMenu = () => document.querySelector('.toolbar--right .OptionsIcon')
+
     test('should match snapshot', async () => {
-        const {container} = render(() => wrapDNDIntl(() =>
+        render(() => wrapDNDIntl(() =>
             <AppStoreProvider store={store}>
                 <CardDialog
                     board={board}
@@ -109,11 +119,13 @@ describe('components/cardDialog', () => {
                 />
             </AppStoreProvider>,
         ))
-        expect(container).toMatchSnapshot()
+        expectCardEditable(true)
+        expect(screen.getByText('Attach')).toBeInTheDocument()
+        expect(cardMenu()).not.toBeNull()
     })
     test('should match snapshot without permissions', async () => {
         const localStore = mockAppStore({...state, teams: {current: undefined}})
-        const result = render(() => wrapDNDIntl(() =>
+        render(() => wrapDNDIntl(() =>
             <AppStoreProvider store={localStore}>
                 <CardDialog
                     board={board}
@@ -127,11 +139,12 @@ describe('components/cardDialog', () => {
                 />
             </AppStoreProvider>,
         ))
-        const container = result.container
-        expect(container).toMatchSnapshot()
+        expectCardEditable(false)
+        expect(screen.queryByText('Attach')).toBeNull()
+        expect(cardMenu()).not.toBeNull()
     })
     test('return a cardDialog readonly', async () => {
-        const {container} = render(() => wrapDNDIntl(() =>
+        render(() => wrapDNDIntl(() =>
             <AppStoreProvider store={store}>
                 <CardDialog
                     board={board}
@@ -145,7 +158,8 @@ describe('components/cardDialog', () => {
                 />
             </AppStoreProvider>,
         ))
-        expect(container).toMatchSnapshot()
+        expectCardEditable(false)
+        expect(cardMenu()).toBeNull()
     })
     test('return cardDialog and do a close action', async () => {
         const closeFn = vi.fn()
@@ -168,7 +182,7 @@ describe('components/cardDialog', () => {
         expect(closeFn).toHaveBeenCalledTimes(1)
     })
     test('return cardDialog menu content', async () => {
-        const {container} = render(() => wrapDNDIntl(() =>
+        render(() => wrapDNDIntl(() =>
             <AppStoreProvider store={store}>
                 <CardDialog
                     board={board}
@@ -184,7 +198,9 @@ describe('components/cardDialog', () => {
         ))
         const buttonMenu = screen.getAllByRole('button', {name: 'menuwrapper'})[0]
         userEvent.click(buttonMenu)
-        expect(container).toMatchSnapshot()
+        for (const action of ['Delete', 'Move to a board…', 'New template from card']) {
+            expect(screen.getByRole('button', {name: action})).toBeInTheDocument()
+        }
     })
     test('return cardDialog menu content and verify delete action', async () => {
         render(() => wrapDNDIntl(() =>
@@ -220,7 +236,7 @@ describe('components/cardDialog', () => {
     })
 
     test('return cardDialog menu content and cancel delete confirmation do nothing', async () => {
-        const {container} = render(() => wrapDNDIntl(() =>
+        render(() => wrapDNDIntl(() =>
             <AppStoreProvider store={store}>
                 <CardDialog
                     board={board}
@@ -250,7 +266,9 @@ describe('components/cardDialog', () => {
         userEvent.click(cancelButton!)
 
         // should do nothing  on cancel delete dialog
-        expect(container).toMatchSnapshot()
+        expect(screen.queryByTitle('Confirmation dialog')).toBeNull()
+        expect(mockedMutator.deleteBlock).not.toHaveBeenCalled()
+        expectCardEditable(true)
     })
 
     test('return cardDialog menu content and do a New template from card', async () => {
@@ -311,7 +329,7 @@ describe('components/cardDialog', () => {
 
         const newStore = mockAppStore(newState)
 
-        const {container} = render(() => wrapDNDIntl(() =>
+        render(() => wrapDNDIntl(() =>
             <AppStoreProvider store={newStore}>
                 <CardDialog
                     board={board}
@@ -325,7 +343,7 @@ describe('components/cardDialog', () => {
                 />
             </AppStoreProvider>,
         ))
-        expect(container).toMatchSnapshot()
+        expectCardEditable(true)
     })
 
     // The changes are worth a button only when there are some. On «На ревью»

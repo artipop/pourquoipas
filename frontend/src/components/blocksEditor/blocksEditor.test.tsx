@@ -1,6 +1,6 @@
 import {render, screen, fireEvent} from '@solidjs/testing-library'
 
-import {mockAppStore, mockDOM, wrapDNDIntl, wrapIntl} from '../../testUtils'
+import {mockAppStore, wrapDNDIntl, wrapIntl} from '../../testUtils'
 import {AppStoreProvider} from '../../store'
 import {TestBlockFactory} from '../../test/testBlockFactory'
 
@@ -8,8 +8,6 @@ import {BlockData} from './blocks/types'
 import BlocksEditor from './blocksEditor'
 
 describe('components/blocksEditor/blocksEditor', () => {
-    beforeEach(mockDOM)
-
     const blocks: Array<BlockData<any>> = [
         {id: '1', value: 'Title', contentType: 'h1'},
         {id: '2', value: 'Sub title', contentType: 'h2'},

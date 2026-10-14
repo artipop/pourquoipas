@@ -5,37 +5,24 @@ import {wrapIntl} from '../../testUtils'
 
 import Menu from './menu'
 
-const autoSubmenu = () => (
-    <Menu>
-        <Menu.SubMenu
-            id='export'
-            name='Export'
-            position='auto'
-        >
-            <Menu.Text
-                id='csv'
-                name='To CSV'
-                onClick={() => undefined}
-            />
-        </Menu.SubMenu>
-    </Menu>
+// Stood 100px wide at a chosen distance from the left edge of the window.
+const autoSubmenu = (left: number) => () => (
+    <div style={{position: 'absolute', top: '100px', left: `${left}px`, width: '100px'}}>
+        <Menu>
+            <Menu.SubMenu
+                id='export'
+                name='Export'
+                position='auto'
+            >
+                <Menu.Text
+                    id='csv'
+                    name='To CSV'
+                    onClick={() => undefined}
+                />
+            </Menu.SubMenu>
+        </Menu>
+    </div>
 )
-
-// Puts the submenu's own option at a chosen spot on the screen: jsdom does no
-// layout, so where the option "stands" is whatever its rect answers.
-const standAt = (option: HTMLElement, left: number, right: number) => {
-    option.getBoundingClientRect = () => ({
-        left,
-        right,
-        top: 100,
-        bottom: 130,
-        width: right - left,
-        height: 30,
-        x: left,
-        y: 100,
-        toJSON: () => ({}),
-    } as DOMRect)
-}
 
 const submenu = () => (
     <Menu>
@@ -94,10 +81,9 @@ describe('widgets/menu/subMenuOption', () => {
     // measured when it opens, because at mount the menu has not been placed
     // yet and the rect describes a corner the option never stands in.
     it('auto hangs the submenu left when the right edge is closer', () => {
-        render(() => wrapIntl(autoSubmenu))
+        render(() => wrapIntl(autoSubmenu(window.innerWidth - 120)))
 
         const option = document.getElementById('export') as HTMLElement
-        standAt(option, window.innerWidth - 120, window.innerWidth - 20)
         fireEvent.mouseEnter(option)
 
         const sub = option.querySelector('.SubMenu') as HTMLElement
@@ -106,10 +92,9 @@ describe('widgets/menu/subMenuOption', () => {
     })
 
     it('auto keeps the submenu on the right where the room is', () => {
-        render(() => wrapIntl(autoSubmenu))
+        render(() => wrapIntl(autoSubmenu(20)))
 
         const option = document.getElementById('export') as HTMLElement
-        standAt(option, 20, 120)
         fireEvent.mouseEnter(option)
 
         const sub = option.querySelector('.SubMenu') as HTMLElement

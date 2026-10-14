@@ -21,9 +21,12 @@
         "moduleResolution": "bundler",
 
         // What @types/jest used to declare: the suite runs with vitest's
-        // globals rather than importing describe/expect/vi in every file.
+        // globals rather than importing describe/expect/vi in every file. And
+        // Vite's own: the suite reads files as `?raw` imports and through
+        // import.meta.glob, the only way a page in a browser reads one.
         "types": [
-            "vitest/globals"
+            "vitest/globals",
+            "vite/client"
         ],
     },
     "include": [

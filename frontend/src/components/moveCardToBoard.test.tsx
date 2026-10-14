@@ -2,15 +2,11 @@ import '@testing-library/jest-dom'
 import {fireEvent, render, screen} from '@solidjs/testing-library'
 
 import {TestBlockFactory} from '../test/testBlockFactory'
-import {mockAppStore, mockDOM, wrapIntl} from '../testUtils'
+import {mockAppStore, wrapIntl} from '../testUtils'
 import {AppStoreProvider} from '../store'
 import mutator from '../mutator'
 
 import MoveCardToBoard, {openMoveCardToBoard} from './moveCardToBoard'
-
-beforeAll(() => {
-    mockDOM()
-})
 
 beforeEach(() => {
     vi.clearAllMocks()

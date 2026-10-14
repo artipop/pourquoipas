@@ -3,15 +3,13 @@ import type {JSX} from '@solidjs/web'
 import {render} from '@solidjs/testing-library'
 import {useDragDropManager} from '@dnd-kit/solid'
 
-import {setupDragEnvironment, setRect, drag, flick} from '../test/dragEnvironment'
+import {drag} from '../test/drag'
 
 import {SortableProvider, useSortable, useDropZone} from './sortable'
 
-setupDragEnvironment()
-
-// Solid needs no act(): events propagate synchronously. The helpers still take
-// a wrapper so the same code serves suites that need one; this is it.
-const act = async (fn: () => Promise<void>): Promise<unknown> => fn()
+// Laid out one under another: a card at 0, a card at 100, the zone at 200.
+const cardStyle = {width: '100px', height: '40px', 'margin-bottom': '60px'}
+const zoneStyle = {width: '100px', height: '100px'}
 
 type Item = {id: string}
 
@@ -21,6 +19,7 @@ function Card(props: {item: Item, onDrop: (src: Item, dst: Item) => void}) {
         <div
             ref={ref}
             data-testid={props.item.id}
+            style={cardStyle}
         />
     )
 }
@@ -31,6 +30,7 @@ function Zone(props: {onDrop: (src: Item) => void}) {
         <div
             ref={ref}
             data-testid='zone'
+            style={zoneStyle}
         />
     )
 }
@@ -55,16 +55,13 @@ describe('hooks/sortable dragging', () => {
                 <Zone onDrop={onZone}/>
             </SortableProvider>
         ))
-        setRect(getByTestId('a'), {x: 0, y: 0, width: 100, height: 40})
-        setRect(getByTestId('b'), {x: 0, y: 100, width: 100, height: 40})
-        setRect(getByTestId('zone'), {x: 0, y: 200, width: 100, height: 100})
         return {getByTestId, onCard, onZone}
     }
 
     it('drops a card onto another card', async () => {
         const {getByTestId, onCard} = setup()
 
-        await drag(act, getByTestId('a'), {x: 50, y: 120})
+        await drag(getByTestId('a'), getByTestId('b'))
 
         expect(onCard).toHaveBeenCalledWith(a, b)
     })
@@ -82,6 +79,7 @@ describe('hooks/sortable dragging', () => {
                     ref={ref}
                     data-testid='lit'
                     class={isOver() ? 'dragover' : ''}
+                    style={zoneStyle}
                 />
             )
         }
@@ -94,35 +92,28 @@ describe('hooks/sortable dragging', () => {
                 <LitZone/>
             </SortableProvider>
         ))
-        setRect(getByTestId('a'), {x: 0, y: 0, width: 100, height: 40})
-        setRect(getByTestId('lit'), {x: 0, y: 200, width: 100, height: 100})
 
-        // Read after every step of the drag, so the hover is seen before the
-        // release clears it.
+        // Every change of the zone's class while the drag runs, so the hover
+        // is seen before the release clears it.
+        const zone = getByTestId('lit')
         const lit: boolean[] = []
-        const watching = async (fn: () => Promise<void>) => {
-            await fn()
-            await new Promise((resolve) => setTimeout(resolve, 0))
-            lit.push(getByTestId('lit').classList.contains('dragover'))
-        }
-        await drag(watching, getByTestId('a'), {x: 50, y: 250})
+        const watching = new MutationObserver(() => lit.push(zone.classList.contains('dragover')))
+        watching.observe(zone, {attributes: true, attributeFilter: ['class']})
+        await drag(getByTestId('a'), zone)
+        watching.disconnect()
 
         expect(lit).toContain(true)
-        expect(lit[lit.length - 1]).toBe(false)
+        expect(zone.classList.contains('dragover')).toBe(false)
     })
 
     it('drops a card into a zone that holds none', async () => {
         const {getByTestId, onZone} = setup()
 
-        await drag(act, getByTestId('a'), {x: 50, y: 250})
+        await drag(getByTestId('a'), getByTestId('zone'))
 
         expect(onZone).toHaveBeenCalledWith(a)
     })
 
-    // Note this passes with dnd-kit's defaults too: the abort it guards against
-    // hangs off a real 200ms timer that jsdom does not reproduce. It is here for
-    // what it does assert -- that a single-move drag lands -- not as a guard.
-    //
     // Moving the mouse quickly is not a mistake the user made. dnd-kit's default
     // pairs a Delay with a Distance under one controller, and the Delay aborts
     // the whole activation if the pointer outruns its tolerance before the timer
@@ -131,7 +122,7 @@ describe('hooks/sortable dragging', () => {
     it('drops when the pointer is moved in one quick sweep', async () => {
         const {getByTestId, onZone} = setup()
 
-        await flick(act, getByTestId('a'), {x: 50, y: 250})
+        await drag(getByTestId('a'), getByTestId('zone'), {steps: 3})
 
         expect(onZone).toHaveBeenCalledWith(a)
     })
@@ -176,11 +167,8 @@ describe('hooks/sortable dragging', () => {
         }
 
         const {getByTestId} = render(() => <Board probe={<Probe/>}/>)
-        setRect(getByTestId('a'), {x: 0, y: 0, width: 100, height: 40})
-        setRect(getByTestId('b'), {x: 0, y: 100, width: 100, height: 40})
-        setRect(getByTestId('zone'), {x: 0, y: 200, width: 100, height: 100})
 
-        await drag(act, getByTestId('a'), {x: 50, y: 120})
+        await drag(getByTestId('a'), getByTestId('b'))
         expect(onCard).toHaveBeenCalledWith(a, b)
 
         // The second drag is only half of it. dnd-kit refuses a press outright
@@ -189,7 +177,7 @@ describe('hooks/sortable dragging', () => {
         // which of the two failed.
         expect(manager!.dragOperation.status.idle).toBe(true)
 
-        await drag(act, getByTestId('b'), {x: 50, y: 250})
+        await drag(getByTestId('b'), getByTestId('zone'))
         expect(onZone).toHaveBeenCalledWith(b)
     })
 
@@ -199,7 +187,8 @@ describe('hooks/sortable dragging', () => {
     it('never lands on the card being dragged', async () => {
         const {getByTestId, onCard} = setup()
 
-        await drag(act, getByTestId('a'), {x: 50, y: 20})
+        // Moved past the activation distance and released over itself.
+        await drag(getByTestId('a'), getByTestId('a'), {at: {x: 50, y: 35}})
 
         expect(onCard).not.toHaveBeenCalled()
     })

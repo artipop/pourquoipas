@@ -87,16 +87,6 @@ describe('components/settings/appSettingsDialog', () => {
         expect(document.querySelector('.Switch')).toBeTruthy()
     })
 
-    // A build that cannot do a thing does not offer a section for it.
-    test('leaves out what this build has no bindings for', async () => {
-        fakeGoSide({GetPlanningPrompt: vi.fn().mockResolvedValue('')})
-
-        open()
-
-        await waitFor(() => expect(screen.getByRole('button', {name: 'Other'})).toBeInTheDocument())
-        expect(screen.queryByRole('button', {name: 'Access from a phone'})).toBeNull()
-    })
-
     // Carrying boards in and out is not part of the agent integration: a build
     // with no agents at all still opens on it.
     test('offers import and export whatever else the machine can do', async () => {

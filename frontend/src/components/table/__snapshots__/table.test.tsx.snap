@@ -1246,7 +1246,19 @@ exports[`components/table/Table extended > should have Duplicate Button 1`] = `
                   />
                 </button>
                 <!---->
-                
+                <div
+                  class="octo-tooltip__body"
+                  role="tooltip"
+                >
+                  <span
+                    class="octo-tooltip__text"
+                  >
+                    More actions
+                  </span>
+                  <div
+                    class="octo-tooltip__arrow"
+                  />
+                </div>
                 <!---->
               </div>
               <!---->

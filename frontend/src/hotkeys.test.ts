@@ -53,11 +53,10 @@ describe('hotkeys', () => {
         it('counts a contenteditable', () => {
             const div = document.createElement('div')
             div.contentEditable = 'true'
-
-            // jsdom does not derive isContentEditable from the attribute.
-            Object.defineProperty(div, 'isContentEditable', {value: true})
+            document.body.append(div)
 
             expect(isTypingTarget(div)).toBe(true)
+            div.remove()
         })
 
         it('is false without a target', () => {

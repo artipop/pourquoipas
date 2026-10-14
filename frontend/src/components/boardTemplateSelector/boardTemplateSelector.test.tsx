@@ -5,7 +5,7 @@ import Mutator from '../../mutator'
 import {Team} from '../../store/teams'
 import {createBoard, Board} from '../../blocks/board'
 import {IUser} from '../../user'
-import {TestRouter, mockAppStore, mockDOM, wrapDNDIntl} from '../../testUtils'
+import {TestRouter, mockAppStore, wrapDNDIntl} from '../../testUtils'
 import {AppStoreProvider} from '../../store'
 
 import BoardTemplateSelector from './boardTemplateSelector'
@@ -59,7 +59,6 @@ describe('components/boardTemplateSelector/boardTemplateSelector', () => {
     // Kept where a test can build a second store out of it: one of them needs
     // the same fixtures with the marker taken away.
     let state: any
-    beforeAll(mockDOM)
     beforeEach(() => {
         vi.clearAllMocks()
         state = {

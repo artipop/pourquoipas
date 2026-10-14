@@ -3,7 +3,7 @@ import {render, screen} from '@solidjs/testing-library'
 
 import userEvent from '@testing-library/user-event'
 
-import {wrapDNDIntl} from '../testUtils'
+import {wrapDNDIntl, onAPhone} from '../testUtils'
 
 import Menu from '../widgets/menu'
 
@@ -84,7 +84,8 @@ describe('components/dialog', () => {
         userEvent.click(buttonTest)
         expect(onTest).toHaveBeenCalledTimes(1)
     })
-    test('should return dialog and click on cancel button', () => {
+    test('should return dialog and click on cancel button', async () => {
+        await onAPhone()
         const {container} = render(() => wrapDNDIntl(() =>
             <Dialog
                 onClose={vi.fn()}

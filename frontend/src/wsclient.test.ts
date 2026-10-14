@@ -43,7 +43,7 @@ describe('wsclient reconnection', () => {
     beforeEach(() => {
         sockets.length = 0
         vi.useFakeTimers()
-        ;(global as any).WebSocket = StubWebSocket
+        ;(globalThis as any).WebSocket = StubWebSocket
     })
 
     afterEach(() => {

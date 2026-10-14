@@ -179,7 +179,7 @@ describe('components/sidebarSidebar', () => {
     })
 
     test('sidebar expect hidden', () => {
-        const customGlobal = global as any
+        const customGlobal = globalThis as any
 
         customGlobal.innerWidth = 500
 
@@ -544,9 +544,9 @@ describe('components/sidebarSidebar', () => {
     // })
 })
 
-// The drag itself needs a pointer and real geometry, which jsdom has neither of.
-// What is testable, and what broke, is the step between: reading a finished
-// dnd-kit operation as the drop the sidebar's handlers act on.
+// The drag itself is sidebarDrag.test.tsx's. What is pinned here, and what
+// broke, is the step between: reading a finished dnd-kit operation as the drop
+// the sidebar's handlers act on.
 describe('components/sidebarSidebar drops', () => {
     const categoryWithHiddenBoard: CategoryBoards = {
         ...TestBlockFactory.createCategoryBoards(),

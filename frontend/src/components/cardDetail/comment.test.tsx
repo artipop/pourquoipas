@@ -1,7 +1,7 @@
 import {render, screen} from '@solidjs/testing-library'
 import userEvent from '@testing-library/user-event'
 
-import {mockAppStore, wrapIntl} from '../../testUtils'
+import {mockAppStore, wrapIntl, hoverOver} from '../../testUtils'
 import {AppStoreProvider} from '../../store'
 
 import {TestBlockFactory} from '../../test/testBlockFactory'
@@ -43,7 +43,7 @@ describe('components/cardDetail/comment', () => {
         vi.useRealTimers()
     })
 
-    test('return comment', () => {
+    test('return comment', async () => {
         const {container} = render(() => wrapIntl(() =>
             <AppStoreProvider store={store}>
                 <Comment
@@ -54,6 +54,7 @@ describe('components/cardDetail/comment', () => {
                 />
             </AppStoreProvider>,
         ))
+        await hoverOver(document.querySelector('.Comment')!)
         const buttonElement = screen.getByRole('button', {name: 'menuwrapper'})
         userEvent.click(buttonElement)
         expect(container).toMatchSnapshot()
@@ -73,7 +74,7 @@ describe('components/cardDetail/comment', () => {
         expect(container).toMatchSnapshot()
     })
 
-    test('return comment and delete comment', () => {
+    test('return comment and delete comment', async () => {
         const {container} = render(() => wrapIntl(() =>
             <AppStoreProvider store={store}>
                 <Comment
@@ -84,6 +85,7 @@ describe('components/cardDetail/comment', () => {
                 />
             </AppStoreProvider>,
         ))
+        await hoverOver(document.querySelector('.Comment')!)
         const buttonElement = screen.getByRole('button', {name: 'menuwrapper'})
         userEvent.click(buttonElement)
         expect(container).toMatchSnapshot()
@@ -93,7 +95,7 @@ describe('components/cardDetail/comment', () => {
         expect(mockedMutator.deleteBlock).toHaveBeenCalledWith(comment)
     })
 
-    test('return guest comment', () => {
+    test('return guest comment', async () => {
         const localStore = mockAppStore({users: {boardUsers: {[comment.modifiedBy]: {username: 'username_1', is_guest: true}}}})
         const {container} = render(() => wrapIntl(() =>
             <AppStoreProvider store={localStore}>
@@ -105,6 +107,7 @@ describe('components/cardDetail/comment', () => {
                 />
             </AppStoreProvider>,
         ))
+        await hoverOver(document.querySelector('.Comment')!)
         const buttonElement = screen.getByRole('button', {name: 'menuwrapper'})
         userEvent.click(buttonElement)
         expect(container).toMatchSnapshot()
@@ -125,7 +128,7 @@ describe('components/cardDetail/comment', () => {
         expect(container).toMatchSnapshot()
     })
 
-    test('return guest comment and delete comment', () => {
+    test('return guest comment and delete comment', async () => {
         const localStore = mockAppStore({users: {boardUsers: {[comment.modifiedBy]: {username: 'username_1', is_guest: true}}}})
         const {container} = render(() => wrapIntl(() =>
             <AppStoreProvider store={localStore}>
@@ -137,6 +140,7 @@ describe('components/cardDetail/comment', () => {
                 />
             </AppStoreProvider>,
         ))
+        await hoverOver(document.querySelector('.Comment')!)
         const buttonElement = screen.getByRole('button', {name: 'menuwrapper'})
         userEvent.click(buttonElement)
         expect(container).toMatchSnapshot()

@@ -107,6 +107,7 @@ describe('components/acp/agentsPanel', () => {
                 {kind: 'codex', package: '@agentclientprotocol/codex-acp', ready: true, path: '/usr/local/bin/codex-acp'},
             ])),
             InstallAgentAdapter: vi.fn().mockResolvedValue('added 1 package'),
+            ListProxies: vi.fn().mockResolvedValue('[]'),
             AddAgent: vi.fn(),
             UpdateAgent: vi.fn(),
             RemoveAgent: vi.fn(),

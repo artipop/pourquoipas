@@ -205,7 +205,14 @@ exports[`components/contentBlock > return commentBlock and click on menuwrapper 
           <!---->
         </div>
         <div
+          aria-describedby="dnd-kit-description-5"
+          aria-disabled="false"
+          aria-grabbed="false"
+          aria-pressed="false"
+          aria-roledescription="draggable"
           class="dnd-handle"
+          role="button"
+          tabindex="0"
         >
           <svg
             class="GripIcon Icon"
@@ -222,15 +229,29 @@ exports[`components/contentBlock > return commentBlock and click on menuwrapper 
         </div>
       </div>
       <div
+        aria-describedby="dnd-kit-description-5"
+        aria-disabled="false"
+        aria-grabbed="false"
+        aria-pressed="false"
+        aria-roledescription="draggable"
         class="addToRow "
+        role="button"
         style="flex:none;height:100%"
+        tabindex="0"
       />
       <!---->
       
       <!---->
     </div>
     <div
+      aria-describedby="dnd-kit-description-5"
+      aria-disabled="false"
+      aria-grabbed="false"
+      aria-pressed="false"
+      aria-roledescription="draggable"
       class="addToRow "
+      role="button"
+      tabindex="0"
     />
   </div>
 </div>

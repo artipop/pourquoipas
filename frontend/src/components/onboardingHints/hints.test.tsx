@@ -63,7 +63,7 @@ describe('components/onboardingHints', () => {
             renderHint(storeWith(['inbox']))
 
             expect(screen.getByText('The agent is asking')).toBeInTheDocument()
-            userEvent.click(screen.getByRole('button', {name: 'Got it'}))
+            userEvent.click(await screen.findByRole('button', {name: 'Got it'}))
 
             await waitFor(() => expect(mockedOctoClient.patchUserConfig).toHaveBeenCalledWith('user_id_1', {
                 updatedFields: {shownHints: JSON.stringify(['inbox', 'question'])},

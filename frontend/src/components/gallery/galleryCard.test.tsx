@@ -2,7 +2,7 @@ import {render, screen} from '@solidjs/testing-library'
 
 import userEvent from '@testing-library/user-event'
 
-import {mockAppStore, wrapDNDIntl} from '../../testUtils'
+import {mockAppStore, wrapDNDIntl, hoverOver, onAPhone} from '../../testUtils'
 import {AppStoreProvider} from '../../store'
 
 import {TestBlockFactory} from '../../test/testBlockFactory'
@@ -91,7 +91,7 @@ describe('src/components/gallery/GalleryCard', () => {
             }
             store = mockAppStore(state)
         })
-        test('should match snapshot', () => {
+        test('should match snapshot', async () => {
             const {container} = render(() => wrapDNDIntl(() =>
                 <AppStoreProvider store={store}>
                     <GalleryCard
@@ -108,6 +108,7 @@ describe('src/components/gallery/GalleryCard', () => {
                     />
                 </AppStoreProvider>,
             ))
+            await hoverOver(document.querySelector('.GalleryCard')!)
             const buttonElement = screen.getByRole('button', {name: 'menuwrapper'})
             userEvent.click(buttonElement)
             expect(container).toMatchSnapshot()
@@ -134,7 +135,7 @@ describe('src/components/gallery/GalleryCard', () => {
             userEvent.click(galleryCardElement!)
             expect(mockedOnClick).toHaveBeenCalledTimes(1)
         })
-        test('return GalleryCard and delete card', () => {
+        test('return GalleryCard and delete card', async () => {
             const {container} = render(() => wrapDNDIntl(() =>
                 <AppStoreProvider store={store}>
                     <GalleryCard
@@ -151,6 +152,7 @@ describe('src/components/gallery/GalleryCard', () => {
                     />
                 </AppStoreProvider>,
             ))
+            await hoverOver(document.querySelector('.GalleryCard')!)
             const buttonElement = screen.getByRole('button', {name: 'menuwrapper'})
             userEvent.click(buttonElement)
             const buttonDelete = screen.getByRole('button', {name: 'Delete'})
@@ -158,7 +160,7 @@ describe('src/components/gallery/GalleryCard', () => {
             expect(container).toMatchSnapshot()
         })
 
-        test('return GalleryCard and duplicate card', () => {
+        test('return GalleryCard and duplicate card', async () => {
             const {container} = render(() => wrapDNDIntl(() =>
                 <AppStoreProvider store={store}>
                     <GalleryCard
@@ -175,6 +177,7 @@ describe('src/components/gallery/GalleryCard', () => {
                     />
                 </AppStoreProvider>,
             ))
+            await hoverOver(document.querySelector('.GalleryCard')!)
             const buttonElement = screen.getByRole('button', {name: 'menuwrapper'})
             userEvent.click(buttonElement)
             const buttonDuplicate = screen.getByRole('button', {name: 'Duplicate'})
@@ -183,7 +186,7 @@ describe('src/components/gallery/GalleryCard', () => {
             expect(mockedMutator.duplicateCard).toHaveBeenCalledTimes(1)
             expect(mockedMutator.duplicateCard).toHaveBeenCalledWith(card.id, board.id)
         })
-        test('return GalleryCard and copy link', () => {
+        test('return GalleryCard and copy link', async () => {
             const {container} = render(() => wrapDNDIntl(() =>
                 <AppStoreProvider store={store}>
                     <GalleryCard
@@ -200,6 +203,7 @@ describe('src/components/gallery/GalleryCard', () => {
                     />
                 </AppStoreProvider>,
             ))
+            await hoverOver(document.querySelector('.GalleryCard')!)
             const buttonElement = screen.getByRole('button', {name: 'menuwrapper'})
             userEvent.click(buttonElement)
             const buttonCopyLink = screen.getByRole('button', {name: 'Copy link'})
@@ -207,7 +211,8 @@ describe('src/components/gallery/GalleryCard', () => {
             expect(container).toMatchSnapshot()
             expect(mockedUtils.copyTextToClipboard).toHaveBeenCalledTimes(1)
         })
-        test('return GalleryCard and cancel', () => {
+        test('return GalleryCard and cancel', async () => {
+            await onAPhone()
             const {container} = render(() => wrapDNDIntl(() =>
                 <AppStoreProvider store={store}>
                     <GalleryCard
@@ -224,6 +229,7 @@ describe('src/components/gallery/GalleryCard', () => {
                     />
                 </AppStoreProvider>,
             ))
+            await hoverOver(document.querySelector('.GalleryCard')!)
             const buttonElement = screen.getByRole('button', {name: 'menuwrapper'})
             userEvent.click(buttonElement)
             const buttonCancel = screen.getByRole('button', {name: 'Cancel'})
@@ -297,6 +303,7 @@ describe('src/components/gallery/GalleryCard', () => {
                     />
                 </AppStoreProvider>,
             ))
+            await hoverOver(document.querySelector('.GalleryCard')!)
             const buttonElement = screen.getByRole('button', {name: 'menuwrapper'})
             userEvent.click(buttonElement)
             expect(container).toMatchSnapshot()
@@ -373,6 +380,7 @@ describe('src/components/gallery/GalleryCard', () => {
                     />
                 </AppStoreProvider>,
             ))
+            await hoverOver(document.querySelector('.GalleryCard')!)
             const buttonElement = screen.getByRole('button', {name: 'menuwrapper'})
             userEvent.click(buttonElement)
             expect(container).toMatchSnapshot()
@@ -427,7 +435,7 @@ describe('src/components/gallery/GalleryCard', () => {
             }
             store = mockAppStore(state)
         })
-        test('should match snapshot', () => {
+        test('should match snapshot', async () => {
             const {container} = render(() => wrapDNDIntl(() =>
                 <AppStoreProvider store={store}>
                     <GalleryCard
@@ -444,6 +452,7 @@ describe('src/components/gallery/GalleryCard', () => {
                     />
                 </AppStoreProvider>,
             ))
+            await hoverOver(document.querySelector('.GalleryCard')!)
             const buttonElement = screen.getByRole('button', {name: 'menuwrapper'})
             userEvent.click(buttonElement)
             expect(container).toMatchSnapshot()
@@ -519,7 +528,7 @@ describe('src/components/gallery/GalleryCard', () => {
             }
             store = mockAppStore(state)
         })
-        test('should match snapshot', () => {
+        test('should match snapshot', async () => {
             const {container} = render(() => wrapDNDIntl(() =>
                 <AppStoreProvider store={store}>
                     <GalleryCard
@@ -536,6 +545,7 @@ describe('src/components/gallery/GalleryCard', () => {
                     />
                 </AppStoreProvider>,
             ))
+            await hoverOver(document.querySelector('.GalleryCard')!)
             const buttonElement = screen.getByRole('button', {name: 'menuwrapper'})
             userEvent.click(buttonElement)
             expect(container).toMatchSnapshot()

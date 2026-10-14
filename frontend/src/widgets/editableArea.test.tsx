@@ -1,4 +1,4 @@
-import {render, screen} from '@solidjs/testing-library'
+import {render, waitFor} from '@solidjs/testing-library'
 import '@testing-library/jest-dom'
 
 import EditableArea from './editableArea'
@@ -8,50 +8,27 @@ import EditableArea from './editableArea'
 // leaves the box the wrong height. That is what opening the panel beside a card
 // does: «Поднять зависимости» rewrapped to two lines while the box kept the
 // height of one, and the title read as «Поднять» with the rest clipped.
-
-type Observed = {target: Element, run: () => void}
-
-function fakeResizeObserver(): Observed[] {
-    const observed: Observed[] = []
-    ;(window as any).ResizeObserver = class {
-        constructor(private readonly cb: () => void) {}
-        observe(target: Element) {
-            observed.push({target, run: () => this.cb()})
-        }
-        disconnect() {
-            observed.length = 0
-        }
-    }
-    return observed
-}
-
 describe('widgets/editableArea', () => {
-    afterEach(() => {
-        delete (window as any).ResizeObserver
-    })
-
     it('grows to fit its text again when its width changes', async () => {
-        const observed = fakeResizeObserver()
         render(() => (
-            <EditableArea
-                value='Поднять зависимости'
-                onChange={() => undefined}
-            />
+            <div
+                class='column'
+                style={{width: '600px'}}
+            >
+                <EditableArea
+                    value='Поднять зависимости'
+                    onChange={() => undefined}
+                />
+            </div>
         ))
+        const column = document.querySelector('.column') as HTMLElement
+        const box = document.querySelector('textarea.EditableArea') as HTMLTextAreaElement
 
-        const boxes = screen.getAllByRole('textbox', {hidden: true}) as HTMLTextAreaElement[]
-        const visible = document.querySelector('textarea.EditableArea') as HTMLTextAreaElement
-        const reference = document.querySelector('textarea.EditableAreaReference') as HTMLTextAreaElement
-        expect(boxes.length).toBeGreaterThan(0)
-        expect(observed.map((o) => o.target)).toContain(reference)
+        await waitFor(() => expect(box.style.height).not.toBe(''))
+        const oneLine = parseInt(box.style.height, 10)
 
-        // jsdom lays nothing out, so nothing has a height to begin with, and
-        // the reference is what says how tall the text is — here, what a
-        // narrower column would make of it: two lines instead of one.
-        expect(visible.style.height).toBe('')
-        Object.defineProperty(reference, 'scrollHeight', {value: 80, configurable: true})
-        observed[0].run()
-
-        expect(parseInt(visible.style.height, 10)).toBeGreaterThanOrEqual(80)
+        // What a narrower column makes of the same text: more lines.
+        column.style.width = '80px'
+        await waitFor(() => expect(parseInt(box.style.height, 10)).toBeGreaterThan(oneLine))
     })
 })

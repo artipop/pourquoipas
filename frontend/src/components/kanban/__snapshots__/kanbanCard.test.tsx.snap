@@ -3,8 +3,15 @@
 exports[`src/components/kanban/kanbanCard > return kanbanCard and click on copy link menu  1`] = `
 <div>
   <div
+    aria-describedby="dnd-kit-description-6"
+    aria-disabled="false"
+    aria-grabbed="false"
+    aria-pressed="false"
+    aria-roledescription="draggable"
     class="KanbanCard"
+    role="button"
     style="opacity: 1;"
+    tabindex="0"
   >
     
     <span
@@ -269,8 +276,15 @@ exports[`src/components/kanban/kanbanCard > return kanbanCard and click on copy 
 exports[`src/components/kanban/kanbanCard > return kanbanCard and click on delete menu  1`] = `
 <div>
   <div
+    aria-describedby="dnd-kit-description-4"
+    aria-disabled="false"
+    aria-grabbed="false"
+    aria-pressed="false"
+    aria-roledescription="draggable"
     class="KanbanCard"
+    role="button"
     style="opacity: 1;"
+    tabindex="0"
   >
     
     <span
@@ -535,8 +549,15 @@ exports[`src/components/kanban/kanbanCard > return kanbanCard and click on delet
 exports[`src/components/kanban/kanbanCard > return kanbanCard and click on duplicate menu  1`] = `
 <div>
   <div
+    aria-describedby="dnd-kit-description-5"
+    aria-disabled="false"
+    aria-grabbed="false"
+    aria-pressed="false"
+    aria-roledescription="draggable"
     class="KanbanCard"
+    role="button"
     style="opacity: 1;"
+    tabindex="0"
   >
     
     <span

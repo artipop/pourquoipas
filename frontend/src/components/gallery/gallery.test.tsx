@@ -1,8 +1,9 @@
-import {render, screen, fireEvent} from '@solidjs/testing-library'
+import {render, screen, fireEvent, waitFor} from '@solidjs/testing-library'
 
 import userEvent from '@testing-library/user-event'
 
-import {blocksById, mockAppStore, wrapDNDIntl} from '../../testUtils'
+import {blocksById, mockAppStore, wrapDNDIntl, hoverOver} from '../../testUtils'
+import {drag} from '../../test/drag'
 import {AppStoreProvider} from '../../store'
 
 import {TestBlockFactory} from '../../test/testBlockFactory'
@@ -68,7 +69,7 @@ describe('src/components/gallery/Gallery', () => {
     beforeEach(() => {
         vi.clearAllMocks()
     })
-    test('should match snapshot', () => {
+    test('should match snapshot', async () => {
         const {container} = render(() => wrapDNDIntl(() =>
             <AppStoreProvider store={store}>
                 <Gallery
@@ -82,11 +83,12 @@ describe('src/components/gallery/Gallery', () => {
                 />
             </AppStoreProvider>,
         ))
+        await hoverOver(document.querySelector('.GalleryCard')!)
         const buttonElement = screen.getAllByRole('button', {name: 'menuwrapper'})[0]
         userEvent.click(buttonElement)
         expect(container).toMatchSnapshot()
     })
-    test('should match snapshot without permissions', () => {
+    test('should match snapshot without permissions', async () => {
         const localStore = mockAppStore({...state, teams: {current: undefined}})
         const {container} = render(() => wrapDNDIntl(() =>
             <AppStoreProvider store={localStore}>
@@ -101,6 +103,7 @@ describe('src/components/gallery/Gallery', () => {
                 />
             </AppStoreProvider>,
         ))
+        await hoverOver(document.querySelector('.GalleryCard')!)
         const buttonElement = screen.getAllByRole('button', {name: 'menuwrapper'})[0]
         userEvent.click(buttonElement)
         expect(container).toMatchSnapshot()
@@ -145,9 +148,7 @@ describe('src/components/gallery/Gallery', () => {
         expect(container).toMatchSnapshot()
     })
 
-    // TODO(react-19): see docs/npm-dependency-warnings.md -- drives react-dnd HTML5 drag events, which dnd-kit does not listen to
-    // eslint-disable-next-line no-only-tests/no-only-tests
-    test.skip('return Gallery and drag and drop card', async () => {
+    test('return Gallery and drag and drop card', async () => {
         const {container} = render(() => wrapDNDIntl(() =>
             <AppStoreProvider store={store}>
                 <Gallery
@@ -162,12 +163,7 @@ describe('src/components/gallery/Gallery', () => {
             </AppStoreProvider>,
         ))
         const allGalleryCard = container.querySelectorAll('.GalleryCard')
-        const drag = allGalleryCard[0]
-        const drop = allGalleryCard[1]
-        fireEvent.dragStart(drag)
-        fireEvent.dragEnter(drop)
-        fireEvent.dragOver(drop)
-        fireEvent.drop(drop)
-        expect(mockedMutator.performAsUndoGroup).toHaveBeenCalledTimes(1)
+        await drag(allGalleryCard[0], allGalleryCard[1])
+        await waitFor(() => expect(mockedMutator.performAsUndoGroup).toHaveBeenCalledTimes(1))
     })
 })

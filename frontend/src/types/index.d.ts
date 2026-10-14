@@ -12,7 +12,7 @@ export interface IAppWindow extends Window {
 
     // Set by the bootstrap the front door injects (proxy.go): there is a Go
     // side behind this origin, and goApp (goBridge.ts) hands out its bindings.
-    // Absent under jsdom unless a test asks for one (src/test/goSide.ts).
+    // Absent in a test unless it asks for one (src/test/goSide.ts).
     hasGoSide?: boolean
     webkit?: {messageHandlers: {nativeApp?: {postMessage: <T>(message: T) => void}}}
 }

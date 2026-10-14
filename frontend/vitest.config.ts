@@ -10,8 +10,10 @@ import {fileURLToPath} from 'url'
 
 import {defineConfig} from 'vitest/config'
 import solid from '@solidjs/vite-plugin'
+import {playwright} from '@vitest/browser-playwright'
 
 import {solid1Compat} from './solid1/plugin'
+import {mouse} from './src/test/mouseCommand'
 
 const root = path.dirname(fileURLToPath(import.meta.url))
 
@@ -39,43 +41,62 @@ export default defineConfig({
         ],
     },
 
-    test: {
+    // The page runs in a real browser, where Vite pre-bundles dependencies
+    // with esbuild exactly as the dev server does, and for the same reason
+    // (vite.config.ts) the Solid 1 package is left out of it.
+    //
+    // Left out, it imports @dnd-kit/state as it lies in node_modules, while
+    // the bundled @dnd-kit/dom carries a copy of its own: two signal runtimes,
+    // and an effect in one never hears a write in the other. A column then
+    // never lights under a dragged card. Named here, the package is bundled
+    // once and both sides import that.
+    optimizeDeps: {
+        exclude: ['@dnd-kit/solid'],
+        include: ['@dnd-kit/state'],
+    },
 
-        // The Solid 1 packages have to go through Vite, or solid1Compat never
-        // sees them: vitest hands a dependency straight to Node unless it is
-        // inlined, and Node then resolves `solid-js/web` against a Solid 2
-        // package that does not publish it.
-        server: {
-            deps: {
-                inline: [/@dnd-kit\//],
-            },
-        },
+    test: {
 
         // The suite was written against jest's injected globals, so `describe`,
         // `expect` and `vi` are expected to exist without an import.
         globals: true,
 
-        // jsdom, not happy-dom: the fakes in src/test are written against its
-        // quirks, and the suite drives real DOM APIs rather than a fast subset.
-        environment: 'jsdom',
+        browser: {
+            enabled: true,
+            provider: playwright(),
+            headless: true,
+            instances: [{browser: 'chromium'}],
 
-        environmentOptions: {
+            // A desktop window, as jsdom's was and as the suite was written
+            // for. Vitest's default is a phone, below the width at which the
+            // sidebar takes itself off screen.
+            viewport: {width: 1024, height: 768},
 
-            // jest served the page from http://localhost/, vitest defaults to
-            // port 3000. Anything the app builds out of window.location -- an
-            // API URL, a share link -- is asserted against the former.
-            jsdom: {url: 'http://localhost/'},
+            // A failing test would leave a PNG beside it in the tree, and what
+            // failed is in the assertion, not in a picture of the page.
+            screenshotFailures: false,
+
+            // A drag a hand could make, for the drag tests (src/test/drag.ts).
+            commands: {mouse},
         },
 
-        // jsdomPolyfills has to run first: it installs what modules read while
-        // they are being evaluated (fetch, ResizeObserver, PointerEvent).
-        // vite-plugin-solid appends @testing-library/jest-dom to this list.
+        // The two mocks come first: in a browser a module is loaded once per
+        // page, so a mock registered after something imported the module (as
+        // flushAfterEvents imports solid-js) replaces nothing. The silent
+        // socket goes before any module that may open one while loading.
+        //
+        // jest-dom is named here because vite-plugin-solid adds it only outside
+        // browser mode, where vitest brings matchers of its own under the same
+        // names, and its toHaveTextContent matches the whole text where
+        // jest-dom's, which the suite was written against, matches a part.
         setupFiles: [
-            path.join(root, 'src/test/jsdomPolyfills.ts'),
-            path.join(root, 'src/test/dndKitSnapshotSerializer.ts'),
-            path.join(root, 'src/test/flushAfterEvents.ts'),
-            path.join(root, 'src/test/goSideMock.ts'),
             path.join(root, 'src/test/stableIds.ts'),
+            path.join(root, 'src/test/goSideMock.ts'),
+            path.join(root, 'src/test/silentWebSocket.ts'),
+            path.join(root, 'src/test/appStylesheets.ts'),
+            path.join(root, 'src/test/flushAfterEvents.ts'),
+            path.join(root, 'src/test/parkPointer.ts'),
+            path.join(root, 'src/test/jestDom.ts'),
         ],
 
         // Half the cores, as under jest: the suite is wide enough that full

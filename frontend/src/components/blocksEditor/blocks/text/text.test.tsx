@@ -1,14 +1,12 @@
 import {render} from '@solidjs/testing-library'
 
-import {mockAppStore, mockDOM, wrapDNDIntl} from '../../../../testUtils'
+import {mockAppStore, wrapDNDIntl} from '../../../../testUtils'
 import {AppStoreProvider} from '../../../../store'
 import {TestBlockFactory} from '../../../../test/testBlockFactory'
 
 import TextBlock from '.'
 
 describe('components/blocksEditor/blocks/text', () => {
-    beforeEach(mockDOM)
-
     const board1 = TestBlockFactory.createBoard()
     board1.id = 'board-id-1'
 

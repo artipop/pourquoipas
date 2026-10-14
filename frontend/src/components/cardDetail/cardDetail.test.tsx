@@ -5,7 +5,7 @@ import userEvent from '@testing-library/user-event'
 import {FetchMock} from '../../test/fetchMock'
 import {TestBlockFactory} from '../../test/testBlockFactory'
 
-import {mockAppStore, mockDOM, wrapDNDIntl, wrapIntl} from '../../testUtils'
+import {mockAppStore, wrapDNDIntl, wrapIntl} from '../../testUtils'
 import {AppStoreProvider} from '../../store'
 
 import octoClient from '../../octoClient'
@@ -16,7 +16,7 @@ import {fakeGoSide} from '../../test/goSide'
 
 import CardDetail from './cardDetail'
 
-global.fetch = FetchMock.fn
+globalThis.fetch = FetchMock.fn
 vi.mock('../../octoClient')
 
 const mockedOctoClient = vi.mocked(octoClient)
@@ -29,15 +29,6 @@ beforeEach(() => {
 // every test after it whether this app has an agent integration at all.
 afterEach(() => {
     fakeGoSide()
-})
-
-// This is needed to run EasyMDE in tests.
-// It needs bounding rectangle box property
-// on HTML elements, but Jest's HTML engine jsdom
-// doesn't provide it.
-// So we mock it.
-beforeAll(() => {
-    mockDOM()
 })
 
 describe('components/cardDetail/CardDetail', () => {

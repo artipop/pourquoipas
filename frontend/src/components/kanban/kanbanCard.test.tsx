@@ -8,7 +8,7 @@ import {Utils} from '../../utils'
 
 import {TestBlockFactory} from '../../test/testBlockFactory'
 import {IPropertyTemplate} from '../../blocks/board'
-import {TestRouter, mockAppStore, wrapDNDIntl} from '../../testUtils'
+import {TestRouter, mockAppStore, wrapDNDIntl, hoverOver} from '../../testUtils'
 import {AppStoreProvider} from '../../store'
 
 import {fakeGoSide} from '../../test/goSide'
@@ -147,17 +147,18 @@ describe('src/components/kanban/kanbanCard', () => {
             </AppStoreProvider>,
         ), {wrapper: TestRouter})
 
-        const data: {[type: string]: string} = {}
-        const dataTransfer = {
-            setData: (type: string, value: string) => {
-                data[type] = value
-            },
-            setDragImage: vi.fn(),
-            effectAllowed: 'all',
-        }
-        fireEvent.dragStart(container.querySelector('.KanbanCard__dragOut')!, {dataTransfer})
-        expect(data['text/plain']).toMatch(new RegExp(`^# ${card.title}`))
-        expect(dataTransfer.effectAllowed).toBe('copy')
+        const dataTransfer = new DataTransfer()
+
+        // Outside a drag the browser drives, the effect is not writable, so
+        // what is checked is what the handler asked for.
+        const effect = vi.spyOn(DataTransfer.prototype, 'effectAllowed', 'set')
+
+        // Dispatched by hand: testing-library copies a dataTransfer it is given
+        // into one of its own, and the handler would write into the copy.
+        container.querySelector('.KanbanCard__dragOut')!.dispatchEvent(new DragEvent('dragstart', {bubbles: true, cancelable: true, dataTransfer}))
+        expect(dataTransfer.getData('text/plain')).toMatch(new RegExp(`^# ${card.title}`))
+        expect(effect).toHaveBeenLastCalledWith('copy')
+        effect.mockRestore()
     })
 
     test('should match snapshot', () => {
@@ -200,7 +201,7 @@ describe('src/components/kanban/kanbanCard', () => {
         ), {wrapper: TestRouter})
         expect(container).toMatchSnapshot()
     })
-    test('return kanbanCard and click on delete menu ', () => {
+    test('return kanbanCard and click on delete menu ', async () => {
         const result = render(() => wrapDNDIntl(() =>
             <AppStoreProvider store={store}>
                 <KanbanCard
@@ -221,6 +222,7 @@ describe('src/components/kanban/kanbanCard', () => {
 
         const {container} = result
 
+        await hoverOver(document.querySelector('.KanbanCard')!)
         const elementMenuWrapper = screen.getByRole('button', {name: 'menuwrapper'})
         expect(elementMenuWrapper).not.toBeNull()
         userEvent.click(elementMenuWrapper)
@@ -238,7 +240,7 @@ describe('src/components/kanban/kanbanCard', () => {
         expect(mockedMutator.deleteBlock).toHaveBeenCalledWith(card, 'delete card')
     })
 
-    test('return kanbanCard and click on duplicate menu ', () => {
+    test('return kanbanCard and click on duplicate menu ', async () => {
         const {container} = render(() => wrapDNDIntl(() =>
             <AppStoreProvider store={store}>
                 <KanbanCard
@@ -256,6 +258,7 @@ describe('src/components/kanban/kanbanCard', () => {
                 />
             </AppStoreProvider>,
         ), {wrapper: TestRouter})
+        await hoverOver(document.querySelector('.KanbanCard')!)
         const elementMenuWrapper = screen.getByRole('button', {name: 'menuwrapper'})
         expect(elementMenuWrapper).not.toBeNull()
         userEvent.click(elementMenuWrapper)
@@ -266,7 +269,7 @@ describe('src/components/kanban/kanbanCard', () => {
         expect(mockedMutator.duplicateCard).toHaveBeenCalledTimes(1)
     })
 
-    test('return kanbanCard and click on copy link menu ', () => {
+    test('return kanbanCard and click on copy link menu ', async () => {
         const {container} = render(() => wrapDNDIntl(() =>
             <AppStoreProvider store={store}>
                 <KanbanCard
@@ -284,6 +287,7 @@ describe('src/components/kanban/kanbanCard', () => {
                 />
             </AppStoreProvider>,
         ), {wrapper: TestRouter})
+        await hoverOver(document.querySelector('.KanbanCard')!)
         const elementMenuWrapper = screen.getByRole('button', {name: 'menuwrapper'})
         expect(elementMenuWrapper).not.toBeNull()
         userEvent.click(elementMenuWrapper)

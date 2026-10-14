@@ -93,8 +93,8 @@ describe('utils', () => {
 
     describe('test - buildURL', () => {
         test('buildURL, no base', () => {
-            expect(Utils.buildURL('test', true)).toBe('http://localhost/test')
-            expect(Utils.buildURL('/test', true)).toBe('http://localhost/test')
+            expect(Utils.buildURL('test', true)).toBe(`${window.location.origin}/test`)
+            expect(Utils.buildURL('/test', true)).toBe(`${window.location.origin}/test`)
 
             expect(Utils.buildURL('test')).toBe('/test')
             expect(Utils.buildURL('/test')).toBe('/test')
@@ -103,8 +103,8 @@ describe('utils', () => {
         test('buildURL, base no slash', () => {
             window.baseURL = 'base'
 
-            expect(Utils.buildURL('test', true)).toBe('http://localhost/base/test')
-            expect(Utils.buildURL('/test', true)).toBe('http://localhost/base/test')
+            expect(Utils.buildURL('test', true)).toBe(`${window.location.origin}/base/test`)
+            expect(Utils.buildURL('/test', true)).toBe(`${window.location.origin}/base/test`)
 
             expect(Utils.buildURL('test')).toBe('base/test')
             expect(Utils.buildURL('/test')).toBe('base/test')
@@ -113,8 +113,8 @@ describe('utils', () => {
         test('buildUrl, base with slash', () => {
             window.baseURL = '/base/'
 
-            expect(Utils.buildURL('test', true)).toBe('http://localhost/base/test')
-            expect(Utils.buildURL('/test', true)).toBe('http://localhost/base/test')
+            expect(Utils.buildURL('test', true)).toBe(`${window.location.origin}/base/test`)
+            expect(Utils.buildURL('/test', true)).toBe(`${window.location.origin}/base/test`)
 
             expect(Utils.buildURL('test')).toBe('base/test')
             expect(Utils.buildURL('/test')).toBe('base/test')

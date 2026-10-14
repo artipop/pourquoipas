@@ -4,18 +4,16 @@
 // is two parsers of one file, and the second one goes wrong — which is the
 // same bug the palette itself was collapsed into one file to avoid.
 //
-// Nothing in the running product imports this: it reaches for `fs`, and it is
-// here because the file it parses is here.
+// Nothing in the running product imports this: the file comes in as text
+// through Vite's `?raw`, which is how a suite running in a browser reads a
+// file at all, and it is here because the file it parses is here.
 
-import {readFileSync} from 'fs'
-import {join} from 'path'
+import tokensText from './_tokens.scss?raw'
 
 export type Vars = Record<string, string>
 
-export const tokensPath = join(__dirname, '_tokens.scss')
-
 export function tokensSource(): string {
-    return readFileSync(tokensPath, 'utf8')
+    return tokensText
 }
 
 // The file is three `:root` blocks: light, dark, and the derived layer both

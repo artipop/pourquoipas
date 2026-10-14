@@ -153,8 +153,15 @@ exports[`src/components/gallery/Gallery > should match snapshot 1`] = `
     class="Gallery"
   >
     <div
+      aria-describedby="dnd-kit-description-0"
+      aria-disabled="false"
+      aria-grabbed="false"
+      aria-pressed="false"
+      aria-roledescription="draggable"
       class="GalleryCard selected"
+      role="button"
       style="opacity: 1;"
+      tabindex="0"
     >
       <div
         aria-label="menuwrapper"
@@ -376,8 +383,15 @@ exports[`src/components/gallery/Gallery > should match snapshot 1`] = `
       <!---->
     </div>
     <div
+      aria-describedby="dnd-kit-description-0"
+      aria-disabled="false"
+      aria-grabbed="false"
+      aria-pressed="false"
+      aria-roledescription="draggable"
       class="GalleryCard"
+      role="button"
       style="opacity: 1;"
+      tabindex="0"
     >
       <div
         aria-label="menuwrapper"
@@ -430,8 +444,15 @@ exports[`src/components/gallery/Gallery > should match snapshot without permissi
     class="Gallery"
   >
     <div
+      aria-describedby="dnd-kit-description-1"
+      aria-disabled="false"
+      aria-grabbed="false"
+      aria-pressed="false"
+      aria-roledescription="draggable"
       class="GalleryCard selected"
+      role="button"
       style="opacity: 1;"
+      tabindex="0"
     >
       <div
         aria-label="menuwrapper"
@@ -545,8 +566,15 @@ exports[`src/components/gallery/Gallery > should match snapshot without permissi
       <!---->
     </div>
     <div
+      aria-describedby="dnd-kit-description-1"
+      aria-disabled="false"
+      aria-grabbed="false"
+      aria-pressed="false"
+      aria-roledescription="draggable"
       class="GalleryCard"
+      role="button"
       style="opacity: 1;"
+      tabindex="0"
     >
       <div
         aria-label="menuwrapper"

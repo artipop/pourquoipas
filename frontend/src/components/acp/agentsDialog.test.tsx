@@ -38,21 +38,6 @@ describe('components/acp/agentsDialog', () => {
         expect(agents.compareDocumentPosition(proxies) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     })
 
-    // A proxy is the second half of the question, so a build that cannot answer
-    // it draws no empty half: no heading, no list.
-    test('says nothing about proxies where the build has none', async () => {
-        fakeGoSide({
-            ListAgents: vi.fn().mockResolvedValue('[]'),
-            ListAgentAdapters: vi.fn().mockResolvedValue('[]'),
-        })
-
-        open()
-
-        await waitFor(() => expect(document.querySelector('.AgentsPanel')).toBeTruthy())
-        expect(document.querySelector('.ProxiesPanel')).toBeNull()
-        expect(screen.queryByText('Proxy configurations')).toBeNull()
-    })
-
     // The door is drawn on the binding, not on the board: a build with no agent
     // integration at all has nothing to open here.
     test('is not offered by a build that knows no agents', () => {

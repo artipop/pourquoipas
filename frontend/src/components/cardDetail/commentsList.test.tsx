@@ -3,7 +3,7 @@ import {render} from '@solidjs/testing-library'
 
 import {CommentBlock} from '../../blocks/commentBlock'
 
-import {mockAppStore, mockDOM, wrapIntl} from '../../testUtils'
+import {mockAppStore, wrapIntl} from '../../testUtils'
 import {AppStoreProvider} from '../../store'
 import {Utils} from '../../utils'
 
@@ -11,16 +11,12 @@ import {FetchMock} from '../../test/fetchMock'
 
 import CommentsList from './commentsList'
 
-global.fetch = FetchMock.fn
+globalThis.fetch = FetchMock.fn
 vi.spyOn(Utils, 'displayDateTime').mockReturnValue('a long time ago')
 vi.spyOn(Utils, 'relativeDisplayDateTime').mockReturnValue('a long time ago')
 
 beforeEach(() => {
     FetchMock.fn.mockReset()
-})
-
-beforeAll(() => {
-    mockDOM()
 })
 
 describe('components/cardDetail/CommentsList', () => {

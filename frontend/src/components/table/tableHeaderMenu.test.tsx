@@ -11,7 +11,7 @@ import {FetchMock} from '../../test/fetchMock'
 
 import TableHeaderMenu from './tableHeaderMenu'
 
-global.fetch = FetchMock.fn
+globalThis.fetch = FetchMock.fn
 
 // import mutator from '../../mutator'
 

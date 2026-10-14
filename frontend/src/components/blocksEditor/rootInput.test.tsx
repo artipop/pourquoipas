@@ -19,7 +19,7 @@ describe('components/blocksEditor/rootInput', () => {
         expect(screen.queryByRole('listbox')).toBeNull()
     })
 
-    test('shows slash commands when the menu opens', () => {
+    test('shows slash commands when the menu opens', async () => {
         render(() => wrapIntl(() =>
             <RootInput
                 onChange={vi.fn()}
@@ -30,12 +30,12 @@ describe('components/blocksEditor/rootInput', () => {
         ))
         const input = screen.getByDisplayValue('')
         fireEvent.input(input, {target: {value: '/'}})
-        expect(screen.getByRole('listbox')).toBeInTheDocument()
+        expect(await screen.findByRole('listbox')).toBeInTheDocument()
         expect(screen.getByText('/title Creates a new Title block.')).toBeInTheDocument()
         expect(screen.getByText('/checkbox Creates a new Checkbox block.')).toBeInTheDocument()
     })
 
-    test('links the combobox to its menu and active option', () => {
+    test('links the combobox to its menu and active option', async () => {
         const {container} = render(() => wrapIntl(() =>
             <RootInput
                 onChange={vi.fn()}
@@ -47,7 +47,7 @@ describe('components/blocksEditor/rootInput', () => {
         const input = screen.getByRole('combobox')
         fireEvent.input(input, {target: {value: '/'}})
 
-        const listbox = screen.getByRole('listbox')
+        const listbox = await screen.findByRole('listbox')
         expect(input.getAttribute('aria-controls')).toBe(listbox.id)
         const activeId = input.getAttribute('aria-activedescendant')
         expect(activeId).toBeTruthy()

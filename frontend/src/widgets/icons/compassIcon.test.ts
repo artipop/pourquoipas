@@ -1,5 +1,4 @@
-import {readFileSync, readdirSync, statSync} from 'fs'
-import {join} from 'path'
+import css from '@mattermost/compass-icons/css/compass-icons.css?raw'
 
 // An icon name the font does not have renders as nothing: the `<i>` is still
 // there, still takes its width and line-height, so the button beside it sits
@@ -11,12 +10,7 @@ import {join} from 'path'
 // Three names were wrong when this was written, all in the diff viewer, and
 // what found them was somebody looking at the screen.
 
-const iconCSS = join(
-    __dirname, '..', '..', '..', 'node_modules', '@mattermost', 'compass-icons', 'css', 'compass-icons.css',
-)
-
 function fontNames(): Set<string> {
-    const css = readFileSync(iconCSS, 'utf8')
     const names = new Set<string>()
     for (const m of css.matchAll(/^\.icon-([a-z0-9-]+):before/gm)) {
         names.add(m[1])
@@ -24,17 +18,8 @@ function fontNames(): Set<string> {
     return names
 }
 
-function sources(dir: string, found: string[] = []): string[] {
-    for (const entry of readdirSync(dir)) {
-        const path = join(dir, entry)
-        if (statSync(path).isDirectory()) {
-            sources(path, found)
-        } else if ((/\.tsx?$/).test(entry) && !(/\.test\.tsx?$/).test(entry)) {
-            found.push(path)
-        }
-    }
-    return found
-}
+// The page's own code, as text, keyed by its path; tests are not callers.
+const sources = import.meta.glob<string>(['/src/**/*.{ts,tsx}', '!/src/**/*.test.{ts,tsx}'], {query: '?raw', import: 'default', eager: true})
 
 describe('widgets/icons/compassIcon', () => {
     it('is never asked for a glyph the font has not got', () => {
@@ -45,11 +30,10 @@ describe('widgets/icons/compassIcon', () => {
         // the caller's to get right, and there is nothing here to check it
         // against.
         const wrong: string[] = []
-        for (const path of sources(join(__dirname, '..', '..'))) {
-            const source = readFileSync(path, 'utf8')
+        for (const [path, source] of Object.entries(sources)) {
             for (const m of source.matchAll(/icon=['"]([a-z0-9-]+)['"]/g)) {
                 if (!known.has(m[1])) {
-                    wrong.push(`${m[1]} (${path.slice(path.indexOf('/src/') + 1)})`)
+                    wrong.push(`${m[1]} (${path.slice(1)})`)
                 }
             }
         }

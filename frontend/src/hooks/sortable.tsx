@@ -57,8 +57,8 @@ function afterDragTeardown(run: () => void): void {
     setTimeout(run, 0)
 }
 
-// Exported so the dispatch can be tested: everything else here needs real
-// pointer events and real element geometry, which jsdom has neither of.
+// Exported so the dispatch can be tested on its own; the drags around it are
+// sortableDrag.test.tsx's.
 export function dispatchDrop(event: DragEndEvent): void {
     if (event.canceled) {
         return

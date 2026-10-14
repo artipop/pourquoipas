@@ -4,17 +4,13 @@ import {fireEvent, render} from '@solidjs/testing-library'
 
 import {TestBlockFactory} from '../../test/testBlockFactory'
 
-import {mockAppStore, mockDOM, wrapDNDIntl} from '../../testUtils'
+import {mockAppStore, wrapDNDIntl} from '../../testUtils'
 import {AppStoreProvider} from '../../store'
 
 import CardDetailContents from './cardDetailContents'
 import {CardDetailProvider} from './cardDetailContext'
 
-global.fetch = vi.fn()
-
-beforeAll(() => {
-    mockDOM()
-})
+globalThis.fetch = vi.fn()
 
 describe('components/cardDetail/cardDetailContents', () => {
     const board = TestBlockFactory.createBoard()

@@ -1,12 +1,11 @@
 import {render, screen} from '@solidjs/testing-library'
 import userEvent from '@testing-library/user-event'
 
-import {mockDOM, wrapDNDIntl} from '../testUtils'
+import {wrapDNDIntl, onAPhone} from '../testUtils'
 
 import Modal from './modal'
 
 describe('components/modal', () => {
-    beforeAll(mockDOM)
     beforeEach(vi.clearAllMocks)
     test('should match snapshot', () => {
         const {container} = render(() => wrapDNDIntl(() =>
@@ -18,7 +17,8 @@ describe('components/modal', () => {
         ))
         expect(container).toMatchSnapshot()
     })
-    test('return Modal and close', () => {
+    test('return Modal and close', async () => {
+        await onAPhone()
         const onMockedClose = vi.fn()
         render(() => wrapDNDIntl(() =>
             <Modal

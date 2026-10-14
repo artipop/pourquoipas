@@ -17,7 +17,7 @@ import Mutator from '../../mutator'
 
 import Table from './table'
 
-global.fetch = FetchMock.fn
+globalThis.fetch = FetchMock.fn
 
 beforeEach(() => {
     FetchMock.fn.mockReset()

@@ -1,16 +1,11 @@
 import mutator from './mutator'
 import {TestBlockFactory} from './test/testBlockFactory'
 import {FetchMock} from './test/fetchMock'
-import {mockDOM} from './testUtils'
 
-global.fetch = FetchMock.fn
+globalThis.fetch = FetchMock.fn
 
 beforeEach(() => {
     FetchMock.fn.mockReset()
-})
-
-beforeAll(() => {
-    mockDOM()
 })
 
 describe('Mutator', () => {
