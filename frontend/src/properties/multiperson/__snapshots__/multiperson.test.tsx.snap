@@ -81,7 +81,7 @@ exports[`properties/multiperson > not readonly 1`] = `
         <!---->
         
         <input
-          aria-controls="cl-1"
+          aria-controls="id-0"
           aria-expanded="false"
           autocomplete="off"
           class="Combobox__input react-select__input"
@@ -123,7 +123,7 @@ exports[`properties/multiperson > not readonly not existing user 1`] = `
           Empty
         </div>
         <input
-          aria-controls="cl-0"
+          aria-controls="id-0"
           aria-expanded="false"
           autocomplete="off"
           class="Combobox__input react-select__input"
@@ -252,8 +252,8 @@ exports[`properties/multiperson > user dropdown open 1`] = `
         <!---->
         
         <input
-          aria-activedescendant="cl-2-option-0"
-          aria-controls="cl-2"
+          aria-activedescendant="id-0-option-0"
+          aria-controls="id-0"
           aria-expanded="true"
           autocomplete="off"
           class="Combobox__input react-select__input"
@@ -268,7 +268,7 @@ exports[`properties/multiperson > user dropdown open 1`] = `
     >
       <div
         class="react-select__menu-list"
-        id="cl-2"
+        id="id-0"
         role="listbox"
       >
         
@@ -276,7 +276,7 @@ exports[`properties/multiperson > user dropdown open 1`] = `
         <div
           aria-selected="true"
           class="react-select__option react-select__option--is-focused react-select__option--is-selected"
-          id="cl-2-option-0"
+          id="id-0-option-0"
           role="option"
         >
           <div
@@ -295,7 +295,7 @@ exports[`properties/multiperson > user dropdown open 1`] = `
         <div
           aria-selected="true"
           class="react-select__option react-select__option--is-selected"
-          id="cl-2-option-1"
+          id="id-0-option-1"
           role="option"
         >
           <div
@@ -314,7 +314,7 @@ exports[`properties/multiperson > user dropdown open 1`] = `
         <div
           aria-selected="false"
           class="react-select__option"
-          id="cl-2-option-2"
+          id="id-0-option-2"
           role="option"
         >
           <div

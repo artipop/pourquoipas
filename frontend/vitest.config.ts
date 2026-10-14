@@ -75,6 +75,7 @@ export default defineConfig({
             path.join(root, 'src/test/dndKitSnapshotSerializer.ts'),
             path.join(root, 'src/test/flushAfterEvents.ts'),
             path.join(root, 'src/test/goSideMock.ts'),
+            path.join(root, 'src/test/stableIds.ts'),
         ],
 
         // Half the cores, as under jest: the suite is wide enough that full

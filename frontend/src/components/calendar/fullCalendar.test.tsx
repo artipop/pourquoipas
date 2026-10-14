@@ -72,6 +72,14 @@ describe('components/calendar/toolbar', () => {
         )
 
         await calendarBuilt()
+        const labelled = Array.from(container.querySelectorAll('[aria-labelledby]'))
+        expect(labelled.length).toBeGreaterThan(0)
+        for (const element of labelled) {
+            for (const id of element.getAttribute('aria-labelledby')!.split(/\s+/)) {
+                expect(container.querySelector(`[id="${id}"]`)).not.toBeNull()
+            }
+        }
+        expect(container.querySelector('.dateContainer.with-plus')).not.toBeNull()
         expect(container).toMatchSnapshot()
     })
 
@@ -141,6 +149,7 @@ describe('components/calendar/toolbar', () => {
         )
 
         await calendarBuilt()
+        expect(container.querySelector('.dateContainer.with-plus')).toBeNull()
         expect(container).toMatchSnapshot()
     })
 

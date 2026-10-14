@@ -5,8 +5,8 @@ import {wrapIntl} from '../../testUtils'
 import RootInput from './rootInput'
 
 describe('components/blocksEditor/rootInput', () => {
-    test('should match Display snapshot', async () => {
-        const {container} = render(() => wrapIntl(() =>
+    test('shows the current value in the combobox', () => {
+        render(() => wrapIntl(() =>
             <RootInput
                 onChange={vi.fn()}
                 value='test-value'
@@ -14,23 +14,13 @@ describe('components/blocksEditor/rootInput', () => {
                 onSave={vi.fn()}
             />,
         ))
-        expect(container).toMatchSnapshot()
+        expect(screen.getByRole('combobox')).toHaveValue('test-value')
+        expect(screen.queryByText('Type your text, or a slash command')).toBeNull()
+        expect(screen.queryByRole('listbox')).toBeNull()
     })
 
-    test('should match Input snapshot', async () => {
-        const {container} = render(() => wrapIntl(() =>
-            <RootInput
-                onChange={vi.fn()}
-                value='test-value'
-                onChangeType={vi.fn()}
-                onSave={vi.fn()}
-            />,
-        ))
-        expect(container).toMatchSnapshot()
-    })
-
-    test('should match Input snapshot with menu open', async () => {
-        const {container} = render(() => wrapIntl(() =>
+    test('shows slash commands when the menu opens', () => {
+        render(() => wrapIntl(() =>
             <RootInput
                 onChange={vi.fn()}
                 value=''
@@ -40,7 +30,28 @@ describe('components/blocksEditor/rootInput', () => {
         ))
         const input = screen.getByDisplayValue('')
         fireEvent.input(input, {target: {value: '/'}})
-        expect(container).toMatchSnapshot()
+        expect(screen.getByRole('listbox')).toBeInTheDocument()
+        expect(screen.getByText('/title Creates a new Title block.')).toBeInTheDocument()
+        expect(screen.getByText('/checkbox Creates a new Checkbox block.')).toBeInTheDocument()
+    })
+
+    test('links the combobox to its menu and active option', () => {
+        const {container} = render(() => wrapIntl(() =>
+            <RootInput
+                onChange={vi.fn()}
+                value=''
+                onChangeType={vi.fn()}
+                onSave={vi.fn()}
+            />,
+        ))
+        const input = screen.getByRole('combobox')
+        fireEvent.input(input, {target: {value: '/'}})
+
+        const listbox = screen.getByRole('listbox')
+        expect(input.getAttribute('aria-controls')).toBe(listbox.id)
+        const activeId = input.getAttribute('aria-activedescendant')
+        expect(activeId).toBeTruthy()
+        expect(container.querySelector(`[id="${activeId}"]`)?.getAttribute('role')).toBe('option')
     })
 
     test('should emit onChange event', async () => {

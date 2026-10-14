@@ -46,7 +46,7 @@ exports[`properties/person > not readOnly, show firstname 1`] = `
         <!---->
         
         <input
-          aria-controls="cl-1"
+          aria-controls="id-0"
           aria-expanded="false"
           autocomplete="off"
           class="Combobox__input react-select__input"
@@ -89,8 +89,8 @@ exports[`properties/person > not readOnly, show me 1`] = `
           Empty
         </div>
         <input
-          aria-activedescendant="cl-5-option-0"
-          aria-controls="cl-5"
+          aria-activedescendant="id-0-option-0"
+          aria-controls="id-0"
           aria-expanded="true"
           autocomplete="off"
           class="Combobox__input react-select__input"
@@ -105,7 +105,7 @@ exports[`properties/person > not readOnly, show me 1`] = `
     >
       <div
         class="react-select__menu-list"
-        id="cl-5"
+        id="id-0"
         role="listbox"
       >
         
@@ -113,7 +113,7 @@ exports[`properties/person > not readOnly, show me 1`] = `
         <div
           aria-selected="false"
           class="react-select__option react-select__option--is-focused"
-          id="cl-5-option-0"
+          id="id-0-option-0"
           role="option"
         >
           <div
@@ -132,7 +132,7 @@ exports[`properties/person > not readOnly, show me 1`] = `
         <div
           aria-selected="false"
           class="react-select__option"
-          id="cl-5-option-1"
+          id="id-0-option-1"
           role="option"
         >
           <div
@@ -151,7 +151,7 @@ exports[`properties/person > not readOnly, show me 1`] = `
         <div
           aria-selected="false"
           class="react-select__option"
-          id="cl-5-option-2"
+          id="id-0-option-2"
           role="option"
         >
           <div
@@ -170,7 +170,7 @@ exports[`properties/person > not readOnly, show me 1`] = `
         <div
           aria-selected="false"
           class="react-select__option"
-          id="cl-5-option-3"
+          id="id-0-option-3"
           role="option"
         >
           <div
@@ -221,8 +221,8 @@ exports[`properties/person > not readOnly, show me 2`] = `
           Empty
         </div>
         <input
-          aria-activedescendant="cl-5-option-0"
-          aria-controls="cl-5"
+          aria-activedescendant="id-0-option-0"
+          aria-controls="id-0"
           aria-expanded="true"
           autocomplete="off"
           class="Combobox__input react-select__input"
@@ -237,7 +237,7 @@ exports[`properties/person > not readOnly, show me 2`] = `
     >
       <div
         class="react-select__menu-list"
-        id="cl-5"
+        id="id-0"
         role="listbox"
       >
         
@@ -245,7 +245,7 @@ exports[`properties/person > not readOnly, show me 2`] = `
         <div
           aria-selected="false"
           class="react-select__option react-select__option--is-focused"
-          id="cl-5-option-0"
+          id="id-0-option-0"
           role="option"
         >
           <div
@@ -264,7 +264,7 @@ exports[`properties/person > not readOnly, show me 2`] = `
         <div
           aria-selected="false"
           class="react-select__option"
-          id="cl-5-option-1"
+          id="id-0-option-1"
           role="option"
         >
           <div
@@ -283,7 +283,7 @@ exports[`properties/person > not readOnly, show me 2`] = `
         <div
           aria-selected="false"
           class="react-select__option"
-          id="cl-5-option-2"
+          id="id-0-option-2"
           role="option"
         >
           <div
@@ -302,7 +302,7 @@ exports[`properties/person > not readOnly, show me 2`] = `
         <div
           aria-selected="false"
           class="react-select__option"
-          id="cl-5-option-3"
+          id="id-0-option-3"
           role="option"
         >
           <div
@@ -353,7 +353,7 @@ exports[`properties/person > not readOnly, show modal 1`] = `
           Empty
         </div>
         <input
-          aria-controls="cl-2"
+          aria-controls="id-0"
           aria-expanded="false"
           autocomplete="off"
           class="Combobox__input react-select__input"
@@ -396,8 +396,8 @@ exports[`properties/person > not readOnly, show modal 2`] = `
           Empty
         </div>
         <input
-          aria-activedescendant="cl-2-option-0"
-          aria-controls="cl-2"
+          aria-activedescendant="id-0-option-0"
+          aria-controls="id-0"
           aria-expanded="true"
           autocomplete="off"
           class="Combobox__input react-select__input"
@@ -412,7 +412,7 @@ exports[`properties/person > not readOnly, show modal 2`] = `
     >
       <div
         class="react-select__menu-list"
-        id="cl-2"
+        id="id-0"
         role="listbox"
       >
         
@@ -420,7 +420,7 @@ exports[`properties/person > not readOnly, show modal 2`] = `
         <div
           aria-selected="false"
           class="react-select__option react-select__option--is-focused"
-          id="cl-2-option-0"
+          id="id-0-option-0"
           role="option"
         >
           <div
@@ -439,7 +439,7 @@ exports[`properties/person > not readOnly, show modal 2`] = `
         <div
           aria-selected="false"
           class="react-select__option"
-          id="cl-2-option-1"
+          id="id-0-option-1"
           role="option"
         >
           <div
@@ -458,7 +458,7 @@ exports[`properties/person > not readOnly, show modal 2`] = `
         <div
           aria-selected="false"
           class="react-select__option"
-          id="cl-2-option-2"
+          id="id-0-option-2"
           role="option"
         >
           <div
@@ -527,7 +527,7 @@ exports[`properties/person > not readOnly, show username 1`] = `
         <!---->
         
         <input
-          aria-controls="cl-0"
+          aria-controls="id-0"
           aria-expanded="false"
           autocomplete="off"
           class="Combobox__input react-select__input"
@@ -644,7 +644,7 @@ exports[`properties/person > show multiple 1`] = `
         <!---->
         
         <input
-          aria-controls="cl-3"
+          aria-controls="id-0"
           aria-expanded="false"
           autocomplete="off"
           class="Combobox__input react-select__input"
@@ -740,7 +740,7 @@ exports[`properties/person > show multiple, display modal 1`] = `
         <!---->
         
         <input
-          aria-controls="cl-4"
+          aria-controls="id-0"
           aria-expanded="false"
           autocomplete="off"
           class="Combobox__input react-select__input"
@@ -836,8 +836,8 @@ exports[`properties/person > show multiple, display modal 2`] = `
         <!---->
         
         <input
-          aria-activedescendant="cl-4-option-0"
-          aria-controls="cl-4"
+          aria-activedescendant="id-0-option-0"
+          aria-controls="id-0"
           aria-expanded="true"
           autocomplete="off"
           class="Combobox__input react-select__input"
@@ -852,7 +852,7 @@ exports[`properties/person > show multiple, display modal 2`] = `
     >
       <div
         class="react-select__menu-list"
-        id="cl-4"
+        id="id-0"
         role="listbox"
       >
         
@@ -860,7 +860,7 @@ exports[`properties/person > show multiple, display modal 2`] = `
         <div
           aria-selected="true"
           class="react-select__option react-select__option--is-focused react-select__option--is-selected"
-          id="cl-4-option-0"
+          id="id-0-option-0"
           role="option"
         >
           <div
@@ -879,7 +879,7 @@ exports[`properties/person > show multiple, display modal 2`] = `
         <div
           aria-selected="true"
           class="react-select__option react-select__option--is-selected"
-          id="cl-4-option-1"
+          id="id-0-option-1"
           role="option"
         >
           <div
@@ -898,7 +898,7 @@ exports[`properties/person > show multiple, display modal 2`] = `
         <div
           aria-selected="false"
           class="react-select__option"
-          id="cl-4-option-2"
+          id="id-0-option-2"
           role="option"
         >
           <div

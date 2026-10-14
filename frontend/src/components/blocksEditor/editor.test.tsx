@@ -49,8 +49,8 @@ describe('components/blocksEditor/editor', () => {
         expect(container).toMatchSnapshot()
     })
 
-    test('should match snapshot on empty', async () => {
-        const {container} = render(() => wrapIntl(() => wrapDNDIntl(() =>
+    test('shows an empty input', () => {
+        render(() => wrapIntl(() => wrapDNDIntl(() =>
             <AppStoreProvider store={store}>
                 <Editor
                     boardId='fake-board-id'
@@ -58,7 +58,8 @@ describe('components/blocksEditor/editor', () => {
                 />
             </AppStoreProvider>,
         )))
-        expect(container).toMatchSnapshot()
+        expect(screen.getByRole('combobox')).toHaveValue('')
+        expect(screen.getByText('Type your text, or a slash command')).toBeInTheDocument()
     })
 
     test('should call onSave after introduce text and hit enter', async () => {

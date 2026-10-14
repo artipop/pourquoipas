@@ -28,7 +28,7 @@ exports[`components/calculations/Options > should match snapshot 1`] = `
         <!---->
         
         <input
-          aria-controls="cl-0"
+          aria-controls="id-0"
           aria-expanded="false"
           autocomplete="off"
           class="Combobox__input CalculationOptions__input"
@@ -72,8 +72,8 @@ exports[`components/calculations/Options > should match snapshot menu open 1`] =
         <!---->
         
         <input
-          aria-activedescendant="cl-1-option-0"
-          aria-controls="cl-1"
+          aria-activedescendant="id-0-option-0"
+          aria-controls="id-0"
           aria-expanded="true"
           autocomplete="off"
           class="Combobox__input CalculationOptions__input"
@@ -89,7 +89,7 @@ exports[`components/calculations/Options > should match snapshot menu open 1`] =
     >
       <div
         class="CalculationOptions__menu-list"
-        id="cl-1"
+        id="id-0"
         role="listbox"
       >
         
@@ -97,7 +97,7 @@ exports[`components/calculations/Options > should match snapshot menu open 1`] =
         <div
           aria-selected="false"
           class="CalculationOptions__option CalculationOptions__option--is-focused"
-          id="cl-1-option-0"
+          id="id-0-option-0"
           role="option"
         >
           Count
@@ -105,7 +105,7 @@ exports[`components/calculations/Options > should match snapshot menu open 1`] =
         <div
           aria-selected="false"
           class="CalculationOptions__option"
-          id="cl-1-option-1"
+          id="id-0-option-1"
           role="option"
         >
           Max

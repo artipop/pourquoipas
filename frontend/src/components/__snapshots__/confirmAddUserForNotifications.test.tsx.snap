@@ -100,7 +100,7 @@ exports[`/components/confirmAddUserForNotifications > should match snapshot 1`] 
                     <!---->
                     
                     <input
-                      aria-controls="cl-0"
+                      aria-controls="id-0"
                       aria-expanded="false"
                       autocomplete="off"
                       class="Combobox__input select__input"

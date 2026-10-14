@@ -44,8 +44,8 @@ describe('components/blocksEditor/blocksEditor', () => {
     }
     const store = mockAppStore(state)
 
-    test('should match snapshot on empty', async () => {
-        const {container} = render(() => wrapIntl(() => wrapDNDIntl(() =>
+    test('shows an empty editor', () => {
+        render(() => wrapIntl(() => wrapDNDIntl(() =>
             <AppStoreProvider store={store}>
                 <BlocksEditor
                     boardId='test-board'
@@ -56,11 +56,12 @@ describe('components/blocksEditor/blocksEditor', () => {
                 />
             </AppStoreProvider>,
         )))
-        expect(container).toMatchSnapshot()
+        expect(screen.getByRole('combobox')).toHaveValue('')
+        expect(screen.queryAllByTestId('block-content')).toHaveLength(0)
     })
 
-    test('should match snapshot with blocks', async () => {
-        const {container} = render(() => wrapIntl(() => wrapDNDIntl(() =>
+    test('shows the saved blocks', () => {
+        render(() => wrapIntl(() => wrapDNDIntl(() =>
             <AppStoreProvider store={store}>
                 <BlocksEditor
                     boardId='test-board'
@@ -71,7 +72,10 @@ describe('components/blocksEditor/blocksEditor', () => {
                 />
             </AppStoreProvider>,
         )))
-        expect(container).toMatchSnapshot()
+        expect(screen.getAllByTestId('block-content')).toHaveLength(blocks.length)
+        expect(screen.getByRole('heading', {level: 1, name: 'Title'})).toBeInTheDocument()
+        expect(screen.getByText('Checkbox')).toBeInTheDocument()
+        expect(screen.getByRole('combobox')).toHaveValue('')
     })
 
     test('should call onBlockCreate after introduce text and hit enter', async () => {

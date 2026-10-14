@@ -68,8 +68,8 @@ exports[`components/kanban/calculation/KanbanCalculation > calculations menu ope
           <!---->
           
           <input
-            aria-activedescendant="cl-0-option-0"
-            aria-controls="cl-0"
+            aria-activedescendant="id-0-option-0"
+            aria-controls="id-0"
             aria-expanded="true"
             autocomplete="off"
             class="Combobox__input CalculationOptions__input"
@@ -85,7 +85,7 @@ exports[`components/kanban/calculation/KanbanCalculation > calculations menu ope
       >
         <div
           class="CalculationOptions__menu-list"
-          id="cl-0"
+          id="id-0"
           role="listbox"
         >
           
@@ -93,7 +93,7 @@ exports[`components/kanban/calculation/KanbanCalculation > calculations menu ope
           <div
             aria-selected="true"
             class="CalculationOptions__option CalculationOptions__option--is-focused CalculationOptions__option--is-selected"
-            id="cl-0-option-0"
+            id="id-0-option-0"
             role="option"
           >
             <div
@@ -111,7 +111,7 @@ exports[`components/kanban/calculation/KanbanCalculation > calculations menu ope
           <div
             aria-selected="false"
             class="CalculationOptions__option"
-            id="cl-0-option-1"
+            id="id-0-option-1"
             role="option"
           >
             <div
@@ -131,7 +131,7 @@ exports[`components/kanban/calculation/KanbanCalculation > calculations menu ope
           <div
             aria-selected="false"
             class="CalculationOptions__option"
-            id="cl-0-option-2"
+            id="id-0-option-2"
             role="option"
           >
             <div
@@ -151,7 +151,7 @@ exports[`components/kanban/calculation/KanbanCalculation > calculations menu ope
           <div
             aria-selected="false"
             class="CalculationOptions__option"
-            id="cl-0-option-3"
+            id="id-0-option-3"
             role="option"
           >
             <div
@@ -171,7 +171,7 @@ exports[`components/kanban/calculation/KanbanCalculation > calculations menu ope
           <div
             aria-selected="false"
             class="CalculationOptions__option"
-            id="cl-0-option-4"
+            id="id-0-option-4"
             role="option"
           >
             <div
@@ -191,7 +191,7 @@ exports[`components/kanban/calculation/KanbanCalculation > calculations menu ope
           <div
             aria-selected="false"
             class="CalculationOptions__option"
-            id="cl-0-option-5"
+            id="id-0-option-5"
             role="option"
           >
             <div
@@ -211,7 +211,7 @@ exports[`components/kanban/calculation/KanbanCalculation > calculations menu ope
           <div
             aria-selected="false"
             class="CalculationOptions__option"
-            id="cl-0-option-6"
+            id="id-0-option-6"
             role="option"
           >
             <div
