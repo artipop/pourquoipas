@@ -101,5 +101,23 @@ jobs:
         working-directory: frontend
         env:
           CYPRESS_INSTALL_BINARY: 0
+      # The suite runs in Chromium (vitest browser mode). The browser is a
+      # download per Playwright version, so it is cached under that version;
+      # the system libraries it needs are not in the cache and are installed
+      # either way.
+      - id: playwright
+        run: echo "version=$(node -p "require('./node_modules/playwright/package.json').version")" >> "$GITHUB_OUTPUT"
+        working-directory: frontend
+      - uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+      - if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+        working-directory: frontend
+      - if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+        working-directory: frontend
       - run: npm test
         working-directory: frontend
