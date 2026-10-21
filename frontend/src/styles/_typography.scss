@@ -76,6 +76,15 @@
     @include label;
 }
 
+// A dialog speaks for itself, not for the place it was opened from: the board
+// setup wizard opens inside .ViewHeader and came out in caps, hints and typed
+// text included. Its own labels and buttons still name things.
+.Dialog {
+    @include prose;
+
+    font-size: var(--text-body);
+}
+
 // The data voice: counts, calculations, table values, timestamps, code.
 .KanbanCalculation,
 .octo-table-cell .octo-propertyvalue,
