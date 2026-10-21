@@ -49,8 +49,9 @@ func bootstrapScript(sessionToken string) string {
   } catch (e) {}
 
   window.hasGoSide = true;
+  window.pageOnWails = %t;
 })();
-</script>`, sessionToken)
+</script>`, sessionToken, pageOnWails)
 }
 
 // newServerProxy builds what the front door puts behind everything that is not
@@ -231,6 +232,14 @@ func (r *boardRouter) point(attached string) error {
 }
 
 func (r *boardRouter) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	// A request from a page on wails:// reaches us through Wails' asset
+	// server, and WKWebView hands that server the body without a
+	// Content-Length. The request then says 0, and httputil.ReverseProxy drops
+	// a body of length 0 — every POST arrived at the board empty. Unknown is
+	// what it is.
+	if req.ContentLength == 0 && req.Body != nil && req.Body != http.NoBody && req.Method != http.MethodGet && req.Method != http.MethodHead {
+		req.ContentLength = -1
+	}
 	handler := r.current.Load()
 	if handler == nil {
 		http.Error(w, "no board", http.StatusServiceUnavailable)

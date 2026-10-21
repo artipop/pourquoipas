@@ -1,3 +1,4 @@
+import {sendableForm} from './busSocket'
 import {Block, BlockPatch, FileInfo} from './blocks/block'
 import {CardHistoryEntry} from './blocks/cardHistory'
 import {Board, BoardsAndBlocks, BoardsAndBlocksPatch, BoardPatch, BoardMember} from './blocks/board'
@@ -280,11 +281,15 @@ class OctoClient {
 
         // TIPTIP: Leave out Content-Type here, it will be automatically set by the browser
         delete headers['Content-Type']
+        const {body, contentType} = await sendableForm(formData)
+        if (contentType) {
+            headers['Content-Type'] = contentType
+        }
 
         return fetch(this.getBaseURL() + this.teamPath() + '/archive/import', {
             method: 'POST',
             headers,
-            body: formData,
+            body,
         })
     }
 
@@ -600,11 +605,15 @@ class OctoClient {
 
             // TIPTIP: Leave out Content-Type here, it will be automatically set by the browser
             delete headers['Content-Type']
+            const {body, contentType} = await sendableForm(formData)
+            if (contentType) {
+                headers['Content-Type'] = contentType
+            }
 
             const response = await fetch(this.getBaseURL() + this.teamPath() + '/' + rootID + '/files', {
                 method: 'POST',
                 headers,
-                body: formData,
+                body,
             })
             if (response.status !== 200) {
                 return undefined
@@ -643,7 +652,11 @@ class OctoClient {
         if (xhr.upload) {
             xhr.upload.onprogress = () => {}
         }
-        xhr.send(formData)
+        const {body, contentType} = await sendableForm(formData)
+        if (contentType) {
+            xhr.setRequestHeader('Content-Type', contentType)
+        }
+        xhr.send(body as XMLHttpRequestBodyInit)
         return xhr
     }
 

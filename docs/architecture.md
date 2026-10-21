@@ -10,15 +10,33 @@ Eleven ideas hold this together. Read them before changing anything structural.
 
 ## The front door owns the origin
 
-`frontdoor.go` is an HTTP server of ours that everything goes through: `/wails/` to
-the Wails runtime, everything else — HTML, `/api`, `/files` and the `/ws` socket —
-to the board. A desktop build hands it to Wails as an `AssetServerTransport`
-(loopback, random port) and points the window at it rather than at the `wails://`
-origin.
+`frontdoor.go` is an HTTP server of ours: `/wails/` to the Wails runtime,
+`/acp/` and `/sources/ingest` to our routes, everything else — HTML, `/api`,
+`/files` and the `/ws` socket — to the board. A desktop build hands it to Wails
+as an `AssetServerTransport` on loopback, with a random port per launch; it is
+what other processes reach the app at (an agent's board tools, a script posting
+to a source, the column feed).
 
-This exists because **Wails' asset server answers a WebSocket upgrade with 501**,
-and in a webview the page is not reached over the network at all, so `/ws` can
-never be served through it.
+**A desktop window does not go through it** (since 2026-10-21). The page is on
+`wails://`: Wails' asset server hands every request to the same board router the
+door holds (`AssetOptions.Handler`), so REST reaches the board with no network
+in between. A WebSocket cannot ride a scheme handler — the asset server answers
+an upgrade with 501 — so the page's two sockets are **tunnelled through Go**
+(`sockettunnel.go`, `busSocket.ts`): the page subscribes to `socket:<id>` on the
+Wails bus, asks `OpenSocket(id, path)`, Go dials the socket on the loopback door
+and puts every frame it hears on the bus, and the page's frames go back as
+`SendSocket`, one after another (two calls in flight are two goroutines, and
+the board refused a subscription that overtook its login). The protocol inside
+is untouched, so it works against an attached server as it does locally. The
+bootstrap tells the page with `window.pageOnWails`. Two traps of the scheme
+handler, both measured on macOS: WKWebView sends no `Content-Length`, so the
+request says 0 and `httputil.ReverseProxy` dropped every body
+(`boardRouter.ServeHTTP` says unknown instead); and WebKit hands the handler no
+body at all for a `FormData` or a `Blob`, so a form is sent as its encoded bytes
+(`sendableForm`). In `wails3 dev` the HMR client connects to Vite itself
+(`server.hmr.host` in `vite.config.ts`). The door still serves the page to
+whoever asks for it on loopback; taking that away is step 2 of
+`docs/client-server-plan.md`.
 
 **A server build has no door of its own** (`mode_server.go`). Wails' own HTTP
 server is the door there: it binds the address, refuses a foreign `Host` on a

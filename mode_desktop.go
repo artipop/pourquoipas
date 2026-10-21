@@ -138,8 +138,21 @@ func (o *origin) Stop() error {
 
 func (o *origin) host() string { return o.listener.Addr().String() }
 
-// url is where the window is pointed.
+// url is the loopback door: what other processes — an agent's board tools, a
+// script — are given.
 func (o *origin) url() string { return "http://" + o.host() + "/" }
+
+// pageURL is where a window is pointed: the page Wails itself serves, on
+// wails://. Requests go through the asset server to the same handler the door
+// holds, and the sockets ride the bus (sockettunnel.go).
+func (o *origin) pageURL() string { return "/" }
+
+// socketHost is where a tunnel dials its socket.
+func (o *origin) socketHost() string { return o.host() }
+
+// pageOnWails: the window's page is on wails://, so it opens its sockets
+// through Go and sends a file's bytes rather than a form (busSocket.ts).
+const pageOnWails = true
 
 // transport hands the front door to Wails as the IPC transport, which is how
 // it gets to serve the assets at all.

@@ -124,12 +124,12 @@ export default defineConfig(({mode}) => {
 
         // `npm run dev` is what `wails3 dev` starts (`common:dev:frontend`,
         // with the port on the command line), and nobody opens it directly:
-        // a development build's front door takes the page and its modules
-        // from here and serves them under its own origin with the bootstrap
-        // injected, while /api and /ws stay the board's (proxy.go). The HMR
-        // client connects back to that origin, and the door passes the upgrade
-        // through. So there is no proxy to configure here — the door is it.
-        server: {},
+        // a development build serves the page and its modules from here, with
+        // the bootstrap injected, while /api and /ws stay the board's
+        // (proxy.go). The window's page is on wails://, where the HMR client
+        // cannot open its socket against the page's origin, so it is told to
+        // connect to Vite itself — on 127.0.0.1, where dev:frontend binds it.
+        server: {hmr: {host: '127.0.0.1'}},
 
         // The dev server pre-bundles dependencies with esbuild, which knows
         // nothing of solid1Compat: a Solid 1 package bundled there resolves

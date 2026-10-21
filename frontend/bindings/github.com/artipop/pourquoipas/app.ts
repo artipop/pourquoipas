@@ -142,6 +142,13 @@ export function CloseShareWindow(): $CancellablePromise<void> {
 }
 
 /**
+ * CloseSocket closes a socket the page is done with.
+ */
+export function CloseSocket(id: string): $CancellablePromise<void> {
+    return $Call.ByID(3600748378, id);
+}
+
+/**
  * DetachServer puts this desktop back on its own board.
  */
 export function DetachServer(): $CancellablePromise<string> {
@@ -216,6 +223,14 @@ export function GetCardDiff(cardID: string): $CancellablePromise<string> {
  */
 export function GetInboxSorting(): $CancellablePromise<string> {
     return $Call.ByID(4190063719);
+}
+
+/**
+ * GetLocalAddress returns the address other processes on this machine reach
+ * the app at, e.g. "http://127.0.0.1:53114".
+ */
+export function GetLocalAddress(): $CancellablePromise<string> {
+    return $Call.ByID(3137441766);
 }
 
 /**
@@ -456,6 +471,14 @@ export function OpenInBrowser(url: string): $CancellablePromise<void> {
 }
 
 /**
+ * OpenSocket opens the socket at path for the page under the id it chose and
+ * subscribed to as "socket:<id>" (sockettunnel.go).
+ */
+export function OpenSocket(id: string, path: string): $CancellablePromise<void> {
+    return $Call.ByID(2798680112, id, path);
+}
+
+/**
  * PickDirectory opens the native folder picker and returns the chosen
  * absolute path ("" when the user cancels). A server build has no native
  * dialog to open, so it says so rather than returning an empty path the UI
@@ -572,6 +595,13 @@ export function SeedBoardAutomation(boardID: string): $CancellablePromise<void> 
  */
 export function SelectBoardSource(id: string): $CancellablePromise<string> {
     return $Call.ByID(1713442350, id);
+}
+
+/**
+ * SendSocket writes one frame to an open socket.
+ */
+export function SendSocket(id: string, data: string): $CancellablePromise<void> {
+    return $Call.ByID(1898611230, id, data);
 }
 
 /**

@@ -6,6 +6,7 @@ import {Board, BoardMember} from './blocks/board'
 import {OctoUtils} from './octoUtils'
 import {BoardCategoryWebsocketData, Category} from './store/sidebar'
 import {IAppWindow} from './types'
+import {openSocket} from './busSocket'
 
 // These are outgoing commands to the server
 type WSCommand = {
@@ -296,7 +297,7 @@ class WSClient {
         const protocol = (url.protocol === 'https:') ? 'wss:' : 'ws:'
         const wsServerUrl = `${protocol}//${url.host}${url.pathname.replace(/\/$/, '')}/ws`
         Utils.log(`WSClient open: ${wsServerUrl}`)
-        const ws = new WebSocket(wsServerUrl)
+        const ws = openSocket('/ws', () => wsServerUrl)
         this.ws = ws
 
         ws.onopen = () => {

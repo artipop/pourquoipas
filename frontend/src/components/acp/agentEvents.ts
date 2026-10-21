@@ -1,4 +1,5 @@
 import {goApp} from '../../goBridge'
+import {openSocket} from '../../busSocket'
 
 // What the agents are doing, as it happens: a session changed state, a stage
 // opened or closed, a card started waiting for a person.
@@ -43,7 +44,7 @@ const connect = (): void => {
     if (socket || handlers.size === 0) {
         return
     }
-    const ws = new WebSocket(socketURL())
+    const ws = openSocket('/acp/events/ws', socketURL)
     socket = ws
 
     ws.onopen = () => {

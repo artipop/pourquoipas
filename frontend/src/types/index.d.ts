@@ -14,5 +14,9 @@ export interface IAppWindow extends Window {
     // side behind this origin, and goApp (goBridge.ts) hands out its bindings.
     // Absent in a test unless it asks for one (src/test/goSide.ts).
     hasGoSide?: boolean
+
+    // Set by the same bootstrap in a desktop window, whose page is on wails://
+    // (busSocket.ts).
+    pageOnWails?: boolean
     webkit?: {messageHandlers: {nativeApp?: {postMessage: <T>(message: T) => void}}}
 }

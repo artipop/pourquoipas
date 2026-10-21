@@ -8,6 +8,7 @@ import Button from '../../widgets/buttons/button'
 import Dialog from '../dialog'
 
 import {goApp} from '../../goBridge'
+import {pageOnWails} from '../../busSocket'
 import {GoMessage, goMessage} from '../../goMessages'
 
 import './sourcesDialog.scss'
@@ -112,11 +113,21 @@ const SourcesDialog = (props: Props) => {
     const [error, setError] = createSignal('')
     const [busy, setBusy] = createSignal(false)
 
+    // Where a script posts: the address other processes reach the app at.
+    // A desktop window's own address is wails://, which no script can reach.
+    const [origin, setOrigin] = createSignal(window.location.origin)
+
     const refresh = async () => {
         if (!bindings?.ListSources) {
             return
         }
         try {
+            // A browser's own origin is right as it is; a server's local
+            // address may be 0.0.0.0.
+            const local = pageOnWails() ? await bindings.GetLocalAddress?.() : ''
+            if (local) {
+                setOrigin(local)
+            }
             setSources(JSON.parse(await bindings.ListSources()) || [])
             if (bindings.ListSourcePlugins) {
                 setPlugins(JSON.parse(await bindings.ListSourcePlugins()) || [])
@@ -305,7 +316,7 @@ const SourcesDialog = (props: Props) => {
                             </div>
                             <Show
                                 when={source.plugin}
-                                fallback={<code class='SourcesDialog__address'>{ingestURL(window.location.origin, source.name)}</code>}
+                                fallback={<code class='SourcesDialog__address'>{ingestURL(origin(), source.name)}</code>}
                             >
                                 {/* A plugin has no address to be fed on: it
                                     fetches. What it needs shown instead is

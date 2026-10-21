@@ -114,6 +114,14 @@ func (o *origin) url() string {
 	return "http://" + net.JoinHostPort(o.host, strconv.Itoa(o.port)) + "/"
 }
 
+// pageURL is what a browser is told to open.
+func (o *origin) pageURL() string { return o.url() }
+
+func (o *origin) socketHost() string { return net.JoinHostPort(o.host, strconv.Itoa(o.port)) }
+
+// pageOnWails: a browser's page is on the server's own origin.
+const pageOnWails = false
+
 // emitsOnBus: nothing in a server build listens on the Wails bus, and Wails
 // broadcasts it on /wails/events to anybody who connects, logged in or not.
 const emitsOnBus = false

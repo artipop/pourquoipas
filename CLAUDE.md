@@ -102,10 +102,15 @@ with the same title; what follows is the part that must not be forgotten.
 
 ### The front door owns the origin
 
-`frontdoor.go` is our HTTP server in front of everything: `/wails/` to the Wails
-runtime, the rest — HTML, `/api`, `/files`, `/ws` — to the board. A desktop build
-hands it to Wails as an `AssetServerTransport` on loopback. It exists because
-**Wails' asset server answers a WebSocket upgrade with 501**. **A server build
+`frontdoor.go` is our HTTP server: `/wails/` to the Wails runtime, the rest —
+HTML, `/api`, `/files`, `/ws` — to the board. A desktop build hands it to Wails
+as an `AssetServerTransport` on loopback; it is where other processes reach the
+app. **The window's page is on `wails://`** and goes through the asset server to
+the same board router; its sockets are **tunnelled over the Wails bus**
+(`sockettunnel.go`, `busSocket.ts`), because Wails' asset server answers a
+WebSocket upgrade with 501. Through that handler WKWebView sends no
+`Content-Length` and no body at all for a `FormData` — send a form with
+`sendableForm`. **A server build
 has none**: Wails' own server is the door, our routes are its asset middleware
 (`mode_server.go`), and Wails checks `Host` and `Origin` the way a server
 reached by any name needs. Nothing of ours goes on Wails' `/wails/events`, which
@@ -132,14 +137,15 @@ no session guards (`emitsOnBus`).
 committed; the page calls through it over the `@wailsio/runtime` it bundles,
 pinned to go.mod's Wails (`bindings_test.go`). **Every exported method of `App`
 is callable from the page**, so wiring `main` does itself stays unexported. The
-bootstrap in `proxy.go` only seeds the session and sets `window.hasGoSide`;
+bootstrap in `proxy.go` only seeds the session and sets `window.hasGoSide`
+(and `window.pageOnWails` in a desktop window);
 `goApp()` (`goBridge.ts`) hands out the imported service only when it is set,
 and every call site asks it. **No test reaches the runtime**: the setup file
 mocks the bindings module for the suite, and a test installs its Go side with
 `fakeGoSide` (`src/test/goSide.ts`), never a global.
 
 **Events come back over a socket, not the Wails bus** (`eventsws.go`,
-`/acp/events/ws`), because the bus only reaches windows the app owns and a page
+`/acp/events/ws`; tunnelled in a desktop window), because the bus only reaches windows the app owns and a page
 opened in a browser hears nothing. `emitter.go` sends every event both
 ways; the page listens only on the socket (`components/acp/agentEvents.ts`). A
 new UI event needs nothing but `Emit`.

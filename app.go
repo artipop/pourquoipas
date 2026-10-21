@@ -36,6 +36,13 @@ type App struct {
 	// boards is the page's own door: which board it is served. Switching aims
 	// it somewhere else, and the page reloads onto what it now answers.
 	boards *boardRouter
+	// sockets carries a desktop page's WebSockets over the bus
+	// (sockettunnel.go). Nil in a test that does not care.
+	sockets *socketTunnels
+	// local is the door other processes are given — a script posting to a
+	// source, an agent's tools — which a desktop page, on wails://, cannot
+	// read off its own address.
+	local string
 	// sources turns outside events into cards. Separate from mgr on purpose: a
 	// board of household chores wants cards from a phone and no agents at all.
 	sources *sources.Manager
@@ -575,6 +582,38 @@ func (a *App) SetAgentWorkdirMode(name, boardID, mode string) (string, error) {
 	}
 	out, _ := json.Marshal(entry)
 	return string(out), nil
+}
+
+// GetLocalAddress returns the address other processes on this machine reach
+// the app at, e.g. "http://127.0.0.1:53114".
+func (a *App) GetLocalAddress() string {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	return strings.TrimSuffix(a.local, "/")
+}
+
+// OpenSocket opens the socket at path for the page under the id it chose and
+// subscribed to as "socket:<id>" (sockettunnel.go).
+func (a *App) OpenSocket(id, path string) error {
+	if a.sockets == nil {
+		return errors.New("no sockets in this build")
+	}
+	return a.sockets.open(id, path)
+}
+
+// SendSocket writes one frame to an open socket.
+func (a *App) SendSocket(id, data string) error {
+	if a.sockets == nil {
+		return errors.New("no sockets in this build")
+	}
+	return a.sockets.send(id, data)
+}
+
+// CloseSocket closes a socket the page is done with.
+func (a *App) CloseSocket(id string) {
+	if a.sockets != nil {
+		a.sockets.close(id)
+	}
 }
 
 // GetServerAttachment reports which board this desktop works — its own, or a

@@ -506,7 +506,11 @@ func main() {
 	// application instance rather than through a context, so there is no
 	// startup hook to wait for before an event can be delivered.
 	app.setApplication(wapp)
-	app.setOrigin(front.url())
+	app.setOrigin(front.pageURL())
+	app.mu.Lock()
+	app.local = front.url()
+	app.mu.Unlock()
+	app.sockets = newSocketTunnels(front.socketHost, func() *application.App { return wapp })
 	if mgr != nil {
 		// Where an agent's board tools call back to. Known only now: the front
 		// door picks its port when it binds.
@@ -530,12 +534,12 @@ func main() {
 	if req, ok := shareURLFrom(os.Args); ok {
 		app.openShare(req)
 	} else {
-		newMainWindow(wapp, front.url())
+		newMainWindow(wapp, front.pageURL())
 	}
 
 	// With the app outliving its windows, the Dock icon is a way back in as
 	// much as the menu bar one is.
-	watchDockReopen(wapp, front.url())
+	watchDockReopen(wapp, front.pageURL())
 
 	if err := wapp.Run(); err != nil {
 		shutdown()
