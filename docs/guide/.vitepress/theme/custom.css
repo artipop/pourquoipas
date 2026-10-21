@@ -1,30 +1,69 @@
 /* The guide speaks the product's design language: the values below are the
-   tokens from frontend/src/styles/_tokens.scss, the same ones the landing page
-   carries in site/styles.css — dark is the screen, light is the paper, and the
-   machine speaks in tracked caps while a person speaks in prose.
+   tokens from frontend/src/styles/_tokens.scss. The look is made from the app
+   icon — cream paper, the navy hull, mustard for the funnel — and the type is
+   the app's: Fira Sans Condensed caps for what the system names, Inter for
+   prose, Playfair Display italic for names, JetBrains Mono for code.
 
    VitePress paints from its own variables, so this file is a translation of
    the tokens into that vocabulary rather than a second theme. `:root` is the
    paper here because that is where the default theme keeps its light values;
-   the screen lives under `.dark`, which config.mjs makes the one a reader
+   the hull lives under `.dark`, which config.mjs makes the one a reader
    arrives in. */
 
 @font-face {
-    font-family: 'Roboto Condensed Variable';
+    font-family: 'Inter Variable';
     font-style: normal;
     font-display: swap;
     font-weight: 100 900;
-    src: url(./fonts/roboto-condensed-latin-wght-normal.woff2) format('woff2-variations');
+    src: url('./fonts/inter-latin-wght-normal.woff2') format('woff2-variations');
     unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
         U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 @font-face {
-    font-family: 'Roboto Condensed Variable';
+    font-family: 'Inter Variable';
     font-style: normal;
     font-display: swap;
     font-weight: 100 900;
-    src: url(./fonts/roboto-condensed-cyrillic-wght-normal.woff2) format('woff2-variations');
+    src: url('./fonts/inter-cyrillic-wght-normal.woff2') format('woff2-variations');
+    unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+
+@font-face {
+    font-family: 'Fira Sans Condensed';
+    font-style: normal;
+    font-display: swap;
+    font-weight: 600;
+    src: url('./fonts/fira-sans-condensed-latin-600-normal.woff2') format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+        U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+    font-family: 'Fira Sans Condensed';
+    font-style: normal;
+    font-display: swap;
+    font-weight: 600;
+    src: url('./fonts/fira-sans-condensed-cyrillic-600-normal.woff2') format('woff2');
+    unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+
+@font-face {
+    font-family: 'Playfair Display Variable';
+    font-style: italic;
+    font-display: swap;
+    font-weight: 400 900;
+    src: url('./fonts/playfair-display-latin-wght-italic.woff2') format('woff2-variations');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+        U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+    font-family: 'Playfair Display Variable';
+    font-style: italic;
+    font-display: swap;
+    font-weight: 400 900;
+    src: url('./fonts/playfair-display-cyrillic-wght-italic.woff2') format('woff2-variations');
     unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
 }
 
@@ -33,7 +72,7 @@
     font-style: normal;
     font-display: swap;
     font-weight: 100 800;
-    src: url(./fonts/jetbrains-mono-latin-wght-normal.woff2) format('woff2-variations');
+    src: url('./fonts/jetbrains-mono-latin-wght-normal.woff2') format('woff2-variations');
     unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
         U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
@@ -43,86 +82,103 @@
     font-style: normal;
     font-display: swap;
     font-weight: 100 800;
-    src: url(./fonts/jetbrains-mono-cyrillic-wght-normal.woff2) format('woff2-variations');
+    src: url('./fonts/jetbrains-mono-cyrillic-wght-normal.woff2') format('woff2-variations');
     unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
 }
 
 /* --------------------------------------------------------------- the paper */
 
 :root {
-    --vp-font-family-base: 'Roboto Condensed Variable', sans-serif;
+    --vp-font-family-base: 'Inter Variable', sans-serif;
     --vp-font-family-mono: 'JetBrains Mono Variable', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --guide-font-label: 'Fira Sans Condensed', sans-serif;
+    --guide-font-title: 'Playfair Display Variable', serif;
 
-    --vp-c-bg: #f0ede5;
-    --vp-c-bg-alt: #faf8f4;
-    --vp-c-bg-elv: #faf8f4;
-    --vp-c-bg-soft: #e9e5db;
+    --vp-c-bg: #f5e8d1;
+    --vp-c-bg-alt: #fbf5ea;
+    --vp-c-bg-elv: #fbf5ea;
+    --vp-c-bg-soft: #ecdcc0;
 
-    --vp-c-text-1: rgba(22, 20, 16, 1);
-    --vp-c-text-2: rgba(22, 20, 16, 0.72);
-    --vp-c-text-3: rgba(22, 20, 16, 0.5);
+    --vp-c-text-1: rgba(12, 27, 41, 1);
+    --vp-c-text-2: rgba(12, 27, 41, 0.72);
+    --vp-c-text-3: rgba(12, 27, 41, 0.5);
 
-    --vp-c-divider: rgba(22, 20, 16, 0.14);
-    --vp-c-border: rgba(22, 20, 16, 0.2);
-    --vp-c-gutter: rgba(22, 20, 16, 0.14);
+    --vp-c-divider: rgba(12, 27, 41, 0.14);
+    --vp-c-border: rgba(12, 27, 41, 0.2);
+    --vp-c-gutter: rgba(12, 27, 41, 0.14);
 
-    --vp-c-brand-1: #b3261e;
-    --vp-c-brand-2: #9a201a;
-    --vp-c-brand-3: #b3261e;
-    --vp-c-brand-soft: rgba(179, 38, 30, 0.14);
+    /* Links are the sea, as in the app; the mustard is too light to read as
+       text on cream and stays for the marks. */
+    --vp-c-brand-1: #143d4c;
+    --vp-c-brand-2: #0c1b29;
+    --vp-c-brand-3: #143d4c;
+    --vp-c-brand-soft: rgba(204, 140, 71, 0.22);
 
     --vp-c-tip-1: #1b6e4e;
     --vp-c-tip-soft: rgba(27, 110, 78, 0.14);
-    --vp-c-warning-1: #a87014;
-    --vp-c-warning-soft: rgba(168, 112, 20, 0.14);
+    --vp-c-warning-1: #8c5a1c;
+    --vp-c-warning-soft: rgba(204, 140, 71, 0.18);
+    --vp-c-danger-1: #a3462c;
+    --vp-c-danger-soft: rgba(163, 70, 44, 0.14);
 
-    --vp-button-brand-bg: #b3261e;
-    --vp-button-brand-hover-bg: #9a201a;
-    --vp-button-brand-active-bg: #9a201a;
+    --vp-button-brand-bg: #0c1b29;
+    --vp-button-brand-hover-bg: #143d4c;
+    --vp-button-brand-active-bg: #143d4c;
     --vp-button-brand-border: transparent;
-    --vp-button-brand-text: #f0ede5;
+    --vp-button-brand-text: #f5e8d1;
+    --vp-button-alt-bg: rgba(12, 27, 41, 0.08);
+    --vp-button-alt-hover-bg: rgba(12, 27, 41, 0.14);
+    --vp-button-alt-text: #0c1b29;
 
-    --vp-code-block-bg: #faf8f4;
+    --vp-code-block-bg: #fbf5ea;
     --vp-layout-max-width: 1400px;
 
     /* Inline code is a name, not a link: the theme paints it in the brand
-       colour, and a page about `npx` and adapters then reads as a page of red
-       words. */
-    --vp-code-color: rgba(22, 20, 16, 0.92);
-    --vp-code-bg: rgba(22, 20, 16, 0.06);
+       colour, and a page about `npx` and adapters then reads as a page of
+       coloured words. */
+    --vp-code-color: rgba(12, 27, 41, 0.92);
+    --vp-code-bg: rgba(12, 27, 41, 0.06);
 }
 
-/* -------------------------------------------------------------- the screen */
+/* ---------------------------------------------------------------- the hull */
 
 .dark {
-    --vp-c-bg: #0c0c0e;
-    --vp-c-bg-alt: #18181b;
-    --vp-c-bg-elv: #18181b;
-    --vp-c-bg-soft: #18181b;
+    --vp-c-bg: #0c1b29;
+    --vp-c-bg-alt: #07121c;
+    --vp-c-bg-elv: #13283a;
+    --vp-c-bg-soft: #13283a;
 
-    --vp-c-text-1: rgba(233, 233, 236, 1);
-    --vp-c-text-2: rgba(233, 233, 236, 0.68);
-    --vp-c-text-3: rgba(233, 233, 236, 0.48);
+    --vp-c-text-1: rgba(241, 228, 204, 1);
+    --vp-c-text-2: rgba(241, 228, 204, 0.7);
+    --vp-c-text-3: rgba(241, 228, 204, 0.5);
 
-    --vp-c-divider: rgba(233, 233, 236, 0.1);
-    --vp-c-border: rgba(233, 233, 236, 0.2);
-    --vp-c-gutter: rgba(233, 233, 236, 0.1);
+    --vp-c-divider: rgba(241, 228, 204, 0.12);
+    --vp-c-border: rgba(241, 228, 204, 0.2);
+    --vp-c-gutter: rgba(241, 228, 204, 0.1);
 
-    --vp-c-brand-1: #e24234;
-    --vp-c-brand-2: #f05a4c;
-    --vp-c-brand-3: #e24234;
-    --vp-c-brand-soft: rgba(226, 66, 52, 0.16);
+    --vp-c-brand-1: #7fbfd0;
+    --vp-c-brand-2: #a6d3df;
+    --vp-c-brand-3: #7fbfd0;
+    --vp-c-brand-soft: rgba(204, 140, 71, 0.22);
 
     --vp-c-tip-1: #3db887;
     --vp-c-tip-soft: rgba(61, 184, 135, 0.16);
-    --vp-c-warning-1: #ffb44c;
-    --vp-c-warning-soft: rgba(255, 180, 76, 0.16);
+    --vp-c-warning-1: #e0a85e;
+    --vp-c-warning-soft: rgba(224, 168, 94, 0.16);
+    --vp-c-danger-1: #f08a6c;
+    --vp-c-danger-soft: rgba(240, 138, 108, 0.16);
 
-    --vp-button-brand-text: #08080a;
+    --vp-button-brand-bg: #f1e4cc;
+    --vp-button-brand-hover-bg: #fff;
+    --vp-button-brand-active-bg: #fff;
+    --vp-button-brand-text: #0c1b29;
+    --vp-button-alt-bg: rgba(241, 228, 204, 0.1);
+    --vp-button-alt-hover-bg: rgba(241, 228, 204, 0.16);
+    --vp-button-alt-text: #f1e4cc;
 
-    --vp-code-block-bg: #101013;
-    --vp-code-color: rgba(233, 233, 236, 0.92);
-    --vp-code-bg: rgba(233, 233, 236, 0.08);
+    --vp-code-block-bg: #07121c;
+    --vp-code-color: rgba(241, 228, 204, 0.92);
+    --vp-code-bg: rgba(241, 228, 204, 0.08);
 }
 
 /* ------------------------------------------------------------ square corners */
@@ -139,21 +195,36 @@
     border-radius: 2px;
 }
 
-/* ------------------------------------------------------------ the two voices */
+/* ------------------------------------------------------------ the voices */
 
 /* Everything the system names — the sections in the sidebar, the eyebrow over
-   a heading — is the machine talking, and the machine talks in tracked caps. */
+   a heading — is said in condensed caps, as on the board's columns. */
 .VPSidebarItem.level-0 > .item > .text,
 .VPDocOutlineItem > .root > .outline-title,
 .VPDocFooter .prev-next .desc {
+    font-family: var(--guide-font-label);
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.16em;
+    letter-spacing: 0.08em;
     font-size: 12px;
     opacity: 0.8;
 }
 
-.VPDoc h1 {
-    letter-spacing: -0.01em;
+/* A page's name is lettered like the ship's. */
+.VPDoc h1,
+.VPHero .name,
+.VPHero .text,
+.VPNavBarTitle .title {
+    font-family: var(--guide-font-title);
+    font-style: italic;
+    font-weight: 500;
+    letter-spacing: 0;
+}
+
+.vp-doc h1,
+.vp-doc h2,
+.vp-doc h3 {
+    text-wrap: balance;
 }
 
 /* Prose, and the measure a person can actually read. The default theme sets
@@ -161,6 +232,7 @@
 .vp-doc p,
 .vp-doc li {
     max-width: 78ch;
+    text-wrap: pretty;
 }
 
 .vp-doc table {
@@ -176,9 +248,4 @@
 
 .vp-doc div[class*='language-'] {
     border: 1px solid var(--vp-c-divider);
-}
-
-/* The home page's own heading: the product's name, spaced like a stamp. */
-.VPHero .name {
-    letter-spacing: 0.16em;
 }
