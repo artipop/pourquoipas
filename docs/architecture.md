@@ -15,7 +15,10 @@ the Wails runtime, everything else — HTML, `/api`, `/files` and the `/ws` sock
 to the board. A desktop build hands it to Wails as an `AssetServerTransport`
 (loopback, random port) and points the window at it rather than at the `wails://`
 origin; a server build puts it in front of Wails' own HTTP server, which moves to a
-private port.
+private port. Wails guards that port itself (since beta.31: a loopback `Host` only,
+same-origin calls only), so the front door, having made its own checks, forwards
+with a loopback `Host` and no `Origin` (`mode_server.go`) — otherwise a page served
+under the tailnet name or a public one gets 403 from `/wails/`.
 
 This exists because **Wails' asset server answers a WebSocket upgrade with 501** and
 its response writer cannot be hijacked, so `/ws` can never be served through it. One

@@ -114,7 +114,15 @@ func (o *origin) start() {
 	if err != nil {
 		log.Fatalf("front door: %v", err)
 	}
-	wails := httputil.NewSingleHostReverseProxy(target)
+	wails := &httputil.ReverseProxy{Rewrite: func(r *httputil.ProxyRequest) {
+		// Wails guards its own port against DNS rebinding and cross-origin
+		// calls, and would refuse the tailnet name or any public one with 403.
+		// The front door has already made both checks against the authority it
+		// was published under, so Wails is shown a loopback Host and no origin.
+		r.SetURL(target)
+		r.Out.Header.Del("Origin")
+		r.Out.Header.Del("Sec-Fetch-Site")
+	}}
 	server := &http.Server{Handler: newFrontDoor(wails, o.acp, o.ingest, o.board, o.host, o.session)}
 	go func() {
 		if err := server.Serve(o.listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
