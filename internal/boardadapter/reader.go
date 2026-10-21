@@ -14,9 +14,8 @@ import (
 // The board as a phone reads it.
 //
 // The page at /m has no board API of its own — it is served the bindings and
-// the event socket and nothing else, which is what lets the same page work
-// through the tailnet door — so what it needs from the board comes through
-// here. It is a small, flat surface on purpose: a phone shows a list of cards
+// the event socket and nothing else — so what it needs from the board comes
+// through here. It is a small, flat surface on purpose: a phone shows a list of cards
 // and moves one, and everything else about a board belongs on a screen with
 // room for it.
 //

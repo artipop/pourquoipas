@@ -10,7 +10,6 @@ import {aiEnabled} from '../../aiSwitch'
 import Dialog from '../dialog'
 
 import ServerPanel, {isServerAttachAvailable} from '../acp/serverPanel'
-import TailnetPanel, {isTailnetAvailable} from '../acp/tailnetPanel'
 import MachineMiscPanel from '../acp/machineMiscPanel'
 
 import AppPanel from './appPanel'
@@ -21,7 +20,7 @@ import UpdatesPanel, {isUpdatesAvailable} from './updatesPanel'
 import './appSettingsDialog.scss'
 
 // Everything this app is asked about itself rather than about a board: how it
-// looks and what language it speaks, whether the board is on the tailnet, what
+// looks and what language it speaks, whose board it works, what
 // comes in and goes out as an archive, and what it is allowed to interrupt
 // with.
 //
@@ -92,28 +91,16 @@ const AppSettingsDialog = (props: Props) => {
             body: UpdatesPanel,
         },
         {
-
-            // Beside the tailnet: the two are the same kind of question — who
-            // may reach this board — asked about people and about devices.
             id: 'people',
             name: () => intl.formatMessage({id: 'People.title', defaultMessage: 'People'}),
             when: administersInstall,
             body: PeoplePanel,
         },
         {
-
-            // Before the tailnet, because the two are asked in that order: whose
-            // board this is, and then where it can be reached from.
             id: 'server',
             name: () => intl.formatMessage({id: 'Server.title', defaultMessage: 'Server'}),
             when: isServerAttachAvailable,
             body: ServerPanel,
-        },
-        {
-            id: 'tailnet',
-            name: () => intl.formatMessage({id: 'Tailnet.title', defaultMessage: 'Access from a phone'}),
-            when: isTailnetAvailable,
-            body: TailnetPanel,
         },
         {
             id: 'data',

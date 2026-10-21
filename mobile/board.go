@@ -9,7 +9,7 @@ import (
 // The address of the board, as a person types it and as the webview needs it.
 //
 // What is typed on a phone is a machine name — "board", or
-// "board.tail1234.ts.net" — and what the webview must be given is an absolute
+// "board.example.com" — and what the webview must be given is an absolute
 // https URL ending at the page written for a phone. Everything between the two
 // is here, and it is a pure function so it can be tested without a phone.
 
@@ -20,9 +20,9 @@ const mobileRoute = "/m"
 
 // boardURL turns what somebody typed into the address to load.
 //
-// https, not http, and not negotiable: the front door on a tailnet listens with
-// a real certificate (tsnetdoor.go), and a webview refuses plain HTTP by
-// default on both platforms. An address typed with http:// is a person
+// https, not http, and not negotiable: a server published to the internet sits
+// behind a real certificate, and a webview refuses plain HTTP by default on
+// both platforms. An address typed with http:// is a person
 // describing what they remember, not choosing a transport.
 func boardURL(typed string) (string, error) {
 	host := strings.TrimSpace(typed)
@@ -42,9 +42,9 @@ func boardURL(typed string) (string, error) {
 	return parsed.String(), nil
 }
 
-// machineLabel is what a tab is called. Machines on one tailnet differ in their
-// first label and agree on everything after it — "board.tail1234.ts.net" beside
-// "laptop.tail1234.ts.net" — and a tab on a phone has room for one word, so the
+// machineLabel is what a tab is called. Servers on one domain differ in their
+// first label and agree on everything after it — "board.example.com" beside
+// "team.example.com" — and a tab on a phone has room for one word, so the
 // first label is the name and the rest is noise.
 func machineLabel(typed string) string {
 	host := strings.TrimSpace(typed)

@@ -11,5 +11,4 @@ field:
 - **"Dark"**;
 - **"As the system is"** — the board turns light and dark with the system.
 
-The choice applies at once, is kept by the install, survives a restart and
-holds on a phone through [Access from a phone](./index.md#access-from-a-phone).
+The choice applies at once, is kept by the install and survives a restart.

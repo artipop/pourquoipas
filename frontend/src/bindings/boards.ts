@@ -5,8 +5,8 @@ import {goApp} from '../goBridge'
 // The board as the bindings expose it.
 //
 // Every call here is a binding rather than the board's own REST API, which is
-// what keeps the pages built on it working through the tailnet door exactly as
-// they do in the window: the front door serves main.App.* to a phone, and the
+// what keeps the pages built on it working on a phone exactly as they do in
+// the window: the front door serves main.App.* to a phone, and the
 // store, the websocket and the whole board client are not carried onto a screen
 // that shows a list and files one card. Two pages read the board this way — the
 // phone (/m) and the share dialog (/share) — and both are small on purpose.

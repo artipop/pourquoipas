@@ -85,26 +85,6 @@ The Go code is platform-agnostic — the same files build for every OS:
   `workspace.go` gives it a branch to work on. There was a period when a stage
   was the vendor CLI in a pty instead, with the app drawing a terminal beside
   the card; it is gone, and `docs/decisions.md` says what it cost.
-- `tsnetdoor.go` — **the board on your own tailnet**, which is how a phone
-  reaches it. The app becomes a Tailscale node itself
-  ([`tsnet`](https://tailscale.com/docs/features/tsnet): userspace, no daemon,
-  no root, nothing to install) and serves the same front door there over TLS, so
-  a phone webview gets a real certificate rather than an excuse. Who is calling
-  is answered by `WhoIs`: the gate lets in the tailnet user this node was logged
-  in as, and nobody else unless `allowedLogins` names them. It stands in front of
-  the page too, because fetching the page is how a caller gets the board's
-  session token.
-
-  Off until `~/Library/Application Support/pourquoipas/tailnet/settings.json` says
-  otherwise:
-
-  ```json
-  {"enabled": true, "hostname": "board"}
-  ```
-
-  First run has no credentials, so the login URL is opened in the browser;
-  `authKey` in the same file skips that. The node's state lives beside the
-  settings, so later launches come up by themselves.
 - `app.go` — the bound service. Its exported methods are what the frontend
   calls; `OpenInBrowser` is the one every outward link ends in.
 - `mode_desktop.go` / `mode_server.go` — everything that differs between a
@@ -116,7 +96,7 @@ The Go code is platform-agnostic — the same files build for every OS:
 **On a phone**, the board is the same board: `frontend/src/pages/mobile` is the
 `/m` route — the inbox, one board's cards, and what is waiting for a person,
 answered in place — and [`mobile/`](mobile/README.md) is a small Wails app for
-iOS and Android that is one window onto it, over the tailnet door above. It is
+iOS and Android that is one window onto it on a board server. It is
 its own Go module because the mobile build compiles `package main` from the
 module root, and this one is a board server with SQLite, git and a pty.
 
@@ -208,7 +188,7 @@ There is deliberately **no `window.webSocketBaseURL`** here, unlike v2:
   `board.jsonl`.
 - **Where a setting lives is decided by whose it is.** The registries are the
   machine's — which agents are installed, where they deploy, how they reach the
-  network, whether the board is published on the tailnet — so they are one
+  network — so they are one
   dialog opened from the sidebar's *«Настройки → Эта машина…»*, beside the theme
   and the language, and are reachable with no board open at all. What a board
   keeps — the folders its agents work in, what those agents are told first, where

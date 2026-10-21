@@ -31,10 +31,9 @@ import (
 // frames report to the tabs is one number each — how many things are waiting
 // there — so which desktop needs a person is visible without opening its tab.
 //
-// Getting there is Tailscale's job: the desktop publishes the front door on the
-// tailnet (tsnetdoor.go), the phone has the Tailscale app, and the address is a
-// tailnet name. Nothing of ours is on the public internet, and nothing of ours
-// authenticates — the front door checks the caller's tailnet identity instead.
+// What it opens is a board server, by the address it is published under; the
+// server asks for a login. A desktop publishes nothing off its own machine
+// (docs/todo.md has the plan for the phone).
 
 //go:embed all:frontend
 var assets embed.FS

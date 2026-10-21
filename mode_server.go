@@ -36,7 +36,6 @@ type origin struct {
 	board       http.Handler
 	acp         http.Handler
 	ingest      http.Handler
-	tailnet     *tailnetController
 	privatePort int
 	host        string
 	// session says whether a request carries a live board session; nil in
@@ -46,7 +45,7 @@ type origin struct {
 
 const defaultServerPort = 8080
 
-func newOrigin(board, acp, ingest http.Handler, tailnet *tailnetController, session func(string) bool) (*origin, error) {
+func newOrigin(board, acp, ingest http.Handler, session func(string) bool) (*origin, error) {
 	host := envOnce("SERVER_HOST", "WAILS_SERVER_HOST")
 	if host == "" {
 		host = "localhost"
@@ -78,7 +77,6 @@ func newOrigin(board, acp, ingest http.Handler, tailnet *tailnetController, sess
 		board:       board,
 		acp:         acp,
 		ingest:      ingest,
-		tailnet:     tailnet,
 		privatePort: private,
 		host:        net.JoinHostPort(host, strconv.Itoa(port)),
 		session:     session,
@@ -116,7 +114,7 @@ func (o *origin) start() {
 	}
 	wails := &httputil.ReverseProxy{Rewrite: func(r *httputil.ProxyRequest) {
 		// Wails guards its own port against DNS rebinding and cross-origin
-		// calls, and would refuse the tailnet name or any public one with 403.
+		// calls, and would refuse any name but localhost with 403.
 		// The front door has already made both checks against the authority it
 		// was published under, so Wails is shown a loopback Host and no origin.
 		r.SetURL(target)
@@ -129,12 +127,6 @@ func (o *origin) start() {
 			log.Fatalf("front door: %v", err)
 		}
 	}()
-	// The tailnet gets a front door of its own rather than this one: the guards
-	// are keyed to the authority the page is served under, and there it is a
-	// tailnet name, not the address this build was published under.
-	o.tailnet.publish(func(allowedHost string) http.Handler {
-		return newFrontDoor(wails, o.acp, o.ingest, o.board, allowedHost, o.session)
-	})
 }
 
 func (o *origin) url() string { return "http://" + o.host + "/" }

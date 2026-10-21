@@ -118,10 +118,9 @@ answers a WebSocket upgrade with 501**.
   exception: the page bundles the Wails runtime, so nothing it needs before a
   login is behind the guard. A desktop joins a server by logging in
   (`attach.go`) and keeps its agents.
-- `tsnetdoor.go` is the only supported way off the machine: the same front door
-  published as a node of the user's tailnet (`tsnet`, `ListenTLS`), gated by
-  `WhoIs` in front of *everything*, page included, because the page hands out the
-  board's session token. It gets a front door built for its own authority.
+- **A desktop publishes nothing off its own machine.** The tailnet door that
+  did was removed (`docs/deferred.md`); the way to reach a board from elsewhere
+  is a server build. Where the phone goes next is a plan in `docs/todo.md`.
 
 ### The page talks to Go through generated bindings
 
@@ -137,7 +136,7 @@ mocks the bindings module for the suite, and a test installs its Go side with
 
 **Events come back over a socket, not the Wails bus** (`eventsws.go`,
 `/acp/events/ws`), because the bus only reaches windows the app owns and a page
-served through the tailnet hears nothing. `emitter.go` sends every event both
+opened in a browser hears nothing. `emitter.go` sends every event both
 ways; the page listens only on the socket (`components/acp/agentEvents.ts`). A
 new UI event needs nothing but `Emit`.
 
@@ -146,8 +145,8 @@ nothing of the board's own API — everything comes from `main.App.*` and the ev
 socket (`bindings/boards.ts`). `router.test.tsx` guards that the board's
 catch-all route does not swallow `/m`. **`mobile/` is a second Go module** because
 `wails3 ios` compiles `package main` from the module root, and this root's main
-is a board server with cgo SQLite; the phone app is a window per machine onto
-`https://<machine>.<tailnet>/m`. `mobile/README.md` has the commands.
+is a board server with cgo SQLite; the phone app is a window per server onto
+`https://<server>/m`. `mobile/README.md` has the commands.
 
 ### The page is Solid, and its state is a store rather than Redux
 

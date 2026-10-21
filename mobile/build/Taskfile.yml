@@ -72,8 +72,8 @@ tasks:
   build:frontend:
     summary: Nothing to build — the frontend is one embedded HTML file
     # This app carries a single page of its own, asking where the board is;
-    # everything after that is the board's own page, served by the front door
-    # over the tailnet. So there is no npm project, no bundler and no
+    # everything after that is the board's own page, served by the board
+    # server. So there is no npm project, no bundler and no
     # generated bindings (the page calls Call.ByName, as the board's does) —
     # `go:embed all:frontend` in main.go is the whole of it. The platform
     # Taskfiles depend on this task by name, so it stays and does nothing.

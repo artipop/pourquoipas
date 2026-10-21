@@ -35,7 +35,6 @@ type origin struct {
 	board    http.Handler
 	acp      http.Handler
 	ingest   http.Handler
-	tailnet  *tailnetController
 	server   *http.Server
 	// session says whether a request carries a live board session; nil in
 	// single-user mode, where nothing does. See identity.go.
@@ -45,7 +44,7 @@ type origin struct {
 // newOrigin binds the front door's listener up front, so its address is known
 // before the application — and therefore the window — is created. Serving
 // starts later, when Wails hands over the asset handler.
-func newOrigin(board, acp, ingest http.Handler, tailnet *tailnetController, session func(string) bool) (*origin, error) {
+func newOrigin(board, acp, ingest http.Handler, session func(string) bool) (*origin, error) {
 	listener, err := listenLoopback(0)
 	if err != nil {
 		return nil, fmt.Errorf("front door: %w", err)
@@ -56,7 +55,6 @@ func newOrigin(board, acp, ingest http.Handler, tailnet *tailnetController, sess
 		board:         board,
 		acp:           acp,
 		ingest:        ingest,
-		tailnet:       tailnet,
 		session:       session,
 	}, nil
 }
@@ -71,12 +69,6 @@ func (o *origin) ServeAssets(assetHandler http.Handler) error {
 			log.Printf("front door stopped: %v", err)
 		}
 	}()
-	// The tailnet gets a front door of its own rather than this one: the guards
-	// are keyed to the authority the page is served under, and there it is a
-	// tailnet name, not this loopback address.
-	o.tailnet.publish(func(allowedHost string) http.Handler {
-		return newFrontDoor(assetHandler, o.acp, o.ingest, o.board, allowedHost, o.session)
-	})
 	// The port is new every launch, so the column feed's bridge learns it
 	// from a file (internal/feedmcp). A server build has an address that does
 	// not move and is given it instead.

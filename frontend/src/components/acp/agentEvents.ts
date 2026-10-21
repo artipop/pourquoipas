@@ -5,9 +5,9 @@ import {goApp} from '../../goBridge'
 //
 // It arrives over one socket on the front door (/acp/events/ws) rather than
 // over window.runtime.EventsOn, which is the Wails event bus. The bus reaches
-// the windows the desktop app owns and stops there, so a board opened on a
-// phone through the tailnet door — the same page, served by the same front
-// door — heard nothing at all. One socket for every client is both simpler and
+// the windows the desktop app owns and stops there, so a board opened in a
+// browser or on a phone — the same page, served by the same front door —
+// heard nothing at all. One socket for every client is both simpler and
 // the only thing that works everywhere.
 //
 // The socket is shared: every subscriber on the page is a handler in the map

@@ -19,7 +19,7 @@ import './sourcesDialog.scss'
 // The address a source is fed on is this page's own origin — the front door
 // serves both — so it is composed here rather than asked for. Which door you
 // are looking through is which address you get, which is exactly right: a phone
-// opens the board over the tailnet and sees the tailnet address.
+// that opened the board by its server's name sees that name.
 
 export type SourceRule = {
     name?: string

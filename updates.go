@@ -188,8 +188,8 @@ type updateState struct {
 const updateEvent = "acp:update"
 
 // updateController owns the Updater, the settings file and the snapshot the UI
-// reads. It exists for the same reason tailnetController does — the pieces
-// arrive at different times and the switch keeps working long afterwards.
+// reads. The pieces arrive at different times and the switch keeps working
+// long afterwards.
 type updateController struct {
 	up      *updater.Updater
 	emitter *wailsEmitter

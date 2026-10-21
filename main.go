@@ -71,12 +71,8 @@ func acpDataDir() (string, error) { return appDataDir("acp", 0o750) }
 // what it has already seen.
 func sourcesDataDir() (string, error) { return appDataDir("sources", 0o750) }
 
-// tailnetDataDir returns where the tailnet door keeps its settings and the
-// node's own state. Tighter than the rest: it holds an auth key.
-func tailnetDataDir() (string, error) { return appDataDir("tailnet", 0o700) }
-
 // attachDataDir returns where the address of the hosted board this desktop is
-// attached to is kept. Tight like the tailnet's: it names a server somebody
+// attached to is kept. Tighter than the rest: it names a server somebody
 // works on, and the session for it is in the credential store beside it.
 func attachDataDir() (string, error) { return appDataDir("server", 0o700) }
 
@@ -283,18 +279,6 @@ func main() {
 	app.board = lists
 	feed.SetLists(lists)
 
-	// The tailnet door publishes the same front door to the user's own tailnet,
-	// so a phone can reach the board. Off unless its settings file says
-	// otherwise; a bad settings file disables it rather than stopping the app,
-	// which is the same bargain the ACP config gets.
-	var tailnet *tailnetController
-	if dir, err := tailnetDataDir(); err != nil {
-		log.Printf("tailnet: disabled, no data dir: %v", err)
-	} else if tailnet, err = newTailnetController(filepath.Join(dir, "settings.json"), filepath.Join(dir, "state"), app.OpenInBrowser); err != nil {
-		log.Printf("tailnet: disabled, settings error: %v", err)
-		tailnet = nil
-	}
-	app.tailnet = tailnet
 	app.attach = attach
 	app.boards = router
 
@@ -305,7 +289,7 @@ func main() {
 	// board. Nil on a desktop, which is what "nothing authenticates a user"
 	// means (frontdoor.go).
 	sessionGuard := newSessionGuard(srv.App())
-	front, err := newOrigin(handler, acpSockets, ingest, tailnet, sessionGuard)
+	front, err := newOrigin(handler, acpSockets, ingest, sessionGuard)
 	if err != nil {
 		log.Fatalf("failed to open the front door: %v", err)
 	}
@@ -464,7 +448,6 @@ func main() {
 		if mgr != nil {
 			mgr.Shutdown(5 * time.Second)
 		}
-		tailnet.close()
 		app.updates.close()
 		stopSorter()
 		if sourcePlugins != nil {

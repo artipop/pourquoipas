@@ -104,17 +104,17 @@ func TestFrontDoorTakesTheOtherLoopbackNameButNoOtherSite(t *testing.T) {
 	}
 }
 
-// The tailnet door serves the same handler over TLS (tsnetdoor.go), so the
-// page's own origin is https there. Without this the phone's every binding call
-// and both sockets would be refused as somebody else's site — and the board
-// would look broken in a way nothing in the page could explain.
+// A server published behind TLS serves the page from an https origin while the
+// door speaks HTTP. Without this every binding call and both sockets would be
+// refused as somebody else's site — and the board would look broken in a way
+// nothing in the page could explain.
 func TestFrontDoorAcceptsItsOwnOriginOverTLS(t *testing.T) {
-	door := newFrontDoor(named("wails"), named("acp"), named("ingest"), named("board"), "board.tail1234.ts.net", nil)
+	door := newFrontDoor(named("wails"), named("acp"), named("ingest"), named("board"), "board.example.com", nil)
 
 	for _, path := range []string{"/wails/runtime", "/acp/events/ws"} {
 		req := httptest.NewRequest(http.MethodGet, path, nil)
-		req.Host = "board.tail1234.ts.net"
-		req.Header.Set("Origin", "https://board.tail1234.ts.net")
+		req.Host = "board.example.com"
+		req.Header.Set("Origin", "https://board.example.com")
 		rec := httptest.NewRecorder()
 		door.ServeHTTP(rec, req)
 		if rec.Code != http.StatusOK {

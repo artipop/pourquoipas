@@ -3,7 +3,7 @@
 package main
 
 // appDirName is where a real installation keeps everything it owns: the board
-// database, the registries, the tailnet node's state — and it is also the name
+// database, the registries, the settings — and it is also the name
 // of the keychain service the secrets go under.
 //
 // A development build takes a different one (datadir_dev.go). The two are set

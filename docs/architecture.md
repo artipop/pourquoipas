@@ -18,7 +18,7 @@ origin; a server build puts it in front of Wails' own HTTP server, which moves t
 private port. Wails guards that port itself (since beta.31: a loopback `Host` only,
 same-origin calls only), so the front door, having made its own checks, forwards
 with a loopback `Host` and no `Origin` (`mode_server.go`) — otherwise a page served
-under the tailnet name or a public one gets 403 from `/wails/`.
+under any name but localhost gets 403 from `/wails/`.
 
 This exists because **Wails' asset server answers a WebSocket upgrade with 501** and
 its response writer cannot be hijacked, so `/ws` can never be served through it. One
@@ -54,23 +54,9 @@ The API's synthesizers for the `single-user` id (`api/users.go`,
 `api/teams.go`) are gated on single-user mode: unguarded, they answer every
 question about the owner with a made-up user called «Вы».
 
-The tailnet door below is untouched by any of this and is not the team
-mechanism: it answers *where from*, the build answers *who*.
-
-`tsnetdoor.go` is the way off this machine, and the only supported one: the
-same front door published a second time as a node of the user's own tailnet
-(`tailscale.com/tsnet` — userspace, no daemon, no root), with `ListenTLS` so a phone
-webview gets a real certificate. A port on an interface would have been reachable by
-anything that can route here, and the page hands out the board's session token
-(`proxy.go`) to whoever fetches it. A tsnet listener instead knows its caller:
-`WhoIs` gives the tailnet login, and the gate allows the user this node was logged in
-as (or whatever `allowedLogins` names). Two things follow. The tailnet gets a front
-door **built for its own authority** — `sameOrigin` and `hostGuard` are keyed to the
-address the page was published under, so the loopback handler would refuse every
-request arriving there. And the gate stands in front of *everything*, page included,
-because fetching the page is how a caller gets the token. Settings live in
-`<dataDir>/tailnet/settings.json` and the feature is off until that file says
-otherwise.
+A desktop publishes nothing off its own machine. The tailnet door that did — the
+same front door published as a node of the user's tailnet — was removed, and
+`docs/deferred.md` keeps what it was and how to bring it back.
 
 ## The page talks to Go through generated bindings
 
@@ -134,8 +120,8 @@ of a rebuild and opened white. A release build never listens to the variable:
 the page it serves is the one it embeds.
 
 **Events do not come back that way, though.** The Wails bus delivers an event by
-running JS in the windows the application owns, so a page served through the tailnet
-door hears nothing. `eventsws.go` broadcasts the same events over a socket on the
+running JS in the windows the application owns, so a page opened in a browser hears
+nothing. `eventsws.go` broadcasts the same events over a socket on the
 front door instead (`/acp/events/ws`), `emitter.go` sends every event both ways, and
 the page listens only on the socket — `components/acp/agentEvents.ts`, one shared
 connection for the whole page, with backoff and a "look again" nudge to every
@@ -164,12 +150,12 @@ board's catch-all route is `/:boardId?/…`, which `/m` fits.
 `mobile/` is the phone app itself, and it is **a second Go module on purpose**:
 `wails3 ios overlay:gen` compiles `package main` from the module root, and this
 root's main is a board server with cgo SQLite, git and a pty. The phone runs
-none of that — the app is a window onto `https://<machine>.<tailnet>/m`, which
-is what the desktop's own window is too. It keeps the machines in the platform's
-secure store, because a person has more than one desktop and each publishes its
-own board: the window holds **a tab per machine and a frame behind each tab**,
-which is what keeps every board same-origin with its own front door and costs
-the desktop side nothing. Two things cross that boundary — a `postMessage` with
+none of that — the app is a window onto `https://<server>/m`, which is what the
+desktop's own window is too. It keeps the servers in the platform's secure
+store, because a person may work more than one: the window holds **a tab per
+server and a frame behind each tab**, which is what keeps every board
+same-origin with its own front door and costs the server side nothing. Where
+the phone goes next is a plan in `docs/todo.md`. Two things cross that boundary — a `postMessage` with
 the number waiting there, so a tab can carry it, and a `no-cors` probe of the
 machine's own page, since a frame's failure is not readable from outside it.
 `mobile/README.md` has the build commands; `go test ./...` there covers the
@@ -648,7 +634,7 @@ and writes every edit through to the board (`persistBoardLocked` in
 next edit tries again.
 
 **A setting lives where its owner does**, and that is the rule the whole
-settings surface is sorted by. What the machine keeps for itself — the tailnet,
+settings surface is sorted by. What the machine keeps for itself —
 what a card-less conversation opens saying, whether an agent waiting may
 interrupt, and the archive that carries every board in and out — is
 `settings/appSettingsDialog.tsx`, one dialog of panels opened from

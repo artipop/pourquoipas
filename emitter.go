@@ -13,8 +13,8 @@ import (
 //
 // Every event goes out twice: over the Wails bus, which reaches the windows
 // this application owns, and over the front door's own socket (eventsws.go),
-// which reaches every page — including one opened on a phone through the
-// tailnet door, where the bus does not reach. The page listens on the socket;
+// which reaches every page — including one opened in a browser or on a
+// phone, where the bus does not reach. The page listens on the socket;
 // the bus is kept because it costs a line and it is what a window would use if
 // the socket were ever unavailable.
 type wailsEmitter struct {

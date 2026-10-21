@@ -84,9 +84,9 @@ func requestLog(next http.Handler) http.Handler {
 //
 // A same-origin fetch sends no Origin header (a GET) or sends ours.
 //
-// Both schemes count, because the same handler is published twice: HTTP on
-// loopback for the window, TLS on the tailnet for a phone. The guard is about
-// which *site* is calling, and that is the host.
+// Both schemes count, because a server may be published behind TLS while the
+// door itself speaks HTTP. The guard is about which *site* is calling, and
+// that is the host.
 func sameOrigin(next http.Handler, allowedHost string) http.Handler {
 	allowedPort := portOf(allowedHost)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

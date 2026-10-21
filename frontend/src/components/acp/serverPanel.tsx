@@ -16,9 +16,6 @@ import './serverPanel.scss'
 // on this machine, and the cards live on the server. Which is why the login is
 // here rather than on a page — the Go side needs the session for its own board
 // client, and the page cannot be pointed anywhere until there is an address.
-//
-// It is not the tailnet, and the panel says so: that one answers where the
-// board can be reached *from*, this one answers *whose* board it is.
 
 type AttachState = {
     url: string

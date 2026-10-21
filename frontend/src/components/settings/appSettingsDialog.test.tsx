@@ -20,8 +20,8 @@ describe('components/settings/appSettingsDialog', () => {
         ListAgentAdapters: vi.fn().mockResolvedValue('[]'),
         ListDeployTargets: vi.fn().mockResolvedValue(JSON.stringify([{name: 'dokku-1', sshHost: 'dokku.example.com'}])),
         ListProxies: vi.fn().mockResolvedValue(JSON.stringify([{name: 'office', proxy: 'http://proxy.example.com:8080'}])),
-        GetTailnetAccess: vi.fn().mockResolvedValue(JSON.stringify({enabled: false, hostname: 'board', status: 'off', path: '/x'})),
         GetPlanningPrompt: vi.fn().mockResolvedValue('Think it through.'),
+        GetServerAttachment: vi.fn().mockResolvedValue(JSON.stringify({url: '', username: '', running: ''})),
     })
 
     const open = () => render(() => wrapIntl(() =>
@@ -44,8 +44,8 @@ describe('components/settings/appSettingsDialog', () => {
 
         open()
 
-        userEvent.click(screen.getByRole('button', {name: 'Access from a phone'}))
-        await waitFor(() => expect(screen.getByText('The board is on this machine only')).toBeInTheDocument())
+        userEvent.click(screen.getByRole('button', {name: 'Server'}))
+        await waitFor(() => expect(screen.getByText('Server address')).toBeInTheDocument())
     })
 
     // Three registries are the machine's and are still not here: an agent, the

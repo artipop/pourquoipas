@@ -146,8 +146,6 @@ const messages: Record<string, {id: string, defaultMessage: string}> = defineMes
     'sources.token-refresh': {id: 'Go.sources.token-refresh', defaultMessage: 'Could not refresh the token: {error}'},
     'sources.unavailable': {id: 'Go.sources.unavailable', defaultMessage: 'Sources are not available'},
     'stall.assigned-to-person': {id: 'Go.stall.assigned-to-person', defaultMessage: 'The card is assigned to {who}, so no agent starts. Remove the assignee, or assign an agent if one should take the work'},
-    'tailnet.no-hostname': {id: 'Go.tailnet.no-hostname', defaultMessage: 'Enter the machine\'s name on the tailnet'},
-    'tailnet.unavailable': {id: 'Go.tailnet.unavailable', defaultMessage: 'Access over the tailnet is not available in this build'},
     'updates.nothing-to-skip': {id: 'Go.updates.nothing-to-skip', defaultMessage: 'There is no update to skip'},
     'updates.restart-failed': {id: 'Go.updates.restart-failed', defaultMessage: 'Could not restart'},
     'updates.unavailable': {id: 'Go.updates.unavailable', defaultMessage: 'This build does not update itself'},

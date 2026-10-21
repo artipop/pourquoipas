@@ -5,7 +5,7 @@
 		<key>CFBundleExecutable</key>
 		<string>pourquoipas</string>
 		<key>CFBundleGetInfoString</key>
-		<string>The board on a phone, over your own tailnet</string>
+		<string>The board on a phone</string>
 		<key>CFBundleIconFile</key>
 		<string>icons</string>
 		<key>CFBundleIconName</key>

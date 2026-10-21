@@ -18,8 +18,8 @@ import (
 //
 // They used to go over the Wails event bus alone, and that bus does not leave
 // this machine: in a desktop build an event is delivered by running JS in the
-// windows the application owns, so a page served to a phone over the tailnet
-// door hears nothing at all. (A server build broadcasts over its own socket, so
+// windows the application owns, so a page opened anywhere else hears nothing
+// at all. (A server build broadcasts over its own socket, so
 // it did work there — one more way for the two builds to differ.) The front
 // door is the one thing every client of this app has in common, window and
 // phone alike, so the events ride it and the page has a single path to listen

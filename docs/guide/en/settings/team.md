@@ -16,10 +16,6 @@ restart changes it.
 - comments appear on cards: there is somebody to address them to;
 - a waiting agent gets an addressee — whoever the card is assigned to.
 
-This says **who** may open the board, not where it is visible from. A second
-device still comes in through the tailnet («Access from a phone»), and the two are
-unrelated.
-
 ## The first login
 
 1. Install the server build and open its address in a browser.
@@ -77,9 +73,6 @@ and the folders stay on your machine.
 The password is not kept — what is stored is the session it buys. **«Work this
 machine's own board»** disconnects the app from the server; everything made on
 the server stays there.
-
-This is not the same as «Access from a phone»: the tailnet answers where the board
-can be reached *from*, and «Server» answers *whose* it is.
 
 ## Switching between your own board and the server's
 

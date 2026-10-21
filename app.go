@@ -29,13 +29,9 @@ type App struct {
 	origin  string
 	emitter *wailsEmitter
 	mgr     *acp.Manager // nil when the ACP integration is disabled
-	// tailnet is the door a phone comes through; nil when its settings could
-	// not be read at all. Its own methods are safe on a nil receiver, so the
-	// bindings do not each have to check.
-	tailnet *tailnetController
 	// attach is which board this desktop works: its own, or a hosted server it
-	// has logged in to. Nil when its settings could not be read; safe on a nil
-	// receiver like the tailnet's.
+	// has logged in to. Nil when its settings could not be read; its methods
+	// are safe on a nil receiver, so the bindings do not each have to check.
 	attach *attachController
 	// boards is the page's own door: which board it is served. Switching aims
 	// it somewhere else, and the page reloads onto what it now answers.
@@ -51,7 +47,7 @@ type App struct {
 	board boardLists
 	// updates is how this app replaces itself; nil in a headless build and
 	// whenever the release feed could not be configured. Its methods are safe
-	// on a nil receiver, as the tailnet controller's are.
+	// on a nil receiver, as the attach controller's are.
 	updates *updateController
 	// relanguage puts what the app itself made into a language: the shipped
 	// board templates, and the names on the inbox board. Nil in a test that
@@ -581,54 +577,6 @@ func (a *App) SetAgentWorkdirMode(name, boardID, mode string) (string, error) {
 	return string(out), nil
 }
 
-// GetTailnetAccess reports whether the board is published on the user's tailnet
-// and, when it is, the address to open on a phone. JSON:
-// {"enabled":…,"hostname":…,"status":"off|joining|login|on|error","url":…,
-//
-//	"loginUrl":…,"error":…,"path":…}.
-func (a *App) GetTailnetAccess() (string, error) {
-	out, err := json.Marshal(a.tailnet.status())
-	if err != nil {
-		return "", err
-	}
-	return string(out), nil
-}
-
-// SetTailnetAccess turns the tailnet door on or off and renames the node,
-// returning the new state. It takes effect immediately — the node is brought up
-// or closed here, not at the next launch — which is the whole point of having a
-// switch rather than a settings file.
-//
-// Only the two fields the panel owns are read: an auth key and the list of
-// allowed logins stay whatever the file says, since the panel has no way to ask
-// for either.
-func (a *App) SetTailnetAccess(entryJSON string) (string, error) {
-	if a.tailnet == nil {
-		return "", apperr.New("tailnet.unavailable", "Access over the tailnet is not available in this build")
-	}
-	var want struct {
-		Enabled  bool   `json:"enabled"`
-		Hostname string `json:"hostname"`
-	}
-	if err := json.Unmarshal([]byte(entryJSON), &want); err != nil {
-		return "", err
-	}
-
-	next := a.tailnet.settingsCopy()
-	next.Enabled = want.Enabled
-	next.Hostname = strings.TrimSpace(want.Hostname)
-
-	state, err := a.tailnet.update(next)
-	if err != nil {
-		return "", err
-	}
-	out, err := json.Marshal(state)
-	if err != nil {
-		return "", err
-	}
-	return string(out), nil
-}
-
 // GetServerAttachment reports which board this desktop works — its own, or a
 // hosted server. JSON: {"url":…,"username":…,"running":…}, where url and
 // running disagreeing is the app saying a restart is owed: which board the page
@@ -1124,10 +1072,9 @@ var errNoBoard = apperr.New("board.unavailable", "The board is not available")
 
 // The board, as the page at /m reads it.
 //
-// A phone gets the bindings and the event socket and nothing else, which is
-// what lets the same page work through the tailnet door — so what it needs
-// from the board comes through here rather than through the board's own REST
-// API. What it needs is small: which boards there are, what is on one, what is
+// A phone gets the bindings and the event socket and nothing else, so what it
+// needs from the board comes through here rather than through the board's own
+// REST API. What it needs is small: which boards there are, what is on one, what is
 // waiting in an inbox, and a way to carry a card from the inbox onto a board.
 
 // ListBoards returns the boards with the columns a card can be moved into.

@@ -7,7 +7,7 @@
     <!--
         The only page this app carries of its own: which machines, and which of
         them you are looking at. Everything else is the board's own page, served
-        by the front door of each desktop over the tailnet and shown in a frame.
+        by each board server and shown in a frame.
 
         A frame rather than a navigation, because a machine's page has to stay
         on that machine's origin: inside the frame the board is same-origin with
@@ -219,11 +219,11 @@
     <div id="frames">
         <section id="setup" hidden>
             <h1>Pourquoi Pas?</h1>
-            <p>Введите имя машины в вашем tailnet — то, под которым доска опубликована. Телефон должен быть подключён к Tailscale.</p>
+            <p>Введите адрес сервера, на котором опубликована доска.</p>
 
             <form id="connect">
                 <label for="address">Адрес доски</label>
-                <input id="address" name="address" type="text" inputmode="url" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="board.tail1234.ts.net">
+                <input id="address" name="address" type="text" inputmode="url" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="board.example.com">
                 <button type="submit" class="primary">Добавить</button>
             </form>
             <div class="error" id="error"></div>
@@ -437,8 +437,8 @@
 
         // Whether the desktop is up at all. A frame's failure is not readable
         // from here — cross-origin, and onerror stays silent — so the machine
-        // is asked directly. The board's own page is guarded by nothing but the
-        // tailnet gate and the Host check, so a no-cors GET is enough: an
+        // is asked directly. The board's own page needs no login, so a
+        // no-cors GET is enough: an
         // opaque response means it answered, a rejection means it did not.
         async function probe(machine) {
             const origin = originOf(machine.url)
@@ -466,7 +466,7 @@
             render()
         }
 
-        // Phones sleep, tailnets come and go, desktops are closed for the
+        // Phones sleep, networks come and go, servers restart in the
         // night: what was true when the app opened is not true an hour later.
         setInterval(() => machines.forEach(probe), 30000)
         document.addEventListener('visibilitychange', () => {

@@ -17,9 +17,8 @@ import (
 )
 
 // Attaching this desktop to a hosted board: the cards move, the agents do not
-// (docs/teamwork.md). The address lives in a settings file beside the
-// tailnet's; the session lives in the credential store, because a token is a
-// credential.
+// (docs/teamwork.md). The address lives in a settings file; the session lives
+// in the credential store, because a token is a credential.
 
 // attachSettings is <dataDir>/server/settings.json. No file means this desktop
 // works its own board.
@@ -87,7 +86,7 @@ func saveAttachSettings(path string, cfg attachSettings) error {
 }
 
 // attachController owns the settings file and the token behind it. Safe on a
-// nil receiver, like the tailnet controller.
+// nil receiver, so the bindings need not check.
 type attachController struct {
 	mu sync.Mutex
 

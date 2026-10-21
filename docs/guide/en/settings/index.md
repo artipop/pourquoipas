@@ -9,7 +9,6 @@ Sections:
   [Updates](./updates.md);
 - **«People»** — who is on the server and who runs it; the section is shown to
   the administrator alone, see ["Your own server"](./team.md);
-- **"Access from a phone"** — see below;
 - **"Import and export"** — board archive export and import, see
   [Moving](../transfer.md);
 - **"Other"** — the instruction for conversations without a card, "Notify me
@@ -61,24 +60,7 @@ is turned off finishes what it was doing.
 The switch is shown only in a build that has agents at all.
 
 All of this is available before the first board is created. The picked theme
-and language are kept by the install itself: they survive a restart and apply
-on the phone too, through
-["Access from a phone"](#access-from-a-phone).
-
-## Access from a phone
-
-The app can join your Tailscale network and serve the board to your devices.
-Nothing is published to the internet; access is off by default.
-
-1. Set **"Name of this machine in the network"**.
-2. Press **"Publish the board"** and log the machine in through the link the
-   app shows.
-3. An address appears next to it ("Open this on your phone") with a copy
-   button.
-
-The phone needs the Tailscale app under the same account; the address works
-only inside your network. It serves the board and `/m` — the phone version with
-the Inbox, Cards, Waiting and Terminals tabs.
+and language are kept by the install itself and survive a restart.
 
 ## Agent notifications
 

@@ -238,17 +238,6 @@ export function GetServerAttachment(): $CancellablePromise<string> {
 }
 
 /**
- * GetTailnetAccess reports whether the board is published on the user's tailnet
- * and, when it is, the address to open on a phone. JSON:
- * {"enabled":…,"hostname":…,"status":"off|joining|login|on|error","url":…,
- * 
- * 	"loginUrl":…,"error":…,"path":…}.
- */
-export function GetTailnetAccess(): $CancellablePromise<string> {
-    return $Call.ByID(2633877674);
-}
-
-/**
  * GetUIPreferences returns everything the install keeps for its UI, as a JSON
  * object of key → value. Empty object when nothing was ever picked.
  */
@@ -650,20 +639,6 @@ export function SetPlanningPrompt(text: string): $CancellablePromise<void> {
  */
 export function SetSourceCredential(name: string, token: string): $CancellablePromise<void> {
     return $Call.ByID(1063668987, name, token);
-}
-
-/**
- * SetTailnetAccess turns the tailnet door on or off and renames the node,
- * returning the new state. It takes effect immediately — the node is brought up
- * or closed here, not at the next launch — which is the whole point of having a
- * switch rather than a settings file.
- * 
- * Only the two fields the panel owns are read: an auth key and the list of
- * allowed logins stay whatever the file says, since the panel has no way to ask
- * for either.
- */
-export function SetTailnetAccess(entryJSON: string): $CancellablePromise<string> {
-    return $Call.ByID(1097329950, entryJSON);
 }
 
 /**

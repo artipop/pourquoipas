@@ -13,15 +13,12 @@ import (
 
 // The way in for everything that has no plugin of its own: a script, a webhook
 // forwarded here, a phone. It is a route on the front door, so it is reachable
-// wherever the board is — over loopback from this machine, and over the tailnet
-// door from a phone, which is the only supported way in from outside.
+// wherever the board is.
 //
 // It is deliberately not behind sameOrigin. The callers are not the page, so
 // their Origin is somebody else's or absent, and the check would refuse every
-// one of them. What guards it instead differs by door: on the tailnet the
-// caller's identity is already known (tsnetdoor.go asks WhoIs), on loopback
-// nothing is, so the source token carries it — any process on this machine can
-// reach the port.
+// one of them. The source token guards it instead: any process on this machine
+// can reach the port.
 
 // maxIngestBody bounds one request. A card is text; anything larger is a
 // mistake or an attack, and reading it into memory first would be both.

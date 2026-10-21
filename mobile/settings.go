@@ -12,14 +12,13 @@ import (
 // What the app remembers between launches, which is one thing: where the boards
 // are. There is no config file on a phone, so it goes in the store the platform
 // gives us — the Keychain on iOS, EncryptedSharedPreferences on Android — and
-// that store is the right one for it anyway: an address names a machine on a
-// private network, and is a fact about the person's tailnet.
+// that store is the right one for it anyway: an address says where a person
+// works.
 //
-// It is a list because a person has more than one desktop, and each of them
-// publishes its own front door on the tailnet under its own name. The app shows
-// one tab per machine and one frame behind each tab, so the machines stay what
-// they are — separate boards on separate origins, each talking to its own
-// desktop — rather than being merged into something neither of them serves.
+// It is a list because a person may work more than one board server, each
+// under its own name. The app shows one tab per server and one frame behind
+// each tab, so the servers stay what they are — separate boards on separate
+// origins — rather than being merged into something neither of them serves.
 
 // machinesKey is what the list is stored under, and addressKey is the single
 // address earlier versions kept. Both are read on launch, so both names are

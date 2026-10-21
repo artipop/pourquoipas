@@ -47,8 +47,7 @@ describe('components/acp/agentEvents', () => {
     })
 
     // The whole reason this module exists: the same page has to hear about
-    // agents whether it is drawn in the app's own window or on a phone that
-    // reached the front door over the tailnet.
+    // agents whether it is drawn in the app's own window or in a browser.
     it('delivers what the front door sends to the subscriber that asked for it', () => {
         const sessions: any[] = []
         const terminals: any[] = []
