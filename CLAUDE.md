@@ -103,9 +103,12 @@ with the same title; what follows is the part that must not be forgotten.
 
 `frontdoor.go` is our HTTP server in front of everything: `/wails/` to the Wails
 runtime, the rest — HTML, `/api`, `/files`, `/ws` — to the board. A desktop build
-hands it to Wails as an `AssetServerTransport` on loopback; a server build puts
-it in front of Wails' own HTTP server. It exists because **Wails' asset server
-answers a WebSocket upgrade with 501**.
+hands it to Wails as an `AssetServerTransport` on loopback. It exists because
+**Wails' asset server answers a WebSocket upgrade with 501**. **A server build
+has none**: Wails' own server is the door, our routes are its asset middleware
+(`mode_server.go`), and Wails checks `Host` and `Origin` the way a server
+reached by any name needs. Nothing of ours goes on Wails' `/wails/events`, which
+no session guards (`emitsOnBus`).
 
 - On a desktop **nothing authenticates a user**: the protection is refusing a
   foreign `Origin`/`Sec-Fetch-Site` and a `Host` the door was not published

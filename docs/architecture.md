@@ -14,14 +14,24 @@ Eleven ideas hold this together. Read them before changing anything structural.
 the Wails runtime, everything else — HTML, `/api`, `/files` and the `/ws` socket —
 to the board. A desktop build hands it to Wails as an `AssetServerTransport`
 (loopback, random port) and points the window at it rather than at the `wails://`
-origin; a server build puts it in front of Wails' own HTTP server, which moves to a
-private port. Wails guards that port itself (since beta.31: a loopback `Host` only,
-same-origin calls only), so the front door, having made its own checks, forwards
-with a loopback `Host` and no `Origin` (`mode_server.go`) — otherwise a page served
-under any name but localhost gets 403 from `/wails/`.
+origin.
 
-This exists because **Wails' asset server answers a WebSocket upgrade with 501** and
-its response writer cannot be hijacked, so `/ws` can never be served through it. One
+This exists because **Wails' asset server answers a WebSocket upgrade with 501**,
+and in a webview the page is not reached over the network at all, so `/ws` can
+never be served through it.
+
+**A server build has no door of its own** (`mode_server.go`). Wails' own HTTP
+server is the door there: it binds the address, refuses a foreign `Host` on a
+loopback bind, checks a runtime call's `Origin` against the request's own
+`Host`, and takes TLS and a proxy's public origin in `ServerOptions`. Our routes
+ride it as `AssetOptions.Middleware`, which runs before the asset server's 501,
+so the board's `/ws` and `/acp/events/ws` work through it (gorilla hijacks
+through the asset server's writer, which unwraps). A door of ours in front of
+Wails, as there was until 2026-10-21, keyed its checks to the address it
+listened on and so refused every name a server is really reached by — a domain
+behind a TLS proxy got 403 on everything. Wails' `/wails/events` socket sits on
+its own router, outside the middleware and so outside the session check; the
+emitter keeps our events off the bus in this build (`emitsOnBus`). One
 origin for the page, the API and the socket is what removes the
 `window.webSocketBaseURL` hack the v2 app needed.
 

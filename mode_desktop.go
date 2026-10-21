@@ -59,6 +59,13 @@ func newOrigin(board, acp, ingest http.Handler, session func(string) bool) (*ori
 	}, nil
 }
 
+// middleware: a desktop's routes are its own front door, not Wails' chain.
+func (o *origin) middleware() application.Middleware { return nil }
+
+// emitsOnBus: the menu bar and the OS notifications listen on the Wails bus
+// (alerts_desktop.go), and it reaches only this app's own windows.
+const emitsOnBus = true
+
 // ServeAssets is called by Wails once the asset server exists. Everything but
 // /wails/ goes to the board.
 func (o *origin) ServeAssets(assetHandler http.Handler) error {

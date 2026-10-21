@@ -36,6 +36,9 @@ func (e *wailsEmitter) Emit(event string, payload any) {
 	if e.fanout != nil {
 		e.fanout.Emit(event, payload)
 	}
+	if !emitsOnBus {
+		return
+	}
 	e.mu.RLock()
 	app := e.app
 	e.mu.RUnlock()

@@ -3,43 +3,38 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"net"
 	"net/http"
-	"net/http/httputil"
-	"net/url"
 	"os"
 	"strconv"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 
 	"github.com/artipop/pourquoipas/internal/apperr"
+	"github.com/artipop/pourquoipas/internal/feedmcp"
 )
 
-// origin is the front door of a server build. Here Wails runs an HTTP server of
-// its own, so ours stands in front of it: Wails gets a private loopback port
-// and the front door owns the address people actually open.
+// origin, in a server build, is Wails' own HTTP server. It is the door here:
+// Wails binds the address, checks the Host on a loopback bind and the Origin of
+// a runtime call against the request's own Host, and offers TLS and the
+// origins a proxy in front may add (ServerOptions). Our routes ride it as asset
+// middleware, which runs before Wails answers a WebSocket upgrade with 501, so
+// the board's /ws and our sockets work through it.
 //
-// It exists for the same reason as in a desktop build — one origin for the
-// page, the API and the socket. Wails' asset server refuses a WebSocket
-// upgrade, so a board served through it could never carry /ws; served beside
-// it, it can, and no window.webSocketBaseURL has to name a second port.
+// A desktop needs a door of its own (mode_desktop.go, frontdoor.go): there the
+// page is not reached over the network at all, and a socket has nowhere to go.
 //
-// The address is SERVER_HOST/SERVER_PORT, or the WAILS_SERVER_* names for
-// familiarity. Whichever is used is then removed from the environment, since
-// Wails' own server reads those too and would otherwise publish the private
-// half of this on the same interface.
+// The address is SERVER_HOST/SERVER_PORT, or Wails' own WAILS_SERVER_* names.
 type origin struct {
-	listener    net.Listener
-	board       http.Handler
-	acp         http.Handler
-	ingest      http.Handler
-	privatePort int
-	host        string
-	// session says whether a request carries a live board session; nil in
-	// single-user mode, where nothing does. See identity.go.
+	board   http.Handler
+	acp     http.Handler
+	ingest  http.Handler
+	host    string
+	port    int
+	// session says whether a request carries a live board session. See
+	// identity.go.
 	session func(string) bool
 }
 
@@ -54,37 +49,16 @@ func newOrigin(board, acp, ingest http.Handler, session func(string) bool) (*ori
 	if raw := envOnce("SERVER_PORT", "WAILS_SERVER_PORT"); raw != "" {
 		parsed, err := strconv.Atoi(raw)
 		if err != nil || parsed < 1 || parsed > 65535 {
-			return nil, fmt.Errorf("front door: bad port %q", raw)
+			return nil, fmt.Errorf("server: bad port %q", raw)
 		}
 		port = parsed
 	}
-
-	listener, err := net.Listen("tcp", net.JoinHostPort(host, strconv.Itoa(port)))
-	if err != nil {
-		return nil, fmt.Errorf("front door: %w", err)
-	}
-
-	// Wails' server is an implementation detail of this process, so it gets a
-	// port nobody is told about.
-	private, err := getFreePort()
-	if err != nil {
-		_ = listener.Close()
-		return nil, fmt.Errorf("front door: %w", err)
-	}
-
-	return &origin{
-		listener:    listener,
-		board:       board,
-		acp:         acp,
-		ingest:      ingest,
-		privatePort: private,
-		host:        net.JoinHostPort(host, strconv.Itoa(port)),
-		session:     session,
-	}, nil
+	return &origin{board: board, acp: acp, ingest: ingest, host: host, port: port, session: session}, nil
 }
 
 // envOnce reads the first of the given variables that is set and unsets all of
-// them, so nothing downstream acts on the same value a second time.
+// them: Wails reads the WAILS_SERVER_* pair itself and would let it override
+// what ServerOptions says.
 func envOnce(names ...string) string {
 	value := ""
 	for _, name := range names {
@@ -96,40 +70,53 @@ func envOnce(names ...string) string {
 	return value
 }
 
-// transport is the stock one: in a server build Wails serves /wails/ itself,
-// and the front door forwards to it.
 func (o *origin) transport() application.Transport { return nil }
 
 func (o *origin) serverOptions() application.ServerOptions {
-	return application.ServerOptions{Host: "127.0.0.1", Port: o.privatePort}
+	return application.ServerOptions{Host: o.host, Port: o.port}
 }
 
-// start serves the front door. /wails/ is proxied to Wails' private server —
-// including the /wails/events WebSocket, which an ordinary reverse proxy
-// upgrades without help — and everything else goes straight to the board.
-func (o *origin) start() {
-	target, err := url.Parse("http://127.0.0.1:" + strconv.Itoa(o.privatePort))
-	if err != nil {
-		log.Fatalf("front door: %v", err)
+// middleware puts our routes in front of Wails' asset chain. Wails' own
+// /wails/events and /wails/stream/ws are on its router, outside this chain, so
+// no session guards them; the emitter keeps our events off that bus in this
+// build (emitsOnBus).
+func (o *origin) middleware() application.Middleware {
+	return func(wails http.Handler) http.Handler {
+		mux := http.NewServeMux()
+		// runtime.js and the bound methods. Wails checks a call's Origin
+		// itself; the session is ours to ask.
+		mux.Handle("/wails/", requireSession(wails, o.session))
+		mux.Handle("/acp/events/ws", requireSession(requestOrigin(o.acp), o.session))
+		mux.Handle("/acp/board/", requestOrigin(o.acp))
+		mux.Handle(feedmcp.Path, requestOrigin(o.acp))
+		mux.Handle("/sources/ingest/{name}", o.ingest)
+		// The board takes everything else straight, as the desktop's door
+		// gives it: its page, its API and its /ws socket, which the asset
+		// server would refuse.
+		mux.Handle("/", o.board)
+		return requestLog(mux)
 	}
-	wails := &httputil.ReverseProxy{Rewrite: func(r *httputil.ProxyRequest) {
-		// Wails guards its own port against DNS rebinding and cross-origin
-		// calls, and would refuse any name but localhost with 403.
-		// The front door has already made both checks against the authority it
-		// was published under, so Wails is shown a loopback Host and no origin.
-		r.SetURL(target)
-		r.Out.Header.Del("Origin")
-		r.Out.Header.Del("Sec-Fetch-Site")
-	}}
-	server := &http.Server{Handler: newFrontDoor(wails, o.acp, o.ingest, o.board, o.host, o.session)}
-	go func() {
-		if err := server.Serve(o.listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Fatalf("front door: %v", err)
-		}
-	}()
 }
 
-func (o *origin) url() string { return "http://" + o.host + "/" }
+// requestOrigin is sameOrigin keyed to the Host the request came in under, the
+// rule Wails applies to its own routes: a server is reached by whatever name
+// DNS or a proxy gives it, and a session, not the name, says who is calling.
+func requestOrigin(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		sameOrigin(next, r.Host).ServeHTTP(w, r)
+	})
+}
+
+// start has nothing to start: Wails serves when the application runs.
+func (o *origin) start() {}
+
+func (o *origin) url() string {
+	return "http://" + net.JoinHostPort(o.host, strconv.Itoa(o.port)) + "/"
+}
+
+// emitsOnBus: nothing in a server build listens on the Wails bus, and Wails
+// broadcasts it on /wails/events to anybody who connects, logged in or not.
+const emitsOnBus = false
 
 // A headless build has no windows to outlive, so the question the desktop
 // answers with a flag — does closing the last one end us — never arises, and

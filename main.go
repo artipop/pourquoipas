@@ -470,7 +470,8 @@ func main() {
 		// rather than as a sentence (internal/apperr).
 		MarshalError: apperr.MarshalError,
 		Assets: application.AssetOptions{
-			Handler: handler,
+			Handler:    handler,
+			Middleware: front.middleware(),
 		},
 		// The window is not the app. Closing the board leaves the agents
 		// working and the menu bar icon standing, and these are the two halves
