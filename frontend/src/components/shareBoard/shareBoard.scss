@@ -79,7 +79,10 @@
                 flex: 1;
                 margin-right: 12px;
                 height: 40px;
-                width: 400px;
+
+                // Takes what the button leaves: a fixed 400px pushed the
+                // Russian «copy link» past the dialog's edge.
+                min-width: 0;
                 align-items: center;
                 display: flex;
                 padding: 0 4px 0 8px;

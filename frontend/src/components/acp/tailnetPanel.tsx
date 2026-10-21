@@ -1,6 +1,7 @@
 // The Wails-generated Go bindings are PascalCase methods, not constructors.
 /* eslint-disable new-cap */
-import {Show, createSignal, onSettled} from 'solid-js'
+import {For, Show, createSignal, onSettled} from 'solid-js'
+import type {JSX} from '@solidjs/web'
 
 import {useIntl} from '../../intl'
 import {IAppWindow} from '../../types'
@@ -190,9 +191,12 @@ const TailnetPanel = () => {
                 </div>
 
                 <p class='TailnetPanel__hint'>
-                    {intl.formatMessage(
-                        {id: 'Tailnet.hint-file', defaultMessage: 'An auth key, or letting somebody else in, is edited by hand in {path}.'},
-                        {path: state()?.path || ''},
+                    {withPath(
+                        intl.formatMessage(
+                            {id: 'Tailnet.hint-file', defaultMessage: 'An auth key, or letting somebody else in, is edited by hand in {path}.'},
+                            {path: pathMark},
+                        ),
+                        state()?.path || '',
                     )}
                 </p>
             </div>
@@ -201,3 +205,30 @@ const TailnetPanel = () => {
 }
 
 export default TailnetPanel
+
+const pathMark = '\u0000'
+
+// The sentence is the translation's; the path inside it is data. Drawn as
+// such, it breaks only after a slash: left to the prose around it, a long
+// path split at its hyphens, in the middle of a folder's name.
+function withPath(sentence: string, path: string): JSX.Element {
+    const [before, after = ''] = sentence.split(pathMark)
+    const parts = path.split('/')
+    return (
+        <>
+            {before}
+            <code class='TailnetPanel__path'>
+                <For each={parts}>
+                    {(part, i) => (
+                        <>
+                            <span>{part}{i() < parts.length - 1 ? '/' : ''}</span>
+                            {i() < parts.length - 1 && <wbr/>}
+                        </>
+                    )}
+                </For>
+            </code>
+            {after}
+        </>
+    )
+}
+

@@ -80,6 +80,16 @@
         opacity: 0.64;
     }
 
+    .TailnetPanel__path {
+        @include data;
+
+        font-size: inherit;
+
+        span {
+            white-space: nowrap;
+        }
+    }
+
     .TailnetPanel__error {
         color: rgb(var(--error-text-rgb));
     }

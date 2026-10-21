@@ -49,6 +49,14 @@
     [class$='__empty'],
     [class$='__error'] {
         max-width: 72ch;
+        text-wrap: pretty;
+    }
+
+    // A panel's subtitle is a sentence or two under its heading: balanced,
+    // or the measure above leaves the last three words on a line of their own.
+    [class$='__subtitle'],
+    [class$='__groupHint'] {
+        text-wrap: balance;
     }
 
     // The one sentence in these panels that belongs to a shared widget rather
