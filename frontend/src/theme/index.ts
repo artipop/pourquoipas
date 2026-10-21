@@ -24,22 +24,31 @@ import {themeTokens} from './tokens'
 
 // Which theme applies, and the applying of it.
 //
-// **Two settings, not one.** A theme is a design — «XCIII», «Gruvbox», the
+// **Two settings, not one.** A theme is a design — «Pourquoi Pas?», «Gruvbox», the
 // blue-and-yellow joke — and it comes in a light half and a dark half; whether
 // this machine wears the light one, the dark one or whichever the system is set
 // to is a separate question with its own answer. They were one list once, and
-// that list said «Gruvbox Dark» and «XCIII — paper» in the same column as «Как
+// that list said «Gruvbox Dark» and «Pourquoi Pas? — paper» in the same column as «Как
 // в системе»: picking a design meant also deciding a polarity, and following
 // the system meant giving up every design but ours.
 //
 // A theme is a config (`config.ts`), and applying one is writing the raw tokens
 // it produces onto the document element. `styles/_tokens.scss` still declares
-// the two shipped XCIII palettes at the top of its file: that is what the first
+// the two shipped Pourquoi Pas? palettes at the top of its file: that is what the first
 // paint uses, before this module has run, and it is the copy `themes.test.ts`
 // checks the two configs against — one of them being wrong is a test failure
 // rather than a flash of the wrong colours.
 
-export const defaultFamilyId = 'xciii'
+export const defaultFamilyId = 'pourquoipas'
+
+// Whether a person picks the theme at all. Closed: the app's look is designed
+// around its icon, and another family's colours fight it. Every family and
+// every custom theme a person kept stay where they are — closed hides the
+// choice and pins ours, it deletes nothing — so opening it again is this line.
+// Light or dark is not part of the choice and stays a person's.
+export function themeChoiceOpen(): boolean {
+    return false
+}
 
 // The themes a person brings live in `custom.ts` and stand in the same list as
 // the shipped ones. Each is a pair like every other theme — a light half and a
@@ -197,7 +206,7 @@ export function themeConfigText(config: ThemeConfig): string {
 // `custom-theme` with the config kept beside that.
 //
 // Three older spellings still resolve, and none of them needs a migration
-// table. `light-theme` / `dark-theme` were the XCIII halves when a variant was
+// table. `light-theme` / `dark-theme` were the Pourquoi Pas? halves when a variant was
 // a theme, and they still name real variants; so does every `windows-dark`
 // this build ever wrote. `system-theme` was the third entry in that one list
 // and is now the polarity's own answer. Anything else — including every
@@ -235,6 +244,10 @@ export function loadTheme(): ThemeName {
                 activeMode = variant.dark ? 'dark' : 'light'
             }
         }
+    }
+
+    if (!themeChoiceOpen()) {
+        activeFamilyId = defaultFamilyId
     }
 
     try {

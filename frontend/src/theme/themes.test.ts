@@ -70,7 +70,7 @@ describe('theme/themes', () => {
     it('finds the theme a variant belongs to', () => {
         expect(familyOfVariant('windows-dark')?.family.id).toBe('windows')
         expect(familyOfVariant('windows-dark')?.dark).toBe(true)
-        expect(familyOfVariant('light-theme')?.family.id).toBe('xciii')
+        expect(familyOfVariant('light-theme')?.family.id).toBe('pourquoipas')
         expect(familyOfVariant('light-theme')?.dark).toBe(false)
         expect(familyOfVariant('no-such-theme')).toBeUndefined()
     })
@@ -78,8 +78,8 @@ describe('theme/themes', () => {
     // The load-bearing one. `_tokens.scss` is the first paint and the config is
     // every frame after it; the two disagreeing is a palette that changes as
     // the page finishes loading.
-    describe.each([['light', false], ['dark', true]] as const)('the XCIII %s half', (half, dark) => {
-        const config = () => (dark ? themeFamily('xciii')!.dark : themeFamily('xciii')!.light)
+    describe.each([['light', false], ['dark', true]] as const)('the Pourquoi Pas? %s half', (half, dark) => {
+        const config = () => (dark ? themeFamily('pourquoipas')!.dark : themeFamily('pourquoipas')!.light)
 
         it('says exactly what _tokens.scss says', () => {
             const tokens = themeTokens(parseTheme(config(), half))

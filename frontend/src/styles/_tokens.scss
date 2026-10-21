@@ -1,9 +1,10 @@
-// The whole design language of XCIII, both themes, side by side.
+// The whole design language of Pourquoi Pas?, both themes, side by side.
 //
-// The product is a dossier: a card opens a case, an agent goes into the field —
-// a worktree, a branch, one turn — and files a report. Two themes say that two
-// ways rather than inverting each other: dark is the screen, light is the paper
-// the screen is about.
+// Everything is taken off the app icon, an ocean liner on a poster: the sky is
+// the light theme's paper, the hull is its ink and the dark theme's ground, the
+// funnel's mustard marks what wants a person, the sea is the second colour and
+// the waterline is the red of an error. Two halves of one picture, not two
+// designs.
 //
 // Read this file top to bottom and you have seen every colour in the product.
 // Two rules keep it that way:
@@ -23,66 +24,54 @@
 
 :root {
     // ---------------------------------------------------------------------
-    // Light — the paper. Warm off-white, typewriter ink, a red stamp.
+    // Light — the sky. Cream paper, hull-navy ink and a navy sidebar.
     // ---------------------------------------------------------------------
-    --canvas-rgb: 240, 237, 229;
-    --surface-rgb: 250, 248, 244;
+    --canvas-rgb: 245, 232, 209;
+    --surface-rgb: 251, 245, 234;
+    --ink-rgb: 12, 27, 41;
+    --sidebar-rgb: 12, 27, 41;
+    --sidebar-ink-rgb: 245, 232, 209;
 
-    // Every dark value here is mixed from the paper, never borrowed from the
-    // dark theme. They were all blue-blacks left over from when the system was
-    // navy, and against a warm off-white a hue that opposes it reads as cold —
-    // the ink most of all, since it is most of what you look at.
-    --ink-rgb: 22, 20, 16;
-    --sidebar-rgb: 28, 26, 22;
-    --sidebar-ink-rgb: 240, 237, 229;
+    // A button is the hull, the same navy as the ink and the sidebar: one
+    // colour for everything the app does. The funnel's mustard is kept for
+    // the two things that ask for a look — the open board and an agent's
+    // question — so it is never spent on an ordinary button.
+    --accent-rgb: 12, 27, 41;
+    --accent-ink-rgb: 245, 232, 209;
+    --stamp-rgb: 204, 140, 71;
 
-    // The accent and the stamp are the two lines a colour experiment touches.
-    // On paper the accent is the print, which is the same black the navigation
-    // is made of: one ink, used in two places.
-    --accent-rgb: 28, 26, 22;
-    --accent-ink-rgb: 240, 237, 229;
-    // A few levels brighter than the stamp the paper theme prints with, and
-    // that is the config layer talking: the bar beside the open board is a
-    // mark on the near-black sidebar, and the red it was — the same one the
-    // danger text uses — sat at 2.7:1 there. Every theme is held to 3:1 for a
-    // mark now, this one included.
-    --stamp-rgb: 185, 54, 46;
+    // A link is the sea, the icon's second colour.
+    --link-rgb: 20, 61, 76;
+    --dnd-rgb: 163, 70, 44;
 
-    // A link is the print too, and a theme config may say otherwise: the two
-    // are one decision here and two keys in the format (`buttonBg`,
-    // `linkColor`), so they are declared apart rather than derived from each
-    // other. Same for the presence dot, which Mattermost names separately from
-    // the error text this product draws in the same red.
-    --link-rgb: 28, 26, 22;
-    --dnd-rgb: 179, 38, 30;
-
-    --danger-rgb: 179, 38, 30;
-    // Deeper than the amber it was for the same reason: `--warning-rgb` is
-    // drawn as *text* in six places and was 3.5:1 on the paper.
-    --warning-rgb: 146, 98, 17;
+    // The waterline.
+    --danger-rgb: 163, 70, 44;
+    // The funnel's mustard darkened until it reads as text on the paper: it is
+    // drawn as text in six places, and the icon's own value is 2.3:1 there.
+    --warning-rgb: 140, 90, 28;
     --success-rgb: 27, 110, 78;
     --visited-rgb: 109, 74, 199;
 
     // Label colours are opaque values, not alpha over the canvas: alpha over a
     // tinted background is what made the old dark labels look like mud.
-    --prop-default: #fff;
-    --prop-gray: #e4e0d6;
-    --prop-brown: #e6d6c2;
-    --prop-orange: #f2d9c0;
-    --prop-yellow: #efe6bd;
-    --prop-green: #d5e6d0;
-    --prop-blue: #d4e0ee;
-    --prop-purple: #ded6ee;
-    --prop-pink: #eed6e0;
-    --prop-red: #eed3cf;
+    --prop-default: #fffaf1;
+    --prop-gray: #e8e0d0;
+    --prop-brown: #e8d6bd;
+    --prop-orange: #f2d6b6;
+    --prop-yellow: #f0e2b4;
+    --prop-green: #d5e3cc;
+    --prop-blue: #d0dfe4;
+    --prop-purple: #ddd5e8;
+    --prop-pink: #ecd5d8;
+    --prop-red: #eccfc4;
 
-    // On paper the shadow is a real one; on screen (below) depth is carried by
-    // the surface being lighter than the canvas, and shadows nearly vanish.
-    --shadow-rgb: 28, 26, 22;
+    // On paper the shadow is a real one, made of the hull; on the dark side
+    // (below) depth is carried by the surface being lighter than the canvas.
+    --shadow-rgb: 12, 27, 41;
     --shadow-1: 0 1px 0 rgba(var(--shadow-rgb), 0.06);
     --shadow-2: 0 2px 6px -2px rgba(var(--shadow-rgb), 0.16);
     --shadow-3: 0 16px 48px -12px rgba(var(--shadow-rgb), 0.32);
-    --backdrop: rgba(28, 26, 22, 0.44);
+    --backdrop: rgba(12, 27, 41, 0.44);
 
     // Native widgetry — a select's dropdown list, a checkbox, a scrollbar —
     // is painted by the browser, which has to be told which side we are on or
@@ -92,58 +81,39 @@
 
 :root[data-theme='dark'] {
     // ---------------------------------------------------------------------
-    // Dark — the screen. Black and grey with no cast at all, and one amber.
-    //
-    // Two tints were tried and both were wrong for the same reason. Navy put
-    // the sidebar and the canvas in an argument, one reading as black while
-    // everything else went blue. A green cast was truer to a tube but tinted
-    // ten label colours it had no business touching. A neutral ground makes
-    // the accent the only thing on screen carrying a hue, which is what an
-    // accent is for.
-    //
-    // Amber rather than green for it, though green would be the more literal
-    // tube: green already means "done" in the columns and the flows, and an
-    // accent that also reads as a status is a collision nobody wins.
-    //
-    // The surface is the terminal's own black, so a card and the console the
-    // agent runs in are the same material.
+    // Dark — the hull. Navy ground, the sky's cream for ink, the same
+    // mustard for what asks for a look.
     // ---------------------------------------------------------------------
-    --canvas-rgb: 12, 12, 14;
-    --surface-rgb: 24, 24, 27;
-    --ink-rgb: 233, 233, 236;
-    --sidebar-rgb: 8, 8, 10;
-    --sidebar-ink-rgb: 233, 233, 236;
+    --canvas-rgb: 12, 27, 41;
+    --surface-rgb: 19, 40, 58;
+    --ink-rgb: 241, 228, 204;
+    --sidebar-rgb: 7, 18, 28;
+    --sidebar-ink-rgb: 241, 228, 204;
 
-    // The same red the paper theme stamps with, so both themes make one mark.
-    --accent-rgb: 226, 66, 52;
-    // Dark text again, for the same reason as the amber before it and against
-    // the instinct: white on this red is 3.7:1 and fails, and the red that does
-    // carry white — around #C62828 — is only 3.5:1 against the canvas, so the
-    // button sinks into the board. Bright accent, dark ink, both readable.
-    --accent-ink-rgb: 8, 8, 10;
-    --stamp-rgb: 226, 66, 52;
-    --link-rgb: 226, 66, 52;
-    --dnd-rgb: 255, 140, 160;
+    // On the hull the button turns to the sky: navy on navy would vanish.
+    --accent-rgb: 241, 228, 204;
+    --accent-ink-rgb: 12, 27, 41;
+    --stamp-rgb: 204, 140, 71;
+    // The sea lifted until it reads on the hull.
+    --link-rgb: 127, 191, 208;
+    --dnd-rgb: 240, 138, 108;
 
-    // Danger has to stay apart from an accent that is now red, so it moves
-    // toward pink — far enough that a failed field is not just the accent
-    // again, close enough that it still reads as a warning.
-    --danger-rgb: 255, 140, 160;
-    // Amber keeps "attention" for itself now that the accent has left it.
-    --warning-rgb: 255, 180, 76;
+    // The waterline lifted the same way.
+    --danger-rgb: 240, 138, 108;
+    --warning-rgb: 224, 168, 94;
     --success-rgb: 61, 184, 135;
     --visited-rgb: 176, 156, 255;
 
-    --prop-default: #1c1c20;
-    --prop-gray: #2a2a2e;
-    --prop-brown: #37291d;
-    --prop-orange: #432c19;
-    --prop-yellow: #3e3618;
-    --prop-green: #16321f;
-    --prop-blue: #16293f;
-    --prop-purple: #292148;
-    --prop-pink: #3d1e33;
-    --prop-red: #401f22;
+    --prop-default: #16304a;
+    --prop-gray: #1f3243;
+    --prop-brown: #33291f;
+    --prop-orange: #3d2a1a;
+    --prop-yellow: #393219;
+    --prop-green: #15322a;
+    --prop-blue: #153049;
+    --prop-purple: #262648;
+    --prop-pink: #3a2034;
+    --prop-red: #3d2024;
 
     --shadow-rgb: 0, 0, 0;
     --shadow-1: none;
@@ -152,6 +122,7 @@
     --backdrop: rgba(0, 0, 0, 0.66);
     color-scheme: dark;
 }
+
 
 :root {
     // ---------------------------------------------------------------------
@@ -222,25 +193,24 @@
     --dnd-indicator: rgb(var(--dnd-indicator-rgb));
 
     // ---------------------------------------------------------------------
-    // Type. Three voices, because a dossier has three.
+    // Type. Four voices, three of them for every screen.
     //
-    //   label — how the system NAMES a thing: caps, spread right out. This is
-    //           the title-card voice, and it is proportional: the even rhythm
-    //           comes from the tracking, not from a fixed advance width.
-    //           Monospace here would be the same rhythm twice over, and it
-    //           costs a third of the line in Russian.
+    //   label — how the system NAMES a thing: caps, spread out, as the lettering
+    //           on a poster. Condensed, because a column name in caps has to
+    //           fit a column: Montserrat was tried and cut a three-word name.
     //   data  — what the system MEASURED: branches, paths, times, counts,
     //           code, and the terminal, which is a real tty and has no choice.
-    //           This is where a fixed advance actually buys something.
     //   prose — a person: a card's title, its description, comments.
+    //   title — a board's name and the app's own, in the italic the icon's
+    //           hull is lettered in. Only there: a display face is for names.
     // ---------------------------------------------------------------------
-    --font-label: 'Roboto Condensed Variable', sans-serif;
-    --font-prose: var(--font-label);
+    --font-label: 'Fira Sans Condensed', sans-serif;
+    --font-prose: 'Inter Variable', sans-serif;
+    --font-title: 'Playfair Display Variable', serif;
     --font-mono: 'JetBrains Mono Variable', ui-monospace, SFMono-Regular, Menlo, monospace;
 
-    --track-label: 0.16em;   // a label is spread out
+    --track-label: 0.08em;   // a label is spread out
     --track-prose: 0;        // a person is not
-    --track-title: 0.3em;    // a board name is a case name
 
     --text-micro: 11px;
     --text-small: 12px;

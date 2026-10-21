@@ -62,7 +62,7 @@
 - **Linux.** Обновляется распакованный архив `.tar.gz` в вашем домашнем
   каталоге. Пакеты `.deb` и AppImage, установленные в системные каталоги,
   обновляются своими средствами.
-- **Сервер без окна** (`XCIII-server`) не обновляет себя: раздела «Обновления»
+- **Сервер без окна** (`pourquoipas-server`) не обновляет себя: раздела «Обновления»
   в его настройках нет.
 
 ## Где это хранится
@@ -71,6 +71,6 @@
 когда была последняя проверка — лежит в файле `updates.json` в каталоге
 установки:
 
-- macOS — `~/Library/Application Support/XCIII/updates.json`;
-- Windows — `%AppData%\XCIII\updates.json`;
-- Linux — `~/.config/XCIII/updates.json`.
+- macOS — `~/Library/Application Support/pourquoipas/updates.json`;
+- Windows — `%AppData%\pourquoipas\updates.json`;
+- Linux — `~/.config/pourquoipas/updates.json`.

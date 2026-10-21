@@ -33,7 +33,7 @@ SSH keys, tokens and environment variables are not valid on another computer.
 | Proxies | the same window as the agents, under the list |
 | Access from a phone | "Settings" → [Access from a phone](./settings/index.md#access-from-a-phone) |
 | Project folders | the board's ⋯ menu → "Folders…" |
-| Theme and language | "Settings" → "The app itself" |
+| Light or dark, language | "Settings" → "The app itself" |
 | Sources — the token is issued anew | [Sources…](./inbox/sources.md) in the inbox board's menu |
 
 The setup wizard asks only for what is missing; it can be walked again any

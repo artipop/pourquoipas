@@ -98,13 +98,13 @@ describe('components/settings/appSettingsDialog', () => {
         expect(screen.getByText('Export archive')).toBeInTheDocument()
     })
 
-    // The theme and the language came here from the corner of the board, and
-    // they are what a fresh install with nothing registered opens on: every
+    // Light or dark and the language came here from the corner of the board,
+    // and they are what a fresh install with nothing registered opens on: every
     // other section belongs to something this build may not be able to do.
     test('opens on what every install can answer', async () => {
         open()
 
-        await waitFor(() => expect(screen.getByLabelText('Theme')).toBeInTheDocument())
+        await waitFor(() => expect(screen.getByRole('button', {name: /^Dark/})).toBeInTheDocument())
         expect(screen.getByRole('button', {name: 'Deutsch'})).toBeInTheDocument()
     })
 

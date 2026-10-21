@@ -5,7 +5,13 @@
         align-items: center;
 
         .logo-title {
-            font-family: var(--font-mono);
+            font-family: var(--font-title);
+            font-style: italic;
+            // The header around it is a label, and a name is not: no caps, no
+            // tracking, one line.
+            text-transform: none;
+            letter-spacing: 0;
+            white-space: nowrap;
             display: flex;
             align-items: center;
             font-size: 16px;
@@ -13,13 +19,9 @@
             cursor: pointer;
 
             .AppLogoIcon {
-                fill: rgba(var(--sidebar-text-rgb), 1);
-                color: rgba(var(--sidebar-text-rgb), 1);
-                height: 24px;
+                height: 22px;
                 width: 22px;
-                margin-right: 3px;
-                position: relative;
-                bottom: 2px;
+                margin-right: 6px;
             }
 
             span {

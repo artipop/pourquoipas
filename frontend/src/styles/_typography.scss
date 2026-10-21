@@ -1,5 +1,5 @@
-// The rule the whole product is drawn around. A dossier has three voices, and
-// so does this:
+// The rule the whole product is drawn around. Three voices for everything on
+// screen, and a fourth, the title face, for names only (`_tokens.scss`):
 //
 //   label — how the system NAMES things: column names, property names,
 //           statuses, buttons, menus. Caps, spread right out.
@@ -97,15 +97,16 @@ kbd {
     @include prose;
 }
 
-// A board's name is the name of a case: wide, light, spread right out. This is
-// the one place the type is allowed to be large.
+// A board's name is lettered like the ship's: the title face, in italic, at
+// the one size the type is allowed to be large.
 .ViewTitle .Editable.title,
 .ViewTitle .title {
-    font-family: var(--font-label);
+    font-family: var(--font-title);
     font-size: var(--text-h2);
+    font-style: italic;
     font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: var(--track-title);
+    text-transform: none;
+    letter-spacing: 0;
 }
 
 h1,
@@ -115,6 +116,21 @@ h3,
     font-family: var(--font-prose);
     font-weight: 600;
     letter-spacing: var(--track-prose);
+}
+
+// Where a line breaks is part of how text reads. A heading is balanced so it
+// does not leave one word on a second line; a paragraph avoids a lone last
+// word. Both fall back to ordinary wrapping where the engine lacks them.
+h1,
+h2,
+h3,
+h4 {
+    text-wrap: balance;
+}
+
+p,
+li {
+    text-wrap: pretty;
 }
 
 .font-semibold {

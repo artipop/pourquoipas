@@ -20,9 +20,10 @@
     }
 
     &__wordmark {
-        @include label;
-
+        font-family: var(--font-title);
         font-size: var(--text-h3);
+        font-style: italic;
+        font-weight: 500;
     }
 
     &__subtitle {

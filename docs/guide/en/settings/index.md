@@ -27,10 +27,8 @@ under them. See [Agents, npx and Node.js](./agents.md).
 
 ## The app itself: theme, language, help
 
-- **Theme** — a dropdown: XCIII, the ported ones, the acid ones, and "Custom
-  config" — a field to paste a theme in Mattermost's format into.
-- **Light or dark** — "Light", "Dark", "As the system is"; every theme has both
-  halves. All of it applies immediately; in full, [Themes](./themes.md).
+- **Light or dark** — "Light", "Dark", "As the system is". The app has one look;
+  it applies immediately; in full, [Light and dark](./themes.md).
 - **Language** — the list of app languages. When none was ever picked, the
   system language applies. The board templates come in the app's language:
   changing the language reinstalls them, so the template picker offers boards
@@ -162,7 +160,7 @@ move or change cards.
 - **"Revoke"** closes access to everything that had the token.
 
 The cards are served by the app itself, so it has to be running on this
-machine. When XCIII is closed, the other application says that XCIII is not
+machine. When Pourquoi Pas? is closed, the other application says that Pourquoi Pas? is not
 running.
 
 ## The settings file
@@ -170,9 +168,9 @@ running.
 Some agent settings are not in the window: they are changed rarely, and they
 are edited by hand in a file. It sits in the install's own directory:
 
-- macOS — `~/Library/Application Support/XCIII/acp/config.json`;
-- Windows — `%AppData%\XCIII\acp\config.json`;
-- Linux — `~/.config/XCIII/acp/config.json` (or `$XDG_CONFIG_HOME`).
+- macOS — `~/Library/Application Support/pourquoipas/acp/config.json`;
+- Windows — `%AppData%\pourquoipas\acp\config.json`;
+- Linux — `~/.config/pourquoipas/acp/config.json` (or `$XDG_CONFIG_HOME`).
 
 Close the app before editing the file: it reads the file at startup.
 

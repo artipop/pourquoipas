@@ -51,11 +51,11 @@ describe('components/sidebar/SidebarSettingsButton', () => {
     // the grounds that they are changed while looking at it. Two icons standing
     // in for two words is what that cost, and this is where a person looks for
     // either of them.
-    test('is where the theme and the language are answered', async () => {
+    test('is where light or dark and the language are answered', async () => {
         open()
 
         await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument())
-        expect(screen.getByLabelText('Theme')).toBeInTheDocument()
+        expect(screen.getByRole('button', {name: /^Dark/})).toBeInTheDocument()
         expect(screen.getByRole('button', {name: 'Deutsch'})).toBeInTheDocument()
     })
 })

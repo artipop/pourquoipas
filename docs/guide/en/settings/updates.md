@@ -61,7 +61,7 @@ even when it is served from the same address as the real one.
 - **Linux.** The unpacked `.tar.gz` in your home directory updates itself.
   `.deb` packages and AppImages installed into system directories are updated
   by their own tooling.
-- **The headless server** (`XCIII-server`) does not update itself: its settings
+- **The headless server** (`pourquoipas-server`) does not update itself: its settings
   have no "Updates" section.
 
 ## Where this is kept
@@ -69,6 +69,6 @@ even when it is served from the same address as the real one.
 What you picked — whether the automatic check is on, which version is skipped,
 when it last checked — lives in `updates.json` in the install directory:
 
-- macOS — `~/Library/Application Support/XCIII/updates.json`;
-- Windows — `%AppData%\XCIII\updates.json`;
-- Linux — `~/.config/XCIII/updates.json`.
+- macOS — `~/Library/Application Support/pourquoipas/updates.json`;
+- Windows — `%AppData%\pourquoipas\updates.json`;
+- Linux — `~/.config/pourquoipas/updates.json`.

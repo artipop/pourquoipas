@@ -22,6 +22,14 @@ import AppPanel from './appPanel'
 vi.mock('../../octoClient')
 const mockedOctoClient = vi.mocked(octoClient)
 
+// The theme choice is closed in the product; the tests of the choice itself
+// open it, so the day it is opened again they still say what it does.
+const themeChoice = vi.hoisted(() => ({open: true}))
+vi.mock('../../theme', async (importOriginal) => ({
+    ...await importOriginal<typeof import('../../theme')>(),
+    themeChoiceOpen: () => themeChoice.open,
+}))
+
 describe('components/settings/appPanel', () => {
     let store = mockAppStore({})
 
@@ -41,6 +49,17 @@ describe('components/settings/appPanel', () => {
             removeCustomTheme(theme.id)
         }
         shown = false
+        themeChoice.open = true
+    })
+
+    // The app's look is designed around its icon, so the panel offers no
+    // other theme — but light or dark stays a person's answer.
+    test('offers light or dark and no theme to pick', () => {
+        themeChoice.open = false
+        open()
+
+        expect(screen.queryByRole('button', {name: 'Theme'})).toBeNull()
+        expect(screen.getByRole('button', {name: /^Dark/})).toBeInTheDocument()
     })
 
     const open = () => render(() => wrapIntl(() =>
@@ -153,19 +172,19 @@ describe('components/settings/appPanel', () => {
         await pick('+ New theme')
 
         const light = await screen.findByLabelText('Theme config') as HTMLTextAreaElement
-        expect(JSON.parse(light.value).centerChannelBg).toBe('#f0ede5')
+        expect(JSON.parse(light.value).centerChannelBg).toBe('#f5e8d1')
 
         const halves = within(screen.getByText('Which half to edit').parentElement as HTMLElement)
         userEvent.click(halves.getByRole('button', {name: /^Dark/}))
 
         await waitFor(() => {
             const dark = screen.getByLabelText('Theme config') as HTMLTextAreaElement
-            expect(JSON.parse(dark.value).centerChannelBg).toBe('#0c0c0e')
+            expect(JSON.parse(dark.value).centerChannelBg).toBe('#0c1b29')
         })
 
         // The board is untouched: which half is being typed and which is being
         // worn are two questions, and this one was about the typing.
-        expect(document.documentElement.style.getPropertyValue('--canvas-rgb')).toBe('240, 237, 229')
+        expect(document.documentElement.style.getPropertyValue('--canvas-rgb')).toBe('245, 232, 209')
     })
 
     // «Как в системе» is a real answer for a board and no answer at all for a
@@ -235,7 +254,7 @@ describe('components/settings/appPanel', () => {
 
         await waitFor(() => expect(screen.queryByLabelText('Theme config')).not.toBeInTheDocument())
         expect(customThemes()).toEqual([])
-        expect(document.documentElement.style.getPropertyValue('--canvas-rgb')).toBe('240, 237, 229')
+        expect(document.documentElement.style.getPropertyValue('--canvas-rgb')).toBe('245, 232, 209')
     })
 
     // A theme called «Свой конфиг» is "the other one"; a name is what makes it
@@ -280,7 +299,7 @@ describe('components/settings/appPanel', () => {
         await pick('+ New theme')
 
         const field = await screen.findByLabelText('Theme config') as HTMLTextAreaElement
-        expect(JSON.parse(field.value).centerChannelBg).toBe('#f0ede5')
+        expect(JSON.parse(field.value).centerChannelBg).toBe('#f5e8d1')
     })
 
     test('switches the language', () => {

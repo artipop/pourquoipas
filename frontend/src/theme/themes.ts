@@ -51,14 +51,14 @@ export type ThemeFamily = {
 }
 
 // The name in the list is the family's, not the file's: a variant keeps its own
-// («Gruvbox Light», «XCIII — paper») because that is what it is, and because a
+// («Gruvbox Light», «Pourquoi Pas? — paper») because that is what it is, and because a
 // config exported from here should say which half it is.
 export const THEME_FAMILIES: ThemeFamily[] = [
 
-    // The one the product was designed in. Its id is `xciii`, and the two
+    // The one the product was designed in. Its id is `pourquoipas`, and the two
     // halves keep the names the setting stored before themes were configs, so
     // an install that picked one is read without a migration table.
-    {id: 'xciii', name: 'XCIII', light: lightTheme, dark: darkTheme},
+    {id: 'pourquoipas', name: 'Pourquoi Pas?', light: lightTheme, dark: darkTheme},
 
     // Mattermost's own community list. Each of those themes exists in one
     // polarity there and in both upstream, so the missing half is the real one

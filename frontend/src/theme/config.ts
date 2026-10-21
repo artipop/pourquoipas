@@ -83,7 +83,7 @@ export const LABEL_KEYS = [
     'labelRed',
 ] as const
 
-export const XCIII_KEYS = [
+export const POURQUOIPAS_KEYS = [
     'surfaceBg',
     'visitedLinkColor',
     'shadowColor',
@@ -92,7 +92,7 @@ export const XCIII_KEYS = [
 
 export type MattermostKey = typeof MATTERMOST_KEYS[number]
 export type LabelKey = typeof LABEL_KEYS[number]
-export type XciiiKey = typeof XCIII_KEYS[number]
+export type PourquoipasKey = typeof POURQUOIPAS_KEYS[number]
 
 export type ThemeConfig = {
 
@@ -113,14 +113,14 @@ export type ThemeConfig = {
     type?: string
 
     codeTheme?: string
-} & Partial<Record<MattermostKey | XciiiKey, string>>
+} & Partial<Record<MattermostKey | PourquoipasKey, string>>
 
 export type ParsedTheme = {
     id: string
     name: string
     dark: boolean
     config: ThemeConfig
-    colors: Partial<Record<MattermostKey | XciiiKey, RGB>>
+    colors: Partial<Record<MattermostKey | PourquoipasKey, RGB>>
 }
 
 // The four a theme cannot be built without. Everything else has somewhere
@@ -152,10 +152,10 @@ export function parseTheme(input: unknown, fallbackId = 'custom'): ParsedTheme {
     }
 
     const config = raw as ThemeConfig
-    const colors: Partial<Record<MattermostKey | XciiiKey, RGB>> = {}
+    const colors: Partial<Record<MattermostKey | PourquoipasKey, RGB>> = {}
     const bad: string[] = []
 
-    for (const key of [...MATTERMOST_KEYS, ...XCIII_KEYS]) {
+    for (const key of [...MATTERMOST_KEYS, ...POURQUOIPAS_KEYS]) {
         const value = config[key]
         if (value === undefined || value === null || value === '') {
             continue

@@ -32,6 +32,7 @@ import {
     themeModes,
     ThemeName,
     THEME_FAMILIES,
+    themeChoiceOpen,
     themeFamilyName,
     defaultFamilyId,
 } from '../../theme'
@@ -270,18 +271,20 @@ const AppPanel = (props: {onClose?: () => void}) => {
             </div>
 
             <div class='AppPanel__content'>
-                <section class='AppPanel__group'>
-                    <h4 class='AppPanel__groupTitle'>
-                        {intl.formatMessage({id: 'Settings.theme', defaultMessage: 'Theme'})}
-                    </h4>
-                    <Select
-                        class='AppPanel__select'
-                        label={intl.formatMessage({id: 'Settings.theme', defaultMessage: 'Theme'})}
-                        value={themeName()}
-                        options={themeOptions()}
-                        onChange={pickTheme}
-                    />
-                </section>
+                <Show when={themeChoiceOpen()}>
+                    <section class='AppPanel__group'>
+                        <h4 class='AppPanel__groupTitle'>
+                            {intl.formatMessage({id: 'Settings.theme', defaultMessage: 'Theme'})}
+                        </h4>
+                        <Select
+                            class='AppPanel__select'
+                            label={intl.formatMessage({id: 'Settings.theme', defaultMessage: 'Theme'})}
+                            value={themeName()}
+                            options={themeOptions()}
+                            onChange={pickTheme}
+                        />
+                    </section>
+                </Show>
 
                 <section class='AppPanel__group'>
                     <h4 class='AppPanel__groupTitle'>
@@ -320,7 +323,7 @@ const AppPanel = (props: {onClose?: () => void}) => {
                     more of the same. Not a modal — the settings are already
                     one, and a dialog over a dialog in this app has to be
                     argued with the sidebar's stacking context. */}
-                <Show when={editing()}>
+                <Show when={themeChoiceOpen() && editing()}>
                     <section class='AppPanel__group AppPanel__editor'>
                         <h4 class='AppPanel__groupTitle'>
                             {customName() || intl.formatMessage({id: 'Settings.theme-custom', defaultMessage: 'Custom config'})}
