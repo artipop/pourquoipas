@@ -151,8 +151,8 @@ func (c *alertController) refresh() {
 		delete(c.told, key)
 		if c.notifier != nil {
 			// A wait a person has dealt with must not go on standing in the
-			// notification centre: they answered it in the terminal, on the
-			// card, on another window, or on their phone.
+			// notification centre: they answered it on the card, in another
+			// window, or on their phone.
 			//
 			// RemoveDeliveredNotification and not RemoveNotification, which is
 			// the one that reads like the right call and is a stub returning
@@ -192,8 +192,8 @@ func (c *alertController) refresh() {
 }
 
 // appFocused reports whether the person is in this app at all — any window of
-// it, not only the board's. A terminal window is the app too, and announcing a
-// wait to somebody who is sitting in front of the agent's own screen is the
+// it, not only the board's. A card's changes or the share dialog is the app
+// too, and announcing a wait to somebody already sitting in front of it is the
 // noise this whole feature is supposed to be the opposite of.
 func (c *alertController) appFocused() bool {
 	for _, win := range c.wapp.Window.GetAll() {
@@ -249,8 +249,8 @@ func (c *alertController) drawTray(waiting []acp.Attention) {
 }
 
 // menu is the way in from the menu bar: back to the board, or straight to
-// whichever agent is asking. Nothing here answers anything — the agent drew its
-// question in its own terminal, and this is the way to it.
+// whichever agent is asking. Nothing here answers anything — the question is
+// answered on the card, and this is the way to it.
 func (c *alertController) menu(waiting []acp.Attention) *application.Menu {
 	w := currentWords()
 	menu := application.NewMenu()

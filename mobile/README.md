@@ -6,8 +6,8 @@ The phone runs nothing. The board, its API, its sockets and the agent bindings
 are all served by the board server, and this app is a window onto it — exactly
 what the desktop app's own window is, which is also pointed at its front door
 rather than at a `wails://` origin. The page each machine shows is
-`/m`, the board's phone view: what is waiting for a person, and the terminals it
-is waiting in.
+`/m`, the board's phone view: the inbox, a board's cards, and what is waiting
+for a person.
 
 What it reaches is a board server, by the address it is published under, and
 the server asks for a login. A desktop no longer publishes anything off its own
@@ -21,8 +21,7 @@ its own name. So the window holds a tab per machine and a **frame** behind each
 tab — not a navigation, and not one merged board.
 
 A frame is what keeps this free. Inside it the board's page is same-origin with
-its own front door, so the bindings, the event socket and the terminal socket
-work exactly as they do in a browser, and nothing on the server side has to be
+its own front door, so the bindings and the event socket work exactly as they do in a browser, and nothing on the server side has to be
 opened up to another machine's origin. It is also the only way back: the tabs
 live in a page that never leaves.
 
@@ -45,7 +44,7 @@ door and a cross-origin hole in `sameOrigin` — is in `docs/deferred.md`.
 
 The mobile build compiles **package main from the module root** — `wails3 ios
 overlay:gen` injects a `main_ios.gen.go` beside it that calls `main()`. The
-desktop `main` is the board server with cgo SQLite, git and a pty; none of it
+desktop `main` is the board server with cgo SQLite and git; none of it
 builds for iOS and none of it belongs on a phone. So the phone app is its own
 module, with its own `go.mod`, outside the parent's `./...`.
 

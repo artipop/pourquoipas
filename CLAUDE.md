@@ -23,8 +23,9 @@ code builds a headless server (`-tags server`) that serves the board to a browse
   Mattermost any more. A directory of this module (`github.com/artipop/pourquoipas/
   server/…`), not a module of its own. Cutting it is ordinary;
   `docs/fork-shrink-removed.md` is the ledger of what went and how to bring it
-  back. A removal is one commit with its tests, mocks and doc edits. Login,
-  public sharing and multi-team are kept on purpose.
+  back. A removal is one commit with its tests, mocks and doc edits. Login and
+  public sharing are kept on purpose; multi-team is to go
+  (`docs/client-server-plan.md`).
 - `frontend/` — its own npm project, laid out as `wails3 init` lays one out
   (bindings in `frontend/bindings`, the bundle in `frontend/dist`), built with
   Vite, rewritten from React to **SolidJS**. Upstream and this repository's early history are React and are no

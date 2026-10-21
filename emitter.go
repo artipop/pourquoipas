@@ -11,12 +11,10 @@ import (
 // application itself rather than through a runtime context, so the only window
 // in which events are dropped is between application.New and SetApplication.
 //
-// Every event goes out twice: over the Wails bus, which reaches the windows
-// this application owns, and over the front door's own socket (eventsws.go),
-// which reaches every page — including one opened in a browser or on a
-// phone, where the bus does not reach. The page listens on the socket;
-// the bus is kept because it costs a line and it is what a window would use if
-// the socket were ever unavailable.
+// The page listens on our own socket (eventsws.go), which reaches every page,
+// a browser's included, where the bus does not. A desktop also puts each event
+// on the Wails bus, because the menu bar and the OS notifications listen there
+// (alerts_desktop.go); a server build does not (emitsOnBus).
 type wailsEmitter struct {
 	mu     sync.RWMutex
 	app    *application.App

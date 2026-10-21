@@ -159,7 +159,7 @@ board's catch-all route is `/:boardId?/…`, which `/m` fits.
 
 `mobile/` is the phone app itself, and it is **a second Go module on purpose**:
 `wails3 ios overlay:gen` compiles `package main` from the module root, and this
-root's main is a board server with cgo SQLite, git and a pty. The phone runs
+root's main is a board server with cgo SQLite and git. The phone runs
 none of that — the app is a window onto `https://<server>/m`, which is what the
 desktop's own window is too. It keeps the servers in the platform's secure
 store, because a person may work more than one: the window holds **a tab per

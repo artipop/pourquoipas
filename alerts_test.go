@@ -79,7 +79,7 @@ func TestAWaitRaisedAgainIsAnnouncedAgain(t *testing.T) {
 // What a notification has to carry is which agent and which card: the person
 // reading it is somewhere else entirely and has neither in front of them.
 func TestANotificationNamesTheAgentAndTheCard(t *testing.T) {
-	a := acp.Attention{Key: "t1", Agent: "клаус", Title: "Почини логин", Text: "агент ждёт ответа в терминале"}
+	a := acp.Attention{Key: "t1", Agent: "клаус", Title: "Почини логин", Text: "агент ждёт ответа"}
 	if got := alertTitle(englishWords, a); got != "клаус is asking" {
 		t.Errorf("title = %q", got)
 	}

@@ -98,7 +98,7 @@ The Go code is platform-agnostic — the same files build for every OS:
 answered in place — and [`mobile/`](mobile/README.md) is a small Wails app for
 iOS and Android that is one window onto it on a board server. It is
 its own Go module because the mobile build compiles `package main` from the
-module root, and this one is a board server with SQLite, git and a pty.
+module root, and this one is a board server with SQLite and git.
 
 Builds are **native per platform** (each on its own machine/CI runner) — the
 desktop build needs cgo on macOS and Linux, for Wails itself, and cgo does not

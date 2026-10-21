@@ -14,7 +14,7 @@ import (
 // It is a module of its own rather than a build tag over the desktop app, and
 // that is not tidiness. The mobile build compiles package main from the module
 // root (`wails3 ios overlay:gen` injects a main_ios.gen.go beside it), and the
-// desktop main is the board server, cgo SQLite, git and a pty — none of which
+// desktop main is the board server, cgo SQLite and git — none of which
 // builds for iOS and none of which belongs on a phone anyway.
 //
 // What the phone runs is nothing. The board, its API, its sockets and the agent
@@ -23,13 +23,13 @@ import (
 // (mode_desktop.go points it at http://127.0.0.1:port). The page each machine
 // shows is /m, the board's phone view.
 //
-// A person has more than one desktop, so the window holds a tab per machine and
-// a frame behind each tab. A frame keeps every machine on its own origin, which
-// is what makes this cost nothing on the desktop side: inside it, the board's
-// page is same-origin with its own front door, and the bindings, the event
-// socket and the terminal socket work exactly as they do in a browser. What the
-// frames report to the tabs is one number each — how many things are waiting
-// there — so which desktop needs a person is visible without opening its tab.
+// A person may work more than one server, so the window holds a tab per server
+// and a frame behind each tab. A frame keeps every server on its own origin,
+// which is what makes this cost nothing on the server side: inside it, the
+// board's page is same-origin with its own door, and the bindings and the event
+// socket work exactly as they do in a browser. What the frames report to the
+// tabs is one number each — how many things are waiting there — so which
+// server needs a person is visible without opening its tab.
 //
 // What it opens is a board server, by the address it is published under; the
 // server asks for a login. A desktop publishes nothing off its own machine
