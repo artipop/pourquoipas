@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/artipop/xciii/sources/protocol"
-	"github.com/artipop/xciii/sources/sdk"
+	"github.com/artipop/pourquoipas/sources/protocol"
+	"github.com/artipop/pourquoipas/sources/sdk"
 )
 
 // The plugin these tests talk to is this test binary, re-invoked. That is the
@@ -20,7 +20,7 @@ import (
 // stdio, real line framing — without depending on a toolchain being installed
 // to build a second program.
 
-const pluginModeEnv = "XCIII_TEST_PLUGIN"
+const pluginModeEnv = "POURQUOIPAS_TEST_PLUGIN"
 
 func TestMain(m *testing.M) {
 	if mode := os.Getenv(pluginModeEnv); mode != "" {
@@ -165,7 +165,7 @@ func dialTestPlugin(t *testing.T, mode string, handler Handler) (*Client, error)
 		Command: []string{os.Args[0]},
 		Env:     []string{pluginModeEnv + "=" + mode},
 		Source:  SourceInfo{Name: "телефон", Config: map[string]string{"label": "INBOX"}},
-		Host:    HostInfo{Name: "XCIII"},
+		Host:    HostInfo{Name: "pourquoipas"},
 	}, handler)
 }
 

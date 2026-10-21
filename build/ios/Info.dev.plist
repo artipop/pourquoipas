@@ -3,13 +3,13 @@
 <plist version="1.0">
 <dict>
     <key>CFBundleExecutable</key>
-    <string>XCIII</string>
+    <string>pourquoipas</string>
     <key>CFBundleIdentifier</key>
-    <string>io.deffun.xciii.dev</string>
+    <string>io.deffun.pourquoipas.dev</string>
     <key>CFBundleName</key>
-    <string>XCIII (Dev)</string>
+    <string>Pourquoi Pas? (Dev)</string>
     <key>CFBundleDisplayName</key>
-    <string>XCIII (Dev)</string>
+    <string>Pourquoi Pas? (Dev)</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>

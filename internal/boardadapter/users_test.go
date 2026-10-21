@@ -4,10 +4,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/artipop/xciii/server/mlog"
-	"github.com/artipop/xciii/server/model"
+	"github.com/artipop/pourquoipas/server/mlog"
+	"github.com/artipop/pourquoipas/server/model"
 
-	"github.com/artipop/xciii/internal/acp"
+	"github.com/artipop/pourquoipas/internal/acp"
 )
 
 // A source's account is named after the source, because the board shows the
@@ -100,7 +100,7 @@ func TestMoveCardKeepsTheOtherProperties(t *testing.T) {
 
 	card, err := a.CreateCard(&model.Card{
 		Title:      "Карточка с двумя свойствами",
-		Properties: map[string]any{"prop-status": "opt-ideas", "prop-project": "opt-xciii"},
+		Properties: map[string]any{"prop-status": "opt-ideas", "prop-project": "opt-pourquoipas"},
 	}, board.ID, model.SingleUser, true)
 	if err != nil {
 		t.Fatal(err)
@@ -121,7 +121,7 @@ func TestMoveCardKeepsTheOtherProperties(t *testing.T) {
 	if props["prop-status"] != "opt-agent" {
 		t.Errorf("the move did not land: %v", props)
 	}
-	if props["prop-project"] != "opt-xciii" {
+	if props["prop-project"] != "opt-pourquoipas" {
 		t.Errorf("the move erased the card's project: %v", props)
 	}
 }

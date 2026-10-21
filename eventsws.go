@@ -9,7 +9,7 @@ import (
 	"encoding/json"
 	"github.com/gorilla/websocket"
 
-	"github.com/artipop/xciii/internal/feedmcp"
+	"github.com/artipop/pourquoipas/internal/feedmcp"
 )
 
 // The agent events a page listens to — a session changed state, a terminal

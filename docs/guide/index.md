@@ -1,12 +1,12 @@
 ---
 layout: home
 
-# Иначе вкладка называется «XCIII — руководство XCIII»: имя продукта здесь и
+# Иначе вкладка называется «Pourquoi Pas? — руководство Pourquoi Pas?»: имя продукта здесь и
 # есть заголовок страницы.
 titleTemplate: ':title — руководство'
 
 hero:
-  name: XCIII
+  name: Pourquoi Pas?
   text: Руководство
   tagline: Как пользоваться доской, агентами и всем, что вокруг них.
   actions:

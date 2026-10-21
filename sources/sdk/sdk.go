@@ -29,7 +29,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/artipop/xciii/sources/protocol"
+	"github.com/artipop/pourquoipas/sources/protocol"
 )
 
 // Item is one thing a plugin found. The fields that matter are the first two:

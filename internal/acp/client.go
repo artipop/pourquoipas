@@ -11,7 +11,7 @@ import (
 
 	acpsdk "github.com/coder/acp-go-sdk"
 
-	"github.com/artipop/xciii/internal/apperr"
+	"github.com/artipop/pourquoipas/internal/apperr"
 )
 
 // chunkFlushDelay batches streamed text before it reaches the UI: agents emit

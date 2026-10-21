@@ -25,8 +25,8 @@ import (
 // address earlier versions kept. Both are read on launch, so both names are
 // part of the app's compatibility surface.
 const (
-	machinesKey = "xciii.board.machines"
-	addressKey  = "xciii.board.address"
+	machinesKey = "pourquoipas.board.machines"
+	addressKey  = "pourquoipas.board.address"
 )
 
 // Machine is one board, as the page needs it: what was typed (which is what a

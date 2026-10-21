@@ -127,7 +127,7 @@ Tailscale на iOS нет —
 [tailscale#14679](https://github.com/tailscale/tailscale/issues/14679).
 
 Что можно сегодня без кода: на iOS — личная автоматизация в Shortcuts
-(«приложение XCIII открывается» → действие Tailscale), на Android — системная
+(«приложение Pourquoi Pas? открывается» → действие Tailscale), на Android — системная
 Always-on VPN.
 
 Лучший вариант, если браться: **вообще без системного VPN**. Приложение на
@@ -294,26 +294,24 @@ SmartScreen.
 и приезжают на страницу данными. Второе честнее и дороже — выбирать это стоит
 тогда, когда тема действительно понадобится, а не сейчас.
 
-## Префикс `xciii` в том, о чём договорились с ОС
+## Чтение старого имени после переименования
 
-Имя продукта записано в несколько договорённостей с ОС и с уже установленными
-копиями: URL-схема `xciii://` (в `Info.plist` ради расширения «Поделиться»),
-bundle id `io.deffun.xciii`, служба в связке ключей (`xciii.probe`,
-`xciii.board.machines`, `xciii.board.address`), имя файла базы `xciii.db`,
-git-ref `refs/xciii/seen/`, имя экземпляра миграций. Ключи на доске и на
-карточке префикс уже потеряли (2026-08-20: `columns`, `flows`, `setup`,
-`prompt`, `template`, `source`, `flow`, `columnProperty`, `branchProperty`,
-`projectProperty`; сессия — `boardSession`).
+2026-10-20 XCIII стал Pourquoi Pas?, и всё, что несло имя, сменило его разом:
+URL-схема `pourquoipas://`, bundle id `io.deffun.pourquoipas`, папка данных и
+служба в связке ключей (`pourquoipas`, `pourquoipas-dev`), ключи в связке
+(`pourquoipas.probe`, `pourquoipas.board.machines`, `pourquoipas.board.address`),
+файл базы `pourquoipas.db`, переменные окружения `POURQUOIPAS_*`.
+Отметка входящих лишилась имени продукта совсем (`xciiiInbox` → `inbox`): это ключ в `properties` доски, где
+префикс ничего не защищает, — то же решение, что 2026-08-20 сняло его с
+остальных ключей доски.
 
-Не делается, потому что оставшееся меняется только вместе с переименованием
-приложения: там, где наш ключ лежит в чужой карте (связка ключей, `refs/`),
-префикс держит пространство имён, и выбирать надо новое слово, а не удалять
-старое. Когда переименование случится — одна константа префикса, из которой
-собираются ключи, и чтение старого написания с записью нового, как
-`legacyBoardProps` в `boardseed.go` сделал при переходе `acp*` → `xciii*`.
-Мелочь туда же: `server/assets/templates-boardarchive/buz8dcekwdibq3eqjq74w613rxy/
-board.jsonl` ещё носит ключи `acpColumns`; собранный `templates.boardarchive`
-их не содержит.
+Старое написание не читается: установок мало, и папку, токены и отметку
+входящих переносят один раз руками, как при переименовании XXVI в Gandvík.
+Если установок станет много до следующего переименования — одна константа
+префикса, из которой собираются ключи, и чтение старого написания с записью
+нового. Мелочь туда же: `server/assets/templates-boardarchive/
+buz8dcekwdibq3eqjq74w613rxy/board.jsonl` ещё носит ключи `acpColumns`;
+собранный `templates.boardarchive` их не содержит.
 
 ## Синхронизация через iCloud
 
@@ -421,7 +419,7 @@ timestamp во всех трёх диалектах (`TIMESTAMPTZ` / `DATETIME(6
 отдельным проектом, а не миграцией.
 
 **Наши таблицы — только на SQLite.** Доска работает на всех трёх вендорах, и
-сервер выбирает свой через `XCIII_DB_TYPE`/`XCIII_DB_DSN`
+сервер выбирает свой через `POURQUOIPAS_DB_TYPE`/`POURQUOIPAS_DB_DSN`
 (`database_server.go`), но SQL агентов и источников (`internal/acp`,
 `internal/sources`) написан на диалекте SQLite: плейсхолдеры `?` и upsert через
 `ON CONFLICT … excluded.`. Postgres понимает второе и не понимает первое, MySQL

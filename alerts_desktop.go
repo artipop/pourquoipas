@@ -14,7 +14,7 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/events"
 	"github.com/wailsapp/wails/v3/pkg/services/notifications"
 
-	"github.com/artipop/xciii/internal/acp"
+	"github.com/artipop/pourquoipas/internal/acp"
 )
 
 // The menu bar and the OS notification centre, driven by the one thing they are

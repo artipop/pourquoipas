@@ -6,8 +6,8 @@ bin
 frontend/dist/*
 !frontend/dist/.gitkeep
 # `go build .` with no -o leaves a binary named after this directory. Anchored
-# to the root: unanchored it also swallowed site/xciii, a page of the landing.
-/xciii
+# to the root: unanchored it also swallowed site/pourquoipas, a page of the landing.
+/pourquoipas
 # `go build ./tools/...` does the same for the schema generator, and drops it in
 # the module root rather than beside its package.
 /schemagen
@@ -18,7 +18,7 @@ node_modules
 # older commit has taken it away and an IDE watcher is still running — it
 # falls back to .vite beside the config.
 .vite
-# VitePress' own working directory, for both guides (docs/guide, the XCIII one,
+# VitePress' own working directory, for both guides (docs/guide, the Pourquoi Pas? one,
 # and docs/guide-xxvi). They build into site/dist instead, so a `dist` here only
 # appears if somebody overrides outDir.
 docs/guide*/.vitepress/cache
@@ -77,4 +77,4 @@ go.work.sum
 .claude/worktrees/
 
 # The build output of `go build .` on Windows.
-xciii.exe
+pourquoipas.exe

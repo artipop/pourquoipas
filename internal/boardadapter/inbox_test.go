@@ -4,12 +4,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/artipop/xciii/server/app"
-	"github.com/artipop/xciii/server/model"
+	"github.com/artipop/pourquoipas/server/app"
+	"github.com/artipop/pourquoipas/server/model"
 
-	"github.com/artipop/xciii/server/utils"
+	"github.com/artipop/pourquoipas/server/utils"
 
-	"github.com/artipop/xciii/internal/sources"
+	"github.com/artipop/pourquoipas/internal/sources"
 )
 
 // The inbox is a board the app makes, found by a mark on it, and a view on it —

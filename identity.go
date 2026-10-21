@@ -1,6 +1,6 @@
 package main
 
-import "github.com/artipop/xciii/server/model"
+import "github.com/artipop/pourquoipas/server/model"
 
 // Who this install asks about is a property of the build, not of a settings
 // file: a desktop is one person, a hosted server is a team. It was a mode of

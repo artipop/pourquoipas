@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/artipop/xciii/server/model"
+	"github.com/artipop/pourquoipas/server/model"
 
-	"github.com/artipop/xciii/internal/acp"
-	"github.com/artipop/xciii/internal/boardmodel"
+	"github.com/artipop/pourquoipas/internal/acp"
+	"github.com/artipop/pourquoipas/internal/boardmodel"
 )
 
 var (

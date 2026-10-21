@@ -10,13 +10,13 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/artipop/xciii/server/model"
-	"github.com/artipop/xciii/server/server"
-	"github.com/artipop/xciii/server/services/config"
-	"github.com/artipop/xciii/server/services/notify"
-	"github.com/artipop/xciii/server/services/permissions/localpermissions"
+	"github.com/artipop/pourquoipas/server/model"
+	"github.com/artipop/pourquoipas/server/server"
+	"github.com/artipop/pourquoipas/server/services/config"
+	"github.com/artipop/pourquoipas/server/services/notify"
+	"github.com/artipop/pourquoipas/server/services/permissions/localpermissions"
 
-	"github.com/artipop/xciii/server/mlog"
+	"github.com/artipop/pourquoipas/server/mlog"
 )
 
 // getFreePort asks the kernel for a free open port that is ready to use.

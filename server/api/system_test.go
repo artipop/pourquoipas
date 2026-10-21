@@ -7,9 +7,9 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/artipop/xciii/server/app"
-	"github.com/artipop/xciii/server/mlog"
-	"github.com/artipop/xciii/server/model"
+	"github.com/artipop/pourquoipas/server/app"
+	"github.com/artipop/pourquoipas/server/mlog"
+	"github.com/artipop/pourquoipas/server/model"
 )
 
 func TestHello(t *testing.T) {

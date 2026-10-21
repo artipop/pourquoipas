@@ -5,16 +5,16 @@ import (
 	"sync"
 	"time"
 
-	"github.com/artipop/xciii/server/auth"
-	"github.com/artipop/xciii/server/services/config"
-	"github.com/artipop/xciii/server/services/notify"
-	"github.com/artipop/xciii/server/services/permissions"
-	"github.com/artipop/xciii/server/services/store"
-	"github.com/artipop/xciii/server/utils"
-	"github.com/artipop/xciii/server/ws"
+	"github.com/artipop/pourquoipas/server/auth"
+	"github.com/artipop/pourquoipas/server/services/config"
+	"github.com/artipop/pourquoipas/server/services/notify"
+	"github.com/artipop/pourquoipas/server/services/permissions"
+	"github.com/artipop/pourquoipas/server/services/store"
+	"github.com/artipop/pourquoipas/server/utils"
+	"github.com/artipop/pourquoipas/server/ws"
 
-	"github.com/artipop/xciii/server/mlog"
-	"github.com/artipop/xciii/server/services/filestore"
+	"github.com/artipop/pourquoipas/server/mlog"
+	"github.com/artipop/pourquoipas/server/services/filestore"
 )
 
 const (

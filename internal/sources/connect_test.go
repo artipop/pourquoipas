@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/artipop/xciii/internal/secrets"
-	"github.com/artipop/xciii/internal/sources/plugin"
+	"github.com/artipop/pourquoipas/internal/secrets"
+	"github.com/artipop/pourquoipas/internal/sources/plugin"
 )
 
 // Connecting a source is the app's business and not the plugin's: what these

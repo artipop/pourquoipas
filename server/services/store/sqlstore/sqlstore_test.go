@@ -3,7 +3,7 @@ package sqlstore
 import (
 	"testing"
 
-	"github.com/artipop/xciii/server/services/store/storetests"
+	"github.com/artipop/pourquoipas/server/services/store/storetests"
 )
 
 func TestSQLStore(t *testing.T) {

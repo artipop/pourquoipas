@@ -3,7 +3,7 @@ package main
 import (
 	"testing"
 
-	"github.com/artipop/xciii/internal/buildversion"
+	"github.com/artipop/pourquoipas/internal/buildversion"
 )
 
 // The version a build calls itself has to be the version its packaging says,

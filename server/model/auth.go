@@ -6,7 +6,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/artipop/xciii/server/services/auth"
+	"github.com/artipop/pourquoipas/server/services/auth"
 )
 
 const (

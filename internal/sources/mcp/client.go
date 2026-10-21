@@ -27,7 +27,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/artipop/xciii/internal/procgroup"
+	"github.com/artipop/pourquoipas/internal/procgroup"
 )
 
 // ProtocolVersion is what this client asks for. A server that answers with a
@@ -124,7 +124,7 @@ func Dial(ctx context.Context, spec Spec) (*Client, error) {
 
 	name := spec.ClientName
 	if name == "" {
-		name = "XCIII"
+		name = "pourquoipas"
 	}
 	var result struct {
 		ProtocolVersion string     `json:"protocolVersion"`

@@ -11,11 +11,11 @@ package main
 // nothing else: `wails3 dev` runs `wails3 build DEV=true`, which leaves it off,
 // and every packaged build — the .app, the installers, the headless server —
 // has it. Nothing new has to be remembered or passed in.
-const appDirName = "XCIII"
+const appDirName = "pourquoipas"
 
 // singleInstanceID is the lock a second launch looks for; the share extension
 // relies on landing in the running app through it (main.go).
-const singleInstanceID = "io.deffun.xciii"
+const singleInstanceID = "io.deffun.pourquoipas"
 
 // appIsDev says this build is the one you get from `wails3 dev`. It is only
 // ever used to say so out loud at startup, so that "why is my board empty"

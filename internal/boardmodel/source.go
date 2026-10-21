@@ -3,7 +3,7 @@ package boardmodel
 import (
 	"strings"
 
-	"github.com/artipop/xciii/server/model"
+	"github.com/artipop/pourquoipas/server/model"
 )
 
 // A card a source brought: how its named properties become the ids a card

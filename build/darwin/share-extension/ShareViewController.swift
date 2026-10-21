@@ -1,9 +1,9 @@
 import Cocoa
 
-// The extension that puts XCIII in the system's «Поделиться».
+// The extension that puts Pourquoi Pas? in the system's «Поделиться».
 //
 // It is deliberately the thinnest thing that can work: it takes the link and
-// the title the sharing app handed over, opens `xciii://share?…` and finishes.
+// the title the sharing app handed over, opens `pourquoipas://share?…` and finishes.
 // It shows nothing, asks nothing and never touches the network.
 //
 // That is not laziness. An app extension is a separate, sandboxed process: to
@@ -81,7 +81,7 @@ final class ShareViewController: NSViewController {
 
     private func open(url: String, text: String, title: String) {
         var components = URLComponents()
-        components.scheme = "xciii"
+        components.scheme = "pourquoipas"
         components.host = "share"
         components.queryItems = [
             URLQueryItem(name: "url", value: url),

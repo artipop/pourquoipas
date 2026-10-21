@@ -10,10 +10,10 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/artipop/xciii/internal/apperr"
-	"github.com/artipop/xciii/internal/secrets"
-	"github.com/artipop/xciii/server/client"
-	"github.com/artipop/xciii/server/model"
+	"github.com/artipop/pourquoipas/internal/apperr"
+	"github.com/artipop/pourquoipas/internal/secrets"
+	"github.com/artipop/pourquoipas/server/client"
+	"github.com/artipop/pourquoipas/server/model"
 )
 
 // Attaching this desktop to a hosted board: the cards move, the agents do not

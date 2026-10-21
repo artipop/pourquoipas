@@ -75,7 +75,7 @@ const MobilePage = () => {
             return
         }
         try {
-            window.parent.postMessage({type: 'xciii:waiting', count}, '*')
+            window.parent.postMessage({type: 'pourquoipas:waiting', count}, '*')
         } catch {
             // Whatever is holding this page is not listening; nothing here
             // depends on it.
@@ -89,7 +89,7 @@ const MobilePage = () => {
     return (
         <div class='MobilePage'>
             <header class='MobilePage__header'>
-                <span class='MobilePage__wordmark'>{'XCIII'}</span>
+                <span class='MobilePage__wordmark'>{'Pourquoi Pas?'}</span>
                 <span class='MobilePage__subtitle'>
                     {intl.formatMessage({id: 'Mobile.subtitle', defaultMessage: 'What needs you'})}
                 </span>

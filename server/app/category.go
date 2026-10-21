@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/artipop/xciii/server/model"
-	"github.com/artipop/xciii/server/utils"
+	"github.com/artipop/pourquoipas/server/model"
+	"github.com/artipop/pourquoipas/server/utils"
 )
 
 var errCategoryNotFound = errors.New("category ID specified in input does not exist for user")

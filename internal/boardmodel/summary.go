@@ -3,7 +3,7 @@ package boardmodel
 import (
 	"strings"
 
-	"github.com/artipop/xciii/server/model"
+	"github.com/artipop/pourquoipas/server/model"
 )
 
 // The board as a list shows it — what the phone at /m and the share dialog

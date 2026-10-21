@@ -15,7 +15,7 @@ import (
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 
-	"github.com/artipop/xciii/internal/apperr"
+	"github.com/artipop/pourquoipas/internal/apperr"
 )
 
 // origin is the front door of a server build. Here Wails runs an HTTP server of

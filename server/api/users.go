@@ -5,9 +5,9 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/artipop/xciii/server/model"
-	"github.com/artipop/xciii/server/utils"
-	"github.com/artipop/xciii/server/web"
+	"github.com/artipop/pourquoipas/server/model"
+	"github.com/artipop/pourquoipas/server/utils"
+	"github.com/artipop/pourquoipas/server/web"
 )
 
 func (a *API) registerUsersRoutes(r *web.Router) {

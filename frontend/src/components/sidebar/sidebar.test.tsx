@@ -104,7 +104,7 @@ describe('components/sidebarSidebar', () => {
     // the categories say — and a category never lists it a second time, even
     // though the server still files it in one.
     test('the inbox is pinned above every category', () => {
-        const inbox = {...TestBlockFactory.createBoard(), id: 'inbox', title: 'Входящие', properties: {xciiiInbox: true}} as unknown as typeof board
+        const inbox = {...TestBlockFactory.createBoard(), id: 'inbox', title: 'Входящие', properties: {inbox: true}} as unknown as typeof board
         const category = {...categoryAttribute1, boardMetadata: [{boardID: board.id, hidden: false}, {boardID: inbox.id, hidden: false}]}
         const store = mockAppStore({
             teams: {current: {id: 'team-id'}},

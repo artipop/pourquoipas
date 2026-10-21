@@ -3,13 +3,13 @@ package server
 import (
 	"fmt"
 
-	"github.com/artipop/xciii/server/services/config"
-	"github.com/artipop/xciii/server/services/notify"
-	"github.com/artipop/xciii/server/services/permissions"
-	"github.com/artipop/xciii/server/services/store"
-	"github.com/artipop/xciii/server/ws"
+	"github.com/artipop/pourquoipas/server/services/config"
+	"github.com/artipop/pourquoipas/server/services/notify"
+	"github.com/artipop/pourquoipas/server/services/permissions"
+	"github.com/artipop/pourquoipas/server/services/store"
+	"github.com/artipop/pourquoipas/server/ws"
 
-	"github.com/artipop/xciii/server/mlog"
+	"github.com/artipop/pourquoipas/server/mlog"
 )
 
 type Params struct {

@@ -1,7 +1,7 @@
 // Package feedmcp is the board read from outside: one MCP tool that lists the
 // cards standing in a column, for another application to take as its own
-// inbox. XXVI reads it as a source (its manifest xciii.json names
-// `xciii mcp feed`).
+// inbox. Gandvík reads it as a source (its manifest xciii.json names
+// `pourquoipas mcp feed`).
 //
 // It is not boardmcp. That one is an agent's, authorized by one run's grant and
 // written for a model to read — lines of text. This one is a program's: a
@@ -27,11 +27,11 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/artipop/xciii/internal/boardmodel"
+	"github.com/artipop/pourquoipas/internal/boardmodel"
 )
 
 // ServerName is the name the tools appear under and the subcommand that
-// bridges to them: `xciii mcp feed`.
+// bridges to them: `pourquoipas mcp feed`.
 const ServerName = "feed"
 
 // Path is where the feed is served on the front door.
@@ -41,18 +41,18 @@ const version = "0.1.0"
 
 // Environment the bridge is configured through.
 const (
-	EnvToken = "XCIII_FEED_TOKEN"
+	EnvToken = "POURQUOIPAS_FEED_TOKEN"
 	// EnvURL is the board's address when it is not this machine's running
 	// app: a server build, reached at an address that does not change. It is
 	// also what makes a card's link worth giving — see BaseHeader.
-	EnvURL = "XCIII_URL"
+	EnvURL = "POURQUOIPAS_URL"
 )
 
 // BaseHeader carries the address the caller reached the board at, when that
 // address is stable. The feed answers with links only then: a desktop's front
 // door is a random loopback port per launch, and a link to it is dead by the
 // next start.
-const BaseHeader = "X-Xciii-Base"
+const BaseHeader = "X-Pourquoipas-Base"
 
 // Lists is the part of the board the feed reads.
 type Lists interface {
@@ -81,7 +81,7 @@ type listInput struct {
 // NewServer builds the feed over a board. base is the stable address the
 // caller reached the board at, or empty when there is none.
 func NewServer(lists Lists, base string) *mcp.Server {
-	srv := mcp.NewServer(&mcp.Implementation{Name: ServerName, Title: "XCIII board feed", Version: version}, nil)
+	srv := mcp.NewServer(&mcp.Implementation{Name: ServerName, Title: "Pourquoi Pas? board feed", Version: version}, nil)
 	mcp.AddTool(srv, &mcp.Tool{
 		Name:        "list_column_cards",
 		Description: "The cards standing in one column of a board, as JSON: {cards: [{id, title, board, column, updated, url, properties}]}.",
@@ -276,7 +276,7 @@ func errorResult(err error) *mcp.CallToolResult {
 
 // How the bridge finds a desktop app: its front door is a random loopback port
 // per launch, so the running app leaves the address beside its data, and
-// `xciii mcp feed` reads it there. A server build's reader has a token a person
+// `pourquoipas mcp feed` reads it there. A server build's reader has a token a person
 // issued in the settings. A desktop's reader is a program on the same machine,
 // and makes a person carry a secret from one window to another for nothing: the
 // app makes one of its own for the run and leaves it in the file, which only
@@ -310,7 +310,7 @@ func RemoveHandoff(dataDir string) {
 }
 
 // Endpoint is where the bridge connects, and the stable base to announce with
-// it: XCIII_URL when it is given, else the address the running app left — with
+// it: POURQUOIPAS_URL when it is given, else the address the running app left — with
 // the secret it left beside it, which is empty for a server.
 func Endpoint(dataDir string) (endpoint, base, secret string, err error) {
 	if raw := strings.TrimSpace(os.Getenv(EnvURL)); raw != "" {
@@ -322,19 +322,19 @@ func Endpoint(dataDir string) (endpoint, base, secret string, err error) {
 	}
 	body, err := os.ReadFile(filepath.Join(dataDir, HandoffFile))
 	if os.IsNotExist(err) {
-		return "", "", "", errors.New("XCIII не запущен: фид доски отдаёт само приложение, откройте его")
+		return "", "", "", errors.New("Pourquoi Pas? не запущен: фид доски отдаёт само приложение, откройте его")
 	}
 	if err != nil {
 		return "", "", "", err
 	}
 	var h Handoff
 	if err := json.Unmarshal(body, &h); err != nil || h.URL == "" {
-		return "", "", "", fmt.Errorf("не удалось прочитать %s — перезапустите XCIII", HandoffFile)
+		return "", "", "", fmt.Errorf("не удалось прочитать %s — перезапустите Pourquoi Pas?", HandoffFile)
 	}
 	return h.URL, "", h.Secret, nil
 }
 
-// ServeStdio is `xciii mcp feed`: one stdio session piped through to the feed.
+// ServeStdio is `pourquoipas mcp feed`: one stdio session piped through to the feed.
 // The bridge carries no tool of its own — it asks the feed what it has and
 // forwards the calls — so the tool is described in one place.
 func ServeStdio(ctx context.Context, dataDir string, in io.ReadCloser, out io.WriteCloser) error {
@@ -349,7 +349,7 @@ func ServeStdio(ctx context.Context, dataDir string, in io.ReadCloser, out io.Wr
 		token = secret
 	}
 	if token == "" {
-		return fmt.Errorf("не задан токен фида (%s): его выдают в настройках XCIII", EnvToken)
+		return fmt.Errorf("не задан токен фида (%s): его выдают в настройках Pourquoi Pas?", EnvToken)
 	}
 	httpClient := &http.Client{Transport: headers{token: token, base: base}}
 	if err := checkAccess(ctx, httpClient, endpoint); err != nil {
@@ -361,15 +361,15 @@ func ServeStdio(ctx context.Context, dataDir string, in io.ReadCloser, out io.Wr
 		HTTPClient: httpClient,
 	}, nil)
 	if err != nil {
-		return fmt.Errorf("не удалось подключиться к XCIII: %w", err)
+		return fmt.Errorf("не удалось подключиться к Pourquoi Pas?: %w", err)
 	}
 	defer upstream.Close()
 
 	tools, err := upstream.ListTools(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("XCIII не отдал инструменты фида: %w", err)
+		return fmt.Errorf("Pourquoi Pas? не отдал инструменты фида: %w", err)
 	}
-	srv := mcp.NewServer(&mcp.Implementation{Name: ServerName, Title: "XCIII board feed", Version: version}, nil)
+	srv := mcp.NewServer(&mcp.Implementation{Name: ServerName, Title: "Pourquoi Pas? board feed", Version: version}, nil)
 	for _, tool := range tools.Tools {
 		name := tool.Name
 		srv.AddTool(tool, func(ctx context.Context, req *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -391,16 +391,16 @@ func checkAccess(ctx context.Context, client *http.Client, endpoint string) erro
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
-		return fmt.Errorf("XCIII не отвечает по адресу %s: %w", endpoint, err)
+		return fmt.Errorf("Pourquoi Pas? не отвечает по адресу %s: %w", endpoint, err)
 	}
 	resp.Body.Close()
 	if resp.StatusCode == http.StatusForbidden {
 		if strings.TrimSpace(os.Getenv(EnvToken)) == "" {
 			// The secret in the file is from a run that is over: a crash left
 			// it, and the app that is open now has made another.
-			return errors.New("секрет из " + HandoffFile + " не подходит: перезапустите XCIII")
+			return errors.New("секрет из " + HandoffFile + " не подходит: перезапустите Pourquoi Pas?")
 		}
-		return errors.New("токен фида не подходит: выдайте новый в настройках XCIII (Прочее → Доступ для других приложений)")
+		return errors.New("токен фида не подходит: выдайте новый в настройках Pourquoi Pas? (Прочее → Доступ для других приложений)")
 	}
 	return nil
 }

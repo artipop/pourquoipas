@@ -9,7 +9,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/artipop/xciii/internal/acp"
+	"github.com/artipop/pourquoipas/internal/acp"
 )
 
 // What the install remembers about its own UI — the language and theme a

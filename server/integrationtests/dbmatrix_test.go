@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/artipop/xciii/internal/dbtest"
+	"github.com/artipop/pourquoipas/internal/dbtest"
 )
 
 // The API tests go through the same store, so they run on the same matrix and

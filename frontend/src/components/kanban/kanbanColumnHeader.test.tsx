@@ -325,7 +325,7 @@ describe('src/components/kanban/kanbanColumnHeader', () => {
     // brought is their unprocessed tasks, so their own column is headed by what
     // the cards are — the my-tasks column — and everybody else's by who they are.
     describe('a person group on the inbox', () => {
-        const inboxBoard = {...board, properties: {xciiiInbox: true}} as unknown as typeof board
+        const inboxBoard = {...board, properties: {inbox: true}} as unknown as typeof board
         const inboxView = TestBlockFactory.createBoardView(inboxBoard)
         const byAuthor = {id: 'author-prop', name: 'Автор', type: 'createdBy', options: []} as unknown as IPropertyTemplate
         const meUser = {id: 'single-user', username: 'Вы'}

@@ -1,6 +1,6 @@
 import {defineConfig} from 'vitepress'
 
-// The XXVI guide. A second site rather than a second section of the XCIII one:
+// The XXVI guide. A second site rather than a second section of the Pourquoi Pas? one:
 // the two are different products, and a reader who came for one should not have
 // to step over the other's sidebar. Everything else — VitePress, the theme, the
 // place in the deploy — is deliberately the same as `docs/guide/`, so there is
@@ -18,18 +18,18 @@ export default defineConfig({
     description: 'Руководство пользователя XXVI: входящие, флоу, лента и агенты.',
 
     // The product is a screen, so the screen theme is the one a reader arrives
-    // in — the same decision the landing page and the XCIII guide make.
+    // in — the same decision the landing page and the Pourquoi Pas? guide make.
     appearance: 'dark',
     lastUpdated: true,
 
-    // Links keep their `.html`, for the same reason as in the XCIII guide: a
+    // Links keep their `.html`, for the same reason as in the Pourquoi Pas? guide: a
     // guide that 404s depending on where it was uploaded is worse than one with
     // an extension in the address.
     cleanUrls: false,
 
-    // Published beside the XCIII guide, inside the site's own dist, so that a
+    // Published beside the Pourquoi Pas? guide, inside the site's own dist, so that a
     // deploy stays one directory. `build:all` in site/ runs the landing first
-    // (it empties dist/), then the XCIII guide (it empties dist/docs), then
+    // (it empties dist/), then the Pourquoi Pas? guide (it empties dist/docs), then
     // this one — the order is the whole reason it is a single script.
     base: '/docs/xxvi/',
     outDir: '../../site/dist/docs/xxvi',

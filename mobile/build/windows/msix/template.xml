@@ -8,7 +8,7 @@
         AllowPromptForPassword="false">
     </Settings>
     <Installer
-        Path="xciii"
+        Path="pourquoipas"
         Arguments=""
         InstallLocation="C:\Program Files\artipop\My Product">
     </Installer>
@@ -25,10 +25,10 @@
         </Capabilities>
         <Applications>
             <Application
-                Id="io.deffun.xciii.mobile"
+                Id="io.deffun.pourquoipas.mobile"
                 Description="Boards with coding agents"
                 DisplayName="My Product"
-                ExecutableName="xciii"
+                ExecutableName="pourquoipas"
                 EntryPoint="Windows.FullTrustApplication">
                 
             </Application>
@@ -47,7 +47,7 @@
             <Logo>Assets\AppIcon.png</Logo>
         </Properties>
     </PackageInformation>
-    <SaveLocation PackagePath="xciii.msix" />
+    <SaveLocation PackagePath="pourquoipas.msix" />
     <PackageIntegrity>
         <CertificatePath></CertificatePath>
     </PackageIntegrity>

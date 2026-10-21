@@ -6,7 +6,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/artipop/xciii/server/mlog"
+	"github.com/artipop/pourquoipas/server/mlog"
 )
 
 // CallbackFunc is a func that can enqueued in the callback queue and will be

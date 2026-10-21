@@ -1,7 +1,7 @@
 // Package kaiten is an MCP server over the Kaiten API, exposing the one thing a
 // source needs: the cards assigned to whoever the token belongs to.
 //
-// It is this app's own binary re-invoked (`xciii mcp kaiten`), like the deploy
+// It is this app's own binary re-invoked (`pourquoipas mcp kaiten`), like the deploy
 // server and the inbox one, and that is the whole reason it is in Go rather
 // than the TypeScript server in kaiten/: a source somebody adds from the
 // dialog must not need a runtime installed, a checkout on disk and a path

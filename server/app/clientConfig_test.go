@@ -3,7 +3,7 @@ package app
 import (
 	"testing"
 
-	"github.com/artipop/xciii/server/services/config"
+	"github.com/artipop/pourquoipas/server/services/config"
 	"github.com/stretchr/testify/require"
 )
 

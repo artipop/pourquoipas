@@ -1,10 +1,10 @@
 package app
 
 import (
-	"github.com/artipop/xciii/server/model"
-	"github.com/artipop/xciii/server/utils"
+	"github.com/artipop/pourquoipas/server/model"
+	"github.com/artipop/pourquoipas/server/utils"
 
-	"github.com/artipop/xciii/server/mlog"
+	"github.com/artipop/pourquoipas/server/mlog"
 )
 
 func (a *App) CreateSubscription(sub *model.Subscription) (*model.Subscription, error) {

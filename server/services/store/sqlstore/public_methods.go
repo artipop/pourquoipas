@@ -12,8 +12,8 @@ package sqlstore
 import (
 	"context"
 
-	"github.com/artipop/xciii/server/mlog"
-	"github.com/artipop/xciii/server/model"
+	"github.com/artipop/pourquoipas/server/mlog"
+	"github.com/artipop/pourquoipas/server/model"
 )
 
 func (s *SQLStore) AddUpdateCategoryBoard(userID string, categoryID string, boardIDs []string) error {

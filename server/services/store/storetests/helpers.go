@@ -3,8 +3,8 @@ package storetests
 import (
 	"testing"
 
-	"github.com/artipop/xciii/server/model"
-	"github.com/artipop/xciii/server/services/store"
+	"github.com/artipop/pourquoipas/server/model"
+	"github.com/artipop/pourquoipas/server/services/store"
 	"github.com/stretchr/testify/require"
 )
 

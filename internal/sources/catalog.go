@@ -14,7 +14,7 @@ import (
 // a file in the data directory; a service *this* app carries a server for is a
 // file here, so it is in the dialog from the first run with nothing to install,
 // no path to type and no runtime to have. Such a manifest's command is this
-// binary re-invoked (`xciii mcp <name>`), which is what SelfCommand stands
+// binary re-invoked (`pourquoipas mcp <name>`), which is what SelfCommand stands
 // for.
 //
 //go:embed manifests/*.json

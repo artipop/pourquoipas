@@ -33,20 +33,20 @@ describe('components/acp/caseStamp', () => {
         fakeGoSide(cardBindings({
             session: {
                 status: 'finished',
-                branch: 'xciii/card-1',
-                worktree: '/Users/someone/work/xciii-card-1',
+                branch: 'pourquoipas/card-1',
+                worktree: '/Users/someone/work/pourquoipas-card-1',
             },
         }))
 
         render(() => <CaseStamp cardId='card-2'/>)
 
-        expect(await screen.findByText('xciii/card-1')).toBeInTheDocument()
+        expect(await screen.findByText('pourquoipas/card-1')).toBeInTheDocument()
         expect(await screen.findByText('finished')).toBeInTheDocument()
 
         // The copy's path rides in the line's tooltip; it is not a second
         // line, because it is not a second thing.
-        expect(screen.getByTitle('/Users/someone/work/xciii-card-1')).toBeInTheDocument()
-        expect(screen.queryByText('xciii-card-1')).toBeNull()
+        expect(screen.getByTitle('/Users/someone/work/pourquoipas-card-1')).toBeInTheDocument()
+        expect(screen.queryByText('pourquoipas-card-1')).toBeNull()
     })
 
     // The line is named after the folder's setting. A person who chose
@@ -81,12 +81,12 @@ describe('components/acp/caseStamp', () => {
     // though no session is running right now.
     it('falls back to what a resumable terminal knows', async () => {
         fakeGoSide(cardBindings({
-            resume: {available: true, branch: 'xciii/card-9', cwd: '/tmp/wt/card-9'},
+            resume: {available: true, branch: 'pourquoipas/card-9', cwd: '/tmp/wt/card-9'},
         }))
 
         render(() => <CaseStamp cardId='card-3'/>)
 
-        expect(await screen.findByText('xciii/card-9')).toBeInTheDocument()
+        expect(await screen.findByText('pourquoipas/card-9')).toBeInTheDocument()
         expect(screen.queryByText('card-9')).toBeNull()
     })
 

@@ -9,7 +9,7 @@ import (
 //
 // The share extension inside the .app knows nothing about boards and never
 // touches the network: it takes what was shared and opens
-// `xciii://share?url=…&title=…`. Everything after that is here — a small window
+// `pourquoipas://share?url=…&title=…`. Everything after that is here — a small window
 // of ours on our own page, which is the only place that already has the board,
 // the registry and a session. See docs/sources.md §24 for why the extension is
 // that thin: it is a sandboxed process of its own, and giving it the board
@@ -22,7 +22,7 @@ import (
 
 // shareScheme is the URL scheme the share extension opens. Registered in
 // Info.plist; anything else arriving on it is ignored rather than guessed at.
-const shareScheme = "xciii"
+const shareScheme = "pourquoipas"
 
 // shareWindowName names the window so a second share focuses the one already
 // open instead of stacking dialogs — the same arrangement the terminal windows
@@ -62,10 +62,10 @@ func (s shareRequest) Query() string {
 	return "?" + values.Encode()
 }
 
-// parseShareURL reads `xciii://share?url=…&title=…&text=…`.
+// parseShareURL reads `pourquoipas://share?url=…&title=…&text=…`.
 //
-// Both shapes are accepted — `xciii://share?…`, where "share" is the host, and
-// `xciii:///share?…`, where it is the path — because which one a URL ends up
+// Both shapes are accepted — `pourquoipas://share?…`, where "share" is the host, and
+// `pourquoipas:///share?…`, where it is the path — because which one a URL ends up
 // with depends on how whoever built it joined the pieces, and refusing one of
 // them would be a bug that only ever appears on somebody else's machine.
 func parseShareURL(raw string) (shareRequest, bool) {
@@ -95,7 +95,7 @@ func parseShareURL(raw string) (shareRequest, bool) {
 // shareURLFrom finds the share URL among a launch's arguments. macOS delivers a
 // URL launch as an Apple Event rather than in argv, and Wails puts what it
 // caught at the end of Args — so this reads the whole list rather than a
-// position, and answers for a plain `xciii://…` on the command line too.
+// position, and answers for a plain `pourquoipas://…` on the command line too.
 func shareURLFrom(args []string) (shareRequest, bool) {
 	for _, arg := range args {
 		if req, ok := parseShareURL(arg); ok {

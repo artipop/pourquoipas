@@ -6,7 +6,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/artipop/xciii/internal/apperr"
+	"github.com/artipop/pourquoipas/internal/apperr"
 )
 
 // Store keeps what the sorter has read about each board and what it decided

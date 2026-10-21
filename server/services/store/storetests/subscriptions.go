@@ -6,8 +6,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/artipop/xciii/server/model"
-	"github.com/artipop/xciii/server/services/store"
+	"github.com/artipop/pourquoipas/server/model"
+	"github.com/artipop/pourquoipas/server/services/store"
 )
 
 //nolint:dupl

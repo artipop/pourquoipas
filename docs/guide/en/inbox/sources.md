@@ -10,7 +10,7 @@ There are three ways.
 
 Sends a link from any app to the inbox or to a board you pick.
 
-1. Press **Share** (in Safari or another app) and pick **XCIII**.
+1. Press **Share** (in Safari or another app) and pick **Pourquoi Pas?**.
 2. In the **"Save to a board"** window the title is already filled in; add a
    note if you want. The **Inbox** board is first and already picked; if you
    already know where the link belongs, pick another board.
@@ -21,7 +21,7 @@ Useful to know:
 
 - the same link to the same board does not create a second card; to another
   board it does;
-- if XCIII is not in the Share menu: start the app at least once and enable the
+- if Pourquoi Pas? is not in the Share menu: start the app at least once and enable the
   extension in **System Settings → General → Login Items & Extensions →
   Sharing**.
 

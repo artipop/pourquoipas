@@ -12,7 +12,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/artipop/xciii/internal/apperr"
+	"github.com/artipop/pourquoipas/internal/apperr"
 )
 
 // Planning is talking a task over with an agent before a card exists: a

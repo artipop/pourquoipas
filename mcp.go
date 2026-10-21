@@ -11,11 +11,11 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/artipop/xciii/internal/dokku"
-	"github.com/artipop/xciii/internal/feedmcp"
-	"github.com/artipop/xciii/internal/sources"
-	"github.com/artipop/xciii/internal/sources/inbox"
-	"github.com/artipop/xciii/internal/sources/kaiten"
+	"github.com/artipop/pourquoipas/internal/dokku"
+	"github.com/artipop/pourquoipas/internal/feedmcp"
+	"github.com/artipop/pourquoipas/internal/sources"
+	"github.com/artipop/pourquoipas/internal/sources/inbox"
+	"github.com/artipop/pourquoipas/internal/sources/kaiten"
 )
 
 // maybeRunMCP handles `<binary> mcp <server>`: the same executable doubles as
@@ -28,7 +28,7 @@ func maybeRunMCP(args []string) {
 		return
 	}
 	if len(args) < 2 {
-		fmt.Fprintf(os.Stderr, "usage: xciii mcp %s|%s|%s|%s\n", dokku.ServerName, inbox.ServerName, kaiten.ServerName, feedmcp.ServerName)
+		fmt.Fprintf(os.Stderr, "usage: pourquoipas mcp %s|%s|%s|%s\n", dokku.ServerName, inbox.ServerName, kaiten.ServerName, feedmcp.ServerName)
 		os.Exit(2)
 	}
 	var err error
@@ -75,8 +75,8 @@ func runKaitenMCP() error {
 }
 
 // runFeedMCP bridges one stdio session to the column feed of the running app,
-// or of the server XCIII_URL names. It is what another application starts to
-// read a board (XXVI's xciii.json manifest).
+// or of the server POURQUOIPAS_URL names. It is what another application starts to
+// read a board (Gandvík's xciii.json manifest).
 func runFeedMCP() error {
 	dir, err := appDataDir("", 0o755)
 	if err != nil {

@@ -1,7 +1,7 @@
 import {defineConfig} from 'vite'
 
 // Two pages, so the entries are listed by hand: on its own Vite finds only the
-// index.html at the root. `mpa` keeps the dev server from answering /xciii/
+// index.html at the root. `mpa` keeps the dev server from answering /pourquoipas/
 // with the home page.
 export default defineConfig({
     appType: 'mpa',
@@ -14,7 +14,7 @@ export default defineConfig({
         proxy: {
             // Three guides, three dev servers, and the more specific paths
             // first: the rules are tried in order, so '/docs' listed above
-            // would take /docs/xxvi/ and /docs/vi/ to the XCIII guide.
+            // would take /docs/xxvi/ and /docs/vi/ to the Pourquoi Pas? guide.
             //
             // `ws` because a guide's own hot reload talks over a socket on
             // these paths too, and a proxy that forwards only HTTP leaves it
@@ -45,7 +45,7 @@ export default defineConfig({
         rollupOptions: {
             input: {
                 index: new URL('index.html', import.meta.url).pathname,
-                xciii: new URL('xciii/index.html', import.meta.url).pathname,
+                pourquoipas: new URL('pourquoipas/index.html', import.meta.url).pathname,
             },
         },
     },

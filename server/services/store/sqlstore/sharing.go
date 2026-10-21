@@ -1,8 +1,8 @@
 package sqlstore
 
 import (
-	"github.com/artipop/xciii/server/model"
-	"github.com/artipop/xciii/server/utils"
+	"github.com/artipop/pourquoipas/server/model"
+	"github.com/artipop/pourquoipas/server/utils"
 
 	sq "github.com/Masterminds/squirrel"
 )

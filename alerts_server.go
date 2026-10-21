@@ -5,7 +5,7 @@ package main
 import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 
-	"github.com/artipop/xciii/internal/acp"
+	"github.com/artipop/pourquoipas/internal/acp"
 )
 
 // A headless build has neither of the two surfaces this is about: there is no

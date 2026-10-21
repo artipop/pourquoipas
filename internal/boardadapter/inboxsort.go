@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/artipop/xciii/server/model"
+	"github.com/artipop/pourquoipas/server/model"
 
-	"github.com/artipop/xciii/internal/boardmodel"
-	"github.com/artipop/xciii/internal/inboxsort"
+	"github.com/artipop/pourquoipas/internal/boardmodel"
+	"github.com/artipop/pourquoipas/internal/inboxsort"
 )
 
 // SortBoard is the board as internal/inboxsort reads and writes it. A type of

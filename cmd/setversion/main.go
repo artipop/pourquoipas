@@ -14,7 +14,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/artipop/xciii/internal/buildversion"
+	"github.com/artipop/pourquoipas/internal/buildversion"
 )
 
 func main() {

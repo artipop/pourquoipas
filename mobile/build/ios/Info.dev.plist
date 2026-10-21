@@ -3,15 +3,15 @@
 <plist version="1.0">
 	<dict>
 		<key>CFBundleDisplayName</key>
-		<string>XCIII (Dev)</string>
+		<string>Pourquoi Pas? (Dev)</string>
 		<key>CFBundleExecutable</key>
-		<string>xciii</string>
+		<string>pourquoipas</string>
 		<key>CFBundleGetInfoString</key>
 		<string>The board on a phone, over your own tailnet</string>
 		<key>CFBundleIdentifier</key>
-		<string>io.deffun.xciii.mobile.dev</string>
+		<string>io.deffun.pourquoipas.mobile.dev</string>
 		<key>CFBundleName</key>
-		<string>XCIII (Dev)</string>
+		<string>Pourquoi Pas? (Dev)</string>
 		<key>CFBundlePackageType</key>
 		<string>APPL</string>
 		<key>CFBundleShortVersionString</key>

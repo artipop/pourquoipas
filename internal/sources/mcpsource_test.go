@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/artipop/xciii/internal/sources/plugin"
+	"github.com/artipop/pourquoipas/internal/sources/plugin"
 )
 
 // The MCP server these tests talk to is this test binary, re-invoked — the same
@@ -17,7 +17,7 @@ import (
 // actually breaks is a real process with real stdio, and proving it must not
 // depend on a toolchain being installed to build a second program.
 
-const mcpModeEnv = "XCIII_TEST_MCP"
+const mcpModeEnv = "POURQUOIPAS_TEST_MCP"
 
 func TestMain(m *testing.M) {
 	if mode := os.Getenv(mcpModeEnv); mode != "" {

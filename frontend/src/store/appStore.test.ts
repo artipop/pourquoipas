@@ -141,7 +141,7 @@ describe('createAppStore', () => {
     test('user preferences parse into myConfig', () => {
         const {state, actions} = createAppStore({client: fakeClient()})
 
-        actions.users.patchProps([{user_id: 'user-1', category: 'xciii', name: 'onboardingTourStep', value: '3'}])
+        actions.users.patchProps([{user_id: 'user-1', category: 'pourquoipas', name: 'onboardingTourStep', value: '3'}])
         expect(getMyConfig(state).onboardingTourStep?.value).toBe('3')
     })
 
@@ -154,12 +154,12 @@ describe('createAppStore', () => {
         const {state, actions} = createAppStore({client: fakeClient()})
 
         actions.users.patchProps([
-            {user_id: 'user-1', category: 'xciii', name: 'welcomePageViewed', value: '1'},
-            {user_id: 'user-1', category: 'xciii', name: 'onboardingTourStep', value: '3'},
+            {user_id: 'user-1', category: 'pourquoipas', name: 'welcomePageViewed', value: '1'},
+            {user_id: 'user-1', category: 'pourquoipas', name: 'onboardingTourStep', value: '3'},
         ])
         expect(getMyConfig(state).welcomePageViewed?.value).toBe('1')
 
-        actions.users.patchProps([{user_id: 'user-1', category: 'xciii', name: 'onboardingTourStep', value: '3'}])
+        actions.users.patchProps([{user_id: 'user-1', category: 'pourquoipas', name: 'onboardingTourStep', value: '3'}])
         expect(getMyConfig(state).welcomePageViewed).toBeUndefined()
         expect(getMyConfig(state).onboardingTourStep?.value).toBe('3')
     })

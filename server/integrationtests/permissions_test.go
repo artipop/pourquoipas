@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/artipop/xciii/server/client"
-	"github.com/artipop/xciii/server/model"
+	"github.com/artipop/pourquoipas/server/client"
+	"github.com/artipop/pourquoipas/server/model"
 	"github.com/stretchr/testify/require"
 )
 

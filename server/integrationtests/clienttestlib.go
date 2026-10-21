@@ -9,17 +9,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/artipop/xciii/server/client"
-	"github.com/artipop/xciii/server/model"
-	"github.com/artipop/xciii/server/server"
-	"github.com/artipop/xciii/server/services/auth"
-	"github.com/artipop/xciii/server/services/config"
-	"github.com/artipop/xciii/server/services/permissions/localpermissions"
-	"github.com/artipop/xciii/server/services/store"
-	"github.com/artipop/xciii/server/services/store/sqlstore"
-	"github.com/artipop/xciii/server/utils"
+	"github.com/artipop/pourquoipas/server/client"
+	"github.com/artipop/pourquoipas/server/model"
+	"github.com/artipop/pourquoipas/server/server"
+	"github.com/artipop/pourquoipas/server/services/auth"
+	"github.com/artipop/pourquoipas/server/services/config"
+	"github.com/artipop/pourquoipas/server/services/permissions/localpermissions"
+	"github.com/artipop/pourquoipas/server/services/store"
+	"github.com/artipop/pourquoipas/server/services/store/sqlstore"
+	"github.com/artipop/pourquoipas/server/utils"
 
-	"github.com/artipop/xciii/server/mlog"
+	"github.com/artipop/pourquoipas/server/mlog"
 
 	"github.com/stretchr/testify/require"
 )

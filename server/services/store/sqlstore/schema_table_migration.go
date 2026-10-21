@@ -5,9 +5,9 @@ import (
 	"strings"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/artipop/xciii/server/model"
+	"github.com/artipop/pourquoipas/server/model"
 
-	"github.com/artipop/xciii/server/mlog"
+	"github.com/artipop/pourquoipas/server/mlog"
 )
 
 // retiredSchemaTable is where the previous engine's record is kept while the

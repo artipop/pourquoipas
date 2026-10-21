@@ -9,9 +9,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/artipop/xciii/server/app"
-	"github.com/artipop/xciii/server/mlog"
-	"github.com/artipop/xciii/server/model"
+	"github.com/artipop/pourquoipas/server/app"
+	"github.com/artipop/pourquoipas/server/mlog"
+	"github.com/artipop/pourquoipas/server/model"
 )
 
 // The board templates this app ships are ours, and they live here. The server

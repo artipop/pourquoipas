@@ -19,7 +19,7 @@ import (
 
 	// Also the driver: sqlstore registers "sqlite3", and importing one here as
 	// well would register it twice.
-	"github.com/artipop/xciii/server/services/store/sqlstore"
+	"github.com/artipop/pourquoipas/server/services/store/sqlstore"
 )
 
 // migrations are the two that create the schema: the board's own tables, then

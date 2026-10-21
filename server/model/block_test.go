@@ -5,9 +5,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/artipop/xciii/server/mlog"
+	"github.com/artipop/pourquoipas/server/mlog"
 
-	"github.com/artipop/xciii/server/utils"
+	"github.com/artipop/pourquoipas/server/utils"
 
 	"github.com/stretchr/testify/require"
 )

@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/artipop/xciii/internal/apperr"
-	"github.com/artipop/xciii/internal/sources/plugin"
+	"github.com/artipop/pourquoipas/internal/apperr"
+	"github.com/artipop/pourquoipas/internal/sources/plugin"
 )
 
 // Running a plugin: one goroutine per source, started when the app starts and
@@ -118,7 +118,7 @@ func dialPlugin(ctx context.Context, entry SourceEntry, manifest Manifest, cred 
 		Env:         envList(env),
 		Source:      plugin.SourceInfo{Name: entry.Name, Config: entry.Config},
 		Credentials: cred,
-		Host:        plugin.HostInfo{Name: "XCIII"},
+		Host:        plugin.HostInfo{Name: "pourquoipas"},
 	}, handler)
 }
 

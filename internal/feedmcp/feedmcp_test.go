@@ -12,7 +12,7 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/artipop/xciii/internal/boardmodel"
+	"github.com/artipop/pourquoipas/internal/boardmodel"
 )
 
 type fakeLists struct{}
@@ -255,7 +255,7 @@ func TestTheBridgeTakesTheSecretTheAppLeft(t *testing.T) {
 	inR2, _ := io.Pipe()
 	_, outW2 := io.Pipe()
 	err = ServeStdio(context.Background(), dir, inR2, outW2)
-	if err == nil || !strings.Contains(err.Error(), "перезапустите XCIII") {
+	if err == nil || !strings.Contains(err.Error(), "перезапустите Pourquoi Pas?") {
 		t.Fatalf("err: %v", err)
 	}
 }

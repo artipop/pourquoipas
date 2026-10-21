@@ -1,10 +1,10 @@
 package localpermissions
 
 import (
-	"github.com/artipop/xciii/server/model"
-	"github.com/artipop/xciii/server/services/permissions"
+	"github.com/artipop/pourquoipas/server/model"
+	"github.com/artipop/pourquoipas/server/services/permissions"
 
-	"github.com/artipop/xciii/server/mlog"
+	"github.com/artipop/pourquoipas/server/mlog"
 )
 
 type Service struct {

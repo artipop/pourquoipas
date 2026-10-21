@@ -10,7 +10,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/artipop/xciii/internal/apperr"
+	"github.com/artipop/pourquoipas/internal/apperr"
 )
 
 // Folder registry: places an agent can work, edited from the desktop UI and

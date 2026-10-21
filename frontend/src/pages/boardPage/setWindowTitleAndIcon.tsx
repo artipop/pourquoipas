@@ -19,7 +19,7 @@ const SetWindowTitleAndIcon = (): null => {
             }
             document.title = title
         } else {
-            document.title = 'XCIII'
+            document.title = 'Pourquoi Pas?'
         }
     })
 

@@ -8,7 +8,7 @@ import {fakeGoSide} from '../../test/goSide'
 
 import TailnetPanel, {isTailnetAvailable} from './tailnetPanel'
 
-const settingsPath = '/Users/x/Library/Application Support/XCIII/tailnet/settings.json'
+const settingsPath = '/Users/x/Library/Application Support/pourquoipas/tailnet/settings.json'
 
 function bindings(state: Record<string, unknown>) {
     return {

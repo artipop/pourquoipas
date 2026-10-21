@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/artipop/xciii/server/model"
+	"github.com/artipop/pourquoipas/server/model"
 
-	"github.com/artipop/xciii/internal/acp"
+	"github.com/artipop/pourquoipas/internal/acp"
 )
 
 var _ acp.BoardUsers = (*Client)(nil)

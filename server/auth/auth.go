@@ -2,11 +2,11 @@
 package auth
 
 import (
-	"github.com/artipop/xciii/server/model"
-	"github.com/artipop/xciii/server/services/config"
-	"github.com/artipop/xciii/server/services/permissions"
-	"github.com/artipop/xciii/server/services/store"
-	"github.com/artipop/xciii/server/utils"
+	"github.com/artipop/pourquoipas/server/model"
+	"github.com/artipop/pourquoipas/server/services/config"
+	"github.com/artipop/pourquoipas/server/services/permissions"
+	"github.com/artipop/pourquoipas/server/services/store"
+	"github.com/artipop/pourquoipas/server/utils"
 	"github.com/pkg/errors"
 )
 

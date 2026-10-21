@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/artipop/xciii/internal/edition"
+	"github.com/artipop/pourquoipas/internal/edition"
 )
 
 // A fresh install looks for updates without being asked. Anything else means a

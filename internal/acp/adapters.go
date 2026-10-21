@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/artipop/xciii/internal/apperr"
+	"github.com/artipop/pourquoipas/internal/apperr"
 )
 
 // Two of the kinds we support are reached through an adapter their vendor

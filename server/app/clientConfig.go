@@ -1,9 +1,9 @@
 package app
 
 import (
-	"github.com/artipop/xciii/server/model"
+	"github.com/artipop/pourquoipas/server/model"
 
-	"github.com/artipop/xciii/server/mlog"
+	"github.com/artipop/pourquoipas/server/mlog"
 )
 
 // registrationOpen: nobody has claimed this install yet, so the next person to

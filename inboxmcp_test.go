@@ -8,7 +8,7 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/artipop/xciii/internal/sources/inbox"
+	"github.com/artipop/pourquoipas/internal/sources/inbox"
 )
 
 // The tool an agent source files through, against the real ingest route and the

@@ -1,4 +1,4 @@
-import * as App from '../bindings/github.com/artipop/xciii/app'
+import * as App from '../bindings/github.com/artipop/pourquoipas/app'
 
 import type {IAppWindow} from './types'
 

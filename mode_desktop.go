@@ -16,7 +16,7 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
 
-	"github.com/artipop/xciii/internal/feedmcp"
+	"github.com/artipop/pourquoipas/internal/feedmcp"
 )
 
 // origin is the front door of a desktop build. A Wails desktop app has no HTTP
@@ -220,7 +220,7 @@ func showMainWindow(wapp *application.App, url string) {
 func newMainWindow(wapp *application.App, url string) {
 	win := wapp.Window.NewWithOptions(application.WebviewWindowOptions{
 		Name:  mainWindowName,
-		Title: "XCIII",
+		Title: "Pourquoi Pas?",
 		// The stated size is what Restore returns to; the window itself opens
 		// maximised (below).
 		Width:  1024,

@@ -109,7 +109,9 @@ tasks:
     dir: build
     sources:
       - "appicon.png"
-      - "appicon.icon"
+      # The files inside: a directory alone is not looked into, so a new
+      # picture in Assets/ left Assets.car as it was.
+      - "appicon.icon/**/*"
     generates:
       - "darwin/icons.icns"
       - "windows/icon.ico"
@@ -175,7 +177,7 @@ tasks:
       the page built first: frontend/dist is embedded, and the image has no node.
       Pure Go on distroless/static by default.
 
-      Usage: task build:docker [TAG=xciii:latest] [GO_IMAGE=...] [RUNTIME_IMAGE=...] [EDITION=lifetime]
+      Usage: task build:docker [TAG=pourquoipas:latest] [GO_IMAGE=...] [RUNTIME_IMAGE=...] [EDITION=lifetime]
     deps:
       - task: build:frontend
     cmds:
@@ -184,20 +186,20 @@ tasks:
         --build-arg GO_IMAGE={{.GO_IMAGE | default "golang:alpine"}}
         --build-arg RUNTIME_IMAGE={{.RUNTIME_IMAGE | default "gcr.io/distroless/static-debian12"}}
         --build-arg TAGS=server,production,frontend{{.EDITION_TAG}}
-        -t {{.TAG | default "xciii:latest"}}
+        -t {{.TAG | default "pourquoipas:latest"}}
         -f build/docker/Dockerfile.server .
     preconditions:
       - sh: docker info > /dev/null 2>&1
         msg: "Docker is required. Please install Docker first."
 
   run:docker:
-    summary: Builds and runs the Docker image, its data in the xciii-data volume
+    summary: Builds and runs the Docker image, its data in the pourquoipas-data volume
     desc: |
-      Usage: task run:docker [TAG=xciii:latest] [PORT=8080]
+      Usage: task run:docker [TAG=pourquoipas:latest] [PORT=8080]
       The container listens on 8080; PORT is the host side. The database and
       the rest are the environment's (build/docker/Dockerfile.server) — run
-      `docker run` yourself to pass XCIII_DB_TYPE and XCIII_DB_DSN.
+      `docker run` yourself to pass POURQUOIPAS_DB_TYPE and POURQUOIPAS_DB_DSN.
     deps:
       - task: build:docker
     cmds:
-      - docker run --rm -p {{.PORT | default "8080"}}:8080 -v xciii-data:/data {{.TAG | default "xciii:latest"}}
+      - docker run --rm -p {{.PORT | default "8080"}}:8080 -v pourquoipas-data:/data {{.TAG | default "pourquoipas:latest"}}

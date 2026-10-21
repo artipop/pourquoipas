@@ -8,7 +8,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/artipop/xciii/internal/sources"
+	"github.com/artipop/pourquoipas/internal/sources"
 )
 
 // The way in for everything that has no plugin of its own: a script, a webhook

@@ -29,7 +29,7 @@ const card = TestBlockFactory.createCard(board)
 // The inbox is a board of its own, marked as such by the app, and its menu is
 // where the question about sources is asked; every other board's says nothing
 // of it.
-const inboxBoard = {...TestBlockFactory.createBoard(), id: 'board-inbox', properties: {xciiiInbox: true}} as unknown as typeof board
+const inboxBoard = {...TestBlockFactory.createBoard(), id: 'board-inbox', properties: {inbox: true}} as unknown as typeof board
 const inboxView = TestBlockFactory.createBoardView(inboxBoard)
 inboxView.id = 'view-inbox'
 inboxView.title = 'Входящие'

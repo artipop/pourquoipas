@@ -26,7 +26,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/artipop/xciii/internal/apperr"
+	"github.com/artipop/pourquoipas/internal/apperr"
 )
 
 // BoardInfo is a board as the sorter reads it.

@@ -3,7 +3,7 @@ package app
 import (
 	"runtime"
 
-	"github.com/artipop/xciii/server/model"
+	"github.com/artipop/pourquoipas/server/model"
 )
 
 // ServerMetadata is what /ping answers: enough to tell which application is

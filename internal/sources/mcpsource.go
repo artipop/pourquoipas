@@ -11,8 +11,8 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/artipop/xciii/internal/sources/mcp"
-	"github.com/artipop/xciii/internal/sources/plugin"
+	"github.com/artipop/pourquoipas/internal/sources/mcp"
+	"github.com/artipop/pourquoipas/internal/sources/plugin"
 )
 
 // An MCP server as a source.
@@ -141,7 +141,7 @@ func dialMCP(ctx context.Context, entry SourceEntry, manifest Manifest, cred plu
 		Command:    argv,
 		Dir:        manifest.Dir,
 		Env:        envList(env),
-		ClientName: "XCIII",
+		ClientName: "pourquoipas",
 	})
 	if err != nil {
 		return nil, err

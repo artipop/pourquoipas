@@ -3,9 +3,9 @@ package model
 import (
 	"fmt"
 
-	"github.com/artipop/xciii/server/utils"
+	"github.com/artipop/pourquoipas/server/utils"
 
-	"github.com/artipop/xciii/server/mlog"
+	"github.com/artipop/pourquoipas/server/mlog"
 )
 
 // GenerateBlockIDs generates new IDs for all the blocks of the list,

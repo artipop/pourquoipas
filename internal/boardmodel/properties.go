@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/artipop/xciii/server/model"
+	"github.com/artipop/pourquoipas/server/model"
 
-	"github.com/artipop/xciii/internal/acp"
+	"github.com/artipop/pourquoipas/internal/acp"
 )
 
 // Naming a property or an option the way a person does, and turning that into

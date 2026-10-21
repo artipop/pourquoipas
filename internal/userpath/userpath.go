@@ -32,8 +32,8 @@ import (
 // free to print anything it likes on the way — a greeting, a version notice, a
 // warning about a plugin — and that noise arrives on the same stdout.
 const (
-	startMark = "__xciii_path_start__"
-	endMark   = "__xciii_path_end__"
+	startMark = "__pourquoipas_path_start__"
+	endMark   = "__pourquoipas_path_end__"
 )
 
 // query is what the shell is asked to run. `printenv PATH` rather than

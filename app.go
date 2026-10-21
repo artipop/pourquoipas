@@ -9,10 +9,10 @@ import (
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 
-	"github.com/artipop/xciii/internal/acp"
-	"github.com/artipop/xciii/internal/apperr"
-	"github.com/artipop/xciii/internal/inboxsort"
-	"github.com/artipop/xciii/internal/sources"
+	"github.com/artipop/pourquoipas/internal/acp"
+	"github.com/artipop/pourquoipas/internal/apperr"
+	"github.com/artipop/pourquoipas/internal/inboxsort"
+	"github.com/artipop/pourquoipas/internal/sources"
 )
 
 // errACPDisabled is returned by bindings when the integration is off.

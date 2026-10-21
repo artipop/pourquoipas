@@ -13,8 +13,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/artipop/xciii/sources/protocol"
-	"github.com/artipop/xciii/sources/sdk"
+	"github.com/artipop/pourquoipas/sources/protocol"
+	"github.com/artipop/pourquoipas/sources/sdk"
 )
 
 func main() {

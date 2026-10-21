@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/artipop/xciii/server/model"
-	"github.com/artipop/xciii/server/web"
+	"github.com/artipop/pourquoipas/server/model"
+	"github.com/artipop/pourquoipas/server/web"
 
-	"github.com/artipop/xciii/server/mlog"
+	"github.com/artipop/pourquoipas/server/mlog"
 )
 
 const (

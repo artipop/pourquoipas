@@ -3,7 +3,7 @@ package app
 import (
 	"testing"
 
-	"github.com/artipop/xciii/server/model"
+	"github.com/artipop/pourquoipas/server/model"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )

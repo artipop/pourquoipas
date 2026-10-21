@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/artipop/xciii/internal/apperr"
+	"github.com/artipop/pourquoipas/internal/apperr"
 	"github.com/google/uuid"
 )
 

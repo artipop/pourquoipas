@@ -14,11 +14,11 @@ import (
 	"github.com/golang-migrate/migrate/v4/database/mysql"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 
-	"github.com/artipop/xciii/server/mlog"
+	"github.com/artipop/pourquoipas/server/mlog"
 
 	_ "github.com/lib/pq" // postgres driver
 
-	"github.com/artipop/xciii/server/model"
+	"github.com/artipop/pourquoipas/server/model"
 )
 
 //go:embed migrations/*.sql
@@ -120,7 +120,7 @@ func (s *SQLStore) Migrate() error {
 	}
 
 	s.logger.Debug("Creating migration engine")
-	engine, err := migrate.NewWithInstance("xciii", src, s.dbType, driver)
+	engine, err := migrate.NewWithInstance("pourquoipas", src, s.dbType, driver)
 	if err != nil {
 		return err
 	}

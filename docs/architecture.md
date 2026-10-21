@@ -1,6 +1,6 @@
 # Architecture
 
-How XCIII is put together, and why each piece has the shape it has. This is the
+How Pourquoi Pas? is put together, and why each piece has the shape it has. This is the
 long form of the architecture section that used to live in CLAUDE.md; CLAUDE.md
 now keeps the rules and points here for the reasoning. Rejected alternatives
 and post-mortems in Russian are in `decisions.md`, what was deliberately not
@@ -711,7 +711,7 @@ is adjusted, since `awayIndicator` is an eight-pixel dot there and the word
 «ждёт» on a card here. Every shipped theme is held to the same contrast bar,
 ours included; that bar is what moved the paper theme's amber and its stamp a
 few levels.
-**A theme is a pair, and which half is a second setting.** «XCIII», «Gruvbox»,
+**A theme is a pair, and which half is a second setting.** «Pourquoi Pas?», «Gruvbox»,
 «Acid techno» each come light and dark, and `themeMode` — light, dark, or
 whichever the system is set to — says which is worn. One list asked both
 questions at once and could answer neither: it said «Gruvbox Dark» and «Как в
@@ -1139,7 +1139,7 @@ row of the answer as an item (`internal/sources/mcpsource.go`, mapped with the
 same `text/template` a rule's properties use). Past `dialPlugin` nothing knows
 which protocol the process speaks. Manifests come from two places: the ones
 this app ships (`internal/sources/manifests`, embedded — each one's server is
-this binary re-invoked, `xciii mcp <name>`, so there is nothing to install), and
+this binary re-invoked, `pourquoipas mcp <name>`, so there is nothing to install), and
 the ones somebody drops in `<dataDir>/sources/manifests/*.json`, which win by
 name. A
 service with a server of its own is the second kind, since a manifest then
@@ -1147,7 +1147,7 @@ names a path on that machine.
 
 The system's «Поделиться» is a source too (`internal/sources/share.go`,
 `share.go`, `pages/share/`): the share extension in the .app opens
-`xciii://share?url=…`, a small window asks which board — the inbox, offered
+`pourquoipas://share?url=…`, a small window asks which board — the inbox, offered
 first and already picked, or another — and the link goes down the same
 pipeline. It is the one entry allowed to name a board other than the inbox
 (`PickBoard`), because a person is looking at the dialog when it happens. On a
@@ -1158,7 +1158,7 @@ since a card in no column is on the board and on no kanban.
 (`boardadapter.EnsureInboxBoard`). The app makes it at launch — it is also
 where a person writes down what they have not decided about yet, so it cannot
 wait for the first source — and finds it by a board property it gives it
-(`xciiiInbox`), never by title: a person may rename it. A source names no
+(`inbox`), never by title: a person may rename it. A source names no
 board, and a rule decides only whether an item is claimed, never where it goes.
 Collect first, decide later: a card leaves the inbox when a person carries it
 to the board it belongs to.

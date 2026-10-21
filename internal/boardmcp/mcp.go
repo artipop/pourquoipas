@@ -49,7 +49,7 @@ const version = "0.1.0"
 // in whatever language the people using it write in, and their words travel
 // through these tools as data — a column name, a card title. The instructions
 // around them are ours, and one language for them is one thing to keep true.
-const instructions = `The XCIII board's tools. Work comes back into the application through
+const instructions = `The Pourquoi Pas? board's tools. Work comes back into the application through
 them instead of into a chat message for somebody to retype: cards are created,
 changed, and carried on across the board by themselves.
 
@@ -250,7 +250,7 @@ func fieldShape(f FieldInfo) string {
 // NewServer exposes one board's operations as tools.
 func NewServer(board Board) *mcp.Server {
 	srv := mcp.NewServer(
-		&mcp.Implementation{Name: ServerName, Title: "XCIII board", Version: version},
+		&mcp.Implementation{Name: ServerName, Title: "Pourquoi Pas? board", Version: version},
 		&mcp.ServerOptions{Instructions: instructions},
 	)
 

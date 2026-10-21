@@ -5,12 +5,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/artipop/xciii/server/app"
-	"github.com/artipop/xciii/server/mlog"
-	"github.com/artipop/xciii/server/model"
+	"github.com/artipop/pourquoipas/server/app"
+	"github.com/artipop/pourquoipas/server/mlog"
+	"github.com/artipop/pourquoipas/server/model"
 
-	"github.com/artipop/xciii/internal/acp"
-	"github.com/artipop/xciii/internal/author"
+	"github.com/artipop/pourquoipas/internal/acp"
+	"github.com/artipop/pourquoipas/internal/author"
 )
 
 // What an agent does to a card through the board tools ends here, in the real
@@ -37,7 +37,7 @@ func boardWithACard(t *testing.T, a *app.App) (*model.Board, *model.Card) {
 			},
 			{
 				"id": "prop-project", "name": "Проекты", "type": "select",
-				"options": []any{map[string]any{"id": "opt-xciii", "value": "xciii", "color": ""}},
+				"options": []any{map[string]any{"id": "opt-pourquoipas", "value": "pourquoipas", "color": ""}},
 			},
 		},
 	}, model.SingleUser, true)
@@ -78,7 +78,7 @@ func TestAMoveThroughTheToolsSetsTheTriggerOff(t *testing.T) {
 	err = writer.UpdateCard(t.Context(), card.ID, acp.CardEdit{
 		Property: "Статус",
 		Column:   "К агенту",
-		Options:  []string{"xciii"},
+		Options:  []string{"pourquoipas"},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -109,7 +109,7 @@ func TestAMoveThroughTheToolsSetsTheTriggerOff(t *testing.T) {
 	}
 	// Everything selected on the card travels with the event, so the project it
 	// names is resolvable from the move alone.
-	if !strings.Contains(strings.Join(column.OptionNames, ","), "xciii") {
+	if !strings.Contains(strings.Join(column.OptionNames, ","), "pourquoipas") {
 		t.Errorf("the values set with the move did not travel with it: %v", column.OptionNames)
 	}
 
@@ -119,7 +119,7 @@ func TestAMoveThroughTheToolsSetsTheTriggerOff(t *testing.T) {
 		t.Fatal(err)
 	}
 	props, _ := after.Fields["properties"].(map[string]any)
-	if props["prop-status"] != "opt-agent" || props["prop-project"] != "opt-xciii" {
+	if props["prop-status"] != "opt-agent" || props["prop-project"] != "opt-pourquoipas" {
 		t.Errorf("the card stands as %+v", props)
 	}
 	_ = board

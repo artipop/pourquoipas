@@ -1,7 +1,7 @@
 package app
 
 import (
-	"github.com/artipop/xciii/server/model"
+	"github.com/artipop/pourquoipas/server/model"
 )
 
 func (a *App) GetTeamUsers(teamID string, asGuestID string) ([]*model.User, error) {

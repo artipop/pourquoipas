@@ -22,7 +22,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/artipop/xciii/internal/apperr"
+	"github.com/artipop/pourquoipas/internal/apperr"
 )
 
 // Store is the whole surface. A key is a name the caller chose (a source's

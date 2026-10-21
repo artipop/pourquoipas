@@ -43,7 +43,7 @@ class Constants {
     // answer to any of them — somebody who opens the guide link wants the manual,
     // not a source tree, and a bug report is a letter rather than an account on
     // a hosting service.
-    static readonly homeUrl = 'https://deffun.com/xciii/'
+    static readonly homeUrl = 'https://deffun.com/pourquoipas/'
     static readonly guideUrl = 'https://deffun.com/docs/'
     static readonly feedbackEmail = 'hello@deffun.com'
     static readonly feedbackUrl = `mailto:${Constants.feedbackEmail}`

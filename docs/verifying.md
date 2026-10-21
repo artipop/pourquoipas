@@ -52,13 +52,13 @@ scratch-каталоге, к ней подключён собранный `front
 
 ## Живую сборку — headless и на своём HOME
 
-`wails3 task build:server` даёт `bin/XCIII-server`: то же приложение без окна,
+`wails3 task build:server` даёт `bin/pourquoipas-server`: то же приложение без окна,
 на том же front door. Запускать со своим `HOME` — настоящая установка на этой
-машине принадлежит работающему XCIII, и гонять по ней проверки нельзя.
+машине принадлежит работающему Pourquoi Pas?, и гонять по ней проверки нельзя.
 
 Порт — `SERVER_PORT` (по умолчанию 8080). Биндинги дёргаются как из
 страницы, через `POST /wails/runtime` с id метода — он записан в
-`frontend/bindings/github.com/artipop/xciii/app.ts` рядом с именем, — так что
+`frontend/bindings/github.com/artipop/pourquoipas/app.ts` рядом с именем, — так что
 любую часть Go-стороны можно проверить без единого клика.
 
 ## Ловушки харнесса

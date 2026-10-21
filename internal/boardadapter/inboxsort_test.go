@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/artipop/xciii/server/mlog"
+	"github.com/artipop/pourquoipas/server/mlog"
 
-	"github.com/artipop/xciii/internal/sources"
+	"github.com/artipop/pourquoipas/internal/sources"
 )
 
 // A card the sorter files stands in the board's first column, where a person

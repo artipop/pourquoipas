@@ -132,7 +132,7 @@ a route that no longer existed.
 ## How it is verified
 
 A browser against a real build from an empty data directory. A build without the
-`production` tag uses `XCIII-dev`, so this never touches a real install:
+`production` tag uses `pourquoipas-dev`, so this never touches a real install:
 `go build -tags server,frontend`, run with a data directory of its own, and
 drive `http://localhost:8080`. The whole path, not the entry point: template →
 wizard → first task → what the agent left on the card and its branch.

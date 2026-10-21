@@ -17,7 +17,7 @@ import (
 	"tailscale.com/ipn/ipnstate"
 	"tailscale.com/tsnet"
 
-	"github.com/artipop/xciii/internal/apperr"
+	"github.com/artipop/pourquoipas/internal/apperr"
 )
 
 // The tailnet door is the same front door, published a second time — as a node

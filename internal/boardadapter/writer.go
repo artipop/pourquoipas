@@ -7,13 +7,13 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/artipop/xciii/server/app"
-	"github.com/artipop/xciii/server/model"
-	"github.com/artipop/xciii/server/utils"
+	"github.com/artipop/pourquoipas/server/app"
+	"github.com/artipop/pourquoipas/server/model"
+	"github.com/artipop/pourquoipas/server/utils"
 
-	"github.com/artipop/xciii/internal/acp"
-	"github.com/artipop/xciii/internal/author"
-	"github.com/artipop/xciii/internal/boardmodel"
+	"github.com/artipop/pourquoipas/internal/acp"
+	"github.com/artipop/pourquoipas/internal/author"
+	"github.com/artipop/pourquoipas/internal/boardmodel"
 )
 
 // Writer implements acp.BoardWriter over the server's app layer. All writes

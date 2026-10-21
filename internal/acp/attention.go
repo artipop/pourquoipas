@@ -3,7 +3,7 @@ package acp
 import (
 	"sort"
 
-	"github.com/artipop/xciii/internal/apperr"
+	"github.com/artipop/pourquoipas/internal/apperr"
 )
 
 // Attention is one thing waiting for a person, from either of the two places a

@@ -14,13 +14,13 @@ section of `docs/architecture.md` before changing anything structural.
 
 ## What this is
 
-**XCIII** is a desktop board that runs coding agents from the board. One Go
+**Pourquoi Pas?** is a desktop board that runs coding agents from the board. One Go
 module built with **Wails v3**, the board server running **in-process**; the same
 code builds a headless server (`-tags server`) that serves the board to a browser.
 
 - `server/` — the board server, a fork of Mattermost's Focalboard. It is **ours**,
   not a fork kept recognisable: Focalboard is archived and nothing imports
-  Mattermost any more. A directory of this module (`github.com/artipop/xciii/
+  Mattermost any more. A directory of this module (`github.com/artipop/pourquoipas/
   server/…`), not a module of its own. Cutting it is ordinary;
   `docs/fork-shrink-removed.md` is the ledger of what went and how to bring it
   back. A removal is one commit with its tests, mocks and doc edits. Login,
@@ -40,7 +40,7 @@ code builds a headless server (`-tags server`) that serves the board to a browse
 - `wails3 dev` — the dev loop, the template's: Vite with HMR beside the app;
   the frontend's dependencies install themselves (`install:frontend:deps`). A dev
   build is its own install — data dir, keychain service and single-instance
-  lock (`datadir_dev.go`) — or its window hands itself to a running XCIII and
+  lock (`datadir_dev.go`) — or its window hands itself to a running Pourquoi Pas? and
   exits silently. A development build's front door takes the
   page from Vite (`FRONTEND_DEVSERVER_URL`, `devserver.go`) and injects the
   bootstrap into it as into any page; `/api` and `/ws` stay the board's.
@@ -48,7 +48,7 @@ code builds a headless server (`-tags server`) that serves the board to a browse
   `linux:package`) / `build:server` / `build:docker`. `EDITION=lifetime` on any
   of them.
 - **A server's database is the environment's** (`database_server.go`):
-  `XCIII_DB_TYPE` (`sqlite3`, `postgres`, `mysql`) and `XCIII_DB_DSN`. A desktop
+  `POURQUOIPAS_DB_TYPE` (`sqlite3`, `postgres`, `mysql`) and `POURQUOIPAS_DB_DSN`. A desktop
   is always SQLite. On the other two the board runs and the agents and sources
   are off, because their SQL is SQLite's (`appTablesSupported`).
 - `wails3 task generate:bindings` — run by every build when Go changed, as in
@@ -271,7 +271,8 @@ server.
 - **A theme is a Mattermost theme config** (`frontend/src/theme/`,
   `docs/themes.md`), shipped as pairs (light/dark) with `themeMode` choosing the
   half; `_tokens.scss` is the first paint and a test holds it equal to the
-  shipped configs.
+  shipped configs. **The choice of theme is closed** (`themeChoiceOpen()`): the
+  look is made from the app icon, and only light or dark is a person's.
 - **Board setup is three questions** — name, agent, done (`impliedSetup`,
   `BoardSetupPlan`) — and a board may declare its own (`BoardPropSetup`). The
   first is the board's name, unique case-insensitively (`boardTitle.ts`). **The
@@ -344,7 +345,7 @@ over HTTP on the front door (`/acp/board/mcp`, `boardapi.go`).
   (`mcpsource.go`); shipped manifests re-invoke this binary, user manifests in
   `<dataDir>/sources/manifests/` win by name.
 - **The inbox is one board**, made by the app at launch
-  (`boardadapter.EnsureInboxBoard`) and found by its `xciiiInbox` mark, never by
+  (`boardadapter.EnsureInboxBoard`) and found by its `inbox` mark, never by
   title. Every source writes there and names no board; a person carries each
   card on to where it belongs. It has no column property — its one view is a
   kanban grouped by author, and each source has a board account

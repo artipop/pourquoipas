@@ -11,8 +11,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/artipop/xciii/internal/apperr"
-	"github.com/artipop/xciii/internal/edition"
+	"github.com/artipop/pourquoipas/internal/apperr"
+	"github.com/artipop/pourquoipas/internal/edition"
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/updater"
 	"github.com/wailsapp/wails/v3/pkg/updater/providers/endpoint"

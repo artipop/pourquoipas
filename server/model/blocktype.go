@@ -4,7 +4,7 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/artipop/xciii/server/utils"
+	"github.com/artipop/pourquoipas/server/utils"
 )
 
 // BlockType represents a block type.

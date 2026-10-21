@@ -12,9 +12,9 @@ import (
 
 	acpsdk "github.com/coder/acp-go-sdk"
 
-	"github.com/artipop/xciii/internal/apperr"
-	"github.com/artipop/xciii/internal/dokku"
-	"github.com/artipop/xciii/internal/procgroup"
+	"github.com/artipop/pourquoipas/internal/apperr"
+	"github.com/artipop/pourquoipas/internal/dokku"
+	"github.com/artipop/pourquoipas/internal/procgroup"
 )
 
 // turnRequest is one user message queued onto a live session.

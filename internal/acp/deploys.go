@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/artipop/xciii/internal/apperr"
-	"github.com/artipop/xciii/internal/dokku"
+	"github.com/artipop/pourquoipas/internal/apperr"
+	"github.com/artipop/pourquoipas/internal/dokku"
 )
 
 // Deploy target registry: named Dokku destinations, edited from the desktop UI

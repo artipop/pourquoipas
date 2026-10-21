@@ -48,7 +48,7 @@ describe('properties/link', () => {
         const {container} = render(() => wrapIntl(() => (
             <Url
                 {...baseData}
-                propertyValue='https://deffun.com/xciii/'
+                propertyValue='https://deffun.com/pourquoipas/'
             />
         )))
         expect(container).toMatchSnapshot()
@@ -58,7 +58,7 @@ describe('properties/link', () => {
         const {container} = render(() => wrapIntl(() => (
             <Url
                 {...baseData}
-                propertyValue='https://deffun.com/xciii/'
+                propertyValue='https://deffun.com/pourquoipas/'
                 readOnly={true}
             />
         )))

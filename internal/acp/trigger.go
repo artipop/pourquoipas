@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/artipop/xciii/internal/apperr"
+	"github.com/artipop/pourquoipas/internal/apperr"
 )
 
 // errSwitchedOff is what a start refused by the switch says.

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/artipop/xciii/internal/apperr"
+	"github.com/artipop/pourquoipas/internal/apperr"
 )
 
 // A workspace is what a folder hands out: a directory to work in and, when the

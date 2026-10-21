@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/artipop/xciii/server/model"
+	"github.com/artipop/pourquoipas/server/model"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )

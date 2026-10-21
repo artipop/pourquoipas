@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/artipop/xciii/internal/apperr"
-	"github.com/artipop/xciii/internal/secrets"
+	"github.com/artipop/pourquoipas/internal/apperr"
+	"github.com/artipop/pourquoipas/internal/secrets"
 )
 
 // Manager owns the registry and runs the pipeline. It is the only thing outside

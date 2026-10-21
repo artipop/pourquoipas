@@ -4,11 +4,11 @@ import (
 	"context"
 	"testing"
 
-	"github.com/artipop/xciii/server/mlog"
-	"github.com/artipop/xciii/server/model"
-	"github.com/artipop/xciii/server/services/notify"
+	"github.com/artipop/pourquoipas/server/mlog"
+	"github.com/artipop/pourquoipas/server/model"
+	"github.com/artipop/pourquoipas/server/services/notify"
 
-	"github.com/artipop/xciii/internal/acp"
+	"github.com/artipop/pourquoipas/internal/acp"
 )
 
 func testBoard() *model.Board {

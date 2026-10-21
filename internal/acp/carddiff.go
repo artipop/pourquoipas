@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/artipop/xciii/internal/apperr"
+	"github.com/artipop/pourquoipas/internal/apperr"
 )
 
 // A card's work read by eye. A route can put a card on a stage where nothing

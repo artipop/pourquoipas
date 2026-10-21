@@ -6,7 +6,7 @@ import (
 
 	acpsdk "github.com/coder/acp-go-sdk"
 
-	"github.com/artipop/xciii/internal/boardmcp"
+	"github.com/artipop/pourquoipas/internal/boardmcp"
 )
 
 // The grant is the whole of the door: the token names the board, so an agent
@@ -25,7 +25,7 @@ func TestBoardToolsWriteOnlyToTheGrantedBoard(t *testing.T) {
 		Title:   "Починить окно планирования",
 		Body:    "Оно открывается пополам.",
 		Column:  "К агенту",
-		Options: []string{"xciii"},
+		Options: []string{"pourquoipas"},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -156,7 +156,7 @@ func boardWithCards(t *testing.T) (*Manager, *fakeWriter) {
 			// The board renders a select value upper-cased, which is what Props
 			// carries everywhere — see toolCard.
 			Props:       map[string]string{"статус": "К АГЕНТУ"},
-			OptionNames: []string{"К агенту", "xciii"},
+			OptionNames: []string{"К агенту", "pourquoipas"},
 		},
 		{
 			CardID: "card-2", BoardID: "board-1", Title: "Вторая",
@@ -250,7 +250,7 @@ func TestBoardToolsListTheGrantedBoardsCards(t *testing.T) {
 		t.Errorf("the run's own card reads as %+v", first)
 	}
 	// The column is said once: it is its own field, not one of the values.
-	if strings.Join(first.Options, ",") != "xciii" {
+	if strings.Join(first.Options, ",") != "pourquoipas" {
 		t.Errorf("values read back as %v", first.Options)
 	}
 

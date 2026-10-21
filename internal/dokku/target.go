@@ -23,7 +23,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/artipop/xciii/internal/apperr"
+	"github.com/artipop/pourquoipas/internal/apperr"
 )
 
 // The whole app name is one DNS label — <baseApp>-<slug>.<baseDomain> — and a

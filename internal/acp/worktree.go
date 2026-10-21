@@ -9,7 +9,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/artipop/xciii/internal/dokku"
+	"github.com/artipop/pourquoipas/internal/dokku"
 )
 
 // WorktreeInfo describes a session's dedicated git worktree.

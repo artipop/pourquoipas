@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/artipop/xciii/internal/sources"
+	"github.com/artipop/pourquoipas/internal/sources"
 )
 
 // oneBoard is a source writer that serves one board and refuses every other,

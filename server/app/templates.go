@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/artipop/xciii/server/assets"
-	"github.com/artipop/xciii/server/model"
+	"github.com/artipop/pourquoipas/server/assets"
+	"github.com/artipop/pourquoipas/server/model"
 
-	"github.com/artipop/xciii/server/mlog"
+	"github.com/artipop/pourquoipas/server/mlog"
 )
 
 const (

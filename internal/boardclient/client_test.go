@@ -5,14 +5,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/artipop/xciii/server/client"
-	"github.com/artipop/xciii/server/integrationtests"
-	"github.com/artipop/xciii/server/mlog"
-	"github.com/artipop/xciii/server/model"
-	"github.com/artipop/xciii/server/utils"
+	"github.com/artipop/pourquoipas/server/client"
+	"github.com/artipop/pourquoipas/server/integrationtests"
+	"github.com/artipop/pourquoipas/server/mlog"
+	"github.com/artipop/pourquoipas/server/model"
+	"github.com/artipop/pourquoipas/server/utils"
 
-	"github.com/artipop/xciii/internal/acp"
-	"github.com/artipop/xciii/internal/boardclient"
+	"github.com/artipop/pourquoipas/internal/acp"
+	"github.com/artipop/pourquoipas/internal/boardclient"
 
 	"github.com/stretchr/testify/require"
 )

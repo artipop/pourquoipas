@@ -1,7 +1,7 @@
 package ws
 
 import (
-	"github.com/artipop/xciii/server/model"
+	"github.com/artipop/pourquoipas/server/model"
 )
 
 // UpdateCategoryMessage is sent on block updates.

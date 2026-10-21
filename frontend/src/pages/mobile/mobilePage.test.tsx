@@ -135,7 +135,7 @@ describe('pages/mobile/mobilePage', () => {
         try {
             renderPage()
 
-            await waitFor(() => expect(parent.postMessage).toHaveBeenCalledWith({type: 'xciii:waiting', count: 2}, '*'))
+            await waitFor(() => expect(parent.postMessage).toHaveBeenCalledWith({type: 'pourquoipas:waiting', count: 2}, '*'))
         } finally {
             if (original) {
                 Object.defineProperty(window, 'parent', original)

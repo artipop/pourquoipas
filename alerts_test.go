@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/artipop/xciii/internal/acp"
-	"github.com/artipop/xciii/internal/apperr"
+	"github.com/artipop/pourquoipas/internal/acp"
+	"github.com/artipop/pourquoipas/internal/apperr"
 )
 
 func keys(waits []acp.Attention) []string {

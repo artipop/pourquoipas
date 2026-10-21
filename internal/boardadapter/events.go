@@ -11,13 +11,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/artipop/xciii/server/app"
-	"github.com/artipop/xciii/server/mlog"
-	"github.com/artipop/xciii/server/model"
-	"github.com/artipop/xciii/server/services/notify"
+	"github.com/artipop/pourquoipas/server/app"
+	"github.com/artipop/pourquoipas/server/mlog"
+	"github.com/artipop/pourquoipas/server/model"
+	"github.com/artipop/pourquoipas/server/services/notify"
 
-	"github.com/artipop/xciii/internal/acp"
-	"github.com/artipop/xciii/internal/boardmodel"
+	"github.com/artipop/pourquoipas/internal/acp"
+	"github.com/artipop/pourquoipas/internal/boardmodel"
 )
 
 // EventsBackend is a notify.Backend that normalizes card select-property

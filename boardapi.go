@@ -7,8 +7,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/artipop/xciii/internal/acp"
-	"github.com/artipop/xciii/internal/boardmcp"
+	"github.com/artipop/pourquoipas/internal/acp"
+	"github.com/artipop/pourquoipas/internal/boardmcp"
 )
 
 // The board tools an agent calls, served by the app itself on the front door

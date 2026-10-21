@@ -147,7 +147,7 @@ jobs:
       # dist/<edition>/update is what the updater installs;
       # dist/<edition>/install is what a person downloads the first time. The
       # manifest is generated over the first directory alone — an installer
-      # swapped in as if it were the app would replace XCIII with a copy of its
+      # swapped in as if it were the app would replace Pourquoi Pas? with a copy of its
       # own installer.
       #
       # The edition is a directory rather than a suffix in the file names,
@@ -166,10 +166,10 @@ jobs:
         if: matrix.target.platform == 'darwin'
         run: |
           wails3 task darwin:package:dmg EDITION=${{ matrix.edition }}
-          ditto -c -k --keepParent "bin/XCIII.app" \
-            "dist/${{ matrix.edition }}/update/XCIII-${{ steps.version.outputs.version }}-darwin-${{ matrix.target.arch }}.zip"
-          mv "bin/XCIII.dmg" \
-            "dist/${{ matrix.edition }}/install/XCIII-${{ steps.version.outputs.version }}-darwin-${{ matrix.target.arch }}.dmg"
+          ditto -c -k --keepParent "bin/pourquoipas.app" \
+            "dist/${{ matrix.edition }}/update/pourquoipas-${{ steps.version.outputs.version }}-darwin-${{ matrix.target.arch }}.zip"
+          mv "bin/pourquoipas.dmg" \
+            "dist/${{ matrix.edition }}/install/pourquoipas-${{ steps.version.outputs.version }}-darwin-${{ matrix.target.arch }}.dmg"
 
       # ── Windows ──────────────────────────────────────────────────────────
       # INSTALL_SCOPE=user rather than the Taskfile's default of machine: an app
@@ -181,10 +181,10 @@ jobs:
         shell: bash
         run: |
           wails3 task windows:package INSTALL_SCOPE=user EDITION=${{ matrix.edition }}
-          cp "bin/XCIII.exe" \
-            "dist/${{ matrix.edition }}/update/XCIII-${{ steps.version.outputs.version }}-windows-${{ matrix.target.arch }}.exe"
-          mv "bin/XCIII-${{ matrix.target.arch }}-installer.exe" \
-            "dist/${{ matrix.edition }}/install/XCIII-${{ steps.version.outputs.version }}-windows-${{ matrix.target.arch }}-installer.exe"
+          cp "bin/pourquoipas.exe" \
+            "dist/${{ matrix.edition }}/update/pourquoipas-${{ steps.version.outputs.version }}-windows-${{ matrix.target.arch }}.exe"
+          mv "bin/pourquoipas-${{ matrix.target.arch }}-installer.exe" \
+            "dist/${{ matrix.edition }}/install/pourquoipas-${{ steps.version.outputs.version }}-windows-${{ matrix.target.arch }}-installer.exe"
 
       # ── Linux ────────────────────────────────────────────────────────────
       # The tar.gz is the updatable form: unpacked into a directory the user
@@ -198,8 +198,8 @@ jobs:
         if: matrix.target.platform == 'linux'
         run: |
           wails3 task linux:build EDITION=${{ matrix.edition }}
-          tar -czf "dist/${{ matrix.edition }}/update/XCIII-${{ steps.version.outputs.version }}-linux-${{ matrix.target.arch }}.tar.gz" \
-            -C bin XCIII
+          tar -czf "dist/${{ matrix.edition }}/update/pourquoipas-${{ steps.version.outputs.version }}-linux-${{ matrix.target.arch }}.tar.gz" \
+            -C bin pourquoipas
           wails3 task linux:create:appimage EDITION=${{ matrix.edition }}
           wails3 task linux:create:deb EDITION=${{ matrix.edition }}
           find bin -maxdepth 1 \( -name '*.AppImage' -o -name '*.deb' \) -exec mv {} dist/${{ matrix.edition }}/install/ \;
@@ -277,7 +277,7 @@ jobs:
             git tag -l --format='%(contents)' "${GITHUB_REF_NAME}" > notes.md
           fi
           if [ ! -s notes.md ]; then
-            printf 'XCIII %s\n' "${{ steps.version.outputs.version }}" > notes.md
+            printf 'Pourquoi Pas? %s\n' "${{ steps.version.outputs.version }}" > notes.md
           fi
           cat notes.md
 

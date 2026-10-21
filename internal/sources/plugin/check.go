@@ -64,7 +64,7 @@ func Check(ctx context.Context, opts CheckOptions) []Finding {
 		Env:         opts.Env,
 		Source:      SourceInfo{Name: "check", Config: opts.Config},
 		Credentials: Credentials{AccessToken: opts.Token},
-		Host:        HostInfo{Name: "XCIII", Version: "check"},
+		Host:        HostInfo{Name: "pourquoipas", Version: "check"},
 	}, collector)
 	if err != nil {
 		add(true, "initialize", "%v", err)

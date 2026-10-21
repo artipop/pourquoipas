@@ -7,8 +7,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/artipop/xciii/internal/acp"
-	"github.com/artipop/xciii/internal/apperr"
+	"github.com/artipop/pourquoipas/internal/acp"
+	"github.com/artipop/pourquoipas/internal/apperr"
 )
 
 // The words Go draws itself: the menu bar, the OS notification and the titles

@@ -6,10 +6,10 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/artipop/xciii/server/model"
-	"github.com/artipop/xciii/server/web"
+	"github.com/artipop/pourquoipas/server/model"
+	"github.com/artipop/pourquoipas/server/web"
 
-	"github.com/artipop/xciii/server/mlog"
+	"github.com/artipop/pourquoipas/server/mlog"
 )
 
 var ErrTurningOnSharing = errors.New("turning on sharing for board failed, see log for details")

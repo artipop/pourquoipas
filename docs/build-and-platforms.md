@@ -28,10 +28,10 @@
 - `gtk3` добавляется на Linux сам (`GTK_TAG` в `build/linux/Taskfile.yml`);
 - `server` — headless-сборка, у неё свои файлы (`window_server.go` вместо
   `window_desktop.go`);
-- `production` — релизная сборка; без него каталог данных `XCIII-dev` и свой
+- `production` — релизная сборка; без него каталог данных `pourquoipas-dev` и свой
   замок единственного экземпляра (`singleInstanceID`), поэтому дев-сборка
   никогда не трогает настоящую установку. С общим замком окно из `wails3 dev`
-  при запущенном XCIII отдавало запуск ему и молча выходило — в терминале
+  при запущенном Pourquoi Pas? отдавало запуск ему и молча выходило — в терминале
   оставался только адрес Vite;
 - `lifetime` — платное издание: лишние шаблоны досок и свой фид обновлений.
   Добавляется через `EDITION=lifetime`, а не руками: `EDITION=base` (по
@@ -82,6 +82,17 @@ Windows Wails cgo не нужен. Ещё одно место с cgo, `tailscale
 **macOS.** `build` / `package` / `darwin:package:dmg`: `.app` и `.dmg`
 собираются, приложение запускается, вебвью грузит страницу с front door по
 настоящему HTTP.
+
+Файл бандла — `pourquoipas.app`, а в «Программах», Доке и Spotlight видно
+«Pourquoi Pas?»: имя берётся из `build/darwin/{en,ru}.lproj/InfoPlist.strings`
+(`LSHasLocalizedDisplayName`). macOS показывает его, только пока имя файла
+совпадает с нелокализованным `CFBundleDisplayName` в `Info.plist`. Если файл
+переименовать, снова будет видно имя файла.
+
+Иконку для `.dmg` рисует сама система по бандлу (`dmg-icon/RenderAppIcon.swift`)
+и кэширует её по пути. Сразу после смены иконки DMG может выйти со старой или
+с пунктирной заглушкой. Проверьте `bin/dmg-icon.icns`; помогает
+`lsregister -f bin/pourquoipas.app` и ещё один-два прогона `darwin:create:dmg`.
 
 **Linux.** `wails3 task linux:build` даёт ELF, слинкованный с `libgtk-3`,
 `libwebkit2gtk-4.1` и `libsqlite3`. Тег `gtk3` обязателен: по умолчанию Wails v3
@@ -171,14 +182,14 @@ beta.22: сервер стартует, прогоняет миграции на
 `wails3 task build:docker` — образ серверного режима по шаблону Wails
 (`build/docker/Dockerfile.server`): сначала собирается страница (`frontend/dist`
 вшивается тегом `frontend`, node в образе нет), потом чистый Go без cgo на
-`distroless/static`. `run:docker` запускает его с данными в томе `xciii-data`.
+`distroless/static`. `run:docker` запускает его с данными в томе `pourquoipas-data`.
 
 Настраивается окружением при `docker run`:
 
 - `WAILS_SERVER_HOST`/`WAILS_SERVER_PORT` (или `SERVER_HOST`/`SERVER_PORT`) —
   где слушает front door; в образе `0.0.0.0:8080`;
-- `XCIII_DB_TYPE` — `sqlite3` (по умолчанию), `postgres` или `mysql`, и
-  `XCIII_DB_DSN` — строка подключения в синтаксисе драйвера; для SQLite это
+- `POURQUOIPAS_DB_TYPE` — `sqlite3` (по умолчанию), `postgres` или `mysql`, и
+  `POURQUOIPAS_DB_DSN` — строка подключения в синтаксисе драйвера; для SQLite это
   путь, по умолчанию файл в каталоге данных (`database_server.go`);
 - `/data` — каталог установки (`XDG_CONFIG_HOME`): база SQLite, файлы,
   настройки. Без тома каждый перезапуск — новая установка.

@@ -6,7 +6,7 @@ import {Board} from '../../blocks/board'
 // marks with a board property, and it is found by that mark — never by its
 // title, which a person may change, and never by a view's title, which a person
 // may give to a view of any board.
-export const InboxBoardProperty = 'xciiiInbox'
+export const InboxBoardProperty = 'inbox'
 
 export function isInboxBoard(board?: Board): boolean {
     // The mark is a JSON boolean, which the board's property type does not

@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/artipop/xciii/internal/secrets"
+	"github.com/artipop/pourquoipas/internal/secrets"
 )
 
 // fakeVault is the credential store as the attachment sees it: one key, set,

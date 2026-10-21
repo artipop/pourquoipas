@@ -34,7 +34,7 @@ func (b *fakeBoard) Fields(context.Context) ([]FieldInfo, error) {
 
 func (b *fakeBoard) Cards(_ context.Context, column string) ([]CardInfo, error) {
 	all := []CardInfo{
-		{ID: "card-1", Title: "Починить окно", Column: "К агенту", Options: []string{"xciii"}, Mine: true,
+		{ID: "card-1", Title: "Починить окно", Column: "К агенту", Options: []string{"pourquoipas"}, Mine: true,
 			Running: true},
 		{ID: "card-2", Title: "Вторая", Column: "Идеи"},
 	}
@@ -161,10 +161,10 @@ func TestNothingLandingIsAFailure(t *testing.T) {
 // whether somebody is already working on it.
 func TestACardSaysWhatActingOnItNeeds(t *testing.T) {
 	line := cardLine(CardInfo{
-		ID: "card-1", Title: "Починить окно", Column: "К агенту", Options: []string{"xciii"},
+		ID: "card-1", Title: "Починить окно", Column: "К агенту", Options: []string{"pourquoipas"},
 		Mine: true, Running: true,
 	})
-	for _, want := range []string{"card-1", "Починить окно", "К агенту", "xciii", "an agent is working on it"} {
+	for _, want := range []string{"card-1", "Починить окно", "К агенту", "pourquoipas", "an agent is working on it"} {
 		if !strings.Contains(line, want) {
 			t.Errorf("the card does not say %q:\n%s", want, line)
 		}

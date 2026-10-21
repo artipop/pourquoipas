@@ -10,7 +10,7 @@
 // The obvious alternative — `wails3 task common:update:build-assets`, which
 // regenerates the platform assets from build/config.yml — cannot be used:
 // it rewrites build/darwin/Info.plist from the CLI's own template and drops
-// the hand-written CFBundleURLTypes block that registers the xciii:// scheme
+// the hand-written CFBundleURLTypes block that registers the pourquoipas:// scheme
 // the share extension launches us with.
 package buildversion
 

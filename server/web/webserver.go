@@ -11,7 +11,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/artipop/xciii/server/mlog"
+	"github.com/artipop/pourquoipas/server/mlog"
 )
 
 // RoutedService defines the interface that is needed for any service to

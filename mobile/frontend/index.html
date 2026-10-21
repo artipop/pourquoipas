@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <title>XCIII</title>
+    <title>Pourquoi Pas?</title>
     <!--
         The only page this app carries of its own: which machines, and which of
         them you are looking at. Everything else is the board's own page, served
@@ -218,7 +218,7 @@
 <body>
     <div id="frames">
         <section id="setup" hidden>
-            <h1>XCIII</h1>
+            <h1>Pourquoi Pas?</h1>
             <p>Введите имя машины в вашем tailnet — то, под которым доска опубликована. Телефон должен быть подключён к Tailscale.</p>
 
             <form id="connect">
@@ -251,7 +251,7 @@
         // 'setup' is a tab like any other, so there is exactly one thing on
         // screen and one place that decides what it is.
         const SETUP = 'setup'
-        const ACTIVE_KEY = 'xciii.active'
+        const ACTIVE_KEY = 'pourquoipas.active'
 
         // Which tab you were last on. Written through a try: this page is served
         // by the app itself, and a webview is allowed to refuse storage on such
@@ -422,7 +422,7 @@
         // there are waiting for a person, so the tab can carry the number.
         window.addEventListener('message', (event) => {
             const data = event.data
-            if (!data || data.type !== 'xciii:waiting') {
+            if (!data || data.type !== 'pourquoipas:waiting') {
                 return
             }
             // Only from a board we put on screen ourselves. Anything else is

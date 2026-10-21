@@ -5,10 +5,10 @@ import (
 	"os"
 	"testing"
 
-	"github.com/artipop/xciii/server/services/store"
+	"github.com/artipop/pourquoipas/server/services/store"
 	"github.com/stretchr/testify/require"
 
-	"github.com/artipop/xciii/server/mlog"
+	"github.com/artipop/pourquoipas/server/mlog"
 )
 
 func SetupTests(t *testing.T) (store.Store, func()) {

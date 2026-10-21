@@ -7,12 +7,12 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/artipop/xciii/server/model"
-	"github.com/artipop/xciii/server/services/auth"
-	"github.com/artipop/xciii/server/utils"
-	"github.com/artipop/xciii/server/web"
+	"github.com/artipop/pourquoipas/server/model"
+	"github.com/artipop/pourquoipas/server/services/auth"
+	"github.com/artipop/pourquoipas/server/utils"
+	"github.com/artipop/pourquoipas/server/web"
 
-	"github.com/artipop/xciii/server/mlog"
+	"github.com/artipop/pourquoipas/server/mlog"
 )
 
 func (a *API) registerAuthRoutes(r *web.Router) {

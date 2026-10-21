@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/artipop/xciii/internal/dbtest"
+	"github.com/artipop/pourquoipas/internal/dbtest"
 )
 
 // The store's tests run against whichever database FOCALBOARD_STORE_TEST_DB_TYPE

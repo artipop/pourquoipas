@@ -16,9 +16,9 @@ const ServerName = "dokku"
 // which host, which project, which branch — arrives here rather than as tool
 // arguments, so the model cannot point a deploy somewhere else.
 const (
-	EnvTarget = "XCIII_DOKKU_TARGET" // JSON Target
-	EnvRepo   = "XCIII_DOKKU_REPO"   // local project the branch is pushed from
-	EnvBranch = "XCIII_DOKKU_BRANCH" // default branch for tools that omit one
+	EnvTarget = "POURQUOIPAS_DOKKU_TARGET" // JSON Target
+	EnvRepo   = "POURQUOIPAS_DOKKU_REPO"   // local project the branch is pushed from
+	EnvBranch = "POURQUOIPAS_DOKKU_BRANCH" // default branch for tools that omit one
 )
 
 // version is reported to the client on initialize; it tracks the tool surface,

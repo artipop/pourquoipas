@@ -7,7 +7,7 @@ const Name = "lifetime"
 
 // Title is the edition in words, for a log line and for support: two binaries
 // under one app name are otherwise told apart only by what is in them.
-const Title = "XCIII Lifetime"
+const Title = "Pourquoi Pas? Lifetime"
 
 // ManifestURL is the release feed this build asks. A second file beside
 // stable.json, not a second bucket: the address of a feed is the one thing an

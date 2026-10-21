@@ -1,6 +1,6 @@
 package acp
 
-import "github.com/artipop/xciii/internal/apperr"
+import "github.com/artipop/pourquoipas/internal/apperr"
 
 // Why a card is standing still, said where the card already says where it
 // stands — on its route strip — rather than in its comments.

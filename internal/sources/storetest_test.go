@@ -3,7 +3,7 @@ package sources
 import (
 	"testing"
 
-	"github.com/artipop/xciii/internal/appschema"
+	"github.com/artipop/pourquoipas/internal/appschema"
 )
 
 // newTestStore gives a test a store on a scratch database of its own, closed

@@ -7,7 +7,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/artipop/xciii/internal/appschema"
+	"github.com/artipop/pourquoipas/internal/appschema"
 )
 
 // fakeBoard is a board of a few boards and their cards, in memory.
@@ -24,7 +24,7 @@ func newFakeBoard() *fakeBoard {
 		boards: []BoardInfo{
 			{ID: "inbox", Title: "Входящие", Inbox: true},
 			{ID: "home", Title: "Дом", Description: "Покупки, ремонт, счета за квартиру"},
-			{ID: "work", Title: "Работа", Description: "Задачи по проекту XCIII"},
+			{ID: "work", Title: "Работа", Description: "Задачи по проекту Pourquoi Pas?"},
 		},
 		cards: map[string][]CardInfo{
 			"home": {{ID: "h1", Title: "Купить лампочки"}},
@@ -102,7 +102,7 @@ func (a *fakeAgent) Ask(_ context.Context, _ string, prompt string) (string, err
 	if strings.Contains(prompt, "mapping each board key to its summary") {
 		a.summaries++
 		// Wrapped the way agents wrap JSON, to prove it is read anyway.
-		return "Here you go:\n```json\n{\"b1\":\"Бытовые дела по квартире.\",\"b2\":\"Разработка XCIII.\"}\n```", nil
+		return "Here you go:\n```json\n{\"b1\":\"Бытовые дела по квартире.\",\"b2\":\"Разработка Pourquoi Pas?\"}\n```", nil
 	}
 	a.sorts = append(a.sorts, prompt)
 	return a.sort(prompt), nil
@@ -110,7 +110,7 @@ func (a *fakeAgent) Ask(_ context.Context, _ string, prompt string) (string, err
 
 func newSorter(t *testing.T, board Board, agent Agent) *Sorter {
 	t.Helper()
-	db, err := appschema.Open(filepath.Join(t.TempDir(), "xciii.db"))
+	db, err := appschema.Open(filepath.Join(t.TempDir(), "pourquoipas.db"))
 	if err != nil {
 		t.Fatal(err)
 	}

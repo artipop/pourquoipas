@@ -51,7 +51,7 @@ S3. Нужно:
    | Секрет | Пример |
    |---|---|
    | `RELEASES_S3_ENDPOINT` | `https://<account>.r2.cloudflarestorage.com` |
-   | `RELEASES_S3_BUCKET` | `xciii-releases` |
+   | `RELEASES_S3_BUCKET` | `pourquoipas-releases` |
    | `RELEASES_S3_ACCESS_KEY_ID` | |
    | `RELEASES_S3_SECRET_ACCESS_KEY` | |
 
@@ -60,8 +60,8 @@ S3. Нужно:
 ```
 stable.json                                  ← манифест base, перезаписывается
 lifetime.json                                ← манифест lifetime
-v1.1.0/base/XCIII-1.1.0-darwin-arm64.zip     ← обновление
-v1.1.0/base/XCIII-1.1.0-darwin-arm64.dmg     ← первая установка
+v1.1.0/base/pourquoipas-1.1.0-darwin-arm64.zip     ← обновление
+v1.1.0/base/pourquoipas-1.1.0-darwin-arm64.dmg     ← первая установка
 v1.1.0/lifetime/…                            ← то же, платное издание
 ```
 
@@ -115,10 +115,10 @@ per-platform сборочные файлы — список в `internal/buildve
 
 | Раннер | Обновление (`dist/update/`) | Первая установка (`dist/install/`) |
 |---|---|---|
-| macos-14 | `XCIII-<v>-darwin-arm64.zip` | `.dmg` |
-| macos-13 | `XCIII-<v>-darwin-amd64.zip` | `.dmg` |
-| windows-latest | `XCIII-<v>-windows-amd64.exe` | `-installer.exe` (NSIS, `INSTALL_SCOPE=user`) |
-| ubuntu-latest | `XCIII-<v>-linux-amd64.tar.gz` | AppImage, `.deb` |
+| macos-14 | `pourquoipas-<v>-darwin-arm64.zip` | `.dmg` |
+| macos-13 | `pourquoipas-<v>-darwin-amd64.zip` | `.dmg` |
+| windows-latest | `pourquoipas-<v>-windows-amd64.exe` | `-installer.exe` (NSIS, `INSTALL_SCOPE=user`) |
+| ubuntu-latest | `pourquoipas-<v>-linux-amd64.tar.gz` | AppImage, `.deb` |
 
 Деление на две папки — не косметика: `manifest.json` строится только по
 `dist/update/`, и попавший туда инсталлятор апдейтер поставил бы **вместо**
@@ -178,9 +178,9 @@ cgo-SQLite, `makensis` и `ldd` — см.
   (`beta.json`) в том же бакете — это одна строка в workflow, а вот
   переключателя в приложении нет, и мешает ему `Init`, который вызывается один
   раз за запуск. См. [deferred.md](deferred.md).
-- **Страница загрузки.** Файлы лежат в бакете, но `site/xciii/` про них ещё не
+- **Страница загрузки.** Файлы лежат в бакете, но `site/pourquoipas/` про них ещё не
   знает: там форма предзаказа. Ссылки вида
-  `https://updates.deffun.org/v1.1.0/base/XCIII-1.1.0-darwin-arm64.dmg` можно
+  `https://updates.deffun.org/v1.1.0/base/pourquoipas-1.1.0-darwin-arm64.dmg` можно
   ставить на страницу руками, пока не появится что-то, что читает манифесты.
   Изданий два, так что и ссылок на скачивание будет два набора.
 - **Прогон тестов в релизном workflow.** Сейчас его нет: тег вешают на то, что

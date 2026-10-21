@@ -90,7 +90,7 @@ func NewServer(cfg Config, client *http.Client) *mcp.Server {
 		client = &http.Client{Timeout: 30 * time.Second}
 	}
 	srv := mcp.NewServer(
-		&mcp.Implementation{Name: ServerName, Title: "XCIII inbox", Version: version},
+		&mcp.Implementation{Name: ServerName, Title: "Pourquoi Pas? inbox", Version: version},
 		&mcp.ServerOptions{Instructions: instructions},
 	)
 

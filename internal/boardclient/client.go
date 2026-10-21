@@ -11,12 +11,12 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/artipop/xciii/server/client"
-	"github.com/artipop/xciii/server/mlog"
-	"github.com/artipop/xciii/server/model"
+	"github.com/artipop/pourquoipas/server/client"
+	"github.com/artipop/pourquoipas/server/mlog"
+	"github.com/artipop/pourquoipas/server/model"
 
-	"github.com/artipop/xciii/internal/acp"
-	"github.com/artipop/xciii/internal/boardmodel"
+	"github.com/artipop/pourquoipas/internal/acp"
+	"github.com/artipop/pourquoipas/internal/boardmodel"
 )
 
 // Client is one attached board server, seen as everything internal/acp asks of

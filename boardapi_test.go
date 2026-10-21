@@ -13,9 +13,9 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/artipop/xciii/internal/acp"
-	"github.com/artipop/xciii/internal/appschema"
-	"github.com/artipop/xciii/internal/boardmcp"
+	"github.com/artipop/pourquoipas/internal/acp"
+	"github.com/artipop/pourquoipas/internal/appschema"
+	"github.com/artipop/pourquoipas/internal/boardmcp"
 )
 
 // recordingWriter is the board as far as these tests are concerned.
@@ -136,7 +136,7 @@ func (r *recordingReader) cards() []acp.CardMoved {
 			Title:       "Починить окно",
 			Body:        "Оно открывается пополам.",
 			Props:       map[string]string{"статус": "К АГЕНТУ"}, // the board shouts a select value
-			OptionNames: []string{"К агенту", "xciii"},
+			OptionNames: []string{"К агенту", "pourquoipas"},
 		},
 		{CardID: "card-2", BoardID: "board-1", Title: "Вторая",
 			Props: map[string]string{"статус": "ИДЕИ"}, OptionNames: []string{"Идеи"}},
@@ -246,7 +246,7 @@ func TestBoardToolsRoundTrip(t *testing.T) {
 				"title":       "Первая",
 				"description": "Что сделать",
 				"column":      "К агенту",
-				"options":     []any{"xciii"},
+				"options":     []any{"pourquoipas"},
 			},
 			map[string]any{"title": "   "},
 		}},
@@ -271,7 +271,7 @@ func TestBoardToolsRoundTrip(t *testing.T) {
 	if got.BoardID != "board-1" || got.Property != "Статус" || got.Column != "К агенту" {
 		t.Errorf("card landed as %+v", got)
 	}
-	if got.Body != "Что сделать" || strings.Join(got.Options, ",") != "xciii" {
+	if got.Body != "Что сделать" || strings.Join(got.Options, ",") != "pourquoipas" {
 		t.Errorf("card lost what the agent asked for: %+v", got)
 	}
 }

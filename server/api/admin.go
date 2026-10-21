@@ -5,8 +5,8 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/artipop/xciii/server/model"
-	"github.com/artipop/xciii/server/web"
+	"github.com/artipop/pourquoipas/server/model"
+	"github.com/artipop/pourquoipas/server/web"
 )
 
 // Administering the install, as opposed to administering a board: board roles

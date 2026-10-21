@@ -1,4 +1,4 @@
-module github.com/artipop/xciii
+module github.com/artipop/pourquoipas
 
 go 1.26.5
 

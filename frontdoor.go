@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/artipop/xciii/internal/feedmcp"
+	"github.com/artipop/pourquoipas/internal/feedmcp"
 )
 
 // The front door is the origin the page actually talks to — the webview in a

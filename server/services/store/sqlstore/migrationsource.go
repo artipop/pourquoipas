@@ -9,9 +9,9 @@ import (
 
 	"github.com/golang-migrate/migrate/v4/source"
 
-	"github.com/artipop/xciii/server/mlog"
+	"github.com/artipop/pourquoipas/server/mlog"
 
-	"github.com/artipop/xciii/server/model"
+	"github.com/artipop/pourquoipas/server/model"
 )
 
 // migrationSource is where the migrations come from, and they do not come off

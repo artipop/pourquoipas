@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/artipop/xciii/server/utils"
+	"github.com/artipop/pourquoipas/server/utils"
 )
 
 var ErrInvalidBoardBlock = errors.New("invalid board block")

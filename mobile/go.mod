@@ -1,4 +1,4 @@
-module github.com/artipop/xciii/mobile
+module github.com/artipop/pourquoipas/mobile
 
 go 1.26.5
 

@@ -1,7 +1,7 @@
 version: '3'
 
 vars:
-  APP_NAME: "XCIII"
+  APP_NAME: "pourquoipas"
   BIN_DIR: "bin"
   # Target OS for build/package/run. Defaults to the host OS, and is overridden
   # by `wails3 build GOOS=...` (or the GOOS env var) for cross-compilation. The
@@ -74,7 +74,7 @@ tasks:
     # Deliberately not `common:update:build-assets`, which regenerates the
     # platform assets from build/config.yml: it rewrites build/darwin/Info.plist
     # from the CLI's own template and drops the hand-written CFBundleURLTypes
-    # block that registers the xciii:// scheme the share extension launches us
+    # block that registers the pourquoipas:// scheme the share extension launches us
     # with.
     requires:
       vars: [VERSION]

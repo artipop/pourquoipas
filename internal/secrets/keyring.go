@@ -61,7 +61,7 @@ func (k Keyring) Delete(key string) error {
 // probeKey is read to find out whether there is a store at all. Reading rather
 // than writing: an item nothing uses would otherwise appear in somebody's
 // keychain for no reason, and a store that answers "no such item" has answered.
-const probeKey = "xciii.probe"
+const probeKey = "pourquoipas.probe"
 
 // OpenKeychain returns the platform's store when this machine has one.
 //

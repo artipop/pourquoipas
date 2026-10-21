@@ -11,8 +11,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/artipop/xciii/internal/apperr"
-	"github.com/artipop/xciii/internal/procgroup"
+	"github.com/artipop/pourquoipas/internal/apperr"
+	"github.com/artipop/pourquoipas/internal/procgroup"
 )
 
 // Spec is everything needed to start one plugin: the command, where it runs and

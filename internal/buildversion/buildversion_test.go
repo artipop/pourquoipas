@@ -56,7 +56,7 @@ func TestSettingTheVersionWritesEveryFile(t *testing.T) {
 }
 
 // The plist carries a hand-written CFBundleURLTypes block registering the
-// xciii:// scheme the share extension launches the app through. Regenerating
+// pourquoipas:// scheme the share extension launches the app through. Regenerating
 // the build assets from the wails3 template drops it, which is why the version
 // is rewritten in place instead — and why this is worth a test rather than a
 // comment.
@@ -81,7 +81,7 @@ func TestBumpingTheVersionLeavesTheRestOfTheFileAlone(t *testing.T) {
 		t.Fatalf("reading: %v", err)
 	}
 	if !strings.Contains(string(after), "CFBundleURLTypes") {
-		t.Error("bumping the version dropped the xciii:// URL scheme")
+		t.Error("bumping the version dropped the pourquoipas:// URL scheme")
 	}
 	if strings.Count(string(after), "\n") != strings.Count(string(before), "\n") {
 		t.Error("bumping the version rewrote more of the file than the version")

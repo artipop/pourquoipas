@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/artipop/xciii/internal/dokku"
+	"github.com/artipop/pourquoipas/internal/dokku"
 )
 
 func deployEntry(name string) DeployEntry {
@@ -292,7 +292,7 @@ func TestMCPLaunchPromptIsOurs(t *testing.T) {
 func TestMCPServersForSessionNew(t *testing.T) {
 	specs := []mcpServerSpec{{
 		Name:    "dokku",
-		Command: "/Applications/XCIII.app/Contents/MacOS/XCIII",
+		Command: "/Applications/pourquoipas.app/Contents/MacOS/pourquoipas",
 		Args:    []string{"mcp", "dokku"},
 		Env:     map[string]string{"B_VAR": `{"json":"value"}`, "A_VAR": "1"},
 	}}

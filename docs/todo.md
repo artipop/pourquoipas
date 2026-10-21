@@ -196,7 +196,7 @@ Mattermost. Доставку и писателя очереди вынесли �
 ## Мёртвые селекторы в стилях
 
 Замер: 1842 класса, из них 92 не пишет никто, 19 — в наших собственных scss.
-Образец — `.xciii-plugin-root { height: 100% }` в `styles/main.scss`, класс от
+Образец — `.pourquoipas-plugin-root { height: 100% }` в `styles/main.scss`, класс от
 плагинного режима.
 
 Инструмент — **PurgeCSS** с `--rejected` (печатает выброшенное) и `safelist`

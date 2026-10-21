@@ -1,6 +1,6 @@
 import DefaultTheme from 'vitepress/theme-without-fonts'
 
-// The palette is not copied here: this imports the very stylesheet the XCIII
+// The palette is not copied here: this imports the very stylesheet the Pourquoi Pas?
 // guide is painted with, because both guides belong to the same company and a
 // second copy of the tokens would start drifting the day one of them is
 // touched. The typefaces come along with it — the `url()`s inside that file

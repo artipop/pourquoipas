@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/artipop/xciii/internal/apperr"
-	"github.com/artipop/xciii/internal/dokku"
+	"github.com/artipop/pourquoipas/internal/apperr"
+	"github.com/artipop/pourquoipas/internal/dokku"
 )
 
 // WorkdirEntry is one named local folder in the registry.

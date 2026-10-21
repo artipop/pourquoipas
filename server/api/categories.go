@@ -6,8 +6,8 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/artipop/xciii/server/model"
-	"github.com/artipop/xciii/server/web"
+	"github.com/artipop/pourquoipas/server/model"
+	"github.com/artipop/pourquoipas/server/web"
 )
 
 func (a *API) registerCategoriesRoutes(r *web.Router) {

@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/artipop/xciii/internal/apperr"
-	"github.com/artipop/xciii/internal/oauth"
-	"github.com/artipop/xciii/internal/secrets"
+	"github.com/artipop/pourquoipas/internal/apperr"
+	"github.com/artipop/pourquoipas/internal/oauth"
+	"github.com/artipop/pourquoipas/internal/secrets"
 )
 
 // Connecting a source to the service behind it. The app performs the

@@ -10,8 +10,8 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/artipop/xciii/server/api"
-	"github.com/artipop/xciii/server/model"
+	"github.com/artipop/pourquoipas/server/api"
+	"github.com/artipop/pourquoipas/server/model"
 )
 
 const (

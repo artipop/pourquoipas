@@ -7,8 +7,8 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/artipop/xciii/server/model"
-	"github.com/artipop/xciii/server/web"
+	"github.com/artipop/pourquoipas/server/model"
+	"github.com/artipop/pourquoipas/server/web"
 )
 
 // An account for something that never logs in: one per registered agent, one

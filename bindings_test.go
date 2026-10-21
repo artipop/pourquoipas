@@ -10,7 +10,7 @@ import (
 
 // generatedApp is the binding module `wails3 task generate:bindings` writes for
 // App.
-const generatedApp = "frontend/bindings/github.com/artipop/xciii/app.ts"
+const generatedApp = "frontend/bindings/github.com/artipop/pourquoipas/app.ts"
 
 // The page calls App through bindings generated from it, and they are committed
 // so that building or testing the page needs no Go. What that costs is that they

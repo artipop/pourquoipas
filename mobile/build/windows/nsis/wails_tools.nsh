@@ -5,13 +5,13 @@
 !include "FileFunc.nsh"
 
 !ifndef INFO_PROJECTNAME
-    !define INFO_PROJECTNAME "xciii"
+    !define INFO_PROJECTNAME "pourquoipas"
 !endif
 !ifndef INFO_COMPANYNAME
     !define INFO_COMPANYNAME "artipop"
 !endif
 !ifndef INFO_PRODUCTNAME
-    !define INFO_PRODUCTNAME "XCIII"
+    !define INFO_PRODUCTNAME "Pourquoi Pas"
 !endif
 !ifndef INFO_PRODUCTVERSION
     !define INFO_PRODUCTVERSION "1.0.0"

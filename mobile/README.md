@@ -1,4 +1,4 @@
-# XCIII on a phone
+# Pourquoi Pas? on a phone
 
 One window onto the board, for iOS and Android.
 

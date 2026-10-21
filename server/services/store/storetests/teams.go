@@ -3,14 +3,14 @@ package storetests
 import (
 	"fmt"
 
-	"github.com/artipop/xciii/server/model"
-	"github.com/artipop/xciii/server/utils"
+	"github.com/artipop/pourquoipas/server/model"
+	"github.com/artipop/pourquoipas/server/utils"
 
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/artipop/xciii/server/services/store"
+	"github.com/artipop/pourquoipas/server/services/store"
 )
 
 func StoreTestTeamStore(t *testing.T, setup func(t *testing.T) (store.Store, func())) {

@@ -7,7 +7,7 @@ const Name = "base"
 
 // Title is the edition in words, for a log line and for support: two binaries
 // under one app name are otherwise told apart only by what is in them.
-const Title = "XCIII"
+const Title = "Pourquoi Pas?"
 
 // ManifestURL is the release feed this build asks, and it is the one address
 // it can never change — every copy already installed asks here and nowhere

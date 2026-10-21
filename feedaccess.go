@@ -10,9 +10,9 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/artipop/xciii/internal/boardmodel"
-	"github.com/artipop/xciii/internal/feedmcp"
-	"github.com/artipop/xciii/internal/sources"
+	"github.com/artipop/pourquoipas/internal/boardmodel"
+	"github.com/artipop/pourquoipas/internal/feedmcp"
+	"github.com/artipop/pourquoipas/internal/sources"
 )
 
 // Access for other applications: the feed of a column (internal/feedmcp), read

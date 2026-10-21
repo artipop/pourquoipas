@@ -17,7 +17,7 @@ func TestTheKeychainKeepsASecretAndGivesItBack(t *testing.T) {
 	if os.Getenv("CI") != "" {
 		t.Skip("нет доступа к связке ключей на CI")
 	}
-	store, ok := OpenKeychain("XCIII-test")
+	store, ok := OpenKeychain("pourquoipas-test")
 	if !ok {
 		t.Skip("на этой машине нет хранилища секретов")
 	}

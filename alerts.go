@@ -3,7 +3,7 @@ package main
 import (
 	"strings"
 
-	"github.com/artipop/xciii/internal/acp"
+	"github.com/artipop/pourquoipas/internal/acp"
 )
 
 // What a person is told when they are not looking at the board.

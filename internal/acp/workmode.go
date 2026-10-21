@@ -4,7 +4,7 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/artipop/xciii/internal/apperr"
+	"github.com/artipop/pourquoipas/internal/apperr"
 )
 
 // How work in a folder is arranged. A folder is what an agent is sent into; the

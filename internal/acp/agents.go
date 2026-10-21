@@ -7,7 +7,7 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/artipop/xciii/internal/apperr"
+	"github.com/artipop/pourquoipas/internal/apperr"
 )
 
 // Agent registry: named coding agents (claude/codex with their own prompt,

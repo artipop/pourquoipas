@@ -3,7 +3,7 @@
 <plist version="1.0">
 	<dict>
 		<key>CFBundleExecutable</key>
-		<string>xciii</string>
+		<string>pourquoipas</string>
 		<key>CFBundleGetInfoString</key>
 		<string>The board on a phone, over your own tailnet</string>
 		<key>CFBundleIconFile</key>
@@ -11,9 +11,9 @@
 		<key>CFBundleIconName</key>
 		<string>appicon</string>
 		<key>CFBundleIdentifier</key>
-		<string>io.deffun.xciii.mobile</string>
+		<string>io.deffun.pourquoipas.mobile</string>
 		<key>CFBundleName</key>
-		<string>XCIII</string>
+		<string>Pourquoi Pas?</string>
 		<key>CFBundlePackageType</key>
 		<string>APPL</string>
 		<key>CFBundleShortVersionString</key>

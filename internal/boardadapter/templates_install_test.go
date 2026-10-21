@@ -6,14 +6,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/artipop/xciii/server/app"
-	"github.com/artipop/xciii/server/model"
-	"github.com/artipop/xciii/server/server"
-	"github.com/artipop/xciii/server/services/config"
-	"github.com/artipop/xciii/server/services/notify"
-	"github.com/artipop/xciii/server/services/permissions/localpermissions"
+	"github.com/artipop/pourquoipas/server/app"
+	"github.com/artipop/pourquoipas/server/model"
+	"github.com/artipop/pourquoipas/server/server"
+	"github.com/artipop/pourquoipas/server/services/config"
+	"github.com/artipop/pourquoipas/server/services/notify"
+	"github.com/artipop/pourquoipas/server/services/permissions/localpermissions"
 
-	"github.com/artipop/xciii/server/mlog"
+	"github.com/artipop/pourquoipas/server/mlog"
 )
 
 // Installing the templates is the half nothing else covers: the files are

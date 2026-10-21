@@ -1,4 +1,4 @@
-# XCIII
+# Pourquoi Pas?
 
 A desktop board that runs coding agents from the board itself. Moving a card
 into a column starts the agent it is assigned to on it, in a branch and an
@@ -16,7 +16,7 @@ it, not a module of its own — so **`git clone` and `go build ./...` is the who
 of it**: no second checkout beside this one, no branch of somebody else's, and
 nothing to `replace`.
 
-The board server's packages are `github.com/artipop/xciii/server/…`. They kept
+The board server's packages are `github.com/artipop/pourquoipas/server/…`. They kept
 upstream's import path for a long time, on the grounds that a rename was a
 tree-wide edit buying nothing but the name; the name turned out to be worth it,
 and the edit was one pass over 209 files.
@@ -27,12 +27,12 @@ The Go code is platform-agnostic — the same files build for every OS:
 
 - `server.go` — starts the board server in-process in single-user mode on a
   free port. The SQLite database and uploaded files live under the OS user config
-  dir (`os.UserConfigDir()` → `~/Library/Application Support/XCIII` on macOS,
-  `%AppData%\XCIII` on Windows, `~/.config/XCIII` on Linux), **not** next
+  dir (`os.UserConfigDir()` → `~/Library/Application Support/pourquoipas` on macOS,
+  `%AppData%\pourquoipas` on Windows, `~/.config/pourquoipas` on Linux), **not** next
   to the binary, because a signed/packaged app dir is read-only.
 - `datadir_production.go` / `datadir_dev.go` — which install that is.
   A packaged build (`-tags production`, which every one of them carries) uses
-  `XCIII`; `wails3 dev` builds without the tag and uses `XCIII-dev`, including
+  `pourquoipas`; `wails3 dev` builds without the tag and uses `pourquoipas-dev`, including
   as the keychain service name, and a single-instance lock of its own, so the
   dev window opens while the installed app runs. One product, two installs, so what is tried out
   in development is not in the app afterwards.
@@ -95,7 +95,7 @@ The Go code is platform-agnostic — the same files build for every OS:
   the page too, because fetching the page is how a caller gets the board's
   session token.
 
-  Off until `~/Library/Application Support/XCIII/tailnet/settings.json` says
+  Off until `~/Library/Application Support/pourquoipas/tailnet/settings.json` says
   otherwise:
 
   ```json
@@ -310,7 +310,7 @@ The server build is the fastest way to look at the UI in a real browser with
 devtools:
 
 ```
-wails3 task build:server && SERVER_PORT=8099 bin/XCIII-server
+wails3 task build:server && SERVER_PORT=8099 bin/pourquoipas-server
 ```
 
 For pure frontend/CSS iteration the browser loop is still faster than the webview:
@@ -339,11 +339,11 @@ From the repo root, per platform. The build produces `frontend/dist` itself and
 embeds it, so the artifacts are single-binary:
 
 ```
-wails3 task package            # macOS   → bin/XCIII.app
-wails3 task darwin:package:dmg # macOS   → bin/XCIII.dmg
-wails3 task windows:package    # Windows → bin/XCIII.exe + NSIS installer
+wails3 task package            # macOS   → bin/pourquoipas.app
+wails3 task darwin:package:dmg # macOS   → bin/pourquoipas.dmg
+wails3 task windows:package    # Windows → bin/pourquoipas.exe + NSIS installer
 wails3 task linux:package      # Linux   → AppImage + .deb (+ .rpm)
-wails3 task build:server       # any     → bin/XCIII-server (headless)
+wails3 task build:server       # any     → bin/pourquoipas-server (headless)
 ```
 
 `wails3 task build` / `linux-app-wails3` build just the `.app` / bare binary.
@@ -375,12 +375,12 @@ by hand still works and is one pass, since the app is one binary:
 ```
 codesign --deep --force --options runtime \
   --sign "Developer ID Application: <TEAM>" \
-  bin/XCIII.app
+  bin/pourquoipas.app
 
-xcrun notarytool submit bin/XCIII.app \
+xcrun notarytool submit bin/pourquoipas.app \
   --apple-id <id> --team-id <team> --password <app-specific-pw> --wait
 
-xcrun stapler staple bin/XCIII.app
+xcrun stapler staple bin/pourquoipas.app
 ```
 
 ## Out of scope (MVP)

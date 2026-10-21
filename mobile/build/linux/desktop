@@ -1,13 +1,13 @@
 [Desktop Entry]
 Version=1.0
-Name=XCIII
+Name=Pourquoi Pas?
 Comment=Boards with coding agents
 # The Exec line includes %u to pass the URL to the application
-Exec=/usr/local/bin/xciii %u
+Exec=/usr/local/bin/pourquoipas %u
 Terminal=false
 Type=Application
-Icon=xciii
+Icon=pourquoipas
 Categories=Utility;
-StartupWMClass=xciii
+StartupWMClass=pourquoipas
 
  

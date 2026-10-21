@@ -3,7 +3,7 @@ package app
 import (
 	"context"
 
-	"github.com/artipop/xciii/server/mlog"
+	"github.com/artipop/pourquoipas/server/mlog"
 )
 
 // initialize is called when the App is first created.

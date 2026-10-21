@@ -13,15 +13,15 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/updater"
 
-	"github.com/artipop/xciii/server/services/notify"
+	"github.com/artipop/pourquoipas/server/services/notify"
 
-	"github.com/artipop/xciii/internal/acp"
-	"github.com/artipop/xciii/internal/apperr"
-	"github.com/artipop/xciii/internal/boardadapter"
-	"github.com/artipop/xciii/internal/inboxsort"
-	"github.com/artipop/xciii/internal/secrets"
-	"github.com/artipop/xciii/internal/sources"
-	"github.com/artipop/xciii/internal/userpath"
+	"github.com/artipop/pourquoipas/internal/acp"
+	"github.com/artipop/pourquoipas/internal/apperr"
+	"github.com/artipop/pourquoipas/internal/boardadapter"
+	"github.com/artipop/pourquoipas/internal/inboxsort"
+	"github.com/artipop/pourquoipas/internal/secrets"
+	"github.com/artipop/pourquoipas/internal/sources"
+	"github.com/artipop/pourquoipas/internal/userpath"
 )
 
 // appDataDir returns one of this install's own directories, made if it is not
@@ -90,7 +90,7 @@ func main() {
 	// wait for us to die. In helper mode the call never returns.
 	updater.HandleHelperMode()
 
-	// `xciii mcp dokku` runs this same binary as an MCP server for an agent
+	// `pourquoipas mcp dokku` runs this same binary as an MCP server for an agent
 	// session; it must come first, before the board server or a window exists.
 	maybeRunMCP(os.Args[1:])
 
@@ -478,7 +478,7 @@ func main() {
 	// The bound methods live on App, and the webapp calls them through the
 	// bindings generated from it (frontend/bindings).
 	wapp := application.New(application.Options{
-		Name:        "XCIII",
+		Name:        "Pourquoi Pas?",
 		Description: "Boards with coding agents",
 		Services: []application.Service{
 			application.NewService(app),
@@ -601,7 +601,7 @@ func (r sortingAgent) Ask(ctx context.Context, agent, prompt string) (string, er
 // registry for history's sake: it was written there first, and moving it would
 // take somebody's stored tokens with it for no gain.
 func openVault() secrets.Store {
-	store := secrets.Chain{secrets.Env{Prefix: "XCIII_SECRET_"}}
+	store := secrets.Chain{secrets.Env{Prefix: "POURQUOIPAS_SECRET_"}}
 	if keychain, ok := secrets.OpenKeychain(appDirName); ok {
 		return append(store, keychain)
 	}

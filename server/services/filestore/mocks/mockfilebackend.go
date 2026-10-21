@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/mock"
 
-	"github.com/artipop/xciii/server/services/filestore"
+	"github.com/artipop/pourquoipas/server/services/filestore"
 )
 
 // FileBackend mocks filestore.FileBackend.

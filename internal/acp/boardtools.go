@@ -9,7 +9,7 @@ import (
 
 	acpsdk "github.com/coder/acp-go-sdk"
 
-	"github.com/artipop/xciii/internal/boardmcp"
+	"github.com/artipop/pourquoipas/internal/boardmcp"
 )
 
 // The board tools are how an agent says something back to this application

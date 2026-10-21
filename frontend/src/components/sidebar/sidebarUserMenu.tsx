@@ -64,7 +64,7 @@ const SidebarUserMenu = () => {
 
                             <Menu.Text
                                 id='about'
-                                name={intl.formatMessage({id: 'Sidebar.about', defaultMessage: 'About XCIII'})}
+                                name={intl.formatMessage({id: 'Sidebar.about', defaultMessage: 'About Pourquoi Pas?'})}
                                 onClick={async () => {
                                     window.open(Constants.homeUrl, '_blank')
 
@@ -80,7 +80,7 @@ const SidebarUserMenu = () => {
                     <div class='logo'>
                         <div class='logo-title'>
                             <AppLogoIcon/>
-                            <span>{'XCIII'}</span>
+                            <span>{'Pourquoi Pas?'}</span>
                         </div>
                     </div>
                 </MenuWrapper>

@@ -5,13 +5,14 @@
 	<meta charset="UTF-8">
     <meta name='viewport' content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0'>
 
-    <title>XCIII</title>
+    <title>Pourquoi Pas?</title>
 
     <!-- The BaseURL below is a Go text/template action: the server substitutes it
          when serving this file (server/web/webserver.go), and vite.config.mjs
          replaces it with an empty string when the Vite dev server serves it. -->
     <script>window.baseURL = '{{.BaseURL}}'</script>
-    <link rel="icon" href="{{.BaseURL}}/favicon.svg?v=1" />
+    <link rel="icon" href="{{.BaseURL}}/favicon.png?v=2" media="(prefers-color-scheme: light)" />
+    <link rel="icon" href="{{.BaseURL}}/favicon-dark.png?v=2" media="(prefers-color-scheme: dark)" />
 </head>
 
 <body class="app-body">

@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/artipop/xciii/server/model"
+	"github.com/artipop/pourquoipas/server/model"
 )
 
 func personSchema() model.PropSchema {

@@ -5,7 +5,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/artipop/xciii/server/model"
+	"github.com/artipop/pourquoipas/server/model"
 )
 
 func TestGetServerMetadata(t *testing.T) {

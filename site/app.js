@@ -48,7 +48,7 @@ form?.addEventListener('submit', async (event) => {
             `Система: ${data.os}`,
         ].join('\n')
         window.location.href = `mailto:${PREORDER_EMAIL}` +
-            `?subject=${encodeURIComponent('Предзаказ XCIII')}&body=${encodeURIComponent(body)}`
+            `?subject=${encodeURIComponent('Предзаказ Pourquoi Pas?')}&body=${encodeURIComponent(body)}`
         say('Открыли почтовую программу — письмо заполнено, осталось отправить.')
         return
     }

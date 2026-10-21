@@ -6,10 +6,10 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/artipop/xciii/internal/boardmodel"
-	"github.com/artipop/xciii/server/app"
-	"github.com/artipop/xciii/server/model"
-	"github.com/artipop/xciii/server/utils"
+	"github.com/artipop/pourquoipas/internal/boardmodel"
+	"github.com/artipop/pourquoipas/server/app"
+	"github.com/artipop/pourquoipas/server/model"
+	"github.com/artipop/pourquoipas/server/utils"
 )
 
 // The inbox is one board, not a view of every board.
@@ -23,7 +23,7 @@ import (
 // InboxBoardProperty marks the board the app made to be the inbox. It is found
 // by this and never by title: a person may rename the board, and its name is
 // not a key in any language.
-const InboxBoardProperty = "xciiiInbox"
+const InboxBoardProperty = "inbox"
 
 // The inbox's words, in the source language like the template files, and
 // translated through the same catalogue (templatetext.go): the board and its

@@ -3,15 +3,15 @@
 <plist version="1.0">
 	<dict>
 		<key>CFBundleName</key>
-		<string>XCIII</string>
+		<string>Pourquoi Pas?</string>
 		<key>CFBundleDisplayName</key>
-		<string>XCIII</string>
+		<string>Pourquoi Pas?</string>
 		<key>CFBundleExecutable</key>
 		<string>ShareExtension</string>
 		<!-- An app extension's id has to be prefixed by the id of the app it
 		     lives in: that is how the system knows whose extension it is. -->
 		<key>CFBundleIdentifier</key>
-		<string>io.deffun.xciii.share</string>
+		<string>io.deffun.pourquoipas.share</string>
 		<key>CFBundleInfoDictionaryVersion</key>
 		<string>6.0</string>
 		<!-- XPC! and not APPL: an extension is a service the system starts, not

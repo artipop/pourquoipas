@@ -4,16 +4,16 @@ import (
 	"context"
 	"sync"
 
-	"github.com/artipop/xciii/server/app"
-	"github.com/artipop/xciii/server/mlog"
-	"github.com/artipop/xciii/server/model"
-	"github.com/artipop/xciii/server/services/notify"
+	"github.com/artipop/pourquoipas/server/app"
+	"github.com/artipop/pourquoipas/server/mlog"
+	"github.com/artipop/pourquoipas/server/model"
+	"github.com/artipop/pourquoipas/server/services/notify"
 
-	"github.com/artipop/xciii/internal/acp"
-	"github.com/artipop/xciii/internal/boardadapter"
-	"github.com/artipop/xciii/internal/boardclient"
-	"github.com/artipop/xciii/internal/boardmodel"
-	"github.com/artipop/xciii/internal/sources"
+	"github.com/artipop/pourquoipas/internal/acp"
+	"github.com/artipop/pourquoipas/internal/boardadapter"
+	"github.com/artipop/pourquoipas/internal/boardclient"
+	"github.com/artipop/pourquoipas/internal/boardmodel"
+	"github.com/artipop/pourquoipas/internal/sources"
 )
 
 // Which board the agents work. Two things can answer internal/acp's questions —

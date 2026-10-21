@@ -19,11 +19,11 @@ import {defineConfig} from 'vitepress'
 const ru = {
     label: 'Русский',
     lang: 'ru-RU',
-    titleTemplate: ':title — руководство XCIII',
-    description: 'Руководство пользователя XCIII: доска, агенты, Входящие и настройки.',
+    titleTemplate: ':title — руководство Pourquoi Pas?',
+    description: 'Руководство пользователя Pourquoi Pas?: доска, агенты, Входящие и настройки.',
 
     themeConfig: {
-        siteTitle: 'XCIII · Руководство',
+        siteTitle: 'Pourquoi Pas? · Руководство',
 
         nav: [
             {text: 'Доска', link: '/board'},
@@ -62,7 +62,7 @@ const ru = {
                 text: 'Настройки',
                 items: [
                     {text: 'Обзор', link: '/settings/'},
-                    {text: 'Темы', link: '/settings/themes'},
+                    {text: 'Светлая и тёмная', link: '/settings/themes'},
                     {text: 'Агенты, npx и Node.js', link: '/settings/agents'},
                     {text: 'Свой сервер', link: '/settings/team'},
                     {text: 'Обновления', link: '/settings/updates'},
@@ -89,7 +89,7 @@ const ru = {
         lastUpdatedText: 'Обновлено',
 
         footer: {
-            message: 'Руководство пользователя XCIII',
+            message: 'Руководство пользователя Pourquoi Pas?',
             copyright: '© 2026 deffun',
         },
 
@@ -105,11 +105,11 @@ const en = {
     label: 'English',
     lang: 'en-US',
     link: '/en/',
-    titleTemplate: ':title — the XCIII guide',
-    description: 'The XCIII user guide: the board, agents, the inbox and the settings.',
+    titleTemplate: ':title — the Pourquoi Pas? guide',
+    description: 'The Pourquoi Pas? user guide: the board, agents, the inbox and the settings.',
 
     themeConfig: {
-        siteTitle: 'XCIII · Guide',
+        siteTitle: 'Pourquoi Pas? · Guide',
 
         nav: [
             {text: 'Board', link: '/en/board'},
@@ -148,7 +148,7 @@ const en = {
                 text: 'Settings',
                 items: [
                     {text: 'Overview', link: '/en/settings/'},
-                    {text: 'Themes', link: '/en/settings/themes'},
+                    {text: 'Light and dark', link: '/en/settings/themes'},
                     {text: 'Agents, npx and Node.js', link: '/en/settings/agents'},
                     {text: 'Your own server', link: '/en/settings/team'},
                     {text: 'Updates', link: '/en/settings/updates'},
@@ -165,7 +165,7 @@ const en = {
         outline: {level: [2, 3], label: 'On this page'},
 
         footer: {
-            message: 'The XCIII user guide',
+            message: 'The Pourquoi Pas? user guide',
             copyright: '© 2026 deffun',
         },
 
@@ -178,7 +178,7 @@ const en = {
 }
 
 export default defineConfig({
-    title: 'XCIII',
+    title: 'Pourquoi Pas?',
 
     // The product is a screen, so the screen theme is the one a reader gets
     // first — the same decision the landing page makes.
@@ -198,7 +198,8 @@ export default defineConfig({
     outDir: '../../site/dist/docs',
 
     head: [
-        ['link', {rel: 'icon', href: '/docs/favicon.svg'}],
+        ['link', {rel: 'icon', href: '/docs/favicon.png', media: '(prefers-color-scheme: light)'}],
+        ['link', {rel: 'icon', href: '/docs/favicon-dark.png', media: '(prefers-color-scheme: dark)'}],
     ],
 
     markdown: {

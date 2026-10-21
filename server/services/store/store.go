@@ -3,7 +3,7 @@
 package store
 
 import (
-	"github.com/artipop/xciii/server/model"
+	"github.com/artipop/pourquoipas/server/model"
 )
 
 // Store represents the abstraction of the data storage.

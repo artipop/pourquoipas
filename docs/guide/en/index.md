@@ -1,12 +1,12 @@
 ---
 layout: home
 
-# Otherwise the tab reads "XCIII — the XCIII guide": the product's name is the
+# Otherwise the tab reads "Pourquoi Pas? — the Pourquoi Pas? guide": the product's name is the
 # title of this page.
 titleTemplate: ':title — the guide'
 
 hero:
-  name: XCIII
+  name: Pourquoi Pas?
   text: The guide
   tagline: How to use the board, the agents and everything around them.
   actions:

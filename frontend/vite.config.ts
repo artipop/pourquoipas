@@ -17,7 +17,7 @@ const outDir = path.join(root, 'dist')
 // the dev server serves the file as-is, so the placeholder is dropped here.
 function appHtml(): Plugin {
     return {
-        name: 'xciii-html',
+        name: 'pourquoipas-html',
         apply: 'serve',
         transformIndexHtml: {
             order: 'pre',
@@ -35,7 +35,7 @@ function appHtml(): Plugin {
 // rm/mkdir/touch, which Task's shell does not have on Windows.
 function emptyDist(): Plugin {
     return {
-        name: 'xciii-empty-dist',
+        name: 'pourquoipas-empty-dist',
         apply: 'build',
         buildStart() {
             mkdirSync(outDir, {recursive: true})

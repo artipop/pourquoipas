@@ -5,14 +5,14 @@ import (
 
 	"github.com/golang/mock/gomock"
 
-	"github.com/artipop/xciii/server/auth"
-	"github.com/artipop/xciii/server/services/config"
-	permissionsMocks "github.com/artipop/xciii/server/services/permissions/mocks"
-	"github.com/artipop/xciii/server/services/store/mockstore"
-	"github.com/artipop/xciii/server/ws"
+	"github.com/artipop/pourquoipas/server/auth"
+	"github.com/artipop/pourquoipas/server/services/config"
+	permissionsMocks "github.com/artipop/pourquoipas/server/services/permissions/mocks"
+	"github.com/artipop/pourquoipas/server/services/store/mockstore"
+	"github.com/artipop/pourquoipas/server/ws"
 
-	"github.com/artipop/xciii/server/mlog"
-	"github.com/artipop/xciii/server/services/filestore/mocks"
+	"github.com/artipop/pourquoipas/server/mlog"
+	"github.com/artipop/pourquoipas/server/services/filestore/mocks"
 )
 
 type TestHelper struct {

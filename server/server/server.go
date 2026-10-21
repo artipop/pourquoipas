@@ -8,21 +8,21 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/artipop/xciii/server/api"
-	"github.com/artipop/xciii/server/app"
-	"github.com/artipop/xciii/server/auth"
-	appModel "github.com/artipop/xciii/server/model"
-	"github.com/artipop/xciii/server/services/config"
-	"github.com/artipop/xciii/server/services/notify"
-	"github.com/artipop/xciii/server/services/scheduler"
-	"github.com/artipop/xciii/server/services/store"
-	"github.com/artipop/xciii/server/services/store/sqlstore"
-	"github.com/artipop/xciii/server/utils"
-	"github.com/artipop/xciii/server/web"
-	"github.com/artipop/xciii/server/ws"
+	"github.com/artipop/pourquoipas/server/api"
+	"github.com/artipop/pourquoipas/server/app"
+	"github.com/artipop/pourquoipas/server/auth"
+	appModel "github.com/artipop/pourquoipas/server/model"
+	"github.com/artipop/pourquoipas/server/services/config"
+	"github.com/artipop/pourquoipas/server/services/notify"
+	"github.com/artipop/pourquoipas/server/services/scheduler"
+	"github.com/artipop/pourquoipas/server/services/store"
+	"github.com/artipop/pourquoipas/server/services/store/sqlstore"
+	"github.com/artipop/pourquoipas/server/utils"
+	"github.com/artipop/pourquoipas/server/web"
+	"github.com/artipop/pourquoipas/server/ws"
 
-	"github.com/artipop/xciii/server/mlog"
-	"github.com/artipop/xciii/server/services/filestore"
+	"github.com/artipop/pourquoipas/server/mlog"
+	"github.com/artipop/pourquoipas/server/services/filestore"
 )
 
 const (

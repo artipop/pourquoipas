@@ -3,10 +3,10 @@ package localpermissions
 import (
 	"testing"
 
-	"github.com/artipop/xciii/server/model"
-	permissionsMocks "github.com/artipop/xciii/server/services/permissions/mocks"
+	"github.com/artipop/pourquoipas/server/model"
+	permissionsMocks "github.com/artipop/pourquoipas/server/services/permissions/mocks"
 
-	"github.com/artipop/xciii/server/mlog"
+	"github.com/artipop/pourquoipas/server/mlog"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"

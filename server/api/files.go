@@ -10,12 +10,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/artipop/xciii/server/app"
+	"github.com/artipop/pourquoipas/server/app"
 
-	"github.com/artipop/xciii/server/model"
-	"github.com/artipop/xciii/server/web"
+	"github.com/artipop/pourquoipas/server/model"
+	"github.com/artipop/pourquoipas/server/web"
 
-	"github.com/artipop/xciii/server/mlog"
+	"github.com/artipop/pourquoipas/server/mlog"
 )
 
 var UnsafeContentTypes = [...]string{

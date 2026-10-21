@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/artipop/xciii/internal/sources/plugin"
+	"github.com/artipop/pourquoipas/internal/sources/plugin"
 )
 
 // The runner is tested against a fake connection rather than a real process:

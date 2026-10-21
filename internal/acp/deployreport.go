@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/artipop/xciii/internal/dokku"
+	"github.com/artipop/pourquoipas/internal/dokku"
 )
 
 // What a finished deploy session says on the card. "The agent stopped talking"

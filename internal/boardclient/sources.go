@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/artipop/xciii/internal/apperr"
-	"github.com/artipop/xciii/server/model"
-	"github.com/artipop/xciii/server/utils"
+	"github.com/artipop/pourquoipas/internal/apperr"
+	"github.com/artipop/pourquoipas/server/model"
+	"github.com/artipop/pourquoipas/server/utils"
 
-	"github.com/artipop/xciii/internal/boardmodel"
-	"github.com/artipop/xciii/internal/sources"
+	"github.com/artipop/pourquoipas/internal/boardmodel"
+	"github.com/artipop/pourquoipas/internal/sources"
 )
 
 // The board as internal/sources writes to it, over HTTP. A wrapper type for the

@@ -9,7 +9,7 @@
 // forwarder rather than the installed method. So every method is present, as
 // it is in a real build, and one the fake left out answers what a Go method
 // with nothing to say would: a promise of undefined.
-vi.mock('../../bindings/github.com/artipop/xciii/app', async (importOriginal) => {
+vi.mock('../../bindings/github.com/artipop/pourquoipas/app', async (importOriginal) => {
     const {goSide} = await import('./goSide')
     const names = Object.keys(await importOriginal<Record<string, unknown>>())
     return Object.fromEntries(names.map((name) => [name, (...args: unknown[]) => (goSide[name] ? goSide[name](...args) : Promise.resolve(undefined))]))

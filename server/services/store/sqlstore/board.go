@@ -9,12 +9,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/artipop/xciii/server/utils"
+	"github.com/artipop/pourquoipas/server/utils"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/artipop/xciii/server/model"
+	"github.com/artipop/pourquoipas/server/model"
 
-	"github.com/artipop/xciii/server/mlog"
+	"github.com/artipop/pourquoipas/server/mlog"
 )
 
 func boardFields(tableAlias string) []string {

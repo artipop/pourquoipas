@@ -9,7 +9,7 @@ import (
 
 	acpsdk "github.com/coder/acp-go-sdk"
 
-	"github.com/artipop/xciii/internal/dokku"
+	"github.com/artipop/pourquoipas/internal/dokku"
 )
 
 // A session can offer its agent extra tools through MCP servers, and they come

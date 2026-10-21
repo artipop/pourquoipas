@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/artipop/xciii/internal/apperr"
-	"github.com/artipop/xciii/internal/sources/plugin"
+	"github.com/artipop/pourquoipas/internal/apperr"
+	"github.com/artipop/pourquoipas/internal/sources/plugin"
 )
 
 // A source an agent brings in.
@@ -95,9 +95,9 @@ const InboxServerName = "inbox"
 // token rather than finding them, so the agent's own process has no way to
 // reach anything else this app serves.
 const (
-	EnvInboxURL    = "XCIII_INBOX_URL"
-	EnvInboxSource = "XCIII_INBOX_SOURCE"
-	EnvInboxToken  = "XCIII_INBOX_TOKEN"
+	EnvInboxURL    = "POURQUOIPAS_INBOX_URL"
+	EnvInboxSource = "POURQUOIPAS_INBOX_SOURCE"
+	EnvInboxToken  = "POURQUOIPAS_INBOX_TOKEN"
 )
 
 // agentConn is an agent behind the interface the runner polls. Poll runs one

@@ -2,7 +2,7 @@ package sqlstore
 
 import (
 	sq "github.com/Masterminds/squirrel"
-	"github.com/artipop/xciii/server/model"
+	"github.com/artipop/pourquoipas/server/model"
 )
 
 func (s *SQLStore) getSystemSetting(db sq.BaseRunner, key string) (string, error) {

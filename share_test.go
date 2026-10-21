@@ -7,7 +7,7 @@ import "testing"
 // debugged from here: it is a process the system starts, and everything it
 // says arrives as this one string.
 func TestAShareURLIsReadAsItWasWritten(t *testing.T) {
-	req, ok := parseShareURL("xciii://share?url=https%3A%2F%2Fexample.com%2Fa&title=%D0%A1%D1%82%D0%B0%D1%82%D1%8C%D1%8F&text=%D0%BA%D1%83%D1%81%D0%BE%D0%BA")
+	req, ok := parseShareURL("pourquoipas://share?url=https%3A%2F%2Fexample.com%2Fa&title=%D0%A1%D1%82%D0%B0%D1%82%D1%8C%D1%8F&text=%D0%BA%D1%83%D1%81%D0%BE%D0%BA")
 	if !ok {
 		t.Fatal("a share URL must be understood")
 	}
@@ -18,7 +18,7 @@ func TestAShareURLIsReadAsItWasWritten(t *testing.T) {
 	// Which of the two shapes a URL ends up with depends on how whoever built
 	// it joined the pieces, and a bug that only appears on another machine is
 	// the worst kind there is.
-	if _, ok := parseShareURL("xciii:///share?url=https://example.com/a"); !ok {
+	if _, ok := parseShareURL("pourquoipas:///share?url=https://example.com/a"); !ok {
 		t.Fatal("a path-shaped share URL must be understood too")
 	}
 }
@@ -27,12 +27,12 @@ func TestAShareURLIsReadAsItWasWritten(t *testing.T) {
 // on it is somebody else's idea and is ignored rather than guessed at.
 func TestAnythingButAShareIsIgnored(t *testing.T) {
 	for _, raw := range []string{
-		"https://example.com/a",   // not our scheme
-		"xciii://open?board=1",    // not an action we have
-		"xciii://share",           // nothing shared
-		"xciii://share?title=%20", // nothing but whitespace
-		"",                        // nothing at all
-		"xciii://share?url=%zz",   // a URL that will not parse
+		"https://example.com/a",         // not our scheme
+		"pourquoipas://open?board=1",    // not an action we have
+		"pourquoipas://share",           // nothing shared
+		"pourquoipas://share?title=%20", // nothing but whitespace
+		"",                              // nothing at all
+		"pourquoipas://share?url=%zz",   // a URL that will not parse
 	} {
 		if _, ok := parseShareURL(raw); ok {
 			t.Errorf("%q should not open the share dialog", raw)
@@ -44,11 +44,11 @@ func TestAnythingButAShareIsIgnored(t *testing.T) {
 // appends what it caught to the end of the arguments — so the URL is looked for
 // rather than expected in a position.
 func TestTheShareURLIsFoundWhereverItIsInTheArguments(t *testing.T) {
-	req, ok := shareURLFrom([]string{"/Applications/XCIII.app/Contents/MacOS/XCIII", "xciii://share?url=https://example.com/a"})
+	req, ok := shareURLFrom([]string{"/Applications/pourquoipas.app/Contents/MacOS/pourquoipas", "pourquoipas://share?url=https://example.com/a"})
 	if !ok || req.URL != "https://example.com/a" {
 		t.Fatalf("request: %+v, ok=%v", req, ok)
 	}
-	if _, ok := shareURLFrom([]string{"/Applications/XCIII.app/Contents/MacOS/XCIII"}); ok {
+	if _, ok := shareURLFrom([]string{"/Applications/pourquoipas.app/Contents/MacOS/pourquoipas"}); ok {
 		t.Fatal("an ordinary launch must open the board, not the share dialog")
 	}
 }
@@ -58,7 +58,7 @@ func TestTheShareURLIsFoundWhereverItIsInTheArguments(t *testing.T) {
 // ordinary case, not an edge one.
 func TestWhatWasSharedSurvivesTheTripToThePage(t *testing.T) {
 	req := shareRequest{URL: "https://example.com/a?x=1&y=2", Title: "Заголовок с пробелом"}
-	round, ok := parseShareURL("xciii://share" + req.Query())
+	round, ok := parseShareURL("pourquoipas://share" + req.Query())
 	if !ok {
 		t.Fatal("the query the page is opened with must parse back")
 	}

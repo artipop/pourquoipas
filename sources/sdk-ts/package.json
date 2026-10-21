@@ -1,7 +1,7 @@
 {
-  "name": "@xciii/source-sdk",
+  "name": "@pourquoipas/source-sdk",
   "version": "0.1.0",
-  "description": "Write an XCIII source plugin in JavaScript or TypeScript",
+  "description": "Write an Pourquoi Pas? source plugin in JavaScript or TypeScript",
   "type": "module",
   "main": "index.js",
   "types": "index.d.ts",

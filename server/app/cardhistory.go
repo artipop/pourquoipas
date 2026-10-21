@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/artipop/xciii/server/model"
+	"github.com/artipop/pourquoipas/server/model"
 )
 
 // What happened to a card, and who did it.

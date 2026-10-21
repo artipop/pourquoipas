@@ -6,7 +6,7 @@
 // lived only on our side would drift from what the app accepts, and an author
 // would learn the difference from a user.
 //
-//	go run ./cmd/sourcecheck -- npx -y @example/xciii-source-gmail
+//	go run ./cmd/sourcecheck -- npx -y @example/pourquoipas-source-gmail
 //	go run ./cmd/sourcecheck -config label=INBOX -- ./my-plugin
 //
 // It never touches a board: a plugin has nothing to do with one.
@@ -20,7 +20,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/artipop/xciii/internal/sources/plugin"
+	"github.com/artipop/pourquoipas/internal/sources/plugin"
 )
 
 func main() {

@@ -3,7 +3,7 @@ package acp
 import (
 	"strings"
 
-	"github.com/artipop/xciii/internal/apperr"
+	"github.com/artipop/pourquoipas/internal/apperr"
 )
 
 // Proxy registry: named network configurations (proxy URL, bypass list, CA

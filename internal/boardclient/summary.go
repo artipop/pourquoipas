@@ -6,9 +6,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/artipop/xciii/server/model"
+	"github.com/artipop/pourquoipas/server/model"
 
-	"github.com/artipop/xciii/internal/boardmodel"
+	"github.com/artipop/pourquoipas/internal/boardmodel"
 )
 
 // The board as a list shows it — what the phone at /m and the share dialog

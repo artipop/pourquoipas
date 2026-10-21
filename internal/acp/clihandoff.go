@@ -3,7 +3,7 @@ package acp
 import (
 	"strings"
 
-	"github.com/artipop/xciii/internal/apperr"
+	"github.com/artipop/pourquoipas/internal/apperr"
 )
 
 // Some agents are an adapter in front of a CLI, and the CLI can do things the

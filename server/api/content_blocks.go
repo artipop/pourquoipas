@@ -3,8 +3,8 @@ package api
 import (
 	"net/http"
 
-	"github.com/artipop/xciii/server/model"
-	"github.com/artipop/xciii/server/web"
+	"github.com/artipop/pourquoipas/server/model"
+	"github.com/artipop/pourquoipas/server/web"
 )
 
 func (a *API) registerContentBlocksRoutes(r *web.Router) {

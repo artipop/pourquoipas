@@ -12,9 +12,9 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/artipop/xciii/server/model"
-	"github.com/artipop/xciii/server/services/filestore"
-	"github.com/artipop/xciii/server/services/filestore/mocks"
+	"github.com/artipop/pourquoipas/server/model"
+	"github.com/artipop/pourquoipas/server/services/filestore"
+	"github.com/artipop/pourquoipas/server/services/filestore/mocks"
 	"github.com/stretchr/testify/mock"
 )
 

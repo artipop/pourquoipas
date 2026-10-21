@@ -14,9 +14,9 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/artipop/xciii/internal/apperr"
-	"github.com/artipop/xciii/internal/dokku"
-	"github.com/artipop/xciii/internal/secrets"
+	"github.com/artipop/pourquoipas/internal/apperr"
+	"github.com/artipop/pourquoipas/internal/dokku"
+	"github.com/artipop/pourquoipas/internal/secrets"
 )
 
 // Manager owns all agent sessions: it consumes board events, enforces limits

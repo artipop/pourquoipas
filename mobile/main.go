@@ -9,7 +9,7 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
-// XCIII on a phone: one window, pointed at the board.
+// Pourquoi Pas? on a phone: one window, pointed at the board.
 //
 // It is a module of its own rather than a build tag over the desktop app, and
 // that is not tidiness. The mobile build compiles package main from the module
@@ -51,7 +51,7 @@ func main() {
 	}
 
 	app := application.New(application.Options{
-		Name:        "XCIII",
+		Name:        "Pourquoi Pas?",
 		Description: "Boards with coding agents",
 		Assets: application.AssetOptions{
 			Handler: http.FileServerFS(pages),
@@ -66,7 +66,7 @@ func main() {
 	// rather than a navigation. On mobile only the first window is shown
 	// anyway, and a second one is not what a phone means by "the other board".
 	window := app.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title: "XCIII",
+		Title: "Pourquoi Pas?",
 
 		// The same black the page paints, so there is no white flash between
 		// the app opening and the board arriving over a phone network.

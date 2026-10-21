@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/artipop/xciii/internal/appschema"
-	"github.com/artipop/xciii/internal/sources"
+	"github.com/artipop/pourquoipas/internal/appschema"
+	"github.com/artipop/pourquoipas/internal/sources"
 )
 
 // recordingBoard stands in for the board: the endpoint is being tested, not the
