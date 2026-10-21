@@ -44,7 +44,7 @@ func Test_NewServer(t *testing.T) {
 			localOnly:          true,
 			logger:             &mlog.Logger{},
 			expectedBaseURL:    "/fake-url",
-			expectedServerAddr: "localhost:3000",
+			expectedServerAddr: "127.0.0.1:3000",
 		},
 		{
 			name:               "should match Server properties when ssl true",
@@ -66,7 +66,7 @@ func Test_NewServer(t *testing.T) {
 			localOnly:          true,
 			logger:             &mlog.Logger{},
 			expectedBaseURL:    "/fake-url",
-			expectedServerAddr: "localhost:9999",
+			expectedServerAddr: "127.0.0.1:9999",
 		},
 		{
 			name:               "should return '/' as base url is not good!",
@@ -77,7 +77,7 @@ func Test_NewServer(t *testing.T) {
 			localOnly:          true,
 			logger:             &mlog.Logger{},
 			expectedBaseURL:    "/",
-			expectedServerAddr: "localhost:9999",
+			expectedServerAddr: "127.0.0.1:9999",
 		},
 	}
 
@@ -94,7 +94,7 @@ func Test_NewServer(t *testing.T) {
 			require.Equal(t, test.logger, ws.logger, "logger pointer does not match")
 
 			if test.localOnly == true {
-				require.Equal(t, test.expectedServerAddr, ws.Server.Addr, "localhost address not as matching!")
+				require.Equal(t, test.expectedServerAddr, ws.Server.Addr, "loopback address not as matching!")
 			} else {
 				require.Equal(t, test.expectedServerAddr, ws.Server.Addr, "server address not matching!")
 			}

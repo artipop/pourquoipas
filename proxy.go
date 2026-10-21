@@ -80,7 +80,9 @@ func bootstrapScript(sessionToken string) string {
 // board is not known until somebody logs in. Which board is behind it can
 // change while the app runs, which is what boardRouter below is for.
 func newServerProxy(port int, attached, devServer string, token func() string) (http.Handler, error) {
-	local, err := url.Parse(fmt.Sprintf("http://localhost:%d", port))
+	// 127.0.0.1, where the board server listens, rather than "localhost",
+	// which resolves to ::1 first and cost every connection a refusal.
+	local, err := url.Parse(fmt.Sprintf("http://127.0.0.1:%d", port))
 	if err != nil {
 		return nil, err
 	}

@@ -21,7 +21,7 @@ import (
 
 // getFreePort asks the kernel for a free open port that is ready to use.
 func getFreePort() (int, error) {
-	addr, err := net.ResolveTCPAddr("tcp", "localhost:0")
+	addr, err := net.ResolveTCPAddr("tcp", "127.0.0.1:0")
 	if err != nil {
 		return 0, err
 	}
@@ -184,8 +184,10 @@ func runServerWithLogger(logger mlog.LoggerIFace, port int, sessionToken string,
 		FilesPath:          path.Join(data, "files"),
 		SessionExpireTime:  259200000000,
 		SessionRefreshTime: 18000,
-		LocalOnly:          false,
-		AuthMode:           "native",
+		// Only our own proxies talk to the board server, on this machine; a
+		// port open to the network was a second way into the board.
+		LocalOnly: true,
+		AuthMode:  "native",
 	}
 
 	singleUser := len(sessionToken) > 0

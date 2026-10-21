@@ -50,7 +50,7 @@ func NewServer(rootPath string, serverRoot string, port int, ssl, localOnly bool
 
 	var addr string
 	if localOnly {
-		addr = fmt.Sprintf(`localhost:%d`, port)
+		addr = fmt.Sprintf(`127.0.0.1:%d`, port)
 	} else {
 		addr = fmt.Sprintf(`:%d`, port)
 	}
