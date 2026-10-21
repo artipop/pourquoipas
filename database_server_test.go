@@ -17,7 +17,7 @@ func TestAServerWithNothingSaidKeepsItsBoardsInSQLite(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if dbType != "sqlite3" || dsn != path.Join("/data/server", "pourquoipas.db") {
+	if dbType != "sqlite3" || dsn != path.Join("/data/server", "app.db") {
 		t.Fatalf("got %s %q", dbType, dsn)
 	}
 }

@@ -13,7 +13,7 @@ import (
 // way the application enforces them.
 func enforcingStore(t *testing.T) (*Store, func(cardID string)) {
 	t.Helper()
-	db, err := appschema.OpenEnforcing(filepath.Join(t.TempDir(), "pourquoipas.db"))
+	db, err := appschema.OpenEnforcing(filepath.Join(t.TempDir(), "app.db"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -68,7 +68,7 @@ func TestADeletedCardTakesWhatWeKnewAboutIt(t *testing.T) {
 // A source's log is the exception, and deliberately: what a source decided is a
 // fact about the source, so the line stays and only the card reference goes.
 func TestASourcesLogSurvivesTheCardItMade(t *testing.T) {
-	db, err := appschema.OpenEnforcing(filepath.Join(t.TempDir(), "pourquoipas.db"))
+	db, err := appschema.OpenEnforcing(filepath.Join(t.TempDir(), "app.db"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -101,7 +101,7 @@ func TestASourcesLogSurvivesTheCardItMade(t *testing.T) {
 // A workspace a card is still working in cannot be deleted out from under it:
 // there is a copy on disk, and it has to be folded away first.
 func TestAWorkspaceInUseCannotBeDeleted(t *testing.T) {
-	db, err := appschema.OpenEnforcing(filepath.Join(t.TempDir(), "pourquoipas.db"))
+	db, err := appschema.OpenEnforcing(filepath.Join(t.TempDir(), "app.db"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -137,7 +137,7 @@ func TestAWorkspaceInUseCannotBeDeleted(t *testing.T) {
 // check is a judgement stated in tools/schemagen/types.go — the sets closed by
 // the model, never the ones that grow with a new vendor CLI or a new event.
 func TestAValueOutsideAClosedSetIsRefused(t *testing.T) {
-	db, err := appschema.OpenEnforcing(filepath.Join(t.TempDir(), "pourquoipas.db"))
+	db, err := appschema.OpenEnforcing(filepath.Join(t.TempDir(), "app.db"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -200,7 +200,7 @@ func TestAValueOutsideAClosedSetIsRefused(t *testing.T) {
 // between, writing anything about such a card was not ambiguous, it was
 // refused. This is the case the whole ref table exists for.
 func TestACardOnAnotherServerCanBeWrittenAbout(t *testing.T) {
-	db, err := appschema.OpenEnforcing(filepath.Join(t.TempDir(), "pourquoipas.db"))
+	db, err := appschema.OpenEnforcing(filepath.Join(t.TempDir(), "app.db"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -241,7 +241,7 @@ func TestACardOnAnotherServerCanBeWrittenAbout(t *testing.T) {
 // path that records something about a card goes through the store, and one that
 // forgot would be a foreign-key error at the worst moment — a card moving.
 func TestWritingAboutACardMakesItsRefOnTheWay(t *testing.T) {
-	db, err := appschema.OpenEnforcing(filepath.Join(t.TempDir(), "pourquoipas.db"))
+	db, err := appschema.OpenEnforcing(filepath.Join(t.TempDir(), "app.db"))
 	if err != nil {
 		t.Fatal(err)
 	}

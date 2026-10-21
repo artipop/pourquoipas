@@ -16,7 +16,7 @@ func registryManager(t *testing.T, cfgPath string, projects ...WorkdirEntry) *Ma
 	cfg := DefaultConfig(dir)
 	cfg.Workdirs = projects
 	// A store, because that is where the folder registry lives now.
-	store, err := newTestStore(t, filepath.Join(dir, "pourquoipas.db"))
+	store, err := newTestStore(t, filepath.Join(dir, "app.db"))
 	if err != nil {
 		t.Fatal(err)
 	}

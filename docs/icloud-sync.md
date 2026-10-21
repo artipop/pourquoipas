@@ -49,7 +49,7 @@ HTTP разбивается о то, что server-to-server ключ ходит
 ## Что вообще пришлось бы синхронизировать
 
 Всё состояние — под `os.UserConfigDir()/pourquoipas/server` (`server.go`): доска в
-`pourquoipas.db` (sqlite3), вложения в `files/`, рядом стор ACP в своём sqlite с WAL
+`app.db` (sqlite3), вложения в `files/`, рядом стор ACP в своём sqlite с WAL
 (`internal/acp/store.go`).
 
 Отсюда важное: **положить это в iCloud Drive нельзя**. Путь без entitlement
@@ -276,7 +276,7 @@ Wails. Чтобы позвать `registerForRemoteNotifications()` и полу�
 
 ## Чего делать не надо
 
-- Класть `pourquoipas.db` или ACP-стор в `~/Library/Mobile Documents/` под живым
+- Класть `app.db` или ACP-стор в `~/Library/Mobile Documents/` под живым
   соединением. Это не «рискованно», это известный способ получить битую базу.
 - Тащить darwinkit ради `macos/cloudkit`, не проверив, что нужный API там есть:
   наличие пакета `cloudkit` ничего не говорит про наличие `CKSyncEngine`.

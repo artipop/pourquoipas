@@ -14,7 +14,7 @@ import (
 //
 //	POURQUOIPAS_DB_TYPE  sqlite3 (the default), postgres or mysql
 //	POURQUOIPAS_DB_DSN   the connection string in that driver's own syntax; for
-//	               sqlite3 a file path, defaulting to <dataDir>/pourquoipas.db
+//	               sqlite3 a file path, defaulting to <dataDir>/app.db
 //
 // The environment rather than a settings file, because that is how the rest of
 // this build is configured — WAILS_SERVER_HOST/PORT — and how a container is
@@ -26,7 +26,7 @@ func boardDatabase(data string) (dbType, dsn string, err error) {
 	switch dbType {
 	case "", "sqlite3":
 		if dsn == "" {
-			dsn = path.Join(data, "pourquoipas.db")
+			dsn = path.Join(data, "app.db")
 		}
 		return "sqlite3", dsn, nil
 	case "postgres", "mysql":

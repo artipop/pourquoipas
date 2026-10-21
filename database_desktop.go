@@ -8,5 +8,5 @@ import "path"
 // install's own directory. A desktop is one person, and there is nothing here
 // to configure — the server build is the one that asks (database_server.go).
 func boardDatabase(data string) (dbType, dsn string, err error) {
-	return "sqlite3", path.Join(data, "pourquoipas.db"), nil
+	return "sqlite3", path.Join(data, "app.db"), nil
 }

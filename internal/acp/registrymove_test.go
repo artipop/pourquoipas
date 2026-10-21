@@ -22,7 +22,7 @@ func managerOn(t *testing.T, store *Store, dir string) *Manager {
 // even where there is no settings file at all.
 func TestTheRegistriesAreThereAfterARestart(t *testing.T) {
 	dir := t.TempDir()
-	store, err := newTestStore(t, filepath.Join(dir, "pourquoipas.db"))
+	store, err := newTestStore(t, filepath.Join(dir, "app.db"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -74,7 +74,7 @@ func TestTheRegistriesAreThereAfterARestart(t *testing.T) {
 // and with a crew pointing at ids it would be a crew pointing at nothing.
 func TestUpdatingAnAgentKeepsItTheSameAgent(t *testing.T) {
 	dir := t.TempDir()
-	store, err := newTestStore(t, filepath.Join(dir, "pourquoipas.db"))
+	store, err := newTestStore(t, filepath.Join(dir, "app.db"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -109,7 +109,7 @@ func TestUpdatingAnAgentKeepsItTheSameAgent(t *testing.T) {
 // app will not start — the worst possible place to find a typo.
 func TestABadlyEditedRegistryIsSkippedRatherThanFatal(t *testing.T) {
 	dir := t.TempDir()
-	store, err := newTestStore(t, filepath.Join(dir, "pourquoipas.db"))
+	store, err := newTestStore(t, filepath.Join(dir, "app.db"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -140,7 +140,7 @@ func TestABadlyEditedRegistryIsSkippedRatherThanFatal(t *testing.T) {
 // next launch brings it back.
 func TestAFolderTakenOffTheRegistryStaysOff(t *testing.T) {
 	dir := t.TempDir()
-	store, err := newTestStore(t, filepath.Join(dir, "pourquoipas.db"))
+	store, err := newTestStore(t, filepath.Join(dir, "app.db"))
 	if err != nil {
 		t.Fatal(err)
 	}

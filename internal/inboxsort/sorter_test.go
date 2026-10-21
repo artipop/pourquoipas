@@ -110,7 +110,7 @@ func (a *fakeAgent) Ask(_ context.Context, _ string, prompt string) (string, err
 
 func newSorter(t *testing.T, board Board, agent Agent) *Sorter {
 	t.Helper()
-	db, err := appschema.Open(filepath.Join(t.TempDir(), "pourquoipas.db"))
+	db, err := appschema.Open(filepath.Join(t.TempDir(), "app.db"))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -300,8 +300,9 @@ SmartScreen.
 URL-схема `pourquoipas://`, bundle id `io.deffun.pourquoipas`, папка данных и
 служба в связке ключей (`pourquoipas`, `pourquoipas-dev`), ключи в связке
 (`pourquoipas.probe`, `pourquoipas.board.machines`, `pourquoipas.board.address`),
-файл базы `pourquoipas.db`, переменные окружения `POURQUOIPAS_*`.
-Отметка входящих лишилась имени продукта совсем (`xciiiInbox` → `inbox`): это ключ в `properties` доски, где
+переменные окружения `POURQUOIPAS_*`. Файл базы и отметка входящих лишились
+имени продукта совсем (`xciii.db` → `app.db`, `xciiiInbox` → `inbox`): файл
+лежит в папке, которая уже названа, а отметка — ключ в `properties` доски, где
 префикс ничего не защищает, — то же решение, что 2026-08-20 сняло его с
 остальных ключей доски.
 

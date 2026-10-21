@@ -18,7 +18,7 @@ func agentManager(t *testing.T, cfgPath string, agents ...AgentEntry) *Manager {
 	cfg.Agents = agents
 	// A store, because the registries live in it. They used to be written into
 	// config.json, and a manager with no store persisted nothing at all.
-	store, err := newTestStore(t, filepath.Join(dir, "pourquoipas.db"))
+	store, err := newTestStore(t, filepath.Join(dir, "app.db"))
 	if err != nil {
 		t.Fatal(err)
 	}
