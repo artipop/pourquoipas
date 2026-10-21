@@ -52,6 +52,9 @@ type Server struct {
 	singleUserToken  string
 	logger           mlog.LoggerIFace
 	store            Store
+	// sink, when set, also gets every message: a desktop page hears them on
+	// the Wails bus instead of a socket.
+	sink func(message any)
 }
 
 type websocketSession struct {
@@ -81,6 +84,22 @@ func NewServer(auth *auth.Auth, singleUserToken string, logger mlog.LoggerIFace,
 		singleUserToken: singleUserToken,
 		logger:          logger,
 		store:           store,
+	}
+}
+
+// SetSink sends every broadcast to sink as well as to the sockets.
+func (ws *Server) SetSink(sink func(message any)) {
+	ws.mu.Lock()
+	defer ws.mu.Unlock()
+	ws.sink = sink
+}
+
+func (ws *Server) emit(message any) {
+	ws.mu.RLock()
+	sink := ws.sink
+	ws.mu.RUnlock()
+	if sink != nil {
+		sink(message)
 	}
 }
 
@@ -543,6 +562,7 @@ func (ws *Server) BroadcastBlockChange(teamID string, block *model.Block, silent
 		Block:  block,
 		Silent: silent,
 	}
+	ws.emit(message)
 
 	listeners := ws.getListenersForTeamAndBoard(teamID, block.BoardID)
 	ws.logger.Trace("listener(s) for teamID",
@@ -580,6 +600,7 @@ func (ws *Server) BroadcastCategoryChange(category model.Category) {
 		TeamID:   category.TeamID,
 		Category: &category,
 	}
+	ws.emit(message)
 
 	listener := ws.getListenerForUser(category.TeamID, category.UserID)
 	if listener != nil {
@@ -603,6 +624,7 @@ func (ws *Server) BroadcastCategoryReorder(teamID, userID string, categoryOrder 
 		CategoryOrder: categoryOrder,
 		TeamID:        teamID,
 	}
+	ws.emit(message)
 
 	listener := ws.getListenerForUser(teamID, userID)
 	if listener != nil {
@@ -626,6 +648,7 @@ func (ws *Server) BroadcastCategoryBoardsReorder(teamID, userID, categoryID stri
 		BoardOrder: boardOrder,
 		TeamID:     teamID,
 	}
+	ws.emit(message)
 
 	listener := ws.getListenerForUser(teamID, userID)
 	if listener != nil {
@@ -649,6 +672,7 @@ func (ws *Server) BroadcastCategoryBoardChange(teamID, userID string, boardCateg
 		TeamID:          teamID,
 		BoardCategories: boardCategories,
 	}
+	ws.emit(message)
 
 	listener := ws.getListenerForUser(teamID, userID)
 	if listener != nil {
@@ -672,6 +696,7 @@ func (ws *Server) BroadcastConfigChange(clientConfig model.ClientConfig) {
 		Action:       websocketActionUpdateConfig,
 		ClientConfig: clientConfig,
 	}
+	ws.emit(message)
 
 	listeners := ws.listeners
 	ws.logger.Debug("broadcasting config change to listener(s)",
@@ -696,6 +721,7 @@ func (ws *Server) BroadcastBoardChange(teamID string, board *model.Board) {
 		TeamID: teamID,
 		Board:  board,
 	}
+	ws.emit(message)
 
 	listeners := ws.getListenersForTeamAndBoard(teamID, board.ID)
 	ws.logger.Trace("listener(s) for teamID and boardID",
@@ -736,6 +762,7 @@ func (ws *Server) BroadcastMemberChange(teamID, boardID string, member *model.Bo
 		TeamID: teamID,
 		Member: member,
 	}
+	ws.emit(message)
 
 	listeners := ws.getListenersForTeamAndBoard(teamID, boardID)
 	ws.logger.Trace("listener(s) for teamID and boardID",
@@ -765,6 +792,7 @@ func (ws *Server) BroadcastMemberDelete(teamID, boardID, userID string) {
 		TeamID: teamID,
 		Member: &model.BoardMember{UserID: userID, BoardID: boardID},
 	}
+	ws.emit(message)
 
 	// when fetching the members of the board that should receive the
 	// member deletion message, the deleted member will not be one of

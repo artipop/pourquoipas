@@ -18,5 +18,8 @@ export interface IAppWindow extends Window {
     // Set by the same bootstrap in a desktop window, whose page is on wails://
     // (busSocket.ts).
     pageOnWails?: boolean
+
+    // The page shows this machine's own board, whose changes come on the bus.
+    boardOnBus?: boolean
     webkit?: {messageHandlers: {nativeApp?: {postMessage: <T>(message: T) => void}}}
 }

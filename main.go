@@ -507,6 +507,9 @@ func main() {
 	app.local = front.url()
 	app.mu.Unlock()
 	app.sockets = newSocketTunnels(router.dialSocket, func() *application.App { return wapp })
+	if pageOnWails {
+		srv.SetBoardEventSink(func(message any) { wapp.Event.Emit("board:ws", message) })
+	}
 	if mgr != nil {
 		// Where an agent's board tools call back to. Known only now: the front
 		// door picks its port when it binds.

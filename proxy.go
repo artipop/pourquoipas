@@ -33,7 +33,7 @@ import (
 // the webapp's socket client the board server's own address. The page, the API
 // and /ws now share one origin — the front door (frontdoor.go) — so the socket
 // connects to where the page came from, as it does in a browser.
-func bootstrapScript(sessionToken string) string {
+func bootstrapScript(sessionToken string, boardOnBus bool) string {
 	return fmt.Sprintf(`<script>
 (function () {
   // In single-user mode this is the session the API synthesizes, seeded before
@@ -61,8 +61,9 @@ func bootstrapScript(sessionToken string) string {
 
   window.hasGoSide = true;
   window.pageOnWails = %t;
+  window.boardOnBus = %t;
 })();
-</script>`, pageLaunch, sessionToken, pageOnWails)
+</script>`, pageLaunch, sessionToken, pageOnWails, boardOnBus)
 }
 
 // pageLaunch is this run of a desktop app; empty on a server.
@@ -109,7 +110,7 @@ func newServerProxy(wire *boardWire, attached, devServer string, token func() st
 		}
 		pageTransport = nil
 	}
-	page := pageProxy(pageOrigin, pageTransport, token)
+	page := pageProxy(pageOrigin, pageTransport, token, pageOnWails && attached == "")
 
 	if attached == "" && devServer == "" {
 		return page, nil
@@ -131,7 +132,7 @@ func newServerProxy(wire *boardWire, attached, devServer string, token func() st
 }
 
 // pageProxy serves the page from origin with the bootstrap injected.
-func pageProxy(origin *url.URL, transport http.RoundTripper, token func() string) *httputil.ReverseProxy {
+func pageProxy(origin *url.URL, transport http.RoundTripper, token func() string, boardOnBus bool) *httputil.ReverseProxy {
 	page := localProxy(origin, transport)
 	director := page.Director
 	page.Director = func(req *http.Request) {
@@ -139,7 +140,7 @@ func pageProxy(origin *url.URL, transport http.RoundTripper, token func() string
 		// Ask upstream for uncompressed HTML so we can inject the bootstrap script.
 		req.Header.Del("Accept-Encoding")
 	}
-	page.ModifyResponse = injectBootstrap(token)
+	page.ModifyResponse = injectBootstrap(token, boardOnBus)
 	return page
 }
 
@@ -189,7 +190,7 @@ func attachedProxy(attached string) (*httputil.ReverseProxy, error) {
 
 // injectBootstrap puts the shim into the served HTML, right after <head>, so
 // the token is set before app scripts load.
-func injectBootstrap(token func() string) func(*http.Response) error {
+func injectBootstrap(token func() string, boardOnBus bool) func(*http.Response) error {
 	return func(resp *http.Response) error {
 		if !strings.HasPrefix(resp.Header.Get("Content-Type"), "text/html") {
 			return nil
@@ -201,7 +202,7 @@ func injectBootstrap(token func() string) func(*http.Response) error {
 		}
 		if idx := bytes.Index(body, []byte("<head>")); idx != -1 {
 			at := idx + len("<head>")
-			inject := []byte(bootstrapScript(token()))
+			inject := []byte(bootstrapScript(token(), boardOnBus))
 			body = append(body[:at], append(inject, body[at:]...)...)
 		}
 		resp.Body = io.NopCloser(bytes.NewReader(body))

@@ -257,6 +257,13 @@ func (s *Server) UpdateAppConfig() {
 	s.app.SetConfig(s.config)
 }
 
+// SetBoardEventSink sends every websocket broadcast to sink as well.
+func (s *Server) SetBoardEventSink(sink func(message any)) {
+	if wss, ok := s.wsAdapter.(*ws.Server); ok {
+		wss.SetSink(sink)
+	}
+}
+
 func (s *Server) GetRootRouter() *web.Router {
 	return s.webServer.Router()
 }

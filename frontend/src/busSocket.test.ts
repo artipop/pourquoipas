@@ -12,7 +12,7 @@ vi.mock('@wailsio/runtime', async (importOriginal) => ({
     },
 }))
 
-const {BusSocket, openSocket, sendableForm} = await import('./busSocket')
+const {BusFeed, BusSocket, openSocket, sendableForm} = await import('./busSocket')
 
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0))
 
@@ -20,6 +20,7 @@ describe('busSocket', () => {
     afterEach(() => {
         fakeGoSide()
         delete (window as unknown as IAppWindow).pageOnWails
+        delete (window as unknown as IAppWindow).boardOnBus
         listeners.clear()
     })
 
@@ -100,5 +101,28 @@ describe('busSocket', () => {
         expect(body).toBeInstanceOf(ArrayBuffer)
         expect(contentType).toMatch(/^multipart\/form-data; boundary=/)
         expect(new TextDecoder().decode(body as ArrayBuffer)).toContain('filename="x.bin"')
+    })
+
+    // On this machine's own board the board server puts every message on the
+    // bus; nothing is dialled and nothing needs sending.
+    test('hears its own board off the bus without asking Go for a socket', async () => {
+        const open = vi.fn().mockResolvedValue(undefined)
+        fakeGoSide({OpenSocket: open})
+        const w = window as unknown as IAppWindow
+        w.pageOnWails = true
+        w.boardOnBus = true
+
+        const socket = openSocket('/ws', () => 'ws://example.test/ws')
+        expect(socket).toBeInstanceOf(BusFeed)
+        const messages: string[] = []
+        socket.onmessage = (e) => messages.push(e.data)
+        await tick()
+
+        listeners.get('board:ws')!({data: {action: 'UPDATE_BLOCK'}})
+        expect(messages).toEqual(['{"action":"UPDATE_BLOCK"}'])
+        expect(open).not.toHaveBeenCalled()
+
+        socket.close()
+        expect(listeners.has('board:ws')).toBe(false)
     })
 })

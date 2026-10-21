@@ -104,9 +104,9 @@ with the same title; what follows is the part that must not be forgotten.
 
 **The board server has no port**: its router is served over in-memory pipes
 (`boardwire.go`). **The window's page is on `wails://`** and goes through the
-asset server to the board router; the board's `/ws` is **tunnelled over the
-Wails bus** (`sockettunnel.go`, `busSocket.ts`), agents' events come off the
-bus. Through the scheme handler WKWebView sends no `Content-Length` and no body
+asset server to the board router; **the board's changes and the agents' events
+come on the Wails bus** (`ws.Server.SetSink` → `board:ws`, `BusFeed`); only an
+attached server's `/ws` is tunnelled through Go (`sockettunnel.go`). Through the scheme handler WKWebView sends no `Content-Length` and no body
 for a `FormData` — send a form with `sendableForm`. `frontdoor.go` is only the
 desktop's loopback door for other processes (agents' tools, the feed,
 `/sources/ingest`). **A server build

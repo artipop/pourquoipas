@@ -82,7 +82,38 @@ export function pageOnWails(): boolean {
     return Boolean((window as unknown as IAppWindow).pageOnWails) && Boolean(goApp())
 }
 
+// BusFeed is the board's /ws for a desktop page on this machine's own board:
+// the board server puts every message on the bus, so there is nothing to send.
+export class BusFeed {
+    onopen: (() => void) | null = null
+    onmessage: ((e: {data: string}) => void) | null = null
+    onclose: ((e: {code: number, reason: string}) => void) | null = null
+    onerror: ((e: unknown) => void) | null = null
+    readyState = 1
+
+    private off?: () => void
+
+    constructor() {
+        this.off = Events.On('board:ws', (event) => this.onmessage?.({data: JSON.stringify(event.data)}))
+        setTimeout(() => this.onopen?.(), 0)
+    }
+
+    send(): void {}
+
+    close(): void {
+        if (this.readyState === 3) {
+            return
+        }
+        this.readyState = 3
+        this.off?.()
+        this.onclose?.({code: 1000, reason: ''})
+    }
+}
+
 export function openSocket(path: string, url: () => string): WebSocket {
+    if (path === '/ws' && pageOnWails() && (window as unknown as IAppWindow).boardOnBus) {
+        return new BusFeed() as unknown as WebSocket
+    }
     return (pageOnWails() ? new BusSocket(path) : new WebSocket(url())) as unknown as WebSocket
 }
 

@@ -74,7 +74,7 @@ func TestProxyLeavesNonHTMLAlone(t *testing.T) {
 // the app. A bridge built here as well would be a second, untyped way to the
 // same methods.
 func TestTheBootstrapTellsThePageThereIsAGoSide(t *testing.T) {
-	script := bootstrapScript("su-token")
+	script := bootstrapScript("su-token", false)
 
 	if !strings.Contains(script, "window.hasGoSide = true") {
 		t.Errorf("bootstrap does not mark the Go side:\n%s", script)

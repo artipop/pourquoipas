@@ -17,14 +17,17 @@ WebSocket protocol are unchanged; there is nothing on the machine to reach the
 board server by except this process.
 
 **A desktop window's page is on `wails://`.** Wails' asset server hands every
-request to the board router (`AssetOptions.Handler`). The board's `/ws` cannot
-ride a scheme handler (the asset server answers an upgrade with 501), so it is
-**tunnelled through Go** (`sockettunnel.go`, `busSocket.ts`): the page
-subscribes to `socket:<id>` on the Wails bus, asks `OpenSocket`, Go dials the
-socket on the board the router points at — over the wire, or an attached
-server's — and puts its frames on the bus; the page's frames go back as
-`SendSocket`, in order. The agents' events need no tunnel: a desktop page hears
-them on the bus (`agentEvents.ts`). The bootstrap says `window.pageOnWails`,
+request to the board router (`AssetOptions.Handler`). A WebSocket cannot ride a
+scheme handler (the asset server answers an upgrade with 501), so **the board's
+changes come on the Wails bus**: the board's websocket hub also hands every
+broadcast to a sink (`ws.Server.SetSink`), which a desktop sets to
+`Event.Emit("board:ws", …)`, and the page's `wsclient.ts` is given a `BusFeed`
+in place of a socket (`busSocket.ts`, `window.boardOnBus`). An attached
+server's `/ws` is **tunnelled through Go** instead (`sockettunnel.go`,
+`BusSocket`): the page subscribes to `socket:<id>`, asks `OpenSocket`, Go dials
+the server and puts its frames on the bus; the page's frames go back as
+`SendSocket`, in order. The agents' events come off the bus too
+(`agentEvents.ts`). The bootstrap says `window.pageOnWails`,
 and clears `localStorage` on the first load of each launch: the store outlives
 the app and its database, and a remembered board that is gone opened the error
 page. Two traps of the scheme handler, measured on macOS: WKWebView sends no
