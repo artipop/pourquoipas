@@ -102,15 +102,14 @@ with the same title; what follows is the part that must not be forgotten.
 
 ### The front door owns the origin
 
-`frontdoor.go` is our HTTP server: `/wails/` to the Wails runtime, the rest —
-HTML, `/api`, `/files`, `/ws` — to the board. A desktop build hands it to Wails
-as an `AssetServerTransport` on loopback; it is where other processes reach the
-app. **The window's page is on `wails://`** and goes through the asset server to
-the same board router; its sockets are **tunnelled over the Wails bus**
-(`sockettunnel.go`, `busSocket.ts`), because Wails' asset server answers a
-WebSocket upgrade with 501. Through that handler WKWebView sends no
-`Content-Length` and no body at all for a `FormData` — send a form with
-`sendableForm`. **A server build
+**The board server has no port**: its router is served over in-memory pipes
+(`boardwire.go`). **The window's page is on `wails://`** and goes through the
+asset server to the board router; the board's `/ws` is **tunnelled over the
+Wails bus** (`sockettunnel.go`, `busSocket.ts`), agents' events come off the
+bus. Through the scheme handler WKWebView sends no `Content-Length` and no body
+for a `FormData` — send a form with `sendableForm`. `frontdoor.go` is only the
+desktop's loopback door for other processes (agents' tools, the feed,
+`/sources/ingest`). **A server build
 has none**: Wails' own server is the door, our routes are its asset middleware
 (`mode_server.go`), and Wails checks `Host` and `Origin` the way a server
 reached by any name needs. Nothing of ours goes on Wails' `/wails/events`, which

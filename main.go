@@ -132,11 +132,6 @@ func main() {
 	// router is built before it and the manager after.
 	var attached *boardSeam
 
-	port, err := getFreePort()
-	if err != nil {
-		log.Fatalf("failed to find a free port: %v", err)
-	}
-
 	// ACP integration: config + board-event backend, wired before the server
 	// so the notify backend registers during server construction.
 	var (
@@ -162,7 +157,7 @@ func main() {
 		backends = append(backends, events)
 	}
 
-	brd, err := runServerWithLogger(logger, port, sessionToken, backends)
+	brd, err := runServerWithLogger(logger, sessionToken, backends)
 	if err != nil {
 		log.Fatalf("failed to start the server: %v", err)
 	}
@@ -226,7 +221,7 @@ func main() {
 	if devServer != "" {
 		log.Printf("development build: the page comes from Vite at %s", devServer)
 	}
-	router, err := newBoardRouter(port, attach.selected(), devServer, pageToken)
+	router, err := newBoardRouter(brd.wire, attach.selected(), devServer, pageToken)
 	if err != nil {
 		log.Fatalf("failed to create the server proxy: %v", err)
 	}
@@ -449,6 +444,7 @@ func main() {
 			mgr.Shutdown(5 * time.Second)
 		}
 		app.updates.close()
+		front.stop()
 		stopSorter()
 		if sourcePlugins != nil {
 			sourcePlugins.Stop(5 * time.Second)
@@ -510,7 +506,7 @@ func main() {
 	app.mu.Lock()
 	app.local = front.url()
 	app.mu.Unlock()
-	app.sockets = newSocketTunnels(front.socketHost, func() *application.App { return wapp })
+	app.sockets = newSocketTunnels(router.dialSocket, func() *application.App { return wapp })
 	if mgr != nil {
 		// Where an agent's board tools call back to. Known only now: the front
 		// door picks its port when it binds.

@@ -1,8 +1,6 @@
 import {fakeGoSide} from './test/goSide'
 import type {IAppWindow} from './types'
 
-// The runtime's bus, standing in for Go's half of the tunnel: a test emits on
-// it what Go would.
 const listeners = vi.hoisted(() => new Map<string, (event: {data: unknown}) => void>())
 vi.mock('@wailsio/runtime', async (importOriginal) => ({
     ...await importOriginal<Record<string, unknown>>(),
@@ -25,8 +23,6 @@ describe('busSocket', () => {
         listeners.clear()
     })
 
-    // The board's socket refused a subscription that overtook the login: two
-    // binding calls in flight are two goroutines, and nothing orders them.
     test('sends frames one after another, in the order they were written', async () => {
         const sent: string[] = []
         let release!: () => void
@@ -56,8 +52,6 @@ describe('busSocket', () => {
         expect(sent).toEqual(['login', 'subscribe'])
     })
 
-    // What Go hears from the socket reaches the page as a message, and the end
-    // of it as a close, so wsclient.ts reconnects as it would from a real one.
     test('delivers frames and the close Go reports', async () => {
         fakeGoSide({OpenSocket: vi.fn().mockResolvedValue(undefined)})
         const socket = new BusSocket('/ws')
@@ -79,8 +73,6 @@ describe('busSocket', () => {
         expect(listeners.size).toBe(0)
     })
 
-    // A page in a browser opens its sockets itself; only a desktop window,
-    // whose page is on wails://, goes through Go.
     test('goes through Go only in a desktop window', () => {
         const opened: string[] = []
         const real = vi.spyOn(window, 'WebSocket').mockImplementation(function(this: unknown, url: string | URL) {
@@ -96,8 +88,6 @@ describe('busSocket', () => {
         real.mockRestore()
     })
 
-    // WebKit gives a custom scheme's handler no body for a FormData: the file
-    // reached the board as an empty multipart. The same form as bytes arrives.
     test('sends a form as bytes from a desktop window', async () => {
         const form = new FormData()
         form.append('file', new Blob([new Uint8Array([1, 2, 3])]), 'x.bin')

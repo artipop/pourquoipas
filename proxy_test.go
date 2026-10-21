@@ -7,7 +7,6 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"strconv"
 	"strings"
 	"testing"
@@ -15,28 +14,20 @@ import (
 )
 
 // upstream stands in for the in-process board server.
-func upstream(t *testing.T, contentType, body string) int {
+func upstream(t *testing.T, contentType, body string) *boardWire {
 	t.Helper()
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	wire := newBoardWire()
+	wire.serve(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", contentType)
 		_, _ = io.WriteString(w, body)
 	}))
-	t.Cleanup(srv.Close)
-
-	u, err := url.Parse(srv.URL)
-	if err != nil {
-		t.Fatal(err)
-	}
-	port, err := strconv.Atoi(u.Port())
-	if err != nil {
-		t.Fatal(err)
-	}
-	return port
+	t.Cleanup(func() { _ = wire.Close() })
+	return wire
 }
 
-func proxied(t *testing.T, port int) *http.Response {
+func proxied(t *testing.T, wire *boardWire) *http.Response {
 	t.Helper()
-	h, err := newServerProxy(port, "", "", func() string { return "su-token" })
+	h, err := newServerProxy(wire, "", "", func() string { return "su-token" })
 	if err != nil {
 		t.Fatal(err)
 	}

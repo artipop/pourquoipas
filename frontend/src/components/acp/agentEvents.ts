@@ -1,24 +1,17 @@
-import {goApp} from '../../goBridge'
-import {openSocket} from '../../busSocket'
+import {Events} from '@wailsio/runtime'
 
-// What the agents are doing, as it happens: a session changed state, a stage
-// opened or closed, a card started waiting for a person.
-//
-// It arrives over one socket on the front door (/acp/events/ws) rather than
-// over window.runtime.EventsOn, which is the Wails event bus. The bus reaches
-// the windows the desktop app owns and stops there, so a board opened in a
-// browser or on a phone — the same page, served by the same front door —
-// heard nothing at all. One socket for every client is both simpler and
-// the only thing that works everywhere.
-//
-// The socket is shared: every subscriber on the page is a handler in the map
-// below, so a board full of cards costs one connection.
+import {goApp} from '../../goBridge'
+import {pageOnWails} from '../../busSocket'
+
+// What the agents are doing, as it happens. A browser hears it on one shared
+// socket (/acp/events/ws); a desktop window, on the Wails bus.
 
 export type AgentEventHandler = (payload: any) => void
 
 const handlers = new Map<string, Set<AgentEventHandler>>()
 
 let socket: WebSocket | undefined
+const busListeners = new Map<string, () => void>()
 let reconnect: ReturnType<typeof setTimeout> | undefined
 let attempt = 0
 
@@ -44,7 +37,7 @@ const connect = (): void => {
     if (socket || handlers.size === 0) {
         return
     }
-    const ws = openSocket('/acp/events/ws', socketURL)
+    const ws = new WebSocket(socketURL())
     socket = ws
 
     ws.onopen = () => {
@@ -108,7 +101,14 @@ export function onAgentEvent(event: string, handler: AgentEventHandler): () => v
     const existing = handlers.get(event) || new Set<AgentEventHandler>()
     existing.add(handler)
     handlers.set(event, existing)
-    connect()
+    if (pageOnWails()) {
+        if (!busListeners.has(event)) {
+            // eslint-disable-next-line new-cap
+            busListeners.set(event, Events.On(event, (e) => deliver(event, e.data)))
+        }
+    } else {
+        connect()
+    }
 
     return () => {
         const set = handlers.get(event)
@@ -118,6 +118,8 @@ export function onAgentEvent(event: string, handler: AgentEventHandler): () => v
         set.delete(handler)
         if (set.size === 0) {
             handlers.delete(event)
+            busListeners.get(event)?.()
+            busListeners.delete(event)
         }
         disconnectIfIdle()
     }

@@ -4,12 +4,8 @@ import {Events} from '@wailsio/runtime'
 import {goApp} from './goBridge'
 import type {IAppWindow} from './types'
 
-// A WebSocket the page asks Go to hold, for a desktop window: the page there is
-// on wails://, where a WebSocket has nowhere to go. Go dials the socket itself
-// and the two ends meet on the Wails bus (sockettunnel.go) — frames arrive as
-// the event "socket:<id>", frames leave as a binding call. It answers the part
-// of WebSocket that wsclient.ts and agentEvents.ts use, so neither knows which
-// one it holds.
+// A WebSocket held by Go for a page on wails://, where the page cannot open
+// one (sockettunnel.go).
 
 type TunnelMessage = {data?: string, closed?: boolean, code?: number}
 
@@ -25,20 +21,15 @@ export class BusSocket {
     private readonly id: string
     private off?: () => void
 
-    // Frames leave in the order they were sent. Each is its own binding call,
-    // and two calls in flight are two goroutines on the Go side: the board's
-    // socket refused a subscription that overtook the login before it.
+    // Each send is a binding call, and two in flight can arrive out of order.
     private sending: Promise<unknown> = Promise.resolve()
 
     constructor(path: string) {
         counter++
         this.id = `${Date.now().toString(36)}-${counter}-${Math.random().toString(36).slice(2)}`
 
-        // Subscribed before the socket is asked for, so its first frame finds
-        // somebody listening.
         this.off = Events.On(`socket:${this.id}`, (event) => this.receive(event.data as TunnelMessage))
 
-        // A page that goes away without closing leaves Go reading for nobody.
         window.addEventListener('pagehide', this.close)
 
         goApp()!.OpenSocket(this.id, path).then(() => {
@@ -87,23 +78,16 @@ export class BusSocket {
     }
 }
 
-// pageOnWails says the page is in a desktop window, loaded from wails://; set
-// by the bootstrap (proxy.go).
 export function pageOnWails(): boolean {
     return Boolean((window as unknown as IAppWindow).pageOnWails) && Boolean(goApp())
 }
 
-// openSocket opens path on this page's own origin, through Go when the page
-// cannot open it itself.
 export function openSocket(path: string, url: () => string): WebSocket {
     return (pageOnWails() ? new BusSocket(path) : new WebSocket(url())) as unknown as WebSocket
 }
 
-// sendableForm is a form as a page on wails:// can send it. WebKit hands a
-// custom scheme's handler no body at all when the body is a FormData or a Blob
-// — a file arrived at the board as an empty multipart, "NextPart: EOF" — while
-// bytes go through whole (3 MB measured). So the form is encoded here, with
-// the boundary the encoding chose.
+// WebKit gives a custom scheme's handler no body for a FormData or a Blob, so a
+// page on wails:// sends the form's encoded bytes.
 export async function sendableForm(form: FormData): Promise<{body: BodyInit, contentType?: string}> {
     if (!pageOnWails()) {
         return {body: form}

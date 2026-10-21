@@ -26,142 +26,61 @@ func request(t *testing.T, h http.Handler, path string, headers map[string]strin
 	return rec
 }
 
-// The split is the whole design: Wails owns /wails/ and the board owns
-// everything else, /ws included — which is what lets the socket live on the
-// page's own origin instead of being told a second address.
-func TestFrontDoorSendsWailsToWailsAndTheRestToTheBoard(t *testing.T) {
-	door := newFrontDoor(named("wails"), named("acp"), named("ingest"), named("board"), "127.0.0.1:9000", nil)
+// The loopback door is for other processes; the page is on wails:// and has no
+// business here, so nothing of it is served — not the HTML, which carries the
+// session token, not the API, not the bindings.
+func TestTheLoopbackDoorServesProcessesAndNotThePage(t *testing.T) {
+	door := newFrontDoor(named("acp"), named("ingest"), "127.0.0.1:9000")
 
 	for path, want := range map[string]string{
-		"/wails/runtime.js":     "wails",
-		"/wails/runtime":        "wails",
-		"/acp/events/ws":        "acp",
+		"/acp/board/mcp":        "acp",
 		"/sources/ingest/phone": "ingest",
-		"/":                     "board",
-		"/ws":                   "board",
-		"/api/v0/teams":         "board",
 	} {
 		if got := request(t, door, path, nil).Body.String(); got != want {
 			t.Errorf("%s went to %q, want %q", path, got, want)
 		}
 	}
+	for _, path := range []string{"/", "/api/v0/teams", "/ws", "/wails/runtime", "/acp/events/ws"} {
+		if code := request(t, door, path, nil).Code; code != http.StatusNotFound {
+			t.Errorf("%s: status %d, want 404", path, code)
+		}
+	}
 }
 
-// The bound methods start agents and read the filesystem, and the runtime
-// endpoint carries no credential of its own. Any page in any browser can reach
-// a loopback port, so a call whose Origin is somebody else's page is refused —
-// the response would be unreadable to them, the side effect would not.
-func TestFrontDoorRefusesCrossOriginRuntimeCalls(t *testing.T) {
-	door := newFrontDoor(named("wails"), named("acp"), named("ingest"), named("board"), "127.0.0.1:9000", nil)
+// Any page in any browser can reach a loopback port; the agents' tools are not
+// for it.
+func TestTheLoopbackDoorRefusesAnotherSite(t *testing.T) {
+	door := newFrontDoor(named("acp"), named("ingest"), "127.0.0.1:9000")
 
 	cases := []struct {
 		name    string
 		headers map[string]string
 		want    int
 	}{
-		{"no origin (a plain GET from our own page)", nil, http.StatusOK},
-		{"our own origin", map[string]string{"Origin": "http://127.0.0.1:9000"}, http.StatusOK},
-		{"same-origin fetch metadata", map[string]string{"Sec-Fetch-Site": "same-origin"}, http.StatusOK},
+		{"a process, no origin", nil, http.StatusOK},
 		{"another site", map[string]string{"Origin": "https://evil.example"}, http.StatusForbidden},
 		{"another site by fetch metadata", map[string]string{"Sec-Fetch-Site": "cross-site"}, http.StatusForbidden},
+		{"another loopback port", map[string]string{"Origin": "http://localhost:9001"}, http.StatusForbidden},
 	}
 	for _, c := range cases {
-		if got := request(t, door, "/wails/runtime", c.headers).Code; got != c.want {
+		if got := request(t, door, "/acp/board/mcp", c.headers).Code; got != c.want {
 			t.Errorf("%s: status %d, want %d", c.name, got, c.want)
 		}
 	}
 }
 
-// The door listens on the whole loopback, so the page can be opened as
-// 127.0.0.1 while published as localhost; the host guard lets that in, and a
-// runtime that then refused every binding call left the page with no settings
-// and no word of why. But a door published on every interface
-// accepts any Host, and taking any Origin with it would hand the bindings to
-// every site — the loopback allowance is for a loopback door only.
-func TestFrontDoorTakesTheOtherLoopbackNameButNoOtherSite(t *testing.T) {
-	cases := []struct {
-		published, host, origin string
-		want                    int
-	}{
-		{"localhost:9000", "127.0.0.1:9000", "http://127.0.0.1:9000", http.StatusOK},
-		{"127.0.0.1:9000", "localhost:9000", "http://localhost:9000", http.StatusOK},
-		{"127.0.0.1:9000", "[::1]:9000", "http://[::1]:9000", http.StatusOK},
-		{"127.0.0.1:9000", "127.0.0.1:9000", "http://localhost:9001", http.StatusForbidden},
-		{"127.0.0.1:9000", "127.0.0.1:9000", "http://evil.example:9000", http.StatusForbidden},
-		{"0.0.0.0:9000", "evil.example:9000", "http://evil.example:9000", http.StatusForbidden},
-		{"0.0.0.0:9000", "0.0.0.0:9000", "http://localhost:9000", http.StatusForbidden},
-	}
-	for _, c := range cases {
-		door := newFrontDoor(named("wails"), named("acp"), named("ingest"), named("board"), c.published, nil)
-		req := httptest.NewRequest(http.MethodPost, "/wails/runtime", nil)
-		req.Host = c.host
-		req.Header.Set("Origin", c.origin)
-		rec := httptest.NewRecorder()
-		door.ServeHTTP(rec, req)
-		if rec.Code != c.want {
-			t.Errorf("published %s, Origin %s: status %d, want %d", c.published, c.origin, rec.Code, c.want)
-		}
-	}
-}
-
-// A server published behind TLS serves the page from an https origin while the
-// door speaks HTTP. Without this every binding call and both sockets would be
-// refused as somebody else's site — and the board would look broken in a way
-// nothing in the page could explain.
-func TestFrontDoorAcceptsItsOwnOriginOverTLS(t *testing.T) {
-	door := newFrontDoor(named("wails"), named("acp"), named("ingest"), named("board"), "board.example.com", nil)
-
-	for _, path := range []string{"/wails/runtime", "/acp/events/ws"} {
-		req := httptest.NewRequest(http.MethodGet, path, nil)
-		req.Host = "board.example.com"
-		req.Header.Set("Origin", "https://board.example.com")
-		rec := httptest.NewRecorder()
-		door.ServeHTTP(rec, req)
-		if rec.Code != http.StatusOK {
-			t.Errorf("%s: status %d, want 200", path, rec.Code)
-		}
-	}
-}
-
-// A name the attacker controls, repointed at 127.0.0.1, would otherwise be
-// same-origin with the app for as long as it is running.
-func TestFrontDoorRefusesAnUnexpectedHost(t *testing.T) {
-	door := newFrontDoor(named("wails"), named("acp"), named("ingest"), named("board"), "127.0.0.1:9000", nil)
-
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
-	req.Host = "rebind.example:9000"
-	rec := httptest.NewRecorder()
-	door.ServeHTTP(rec, req)
-	if rec.Code != http.StatusForbidden {
-		t.Errorf("status %d, want %d", rec.Code, http.StatusForbidden)
-	}
-
-	// localhost and 127.0.0.1 are the same machine on the same port, and the
-	// user may well type either.
-	for _, host := range []string{"localhost:9000", "127.0.0.1:9000", "[::1]:9000"} {
-		req := httptest.NewRequest(http.MethodGet, "/", nil)
-		req.Host = host
-		rec := httptest.NewRecorder()
-		door.ServeHTTP(rec, req)
-		if rec.Code != http.StatusOK {
-			t.Errorf("Host %s: status %d, want 200", host, rec.Code)
-		}
-	}
-}
-
-// A server build published on every interface is reached by whatever name the
-// user's DNS gives it, so there is no authority left to check — only the port.
-// Without this, `SERVER_HOST=0.0.0.0` would answer 403 to everyone
-// but localhost, which is the opposite of what asking for it means.
-func TestFrontDoorPublishedOnEveryInterfaceAcceptsAnyName(t *testing.T) {
-	door := newFrontDoor(named("wails"), named("acp"), named("ingest"), named("board"), "0.0.0.0:8080", nil)
+// A name the attacker controls, repointed at 127.0.0.1, would otherwise reach
+// the door as if it were ours.
+func TestTheLoopbackDoorRefusesAnUnexpectedHost(t *testing.T) {
+	door := newFrontDoor(named("acp"), named("ingest"), "127.0.0.1:9000")
 
 	for host, want := range map[string]int{
-		"boards.internal:8080": http.StatusOK,
-		"192.168.1.10:8080":    http.StatusOK,
-		"boards.internal:9999": http.StatusForbidden, // a different port is a different server
+		"rebind.example:9000": http.StatusForbidden,
+		"localhost:9000":      http.StatusOK,
+		"127.0.0.1:9000":      http.StatusOK,
+		"[::1]:9000":          http.StatusOK,
 	} {
-		req := httptest.NewRequest(http.MethodGet, "/", nil)
+		req := httptest.NewRequest(http.MethodGet, "/acp/board/mcp", nil)
 		req.Host = host
 		rec := httptest.NewRecorder()
 		door.ServeHTTP(rec, req)

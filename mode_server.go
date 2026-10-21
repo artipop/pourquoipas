@@ -16,25 +16,15 @@ import (
 	"github.com/artipop/pourquoipas/internal/feedmcp"
 )
 
-// origin, in a server build, is Wails' own HTTP server. It is the door here:
-// Wails binds the address, checks the Host on a loopback bind and the Origin of
-// a runtime call against the request's own Host, and offers TLS and the
-// origins a proxy in front may add (ServerOptions). Our routes ride it as asset
-// middleware, which runs before Wails answers a WebSocket upgrade with 501, so
-// the board's /ws and our sockets work through it.
-//
-// A desktop needs a door of its own (mode_desktop.go, frontdoor.go): there the
-// page is not reached over the network at all, and a socket has nowhere to go.
-//
-// The address is SERVER_HOST/SERVER_PORT, or Wails' own WAILS_SERVER_* names.
+// origin, in a server build, is Wails' own HTTP server; our routes are its
+// asset middleware, which runs before the asset server refuses an upgrade.
+// The address is SERVER_HOST/SERVER_PORT, or Wails' WAILS_SERVER_* names.
 type origin struct {
 	board   http.Handler
 	acp     http.Handler
 	ingest  http.Handler
 	host    string
 	port    int
-	// session says whether a request carries a live board session. See
-	// identity.go.
 	session func(string) bool
 }
 
@@ -56,9 +46,8 @@ func newOrigin(board, acp, ingest http.Handler, session func(string) bool) (*ori
 	return &origin{board: board, acp: acp, ingest: ingest, host: host, port: port, session: session}, nil
 }
 
-// envOnce reads the first of the given variables that is set and unsets all of
-// them: Wails reads the WAILS_SERVER_* pair itself and would let it override
-// what ServerOptions says.
+// envOnce unsets what it reads: Wails would let WAILS_SERVER_* override
+// ServerOptions.
 func envOnce(names ...string) string {
 	value := ""
 	for _, name := range names {
@@ -76,54 +65,41 @@ func (o *origin) serverOptions() application.ServerOptions {
 	return application.ServerOptions{Host: o.host, Port: o.port}
 }
 
-// middleware puts our routes in front of Wails' asset chain. Wails' own
-// /wails/events and /wails/stream/ws are on its router, outside this chain, so
-// no session guards them; the emitter keeps our events off that bus in this
-// build (emitsOnBus).
+// Wails' own /wails/events is outside this chain and unguarded, so nothing of
+// ours goes on the bus in this build (emitsOnBus).
 func (o *origin) middleware() application.Middleware {
 	return func(wails http.Handler) http.Handler {
 		mux := http.NewServeMux()
-		// runtime.js and the bound methods. Wails checks a call's Origin
-		// itself; the session is ours to ask.
 		mux.Handle("/wails/", requireSession(wails, o.session))
 		mux.Handle("/acp/events/ws", requireSession(requestOrigin(o.acp), o.session))
 		mux.Handle("/acp/board/", requestOrigin(o.acp))
 		mux.Handle(feedmcp.Path, requestOrigin(o.acp))
 		mux.Handle("/sources/ingest/{name}", o.ingest)
-		// The board takes everything else straight, as the desktop's door
-		// gives it: its page, its API and its /ws socket, which the asset
-		// server would refuse.
 		mux.Handle("/", o.board)
 		return requestLog(mux)
 	}
 }
 
-// requestOrigin is sameOrigin keyed to the Host the request came in under, the
-// rule Wails applies to its own routes: a server is reached by whatever name
-// DNS or a proxy gives it, and a session, not the name, says who is calling.
+// requestOrigin is sameOrigin against the request's own Host, as Wails checks
+// its routes: a server is reached by whatever name DNS or a proxy gives it.
 func requestOrigin(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sameOrigin(next, r.Host).ServeHTTP(w, r)
 	})
 }
 
-// start has nothing to start: Wails serves when the application runs.
 func (o *origin) start() {}
+
+func (o *origin) stop() {}
 
 func (o *origin) url() string {
 	return "http://" + net.JoinHostPort(o.host, strconv.Itoa(o.port)) + "/"
 }
 
-// pageURL is what a browser is told to open.
 func (o *origin) pageURL() string { return o.url() }
 
-func (o *origin) socketHost() string { return net.JoinHostPort(o.host, strconv.Itoa(o.port)) }
-
-// pageOnWails: a browser's page is on the server's own origin.
 const pageOnWails = false
 
-// emitsOnBus: nothing in a server build listens on the Wails bus, and Wails
-// broadcasts it on /wails/events to anybody who connects, logged in or not.
 const emitsOnBus = false
 
 // A headless build has no windows to outlive, so the question the desktop

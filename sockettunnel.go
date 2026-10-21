@@ -2,37 +2,24 @@ package main
 
 import (
 	"errors"
-	"log"
-	"net/http"
 	"sync"
 
 	"github.com/gorilla/websocket"
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
-// The page's sockets, carried over the Wails bus.
-//
-// A desktop window loads the page from wails://, where a WebSocket has nowhere
-// to go: the webview asks a scheme handler for every request and that handler
-// cannot carry an upgrade. So the page asks Go to open the socket instead —
-// Go dials it on the loopback door like any other process — and the two ends
-// meet on the bus: what the socket says is an event named for the tunnel, what
-// the page says is a binding call. The protocol inside is untouched, so the
-// board's /ws works against this machine's board and an attached server's
-// alike, and so does /acp/events/ws.
+// socketTunnels hold the board's WebSocket for a desktop page, which is on
+// wails:// and cannot open one: frames arrive on the bus as "socket:<id>",
+// and go out through SendSocket.
 
-// tunnelPaths are the sockets a page may ask for.
-var tunnelPaths = map[string]bool{"/ws": true, "/acp/events/ws": true}
+var tunnelPaths = map[string]bool{"/ws": true}
 
-// tunnelMessage is what the page hears on "socket:<id>": a frame, or the end.
 type tunnelMessage struct {
 	Data   string `json:"data,omitempty"`
 	Closed bool   `json:"closed,omitempty"`
 	Code   int    `json:"code,omitempty"`
 }
 
-// tunnel is one socket and the lock its writes take: gorilla allows one writer
-// at a time, and the page's calls can overlap.
 type tunnel struct {
 	conn  *websocket.Conn
 	write sync.Mutex
@@ -41,19 +28,15 @@ type tunnel struct {
 type socketTunnels struct {
 	mu    sync.Mutex
 	conns map[string]*tunnel
-	// base is the loopback door, "127.0.0.1:port".
-	base func() string
-	emit func(name string, data any)
+	dial  func(path string) (*websocket.Conn, error)
+	emit  func(name string, data any)
 }
 
-func newSocketTunnels(base func() string, wapp func() *application.App) *socketTunnels {
+func newSocketTunnels(dial func(string) (*websocket.Conn, error), wapp func() *application.App) *socketTunnels {
 	return &socketTunnels{
 		conns: map[string]*tunnel{},
-		base:  base,
+		dial:  dial,
 		emit: func(name string, data any) {
-			// Straight onto the bus, not through the emitter: the emitter
-			// also feeds /acp/events/ws, and a tunnel of that socket would
-			// hear its own frames come back.
 			if app := wapp(); app != nil {
 				app.Event.Emit(name, data)
 			}
@@ -61,13 +44,11 @@ func newSocketTunnels(base func() string, wapp func() *application.App) *socketT
 	}
 }
 
-// open dials path under the id the page chose. The page subscribes to the
-// event before it asks, so nothing the socket says first can be missed.
 func (t *socketTunnels) open(id, path string) error {
 	if id == "" || !tunnelPaths[path] {
 		return errors.New("no such socket")
 	}
-	conn, _, err := websocket.DefaultDialer.Dial("ws://"+t.base()+path, http.Header{})
+	conn, err := t.dial(path)
 	if err != nil {
 		return err
 	}
@@ -127,18 +108,4 @@ func (t *socketTunnels) drop(id string, conn *websocket.Conn) {
 	}
 	t.mu.Unlock()
 	_ = conn.Close()
-}
-
-// closeAll ends every tunnel; a page that reloads opens new ones.
-func (t *socketTunnels) closeAll() {
-	t.mu.Lock()
-	conns := t.conns
-	t.conns = map[string]*tunnel{}
-	t.mu.Unlock()
-	for _, tun := range conns {
-		_ = tun.conn.Close()
-	}
-	if len(conns) > 0 {
-		log.Printf("sockets: closed %d tunnels", len(conns))
-	}
 }

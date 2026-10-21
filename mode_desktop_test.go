@@ -17,7 +17,7 @@ func TestTheProbeForAnOptionalScriptIsAnsweredQuietly(t *testing.T) {
 	}))
 
 	rec := httptest.NewRecorder()
-	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodHead, customJSPath, nil))
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodHead, "/wails/custom.js", nil))
 	if rec.Code != http.StatusNoContent {
 		t.Fatalf("custom.js answered %d, want %d", rec.Code, http.StatusNoContent)
 	}

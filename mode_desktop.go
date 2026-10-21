@@ -19,66 +19,39 @@ import (
 	"github.com/artipop/pourquoipas/internal/feedmcp"
 )
 
-// origin is the front door of a desktop build. A Wails desktop app has no HTTP
-// server — the webview asks a custom scheme handler for its pages — so we bring
-// one: a transport implementing AssetServerTransport is handed Wails' own asset
-// handler and is then free to serve it wherever it likes.
-//
-// The window is pointed at that address instead of the wails:// origin, which
-// is the whole point: a page served over real HTTP can open a real WebSocket,
-// so /ws reaches the board directly and window.webSocketBaseURL is not needed.
-// The listener is loopback-only and its port is random per launch.
+// origin is the desktop's loopback door: where other processes reach the app
+// (an agent's board tools, scripts, the column feed). The window does not use
+// it; its page is on wails://.
 type origin struct {
-	*application.HTTPTransport
-
 	listener net.Listener
-	board    http.Handler
 	acp      http.Handler
 	ingest   http.Handler
 	server   *http.Server
-	// session says whether a request carries a live board session; nil in
-	// single-user mode, where nothing does. See identity.go.
-	session func(string) bool
 }
 
-// newOrigin binds the front door's listener up front, so its address is known
-// before the application — and therefore the window — is created. Serving
-// starts later, when Wails hands over the asset handler.
-func newOrigin(board, acp, ingest http.Handler, session func(string) bool) (*origin, error) {
+func newOrigin(_, acp, ingest http.Handler, _ func(string) bool) (*origin, error) {
 	listener, err := listenLoopback(0)
 	if err != nil {
 		return nil, fmt.Errorf("front door: %w", err)
 	}
-	return &origin{
-		HTTPTransport: application.NewHTTPTransport(),
-		listener:      listener,
-		board:         board,
-		acp:           acp,
-		ingest:        ingest,
-		session:       session,
-	}, nil
+	return &origin{listener: listener, acp: acp, ingest: ingest}, nil
 }
 
-// middleware: a desktop's routes are its own front door, not Wails' chain.
-func (o *origin) middleware() application.Middleware { return nil }
+func (o *origin) middleware() application.Middleware { return quietOptionalCustomJS }
 
 // emitsOnBus: the menu bar and the OS notifications listen on the Wails bus
-// (alerts_desktop.go), and it reaches only this app's own windows.
+// (alerts_desktop.go).
 const emitsOnBus = true
 
-// ServeAssets is called by Wails once the asset server exists. Everything but
-// /wails/ goes to the board.
-func (o *origin) ServeAssets(assetHandler http.Handler) error {
-	assetHandler = quietOptionalCustomJS(assetHandler)
-	o.server = &http.Server{Handler: newFrontDoor(assetHandler, o.acp, o.ingest, o.board, o.host(), o.session)}
+func (o *origin) start() {
+	o.server = &http.Server{Handler: newFrontDoor(o.acp, o.ingest, o.host())}
 	go func() {
 		if err := o.server.Serve(o.listener); err != nil && err != http.ErrServerClosed {
 			log.Printf("front door stopped: %v", err)
 		}
 	}()
-	// The port is new every launch, so the column feed's bridge learns it
-	// from a file (internal/feedmcp). A server build has an address that does
-	// not move and is given it instead.
+	// The port is new every launch, so the column feed's bridge reads it from
+	// a file (internal/feedmcp).
 	if dir, err := appDataDir("", 0o755); err == nil {
 		secret, err := newLocalFeedSecret()
 		if err == nil {
@@ -88,27 +61,14 @@ func (o *origin) ServeAssets(assetHandler http.Handler) error {
 			log.Printf("feed: the address was not written: %v", err)
 		}
 	}
-	return nil
 }
 
-// customJSPath is the optional script the Wails runtime probes for on every
-// page load.
-const customJSPath = "/wails/custom.js"
-
-// quietOptionalCustomJS answers that probe with "nothing here" instead of an
-// error. Wails serves custom.js in a server build (it carries the runtime's
-// WebSocket connection) and deliberately 404s it in a desktop one, because the
-// runtime reads the refusal as "there is no custom script". The browser reads
-// it as a failed resource and writes it into the console on every launch, where
-// it looks like a broken app.
-//
-// 204 says the same thing to the runtime — it checks response.ok and then the
-// content type, and takes anything that is not JavaScript as nothing to load —
-// without the console entry, and without the second request an empty script
-// would cost. Desktop only, since a server build has a real one to serve.
+// quietOptionalCustomJS answers the runtime's probe for /wails/custom.js with
+// 204: Wails 404s it on a desktop, which the console reports as an error on
+// every launch.
 func quietOptionalCustomJS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == customJSPath {
+		if r.URL.Path == "/wails/custom.js" {
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}
@@ -116,14 +76,11 @@ func quietOptionalCustomJS(next http.Handler) http.Handler {
 	})
 }
 
-// frontDoorDrain bounds the wait for requests in flight, because Shutdown runs
-// on the main thread inside the framework's cleanup: one request that never
-// returns hangs the quit for ever, process alive and app gone from the screen.
-// Quitting *through* the front door is exactly that case — Shutdown waits for
-// the very request asking it to quit.
+// frontDoorDrain bounds the wait for requests in flight: a request that never
+// returns would otherwise hang the quit.
 const frontDoorDrain = 2 * time.Second
 
-func (o *origin) Stop() error {
+func (o *origin) stop() {
 	if dir, err := appDataDir("", 0o755); err == nil {
 		feedmcp.RemoveHandoff(dir)
 	}
@@ -133,36 +90,19 @@ func (o *origin) Stop() error {
 		defer cancel()
 		_ = o.server.Shutdown(ctx)
 	}
-	return o.HTTPTransport.Stop()
 }
 
 func (o *origin) host() string { return o.listener.Addr().String() }
 
-// url is the loopback door: what other processes — an agent's board tools, a
-// script — are given.
 func (o *origin) url() string { return "http://" + o.host() + "/" }
 
-// pageURL is where a window is pointed: the page Wails itself serves, on
-// wails://. Requests go through the asset server to the same handler the door
-// holds, and the sockets ride the bus (sockettunnel.go).
 func (o *origin) pageURL() string { return "/" }
 
-// socketHost is where a tunnel dials its socket.
-func (o *origin) socketHost() string { return o.host() }
-
-// pageOnWails: the window's page is on wails://, so it opens its sockets
-// through Go and sends a file's bytes rather than a form (busSocket.ts).
 const pageOnWails = true
 
-// transport hands the front door to Wails as the IPC transport, which is how
-// it gets to serve the assets at all.
-func (o *origin) transport() application.Transport { return o }
+func (o *origin) transport() application.Transport { return nil }
 
-// serverOptions are unused in a desktop build: nothing here binds a public port.
 func (o *origin) serverOptions() application.ServerOptions { return application.ServerOptions{} }
-
-// start is a no-op: the front door began serving from ServeAssets.
-func (o *origin) start() {}
 
 // mainWindowName is what the board's own window is called. It has a name so
 // that anything bringing a person back to the board — the menu bar icon, a

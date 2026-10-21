@@ -7,8 +7,12 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"strconv"
 	"strings"
 	"sync/atomic"
+	"time"
+
+	"github.com/gorilla/websocket"
 )
 
 // bootstrapScript is injected into the served index.html <head>, before any app
@@ -35,6 +39,13 @@ func bootstrapScript(sessionToken string) string {
   // In single-user mode this is the session the API synthesizes, seeded before
   // any app script runs. On a hosted server it is empty and the page logs in.
   try {
+    // A desktop page's storage outlives the app and its database; it is kept
+    // for one launch, as it was when every launch had a new origin.
+    var launch = %q;
+    if (launch && localStorage.getItem('launch') !== launch) {
+      localStorage.clear();
+      localStorage.setItem('launch', launch);
+    }
     var seeded = %q;
     if (seeded) { localStorage.setItem('boardSessionId', seeded); }
     // The same token a second way, for the front door (frontdoor.go): the Wails
@@ -51,8 +62,16 @@ func bootstrapScript(sessionToken string) string {
   window.hasGoSide = true;
   window.pageOnWails = %t;
 })();
-</script>`, sessionToken, pageOnWails)
+</script>`, pageLaunch, sessionToken, pageOnWails)
 }
+
+// pageLaunch is this run of a desktop app; empty on a server.
+var pageLaunch = func() string {
+	if !pageOnWails {
+		return ""
+	}
+	return strconv.FormatInt(time.Now().UnixNano(), 36)
+}()
 
 // newServerProxy builds what the front door puts behind everything that is not
 // /wails/ or /acp/: the page, and the board the page talks to. In a release
@@ -79,26 +98,25 @@ func bootstrapScript(sessionToken string) string {
 // token is asked per response rather than baked in: the session for a hosted
 // board is not known until somebody logs in. Which board is behind it can
 // change while the app runs, which is what boardRouter below is for.
-func newServerProxy(port int, attached, devServer string, token func() string) (http.Handler, error) {
-	// 127.0.0.1, where the board server listens, rather than "localhost",
-	// which resolves to ::1 first and cost every connection a refusal.
-	local, err := url.Parse(fmt.Sprintf("http://127.0.0.1:%d", port))
-	if err != nil {
-		return nil, err
-	}
-	pageOrigin := local
+func newServerProxy(wire *boardWire, attached, devServer string, token func() string) (http.Handler, error) {
+	local := &url.URL{Scheme: "http", Host: boardWireHost}
+	board := wire.transport()
+	pageOrigin, pageTransport := local, http.RoundTripper(board)
 	if devServer != "" {
+		var err error
 		if pageOrigin, err = url.Parse(devServer); err != nil {
 			return nil, fmt.Errorf("dev server %q: %w", devServer, err)
 		}
+		pageTransport = nil
 	}
-	page := pageProxy(pageOrigin, token)
+	page := pageProxy(pageOrigin, pageTransport, token)
 
 	if attached == "" && devServer == "" {
 		return page, nil
 	}
 
-	var data http.Handler = localProxy(local)
+	var data http.Handler = localProxy(local, board)
+	var err error
 	if attached != "" {
 		if data, err = attachedProxy(attached); err != nil {
 			return nil, err
@@ -113,8 +131,8 @@ func newServerProxy(port int, attached, devServer string, token func() string) (
 }
 
 // pageProxy serves the page from origin with the bootstrap injected.
-func pageProxy(origin *url.URL, token func() string) *httputil.ReverseProxy {
-	page := localProxy(origin)
+func pageProxy(origin *url.URL, transport http.RoundTripper, token func() string) *httputil.ReverseProxy {
+	page := localProxy(origin, transport)
 	director := page.Director
 	page.Director = func(req *http.Request) {
 		director(req)
@@ -128,8 +146,10 @@ func pageProxy(origin *url.URL, token func() string) *httputil.ReverseProxy {
 // localProxy forwards to a process of this machine: the board server, or Vite.
 // Host is rewritten to the one it listens under — Vite refuses a Host it does
 // not know, which is its own guard against DNS rebinding.
-func localProxy(origin *url.URL) *httputil.ReverseProxy {
+func localProxy(origin *url.URL, transport http.RoundTripper) *httputil.ReverseProxy {
 	proxy := httputil.NewSingleHostReverseProxy(origin)
+	// nil is the default transport: Vite, on a real port.
+	proxy.Transport = transport
 	director := proxy.Director
 	proxy.Director = func(req *http.Request) {
 		director(req)
@@ -207,15 +227,17 @@ func stripCookie(req *http.Request, name string) {
 // talks to can change without rebuilding the door. A switch is a rebuild and a
 // reload: everything the page holds came from the board it loaded against.
 type boardRouter struct {
-	port      int
+	wire      *boardWire
 	devServer string
 	token     func() string
 
 	current atomic.Pointer[http.Handler]
+	// attached is the server the router points at, empty for this one.
+	attached atomic.Pointer[string]
 }
 
-func newBoardRouter(port int, attached, devServer string, token func() string) (*boardRouter, error) {
-	r := &boardRouter{port: port, devServer: devServer, token: token}
+func newBoardRouter(wire *boardWire, attached, devServer string, token func() string) (*boardRouter, error) {
+	r := &boardRouter{wire: wire, devServer: devServer, token: token}
 	if err := r.point(attached); err != nil {
 		return nil, err
 	}
@@ -225,20 +247,43 @@ func newBoardRouter(port int, attached, devServer string, token func() string) (
 // point aims the router at a board: a server's origin, or empty for the one
 // this process serves.
 func (r *boardRouter) point(attached string) error {
-	next, err := newServerProxy(r.port, attached, r.devServer, r.token)
+	next, err := newServerProxy(r.wire, attached, r.devServer, r.token)
 	if err != nil {
 		return err
 	}
 	r.current.Store(&next)
+	r.attached.Store(&attached)
 	return nil
 }
 
+// dialSocket opens a WebSocket at path on the board the router points at.
+func (r *boardRouter) dialSocket(path string) (*websocket.Conn, error) {
+	attached := ""
+	if p := r.attached.Load(); p != nil {
+		attached = *p
+	}
+	if attached == "" {
+		return r.wire.dialSocket(path)
+	}
+	remote, err := url.Parse(attached)
+	if err != nil {
+		return nil, err
+	}
+	target := *remote
+	target.Scheme = map[string]string{"https": "wss"}[remote.Scheme]
+	if target.Scheme == "" {
+		target.Scheme = "ws"
+	}
+	target.Path = strings.TrimSuffix(remote.Path, "/") + path
+	header := http.Header{"Origin": {remote.Scheme + "://" + remote.Host}}
+	dialer := websocket.Dialer{Proxy: http.ProxyFromEnvironment, HandshakeTimeout: 10 * time.Second}
+	conn, _, err := dialer.Dial(target.String(), header)
+	return conn, err
+}
+
 func (r *boardRouter) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	// A request from a page on wails:// reaches us through Wails' asset
-	// server, and WKWebView hands that server the body without a
-	// Content-Length. The request then says 0, and httputil.ReverseProxy drops
-	// a body of length 0 — every POST arrived at the board empty. Unknown is
-	// what it is.
+	// WKWebView sends no Content-Length through Wails' asset server, and
+	// ReverseProxy drops a body of length 0.
 	if req.ContentLength == 0 && req.Body != nil && req.Body != http.NoBody && req.Method != http.MethodGet && req.Method != http.MethodHead {
 		req.ContentLength = -1
 	}

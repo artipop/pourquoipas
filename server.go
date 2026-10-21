@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"net"
 	"os"
 	"path"
 	"path/filepath"
@@ -18,21 +17,6 @@ import (
 
 	"github.com/artipop/pourquoipas/server/mlog"
 )
-
-// getFreePort asks the kernel for a free open port that is ready to use.
-func getFreePort() (int, error) {
-	addr, err := net.ResolveTCPAddr("tcp", "127.0.0.1:0")
-	if err != nil {
-		return 0, err
-	}
-
-	l, err := net.ListenTCP("tcp", addr)
-	if err != nil {
-		return 0, err
-	}
-	defer l.Close()
-	return l.Addr().(*net.TCPAddr).Port, nil
-}
 
 // dataDir returns the writable location for the board database and uploaded
 // files — this install's own, so a development build does not open the app's
@@ -141,6 +125,8 @@ type board struct {
 	// dbType is which database that is — "sqlite3" on every desktop, and on a
 	// server whatever boardDatabase was told.
 	dbType string
+	// wire is the only way to the board server (boardwire.go).
+	wire *boardWire
 }
 
 // appTablesSupported says whether this application's own tables — the agents',
@@ -161,7 +147,7 @@ func appTablesSupported(dbType string) error {
 // mode) on the given port, returning the running server so the caller can
 // Shutdown() it. notifyBackends are registered with the server's notification
 // service (used by the ACP agent integration to observe card moves).
-func runServerWithLogger(logger mlog.LoggerIFace, port int, sessionToken string, notifyBackends []notify.Backend) (board, error) {
+func runServerWithLogger(logger mlog.LoggerIFace, sessionToken string, notifyBackends []notify.Backend) (board, error) {
 	data, err := dataDir()
 	if err != nil {
 		return board{}, fmt.Errorf("resolving data dir: %w", err)
@@ -173,8 +159,9 @@ func runServerWithLogger(logger mlog.LoggerIFace, port int, sessionToken string,
 	}
 
 	cfg := &config.Configuration{
-		ServerRoot:         fmt.Sprintf("http://localhost:%d", port),
-		Port:               port,
+		ServerRoot: "http://localhost",
+		// No port: the router is served on the wire (boardwire.go).
+		Port:               -1,
 		DBType:             dbType,
 		DBConfigString:     dsn,
 		UseSSL:             false,
@@ -184,10 +171,8 @@ func runServerWithLogger(logger mlog.LoggerIFace, port int, sessionToken string,
 		FilesPath:          path.Join(data, "files"),
 		SessionExpireTime:  259200000000,
 		SessionRefreshTime: 18000,
-		// Only our own proxies talk to the board server, on this machine; a
-		// port open to the network was a second way into the board.
-		LocalOnly: true,
-		AuthMode:  "native",
+		LocalOnly:          true,
+		AuthMode:           "native",
 	}
 
 	singleUser := len(sessionToken) > 0
@@ -218,5 +203,7 @@ func runServerWithLogger(logger mlog.LoggerIFace, port int, sessionToken string,
 	if err := srv.Start(); err != nil {
 		return board{}, fmt.Errorf("starting server: %w", err)
 	}
-	return board{srv: srv, db: handle, dbType: dbType}, nil
+	wire := newBoardWire()
+	wire.serve(srv.GetRootRouter())
+	return board{srv: srv, db: handle, dbType: dbType, wire: wire}, nil
 }

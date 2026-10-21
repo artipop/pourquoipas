@@ -12,54 +12,15 @@ import (
 	"github.com/artipop/pourquoipas/internal/feedmcp"
 )
 
-// The front door is the origin the page actually talks to — the webview in a
-// desktop build, the browser in a server build. Everything behind it is one
-// host and port: the board itself (HTML, /api, /files and the /ws socket) and
-// the Wails runtime (/wails/runtime.js, the IPC endpoint, and in a server build
-// the event socket).
-//
-// One origin is what removes window.webSocketBaseURL. Wails' asset server
-// answers a WebSocket upgrade with 501 and its response writer cannot be
-// hijacked, so /ws can never be served through it; routing /wails/ to Wails and
-// everything else to the board leaves the socket on a plain net/http server of
-// ours, where an upgrade is ordinary.
-
-// newFrontDoor routes /wails/ to the Wails runtime, /acp/ to our own sockets
-// (the terminal windows), /sources/ to the ingest endpoint and everything else
-// to the board. allowedHost is the authority the page is served under; a
-// request for any other Host is refused, since a name that resolves to this
-// listener but isn't the one we handed out is somebody else's DNS entry
-// pointing here.
-//
-// session says whether a request carries a live board session, and is nil in
-// single-user mode, where there is nothing to carry: the routes that are about
-// this machine rather than about a board — the bound methods, the terminal
-// sockets — are then guarded by the origin and the Host alone. In team mode it
-// is what stops a person who has not logged in from starting an agent
-// (identity.go).
-func newFrontDoor(wails, acpRoutes, ingest, board http.Handler, allowedHost string, session func(string) bool) http.Handler {
+// newFrontDoor is the desktop's loopback door, for other processes on this
+// machine: the agents' board tools and the column feed (each with its own
+// token, and refused to a browser by its Origin), and the ingest route, which
+// a script or webhook posts to with a source token.
+func newFrontDoor(acpRoutes, ingest http.Handler, allowedHost string) http.Handler {
 	mux := http.NewServeMux()
-	mux.Handle("/wails/", requireSession(sameOrigin(wails, allowedHost), session))
-	// The UI event socket is guarded exactly as the runtime is, and for the
-	// same reason: it says what the agents are doing on this machine.
-	mux.Handle("/acp/events/ws", requireSession(sameOrigin(acpRoutes, allowedHost), session))
-	// The board tools an agent calls (boardapi.go). Same origin guard — a page
-	// has no business calling these — on top of the grant token they actually
-	// authenticate with: the caller is a local process, and a local process
-	// sends no Origin, so the guard costs it nothing and still keeps a browser
-	// out.
 	mux.Handle("/acp/board/", sameOrigin(acpRoutes, allowedHost))
-	// The column feed (feedaccess.go): a local process or a program on
-	// another machine, authenticated by the feed token. Same origin guard,
-	// free for the same reason — neither sends an Origin — and it keeps a page
-	// on some website from reading the board with a token it guessed.
 	mux.Handle(feedmcp.Path, sameOrigin(acpRoutes, allowedHost))
-	// The one route here that is *not* same-origin, and it cannot be: what
-	// posts to it is a script, a webhook or a phone, so its Origin is somebody
-	// else's or absent. Its own token is what stands in for the check — see
-	// ingest.go.
 	mux.Handle("/sources/ingest/{name}", ingest)
-	mux.Handle("/", board)
 	return hostGuard(requestLog(mux), allowedHost)
 }
 
@@ -146,37 +107,17 @@ func hostGuard(next http.Handler, allowedHost string) http.Handler {
 	})
 }
 
-// hostAllowed accepts the published authority and the loopback names that mean
-// the same machine on the same port, so http://localhost:port works when the
-// front door was published as 127.0.0.1:port and the other way round.
-//
-// A front door bound to every interface has no authority to check against — the
-// name it is reached by is whatever DNS the user has — so it accepts any Host
-// on its port. Binding to 0.0.0.0 is already the deliberate act of publishing
-// this to a network, where the guard would be the wrong layer anyway.
+// hostAllowed accepts the published authority and the other loopback names on
+// the same port.
 func hostAllowed(host, allowedHost, allowedPort string) bool {
 	if host == allowedHost {
 		return true
 	}
 	name, port, err := net.SplitHostPort(host)
-	if err != nil {
+	if err != nil || port != allowedPort {
 		return false
-	}
-	if port != allowedPort {
-		return false
-	}
-	if boundHost := strings.TrimSuffix(allowedHost, ":"+allowedPort); isWildcardHost(boundHost) {
-		return true
 	}
 	return isLoopbackName(name)
-}
-
-func isWildcardHost(host string) bool {
-	switch host {
-	case "", "0.0.0.0", "[::]", "::", "[::0]":
-		return true
-	}
-	return false
 }
 
 func portOf(hostport string) string {
