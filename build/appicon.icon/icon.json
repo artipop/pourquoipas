@@ -1,29 +1,21 @@
 {
-  "fill" : {
-    "automatic-gradient" : "srgb:0.10588,0.16471,0.29020,1.00000"
-  },
   "groups" : [
     {
       "layers" : [
         {
-          "fill-specializations" : [
+          "glass" : false,
+          "image-name-specializations" : [
             {
-              "appearance" : "dark",
-              "value" : {
-                "solid" : "srgb:1.00000,1.00000,1.00000,1.00000"
-              }
+              "value" : "pourquoipas.png"
             },
             {
-              "appearance" : "tinted",
-              "value" : {
-                "solid" : "srgb:1.00000,1.00000,1.00000,1.00000"
-              }
+              "appearance" : "dark",
+              "value" : "pourquoipas-dark.png"
             }
           ],
-          "image-name" : "xciii_icon_vector.svg",
-          "name" : "xciii_icon_vector",
+          "name" : "pourquoipas",
           "position" : {
-            "scale" : 0.85,
+            "scale" : 1.0,
             "translation-in-points" : [
               0.0,
               0.0
@@ -32,13 +24,13 @@
         }
       ],
       "shadow" : {
-        "kind" : "neutral",
-        "opacity" : 0.5
+        "kind" : "none",
+        "opacity" : 0.0
       },
-      "specular" : true,
+      "specular" : false,
       "translucency" : {
-        "enabled" : true,
-        "value" : 0.5
+        "enabled" : false,
+        "value" : 0.0
       }
     }
   ],

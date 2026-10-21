@@ -1,7 +1,6 @@
 package main
 
 import (
-	"image"
 	"image/color"
 	"image/png"
 	"os"
@@ -9,16 +8,18 @@ import (
 	"testing"
 )
 
-// The branding in the repository is what this renderer draws, pixel for pixel.
-// A change to the mark that nobody re-ran is caught here the way a stale schema
-// is caught in tools/schemagen — and the files were drawn by the Python script
-// this replaced, so the same check is what says the port is faithful.
+// The branding in the repository is what this command makes, pixel for pixel.
+// A new picture or a changed mark that nobody re-ran is caught here the way a
+// stale schema is caught in tools/schemagen.
 func TestTheCommittedBrandingIsWhatTheMarkDraws(t *testing.T) {
 	root, err := moduleRoot()
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := map[string]*image.NRGBA{"build/appicon.png": renderIcon(1024)}
+	want, err := icons(root)
+	if err != nil {
+		t.Fatal(err)
+	}
 	for name, img := range trays() {
 		want["build/tray/"+name+".png"] = img
 	}

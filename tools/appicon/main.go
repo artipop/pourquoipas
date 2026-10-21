@@ -1,34 +1,38 @@
-// Command appicon regenerates the raster branding assets from the vector mark.
+// Command appicon regenerates the raster branding assets.
 //
 //	go run ./tools/appicon
 //
-// It writes build/appicon.png and the four menu-bar marks under build/tray/.
-// darwin/icons.icns and windows/icon.ico come from
-// `wails3 task common:generate:icons`, which reads appicon.png and
-// appicon.icon; run that after this. The webapp's favicon
-// (frontend/public/favicon.svg) draws the same shape by hand.
+// The app icon is a picture, build/appicon.icon/Assets/pourquoipas.png, with a
+// night version beside it (pourquoipas-dark.png): square, full bleed, no
+// corners. Icon Composer takes them as they are and masks them itself;
+// everything else needs the corners baked in, so this writes the masked
+// build/appicon.png and 64px copies of both: the page's favicon
+// (frontend/public/favicon{,-dark}.png), the logo in its sidebar menu
+// (frontend/src/assets/appLogo{,Dark}.png) and the guide's favicon
+// (docs/guide/public/favicon{,-dark}.png). darwin/icons.icns and windows/icon.ico come
+// from `wails3 task common:generate:icons`, which reads appicon.png and
+// appicon.icon; run that after this.
 //
-// Two images it deliberately does not draw, though the script it replaces did.
-// The disk image's own icon is rendered by create:dmg:icon from the built
-// .app's icon. And build/darwin/dmg-background.png has been a picked image
-// since d4849aa, not a rendering — drawing it here would overwrite that choice
-// with the navy wash it replaced.
+// The four menu-bar marks under build/tray/ are drawn, not taken from the
+// picture: they are one ink at 22pt, where an illustration is a smudge. The mark
+// is the picture's bow in silhouette.
+//
+// Two images it deliberately does not draw. The disk image's own icon is
+// rendered by create:dmg:icon from the built .app's icon. And
+// build/darwin/dmg-background.png has been a picked image since d4849aa, not a
+// rendering.
 //
 // The renderer is written out here rather than pulled from a library because
-// the mark is only rounded rectangles — a signed distance field with a
-// one-pixel anti-aliasing band draws them exactly — and an SVG rasteriser would
-// be a dependency for three rectangles. The geometry is the same as
-// frontend/src/widgets/icons/appLogo.tsx and build/appicon.icon: three board
-// columns, tallest first.
-//
-// It was a Python script, the last Python in the tree. The port draws the same
-// pixels, and the test holds the committed files to it.
+// the shapes are only rounded rectangles — a signed distance field with a
+// one-pixel anti-aliasing band draws them exactly — and the only resize is by a
+// whole factor, which a box filter does exactly.
 package main
 
 import (
 	"flag"
 	"fmt"
 	"image"
+	"image/draw"
 	"image/png"
 	"math"
 	"os"
@@ -38,7 +42,7 @@ import (
 type rgb [3]int
 
 var (
-	// The product colours: white columns on deep navy.
+	// The tray mark's inks: navy for a light menu bar, white for a dark one.
 	navy  = rgb{0x1B, 0x2A, 0x4A}
 	white = rgb{0xFF, 0xFF, 0xFF}
 
@@ -76,17 +80,6 @@ func round(v float64) int {
 	return int(math.RoundToEven(v))
 }
 
-// columns are the three columns of the mark, in the proportions of
-// appLogo.tsx.
-func columns(left, top, width float64) []rect {
-	s := width / 560.0
-	return []rect{
-		{left, top, 147 * s, 471 * s, 44 * s},
-		{left + 206*s, top, 147 * s, 324 * s, 44 * s},
-		{left + 412*s, top, 147 * s, 177 * s, 44 * s},
-	}
-}
-
 func blend(dst, src rgb, a float64) rgb {
 	var out rgb
 	for i := range out {
@@ -100,58 +93,172 @@ func set(img *image.NRGBA, x, y int, c rgb, a int) {
 	img.Pix[o], img.Pix[o+1], img.Pix[o+2], img.Pix[o+3] = uint8(c[0]), uint8(c[1]), uint8(c[2]), uint8(a)
 }
 
-func renderIcon(size int) *image.NRGBA {
-	fs := float64(size)
-	// 22.37% of the side is the corner radius Apple's icon grid uses, and the
-	// shape has to be baked in: .icns and .ico carry no mask of their own.
-	frame := rect{0, 0, fs, fs, fs * 0.2237}
-	markW := fs * 0.547
-	cols := columns((fs-markW)/2, (fs-fs*0.46)/2, markW)
+// iconSize is the side of the source picture and of build/appicon.png;
+// pagePx is the page's copies, a whole factor of it.
+const (
+	iconSize = 1024
+	pagePx   = 64
+)
 
-	img := image.NewNRGBA(image.Rect(0, 0, size, size))
-	for py := 0; py < size; py++ {
-		yc := float64(py) + 0.5
-		for px := 0; px < size; px++ {
-			xc := float64(px) + 0.5
-			a := coverage(roundedRectSDF(xc, yc, frame))
-			if a <= 0 {
-				continue
-			}
-			c := navy
-			for _, col := range cols {
-				if ca := coverage(roundedRectSDF(xc, yc, col)); ca > 0 {
-					c = blend(c, white, ca)
-				}
-			}
-			set(img, px, py, c, round(a*255))
+// maskIcon cuts the corners out of the full-bleed picture. 22.37% of the side
+// is the corner radius Apple's icon grid uses, and the shape has to be baked
+// in: .icns and .ico carry no mask of their own.
+func maskIcon(art image.Image) (*image.NRGBA, error) {
+	b := art.Bounds()
+	if b.Dx() != iconSize || b.Dy() != iconSize {
+		return nil, fmt.Errorf("the picture is %dx%d, want %dx%d", b.Dx(), b.Dy(), iconSize, iconSize)
+	}
+	img := image.NewNRGBA(image.Rect(0, 0, iconSize, iconSize))
+	draw.Draw(img, img.Bounds(), art, b.Min, draw.Src)
+	fs := float64(iconSize)
+	frame := rect{0, 0, fs, fs, fs * 0.2237}
+	for py := 0; py < iconSize; py++ {
+		for px := 0; px < iconSize; px++ {
+			a := coverage(roundedRectSDF(float64(px)+0.5, float64(py)+0.5, frame))
+			o := img.PixOffset(px, py)
+			img.Pix[o+3] = uint8(round(float64(img.Pix[o+3]) * a))
 		}
 	}
-	return img
+	return img, nil
 }
 
-// renderTray draws the mark for the system tray: the three columns in ink,
-// plus — when dot is set — a badge saying an agent is waiting for a person.
+// shrink averages each factor×factor block into one pixel, weighting colour by
+// alpha so the transparent corners do not darken the edge.
+func shrink(src *image.NRGBA, factor int) *image.NRGBA {
+	side := src.Bounds().Dx() / factor
+	dst := image.NewNRGBA(image.Rect(0, 0, side, side))
+	for y := 0; y < side; y++ {
+		for x := 0; x < side; x++ {
+			var r, g, bl, a float64
+			for dy := 0; dy < factor; dy++ {
+				for dx := 0; dx < factor; dx++ {
+					o := src.PixOffset(x*factor+dx, y*factor+dy)
+					w := float64(src.Pix[o+3])
+					r += float64(src.Pix[o]) * w
+					g += float64(src.Pix[o+1]) * w
+					bl += float64(src.Pix[o+2]) * w
+					a += w
+				}
+			}
+			o := dst.PixOffset(x, y)
+			if a > 0 {
+				dst.Pix[o], dst.Pix[o+1], dst.Pix[o+2] = uint8(round(r/a)), uint8(round(g/a)), uint8(round(bl/a))
+			}
+			dst.Pix[o+3] = uint8(round(a / float64(factor*factor)))
+		}
+	}
+	return dst
+}
+
+// icons are the masked icon and its page copies, keyed by path from the module
+// root.
+func icons(root string) (map[string]*image.NRGBA, error) {
+	light, err := pageIcons(root, artPath)
+	if err != nil {
+		return nil, err
+	}
+	dark, err := pageIcons(root, darkArtPath)
+	if err != nil {
+		return nil, err
+	}
+	return map[string]*image.NRGBA{
+		"build/appicon.png":                   light[0],
+		"frontend/public/favicon.png":         light[1],
+		"frontend/public/favicon-dark.png":    dark[1],
+		"frontend/src/assets/appLogo.png":     light[1],
+		"frontend/src/assets/appLogoDark.png": dark[1],
+		"docs/guide/public/favicon.png":       light[1],
+		"docs/guide/public/favicon-dark.png":  dark[1],
+	}, nil
+}
+
+// pageIcons masks one picture and returns it at full size and at page size.
+func pageIcons(root, path string) ([2]*image.NRGBA, error) {
+	f, err := os.Open(filepath.Join(root, path))
+	if err != nil {
+		return [2]*image.NRGBA{}, err
+	}
+	defer f.Close()
+	art, err := png.Decode(f)
+	if err != nil {
+		return [2]*image.NRGBA{}, fmt.Errorf("%s: %w", path, err)
+	}
+	icon, err := maskIcon(art)
+	if err != nil {
+		return [2]*image.NRGBA{}, fmt.Errorf("%s: %w", path, err)
+	}
+	return [2]*image.NRGBA{icon, shrink(icon, iconSize/pagePx)}, nil
+}
+
+const artPath = "build/appicon.icon/Assets/pourquoipas.png"
+
+// darkArtPath is the same picture at night. Icon Composer shows it in dark
+// appearance (icon.json); the page shows its small copy in the dark theme.
+// build/appicon.png, which Windows and Linux take, stays the day one.
+const darkArtPath = "build/appicon.icon/Assets/pourquoipas-dark.png"
+
+// bow is the tray mark: the ship's bow as the icon draws it, climbing to the
+// right, cut off by the left edge the way the picture cuts the liner off. In
+// tray pixels; the tip is a few points rather than a curve, which at 44px is
+// the same thing.
+var bow = [][2]float64{
+	{4, 20}, {38, 13.2}, {40.4, 12.9}, {41.0, 13.6}, {40.7, 14.9}, {35.2, 38}, {4, 38},
+}
+
+// funnel stands on the deck behind the bow, as on the icon, with a gap above
+// the hull so the two read as separate shapes. Its top is the icon's dark cap;
+// with one ink per mark, the cap is told apart by a cut, funnelBand.
+var funnel = [][2]float64{
+	{8, 5.5}, {17, 5.5}, {17, 15.4}, {8, 17.2},
+}
+
+var funnelBand = [][2]float64{
+	{6, 10}, {19, 10}, {19, 11.6}, {6, 11.6},
+}
+
+// polygonSDF is the signed distance to a closed polygon, negative inside.
+func polygonSDF(px, py float64, pts [][2]float64) float64 {
+	d := math.Inf(1)
+	inside := false
+	for i, j := 0, len(pts)-1; i < len(pts); j, i = i, i+1 {
+		ax, ay := pts[j][0], pts[j][1]
+		bx, by := pts[i][0], pts[i][1]
+		ex, ey := bx-ax, by-ay
+		wx, wy := px-ax, py-ay
+		t := math.Max(0, math.Min(1, (wx*ex+wy*ey)/(ex*ex+ey*ey)))
+		d = math.Min(d, math.Hypot(wx-ex*t, wy-ey*t))
+		if (ay > py) != (by > py) && px < ax+(py-ay)*ex/ey {
+			inside = !inside
+		}
+	}
+	if inside {
+		return -d
+	}
+	return d
+}
+
+// renderTray draws the mark for the system tray: the bow and funnel in ink, plus — when
+// dot is set — a badge saying an agent is waiting for a person.
 //
 // Two inks rather than one template icon, because the badge is the point: a
 // macOS template icon is drawn from its alpha alone, so the amber would come
-// out the same grey as the columns and the one thing worth noticing across a
-// menu bar would stop being noticeable. The badge sits bottom-right, which is
-// the corner the descending columns leave empty, so it needs no gap punched
-// around it to read as a badge rather than as a fourth column.
+// out the same grey as the hull and the one thing worth noticing across a
+// menu bar would stop being noticeable. The badge sits bottom-right, on the
+// hull, so a ring is punched out around it or it would read as a rivet.
 func renderTray(ink rgb, dot *rgb) *image.NRGBA {
-	cols := columns(4.0, 6.0, 36.0)
+	const dotX, dotY, dotR, gap = 36.5, 35.5, 6.5, 2.5
 
 	img := image.NewNRGBA(image.Rect(0, 0, trayPx, trayPx))
 	for py := 0; py < trayPx; py++ {
 		yc := float64(py) + 0.5
 		for px := 0; px < trayPx; px++ {
 			xc := float64(px) + 0.5
-			a, c := 0.0, ink
-			for _, col := range cols {
-				a = math.Max(a, coverage(roundedRectSDF(xc, yc, col)))
-			}
+			hull := coverage(polygonSDF(xc, yc, bow))
+			stack := coverage(polygonSDF(xc, yc, funnel)) * (1 - coverage(polygonSDF(xc, yc, funnelBand)))
+			a, c := math.Max(hull, stack), ink
 			if dot != nil {
-				if da := coverage(circleSDF(xc, yc, 36.5, 35.5, 6.5)); da > a {
+				a *= 1 - coverage(circleSDF(xc, yc, dotX, dotY, dotR+gap))
+				if da := coverage(circleSDF(xc, yc, dotX, dotY, dotR)); da > a {
 					a, c = da, *dot
 				}
 			}
@@ -208,34 +315,35 @@ func moduleRoot() (string, error) {
 }
 
 func main() {
-	out := flag.String("dir", "", "the directory to write into (default: build/ at the module root)")
 	flag.Parse()
-	if err := run(*out); err != nil {
+	if err := run(); err != nil {
 		fmt.Fprintln(os.Stderr, "appicon:", err)
 		os.Exit(1)
 	}
 }
 
-func run(dir string) error {
-	if dir == "" {
-		root, err := moduleRoot()
-		if err != nil {
-			return err
-		}
-		dir = filepath.Join(root, "build")
-	}
-	if err := os.MkdirAll(filepath.Join(dir, "tray"), 0o755); err != nil {
+func run() error {
+	root, err := moduleRoot()
+	if err != nil {
 		return err
 	}
-	if err := writePNG(filepath.Join(dir, "appicon.png"), renderIcon(1024)); err != nil {
+	out, err := icons(root)
+	if err != nil {
 		return err
 	}
 	for name, img := range trays() {
-		if err := writePNG(filepath.Join(dir, "tray", name+".png"), img); err != nil {
+		out["build/tray/"+name+".png"] = img
+	}
+	for path, img := range out {
+		full := filepath.Join(root, path)
+		if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
 			return err
 		}
+		if err := writePNG(full, img); err != nil {
+			return err
+		}
+		fmt.Println("wrote", path)
 	}
-	fmt.Println("wrote appicon.png, tray/{idle,waiting}-{light,dark}.png")
 	fmt.Println("now run: wails3 task common:generate:icons")
 	return nil
 }

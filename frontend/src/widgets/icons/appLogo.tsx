@@ -1,40 +1,28 @@
 import type {JSX} from '@solidjs/web'
 
+import logo from '../../assets/appLogo.png'
+import logoDark from '../../assets/appLogoDark.png'
+
 import './appLogo.scss'
 
-// The product mark: three columns of a board, tallest first. Drawn here rather
-// than imported as a file so it inherits the sidebar's text colour through
-// `fill`, the way every other icon in this directory does.
+// The app icon itself, corners and all, written by tools/appicon from the same
+// pictures. A picture does not take the sidebar's text colour, so unlike the
+// other icons in this directory it is an image rather than an inline SVG. The
+// night picture is chosen by the theme's half, not the system's: the two can
+// differ (appPanel).
 export default function AppLogoIcon(): JSX.Element {
     return (
-        <svg
-            class='AppLogoIcon Icon'
-            version='1.1'
-            x='0px'
-            y='0px'
-            viewBox='0 0 24 24'
-        >
-            <rect
-                x='2.5'
-                y='4'
-                width='5'
-                height='16'
-                rx='1.5'
+        <picture class='AppLogoIcon Icon'>
+            <img
+                class='AppLogoIcon__day'
+                src={logo}
+                alt=''
             />
-            <rect
-                x='9.5'
-                y='4'
-                width='5'
-                height='11'
-                rx='1.5'
+            <img
+                class='AppLogoIcon__night'
+                src={logoDark}
+                alt=''
             />
-            <rect
-                x='16.5'
-                y='4'
-                width='5'
-                height='6'
-                rx='1.5'
-            />
-        </svg>
+        </picture>
     )
 }

@@ -1,6 +1,25 @@
 .AppLogoIcon {
+    display: inline-flex;
+    flex-shrink: 0;
     width: 32px;
     height: 32px;
-    fill: rgba(var(--sidebar-text-rgb), 0.7);
+
+    img {
+        width: 100%;
+        height: 100%;
+    }
 }
 
+.AppLogoIcon__night {
+    display: none;
+}
+
+[data-theme='dark'] {
+    .AppLogoIcon__day {
+        display: none;
+    }
+
+    .AppLogoIcon__night {
+        display: block;
+    }
+}

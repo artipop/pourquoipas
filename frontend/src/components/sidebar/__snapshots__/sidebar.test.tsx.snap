@@ -28,37 +28,22 @@ exports[`components/sidebarSidebar > a board in no category is filed under the d
                 <div
                   class="logo-title"
                 >
-                  <svg
+                  <picture
                     class="AppLogoIcon Icon"
-                    version="1.1"
-                    viewBox="0 0 24 24"
-                    x="0px"
-                    y="0px"
                   >
-                    <rect
-                      height="16"
-                      rx="1.5"
-                      width="5"
-                      x="2.5"
-                      y="4"
+                    <img
+                      alt=""
+                      class="AppLogoIcon__day"
+                      src="test-file-stub"
                     />
-                    <rect
-                      height="11"
-                      rx="1.5"
-                      width="5"
-                      x="9.5"
-                      y="4"
+                    <img
+                      alt=""
+                      class="AppLogoIcon__night"
+                      src="test-file-stub"
                     />
-                    <rect
-                      height="6"
-                      rx="1.5"
-                      width="5"
-                      x="16.5"
-                      y="4"
-                    />
-                  </svg>
+                  </picture>
                   <span>
-                    XCIII
+                    Pourquoi Pas?
                   </span>
                 </div>
               </div>
@@ -334,37 +319,22 @@ exports[`components/sidebarSidebar > dont show hidden boards 1`] = `
                 <div
                   class="logo-title"
                 >
-                  <svg
+                  <picture
                     class="AppLogoIcon Icon"
-                    version="1.1"
-                    viewBox="0 0 24 24"
-                    x="0px"
-                    y="0px"
                   >
-                    <rect
-                      height="16"
-                      rx="1.5"
-                      width="5"
-                      x="2.5"
-                      y="4"
+                    <img
+                      alt=""
+                      class="AppLogoIcon__day"
+                      src="test-file-stub"
                     />
-                    <rect
-                      height="11"
-                      rx="1.5"
-                      width="5"
-                      x="9.5"
-                      y="4"
+                    <img
+                      alt=""
+                      class="AppLogoIcon__night"
+                      src="test-file-stub"
                     />
-                    <rect
-                      height="6"
-                      rx="1.5"
-                      width="5"
-                      x="16.5"
-                      y="4"
-                    />
-                  </svg>
+                  </picture>
                   <span>
-                    XCIII
+                    Pourquoi Pas?
                   </span>
                 </div>
               </div>
@@ -574,37 +544,22 @@ exports[`components/sidebarSidebar > shouldnt do any category assignment is boar
                 <div
                   class="logo-title"
                 >
-                  <svg
+                  <picture
                     class="AppLogoIcon Icon"
-                    version="1.1"
-                    viewBox="0 0 24 24"
-                    x="0px"
-                    y="0px"
                   >
-                    <rect
-                      height="16"
-                      rx="1.5"
-                      width="5"
-                      x="2.5"
-                      y="4"
+                    <img
+                      alt=""
+                      class="AppLogoIcon__day"
+                      src="test-file-stub"
                     />
-                    <rect
-                      height="11"
-                      rx="1.5"
-                      width="5"
-                      x="9.5"
-                      y="4"
+                    <img
+                      alt=""
+                      class="AppLogoIcon__night"
+                      src="test-file-stub"
                     />
-                    <rect
-                      height="6"
-                      rx="1.5"
-                      width="5"
-                      x="16.5"
-                      y="4"
-                    />
-                  </svg>
+                  </picture>
                   <span>
-                    XCIII
+                    Pourquoi Pas?
                   </span>
                 </div>
               </div>
@@ -1039,37 +994,22 @@ exports[`components/sidebarSidebar > sidebar hidden 1`] = `
                 <div
                   class="logo-title"
                 >
-                  <svg
+                  <picture
                     class="AppLogoIcon Icon"
-                    version="1.1"
-                    viewBox="0 0 24 24"
-                    x="0px"
-                    y="0px"
                   >
-                    <rect
-                      height="16"
-                      rx="1.5"
-                      width="5"
-                      x="2.5"
-                      y="4"
+                    <img
+                      alt=""
+                      class="AppLogoIcon__day"
+                      src="test-file-stub"
                     />
-                    <rect
-                      height="11"
-                      rx="1.5"
-                      width="5"
-                      x="9.5"
-                      y="4"
+                    <img
+                      alt=""
+                      class="AppLogoIcon__night"
+                      src="test-file-stub"
                     />
-                    <rect
-                      height="6"
-                      rx="1.5"
-                      width="5"
-                      x="16.5"
-                      y="4"
-                    />
-                  </svg>
+                  </picture>
                   <span>
-                    XCIII
+                    Pourquoi Pas?
                   </span>
                 </div>
               </div>
@@ -1363,37 +1303,22 @@ exports[`components/sidebarSidebar > some categories hidden 1`] = `
                 <div
                   class="logo-title"
                 >
-                  <svg
+                  <picture
                     class="AppLogoIcon Icon"
-                    version="1.1"
-                    viewBox="0 0 24 24"
-                    x="0px"
-                    y="0px"
                   >
-                    <rect
-                      height="16"
-                      rx="1.5"
-                      width="5"
-                      x="2.5"
-                      y="4"
+                    <img
+                      alt=""
+                      class="AppLogoIcon__day"
+                      src="test-file-stub"
                     />
-                    <rect
-                      height="11"
-                      rx="1.5"
-                      width="5"
-                      x="9.5"
-                      y="4"
+                    <img
+                      alt=""
+                      class="AppLogoIcon__night"
+                      src="test-file-stub"
                     />
-                    <rect
-                      height="6"
-                      rx="1.5"
-                      width="5"
-                      x="16.5"
-                      y="4"
-                    />
-                  </svg>
+                  </picture>
                   <span>
-                    XCIII
+                    Pourquoi Pas?
                   </span>
                 </div>
               </div>
