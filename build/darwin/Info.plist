@@ -3,7 +3,7 @@
 <plist version="1.0">
 	<dict>
 		<key>CFBundleExecutable</key>
-		<string>XCIII</string>
+		<string>pourquoipas</string>
 		<key>CFBundleGetInfoString</key>
 		<string>Boards with coding agents</string>
 		<key>CFBundleIconFile</key>
@@ -11,9 +11,19 @@
 		<key>CFBundleIconName</key>
 		<string>appicon</string>
 		<key>CFBundleIdentifier</key>
-		<string>io.deffun.xciii</string>
+		<string>io.deffun.pourquoipas</string>
 		<key>CFBundleName</key>
-		<string>XCIII</string>
+		<string>Pourquoi Pas?</string>
+		<!-- Finder and the Dock show the name from <lang>.lproj/InfoPlist.strings,
+		     but only while the bundle's file name equals this unlocalized one.
+		     So the file stays ASCII (pourquoipas.app) and people still read
+		     the name with its question mark. -->
+		<key>CFBundleDisplayName</key>
+		<string>pourquoipas</string>
+		<key>LSHasLocalizedDisplayName</key>
+		<true/>
+		<key>CFBundleDevelopmentRegion</key>
+		<string>en</string>
 		<key>CFBundlePackageType</key>
 		<string>APPL</string>
 		<key>CFBundleShortVersionString</key>
@@ -34,10 +44,10 @@
 		<array>
 			<dict>
 				<key>CFBundleURLName</key>
-				<string>io.deffun.xciii.share</string>
+				<string>io.deffun.pourquoipas.share</string>
 				<key>CFBundleURLSchemes</key>
 				<array>
-					<string>xciii</string>
+					<string>pourquoipas</string>
 				</array>
 			</dict>
 		</array>
