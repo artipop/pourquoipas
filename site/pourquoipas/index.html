@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Pourquoi Pas? — доска, на которой работают ИИ-агенты</title>
-<meta name="description" content="Pourquoi Pas? — доска, на которой работают ИИ-агенты: карточки, колонки, терминал. Всё локально, с вашей подпиской на Claude или Codex. Одна оплата навсегда.">
+<meta name="description" content="Pourquoi Pas? — доска, на которой работают ИИ-агенты: карточки, колонки, терминал. Всё локально, с вашими агентами или ключом API. Приложение бесплатное.">
 <meta property="og:title" content="Pourquoi Pas? — доска, на которой работают ИИ-агенты">
-<meta property="og:description" content="Карточка попадает в колонку, и за неё берётся агент. Всё локально, с вашей подпиской на Claude или Codex. Одна оплата навсегда.">
+<meta property="og:description" content="Карточка попадает в колонку, и за неё берётся агент. Всё локально, с вашими агентами или ключом API. Приложение бесплатное.">
 <meta property="og:type" content="website">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%230c0c0e'/><rect x='9' y='7' width='6' height='18' fill='%23e24234'/><rect x='18' y='7' width='6' height='18' fill='%23e9e9ec'/></svg>">
 <link rel="stylesheet" href="/styles.css">
@@ -29,7 +29,7 @@
                  dist/docs — `npm run build:all` в site/. -->
             <a class="nav-hide" href="/docs/">Руководство</a>
             <a href="#price">Цена</a>
-            <a href="#preorder">Предзаказ</a>
+            <a href="#preorder">Узнать о выходе</a>
             <button class="theme-toggle" type="button" id="theme-toggle" aria-label="Переключить тему">◐</button>
         </nav>
     </div>
@@ -54,9 +54,9 @@
             Дальше карточку двигает маршрут.
         </p>
         <p class="hero-actions">
-            <a class="btn" href="#preorder">Оформить предзаказ</a>
+            <a class="btn" href="#preorder">Узнать о&nbsp;выходе</a>
             <a class="btn btn-ghost" href="#how">Как это работает</a>
-            <span class="note">Одна оплата, доступ навсегда</span>
+            <span class="note">Приложение бесплатное</span>
         </p>
     </div>
 </section>
@@ -179,7 +179,7 @@
 <section>
     <div class="wrap">
         <p class="eyebrow"><span class="num">05</span>Что это за программа</p>
-        <h2>Без облака и&nbsp;без второй подписки</h2>
+        <h2>Без облака и&nbsp;с&nbsp;вашими агентами</h2>
         <dl class="rows">
             <div>
                 <dt>Всё на&nbsp;вашем компьютере</dt>
@@ -187,10 +187,11 @@
                     и&nbsp;учётных записей у&nbsp;нас нет.</p></dd>
             </div>
             <div>
-                <dt>Ваша подписка</dt>
+                <dt>Ваш ИИ</dt>
                 <dd><p>Pourquoi Pas? запускает агентов, которые уже установлены у&nbsp;вас,
-                    под&nbsp;вашей учётной записью. Подписки на&nbsp;Claude или Codex
-                    достаточно.</p></dd>
+                    под&nbsp;вашей учётной записью: подписки на&nbsp;Claude или Codex
+                    достаточно. Вместо агента можно вписать свой ключ API
+                    Anthropic или OpenAI.</p></dd>
             </div>
             <div>
                 <dt>Поддерживаемые агенты</dt>
@@ -217,17 +218,17 @@
         <p class="eyebrow"><span class="num">06</span>Цена</p>
         <div class="price">
             <div>
-                <!-- TODO: цена. Впишите сумму вместо «—» ниже. -->
-                <p class="price-badge">Разовая оплата — доступ навсегда</p>
-                <h2>Платите один раз</h2>
+                <!-- TODO: цена подписки, когда она будет. -->
+                <p class="price-badge">Приложение бесплатное</p>
+                <h2>Платно только ИИ по&nbsp;нашей подписке</h2>
                 <p>
-                    Сейчас идёт предзаказ: одна оплата, лицензия навсегда,
-                    без&nbsp;подписки. Оставьте почту&nbsp;— мы&nbsp;напишем, когда
-                    откроем продажи, и&nbsp;пришлём сборку под&nbsp;вашу систему.
+                    Доска, шаблоны, агенты на&nbsp;вашем компьютере и&nbsp;ваш
+                    ключ API работают без&nbsp;оплаты. Подписка даст ИИ без&nbsp;своего
+                    ключа и&nbsp;без&nbsp;установленного агента; она ещё не&nbsp;готова.
                 </p>
-                <p class="muted">
-                    Предзаказ ничего не&nbsp;списывает и&nbsp;ни&nbsp;к&nbsp;чему
-                    не&nbsp;обязывает.
+                <p>
+                    Оставьте почту&nbsp;— мы&nbsp;напишем, когда выйдет сборка
+                    под&nbsp;вашу систему.
                 </p>
             </div>
 
@@ -248,10 +249,10 @@
                         <option>Linux</option>
                     </select>
                 </div>
-                <button class="btn" type="submit">Оформить предзаказ</button>
+                <button class="btn" type="submit">Написать мне о&nbsp;выходе</button>
                 <p class="form-status" id="form-status" role="status"></p>
                 <p class="form-note">
-                    Мы&nbsp;напишем один раз, когда откроются продажи.
+                    Мы&nbsp;напишем один раз, когда выйдет сборка.
                     Рассылок не&nbsp;будет.
                 </p>
             </form>

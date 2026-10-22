@@ -48,7 +48,7 @@ form?.addEventListener('submit', async (event) => {
             `Система: ${data.os}`,
         ].join('\n')
         window.location.href = `mailto:${PREORDER_EMAIL}` +
-            `?subject=${encodeURIComponent('Предзаказ Pourquoi Pas?')}&body=${encodeURIComponent(body)}`
+            `?subject=${encodeURIComponent('Pourquoi Pas?: напишите о выходе')}&body=${encodeURIComponent(body)}`
         say('Открыли почтовую программу — письмо заполнено, осталось отправить.')
         return
     }
@@ -64,7 +64,7 @@ form?.addEventListener('submit', async (event) => {
             throw new Error(String(response.status))
         }
         form.reset()
-        say('Записали. Напишем, когда откроются продажи.')
+        say('Записали. Напишем, когда выйдет сборка.')
     } catch (e) {
         say(`Не отправилось. Напишите нам на ${PREORDER_EMAIL}, мы запишем вас вручную.`, 'error')
     }
