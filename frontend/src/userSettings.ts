@@ -163,26 +163,6 @@ function keep(key: string, value: string | null): void {
     }
 }
 
-// reportLanguage tells the install which language the page is showing, picked
-// or not: the shipped board templates are boards rather than catalogue
-// strings, so the Go side installs them in a language — and the webview's own
-// locale, which is the answer when nobody picked, is something only this side
-// can read. It stores nothing; a resolved default is not a choice.
-//
-// Awaited before the first render, because the answer can mean five boards are
-// replaced: a page that has already read the old ones holds boards that no
-// longer exist, and the template picker drew both languages at once. It resolves
-// at once where there is no Go side, and where nothing changed.
-export async function reportLanguage(lang: string): Promise<void> {
-    try {
-        // eslint-disable-next-line new-cap
-        await goApp()?.UseLanguage?.(lang)
-    } catch (e) {
-        // No Go side, or a binding that threw: the templates stay in the
-        // language they were installed in.
-    }
-}
-
 export class UserSettings {
     static get(key: UserSettingKey): string | null {
         return read(key)

@@ -13,6 +13,7 @@ import {Category, CategoryBoards} from './store/sidebar'
 import {Team} from './store/teams'
 import {Subscription} from './wsclient'
 import {Constants} from './constants'
+import {appWordsLanguage, translateBlocks, translateBoard, translateBoards} from './appWords'
 
 //
 // OctoClient is the client interface to the server APIs
@@ -317,7 +318,7 @@ class OctoClient {
             return []
         }
         const blocks = (await this.getJson(response, [])) as Block[]
-        return this.fixBlocks(blocks)
+        return translateBlocks(this.fixBlocks(blocks))
     }
 
     private async getBoardsWithPath(path: string): Promise<Board[]> {
@@ -326,7 +327,7 @@ class OctoClient {
             return []
         }
         const boards = (await this.getJson(response, [])) as Board[]
-        return boards
+        return translateBoards(boards)
     }
 
     private async getBoardMembersWithPath(path: string): Promise<BoardMember[]> {
@@ -776,7 +777,7 @@ class OctoClient {
             return undefined
         }
 
-        return this.getJson<Board>(response, {} as Board)
+        return translateBoard(await this.getJson<Board>(response, {} as Board))
     }
 
     async duplicateBoard(boardID: string, asTemplate: boolean, toTeam?: string): Promise<BoardsAndBlocks | undefined> {
@@ -786,6 +787,13 @@ class OctoClient {
         }
         if (toTeam) {
             query += `&toTeam=${encodeURIComponent(toTeam)}`
+        }
+
+        // A copy of one of the install's own templates is made in the language
+        // this page shows, and is the person's from then on.
+        const lang = appWordsLanguage()
+        if (lang) {
+            query += `&lang=${encodeURIComponent(lang)}`
         }
 
         const path = `/api/v0/boards/${boardID}/duplicate${query}`
@@ -937,7 +945,7 @@ class OctoClient {
             return []
         }
 
-        return (await this.getJson(response, [])) as Board[]
+        return translateBoards((await this.getJson(response, [])) as Board[])
     }
 
     async searchAll(query: string): Promise<Board[]> {
@@ -951,7 +959,7 @@ class OctoClient {
             return []
         }
 
-        return (await this.getJson(response, [])) as Board[]
+        return translateBoards((await this.getJson(response, [])) as Board[])
     }
 
     async notifyAdminUpgrade(): Promise<void> {

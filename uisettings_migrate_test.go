@@ -60,7 +60,7 @@ func TestAnUpdateCarriesTheOldSettingsFileIntoTheDatabase(t *testing.T) {
 	if _, there := prefs["mobileWarningClosed"]; there {
 		t.Error("a browser's own key became the person's")
 	}
-	if table[settingAIEnabled] != "false" || table[settingShownLanguage] != "ru" {
+	if table[settingAIEnabled] != "false" {
 		t.Errorf("the machine's came over as %v", table)
 	}
 	if _, err := os.Stat(path); !os.IsNotExist(err) {

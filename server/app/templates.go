@@ -112,3 +112,15 @@ func fixTemplateBoard(board *model.Board, cache map[string]interface{}) bool {
 	board.Type = model.BoardTypeOpen
 	return true
 }
+
+// TemplateText puts a copy of one of the install's own templates into a
+// language before it is stored. The templates are kept in one language and
+// translated on display, so the copy is the moment their words become a
+// person's data.
+type TemplateText func(bab *model.BoardsAndBlocks, lang string) error
+
+// SetTemplateText is set by the app that ships the templates; the board server
+// knows nothing about their catalogue.
+func (a *App) SetTemplateText(f TemplateText) {
+	a.templateText = f
+}

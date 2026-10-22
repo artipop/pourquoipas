@@ -57,6 +57,10 @@ type App struct {
 
 	cardLimitMux sync.RWMutex
 	cardLimit    int
+
+	// templateText translates a board copied from one of the install's own
+	// templates; set by whoever installs them (SetTemplateText).
+	templateText TemplateText
 }
 
 func (a *App) SetConfig(config *config.Configuration) {

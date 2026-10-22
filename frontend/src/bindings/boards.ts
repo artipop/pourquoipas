@@ -1,6 +1,7 @@
 // The Wails-generated Go bindings are PascalCase methods, not constructors.
 /* eslint-disable new-cap */
 import {goApp} from '../goBridge'
+import {inboxTitle} from '../appWords'
 
 // The board as the bindings expose it.
 //
@@ -68,9 +69,13 @@ async function readList<T>(call?: () => Promise<string>): Promise<T[]> {
     }
 }
 
-export function listBoards(): Promise<BindingBoard[]> {
+export async function listBoards(): Promise<BindingBoard[]> {
     const bindings = goApp()
-    return readList<BindingBoard>(bindings?.ListBoards && (() => bindings.ListBoards!()))
+    const boards = await readList<BindingBoard>(bindings?.ListBoards && (() => bindings.ListBoards!()))
+
+    // The inbox is stored with the app's English name and read in each
+    // person's language (appWords.ts).
+    return boards.map((b) => (b.inbox ? {...b, title: inboxTitle(b.title)} : b))
 }
 
 export function listInbox(): Promise<BindingCard[]> {

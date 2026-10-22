@@ -92,7 +92,7 @@ func boardByID(t *testing.T, a *app.App, id string) *model.Board {
 func TestTheInboxIsOneBoardMadeOnce(t *testing.T) {
 	a := newTestApp(t)
 
-	first, err := EnsureInboxBoard(a, "ru")
+	first, err := EnsureInboxBoard(a)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -114,7 +114,7 @@ func TestTheInboxIsOneBoardMadeOnce(t *testing.T) {
 // nothing on it is a stage.
 func TestTheInboxGroupsByWhoBroughtTheCard(t *testing.T) {
 	a := newTestApp(t)
-	id, err := EnsureInboxBoard(a, "ru")
+	id, err := EnsureInboxBoard(a)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -133,17 +133,17 @@ func TestTheInboxGroupsByWhoBroughtTheCard(t *testing.T) {
 	if len(views) != 1 {
 		t.Fatalf("the inbox should have one view, it has %d", len(views))
 	}
-	view, ok := views["Входящие"]
+	view, ok := views["Inbox"]
 	if !ok {
-		t.Fatalf("no view called «Входящие»: %v", views)
+		t.Fatalf("no view called Inbox: %v", views)
 	}
 	groupBy, _ := view.Fields["groupById"].(string)
 	if def, ok := schema[groupBy]; !ok || def.Type != "createdBy" {
 		t.Fatalf("the view groups by %q, not by the author", groupBy)
 	}
-	// In the person's language: a field called "Author" on a Russian board is
-	// a field somebody forgot to translate.
-	if schema[groupBy].Name != "Автор" {
+	// In the words the page translates: on a server the one inbox is read in
+	// everybody's language at once.
+	if schema[groupBy].Name != "Author" {
 		t.Fatalf("the author field is called %q", schema[groupBy].Name)
 	}
 }
@@ -152,7 +152,7 @@ func TestTheInboxGroupsByWhoBroughtTheCard(t *testing.T) {
 // and the next arrival must not make a second one beside the renamed board.
 func TestARenamedInboxIsStillTheInbox(t *testing.T) {
 	a := newTestApp(t)
-	id, err := EnsureInboxBoard(a, "ru")
+	id, err := EnsureInboxBoard(a)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -160,57 +160,60 @@ func TestARenamedInboxIsStillTheInbox(t *testing.T) {
 	if _, err := a.PatchBoard(&model.BoardPatch{Title: &title}, id, model.SingleUser); err != nil {
 		t.Fatal(err)
 	}
-	again, err := EnsureInboxBoard(a, "ru")
+	again, err := EnsureInboxBoard(a)
 	if err != nil || again != id {
 		t.Fatalf("the renamed inbox was not found: %q, %v", again, err)
 	}
 }
 
-// The inbox is the app's board, not one the person made from a template, so
-// its names follow the language the app is switched to — and only the names
-// that are still the app's: what the person renamed stays theirs.
-func TestTheInboxFollowsTheLanguageExceptWhereThePersonRenamedIt(t *testing.T) {
+// An install from before translation on display named the inbox in the
+// language it was read in that day; the next launch puts the app's names back
+// to the words the page translates, and leaves what the person renamed alone.
+func TestAnOldInboxGoesBackToTheWordsThePageTranslates(t *testing.T) {
 	a := newTestApp(t)
-	id, err := EnsureInboxBoard(a, "ru")
+	id, err := EnsureInboxBoard(a)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := boardByID(t, a, id).Title; got != "Входящие" {
-		t.Fatalf("a Russian inbox is called %q", got)
-	}
-
-	if err := RelabelInboxBoard(a, "en"); err != nil {
+	if err := relabelInboxBoard(a, "ru"); err != nil {
 		t.Fatal(err)
 	}
+	if got := boardByID(t, a, id).Title; got != "Входящие" {
+		t.Fatalf("the old Russian inbox is called %q", got)
+	}
+	mine := "Мои авторы"
 	board := boardByID(t, a, id)
+	for _, prop := range board.CardProperties {
+		if prop["type"] == "createdBy" {
+			renamed := map[string]any{}
+			for k, v := range prop {
+				renamed[k] = v
+			}
+			renamed["name"] = mine
+			patch := &model.BoardPatch{UpdatedCardProperties: []map[string]any{renamed}}
+			if _, err := a.PatchBoard(patch, id, model.SingleUser); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+
+	if err := RestoreInboxWords(a); err != nil {
+		t.Fatal(err)
+	}
+	board = boardByID(t, a, id)
 	if board.Title != "Inbox" {
-		t.Errorf("after switching to English the board is %q", board.Title)
+		t.Errorf("the board is %q", board.Title)
 	}
 	if _, ok := viewsByTitle(t, NewWriter(a), id)["Inbox"]; !ok {
-		t.Errorf("after switching to English the view is not «Inbox»")
+		t.Errorf("the view is not Inbox")
 	}
 	names := map[string]bool{}
 	for _, prop := range board.CardProperties {
 		name, _ := prop["name"].(string)
 		names[name] = true
 	}
-	if !names["Author"] || !names["Created"] {
-		t.Errorf("after switching to English the fields are %v", names)
-	}
-
-	mine := "Всё подряд"
-	if _, err := a.PatchBoard(&model.BoardPatch{Title: &mine}, id, model.SingleUser); err != nil {
-		t.Fatal(err)
-	}
-	if err := RelabelInboxBoard(a, "ru"); err != nil {
-		t.Fatal(err)
-	}
-	board = boardByID(t, a, id)
-	if board.Title != mine {
-		t.Errorf("the name the person gave became %q", board.Title)
-	}
-	if _, ok := viewsByTitle(t, NewWriter(a), id)["Входящие"]; !ok {
-		t.Errorf("the view the person did not rename stayed in English")
+	if !names[mine] || !names["Created"] {
+		t.Errorf("the fields are %v", names)
 	}
 }
 
@@ -219,7 +222,7 @@ func TestTheInboxFollowsTheLanguageExceptWhereThePersonRenamedIt(t *testing.T) {
 func TestTheBoardListSaysWhichBoardIsTheInbox(t *testing.T) {
 	a := newTestApp(t)
 	work := boardWithAKanban(t, a)
-	inbox, err := EnsureInboxBoard(a, "ru")
+	inbox, err := EnsureInboxBoard(a)
 	if err != nil {
 		t.Fatal(err)
 	}

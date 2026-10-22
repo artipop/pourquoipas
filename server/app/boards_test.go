@@ -638,7 +638,7 @@ func TestDuplicateBoard(t *testing.T) {
 		// for WS change broadcast
 		th.Store.EXPECT().GetMembersForBoard(gomock.Any()).Return([]*model.BoardMember{}, nil).Times(2)
 
-		bab, members, err := th.App.DuplicateBoard("board_id_1", "user_id_1", "team_id_1", false)
+		bab, members, err := th.App.DuplicateBoard("board_id_1", "user_id_1", "team_id_1", false, "")
 		assert.NoError(t, err)
 		assert.NotNil(t, bab)
 		assert.NotNil(t, members)
@@ -673,7 +673,7 @@ func TestDuplicateBoard(t *testing.T) {
 		// for WS change broadcast
 		th.Store.EXPECT().GetMembersForBoard(gomock.Any()).Return([]*model.BoardMember{}, nil).Times(2)
 
-		bab, members, err := th.App.DuplicateBoard("board_id_1", "user_id_1", "team_id_1", true)
+		bab, members, err := th.App.DuplicateBoard("board_id_1", "user_id_1", "team_id_1", true, "")
 		assert.NoError(t, err)
 		assert.NotNil(t, bab)
 		assert.NotNil(t, members)

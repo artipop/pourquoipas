@@ -385,6 +385,12 @@ func (ibe InvalidBoardErr) Error() string {
 	return ibe.msg
 }
 
+// IsInstallTemplate says whether this is one of the templates the install
+// itself put there: nobody writes to one, and a copy of one is translated.
+func (b *Board) IsInstallTemplate() bool {
+	return b != nil && b.IsTemplate && b.CreatedBy == SystemUserID
+}
+
 func (b *Board) IsValid() error {
 	if b.TeamID == "" {
 		return InvalidBoardErr{"empty-team-id"}

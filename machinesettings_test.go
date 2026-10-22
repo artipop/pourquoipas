@@ -25,7 +25,9 @@ func (s settingsTable) SetSystemSetting(key, value string) error {
 // anOwner runs the install in either build.
 type anOwner struct{}
 
-func (anOwner) GetSession(string) (*model.Session, error) { return &model.Session{UserID: "owner"}, nil }
+func (anOwner) GetSession(string) (*model.Session, error) {
+	return &model.Session{UserID: "owner"}, nil
+}
 
 func (anOwner) HasPermissionTo(string, *model.Permission) bool { return true }
 
@@ -73,49 +75,5 @@ func TestAMachineSettingThatDoesNotExistIsRefused(t *testing.T) {
 	}
 	if len(table) != 0 {
 		t.Errorf("the table got %v", table)
-	}
-}
-
-// The templates follow the language the page shows, and the same answer again
-// — which every launch gives — reinstalls nothing.
-func TestTheTemplatesFollowTheLanguageThePageShows(t *testing.T) {
-	freshMachine(t, settingsTable{})
-	var installed []string
-	app := &App{templatesLanguage: "en", relanguage: func(lang string) error {
-		installed = append(installed, lang)
-		return nil
-	}}
-
-	if err := app.UseLanguage("en"); err != nil {
-		t.Fatal(err)
-	}
-	if len(installed) != 0 {
-		t.Fatalf("the language they were already in reinstalled them: %v", installed)
-	}
-	if err := app.UseLanguage("ru"); err != nil {
-		t.Fatal(err)
-	}
-	if err := app.UseLanguage("ru"); err != nil {
-		t.Fatal(err)
-	}
-	if len(installed) != 1 || installed[0] != "ru" {
-		t.Errorf("installed %v, want once in ru", installed)
-	}
-}
-
-// A launch installs the templates before the page has said anything, so it
-// has to guess what the page is about to say: the owner's pick, else what the
-// page showed last time. Guessing English put them into English and straight
-// back at every launch.
-func TestALaunchInstallsTheTemplatesInTheLanguageThePageWillAskFor(t *testing.T) {
-	freshMachine(t, settingsTable{})
-	if err := (&App{}).UseLanguage("ru"); err != nil {
-		t.Fatal(err)
-	}
-	if got := startupLanguage(""); got != "ru" {
-		t.Errorf("with nothing picked a launch installs %q", got)
-	}
-	if got := startupLanguage("de"); got != "de" {
-		t.Errorf("with de picked a launch installs %q", got)
 	}
 }

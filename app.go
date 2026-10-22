@@ -56,15 +56,6 @@ type App struct {
 	// whenever the release feed could not be configured. Its methods are safe
 	// on a nil receiver, as the attach controller's are.
 	updates *updateController
-	// relanguage puts what the app itself made into a language: the shipped
-	// board templates, and the names on the inbox board. Nil in a test that
-	// does not care. Set in main, where the board server is; an attached
-	// desktop leaves the templates alone there — it works a hosted board and
-	// must not fight the server over them — and still renames its own inbox.
-	relanguage func(lang string) error
-	// templatesLanguage is the language the templates were last put into, so a
-	// page saying the same thing again costs nothing. Guarded by mu.
-	templatesLanguage string
 	// owners says who may change the machine's settings on a server
 	// (identity_server.go); a desktop asks nobody.
 	owners installOwners

@@ -258,12 +258,16 @@ server.
   agrees on are created through the board tools.
 - Templates (`docs/templates.md`): the marker (`TemplateMarkerProperty`) is the
   app's to give, and copies are disowned at launch; which templates are ours is
-  `createdBy`. Files are English and translated on import through
-  `templates/i18n/*.json` keyed by the English string
+  `createdBy`, and nobody may write to one (`Board.IsInstallTemplate`). They
+  are stored in English, once, and **translated where they are read**: the page
+  translates the install's templates and the inbox's own names as they arrive
+  (`appWords.ts`, the catalogue from `App.TemplateWords`), and a board made from
+  a template is translated by Go as it is copied (`TranslateTemplateCopy`,
+  `?lang=` on duplicate) and is the person's data from then on. The catalogue
+  is `templates/i18n/*.json` keyed by the English string
   (`TestEveryTemplateStringIsTranslated`) — every string, with no exemptions.
-  Language is the one the page shows (the owner's pick in `preferences`, else
-  the system's); the page reports it via `UseLanguage` at boot and on a pick,
-  which reinstalls them and renames the inbox (`App.relanguage`).
+  A language switch reinstalls and renames nothing; on a server each person
+  reads in their own.
 - **What an agent is told first is two texts** (`promptLead`,
   `boardprompts.go`): the board's `prompt`, then the agent's own. A third layer
   per (board, agent) was built and removed; do not bring it back.

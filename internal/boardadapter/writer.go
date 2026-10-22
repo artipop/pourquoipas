@@ -389,7 +389,7 @@ func (w *Writer) ensureLinkProperty(ctx context.Context, boardID string) (string
 	propID := utils.NewID(utils.IDTypeBlock)
 	prop := map[string]any{
 		"id":      propID,
-		"name":    namingWords()(boardmodel.LinkPropertyTitle),
+		"name":    boardmodel.LinkPropertyTitle,
 		"type":    "url",
 		"options": []any{},
 	}

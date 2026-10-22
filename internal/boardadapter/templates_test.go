@@ -173,7 +173,7 @@ func TestATemplateCarriesWhatTheBoardStillKeeps(t *testing.T) {
 // build's version, which is what decides when it is replaced.
 func TestTheImporterDecidesWhatATemplateIs(t *testing.T) {
 	board := &model.Board{Type: model.BoardTypePrivate}
-	if !asTemplate(board, TemplateVersion, "ru") {
+	if !asTemplate(board, TemplateVersion) {
 		t.Fatal("the modifier dropped the board")
 	}
 	if !board.IsTemplate || board.Type != model.BoardTypeOpen {
@@ -184,9 +184,6 @@ func TestTheImporterDecidesWhatATemplateIs(t *testing.T) {
 	}
 	if board.CreatedBy != model.SystemUserID {
 		t.Errorf("created by %q: only a board of ours may be replaced on an upgrade", board.CreatedBy)
-	}
-	if templateBoardLanguage(board) != "ru" {
-		t.Errorf("language %q: the copy has to say which one it was translated into", templateBoardLanguage(board))
 	}
 }
 

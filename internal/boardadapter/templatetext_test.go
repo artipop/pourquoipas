@@ -8,6 +8,10 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/artipop/pourquoipas/server/app"
+	"github.com/artipop/pourquoipas/server/mlog"
+	"github.com/artipop/pourquoipas/server/model"
 )
 
 // A template is one set of files and a catalogue of words beside it, so the two
@@ -47,53 +51,90 @@ func TestACatalogueSaysNothingTheTemplatesDoNot(t *testing.T) {
 }
 
 // Everything that is not a word stays exactly as it was — the ids a board's own
-// properties point at, and the millisecond timestamps a decoder is happy to
-// hand back as 1.7e+12.
-func TestTranslatingATemplateKeepsEverythingThatIsNotAWord(t *testing.T) {
-	data, err := readShippedTemplate("templates/developer-tasks.jsonl")
-	if err != nil {
-		t.Fatalf("read the template: %v", err)
+// properties point at, the slug, and the millisecond timestamps a decoder is
+// happy to hand back as 1.7e+12.
+func TestTranslatingACopyKeepsEverythingThatIsNotAWord(t *testing.T) {
+	a, dev := installedDeveloperTemplate(t)
+	bab := copyTemplate(t, a, dev.ID, "ru")
+	board := bab.Boards[0]
+	if board.Properties["branchProperty"] != "abranchfield0000000000000001" {
+		t.Errorf("the board points at %v as its branch property", board.Properties["branchProperty"])
 	}
-	out, err := translateTemplate(data, templateCatalogue("ru"))
-	if err != nil {
-		t.Fatalf("translate: %v", err)
+	if board.Properties["template"] != "developer-tasks" {
+		t.Errorf("the slug became %v", board.Properties["template"])
 	}
-	board := firstBoard(t, out)
-	fields, _ := board["fields"].(map[string]any)
-	props, _ := fields["properties"].(map[string]any)
-	if props["branchProperty"] != "abranchfield0000000000000001" {
-		t.Errorf("the board points at %v as its branch property", props["branchProperty"])
-	}
-	if props["template"] != "developer-tasks" {
-		t.Errorf("the slug became %v", props["template"])
-	}
-	if strings.ContainsAny(string(out), "e+") && strings.Contains(string(out), "e+1") {
-		t.Error("a timestamp came back in exponent form")
-	}
-	if !strings.Contains(string(out), `"arepositoriesfield0000000001"`) {
+	if !hasProperty(board, "arepositoriesfield0000000001") {
 		t.Error("a property id was rewritten")
+	}
+	for _, block := range bab.Blocks {
+		if block.CreateAt < 1e12 {
+			t.Errorf("block %s was created at %d", block.ID, block.CreateAt)
+		}
 	}
 }
 
 // The words a person reads are translated wherever they stand: the board's
 // title, its columns, and the cards that arrive standing in one of them.
-func TestATranslatedBoardSaysTheSameNameInEveryPlace(t *testing.T) {
-	data, err := readShippedTemplate("templates/developer-tasks.jsonl")
-	if err != nil {
-		t.Fatalf("read the template: %v", err)
+func TestATranslatedCopySaysTheSameNameInEveryPlace(t *testing.T) {
+	a, dev := installedDeveloperTemplate(t)
+	board := copyTemplate(t, a, dev.ID, "ru").Boards[0]
+	if board.Title != "Разработка" {
+		t.Errorf("board title %v", board.Title)
 	}
-	out, err := translateTemplate(data, templateCatalogue("ru"))
-	if err != nil {
-		t.Fatalf("translate: %v", err)
-	}
-	board := firstBoard(t, out)
-	if board["title"] != "Разработка" {
-		t.Errorf("board title %v", board["title"])
-	}
-	fields, _ := board["fields"].(map[string]any)
-	if !optionExists(fields, "Статус", "В работе") {
+	if !boardOptionExists(board, "Статус", "В работе") {
 		t.Error("the column property has no «В работе» option")
 	}
+}
+
+// The page translates on display with the same fields the copy is translated
+// by, so it is handed them rather than keeping a list of its own.
+func TestThePageIsHandedTheFieldsAndTheWords(t *testing.T) {
+	cat := TemplateCatalogueFor("ru_RU")
+	if len(cat.Fields) != len(textFields) {
+		t.Errorf("fields %v", cat.Fields)
+	}
+	if cat.Words["Development"] != "Разработка" {
+		t.Errorf("Development is %q", cat.Words["Development"])
+	}
+	if en := TemplateCatalogueFor("en"); en.Words == nil || len(en.Words) != 0 {
+		t.Errorf("English has words %v", en.Words)
+	}
+}
+
+func installedDeveloperTemplate(t *testing.T) (*app.App, *model.Board) {
+	t.Helper()
+	a := newTestApp(t)
+	logger, _ := mlog.NewLogger()
+	if err := ImportTemplates(a, logger); err != nil {
+		t.Fatal(err)
+	}
+	a.SetTemplateText(TranslateTemplateCopy)
+	return a, installedTemplates(t, a)["developer-tasks"]
+}
+
+func hasProperty(board *model.Board, id string) bool {
+	for _, prop := range board.CardProperties {
+		if prop["id"] == id {
+			return true
+		}
+	}
+	return false
+}
+
+func boardOptionExists(board *model.Board, property, value string) bool {
+	for _, prop := range board.CardProperties {
+		if prop["name"] != property {
+			continue
+		}
+		options, _ := prop["options"].([]any)
+		for _, o := range options {
+			opt, _ := o.(map[string]any)
+			if opt["value"] == value {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // A language nobody has translated the templates into is not an error: the
@@ -155,43 +196,6 @@ func catalogues(t *testing.T) map[string]map[string]string {
 		out[strings.TrimSuffix(path.Base(file), ".json")] = cat
 	}
 	return out
-}
-
-func firstBoard(t *testing.T, jsonl []byte) map[string]any {
-	t.Helper()
-	for _, line := range strings.Split(string(jsonl), "\n") {
-		if strings.TrimSpace(line) == "" {
-			continue
-		}
-		var doc map[string]any
-		if err := json.Unmarshal([]byte(line), &doc); err != nil {
-			t.Fatalf("read a line back: %v", err)
-		}
-		data, _ := doc["data"].(map[string]any)
-		if data["type"] == "board" {
-			return data
-		}
-	}
-	t.Fatal("no board in the template")
-	return nil
-}
-
-func optionExists(fields map[string]any, property, value string) bool {
-	list, _ := fields["cardProperties"].([]any)
-	for _, item := range list {
-		prop, _ := item.(map[string]any)
-		if prop["name"] != property {
-			continue
-		}
-		options, _ := prop["options"].([]any)
-		for _, o := range options {
-			opt, _ := o.(map[string]any)
-			if opt["value"] == value {
-				return true
-			}
-		}
-	}
-	return false
 }
 
 func short(s string) string {

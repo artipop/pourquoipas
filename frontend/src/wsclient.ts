@@ -7,6 +7,7 @@ import {OctoUtils} from './octoUtils'
 import {BoardCategoryWebsocketData, Category} from './store/sidebar'
 import {IAppWindow} from './types'
 import {openSocket} from './busSocket'
+import {translateBlocks, translateBoard} from './appWords'
 
 // These are outgoing commands to the server
 type WSCommand = {
@@ -545,7 +546,7 @@ class WSClient {
         // Remove existing queued update
         if (type === 'block') {
             this.updatedData.Blocks = this.updatedData.Blocks.filter((o) => o.id !== (data as Block).id)
-            this.updatedData.Blocks.push(OctoUtils.hydrateBlock(data as Block))
+            this.updatedData.Blocks.push(...translateBlocks([OctoUtils.hydrateBlock(data as Block)]))
         } else if (type === 'category') {
             this.updatedData.Categories = this.updatedData.Categories.filter((c) => c.id !== (data as Category).id)
             this.updatedData.Categories.push(data as Category)
@@ -554,7 +555,7 @@ class WSClient {
             this.updatedData.BoardCategories.push(...(data as BoardCategoryWebsocketData[]))
         } else if (type === 'board') {
             this.updatedData.Boards = this.updatedData.Boards.filter((b) => b.id !== (data as Board).id)
-            this.updatedData.Boards.push(data as Board)
+            this.updatedData.Boards.push(translateBoard(data as Board))
         } else if (type === 'boardMembers') {
             this.updatedData.BoardMembers = this.updatedData.BoardMembers.filter((m) => m.userId !== (data as BoardMember).userId || m.boardId !== (data as BoardMember).boardId)
             this.updatedData.BoardMembers.push(data as BoardMember)

@@ -111,8 +111,7 @@ const BoardTemplateSelector = (props: Props) => {
     }
 
     // Every time it opens, not only when the list is empty: the install's own
-    // templates are replaced whole when the language they are read in changes
-    // (internal/boardadapter/templatetext.go), and the answer this reads was
+    // templates are replaced whole on an upgrade, and the answer this reads was
     // fetched before that. The fetch also prunes what the board list is still
     // holding from before it.
     onSettled(() => {

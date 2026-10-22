@@ -141,8 +141,10 @@ func (a *App) setBoardCategoryFromSource(sourceBoardID, destinationBoardID, user
 	return a.AddUpdateUserCategoryBoard(teamID, userID, destinationCategoryID, []string{destinationBoardID})
 }
 
-func (a *App) DuplicateBoard(boardID, userID, toTeam string, asTemplate bool) (*model.BoardsAndBlocks, []*model.BoardMember, error) {
-	bab, members, err := a.store.DuplicateBoard(boardID, userID, toTeam, asTemplate)
+// DuplicateBoard copies a board. lang is the language the copy is read in, and
+// matters only for the install's own templates, whose copy is translated.
+func (a *App) DuplicateBoard(boardID, userID, toTeam string, asTemplate bool, lang string) (*model.BoardsAndBlocks, []*model.BoardMember, error) {
+	bab, members, err := a.duplicateBoard(boardID, userID, toTeam, asTemplate, lang)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -183,6 +185,50 @@ func (a *App) DuplicateBoard(boardID, userID, toTeam string, asTemplate bool) (*
 	})
 
 	return bab, members, err
+}
+
+func (a *App) duplicateBoard(boardID, userID, toTeam string, asTemplate bool, lang string) (*model.BoardsAndBlocks, []*model.BoardMember, error) {
+	if a.templateText == nil || lang == "" {
+		return a.store.DuplicateBoard(boardID, userID, toTeam, asTemplate)
+	}
+	board, err := a.store.GetBoard(boardID)
+	if err != nil {
+		return nil, nil, err
+	}
+	if !board.IsInstallTemplate() {
+		return a.store.DuplicateBoard(boardID, userID, toTeam, asTemplate)
+	}
+	// The store's copy, with the words translated before anything is written:
+	// translating after it would be a second write of every block, and a
+	// second entry in each card's history by nobody.
+	blocks, err := a.store.GetBlocksForBoard(boardID)
+	if err != nil {
+		return nil, nil, err
+	}
+	if asTemplate {
+		board.Title += " copy"
+	}
+	board.Type = model.BoardTypePrivate
+	board.IsTemplate = asTemplate
+	board.CreatedBy = userID
+	board.ChannelID = ""
+	if toTeam != "" {
+		board.TeamID = toTeam
+	}
+	bab := &model.BoardsAndBlocks{Boards: []*model.Board{board}, Blocks: []*model.Block{}}
+	for _, b := range blocks {
+		if b.Type != model.TypeComment {
+			bab.Blocks = append(bab.Blocks, b)
+		}
+	}
+	if err := a.templateText(bab, lang); err != nil {
+		return nil, nil, fmt.Errorf("translate the copy of template %s: %w", boardID, err)
+	}
+	bab, err = model.GenerateBoardsAndBlocksIDs(bab, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	return a.store.CreateBoardsAndBlocksWithAdmin(bab, userID)
 }
 
 func (a *App) GetBoardsForUserAndTeam(userID, teamID string, includePublicBoards bool) ([]*model.Board, error) {

@@ -9,9 +9,9 @@ export type GlobalTemplatesState = {value: Board[]}
 
 export const initialGlobalTemplatesState = (): GlobalTemplatesState => ({value: []})
 
-// Who the install's own templates are made by. The app replaces them whole —
-// on an upgrade, and when the language they are read in changes — so a copy the
-// page is still holding after that is a board that no longer exists.
+// Who the install's own templates are made by. The app replaces them whole on
+// an upgrade, so a copy the page is still holding after that is a board that no
+// longer exists.
 const SYSTEM_USER = 'system'
 
 export const createGlobalTemplatesActions = ({setState, deps}: StoreContext) => ({
@@ -29,8 +29,8 @@ export const createGlobalTemplatesActions = ({setState, deps}: StoreContext) => 
         // template board is deleted without the page hearing of it: nobody is a
         // member of an open template, so the board's own deletion never reaches
         // this client, while the replacement arrives as a new board on the
-        // team. Reinstalling them in another language drew both languages at
-        // once until somebody reloaded.
+        // team. Reinstalling them drew both copies at once until somebody
+        // reloaded.
         //
         // Only what the install made (`SYSTEM_USER`): somebody's own template
         // lives wherever they made it, and this answer is about one team.

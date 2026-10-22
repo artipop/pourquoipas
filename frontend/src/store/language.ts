@@ -1,14 +1,17 @@
 import {getCurrentLanguage, storeLanguage as i18nStoreLanguage} from '../i18n'
 import {reportWords} from '../goWords'
-import {reportLanguage} from '../userSettings'
+import {loadAppWords} from '../appWords'
 
 import type {StoreContext} from './context'
 
 import type {RootState} from './index'
 
-export type LanguageState = {value: string}
+// rereads counts the language picks that changed the words the app's own
+// boards arrive translated with (appWords.ts): the board page reads them again
+// on each.
+export type LanguageState = {value: string, rereads: number}
 
-export const initialLanguageState = (): LanguageState => ({value: 'en'})
+export const initialLanguageState = (): LanguageState => ({value: 'en', rereads: 0})
 
 export const createLanguageActions = ({setState}: StoreContext) => ({
 
@@ -26,10 +29,20 @@ export const createLanguageActions = ({setState}: StoreContext) => ({
             draft.language.value = lang
         })
         reportWords(lang)
-        reportLanguage(lang)
+        loadAppWords(lang).then((changed) => {
+            if (changed) {
+                setState((draft) => {
+                    draft.language.rereads += 1
+                })
+            }
+        })
     },
 })
 
 export function getLanguage(state: RootState): string {
     return state.language.value
+}
+
+export function getLanguageRereads(state: RootState): number {
+    return state.language.rereads
 }

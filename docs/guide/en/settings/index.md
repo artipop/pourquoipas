@@ -29,10 +29,10 @@ under them. See [Agents, npx and Node.js](./agents.md).
 - **Light or dark** — "Light", "Dark", "As the system is". The app has one look;
   it applies immediately; in full, [Light and dark](./themes.md).
 - **Language** — the list of app languages. When none was ever picked, the
-  system language applies. The board templates come in the app's language:
-  changing the language reinstalls them, so the template picker offers boards
-  whose columns are in the new one. Boards you have already made are
-  left alone — they are yours.
+  system language applies. The board templates are shown in the chosen
+  language. A board made from a template gets its column and field names in
+  the language chosen when it was made, and changing the language does not
+  change it — it is your data.
 - **Help** — "The guide", with an "Open" button: it opens this guide. Below
   it — "Give feedback", with a "Write" button: it opens your mail program
   addressed to `hello@deffun.com`. The address is also printed next to the

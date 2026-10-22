@@ -7,10 +7,18 @@ import (
 	"fmt"
 	"io/fs"
 	"path"
+	"sort"
 	"strings"
+
+	"github.com/artipop/pourquoipas/server/model"
 )
 
-// The templates are written once, in English, and translated on the way in.
+// The templates are written once, in English, and stored that way: the page
+// translates them on display, in the language of whoever is reading, and a
+// board made from one is translated once, as it is copied — from then on it is
+// the person's data and no language switch touches it. Installing them in a
+// language instead made the language the install's: on a server two people
+// reading in two languages reinstalled them for each other at every page load.
 // The alternative was a copy of each board per language, and a copy is a second
 // description of the same template: a column added to one of them is a column
 // missing from the other, and nothing says so until somebody opens the board.
@@ -96,34 +104,70 @@ func translateText(cat map[string]string, s string) string {
 	return s
 }
 
-// translateTemplate rewrites a template's JSONL through the catalogue, line by
-// line as the importer reads it. Untouched — every id, every colour, every
-// timestamp — except the text fields above.
-func translateTemplate(data []byte, cat map[string]string) ([]byte, error) {
-	if cat == nil {
-		return data, nil
+// TranslateTemplateCopy puts a board copied from one of the install's own
+// templates into a language, before it is stored. Each board and block goes
+// through its JSON — the shape the template file has it in — so the fields
+// translated are the ones the catalogue was written against.
+func TranslateTemplateCopy(bab *model.BoardsAndBlocks, lang string) error {
+	cat := templateCatalogue(lang)
+	if cat == nil || bab == nil {
+		return nil
 	}
-	var out bytes.Buffer
-	for _, line := range bytes.Split(data, []byte("\n")) {
-		if len(bytes.TrimSpace(line)) == 0 {
-			continue
+	for _, board := range bab.Boards {
+		if err := translateThrough(board, cat); err != nil {
+			return fmt.Errorf("translate the board: %w", err)
 		}
-		// UseNumber, or a card's createAt — a millisecond timestamp — comes
-		// back out as 1.7e+12 and the board arrives with a broken date.
-		dec := json.NewDecoder(bytes.NewReader(line))
-		dec.UseNumber()
-		var doc any
-		if err := dec.Decode(&doc); err != nil {
-			return nil, fmt.Errorf("read a template line: %w", err)
-		}
-		encoded, err := json.Marshal(translateValue(doc, cat, ""))
-		if err != nil {
-			return nil, fmt.Errorf("write a template line: %w", err)
-		}
-		out.Write(encoded)
-		out.WriteByte('\n')
 	}
-	return out.Bytes(), nil
+	for _, block := range bab.Blocks {
+		if err := translateThrough(block, cat); err != nil {
+			return fmt.Errorf("translate block %s: %w", block.ID, err)
+		}
+	}
+	return nil
+}
+
+func translateThrough(v any, cat map[string]string) error {
+	data, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	// UseNumber, or a card's createAt — a millisecond timestamp — comes back
+	// out as 1.7e+12 and the board arrives with a broken date.
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.UseNumber()
+	var doc any
+	if err := dec.Decode(&doc); err != nil {
+		return err
+	}
+	out, err := json.Marshal(translateValue(doc, cat, ""))
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(out, v)
+}
+
+// TemplateCatalogue is what the page translates the install's own templates
+// and the inbox with on display: the words for one language, and which JSON
+// keys hold words, so the page walks a board the way TranslateTemplateCopy
+// does and the two cannot disagree.
+type TemplateCatalogue struct {
+	Fields []string          `json:"fields"`
+	Words  map[string]string `json:"words"`
+}
+
+// TemplateCatalogueFor is that catalogue; a language nobody has translated the
+// templates into has no words, and the page shows the English.
+func TemplateCatalogueFor(lang string) TemplateCatalogue {
+	fields := make([]string, 0, len(textFields))
+	for k := range textFields {
+		fields = append(fields, k)
+	}
+	sort.Strings(fields)
+	words := templateCatalogue(lang)
+	if words == nil {
+		words = map[string]string{}
+	}
+	return TemplateCatalogue{Fields: fields, Words: words}
 }
 
 // translateValue walks a decoded line. The key a string arrived under travels

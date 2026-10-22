@@ -31,9 +31,8 @@ var machinePreferenceKeys = []string{settingAIEnabled, settingAgentNotifications
 
 type oldUISettings struct {
 	// Language predates Preferences by one release.
-	Language         string            `json:"language"`
-	Preferences      map[string]string `json:"preferences"`
-	ResolvedLanguage string            `json:"resolvedLanguage"`
+	Language    string            `json:"language"`
+	Preferences map[string]string `json:"preferences"`
 }
 
 type userPreferences interface {
@@ -97,11 +96,6 @@ func migrateUISettings(path string, prefs userPreferences) error {
 			if err := machine.set(key, value); err != nil {
 				return err
 			}
-		}
-	}
-	if old.ResolvedLanguage != "" && !machine.has(settingShownLanguage) {
-		if err := machine.set(settingShownLanguage, old.ResolvedLanguage); err != nil {
-			return err
 		}
 	}
 	return os.Remove(path)

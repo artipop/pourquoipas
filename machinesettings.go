@@ -3,12 +3,11 @@ package main
 import (
 	"context"
 	"errors"
-	"log"
 	"strings"
 	"sync"
 
 	"github.com/artipop/pourquoipas/internal/acp"
-	"github.com/artipop/pourquoipas/server/model"
+	"github.com/artipop/pourquoipas/internal/boardadapter"
 )
 
 // What the install decides rather than a person, kept in system_settings: the
@@ -22,7 +21,6 @@ const (
 
 	// The language the page last showed. Not a setting: what the next launch
 	// installs the templates in, or they go into English and straight back.
-	settingShownLanguage = "shownLanguage"
 )
 
 // MachineSettings: every switch is on unless it has been turned off.
@@ -139,70 +137,9 @@ func (a *App) SetMachineSetting(ctx context.Context, key string, on bool) error 
 	return nil
 }
 
-// UseLanguage is the page telling this side which language it is showing,
-// picked or resolved from the webview's locale, which only the page can read.
-// The templates are boards rather than catalogue strings, so they follow it:
-// without this a person who never opened the settings would be offered
-// templates in English.
-//
-// Done before answering, and the page waits for the answer before its first
-// render (main.tsx): a page that has drawn the old boards holds boards that no
-// longer exist, and the template picker drew both languages at once.
-func (a *App) UseLanguage(lang string) error {
-	lang = strings.TrimSpace(lang)
-	if lang == "" || len(lang) > 64 {
-		return nil
-	}
-	if machine.get(settingShownLanguage) != lang {
-		if err := machine.set(settingShownLanguage, lang); err != nil {
-			// Costs the next launch a reinstall, nothing more.
-			log.Printf("language: %v", err)
-		}
-	}
-	a.mu.Lock()
-	was := a.templatesLanguage
-	a.templatesLanguage = lang
-	a.mu.Unlock()
-	if was != lang {
-		a.reinstallTemplates(lang)
-	}
-	return nil
-}
-
-// startupLanguage is what launch installs the templates in, before the page
-// has said anything: the install owner's pick, else what the page showed last.
-func startupLanguage(picked string) string {
-	if picked != "" {
-		return picked
-	}
-	return machine.get(settingShownLanguage)
-}
-
-// reinstallTemplates puts the templates and the inbox into a language, and does
-// the work where it is called from.
-func (a *App) reinstallTemplates(lang string) {
-	if a == nil || a.relanguage == nil {
-		return
-	}
-	if err := a.relanguage(lang); err != nil {
-		log.Printf("language: %v", err)
-	}
-}
-
-// ownerLanguage is the language the install's owner picked. On a desktop that
-// is the single user; a server's has no preferences, and gets the last one
-// shown until templates are translated on display (docs/todo.md).
-func ownerLanguage(prefs interface {
-	GetUserPreferences(userID string) ([]model.Preference, error)
-}) string {
-	have, err := prefs.GetUserPreferences(model.SingleUser)
-	if err != nil {
-		return ""
-	}
-	for _, p := range have {
-		if p.Name == "language" {
-			return p.Value
-		}
-	}
-	return ""
+// TemplateWords is what the page translates the install's own templates and
+// the inbox with on display (internal/boardadapter/templatetext.go): they are
+// stored in English, and each person reads them in their own language.
+func (a *App) TemplateWords(lang string) boardadapter.TemplateCatalogue {
+	return boardadapter.TemplateCatalogueFor(lang)
 }

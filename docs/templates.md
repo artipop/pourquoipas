@@ -118,14 +118,18 @@ in neither list. The rest of Focalboard's
 own defaults are hidden: they carry none of the fields a card names a folder or
 a branch in, so a board made from one has nothing to set up.
 
-**They arrive in the language the app is read in.** The files are written once,
-in English, and translated on the way in from a catalogue of words beside them
-(`internal/boardadapter/templates/i18n/*.json`, `templatetext.go`, and
-[i18n.md](i18n.md) for how to add one): the catalogue is keyed by the very
-string the file carries, so a template is one board rather than a copy per
-language, and a string nobody has translated stays as the file wrote it.
-Switching the language in the settings reinstalls them — the boards a person
-already made are theirs and are untouched. Nothing is exempt from the
+**They are read in each person's language.** The files are written once, in
+English, installed as they are, and translated where they are shown, from a
+catalogue of words beside them (`internal/boardadapter/templates/i18n/*.json`,
+`templatetext.go`, `appWords.ts`, and [i18n.md](i18n.md) for how to add one):
+the catalogue is keyed by the very string the file carries, so a template is
+one board rather than a copy per language, and a string nobody has translated
+stays as the file wrote it. On a server two people see the same template in
+two languages. A board made from one is translated once, as it is copied, into
+the language of the person who made it, and is theirs from then on: switching
+the language changes nothing on it. The templates the install ships cannot be
+edited — they are replaced on an upgrade — and a template of your own starts as
+a board made from one. Nothing is exempt from the
 translation: the three strings that used to be («Исход» and its two values) went
 with the field the engine wrote them into.
 

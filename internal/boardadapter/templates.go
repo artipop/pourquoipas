@@ -69,38 +69,27 @@ func readShippedTemplate(file string) ([]byte, error) {
 // theirs until this number moves, and then it is replaced.
 //
 // What each past bump changed is in the log, not here.
-const TemplateVersion = 21
+const TemplateVersion = 22
 
 // TemplateMarkerProperty is the board property each template carries its slug
 // in. Ids are regenerated on import and titles are the user's to change, so the
 // marker is the only thing that still says "this board came from that file".
 const TemplateMarkerProperty = "template"
 
-// TemplateLanguageProperty is which language the installed copy was translated
-// into (templatetext.go). It is beside the version and does the same job: a
-// person who switches the app to English has templates in Russian, and nothing
-// about the files has changed, so the version alone would leave them there for
-// ever.
-const TemplateLanguageProperty = "templateLanguage"
-
 // ImportTemplates makes the app's own templates exist in the global team, and
-// keeps them at the version this build ships and in the language the app is
-// being read in. It is safe to call on every launch, and on a language change:
-// a template that is already there at the right version and language is left
+// keeps them at the version this build ships. They are stored as the files say
+// them, in English, whoever reads them: the page translates them on display and
+// a board made from one is translated as it is copied (templatetext.go). It is
+// safe to call on every launch: a template already at this version is left
 // alone.
-func ImportTemplates(a *app.App, log mlog.LoggerIFace, lang string) error {
-	if err := importTemplates(a, log, TemplateVersion, lang); err != nil {
-		return err
-	}
-	return nil
+func ImportTemplates(a *app.App, log mlog.LoggerIFace) error {
+	return importTemplates(a, log, TemplateVersion)
 }
 
 // importTemplates takes the version as an argument so a test can install an
 // older set and watch the newer one replace it — the path that only ever runs
 // on an upgrade, and the one that would quietly leave two copies if it broke.
-func importTemplates(a *app.App, log mlog.LoggerIFace, version int, lang string) error {
-	lang = templateLanguage(lang)
-	cat := templateCatalogue(lang)
+func importTemplates(a *app.App, log mlog.LoggerIFace, version int) error {
 	files, err := shippedTemplates()
 	if err != nil {
 		return fmt.Errorf("read the shipped templates: %w", err)
@@ -147,7 +136,7 @@ func importTemplates(a *app.App, log mlog.LoggerIFace, version int, lang string)
 		// is left at the end is what this build no longer ships.
 		delete(installed, slug)
 		if ok {
-			if board.TemplateVersion >= version && templateBoardLanguage(board) == lang {
+			if board.TemplateVersion >= version {
 				continue
 			}
 			// Replaced rather than patched: a template is a whole board, and
@@ -161,11 +150,7 @@ func importTemplates(a *app.App, log mlog.LoggerIFace, version int, lang string)
 		if err != nil {
 			return fmt.Errorf("read %s: %w", file, err)
 		}
-		data, err = translateTemplate(data, cat)
-		if err != nil {
-			return fmt.Errorf("translate %s into %s: %w", file, lang, err)
-		}
-		if _, err := a.ImportBoardJSONL(bytes.NewReader(data), templateImportOptions(version, lang)); err != nil {
+		if _, err := a.ImportBoardJSONL(bytes.NewReader(data), templateImportOptions(version)); err != nil {
 			// One unreadable template must not cost the others: the app is
 			// usable without it, and the log says which one to look at.
 			log.Error("templates: cannot install", mlog.String("template", slug), mlog.Err(err))
@@ -190,12 +175,12 @@ func importTemplates(a *app.App, log mlog.LoggerIFace, version int, lang string)
 	return nil
 }
 
-func templateImportOptions(version int, lang string) model.ImportArchiveOptions {
+func templateImportOptions(version int) model.ImportArchiveOptions {
 	return model.ImportArchiveOptions{
 		TeamID:     model.GlobalTeamID,
 		ModifiedBy: model.SystemUserID,
 		BoardModifier: func(board *model.Board, cache map[string]interface{}) bool {
-			return asTemplate(board, version, lang)
+			return asTemplate(board, version)
 		},
 	}
 }
@@ -203,15 +188,11 @@ func templateImportOptions(version int, lang string) model.ImportArchiveOptions 
 // asTemplate is where a file becomes a template, rather than each file having
 // to say so: open (so it is offered without anybody being a member of it) and
 // stamped with the version that decides when it is replaced.
-func asTemplate(board *model.Board, version int, lang string) bool {
+func asTemplate(board *model.Board, version int) bool {
 	board.IsTemplate = true
 	board.Type = model.BoardTypeOpen
 	board.TemplateVersion = version
 	board.CreatedBy = model.SystemUserID
-	if board.Properties == nil {
-		board.Properties = map[string]any{}
-	}
-	board.Properties[TemplateLanguageProperty] = lang
 	return true
 }
 
@@ -219,7 +200,7 @@ func asTemplate(board *model.Board, version int, lang string) bool {
 // stops being read as one of ours: the picker lists it among the person's own,
 // and the importer stops confusing it with the copy it maintains.
 func disownTemplate(a *app.App, log mlog.LoggerIFace, board *model.Board) {
-	patch := &model.BoardPatch{DeletedProperties: []string{TemplateMarkerProperty, TemplateLanguageProperty}}
+	patch := &model.BoardPatch{DeletedProperties: []string{TemplateMarkerProperty}}
 	if _, err := a.PatchBoard(patch, board.ID, model.SystemUserID); err != nil {
 		log.Warn("templates: cannot take the marker off a template we did not install",
 			mlog.String("board", board.ID), mlog.Err(err))
@@ -227,20 +208,6 @@ func disownTemplate(a *app.App, log mlog.LoggerIFace, board *model.Board) {
 	}
 	log.Info("templates: a saved template no longer claims to be one of ours",
 		mlog.String("board", board.ID), mlog.String("title", board.Title))
-}
-
-// templateBoardLanguage is the language the installed copy was translated into.
-// A copy installed before this existed says nothing, and nothing means the
-// language the files are written in — which is what it was.
-func templateBoardLanguage(board *model.Board) string {
-	if board == nil || board.Properties == nil {
-		return SourceLanguage
-	}
-	lang, _ := board.Properties[TemplateLanguageProperty].(string)
-	if lang == "" {
-		return SourceLanguage
-	}
-	return lang
 }
 
 func templateSlug(board *model.Board) string {

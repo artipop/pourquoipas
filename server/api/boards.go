@@ -499,7 +499,9 @@ func (a *API) handleDuplicateBoard(w http.ResponseWriter, r *http.Request) {
 		mlog.String("boardID", boardID),
 	)
 
-	boardsAndBlocks, _, err := a.app.DuplicateBoard(boardID, userID, toTeam, asTemplate == True)
+	// The language the page is read in: a copy of one of the install's own
+	// templates is translated into it as it is made.
+	boardsAndBlocks, _, err := a.app.DuplicateBoard(boardID, userID, toTeam, asTemplate == True, query.Get("lang"))
 	if err != nil {
 		a.errorResponse(w, r, err)
 		return

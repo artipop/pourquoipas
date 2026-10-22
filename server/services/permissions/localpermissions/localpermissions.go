@@ -84,6 +84,16 @@ func (s *Service) HasPermissionToBoard(userID, boardID string, permission *model
 		return false
 	}
 
+	// The install's own templates are the app's: one is replaced whole on an
+	// upgrade, and is translated on display, so a word written into it would be
+	// shown untranslated to everybody and lost at the next version. A person
+	// changes a board made from one.
+	if permission != model.PermissionViewBoard {
+		if board, err := s.store.GetBoard(boardID); err == nil && board.IsInstallTemplate() {
+			return false
+		}
+	}
+
 	switch member.MinimumRole {
 	case "admin":
 		member.SchemeAdmin = true

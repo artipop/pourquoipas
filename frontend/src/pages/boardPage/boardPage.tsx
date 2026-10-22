@@ -34,6 +34,7 @@ import CloseIcon from '../../widgets/icons/close'
 import {Constants} from '../../constants'
 
 import {getCategoryOfBoard, getHiddenBoardIDs} from '../../store/sidebar'
+import {getLanguageRereads} from '../../store/language'
 
 import SetWindowTitleAndIcon from './setWindowTitleAndIcon'
 import TeamToBoardAndViewRedirect from './teamToBoardAndViewRedirect'
@@ -120,6 +121,20 @@ const BoardPage = (props: Props): JSX.Element => {
         actions.boards.fetchBoardMembers({
             teamId: loaded.teamId,
             boardId: loaded.boardId,
+        })
+    })
+
+    // The boards the app made arrive translated (appWords.ts), so after a
+    // language pick the ones on the page are in the language just left: read
+    // them again.
+    const rereads = useAppSelector(getLanguageRereads)
+    createEffect(rereads, (n) => {
+        if (!n || props.readonly || !me()?.id) {
+            return
+        }
+        actions.load.initialLoad().then(() => {
+            reloadBoard()
+            actions.globalTemplates.fetchGlobalTemplates()
         })
     })
 

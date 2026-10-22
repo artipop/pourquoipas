@@ -612,29 +612,29 @@ translating something no template says any more. Both read the templates **off
 the disk**, because a base build embeds the paid edition's boards nowhere and a
 catalogue covers every edition.
 
-Which language is the language the page shows — the install owner's pick in
-`preferences`, else the system's — so the templates are boards in the language
-the app is read in.
-Switching it reinstalls them (`App.UseLanguage` → `App.relanguage`, set in
-`main.go`), because a
-template is a board rather than a catalogue string and nothing about the files
-changed: only the language recorded on the installed copy
-(`TemplateLanguageProperty`) can say the copy is now in the wrong one. Boards
-somebody already made are untouched — they are theirs. **The page is what
-answers** (`UseLanguage`, at boot and on every pick, `settingsRead.ts`): the
-webview's own locale is a thing only that side can read, and without it
-somebody who never opened the settings would read the app in their language and
-be offered templates in English. It sets no preference — a resolved default is
-not a choice, and a pick would stop the app following the system — but it does
-keep the answer (`shownLanguage` in `system_settings`), because the next launch installs the
-templates before the page can say anything: without it every launch installed
-them in English and the report put them back, two full reinstalls, the second
-inside the call the first render **awaits**. That wait is there because
-everything the page reads before the boards are replaced is stale. The template picker refetches when it opens for
-the same reason, and that fetch prunes what the board list still holds: nobody
-is a member of an open template, so a template board being deleted reaches no
-client, while the replacement arrives as a new board on the team — the picker
-drew both languages at once.
+**The templates are stored in English and translated where they are read.**
+The installed copies are never in any other language, so the language is each
+person's: on a server two people read the same template in two. The page
+translates the install's own templates as they arrive — from the REST client
+and from the socket (`appWords.ts`), with the words and the list of fields Go
+hands it (`App.TemplateWords`), so the walk is the same on both sides. A board
+made from one is translated once, by Go, as it is copied: the page sends its
+language with the duplicate (`?lang=`), `server/app` copies the board itself
+when the source is an install template and passes it through
+`TranslateTemplateCopy` before anything is written. From then on it is the
+person's data, and no language switch touches it — as in Notion, where a
+template is shown in your language and a copy is plain content. **Nobody
+writes to an install template** (`Board.IsInstallTemplate`, refused in
+`localpermissions`): it is replaced whole on an upgrade, and a word written
+into it would be shown untranslated to everybody.
+
+Installing them in the language the page showed was the previous shape, and on
+a server it reinstalled every template at every page load of a person reading
+in another language — and renamed the one inbox for everybody. A switch now
+loads the other catalogue and reads the app's boards again
+(`language.rereads`); nothing is reinstalled. The template picker still
+refetches when it opens, because an upgrade replaces the boards and nobody is a
+member of an open template, so its deletion reaches no client.
 
 Nothing is exempt from that translation any more. Three strings used to be —
 «Исход» and its two values, which the engine matched by title inside English

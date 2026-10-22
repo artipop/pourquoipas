@@ -74,7 +74,7 @@ func currentWords() uiWords {
 }
 
 // UseWords is the page handing over the words Go draws on its behalf, in the
-// language it is showing. Sent at boot beside UseLanguage and again when the
+// language it is showing. Sent at boot and again when the
 // language changes; a field left empty keeps its English default, so a page
 // older than a new word does not blank it.
 func (a *App) UseWords(raw string) error {

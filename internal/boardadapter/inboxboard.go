@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"sync"
-	"sync/atomic"
 
 	"github.com/artipop/pourquoipas/internal/boardmodel"
 	"github.com/artipop/pourquoipas/server/app"
@@ -25,11 +24,13 @@ import (
 // not a key in any language.
 const InboxBoardProperty = "inbox"
 
-// The inbox's words, in the source language like the template files, and
-// translated through the same catalogue (templatetext.go): the board and its
-// one view are called inboxTitle, the two card properties are named by the
-// other two. Nothing finds the board or its fields by these — the board by its
-// mark, the fields by their type — so a translation is only ever a label.
+// The inbox's words, stored in the source language like the template files and
+// translated on display by the page through the same catalogue
+// (templatetext.go): on a server the inbox is one board for everybody, and each
+// reads it in their own language. The board and its one view are called
+// inboxTitle, the two card properties are named by the other two. Nothing finds
+// the board or its fields by these — the board by its mark, the fields by their
+// type — so a translation is only ever a label.
 const (
 	inboxTitle   = "Inbox"
 	inboxAuthor  = "Author"
@@ -38,16 +39,6 @@ const (
 
 // inboxWords is what the inbox says to a person, for the catalogue guard.
 var inboxWords = []string{inboxTitle, inboxAuthor, inboxCreated, boardmodel.LinkPropertyTitle}
-
-// boardLanguage is the language the app gives names in, as main last told
-// EnsureInboxBoard or RelabelInboxBoard. A field made later — the link a source
-// brings — is named in it too.
-var boardLanguage atomic.Value
-
-func namingWords() func(string) string {
-	lang, _ := boardLanguage.Load().(string)
-	return TemplateWords(lang)
-}
 
 // inboxViewType is what the inbox is drawn as: a kanban grouped by who brought
 // the card, so each source is a column — the question a person has of an inbox
@@ -60,24 +51,19 @@ const inboxViewType = "board"
 var inboxBoardMu sync.Mutex
 
 // EnsureInboxBoard returns the inbox board, making it when the board server has
-// none. main calls it at startup with the UI language, so the property names
-// are the person's; a later caller that finds none — the startup call failed —
-// makes it in the source language rather than losing what arrived.
-func EnsureInboxBoard(a *app.App, lang string) (string, error) {
-	if lang != "" {
-		boardLanguage.Store(lang)
-	}
+// none.
+func EnsureInboxBoard(a *app.App) (string, error) {
 	inboxBoardMu.Lock()
 	defer inboxBoardMu.Unlock()
 	if id, ok, err := findInboxBoard(a); err != nil || ok {
 		return id, err
 	}
-	return createInboxBoard(a, TemplateWords(lang))
+	return createInboxBoard(a)
 }
 
 // InboxBoard is the inbox as the sources pipeline asks for it.
 func (w *Writer) InboxBoard(_ context.Context) (string, error) {
-	return EnsureInboxBoard(w.app, "")
+	return EnsureInboxBoard(w.app)
 }
 
 func findInboxBoard(a *app.App) (string, bool, error) {
@@ -106,21 +92,21 @@ func IsInboxBoard(board *model.Board) bool {
 // here is a stage and nothing moves between columns — a card is read, then
 // carried to another board or deleted. What groups it is its author, which for
 // what arrived is the source's account (EnsureSourceUser).
-func createInboxBoard(a *app.App, words func(string) string) (string, error) {
+func createInboxBoard(a *app.App) (string, error) {
 	authorID := utils.NewID(utils.IDTypeBlock)
 	board := &model.Board{
 		TeamID: model.GlobalTeamID,
 		// Open, so that on a hosted server every member of the team sees the
 		// one inbox rather than whoever happened to be the first to need it.
 		Type:  model.BoardTypeOpen,
-		Title: words(inboxTitle),
+		Title: inboxTitle,
 		Icon:  "📥",
 		Properties: map[string]any{
 			InboxBoardProperty: true,
 		},
 		CardProperties: []map[string]any{
-			{"id": authorID, "name": words(inboxAuthor), "type": "createdBy", "options": []any{}},
-			{"id": utils.NewID(utils.IDTypeBlock), "name": words(inboxCreated), "type": "createdTime", "options": []any{}},
+			{"id": authorID, "name": inboxAuthor, "type": "createdBy", "options": []any{}},
+			{"id": utils.NewID(utils.IDTypeBlock), "name": inboxCreated, "type": "createdTime", "options": []any{}},
 		},
 	}
 	created, err := a.CreateBoard(board, model.SingleUser, true)
@@ -134,7 +120,7 @@ func createInboxBoard(a *app.App, words func(string) string) (string, error) {
 		BoardID:  created.ID,
 		ParentID: created.ID,
 		Type:     model.TypeView,
-		Title:    words(inboxTitle),
+		Title:    inboxTitle,
 		Fields: map[string]any{
 			"viewType":  inboxViewType,
 			"groupById": authorID,
@@ -173,14 +159,17 @@ var inboxPropertyWords = map[string]string{
 	"createdTime": inboxCreated,
 }
 
-// RelabelInboxBoard puts the inbox's own names into a language. The inbox is
-// made once, in whatever language the app was read in that day, and unlike a
-// board made from a template it is the app's rather than the person's — so it
-// follows a switch in the settings. What follows is only what still says one of
-// the app's names, in any language a catalogue has: a board, view or field the
-// person renamed keeps their name.
-func RelabelInboxBoard(a *app.App, lang string) error {
-	boardLanguage.Store(lang)
+// RestoreInboxWords puts the inbox's own names back to the words the page
+// translates. An install from before translation on display named the inbox in
+// the language it was read in that day; run at every launch, it finds nothing
+// to do after the first. Only what still says one of the app's names, in any
+// language a catalogue has, is touched: a board, view or field the person
+// renamed keeps their name.
+func RestoreInboxWords(a *app.App) error {
+	return relabelInboxBoard(a, SourceLanguage)
+}
+
+func relabelInboxBoard(a *app.App, lang string) error {
 	inboxBoardMu.Lock()
 	defer inboxBoardMu.Unlock()
 	id, ok, err := findInboxBoard(a)

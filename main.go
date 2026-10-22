@@ -2,8 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -173,8 +171,6 @@ func main() {
 			log.Printf("settings: ui-settings.json not carried over: %v", err)
 		}
 	}
-	language := startupLanguage(ownerLanguage(srv.App()))
-
 	// The templates this app offers are its own (internal/boardadapter/
 	// templates); the server module's are the upstream's examples and carry no
 	// automation. Failing to install them costs the selector its contents, not
@@ -182,30 +178,24 @@ func main() {
 	// Not against a server: the templates on a hosted install are its own, and
 	// this would delete the ones this build does not ship — every attached
 	// desktop fighting over them at every launch.
-	// In the language the app is read in: the boards themselves are one set of
-	// files and the words are a catalogue beside them
+	// In English, whoever reads them: the page translates them on display, and
+	// a board made from one is translated as it is copied
 	// (internal/boardadapter/templatetext.go).
-	installTemplates := func(lang string) error {
-		return boardadapter.ImportTemplates(srv.App(), logger, lang)
-	}
 	if attach.target() == "" {
-		if err := installTemplates(language); err != nil {
+		if err := boardadapter.ImportTemplates(srv.App(), logger); err != nil {
 			log.Printf("templates: %v", err)
 		}
 	}
+	srv.App().SetTemplateText(boardadapter.TranslateTemplateCopy)
 	// The inbox is a board this app makes and keeps, there from the first
 	// launch: it is where everything a source brings lands, and where a person
 	// writes down what they have not decided about yet — so it cannot wait for
-	// the first source. Made here, where the UI language is known, so its field
-	// names are the person's. Failing costs nothing yet: the first arrival makes
-	// it again.
-	if _, err := boardadapter.EnsureInboxBoard(srv.App(), language); err != nil {
+	// the first source. Failing costs nothing yet: the first arrival makes it
+	// again.
+	if _, err := boardadapter.EnsureInboxBoard(srv.App()); err != nil {
 		log.Printf("inbox: %v", err)
 	}
-	// And in the language in force now, not the one it was made in: a board a
-	// source made when the startup call failed is in the source language, and
-	// a system locale may have changed since the last launch.
-	if err := boardadapter.RelabelInboxBoard(srv.App(), language); err != nil {
+	if err := boardadapter.RestoreInboxWords(srv.App()); err != nil {
 		log.Printf("inbox: %v", err)
 	}
 
@@ -256,23 +246,7 @@ func main() {
 
 	emitter := newWailsEmitter(uiEvents)
 	app := NewApp(emitter)
-	app.templatesLanguage = language
 	app.owners = srv.App()
-	// The templates and the inbox follow the language they are read in, and a
-	// person changes that while the app runs — so the switch says nothing about
-	// a restart and the picker is right the next time it is opened
-	// (UseLanguage).
-	app.relanguage = func(lang string) error {
-		var errs []error
-		if attach.target() == "" {
-			errs = append(errs, installTemplates(lang))
-		}
-		if err := boardadapter.RelabelInboxBoard(srv.App(), lang); err != nil {
-			errs = append(errs, fmt.Errorf("inbox: %w", err))
-		}
-		return errors.Join(errs...)
-	}
-
 	// The board as the page at /m reads it. Set here rather than beside the
 	// sources registry because a phone lists boards and cards whether or not
 	// this machine has a source or an agent.

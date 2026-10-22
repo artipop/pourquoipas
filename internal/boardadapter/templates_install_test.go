@@ -93,7 +93,7 @@ func TestTemplatesAreInstalledOnceAndStayThere(t *testing.T) {
 	a := newTestApp(t)
 	logger, _ := mlog.NewLogger()
 
-	if err := ImportTemplates(a, logger, SourceLanguage); err != nil {
+	if err := ImportTemplates(a, logger); err != nil {
 		t.Fatalf("first launch: %v", err)
 	}
 	first := installedTemplates(t, a)
@@ -123,7 +123,7 @@ func TestTemplatesAreInstalledOnceAndStayThere(t *testing.T) {
 	// A second launch must find them and leave them alone — including their
 	// ids, since a board somebody made from one keeps no link to it but the
 	// registry's routes are filed under the board they were taken from.
-	if err := ImportTemplates(a, logger, SourceLanguage); err != nil {
+	if err := ImportTemplates(a, logger); err != nil {
 		t.Fatalf("second launch: %v", err)
 	}
 	for slug, board := range installedTemplates(t, a) {
@@ -133,43 +133,45 @@ func TestTemplatesAreInstalledOnceAndStayThere(t *testing.T) {
 	}
 }
 
-// A person switches the app to Russian, and the templates are boards rather
-// than catalogue strings: nothing about the files changed, so only the language
-// recorded on the installed copy can say they are now in the wrong one.
-func TestChangingTheLanguageReinstallsTheTemplates(t *testing.T) {
+// The templates are stored once, in English, and a board made from one is in
+// the language of whoever made it. The language was the install's when they
+// were installed in it, and on a server two people reading in two languages
+// reinstalled them for each other at every page load.
+func TestABoardMadeFromATemplateIsInTheLanguageOfWhoMadeIt(t *testing.T) {
 	a := newTestApp(t)
 	logger, _ := mlog.NewLogger()
-	if err := ImportTemplates(a, logger, SourceLanguage); err != nil {
+	if err := ImportTemplates(a, logger); err != nil {
 		t.Fatal(err)
 	}
-	before := installedTemplates(t, a)
-	if title := before["developer-tasks"].Title; title != "Development" {
-		t.Fatalf("installed as %q", title)
+	a.SetTemplateText(TranslateTemplateCopy)
+	dev := installedTemplates(t, a)["developer-tasks"]
+
+	ru := copyTemplate(t, a, dev.ID, "ru")
+	if ru.Boards[0].Title != "Разработка" {
+		t.Errorf("the Russian copy is called %q", ru.Boards[0].Title)
+	}
+	en := copyTemplate(t, a, dev.ID, "en")
+	if en.Boards[0].Title != "Development" {
+		t.Errorf("the English copy is called %q", en.Boards[0].Title)
 	}
 
-	if err := ImportTemplates(a, logger, "ru"); err != nil {
-		t.Fatal(err)
+	// And the template itself is what it was: the same board, still English.
+	again := installedTemplates(t, a)["developer-tasks"]
+	if again.ID != dev.ID || again.Title != "Development" {
+		t.Errorf("the template became %q (%s), was %q (%s)", again.Title, again.ID, dev.Title, dev.ID)
 	}
-	after := installedTemplates(t, a) // fails the test if any slug is there twice
-	if len(after) != len(before) {
-		t.Fatalf("%d templates installed, expected %d", len(after), len(before))
-	}
-	dev := after["developer-tasks"]
-	if dev.Title != "Разработка" {
-		t.Errorf("the Russian copy is called %q", dev.Title)
-	}
-	if templateBoardLanguage(dev) != "ru" {
-		t.Errorf("it says it is in %q", templateBoardLanguage(dev))
-	}
+}
 
-	// And a second launch in the same language leaves them alone, or every
-	// start would delete and recreate five boards.
-	if err := ImportTemplates(a, logger, "ru"); err != nil {
-		t.Fatal(err)
+func copyTemplate(t *testing.T, a *app.App, templateID, lang string) *model.BoardsAndBlocks {
+	t.Helper()
+	bab, _, err := a.DuplicateBoard(templateID, model.SingleUser, model.GlobalTeamID, false, lang)
+	if err != nil {
+		t.Fatalf("copy the template into %s: %v", lang, err)
 	}
-	if again := installedTemplates(t, a)["developer-tasks"]; again.ID != dev.ID {
-		t.Error("the Russian copy was reinstalled on the next launch")
+	if len(bab.Boards) != 1 || bab.Boards[0].IsTemplate {
+		t.Fatalf("the copy is %+v", bab.Boards)
 	}
+	return bab
 }
 
 // The upgrade path: an edited template reaches an install that already has the
@@ -178,12 +180,12 @@ func TestChangingTheLanguageReinstallsTheTemplates(t *testing.T) {
 func TestABumpedVersionReplacesTheInstalledCopy(t *testing.T) {
 	a := newTestApp(t)
 	logger, _ := mlog.NewLogger()
-	if err := importTemplates(a, logger, 1, SourceLanguage); err != nil {
+	if err := importTemplates(a, logger, 1); err != nil {
 		t.Fatal(err)
 	}
 	before := installedTemplates(t, a)
 
-	if err := importTemplates(a, logger, 2, SourceLanguage); err != nil {
+	if err := importTemplates(a, logger, 2); err != nil {
 		t.Fatal(err)
 	}
 	after := installedTemplates(t, a) // fails the test if any slug is there twice
@@ -205,7 +207,7 @@ func TestABumpedVersionReplacesTheInstalledCopy(t *testing.T) {
 func TestAnInstalledTemplateKeepsItsCardsAndRecords(t *testing.T) {
 	a := newTestApp(t)
 	logger, _ := mlog.NewLogger()
-	if err := ImportTemplates(a, logger, SourceLanguage); err != nil {
+	if err := ImportTemplates(a, logger); err != nil {
 		t.Fatal(err)
 	}
 
@@ -241,7 +243,7 @@ func TestAnInstalledTemplateKeepsItsCardsAndRecords(t *testing.T) {
 func TestATemplateSomebodySavedStopsClaimingToBeOurs(t *testing.T) {
 	a := newTestApp(t)
 	logger, _ := mlog.NewLogger()
-	if err := ImportTemplates(a, logger, SourceLanguage); err != nil {
+	if err := ImportTemplates(a, logger); err != nil {
 		t.Fatal(err)
 	}
 	ours := installedTemplates(t, a)["developer-tasks"]
@@ -264,7 +266,7 @@ func TestATemplateSomebodySavedStopsClaimingToBeOurs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := ImportTemplates(a, logger, SourceLanguage); err != nil {
+	if err := ImportTemplates(a, logger); err != nil {
 		t.Fatal(err)
 	}
 
@@ -293,7 +295,7 @@ func TestATemplateSomebodySavedStopsClaimingToBeOurs(t *testing.T) {
 func TestATemplateThisBuildNoLongerShipsIsRemoved(t *testing.T) {
 	a := newTestApp(t)
 	logger, _ := mlog.NewLogger()
-	if err := ImportTemplates(a, logger, SourceLanguage); err != nil {
+	if err := ImportTemplates(a, logger); err != nil {
 		t.Fatal(err)
 	}
 
@@ -316,7 +318,7 @@ func TestATemplateThisBuildNoLongerShipsIsRemoved(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := ImportTemplates(a, logger, SourceLanguage); err != nil {
+	if err := ImportTemplates(a, logger); err != nil {
 		t.Fatal(err)
 	}
 

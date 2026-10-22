@@ -107,6 +107,21 @@ func TestHasPermissionToBoard(t *testing.T) {
 		assert.False(t, hasPermission)
 	})
 
+	// The install's own templates are replaced on an upgrade and translated on
+	// display, so a write to one would be lost and shown to everybody in the
+	// language it was typed in. Even the board's admin only reads it.
+	t.Run("install template", func(t *testing.T) {
+		member := &model.BoardMember{UserID: "user-id", BoardID: "template-id", SchemeAdmin: true}
+		th.store.EXPECT().GetMemberForBoard(member.BoardID, member.UserID).Return(member, nil).AnyTimes()
+		th.store.EXPECT().GetBoard(member.BoardID).
+			Return(&model.Board{ID: member.BoardID, IsTemplate: true, CreatedBy: model.SystemUserID}, nil).AnyTimes()
+
+		assert.True(t, th.permissions.HasPermissionToBoard(member.UserID, member.BoardID, model.PermissionViewBoard))
+		for _, p := range []*model.Permission{model.PermissionManageBoardCards, model.PermissionManageBoardProperties, model.PermissionDeleteBoard} {
+			assert.False(t, th.permissions.HasPermissionToBoard(member.UserID, member.BoardID, p), p.Id)
+		}
+	})
+
 	t.Run("board admin", func(t *testing.T) {
 		member := &model.BoardMember{
 			UserID:      "user-id",

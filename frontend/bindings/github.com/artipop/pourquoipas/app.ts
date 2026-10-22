@@ -16,6 +16,10 @@ import { Call as $Call, CancellablePromise as $CancellablePromise } from "@wails
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
+import * as boardadapter$0 from "./internal/boardadapter/models.js";
+
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore: Unused imports
 import * as $models from "./models.js";
 
 /**
@@ -780,6 +784,15 @@ export function SyncAgentUsers(boardID: string): $CancellablePromise<string> {
 }
 
 /**
+ * TemplateWords is what the page translates the install's own templates and
+ * the inbox with on display (internal/boardadapter/templatetext.go): they are
+ * stored in English, and each person reads them in their own language.
+ */
+export function TemplateWords(lang: string): $CancellablePromise<boardadapter$0.TemplateCatalogue> {
+    return $Call.ByID(2770964244, lang);
+}
+
+/**
  * UpdateAgent replaces an existing agent (matched by name) from a JSON-encoded
  * AgentEntry and returns the saved entry as JSON.
  */
@@ -813,23 +826,8 @@ export function UpdateSource(entryJSON: string): $CancellablePromise<string> {
 }
 
 /**
- * UseLanguage is the page telling this side which language it is showing,
- * picked or resolved from the webview's locale, which only the page can read.
- * The templates are boards rather than catalogue strings, so they follow it:
- * without this a person who never opened the settings would be offered
- * templates in English.
- * 
- * Done before answering, and the page waits for the answer before its first
- * render (main.tsx): a page that has drawn the old boards holds boards that no
- * longer exist, and the template picker drew both languages at once.
- */
-export function UseLanguage(lang: string): $CancellablePromise<void> {
-    return $Call.ByID(517287990, lang);
-}
-
-/**
  * UseWords is the page handing over the words Go draws on its behalf, in the
- * language it is showing. Sent at boot beside UseLanguage and again when the
+ * language it is showing. Sent at boot and again when the
  * language changes; a field left empty keeps its English default, so a page
  * older than a new word does not blank it.
  */
