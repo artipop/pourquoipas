@@ -200,11 +200,16 @@ export function attentionHeading(intl: Formatter, target: Attention): string {
 // Whether being told about it at all is wanted. The indicator on a card is
 // always there — it is part of the card — but a notification interrupts, so it
 // is a setting, and one the notifications have to see change without a reload.
-const [notificationsOn, setNotificationsOn] = createSignal(UserSettings.agentNotifications)
+// Read through rather than taken at import, which is before the settings are
+// read (settingsRead.ts); the signal only tells tracked readers to ask again.
+const [notificationsChanged, setNotificationsChanged] = createSignal(0)
 
-export const agentNotificationsOn: Accessor<boolean> = notificationsOn
+export const agentNotificationsOn: Accessor<boolean> = () => {
+    notificationsChanged()
+    return UserSettings.agentNotifications
+}
 
 export function setAgentNotifications(on: boolean): void {
     UserSettings.agentNotifications = on
-    setNotificationsOn(on)
+    setNotificationsChanged((n) => n + 1)
 }

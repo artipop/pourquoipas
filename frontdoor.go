@@ -156,6 +156,6 @@ func requireSession(next http.Handler, valid func(string) bool) http.Handler {
 			http.Error(w, "not logged in", http.StatusUnauthorized)
 			return
 		}
-		next.ServeHTTP(w, r)
+		next.ServeHTTP(w, r.WithContext(withSessionToken(r.Context(), cookie.Value)))
 	})
 }

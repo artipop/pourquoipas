@@ -43,9 +43,9 @@ export function getMessages(lang: string): Messages {
     return loaded.get(fileOf(lang)) ?? en
 }
 
-// getCurrentLanguage reads what the person picked — hydrated from the
-// install's own memory before the first render (hydrateUserSettings in
-// main.tsx) — else the OS language the webview reports, else English.
+// getCurrentLanguage reads what the person picked — read before the first
+// render (settingsRead.ts) — else the OS language the webview reports, else
+// English.
 export function getCurrentLanguage(): string {
     let lang = UserSettings.language
     if (!lang) {
@@ -60,8 +60,7 @@ export function getCurrentLanguage(): string {
     return lang
 }
 
-// storeLanguage goes through UserSettings, which also tells the install —
-// the browser's copy alone would be gone with the next desktop launch.
+// storeLanguage goes through UserSettings, which keeps it with the person.
 export function storeLanguage(lang: string): void {
     UserSettings.language = lang
     loadMessages(lang)

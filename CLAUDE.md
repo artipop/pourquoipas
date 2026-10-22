@@ -261,9 +261,9 @@ server.
   `createdBy`. Files are English and translated on import through
   `templates/i18n/*.json` keyed by the English string
   (`TestEveryTemplateStringIsTranslated`) — every string, with no exemptions.
-  Language is `ui-settings.json`; switching reinstalls them and renames the
-  inbox (`App.relanguage`); the page reports the system locale via
-  `UseLanguage` and awaits it before the first render.
+  Language is the one the page shows (the owner's pick in `preferences`, else
+  the system's); the page reports it via `UseLanguage` at boot and on a pick,
+  which reinstalls them and renames the inbox (`App.relanguage`).
 - **What an agent is told first is two texts** (`promptLead`,
   `boardprompts.go`): the board's `prompt`, then the agent's own. A third layer
   per (board, agent) was built and removed; do not bring it back.
@@ -274,9 +274,11 @@ server.
 - **A setting lives where its owner is**: machine settings in
   `settings/appSettingsDialog.tsx`; deploy targets, agents and proxies are
   machine registries offered from a board's ⋯ menu on its setup plan; UI prefs
-  are kept by the install in `<dataDir>/ui-settings.json` (`installKept` in
-  `userSettings.ts`), hydrated before first paint; a desktop page holds
-  them and the session in memory, never in the browser (`pageStorage.ts`).
+  are the person's, in `preferences` via `/users/me/config`; the install's
+  switches (`aiEnabled`, `agentNotifications`, `prefillCardFolder`) are
+  `system_settings` via bindings (`machinesettings.go`). Both are read before
+  first paint and after a login (`settingsRead.ts`); a desktop page holds the
+  session in memory, never in the browser (`session.ts`).
 - **A theme is a Mattermost theme config** (`frontend/src/theme/`,
   `docs/themes.md`), shipped as pairs (light/dark) with `themeMode` choosing the
   half; `_tokens.scss` is the first paint and a test holds it equal to the

@@ -11,6 +11,7 @@ import {getLoggedIn} from '../store/users'
 
 import Button from '../widgets/buttons/button'
 import client from '../octoClient'
+import {readSettings} from '../settingsRead'
 import './registerPage.scss'
 
 const RegisterPage = () => {
@@ -31,7 +32,8 @@ const RegisterPage = () => {
         if (response.code === 200) {
             const logged = await client.login(username(), password())
             if (logged) {
-                await actions.users.fetchMe()
+                await Promise.all([actions.users.fetchMe(), readSettings()])
+                actions.language.fetchLanguage()
                 navigate('/')
             }
         } else if (response.code === 401) {

@@ -32,7 +32,9 @@ CREATE TABLE `teams` (`id` varchar NOT NULL, `signup_token` varchar NOT NULL, `s
 -- A logged-in session. Its token is what proxy.go hands the page.
 CREATE TABLE `sessions` (`id` varchar NOT NULL, `token` varchar NULL, `user_id` varchar NULL, `props` text NULL, `create_at` bigint NULL, `update_at` bigint NULL, `auth_service` varchar NULL, PRIMARY KEY (`id`));
 
--- Key and value, for the handful of things the server records about itself.
+-- Key and value, for the handful of things the server records about itself —
+-- among them the install's switches: whether it runs agents, and whether it
+-- says so when one waits (machinesettings.go).
 CREATE TABLE `system_settings` (`id` varchar NOT NULL, `value` text NULL, PRIMARY KEY (`id`));
 
 -- A board.
@@ -121,9 +123,9 @@ CREATE TABLE `sharing` (`id` varchar NOT NULL, `enabled` boolean NULL, `token` v
 --     every other id column already holds.
 CREATE TABLE `file_info` (`id` varchar NOT NULL, `create_at` bigint NOT NULL, `delete_at` bigint NULL, `name` text NOT NULL, `extension` varchar NOT NULL, `size` bigint NOT NULL, `archived` boolean NULL, `path` varchar NULL);
 
--- What a person chose, per category and name. Not where this app keeps
--- the page's own settings — those are <dataDir>/ui-settings.json, because
--- the desktop window opens on a fresh origin every launch.
+-- What a person chose, per category and name — the page's settings
+-- among them (theme, language, the last board), so on a server everybody
+-- has their own. The machine's switches are system_settings.
 CREATE TABLE `preferences` (`userid` varchar NOT NULL, `category` varchar NOT NULL, `name` varchar NOT NULL, `value` text NULL, PRIMARY KEY (`userid`, `category`, `name`));
 
 CREATE INDEX `idx_preferences_category` ON `preferences` (`category`);
@@ -163,7 +165,9 @@ CREATE TABLE `teams` (`id` varchar(36) NOT NULL, `signup_token` varchar(100) NOT
 -- A logged-in session. Its token is what proxy.go hands the page.
 CREATE TABLE `sessions` (`id` varchar(100) NOT NULL, `token` varchar(100) NULL, `user_id` varchar(100) NULL, `props` text NULL, `create_at` bigint NULL, `update_at` bigint NULL, `auth_service` varchar(20) NULL, PRIMARY KEY (`id`)) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
 
--- Key and value, for the handful of things the server records about itself.
+-- Key and value, for the handful of things the server records about itself —
+-- among them the install's switches: whether it runs agents, and whether it
+-- says so when one waits (machinesettings.go).
 CREATE TABLE `system_settings` (`id` varchar(100) NOT NULL, `value` text NULL, PRIMARY KEY (`id`)) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
 
 -- A board.
@@ -236,9 +240,9 @@ CREATE TABLE `sharing` (`id` varchar(36) NOT NULL, `enabled` bool NULL, `token` 
 --     every other id column already holds.
 CREATE TABLE `file_info` (`id` varchar(36) NOT NULL, `create_at` bigint NOT NULL, `delete_at` bigint NULL, `name` text NOT NULL, `extension` varchar(50) NOT NULL, `size` bigint NOT NULL, `archived` bool NULL, `path` varchar(512) NULL) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
 
--- What a person chose, per category and name. Not where this app keeps
--- the page's own settings — those are <dataDir>/ui-settings.json, because
--- the desktop window opens on a fresh origin every launch.
+-- What a person chose, per category and name — the page's settings
+-- among them (theme, language, the last board), so on a server everybody
+-- has their own. The machine's switches are system_settings.
 CREATE TABLE `preferences` (`userid` varchar(36) NOT NULL, `category` varchar(32) NOT NULL, `name` varchar(32) NOT NULL, `value` text NULL, PRIMARY KEY (`userid`, `category`, `name`), INDEX `idx_preferences_category` (`category`), INDEX `idx_preferences_name` (`name`)) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
 
 -- Who is watching a block, for the notification service.
@@ -272,7 +276,9 @@ CREATE TABLE "teams" ("id" character varying(36) NOT NULL, "signup_token" charac
 -- A logged-in session. Its token is what proxy.go hands the page.
 CREATE TABLE "sessions" ("id" character varying(100) NOT NULL, "token" character varying(100) NULL, "user_id" character varying(100) NULL, "props" text NULL, "create_at" bigint NULL, "update_at" bigint NULL, "auth_service" character varying(20) NULL, PRIMARY KEY ("id"));
 
--- Key and value, for the handful of things the server records about itself.
+-- Key and value, for the handful of things the server records about itself —
+-- among them the install's switches: whether it runs agents, and whether it
+-- says so when one waits (machinesettings.go).
 CREATE TABLE "system_settings" ("id" character varying(100) NOT NULL, "value" text NULL, PRIMARY KEY ("id"));
 
 -- A board.
@@ -392,19 +398,19 @@ CREATE TABLE "sharing" ("id" character varying(36) NOT NULL, "enabled" boolean N
 --     every other id column already holds.
 CREATE TABLE "file_info" ("id" character varying(36) NOT NULL, "create_at" bigint NOT NULL, "delete_at" bigint NULL, "name" text NOT NULL, "extension" character varying(50) NOT NULL, "size" bigint NOT NULL, "archived" boolean NULL, "path" character varying(512) NULL);
 
--- What a person chose, per category and name. Not where this app keeps
--- the page's own settings — those are <dataDir>/ui-settings.json, because
--- the desktop window opens on a fresh origin every launch.
+-- What a person chose, per category and name — the page's settings
+-- among them (theme, language, the last board), so on a server everybody
+-- has their own. The machine's switches are system_settings.
 CREATE TABLE "preferences" ("userid" character varying(36) NOT NULL, "category" character varying(32) NOT NULL, "name" character varying(32) NOT NULL, "value" text NULL, PRIMARY KEY ("userid", "category", "name"));
 
--- What a person chose, per category and name. Not where this app keeps
--- the page's own settings — those are <dataDir>/ui-settings.json, because
--- the desktop window opens on a fresh origin every launch.
+-- What a person chose, per category and name — the page's settings
+-- among them (theme, language, the last board), so on a server everybody
+-- has their own. The machine's switches are system_settings.
 CREATE INDEX "idx_preferences_category" ON "preferences" ("category");
 
--- What a person chose, per category and name. Not where this app keeps
--- the page's own settings — those are <dataDir>/ui-settings.json, because
--- the desktop window opens on a fresh origin every launch.
+-- What a person chose, per category and name — the page's settings
+-- among them (theme, language, the last board), so on a server everybody
+-- has their own. The machine's switches are system_settings.
 CREATE INDEX "idx_preferences_name" ON "preferences" ("name");
 
 -- Who is watching a block, for the notification service.

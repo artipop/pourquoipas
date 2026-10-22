@@ -2296,6 +2296,12 @@ func TestPermissionsUpdateUserConfig(t *testing.T) {
 		{"/users/{USER_TEAM_MEMBER_ID}/config", methodPut, patch, userEditor, http.StatusForbidden, 0},
 		{"/users/{USER_TEAM_MEMBER_ID}/config", methodPut, patch, userAdmin, http.StatusForbidden, 0},
 		{"/users/{USER_TEAM_MEMBER_ID}/config", methodPut, patch, userGuest, http.StatusForbidden, 0},
+		// "me" is whoever asks, so everybody signed in may write their own.
+		{"/users/me/config", methodPut, patch, userAnon, http.StatusUnauthorized, 0},
+		{"/users/me/config", methodPut, patch, userNoTeamMember, http.StatusOK, 1},
+		{"/users/me/config", methodPut, patch, userViewer, http.StatusOK, 1},
+		{"/users/me/config", methodPut, patch, userAdmin, http.StatusOK, 1},
+		{"/users/me/config", methodPut, patch, userGuest, http.StatusOK, 1},
 	}
 	t.Run("local", func(t *testing.T) {
 		th := SetupTestHelperLocalMode(t)

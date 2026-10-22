@@ -163,6 +163,18 @@ func main() {
 	}
 	srv := brd.srv
 
+	// The settings live in the board's database, so they are read once it is
+	// open (machinesettings.go); a desktop's old file is carried over first.
+	if err := machine.use(srv.Store()); err != nil {
+		log.Printf("settings: %v", err)
+	}
+	if path, err := oldUISettingsPath(); err == nil && path != "" {
+		if err := migrateUISettings(path, srv.App()); err != nil {
+			log.Printf("settings: ui-settings.json not carried over: %v", err)
+		}
+	}
+	language := startupLanguage(ownerLanguage(srv.App()))
+
 	// The templates this app offers are its own (internal/boardadapter/
 	// templates); the server module's are the upstream's examples and carry no
 	// automation. Failing to install them costs the selector its contents, not
@@ -177,7 +189,7 @@ func main() {
 		return boardadapter.ImportTemplates(srv.App(), logger, lang)
 	}
 	if attach.target() == "" {
-		if err := installTemplates(uiLanguage()); err != nil {
+		if err := installTemplates(language); err != nil {
 			log.Printf("templates: %v", err)
 		}
 	}
@@ -187,13 +199,13 @@ func main() {
 	// the first source. Made here, where the UI language is known, so its field
 	// names are the person's. Failing costs nothing yet: the first arrival makes
 	// it again.
-	if _, err := boardadapter.EnsureInboxBoard(srv.App(), uiLanguage()); err != nil {
+	if _, err := boardadapter.EnsureInboxBoard(srv.App(), language); err != nil {
 		log.Printf("inbox: %v", err)
 	}
 	// And in the language in force now, not the one it was made in: a board a
 	// source made when the startup call failed is in the source language, and
 	// a system locale may have changed since the last launch.
-	if err := boardadapter.RelabelInboxBoard(srv.App(), uiLanguage()); err != nil {
+	if err := boardadapter.RelabelInboxBoard(srv.App(), language); err != nil {
 		log.Printf("inbox: %v", err)
 	}
 
@@ -244,10 +256,12 @@ func main() {
 
 	emitter := newWailsEmitter(uiEvents)
 	app := NewApp(emitter)
+	app.templatesLanguage = language
+	app.owners = srv.App()
 	// The templates and the inbox follow the language they are read in, and a
 	// person changes that while the app runs — so the switch says nothing about
 	// a restart and the picker is right the next time it is opened
-	// (uisettings.go).
+	// (UseLanguage).
 	app.relanguage = func(lang string) error {
 		var errs []error
 		if attach.target() == "" {

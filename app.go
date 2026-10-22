@@ -62,6 +62,12 @@ type App struct {
 	// desktop leaves the templates alone there — it works a hosted board and
 	// must not fight the server over them — and still renames its own inbox.
 	relanguage func(lang string) error
+	// templatesLanguage is the language the templates were last put into, so a
+	// page saying the same thing again costs nothing. Guarded by mu.
+	templatesLanguage string
+	// owners says who may change the machine's settings on a server
+	// (identity_server.go); a desktop asks nobody.
+	owners installOwners
 }
 
 func NewApp(emitter *wailsEmitter) *App {

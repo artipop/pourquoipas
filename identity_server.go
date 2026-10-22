@@ -2,6 +2,12 @@
 
 package main
 
+import (
+	"context"
+
+	"github.com/artipop/pourquoipas/server/model"
+)
+
 // localSessionToken is empty here: no single-user token, so /login and
 // /register are open and every request carries a real session.
 func localSessionToken() string { return "" }
@@ -13,3 +19,16 @@ func newSessionGuard(src sessionSource) func(string) bool { return boardSessionG
 // attachableBuild: a hosted server does not attach to another one — its front
 // door guards on its own sessions and the page would carry somebody else's.
 const attachableBuild = false
+
+// ownsTheInstall: on a server, whoever administers it.
+func ownsTheInstall(ctx context.Context, owners installOwners) bool {
+	token := sessionTokenOf(ctx)
+	if owners == nil || token == "" {
+		return false
+	}
+	session, err := owners.GetSession(token)
+	if err != nil || session == nil {
+		return false
+	}
+	return owners.HasPermissionTo(session.UserID, model.PermissionManageSystem)
+}

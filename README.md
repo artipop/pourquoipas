@@ -235,8 +235,8 @@ There is deliberately **no `window.webSocketBaseURL`** here, unlike v2:
   не настроена»* until every question that board asks has an answer, and
   *«Пройти настройку заново…»* in the ⋯ menu is the way back in.
   Having been offered it is remembered in the store, not in the page: a desktop page
-  keeps no data in the browser (`pageStorage.ts`), so anything it has to
-  remember between runs is asked of Go.
+  keeps no data in the browser (`session.ts`, `userSettings.ts`), so anything
+  it has to remember between runs is kept by the board server.
 - **What starts an agent** is a card being moved into a column while it is
   assigned to one. Nothing else: a column is an ordinary option of the board's
   status field, and there is no registry saying what any of them does. The agent

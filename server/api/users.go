@@ -367,6 +367,11 @@ func (a *API) handleUpdateUserConfig(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	session := ctx.Value(sessionContextKey).(*model.Session)
 
+	// The page writes its settings before it has asked who it is.
+	if userID == "me" {
+		userID = session.UserID
+	}
+
 	// a user can update only own config
 	if userID != session.UserID {
 		a.errorResponse(w, r, model.NewErrForbidden(""))

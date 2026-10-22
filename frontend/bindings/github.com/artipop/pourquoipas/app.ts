@@ -14,6 +14,10 @@
 // @ts-ignore: Unused imports
 import { Call as $Call, CancellablePromise as $CancellablePromise } from "@wailsio/runtime";
 
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore: Unused imports
+import * as $models from "./models.js";
+
 /**
  * AckAttention says a person has seen this wait, so it stops being announced.
  * The wait itself stands — the card keeps its mark until the agent is answered
@@ -234,6 +238,14 @@ export function GetLocalAddress(): $CancellablePromise<string> {
 }
 
 /**
+ * GetMachineSettings is what the page reads before its first render, beside
+ * the person's own settings.
+ */
+export function GetMachineSettings(): $CancellablePromise<$models.MachineSettings> {
+    return $Call.ByID(902925153);
+}
+
+/**
  * GetPlanningPrompt returns the instructions a planning conversation opens
  * with, falling back to the default when the config has none.
  */
@@ -250,14 +262,6 @@ export function GetPlanningPrompt(): $CancellablePromise<string> {
  */
 export function GetServerAttachment(): $CancellablePromise<string> {
     return $Call.ByID(3132960977);
-}
-
-/**
- * GetUIPreferences returns everything the install keeps for its UI, as a JSON
- * object of key → value. Empty object when nothing was ever picked.
- */
-export function GetUIPreferences(): $CancellablePromise<string> {
-    return $Call.ByID(3902885277);
 }
 
 /**
@@ -653,6 +657,15 @@ export function SetInboxSorting(settingsJSON: string): $CancellablePromise<strin
 }
 
 /**
+ * SetMachineSetting turns one switch. Whoever runs the install may: on a
+ * desktop that is the one person there, on a server an administrator
+ * (ownsTheInstall).
+ */
+export function SetMachineSetting(key: string, on: boolean): $CancellablePromise<void> {
+    return $Call.ByID(3885037380, key, on);
+}
+
+/**
  * SetPlanningPrompt stores the instructions a planning conversation opens with.
  */
 export function SetPlanningPrompt(text: string): $CancellablePromise<void> {
@@ -669,16 +682,6 @@ export function SetPlanningPrompt(text: string): $CancellablePromise<void> {
  */
 export function SetSourceCredential(name: string, token: string): $CancellablePromise<void> {
     return $Call.ByID(1063668987, name, token);
-}
-
-/**
- * SetUIPreference remembers one preference; an empty value forgets it. The
- * page sends only the keys it deliberately keeps with the install
- * (userSettings.ts names them); the caps below are a backstop, not a schema —
- * a runaway value must not grow the settings file without bound.
- */
-export function SetUIPreference(key: string, value: string): $CancellablePromise<void> {
-    return $Call.ByID(1256765968, key, value);
 }
 
 /**
@@ -811,14 +814,14 @@ export function UpdateSource(entryJSON: string): $CancellablePromise<string> {
 
 /**
  * UseLanguage is the page telling this side which language it is showing,
- * whether or not anybody picked it. It exists because the templates are boards
- * rather than catalogue strings: without it a person who never opened the
- * settings would read the app in their own language and be offered templates
- * in English.
+ * picked or resolved from the webview's locale, which only the page can read.
+ * The templates are boards rather than catalogue strings, so they follow it:
+ * without this a person who never opened the settings would be offered
+ * templates in English.
  * 
- * It sets no preference — a resolved default is not a choice, and a pick would
- * stop the app following the system. What it does keep is the answer itself,
- * as ResolvedLanguage, so that the next launch starts in it (uiLanguage).
+ * Done before answering, and the page waits for the answer before its first
+ * render (main.tsx): a page that has drawn the old boards holds boards that no
+ * longer exist, and the template picker drew both languages at once.
  */
 export function UseLanguage(lang: string): $CancellablePromise<void> {
     return $Call.ByID(517287990, lang);

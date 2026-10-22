@@ -262,7 +262,16 @@ export function loadTheme(): ThemeName {
     return activeFamilyId
 }
 
+// initThemes applies the stored theme, and follows the system's polarity from
+// the first call on. Called again when whose settings these are changes.
+let followingSystem = false
+
 export function initThemes(): void {
+    if (followingSystem) {
+        loadTheme()
+        return
+    }
+    followingSystem = true
     const darkThemeMq = window.matchMedia('(prefers-color-scheme: dark)')
     const changeHandler = () => {
         if (activeMode === 'system') {

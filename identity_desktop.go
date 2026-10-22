@@ -2,7 +2,11 @@
 
 package main
 
-import "github.com/google/uuid"
+import (
+	"context"
+
+	"github.com/google/uuid"
+)
 
 // localSessionToken makes the API synthesize a session for every request and
 // refuse /login. Minted per launch, so one that leaked dies with the process.
@@ -14,3 +18,6 @@ func newSessionGuard(sessionSource) func(string) bool { return nil }
 
 // attachableBuild: a desktop is what attaches.
 const attachableBuild = true
+
+// ownsTheInstall: the one person at a desktop runs it.
+func ownsTheInstall(context.Context, installOwners) bool { return true }

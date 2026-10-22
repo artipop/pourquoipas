@@ -5,6 +5,7 @@ import {useIntl} from '../../intl'
 
 import {Constants} from '../../constants'
 import octoClient from '../../octoClient'
+import {readSettings} from '../../settingsRead'
 import {IUser} from '../../user'
 import AppLogoIcon from '../../widgets/icons/appLogo'
 import Menu from '../../widgets/menu'
@@ -48,6 +49,8 @@ const SidebarUserMenu = () => {
                                     onClick={async () => {
                                         await octoClient.logout()
                                         actions.users.setMe(null)
+                                        await readSettings()
+                                        actions.language.fetchLanguage()
                                         navigate('/login')
                                     }}
                                 />

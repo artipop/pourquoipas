@@ -1,4 +1,4 @@
-import {pageStorage} from './pageStorage'
+import type {IAppWindow} from './types'
 
 // The board session token, kept twice: a header for the board, a cookie for a
 // server build's guard, which can be handed neither a header on a WebSocket
@@ -9,18 +9,43 @@ const TOKEN_KEY = 'boardSessionId'
 // Kept in step with sessionCookie in frontdoor.go.
 const COOKIE = 'boardSession'
 
+// A desktop window holds its session in memory, handed over by the bootstrap
+// on each load: wails:// storage outlives the app's database, and a token
+// left there belongs to a launch that is gone.
+let seeded: Map<string, string> | undefined
+
+function sessionStorageOf(): Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> {
+    const w = window as unknown as IAppWindow
+    if (!w.pageOnWails) {
+        return localStorage
+    }
+    if (!seeded) {
+        seeded = new Map(w.seededSession ? [[TOKEN_KEY, w.seededSession]] : [])
+    }
+    const memory = seeded
+    return {
+        getItem: (key) => memory.get(key) ?? null,
+        setItem: (key, value) => {
+            memory.set(key, value)
+        },
+        removeItem: (key) => {
+            memory.delete(key)
+        },
+    }
+}
+
 export function sessionToken(): string {
-    return pageStorage().getItem(TOKEN_KEY) || ''
+    return sessionStorageOf().getItem(TOKEN_KEY) || ''
 }
 
 // rememberSession stores a token both ways.
 export function rememberSession(token: string): void {
-    pageStorage().setItem(TOKEN_KEY, token)
+    sessionStorageOf().setItem(TOKEN_KEY, token)
     writeCookie(token)
 }
 
 export function forgetSession(): void {
-    pageStorage().removeItem(TOKEN_KEY)
+    sessionStorageOf().removeItem(TOKEN_KEY)
     writeCookie('')
 }
 

@@ -5,7 +5,7 @@ import {TestRouter, mockAppStore, wrapIntl} from './testUtils'
 import {AppStoreProvider} from './store'
 import {fakeGoSide} from './test/goSide'
 import {TestBlockFactory} from './test/testBlockFactory'
-import {UserSettingKey} from './userSettings'
+import {UserSettingKey, UserSettings} from './userSettings'
 import {aiEnabled, setAIEnabled} from './aiSwitch'
 import {isPlanningAvailable} from './components/acp/planningDialog'
 import {NO_SETUP, withoutAgents} from './components/acp/boardSetup'
@@ -15,7 +15,7 @@ import AppPanel from './components/settings/appPanel'
 
 describe('the AI switch', () => {
     afterEach(() => {
-        localStorage.clear()
+        UserSettings.set(UserSettingKey.AIEnabled, null)
         fakeGoSide()
     })
 
@@ -25,22 +25,22 @@ describe('the AI switch', () => {
         expect(aiEnabled()).toBe(true)
     })
 
-    // Off is the install's decision, so it is kept by the install and not by
-    // the browser, whose origin changes every launch.
+    // Off is the install's decision: the agents run on this machine, and a
+    // person signed in elsewhere has no say over them.
     test('switching it off is kept by the install', () => {
-        const SetUIPreference = vi.fn().mockResolvedValue(undefined)
-        fakeGoSide({SetUIPreference})
+        const SetMachineSetting = vi.fn().mockResolvedValue(undefined)
+        fakeGoSide({SetMachineSetting})
 
         setAIEnabled(false)
 
         expect(aiEnabled()).toBe(false)
-        expect(SetUIPreference).toHaveBeenCalledWith(UserSettingKey.AIEnabled, 'false')
+        expect(SetMachineSetting).toHaveBeenCalledWith(UserSettingKey.AIEnabled, false)
     })
 
     // Off, the app is a kanban board: talking a task over with an agent is not
     // offered even though the build has it.
     test('switched off, nothing about agents is offered', () => {
-        fakeGoSide({StartPlanning: vi.fn(), SetUIPreference: vi.fn().mockResolvedValue(undefined)})
+        fakeGoSide({StartPlanning: vi.fn(), SetMachineSetting: vi.fn().mockResolvedValue(undefined)})
         expect(isPlanningAvailable()).toBe(true)
 
         setAIEnabled(false)
@@ -76,7 +76,7 @@ describe('the AI switch', () => {
 
         expect(withoutAgentProperties(board, board.cardProperties).map((t) => t.id)).toEqual([own.id, folder.id, branch.id])
 
-        fakeGoSide({SetUIPreference: vi.fn().mockResolvedValue(undefined)})
+        fakeGoSide({SetMachineSetting: vi.fn().mockResolvedValue(undefined)})
         setAIEnabled(false)
         expect(withoutAgentProperties(board, board.cardProperties).map((t) => t.id)).toEqual([own.id])
 
@@ -87,7 +87,7 @@ describe('the AI switch', () => {
     // The switch is in the app's own settings, and only where the app can run
     // agents at all.
     test('is switched from the app’s settings', () => {
-        fakeGoSide({ListAgents: vi.fn(), SetUIPreference: vi.fn().mockResolvedValue(undefined)})
+        fakeGoSide({ListAgents: vi.fn(), SetMachineSetting: vi.fn().mockResolvedValue(undefined)})
         const {container} = render(() => wrapIntl(() => (
             <AppStoreProvider store={mockAppStore({})}>
                 <TestRouter>

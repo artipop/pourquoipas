@@ -12,6 +12,7 @@ import {getRegistrationOpen} from '../store/clientConfig'
 
 import Button from '../widgets/buttons/button'
 import client from '../octoClient'
+import {readSettings} from '../settingsRead'
 import './loginPage.scss'
 
 const LoginPage = () => {
@@ -33,7 +34,8 @@ const LoginPage = () => {
     const handleLogin = async (): Promise<void> => {
         const logged = await client.login(username(), password())
         if (logged) {
-            await actions.users.fetchMe()
+            await Promise.all([actions.users.fetchMe(), readSettings()])
+            actions.language.fetchLanguage()
             if (queryParams) {
                 navigate(queryParams.get('r') || '/')
             } else {

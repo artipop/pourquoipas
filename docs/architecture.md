@@ -29,8 +29,8 @@ the server and puts its frames on the bus; the page's frames go back as
 `SendSocket`, in order. The agents' events come off the bus too
 (`agentEvents.ts`). The bootstrap says `window.pageOnWails`
 and hands the session over in `window.seededSession`. **A desktop page keeps
-its data out of the browser** (`pageStorage.ts`): the session and the keys the
-install keeps are held in memory and hydrated from Go, because `wails://`
+its data out of the browser**: the session is held in memory (`session.ts`) and
+the settings come from the database (`userSettings.ts`), because `wails://`
 storage outlives the app and its database, and a remembered board that was
 gone opened the error page on a fresh install. What is only the page's own
 (emoji-mart, `randomIcons`) stays in `localStorage`. Two traps of the scheme handler, measured on macOS: WKWebView sends no
@@ -409,7 +409,7 @@ indicator**, like the card's amber button: it interrupts nobody, it is drawn
 while anything is waiting whether or not it has been acknowledged, and it is
 therefore not a setting. **A notification interrupts**, so it is the switch —
 and it is *the switch that already existed*, `agentNotifications`, read out of
-`ui-settings.json` by the Go side (`agentNotificationsEnabled`) rather than
+the install's settings by the Go side (`agentNotificationsEnabled`) rather than
 duplicated, because "tell me when an agent is waiting" is one question and two
 of them would need a rule about which wins. It is also suppressed while any
 window of this app has focus: announcing a wait to somebody who is looking at
@@ -612,19 +612,21 @@ translating something no template says any more. Both read the templates **off
 the disk**, because a base build embeds the paid edition's boards nowhere and a
 catalogue covers every edition.
 
-Which language is `<dataDir>/ui-settings.json` — the same setting the page
-keeps — so the templates are boards in the language the app is read in.
-Switching it reinstalls them (`App.relanguage`, set in `main.go`), because a
+Which language is the language the page shows — the install owner's pick in
+`preferences`, else the system's — so the templates are boards in the language
+the app is read in.
+Switching it reinstalls them (`App.UseLanguage` → `App.relanguage`, set in
+`main.go`), because a
 template is a board rather than a catalogue string and nothing about the files
 changed: only the language recorded on the installed copy
 (`TemplateLanguageProperty`) can say the copy is now in the wrong one. Boards
 somebody already made are untouched — they are theirs. **The page is what
-answers when nobody has picked** (`UseLanguage`, called from `main.tsx`): the
+answers** (`UseLanguage`, at boot and on every pick, `settingsRead.ts`): the
 webview's own locale is a thing only that side can read, and without it
 somebody who never opened the settings would read the app in their language and
 be offered templates in English. It sets no preference — a resolved default is
 not a choice, and a pick would stop the app following the system — but it does
-keep the answer (`resolvedLanguage`), because the next launch installs the
+keep the answer (`shownLanguage` in `system_settings`), because the next launch installs the
 templates before the page can say anything: without it every launch installed
 them in English and the report put them back, two full reinstalls, the second
 inside the call the first render **awaits**. That wait is there because
@@ -681,7 +683,7 @@ it at the gates it already had: every `is…Available()` of `components/acp`
 answers no, the setup plan keeps only the name (`withoutAgents`), nothing
 waits (`useAttention`), the agents' card fields are hidden
 (`withoutAgentProperties` — the folder and the branch) and the assignee field offers people only. Go reads the same key
-(`aiEnabled` in `uisettings.go`) through `Manager.SetSwitchedOff`: a card move
+(`aiEnabled` in `machinesettings.go`) through `Manager.SetSwitchedOff`: a card move
 is dropped before the engine sees it, the folder poll and agent sources stop,
 and `startSession` refuses whatever was already queued. What is running is
 left to finish — the switch means no more, not undo — and nothing is deleted,
@@ -702,16 +704,25 @@ second half of one question rather than a settings section of its own. The
 cosmetics those panels grew inside the settings dialog moved to
 `styles/_settingsPanel.scss`, or the same panel would have two designs.
 
-**What a person picked for the UI is kept by the install**, not by the
-browser: `<dataDir>/ui-settings.json` (`GetUIPreferences`/`SetUIPreference`),
-because a preference is the install's to keep and must not outlive its
-database in the browser. `main.tsx` hydrates the page from it before the first
-render — the theme and the language
-have to be right on the first paint — and `UserSettings.set` writes through;
-`installKept` in `userSettings.ts` names the keys that travel, and the
-session token deliberately is not one of them. On a desktop those keys live only in memory
-(`pageStorage.ts`); in a plain browser there is no Go side, and localStorage
-stays the whole memory there. **The theme and the language are settings like the rest of them**,
+**What a person picked for the UI is the person's**: the theme, the language,
+the last team, board and view, the name format live in the board's
+`preferences` (`/users/me/config`), beside the tour and the hidden boards. On a
+server everybody has their own and takes them from device to device; on a
+desktop the person is `SingleUser`, in the same database as the boards the
+last-board keys point at, so a remembered board cannot belong to another
+database. **What the install decides is the install's**: `aiEnabled`,
+`agentNotifications` and `prefillCardFolder` are `system_settings`, read and
+written through the bindings (`machinesettings.go`), because the agents run on
+the machine and a desktop attached to a server must not switch off somebody
+else's; on a server they are the server's, and only an administrator turns
+them (`ownsTheInstall`). The page reads both before the first render
+(`settingsRead.ts`: the theme and the language have to be right on the first
+paint) and again after a login or a logout, since a server's login page is
+drawn with nobody's; `UserSettings` holds them in memory and writes through.
+Both builds do this the same way. A desktop's old `<dataDir>/ui-settings.json`
+is carried into the database at the first launch and deleted
+(`uisettings_migrate.go`); a server's was one file for everybody and is not
+read. **The theme and the language are settings like the rest of them**,
 and are `settings/appPanel.tsx` with the link to the manual: they spent a while
 in the corner of the board on the grounds that they are changed while looking at
 it, and what that cost was two icon menus and a question mark standing in for
@@ -967,7 +978,7 @@ answer. It writes an ordinary value, visible and clearable, which is what makes
 writing it unasked acceptable; the filter and the group still win, and a board
 grouped by its folder is left alone entirely, or its empty group could never
 take a card. `UserSettings.prefillCardFolder` is the switch, on by default,
-kept by the install like the rest of `installKept`.
+one of the install's own (`machinesettings.go`).
 
 **Where a card's work is has one answer** (`Manager.CardWork`). Two places knew:
 the claim in this app's own database, which knows the whole of it — directory,

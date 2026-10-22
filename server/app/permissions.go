@@ -7,3 +7,7 @@ import (
 func (a *App) HasPermissionToBoard(userID, boardID string, permission *model.Permission) bool {
 	return a.permissions.HasPermissionToBoard(userID, boardID, permission)
 }
+
+func (a *App) HasPermissionTo(userID string, permission *model.Permission) bool {
+	return a.permissions.HasPermissionTo(userID, permission)
+}

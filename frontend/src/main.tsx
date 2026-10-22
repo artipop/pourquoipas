@@ -2,11 +2,8 @@ import {render} from '@solidjs/web'
 
 import App from './app'
 import {installPolyfills} from './polyfills'
-import {initThemes} from './theme'
 import {importNativeAppSettings} from './nativeApp'
-import {hydrateUserSettings, reportLanguage} from './userSettings'
-import {reportWords} from './goWords'
-import {getCurrentLanguage, loadMessages} from './i18n'
+import {readSettings} from './settingsRead'
 
 import {IUser} from './user'
 import {getMe} from './store/users'
@@ -54,26 +51,12 @@ const MainApp = () => {
     )
 }
 
-// The first paint waits for the install's own memory: a desktop window keeps its
-// data out of the browser (pageStorage.ts), and the theme and the language have
-// to be right when the page appears. A build with no Go side resolves it at once.
+// The first paint waits for the settings: the theme and the language have to
+// be right when the page appears.
 async function boot() {
     installGoBridge()
 
-    await hydrateUserSettings()
-    initThemes()
-
-    // Which language this page settled on — the pick, else the webview's own
-    // locale. The Go side cannot read the second one, and it installs the board
-    // templates in a language (internal/boardadapter/templatetext.go). Awaited,
-    // because it can mean those boards are replaced and everything read before
-    // that is stale.
-    await Promise.all([reportLanguage(getCurrentLanguage()), loadMessages(getCurrentLanguage())])
-
-    // And the words Go draws for us — the menu bar, notifications, window
-    // titles — in the same language. Not awaited: nothing on the page waits
-    // for them.
-    reportWords(getCurrentLanguage())
+    await readSettings()
 
     // The store is created here, not in a module singleton, and everything
     // that writes to it from outside the component tree — the Mutator — gets

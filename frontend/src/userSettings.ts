@@ -1,6 +1,8 @@
+import {createSignal} from 'solid-js'
+
 import {goApp} from './goBridge'
 import {notifySettingsChanged} from './nativeApp'
-import {pageStorage} from './pageStorage'
+import octoClient from './octoClient'
 import {Utils} from './utils'
 
 export enum UserSettingKey {
@@ -38,7 +40,7 @@ export enum UserSettingKey {
 
     // Whether the app runs agents at all. Off, it is a kanban board and
     // nothing on screen mentions an agent (aiSwitch.ts); the Go side reads the
-    // same key to stop starting stages (uisettings.go).
+    // same key to stop starting stages (machinesettings.go).
     AIEnabled = 'aiEnabled',
 
     // Whether a card whose agent is waiting for an answer says so out loud.
@@ -49,11 +51,16 @@ export enum UserSettingKey {
     PrefillCardFolder = 'prefillCardFolder'
 }
 
-// The keys the install keeps for itself, in <dataDir>/ui-settings.json on the
-// Go side; a desktop window holds them only in memory (pageStorage.ts). The
-// rest of the enum stays in localStorage on purpose: the emoji-mart keys are the
-// library's own, and welcomePageViewed lives in the user's server-side config.
-const installKept = new Set<string>([
+// A person's settings are theirs, kept in the board's preferences
+// (/users/me/config): on a server everybody has their own and takes them from
+// device to device, and on a desktop they sit in the same database as the
+// boards the last-board keys point at. The machine's switches are the
+// install's (machinesettings.go): a desktop attached to a server must not turn
+// off somebody else's agents. Both are held here in memory, filled before the
+// first render; the rest of the enum is the browser's own and stays in
+// localStorage — the emoji-mart keys are the library's, welcomePageViewed is
+// read off the user's config by the store.
+const personal = new Set<string>([
     UserSettingKey.Language,
     UserSettingKey.Theme,
     UserSettingKey.ThemeMode,
@@ -66,44 +73,101 @@ const installKept = new Set<string>([
     UserSettingKey.LastTeamId,
     UserSettingKey.LastBoardId,
     UserSettingKey.LastViewId,
-    UserSettingKey.MobileWarningClosed,
+])
+
+const ofTheMachine = new Set<string>([
     UserSettingKey.AIEnabled,
     UserSettingKey.AgentNotifications,
     UserSettingKey.PrefillCardFolder,
 ])
 
-function storageFor(key: string) {
-    return installKept.has(key) ? pageStorage() : localStorage
+const kept = new Map<string, string>()
+
+// Ticks when the settings are read afresh — after a login or a logout — so a
+// tracked reader asks again.
+const [hydrated, setHydrated] = createSignal(0)
+
+function keptHere(key: string): boolean {
+    return personal.has(key) || ofTheMachine.has(key)
 }
 
-// hydrateUserSettings fills the page's storage with what the install remembers,
-// before the first render (main.tsx awaits it): the theme and the language
-// have to be right on the first paint, not a correction after it.
-export async function hydrateUserSettings(): Promise<void> {
-    const bindings = goApp()
-    if (!bindings?.GetUIPreferences) {
-        return
+function read(key: string): string | null {
+    if (keptHere(key)) {
+        hydrated()
+        return kept.get(key) ?? null
     }
+    return localStorage.getItem(key)
+}
+
+function put(key: string, value: string | null): void {
+    if (!keptHere(key)) {
+        if (value === null) {
+            localStorage.removeItem(key)
+        } else {
+            localStorage.setItem(key, value)
+        }
+    } else if (value === null) {
+        kept.delete(key)
+    } else {
+        kept.set(key, value)
+    }
+}
+
+// hydrateUserSettings reads both halves before the first render (main.tsx
+// awaits it): the theme and the language have to be right on the first paint.
+// Without a session — a server's login page — the person's half is empty and
+// the defaults stand until the login reads it again.
+export async function hydrateUserSettings(): Promise<void> {
+    const [mine, machine] = await Promise.all([
+        octoClient.getMyConfig().catch(() => undefined),
+        loadMachineSettings(),
+    ])
+    kept.clear()
+    for (const pref of mine ?? []) {
+        if (personal.has(pref.name) && typeof pref.value === 'string') {
+            kept.set(pref.name, pref.value)
+        }
+    }
+    if (machine) {
+        kept.set(UserSettingKey.AIEnabled, String(machine.aiEnabled))
+        kept.set(UserSettingKey.AgentNotifications, String(machine.agentNotifications))
+        kept.set(UserSettingKey.PrefillCardFolder, String(machine.prefillCardFolder))
+    }
+    setHydrated((n) => n + 1)
+}
+
+async function loadMachineSettings() {
     try {
-        // The Wails-generated Go bindings are PascalCase methods.
         // eslint-disable-next-line new-cap
-        const prefs = JSON.parse((await bindings.GetUIPreferences()) || '{}')
-        for (const [key, value] of Object.entries(prefs)) {
-            if (installKept.has(key) && typeof value === 'string') {
-                storageFor(key).setItem(key, value)
-            }
+        return await goApp()?.GetMachineSettings?.()
+    } catch (e) {
+        // Refused — a server's guard before the login — or no Go side: the
+        // switches are on, which is what they are until turned off.
+        return undefined
+    }
+}
+
+// Fire and forget: the switch on screen is made by the write to memory, and a
+// refused write must not undo it.
+function keep(key: string, value: string | null): void {
+    try {
+        if (personal.has(key)) {
+            const patch = value === null ? {deletedFields: [key]} : {updatedFields: {[key]: value}}
+            octoClient.patchUserConfig('me', patch).catch(() => undefined)
+        } else if (ofTheMachine.has(key)) {
+            // eslint-disable-next-line new-cap
+            goApp()?.SetMachineSetting?.(key, value !== 'false')?.catch?.(() => undefined)
         }
     } catch (e) {
-        // A refused read leaves the boot-time guesses in place.
+        // A client that throws on the way out rather than in its promise.
     }
 }
 
-// reportLanguage tells the install which language the page settled on, whether
-// or not anybody picked it: the shipped board templates are boards rather than
-// catalogue strings, so the Go side installs them in a language — and the
-// webview's own locale, which is the answer when nobody picked, is something
-// only this side can read. It stores nothing; a resolved default is not a
-// choice.
+// reportLanguage tells the install which language the page is showing, picked
+// or not: the shipped board templates are boards rather than catalogue
+// strings, so the Go side installs them in a language — and the webview's own
+// locale, which is the answer when nobody picked, is something only this side
+// can read. It stores nothing; a resolved default is not a choice.
 //
 // Awaited before the first render, because the answer can mean five boards are
 // replaced: a page that has already read the old ones holds boards that no
@@ -121,31 +185,15 @@ export async function reportLanguage(lang: string): Promise<void> {
 
 export class UserSettings {
     static get(key: UserSettingKey): string | null {
-        return storageFor(key).getItem(key)
+        return read(key)
     }
 
     static set(key: UserSettingKey, value: string | null): void {
         if (!Object.values(UserSettingKey).includes(key)) {
             return
         }
-        if (value === null) {
-            storageFor(key).removeItem(key)
-        } else {
-            storageFor(key).setItem(key, value)
-        }
-
-        // Write-through: the write above answers this session,
-        // the install remembers for the next one. Fire and forget — a
-        // refused write must not block the switch being made.
-        if (installKept.has(key)) {
-            try {
-                // eslint-disable-next-line new-cap
-                goApp()?.SetUIPreference?.(key, value ?? '')?.catch?.(() => undefined)
-            } catch (e) {
-                // A binding that throws on the way out rather than in its
-                // promise: the install goes without, this session keeps it.
-            }
-        }
+        put(key, value)
+        keep(key, value)
         notifySettingsChanged(key)
     }
 
@@ -279,8 +327,8 @@ export class UserSettings {
         UserSettings.set(UserSettingKey.LastViewId, JSON.stringify(data))
     }
 
-    // On unless it has been turned off, the rule aiEnabled in uisettings.go
-    // states on the other side: an install that has always run agents keeps
+    // On unless it has been turned off, the rule aiEnabled in
+    // machinesettings.go states on the other side: an install that has always run agents keeps
     // running them until somebody says otherwise.
     static get aiEnabled(): boolean {
         return UserSettings.get(UserSettingKey.AIEnabled) !== 'false'
@@ -371,7 +419,7 @@ export function exportUserSettingsBlob(): string {
 
 function exportUserSettings(): string {
     const keys = Object.values(UserSettingKey)
-    const settings = Object.fromEntries(keys.map((key) => [key, storageFor(key).getItem(key)]))
+    const settings = Object.fromEntries(keys.map((key) => [key, read(key)]))
     settings.timestamp = `${Date.now()}`
     return JSON.stringify(settings)
 }
@@ -396,11 +444,7 @@ function importUserSettings(json: string): string[] {
     const importedKeys = []
     for (const [key, value] of Object.entries(settings)) {
         if (Object.values(UserSettingKey).includes(key as UserSettingKey)) {
-            if (value) {
-                storageFor(key).setItem(key, value as string)
-            } else {
-                storageFor(key).removeItem(key)
-            }
+            put(key, value ? value as string : null)
             importedKeys.push(key)
         }
     }

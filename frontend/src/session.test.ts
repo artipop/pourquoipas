@@ -1,4 +1,5 @@
 import {forgetSession, rememberSession, sessionToken} from './session'
+import type {IAppWindow} from './types'
 
 const cookie = (): string => document.cookie
 
@@ -25,5 +26,19 @@ describe('session', () => {
 
         expect(sessionToken()).toBe('')
         expect(cookie()).not.toContain('a-token')
+    })
+
+    // wails:// storage outlives the app: a token left there is from a launch
+    // whose session is gone.
+    it('a desktop window takes its session from the bootstrap, not the browser', () => {
+        localStorage.setItem('boardSessionId', 'stale')
+        const w = window as unknown as IAppWindow
+        w.pageOnWails = true
+        w.seededSession = 'fresh'
+        try {
+            expect(sessionToken()).toBe('fresh')
+        } finally {
+            delete w.pageOnWails
+        }
     })
 })

@@ -155,7 +155,9 @@ func sessions() Table {
 func systemSettings() Table {
 	return Table{
 		Name: "system_settings",
-		Why:  "Key and value, for the handful of things the server records about itself.",
+		Why: "Key and value, for the handful of things the server records about itself —\n" +
+			"among them the install's switches: whether it runs agents, and whether it\n" +
+			"says so when one waits (machinesettings.go).",
 		Columns: []Column{
 			{Name: "id", Type: Name(100), Null: true},
 			{Name: "value", Type: Text(), Null: true},
@@ -410,9 +412,9 @@ func fileInfo() Table {
 func preferences() Table {
 	return Table{
 		Name: "preferences",
-		Why: "What a person chose, per category and name. Not where this app keeps\n" +
-			"the page's own settings — those are <dataDir>/ui-settings.json, because\n" +
-			"the desktop window opens on a fresh origin every launch.",
+		Why: "What a person chose, per category and name — the page's settings\n" +
+			"among them (theme, language, the last board), so on a server everybody\n" +
+			"has their own. The machine's switches are system_settings.",
 		Columns: []Column{
 			{Name: "userid", Type: Name(36)},
 			{Name: "category", Type: Name(32)},

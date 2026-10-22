@@ -41,8 +41,7 @@ const MachineMiscPanel = () => {
     const [feedIssued, setFeedIssued] = createSignal(false)
     const [feedToken, setFeedToken] = createSignal('')
 
-    // Kept by the install rather than by Go: nothing on that side reads it —
-    // the card is made by the page.
+    // The machine's, though only the page reads it: the card is made here.
     const [prefillFolder, setPrefillFolder] = createSignal(UserSettings.prefillCardFolder)
 
     const togglePrefillFolder = (on: boolean) => {
@@ -134,7 +133,7 @@ const MachineMiscPanel = () => {
                     One switch for both places the interruption reaches: the
                     notification the page draws, and — when the app is in the
                     background — the system's own, which the Go side posts and
-                    reads this very setting for (alerts.go, uisettings.go). */}
+                    reads this very setting for (alerts.go, machinesettings.go). */}
                 <Show when={isAgentsAvailable()}>
                     <div class='MachineMiscPanel__setting'>
                         <div class='MachineMiscPanel__fact'>
