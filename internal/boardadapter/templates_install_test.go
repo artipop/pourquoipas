@@ -112,9 +112,7 @@ func TestTemplatesAreInstalledOnceAndStayThere(t *testing.T) {
 		}
 	}
 	sort.Strings(slugs)
-	// What this build ships, rather than a list written here: the paid edition
-	// carries two more boards (internal/edition), and a test naming the three
-	// core ones would fail on it for being right.
+	// What this build ships, rather than a list written here.
 	want := shippedSlugs(t)
 	if strings.Join(slugs, ",") != strings.Join(want, ",") {
 		t.Fatalf("installed %v, expected %v", slugs, want)

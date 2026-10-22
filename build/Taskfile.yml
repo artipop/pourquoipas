@@ -177,7 +177,7 @@ tasks:
       the page built first: frontend/dist is embedded, and the image has no node.
       Pure Go on distroless/static by default.
 
-      Usage: task build:docker [TAG=pourquoipas:latest] [GO_IMAGE=...] [RUNTIME_IMAGE=...] [EDITION=lifetime]
+      Usage: task build:docker [TAG=pourquoipas:latest] [GO_IMAGE=...] [RUNTIME_IMAGE=...]
     deps:
       - task: build:frontend
     cmds:
@@ -185,7 +185,7 @@ tasks:
         docker build
         --build-arg GO_IMAGE={{.GO_IMAGE | default "golang:alpine"}}
         --build-arg RUNTIME_IMAGE={{.RUNTIME_IMAGE | default "gcr.io/distroless/static-debian12"}}
-        --build-arg TAGS=server,production,frontend{{.EDITION_TAG}}
+        --build-arg TAGS=server,production,frontend
         -t {{.TAG | default "pourquoipas:latest"}}
         -f build/docker/Dockerfile.server .
     preconditions:

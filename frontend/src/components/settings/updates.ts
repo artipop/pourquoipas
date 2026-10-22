@@ -33,11 +33,6 @@ export type UpdateState = {
     enabled: boolean
     currentVersion: string
 
-    // Which build this is: 'base' or 'lifetime' (internal/edition on the Go
-    // side). The raw name, because the words a person reads are the panel's —
-    // an unknown one is printed as it came rather than hidden, so a build this
-    // page has never heard of still says what it is.
-    edition?: string
     status: UpdateStatus
     availableVersion?: string
     releaseName?: string

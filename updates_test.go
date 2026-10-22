@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strings"
 	"testing"
-
-	"github.com/artipop/pourquoipas/internal/edition"
 )
 
 // A fresh install looks for updates without being asked. Anything else means a
@@ -87,26 +87,20 @@ func TestABuildWithoutUpdatingSaysSo(t *testing.T) {
 	}
 }
 
-// Two editions are two installers under one app name, so the panel is where
-// what is installed here gets answered — including in a build that cannot update
-// itself, which is still one edition or the other.
-func TestTheUpdateStateNamesTheEdition(t *testing.T) {
-	app := &App{}
-	out, err := app.GetUpdateState()
+// The release workflow reads the feed address and the channel out of this
+// file with sed; a declaration that stops matching publishes nowhere.
+func TestTheReleaseWorkflowCanReadTheFeed(t *testing.T) {
+	src, err := os.ReadFile("updates.go")
 	if err != nil {
-		t.Fatalf("GetUpdateState: %v", err)
+		t.Fatal(err)
 	}
-	var state updateState
-	if err := json.Unmarshal([]byte(out), &state); err != nil {
-		t.Fatalf("decoding: %v", err)
+	for name, want := range map[string]string{"updateManifestURL": updateManifestURL, "updateChannel": updateChannel} {
+		m := regexp.MustCompile(`(?m)^const ` + name + ` = "(.*)"$`).FindSubmatch(src)
+		if m == nil || string(m[1]) != want {
+			t.Errorf("updates.go does not declare %s as `const %s = \"…\"` on one line", name, name)
+		}
 	}
-	if state.Edition != edition.Name {
-		t.Errorf("edition = %q, want %q", state.Edition, edition.Name)
-	}
-	// The raw name, not a word for a person: the page owns the words, and a
-	// Russian label crossing this boundary would be a label nothing could
-	// translate.
-	if state.Edition != edition.Base && state.Edition != edition.Lifetime {
-		t.Errorf("edition = %q, which is neither of the two this repository builds", state.Edition)
+	if !strings.HasPrefix(updateManifestURL, "https://") {
+		t.Errorf("the feed %s is not https, and then the signature is the only thing standing", updateManifestURL)
 	}
 }

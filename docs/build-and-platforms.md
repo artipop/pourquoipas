@@ -15,7 +15,6 @@
 | Docker-образ сервера | `wails3 task build:docker`, `run:docker` |
 | Привязки к Go после правки `App` (сборка делает это сама) | `wails3 task generate:bindings` |
 | Кросс-образ для Linux и macOS | `wails3 task setup:docker` |
-| Платное издание | к любой из них — `EDITION=lifetime` |
 
 `Taskfile.yml` в корне и по `Taskfile.yml` на платформу в `build/`. Makefile
 здесь нет — цели `*-wails3` жили в v2-приложении и не переезжали.
@@ -33,9 +32,6 @@
   никогда не трогает настоящую установку. С общим замком окно из `wails3 dev`
   при запущенном Pourquoi Pas? отдавало запуск ему и молча выходило — в терминале
   оставался только адрес Vite;
-- `lifetime` — платное издание: лишние шаблоны досок и свой фид обновлений.
-  Добавляется через `EDITION=lifetime`, а не руками: `EDITION=base` (по
-  умолчанию) не добавляет тега вовсе. См. [editions.md](editions.md).
 
 ## Кеш сборки
 

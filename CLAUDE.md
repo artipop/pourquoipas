@@ -48,8 +48,7 @@ code builds a headless server (`-tags server`) that serves the board to a browse
   page from Vite (`FRONTEND_DEVSERVER_URL`, `devserver.go`) and injects the
   bootstrap into it as into any page; `/api` and `/ws` stay the board's.
 - `wails3 task build` / `package` (`darwin:package:dmg`, `windows:package`,
-  `linux:package`) / `build:server` / `build:docker`. `EDITION=lifetime` on any
-  of them.
+  `linux:package`) / `build:server` / `build:docker`.
 - **A server's database is the environment's** (`database_server.go`):
   `PP_DB_TYPE` (`sqlite3`, `postgres`, `mysql`) and `PP_DB_DSN`. A desktop
   is always SQLite. On the other two the board runs and the agents and sources
@@ -397,7 +396,8 @@ over HTTP on the front door (`/acp/board/mcp`, `boardapi.go`).
 
 - Provider `endpoint` with a signed manifest checked against the embedded
   `build/updater.key.pub`. **The manifest URL cannot be taken back** — every
-  installed copy asks there; it is `edition.ManifestURL`, per edition.
+  installed copy asks there; it is `updateManifestURL`, one `const` per line
+  because CI reads it with `sed`.
 - `<dataDir>/updates.json` keeps the switch, the skipped version and last check;
   the timer is ours; a poll only checks, never downloads.
 - UI is ours (`updater.WindowNone`): Go re-emits one `acp:update` with the full
@@ -407,13 +407,12 @@ over HTTP on the front door (`/acp/board/mcp`, `boardapi.go`).
   file that states it; `wails3 task version:set` writes them all. Not
   `common:update:build-assets` — it drops the hand-written `CFBundleURLTypes`.
 
-### An edition is a build, not a flag
+### Nothing in the app is paid for
 
-`internal/edition`, `docs/editions.md`: `base` and `lifetime` differ by a build
-tag, **never by anything read at runtime**. Extra templates are a tagged
-`go:embed`; the page is not told which edition it is. A template the build does
-not ship is deleted at startup. Constants in `internal/edition` are one `const`
-per line because CI reads them with `sed`.
+**There is one build**: the `lifetime` edition
+was removed (`docs/deferred.md`, «Платное издание»). A subscription, when there
+is one, is the AI model reached through our key, and nothing else is behind it
+(`docs/web-ai-plan.md`).
 
 ### One database, and the schema is written once
 

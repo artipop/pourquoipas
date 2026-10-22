@@ -152,9 +152,7 @@ func TestAnUntranslatedLanguageLeavesTheTemplatesAlone(t *testing.T) {
 }
 
 // everyTemplateString reads the templates off the disk rather than out of the
-// build: a catalogue is one file for every edition, and a base build embeds the
-// paid edition's boards nowhere. Off the disk both are read whichever build the
-// test runs in.
+// build, so a template added to the directory is checked before it is embedded.
 func everyTemplateString(t *testing.T) []string {
 	t.Helper()
 	var files []string

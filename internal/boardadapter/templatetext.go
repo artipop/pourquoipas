@@ -226,8 +226,7 @@ func withInboxWords(strs []string) []string {
 }
 
 // templateStrings takes the files and the way to read one, because a test reads
-// them off the disk rather than out of the build: a catalogue covers every
-// edition's templates, and a base build embeds only its own.
+// them off the disk rather than out of the build.
 func templateStrings(files []string, read func(string) ([]byte, error)) ([]string, error) {
 	var out []string
 	seen := map[string]bool{}

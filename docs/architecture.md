@@ -646,8 +646,8 @@ is what keeps ids, colours and the slug out of it;
 `TestEveryTemplateStringIsTranslated` fails when a template gains a string a
 catalogue has not got, and its opposite fails when a catalogue keeps
 translating something no template says any more. Both read the templates **off
-the disk**, because a base build embeds the paid edition's boards nowhere and a
-catalogue covers every edition.
+the disk**, so a template added to the directory is checked before it is
+embedded.
 
 **The templates are stored in English and translated where they are read.**
 The installed copies are never in any other language, so the language is each
@@ -1299,18 +1299,15 @@ key authenticates it. `wails3 updater manifest` in CI is the whole publishing
 side.
 
 **The address is the part that cannot be taken back.** `updateManifestURL` is
-`edition.ManifestURL` — `https://updates.deffun.org/stable.json` for the base
-build — a domain of ours rather than a release page on somebody's platform,
+`https://updates.deffun.org/stable.json` — a domain of ours rather than a release page on somebody's platform,
 because every copy already installed asks there and nowhere else: where the
 *files* are kept is a decision that can be revisited every release, and that
 one line cannot. So the manifest sits at one unchanging address and the
-artifact links inside it are absolute per version (`…/v1.1.0/base/…`), which is
+artifact links inside it are absolute per version (`…/v1.1.0/…`), which is
 what lets one never move and the others always. It is also the only place the
 release address is written down — the workflow reads the prefix back out of the
 constant — so the app and the release cannot come to disagree about where a
-release lives. **Which address it is belongs to the edition** (below): one
-manifest names one artifact per platform, so a shared feed would hand a
-lifetime install the base app under the version number it was waiting for.
+release lives; that is why it is one `const` on its own line, read with `sed`.
 
 **What survives a restart.** Nothing, on the framework's side: the download is
 a temp directory the helper deletes, and the version a person skipped is a
@@ -1351,33 +1348,17 @@ the CLI's template and drops the hand-written `CFBundleURLTypes` block the share
 extension is launched through. `docs/release.md` is the release itself;
 `.github/workflows/release.yml` is a tag away from it.
 
-## An edition is a build, not a flag
+## Nothing in the app is paid for
 
-This tree compiles into two products (`internal/edition`, `docs/editions.md`):
-`base`, which everybody gets, and `lifetime`, bought once, whose whole
-difference today is that it embeds more board templates. **Which one a binary
-is, is a build tag and is never read at runtime** — a licence file, an env var
-or a flag makes the difference a thing this process *reads*, and anything read
-can be made to read the other answer, while what the paid edition buys is files
-that are simply not in the base binary. `templates/lifetime/*.jsonl` is a
-second `go:embed` behind the tag (`templates_base.go`, `templates_lifetime.go`)
-joined with the shipped set by `shippedTemplates`; `EDITION=lifetime` on any
-Taskfile target adds the tag; the release workflow's matrix is `edition ×
-platform`.
+There is one build. A `lifetime` edition used to embed two more board templates
+behind a build tag and ask a feed of its own; it was removed before any release
+was cut, and its templates are everybody's (`docs/deferred.md`, «Платное
+издание»). A subscription, when there is one, buys the AI model reached through
+our key and nothing else: every feature works with a CLI agent or a person's
+own key (`docs/web-ai-plan.md`).
 
-**The page is not told, and that is the point.** `VISIBLE_TEMPLATE_SLUGS` names
-every edition's templates, and in a base install the extra slugs match no board
-because no such board was ever imported. A page that knew which edition it was
-would be a page that could be told otherwise.
-
-Editions are also why the release feed moved into `edition.ManifestURL`
-(above), and why the constants there are one `const` per line: CI reads them
-out of the source with `sed`, the same way it reads the version.
-
-The other end of that rule: **a template this build does not ship is deleted at
-startup**, which predates editions (`importTemplates`) and is what makes
-installing base over lifetime take the two extra templates away. Boards made
-from them are the person's and are untouched.
+**A template this build does not ship is deleted at startup**
+(`importTemplates`); boards made from it are the person's and are untouched.
 
 ## One database, and the schema is written once
 

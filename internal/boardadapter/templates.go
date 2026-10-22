@@ -31,36 +31,19 @@ import (
 //go:embed templates/*.jsonl
 var templateFiles embed.FS
 
-// shippedTemplates is every template this build carries: the ones above, which
-// every edition has, and whatever the edition adds (templates_base.go,
-// templates_lifetime.go). Sorted, so the order a fresh install imports them in
-// is the order they are named in rather than the order two embedded
-// filesystems happened to be walked in.
-//
-// The two sets are kept apart on disk and joined here, which is what makes the
-// edition a build tag rather than a runtime check: the base binary has no path
-// to a file it does not contain.
+// shippedTemplates is every template this build carries, sorted, so a fresh
+// install imports them in the order they are named in.
 func shippedTemplates() ([]string, error) {
-	ours, err := fs.Glob(templateFiles, "templates/*.jsonl")
+	files, err := fs.Glob(templateFiles, "templates/*.jsonl")
 	if err != nil {
 		return nil, err
 	}
-	extra, err := fs.Glob(editionTemplateFiles, "templates/*/*.jsonl")
-	if err != nil {
-		return nil, err
-	}
-	files := append(ours, extra...)
 	sort.Strings(files)
 	return files, nil
 }
 
-// readShippedTemplate reads one of them back. Which filesystem a path lives in
-// is the path itself — the edition's are a directory deeper — so nothing else
-// has to carry the answer around.
+// readShippedTemplate reads one of them back.
 func readShippedTemplate(file string) ([]byte, error) {
-	if strings.Count(file, "/") > 1 {
-		return editionTemplateFiles.ReadFile(file)
-	}
 	return templateFiles.ReadFile(file)
 }
 

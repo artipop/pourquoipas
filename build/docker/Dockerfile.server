@@ -25,7 +25,6 @@ ARG RUNTIME_IMAGE=gcr.io/distroless/static-debian12
 # Build stage
 FROM ${GO_IMAGE} AS builder
 # server,production is the release server; frontend embeds frontend/dist.
-# The Taskfile adds the edition's tag (EDITION=lifetime).
 ARG TAGS=server,production,frontend
 
 WORKDIR /app

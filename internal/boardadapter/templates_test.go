@@ -18,9 +18,6 @@ import (
 
 func embeddedTemplates(t *testing.T) []string {
 	t.Helper()
-	// Whatever this build ships, edition and all: a template only the paid
-	// build carries is still JSON nobody compiles, and is exactly as easy to
-	// get wrong.
 	files, err := shippedTemplates()
 	if err != nil {
 		t.Fatal(err)
@@ -31,9 +28,7 @@ func embeddedTemplates(t *testing.T) []string {
 	return files
 }
 
-// shippedSlugs is what this build's templates are called, sorted. Tests about
-// the installer ask it rather than naming the three core boards, because the
-// set is the edition's answer and not a constant (internal/edition).
+// shippedSlugs is what this build's templates are called, sorted.
 func shippedSlugs(t *testing.T) []string {
 	t.Helper()
 	var slugs []string
@@ -44,29 +39,14 @@ func shippedSlugs(t *testing.T) []string {
 	return slugs
 }
 
-// The slug is the file's own name and it is the key an installed template is
-// found under, so two files sharing one — one shipped by every build, one by
-// the paid edition — would be an install where each launch replaces the other.
-// They live in different directories, which is exactly what makes it possible.
-func TestNoTwoTemplatesShareASlug(t *testing.T) {
-	seen := make(map[string]string)
-	for _, file := range embeddedTemplates(t) {
-		slug := strings.TrimSuffix(path.Base(file), ".jsonl")
-		if first, ok := seen[slug]; ok {
-			t.Errorf("%s and %s are both %q", first, file, slug)
-		}
-		seen[slug] = file
-	}
-}
-
-// Every build ships the boards that make the app explain itself, whatever
-// edition it is: the paid one adds templates and takes none away.
-func TestEveryEditionShipsTheCoreBoards(t *testing.T) {
+// There is one build and it ships every template: the two that used to be a
+// paid edition's are everybody's (docs/deferred.md, «Платное издание»).
+func TestEveryTemplateShipsInEveryBuild(t *testing.T) {
 	have := make(map[string]bool)
 	for _, slug := range shippedSlugs(t) {
 		have[slug] = true
 	}
-	for _, slug := range []string{"developer-tasks", "content-making", "home-chores"} {
+	for _, slug := range []string{"developer-tasks", "content-making", "home-chores", "documentation", "research"} {
 		if !have[slug] {
 			t.Errorf("this build does not ship %q", slug)
 		}
