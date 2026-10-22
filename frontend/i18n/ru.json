@@ -1,4 +1,5 @@
 {
+  "AI.agent-made": "На этом ключе заведён агент «{name}»: его можно выбрать в разборе «Входящих» и назначить на карточку. Модель меняется в меню доски, «Агенты…».",
   "AI.base-url": "Адрес (необязательно)",
   "AI.base-url-openai": "Адрес (необязательно) — для любого сервиса с API OpenAI: OpenRouter, локальная модель",
   "AI.checking": "Проверяю ключ…",
@@ -60,7 +61,7 @@
   "Agents.remote-control-name": "Префикс имени сессии в claude.ai (необязательно)",
   "Agents.remove": "Удалить",
   "Agents.save": "Сохранить",
-  "Agents.subtitle": "Кодинг-агенты (Claude, Codex, Antigravity, GitHub Copilot, JetBrains Junie или любой другой ACP-агент) со своим промптом, моделью, командой запуска, окружением и прокси. Карточка попадает к тому агенту, на которого назначена.",
+  "Agents.subtitle": "Агенты двух видов: CLI на этой машине (Claude, Codex, Antigravity, GitHub Copilot, JetBrains Junie или любой другой ACP-агент) и модель по ключу API, к которой приложение обращается с вашим ключом из «Настройки → ИИ». Карточку работает тот агент, на которого она назначена.",
   "Attachment.Attachment-title": "Вложение",
   "AttachmentBlock.DeleteAction": "Удалить",
   "AttachmentBlock.addElement": "добавить {type}",

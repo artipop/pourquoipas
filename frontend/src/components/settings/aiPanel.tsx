@@ -9,6 +9,8 @@ import {aiEnabled, setAIEnabled} from '../../aiSwitch'
 import {goApp} from '../../goBridge'
 import {goError} from '../../goMessages'
 import {createLoader} from '../../hooks/loader'
+import AgentsPanel from '../acp/agentsPanel'
+import {providerName} from '../acp/modelProviders'
 
 import './appPanel.scss'
 import './aiPanel.scss'
@@ -24,23 +26,13 @@ type Provider = {
     id: string
     keySet: boolean
     fromEnv?: boolean
+    keyHint?: string
     baseUrl?: string
     defaultModel?: string
 }
 
 export function isAIPanelAvailable(): boolean {
     return Boolean(goApp()?.ListAgents)
-}
-
-export const providerName = (id: string): string => {
-    switch (id) {
-    case 'anthropic':
-        return 'Anthropic (Claude)'
-    case 'openai':
-        return 'OpenAI'
-    default:
-        return id
-    }
 }
 
 const ProviderRow = (props: {provider: Provider, onChanged: () => void}) => {
@@ -52,6 +44,10 @@ const ProviderRow = (props: {provider: Provider, onChanged: () => void}) => {
     const [error, setError] = createSignal('')
     const [saved, setSaved] = createSignal(false)
 
+    // The agent the key made, if it made one: a key on its own is not
+    // something anything can pick.
+    const [madeAgent, setMadeAgent] = createSignal('')
+
     const save = async () => {
         if (!bindings?.SetAIProviderKey) {
             return
@@ -60,8 +56,9 @@ const ProviderRow = (props: {provider: Provider, onChanged: () => void}) => {
         setError('')
         setSaved(false)
         try {
-            await bindings.SetAIProviderKey(props.provider.id, key().trim(), baseUrl().trim())
+            const result = await bindings.SetAIProviderKey(props.provider.id, key().trim(), baseUrl().trim())
             setKey('')
+            setMadeAgent(result?.agent || '')
             setSaved(true)
             props.onChanged()
         } catch (e) {
@@ -95,6 +92,9 @@ const ProviderRow = (props: {provider: Provider, onChanged: () => void}) => {
                 <span class='AppPanel__actionName'>{providerName(props.provider.id)}</span>
                 <span class={`AIPanel__state${props.provider.keySet ? ' AIPanel__state--set' : ''}`}>
                     {props.provider.keySet ? intl.formatMessage({id: 'AI.key-set', defaultMessage: 'Key is set'}) : intl.formatMessage({id: 'AI.key-unset', defaultMessage: 'No key'})}
+                    <Show when={props.provider.keyHint}>
+                        {' '}<code class='AIPanel__hint'>{props.provider.keyHint}</code>
+                    </Show>
                 </span>
             </div>
             <Show
@@ -148,6 +148,14 @@ const ProviderRow = (props: {provider: Provider, onChanged: () => void}) => {
                     </Show>
                 </div>
             </Show>
+            <Show when={saved() && madeAgent()}>
+                <span class='AppPanel__actionHint'>
+                    {intl.formatMessage(
+                        {id: 'AI.agent-made', defaultMessage: 'The agent «{name}» is made on this key: it can be chosen in the inbox sorting and assigned to a card. Its model is changed in the board menu, «Agents…».'},
+                        {name: madeAgent()},
+                    )}
+                </span>
+            </Show>
             <Show when={error()}>
                 <div class='AppPanel__customError'>{error()}</div>
             </Show>
@@ -158,6 +166,10 @@ const ProviderRow = (props: {provider: Provider, onChanged: () => void}) => {
 const AIPanel = () => {
     const intl = useIntl()
     const bindings = goApp()
+
+    // The agent list is drawn again when a key is saved: the first key of a
+    // provider makes an agent, and the list should show it.
+    const [agentsDrawn, setAgentsDrawn] = createSignal(0)
     const [providers, reload] = createLoader(async (): Promise<Provider[]> => {
         if (!bindings?.AIProviders) {
             return []
@@ -208,9 +220,24 @@ const AIPanel = () => {
                         {(provider) => (
                             <ProviderRow
                                 provider={provider}
-                                onChanged={reload}
+                                onChanged={() => {
+                                    reload()
+                                    setAgentsDrawn((n) => n + 1)
+                                }}
                             />
                         )}
+                    </For>
+                </section>
+
+                {/* Every agent this person has, of both kinds — a CLI on this
+                    machine and a model by key. The same editor the board's ⋯
+                    menu opens; here it is reachable with no board open. */}
+                <section class='AppPanel__group'>
+                    <h4 class='AppPanel__groupTitle'>
+                        {intl.formatMessage({id: 'Machine.section-agents', defaultMessage: 'Agents'})}
+                    </h4>
+                    <For each={[agentsDrawn()]}>
+                        {() => <AgentsPanel/>}
                     </For>
                 </section>
             </Show>

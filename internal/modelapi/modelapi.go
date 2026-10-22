@@ -45,6 +45,34 @@ func DefaultModel(provider string) string {
 	}
 }
 
+// SuggestModel picks the model a new agent of the provider starts on, out of
+// what the provider listed for the key: the default where it is listed, else
+// the first of a few well-known names, else the first listed. A person changes
+// it in the agent's form; this only has to be a model that exists.
+func SuggestModel(provider string, models []Model) string {
+	has := func(id string) bool {
+		for _, m := range models {
+			if m.ID == id {
+				return true
+			}
+		}
+		return false
+	}
+	preferred := []string{DefaultModel(provider)}
+	if provider == ProviderOpenAI {
+		preferred = append(preferred, "gpt-5", "gpt-5-mini", "gpt-4.1", "gpt-4o")
+	}
+	for _, id := range preferred {
+		if id != "" && has(id) {
+			return id
+		}
+	}
+	if len(models) > 0 {
+		return models[0].ID
+	}
+	return DefaultModel(provider)
+}
+
 // Connection is where requests go and what opens the door.
 type Connection struct {
 	Provider string

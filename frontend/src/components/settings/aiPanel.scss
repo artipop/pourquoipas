@@ -20,6 +20,10 @@
         color: rgba(var(--center-channel-color-rgb), 0.64);
     }
 
+    .AIPanel__hint {
+        font-family: var(--font-mono);
+    }
+
     .AIPanel__state--set {
         color: rgb(var(--online-indicator-rgb));
     }

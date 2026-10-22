@@ -12,9 +12,10 @@ import {goApp} from '../../goBridge'
 import {aiEnabled} from '../../aiSwitch'
 import {isHosted} from '../../buildKind'
 import {createLoader} from '../../hooks/loader'
-import {providerName} from '../settings/aiPanel'
 
 import {GoMessage, goError, goMessage} from '../../goMessages'
+
+import {MODEL_PROVIDERS, providerName} from './modelProviders'
 
 import {ProxyEntry} from './proxiesPanel'
 import PromptField from './promptField'
@@ -153,8 +154,6 @@ export const AGENT_KINDS = [
 // MODEL_KIND is an agent that is no program at all: a model reached over its
 // provider's API with the person's key, the loop run by the Go side.
 export const MODEL_KIND = 'model'
-
-export const MODEL_PROVIDERS = ['anthropic', 'openai']
 
 // agentKindOptions is what the kind field offers: on a hosted server there is
 // no machine to run a CLI on, so only a model.
@@ -529,6 +528,16 @@ const AgentsPanel = () => {
 
     const updateForm = (patch: Partial<AgentEntry>) => setForm((f) => (f ? {...f, ...patch} : f))
 
+    // What an agent is, in the list: the kind's own name, and for a model the
+    // provider and the model it runs on.
+    const kindLabel = (agent: AgentEntry): string => {
+        if (agent.kind === MODEL_KIND) {
+            const model = intl.formatMessage({id: 'Agents.kind-model', defaultMessage: 'Model by API key'})
+            return [model, providerName(agent.provider || ''), agent.model].filter(Boolean).join(' · ')
+        }
+        return AGENT_KINDS.find((k) => k.value === agent.kind)?.label || agent.kind
+    }
+
     // The model is asked for by the field above, so it is not asked for twice.
     const tunableOptions = () => agentOptions().filter((o) => o.id !== MODEL_OPTION_ID)
     const modelOption = () => agentOptions().find((o) => o.id === MODEL_OPTION_ID)
@@ -542,7 +551,7 @@ const AgentsPanel = () => {
     return (
         <div class='AgentsPanel'>
             <div class='AgentsPanel__subtitle'>
-                {intl.formatMessage({id: 'Agents.subtitle', defaultMessage: 'Register coding agents (Claude, Codex, Antigravity, GitHub Copilot, JetBrains Junie or any other ACP agent) with their own prompt, model, launch command, environment and proxy. A card goes to the agent it is assigned to.'})}
+                {intl.formatMessage({id: 'Agents.subtitle', defaultMessage: 'Agents of two kinds: a CLI on this machine (Claude, Codex, Antigravity, GitHub Copilot, JetBrains Junie or any other ACP agent) and a model by API key, reached with your key from Settings → AI. A card goes to the agent it is assigned to.'})}
             </div>
             <div class='AgentsPanel__content'>
                 <Show when={agents().length === 0 && !form()}>
@@ -557,7 +566,7 @@ const AgentsPanel = () => {
                             class='AgentsPanel__row'
                         >
                             <span class='AgentsPanel__name'>{agent.name}</span>
-                            <span class='AgentsPanel__kind'>{agent.kind}</span>
+                            <span class='AgentsPanel__kind'>{kindLabel(agent)}</span>
                             <Button onClick={() => startEdit(agent)}>
                                 {intl.formatMessage({id: 'Agents.edit', defaultMessage: 'Edit'})}
                             </Button>

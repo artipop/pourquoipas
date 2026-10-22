@@ -103,6 +103,19 @@ func (ws *Server) emit(message any) {
 	}
 }
 
+// emitForUser is emit for a message only one user is meant to hear: their
+// categories and the boards filed in them. The sink is a desktop page, whose
+// person is the single user, so another user's message — an agent's account
+// getting its own «Boards» category as it joins a board — is not theirs. Sent
+// anyway, the page filed the board under the agent's category, the board left
+// the sidebar, and the page wrote the move back.
+func (ws *Server) emitForUser(userID string, message any) {
+	if userID != model.SingleUser {
+		return
+	}
+	ws.emit(message)
+}
+
 // RegisterRoutes registers routes.
 func (ws *Server) RegisterRoutes(r *web.Router) {
 	r.HandleFunc("/ws", ws.handleWebSocket)
@@ -600,7 +613,7 @@ func (ws *Server) BroadcastCategoryChange(category model.Category) {
 		TeamID:   category.TeamID,
 		Category: &category,
 	}
-	ws.emit(message)
+	ws.emitForUser(category.UserID, message)
 
 	listener := ws.getListenerForUser(category.TeamID, category.UserID)
 	if listener != nil {
@@ -624,7 +637,7 @@ func (ws *Server) BroadcastCategoryReorder(teamID, userID string, categoryOrder 
 		CategoryOrder: categoryOrder,
 		TeamID:        teamID,
 	}
-	ws.emit(message)
+	ws.emitForUser(userID, message)
 
 	listener := ws.getListenerForUser(teamID, userID)
 	if listener != nil {
@@ -648,7 +661,7 @@ func (ws *Server) BroadcastCategoryBoardsReorder(teamID, userID, categoryID stri
 		BoardOrder: boardOrder,
 		TeamID:     teamID,
 	}
-	ws.emit(message)
+	ws.emitForUser(userID, message)
 
 	listener := ws.getListenerForUser(teamID, userID)
 	if listener != nil {
@@ -672,7 +685,7 @@ func (ws *Server) BroadcastCategoryBoardChange(teamID, userID string, boardCateg
 		TeamID:          teamID,
 		BoardCategories: boardCategories,
 	}
-	ws.emit(message)
+	ws.emitForUser(userID, message)
 
 	listener := ws.getListenerForUser(teamID, userID)
 	if listener != nil {

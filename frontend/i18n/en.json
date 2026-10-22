@@ -1,4 +1,5 @@
 {
+  "AI.agent-made": "The agent «{name}» is made on this key: it can be chosen in the inbox sorting and assigned to a card. Its model is changed in the board menu, «Agents…».",
   "AI.base-url": "Address (optional)",
   "AI.base-url-openai": "Address (optional) — for any service that speaks the OpenAI API: OpenRouter, a local model",
   "AI.checking": "Checking the key…",
@@ -60,7 +61,7 @@
   "Agents.remote-control-name": "Session name prefix in claude.ai (optional)",
   "Agents.remove": "Remove",
   "Agents.save": "Save",
-  "Agents.subtitle": "Register coding agents (Claude, Codex, Antigravity, GitHub Copilot, JetBrains Junie or any other ACP agent) with their own prompt, model, launch command, environment and proxy. A card goes to the agent it is assigned to.",
+  "Agents.subtitle": "Agents of two kinds: a CLI on this machine (Claude, Codex, Antigravity, GitHub Copilot, JetBrains Junie or any other ACP agent) and a model by API key, reached with your key from Settings → AI. A card goes to the agent it is assigned to.",
   "Attachment.Attachment-title": "Attachment",
   "AttachmentBlock.DeleteAction": "delete",
   "AttachmentBlock.addElement": "add {type}",

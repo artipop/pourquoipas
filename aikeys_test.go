@@ -20,7 +20,7 @@ func TestAProvidersKeyIsCheckedStoredAndNeverShown(t *testing.T) {
 	var seenAuth string
 	provider := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		seenAuth = r.Header.Get("Authorization")
-		if seenAuth != "Bearer sk-good" {
+		if seenAuth != "Bearer sk-good-1234" {
 			http.Error(w, `{"error":{"message":"bad key"}}`, http.StatusUnauthorized)
 			return
 		}
@@ -32,10 +32,10 @@ func TestAProvidersKeyIsCheckedStoredAndNeverShown(t *testing.T) {
 	app := &App{aiKeys: newAIKeys(secrets.NewFileStore(filepath.Join(t.TempDir(), "secrets.json")))}
 	ctx := context.Background()
 
-	if err := app.SetAIProviderKey(ctx, modelapi.ProviderOpenAI, "sk-bad", provider.URL+"/v1"); err == nil {
+	if _, err := app.SetAIProviderKey(ctx, modelapi.ProviderOpenAI, "sk-bad", provider.URL+"/v1"); err == nil {
 		t.Fatal("a key the provider refused was stored")
 	}
-	if err := app.SetAIProviderKey(ctx, modelapi.ProviderOpenAI, "sk-good", provider.URL+"/v1"); err != nil {
+	if _, err := app.SetAIProviderKey(ctx, modelapi.ProviderOpenAI, "sk-good-1234", provider.URL+"/v1"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -44,7 +44,7 @@ func TestAProvidersKeyIsCheckedStoredAndNeverShown(t *testing.T) {
 		t.Fatal(err)
 	}
 	raw, _ := json.Marshal(listed)
-	if strings.Contains(string(raw), "sk-good") {
+	if strings.Contains(string(raw), "sk-good-1234") {
 		t.Fatalf("the key reached the page: %s", raw)
 	}
 	var openai AIProvider
@@ -53,12 +53,12 @@ func TestAProvidersKeyIsCheckedStoredAndNeverShown(t *testing.T) {
 			openai = p
 		}
 	}
-	if !openai.KeySet || openai.BaseURL != provider.URL+"/v1" {
+	if !openai.KeySet || openai.BaseURL != provider.URL+"/v1" || openai.KeyHint != "…1234" {
 		t.Errorf("provider = %+v", openai)
 	}
 
 	conn, err := app.aiKeys.connection("", modelapi.ProviderOpenAI)
-	if err != nil || conn.Key != "sk-good" {
+	if err != nil || conn.Key != "sk-good-1234" {
 		t.Errorf("the agent's connection = %+v, %v", conn, err)
 	}
 	models, err := app.AIModels(ctx, modelapi.ProviderOpenAI)

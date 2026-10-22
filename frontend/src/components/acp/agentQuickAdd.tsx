@@ -15,9 +15,10 @@ import {goApp} from '../../goBridge'
 import {goMessage} from '../../goMessages'
 
 import {isHosted} from '../../buildKind'
-import {providerName} from '../settings/aiPanel'
 
-import {AdapterStatus, MODEL_KIND, MODEL_PROVIDERS, agentKindOptions, newModelAgent} from './agentsPanel'
+import {MODEL_PROVIDERS, providerName} from './modelProviders'
+
+import {AdapterStatus, MODEL_KIND, agentKindOptions, newModelAgent} from './agentsPanel'
 import {syncAgentsToBoard} from './agentSync'
 
 import './agentQuickAdd.scss'

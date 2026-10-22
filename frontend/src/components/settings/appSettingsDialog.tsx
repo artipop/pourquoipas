@@ -25,12 +25,10 @@ import './appSettingsDialog.scss'
 // comes in and goes out as an archive, and what it is allowed to interrupt
 // with.
 //
-// The agents and the proxies under them are deliberately not
-// here, although both registries are the machine's: each of them only
-// means something to a board that runs agents, so each is offered from that
-// board's own ⋯ menu, as the agents item, and a board of
-// shopping lists shows neither. What a setting depends on is where it is offered, even
-// when where it is stored is the same file.
+// The agents are in the AI section as well as behind a board's ⋯ menu: a
+// person looking for «which agents do I have» looks in the settings, and a key
+// saved there makes an agent the same section has to show. The proxies stay
+// with the board's agents dialog, under them.
 //
 // All of it used to be reached through a board's ⋯ menu, which put settings
 // behind a board and made them unreachable when none was open; then through the

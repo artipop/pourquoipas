@@ -147,37 +147,45 @@ func (a *App) AddUpdateUserCategoryBoard(teamID, userID, categoryID string, boar
 		return nil
 	}
 
-	err := a.store.AddUpdateCategoryBoard(userID, categoryID, boardIDs)
-	if err != nil {
-		return err
-	}
-
+	// Asked before anything is written: the category has to be this
+	// person's. It used to be checked after the write, so a page that had
+	// been sent another user's category filed a board under it for good and
+	// the board left the person's sidebar.
 	userCategoryBoards, err := a.GetUserCategoryBoards(userID, teamID)
 	if err != nil {
 		return err
 	}
-
-	var updatedCategory *model.CategoryBoards
+	var category *model.CategoryBoards
 	for i := range userCategoryBoards {
 		if userCategoryBoards[i].ID == categoryID {
-			updatedCategory = &userCategoryBoards[i]
+			category = &userCategoryBoards[i]
 			break
 		}
 	}
-
-	if updatedCategory == nil {
+	if category == nil {
 		return errCategoryNotFound
 	}
 
-	wsPayload := make([]*model.BoardCategoryWebsocketData, len(updatedCategory.BoardMetadata))
-	i := 0
-	for _, categoryBoardMetadata := range updatedCategory.BoardMetadata {
-		wsPayload[i] = &model.BoardCategoryWebsocketData{
-			BoardID:    categoryBoardMetadata.BoardID,
+	if err := a.store.AddUpdateCategoryBoard(userID, categoryID, boardIDs); err != nil {
+		return err
+	}
+
+	// What the category holds now: what it held, and the boards just filed
+	// in it, which arrive shown.
+	wsPayload := make([]*model.BoardCategoryWebsocketData, 0, len(category.BoardMetadata)+len(boardIDs))
+	filed := map[string]bool{}
+	for _, metadata := range category.BoardMetadata {
+		filed[metadata.BoardID] = true
+		wsPayload = append(wsPayload, &model.BoardCategoryWebsocketData{
+			BoardID:    metadata.BoardID,
 			CategoryID: categoryID,
-			Hidden:     categoryBoardMetadata.Hidden,
+			Hidden:     metadata.Hidden,
+		})
+	}
+	for _, boardID := range boardIDs {
+		if !filed[boardID] {
+			wsPayload = append(wsPayload, &model.BoardCategoryWebsocketData{BoardID: boardID, CategoryID: categoryID})
 		}
-		i++
 	}
 
 	a.blockChangeNotifier.Enqueue(func() error {

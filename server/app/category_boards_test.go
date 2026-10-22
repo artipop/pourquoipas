@@ -334,3 +334,21 @@ func TestReorderCategoryBoards(t *testing.T) {
 		assert.Nil(t, newOrder)
 	})
 }
+
+// A board is filed only under a category of the person filing it. The desktop
+// page was once sent an agent's «Boards» category, filed a board under it, and
+// the board left the person's sidebar for good, because the write happened
+// before the check.
+func TestABoardIsNotFiledUnderSomebodyElsesCategory(t *testing.T) {
+	th, tearDown := SetupTestHelper(t)
+	defer tearDown()
+
+	th.Store.EXPECT().GetUserCategoryBoards("user_id", "team_id").Return([]model.CategoryBoards{
+		{Category: model.Category{ID: "mine", UserID: "user_id", Type: model.CategoryTypeSystem, Name: "Boards"}},
+	}, nil)
+	// No AddUpdateCategoryBoard is expected: the mock fails the test if the
+	// write happens.
+
+	err := th.App.AddUpdateUserCategoryBoard("team_id", "user_id", "the-agents", []string{"board_id_1"})
+	assert.ErrorIs(t, err, errCategoryNotFound)
+}

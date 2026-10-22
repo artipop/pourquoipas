@@ -281,3 +281,24 @@ func TestGetUserIDForTokenInSingleUserMode(t *testing.T) {
 		require.Equal(t, model.SingleUser, server.getUserIDForToken(singleUserToken))
 	})
 }
+
+// The desktop page hears the bus, and its person is the single user. Another
+// user's categories are not theirs: when an agent joined a board it got a
+// «Boards» category of its own with the board filed in it, the page applied
+// that to its own sidebar, and the board vanished from it.
+func TestTheBusCarriesOnlyTheDesktopPersonsCategories(t *testing.T) {
+	server := NewServer(&auth.Auth{}, "token", &mlog.Logger{}, nil)
+	var heard []any
+	server.SetSink(func(message any) { heard = append(heard, message) })
+
+	agent := "agent-account"
+	server.BroadcastCategoryChange(model.Category{ID: "c-agent", UserID: agent, TeamID: "0"})
+	server.BroadcastCategoryBoardChange("0", agent, []*model.BoardCategoryWebsocketData{{BoardID: "b1", CategoryID: "c-agent"}})
+	server.BroadcastCategoryReorder("0", agent, []string{"c-agent"})
+	server.BroadcastCategoryBoardsReorder("0", agent, "c-agent", []string{"b1"})
+	require.Empty(t, heard, "another user's category messages reached the desktop page")
+
+	server.BroadcastCategoryChange(model.Category{ID: "c-mine", UserID: model.SingleUser, TeamID: "0"})
+	server.BroadcastCategoryBoardChange("0", model.SingleUser, []*model.BoardCategoryWebsocketData{{BoardID: "b1", CategoryID: "c-mine"}})
+	require.Len(t, heard, 2)
+}

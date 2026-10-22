@@ -265,3 +265,19 @@ func TestModelsAreListedWithTheKeyTheyWereAskedWith(t *testing.T) {
 		t.Errorf("no key: err = %v", err)
 	}
 }
+
+// The agent a first key makes has to start on a model that exists for that
+// key: the default where it is listed, a known name next, the first listed
+// otherwise.
+func TestANewAgentStartsOnAModelTheProviderListed(t *testing.T) {
+	listed := []Model{{ID: "o3"}, {ID: "gpt-4.1"}, {ID: "gpt-5"}}
+	if got := SuggestModel(ProviderOpenAI, listed); got != "gpt-5" {
+		t.Errorf("openai: %q", got)
+	}
+	if got := SuggestModel(ProviderOpenAI, []Model{{ID: "qwen3:14b"}}); got != "qwen3:14b" {
+		t.Errorf("a local server's only model: %q", got)
+	}
+	if got := SuggestModel(ProviderAnthropic, []Model{{ID: "claude-x"}, {ID: "claude-opus-5-5"}}); got != "claude-opus-5-5" {
+		t.Errorf("anthropic: %q", got)
+	}
+}

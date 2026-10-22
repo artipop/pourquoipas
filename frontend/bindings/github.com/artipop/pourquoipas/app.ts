@@ -619,8 +619,13 @@ export function SendSocket(id: string, data: string): $CancellablePromise<void> 
  * for one that is not the vendor's. The key is checked first by asking the
  * provider for its models: a key it refuses is not stored. An empty key keeps
  * the one stored and changes only the address.
+ * 
+ * A key nobody can use is a key that looks broken: everything that runs a
+ * model picks an agent, not a key. So the first key of a provider also makes
+ * the person an agent on it, on a model the provider just listed, which the
+ * inbox sorting and a card's assignee field offer at once.
  */
-export function SetAIProviderKey(provider: string, key: string, baseURL: string): $CancellablePromise<void> {
+export function SetAIProviderKey(provider: string, key: string, baseURL: string): $CancellablePromise<$models.AIKeySaved> {
     return $Call.ByID(185465067, provider, key, baseURL);
 }
 
