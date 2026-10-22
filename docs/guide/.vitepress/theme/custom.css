@@ -249,3 +249,39 @@
 .vp-doc div[class*='language-'] {
     border: 1px solid var(--vp-c-divider);
 }
+
+/* ------------------------------------------------------------ the ship */
+
+/* The landing shows the lettered picture the app icon used to be: here there
+   is room for the name on the hull, which a 64px icon cannot read. The default
+   theme sizes a hero image for a transparent logo floating on a glow. */
+.VPHero .image-bg {
+    display: none;
+}
+
+.VPHero .image-container {
+    width: 320px;
+    height: 320px;
+}
+
+.VPHero .image-src {
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 22%;
+    box-shadow: 0 12px 40px rgb(0 0 0 / 0.18);
+}
+
+/* The default theme pulls the image into the title's space by negative margins,
+   room it gave a glow that is gone here. */
+@media (max-width: 959px) {
+    .VPHero .image {
+        margin: 0 0 32px;
+    }
+}
+
+@media (max-width: 639px) {
+    .VPHero .image-container {
+        width: 240px;
+        height: 240px;
+    }
+}

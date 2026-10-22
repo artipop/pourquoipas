@@ -6,6 +6,10 @@ layout: home
 titleTemplate: ':title — руководство'
 
 hero:
+  image:
+    light: /ship.jpg
+    dark: /ship-dark.jpg
+    alt: Лайнер «Pourquoi Pas?»
   name: Pourquoi Pas?
   text: Руководство
   tagline: Как пользоваться доской, агентами и всем, что вокруг них.

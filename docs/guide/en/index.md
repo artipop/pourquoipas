@@ -6,6 +6,10 @@ layout: home
 titleTemplate: ':title — the guide'
 
 hero:
+  image:
+    light: /ship.jpg
+    dark: /ship-dark.jpg
+    alt: The liner «Pourquoi Pas?»
   name: Pourquoi Pas?
   text: The guide
   tagline: How to use the board, the agents and everything around them.
