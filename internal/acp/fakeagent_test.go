@@ -26,8 +26,8 @@ import (
 // that hangs".
 
 const (
-	fakeAgentEnv    = "POURQUOIPAS_FAKE_ACP"     // scenario name; set by writeFakeAgent
-	fakeAgentDirEnv = "POURQUOIPAS_FAKE_ACP_DIR" // where the agent records what it saw
+	fakeAgentEnv    = "PP_FAKE_ACP"     // scenario name; set by writeFakeAgent
+	fakeAgentDirEnv = "PP_FAKE_ACP_DIR" // where the agent records what it saw
 )
 
 // The scenarios. Their old names are kept: the tests read the same either way,

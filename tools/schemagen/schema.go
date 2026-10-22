@@ -32,7 +32,6 @@ func appTables() []Table {
 		workspace(),
 		workspaceBoard(),
 		agent(),
-		deployTarget(),
 
 		agentSession(),
 		sessionEvent(),
@@ -170,6 +169,9 @@ func agent() Table {
 			{Name: "user_id", Type: ID(), Null: true,
 				Why: "The board account. NULL until one is made, and NULL again if it is\n" +
 					"deleted: the registry entry is the machine's and outlives it."},
+			{Name: "owner_id", Type: ID(), Null: true,
+				Why: "The person whose agent this is, and whose model key it runs on. NULL on\n" +
+					"a desktop, where the one person there owns every agent."},
 			{Name: "proxy_id", Type: ID(), Null: true},
 			{Name: "bin_path", Type: Text(), Null: true},
 			{Name: "model", Type: Name(100), Null: true},
@@ -184,35 +186,13 @@ func agent() Table {
 		FKs: []FK{
 			{Name: "agent_user", Columns: []string{"user_id"},
 				RefTable: tableUsers, RefCols: []string{"id"}, OnDelete: SetNull},
+			{Name: "agent_owner", Columns: []string{"owner_id"},
+				RefTable: tableUsers, RefCols: []string{"id"}, OnDelete: Cascade},
 			{Name: "agent_proxy", Columns: []string{"proxy_id"},
 				RefTable: "proxy", RefCols: []string{"id"}, OnDelete: SetNull},
 		},
 		Indexes: []Index{
 			{Name: "idx_agent_name", Columns: []string{"name"}, Unique: true},
-		},
-	}
-}
-
-// deploy_target is one named Dokku destination.
-func deployTarget() Table {
-	return Table{
-		Name: "deploy_target",
-		Why: "Where a card's branch is published. Was the `deploys` array in\n" +
-			"config.json, and a route's stage named it by name.",
-		Columns: []Column{
-			{Name: "id", Type: ID()},
-			{Name: "name", Type: Name(100)},
-			{Name: "ssh_host", Type: Name(255)},
-			{Name: "ssh_user", Type: Name(64), Null: true},
-			{Name: "ssh_port", Type: Int(), Null: true},
-			{Name: "ssh_key", Type: Text(), Null: true},
-			{Name: "base_app", Type: Name(100), Null: true},
-			{Name: "base_domain", Type: Name(255), Null: true},
-			{Name: "created_at", Type: Millis()},
-		},
-		PK: []string{"id"},
-		Indexes: []Index{
-			{Name: "idx_deploy_target_name", Columns: []string{"name"}, Unique: true},
 		},
 	}
 }
@@ -319,8 +299,8 @@ func boardFK(table string) FK {
 	}
 }
 
-// agent_session is a run over the protocol: a card's work, a deploy, a
-// test, the short headless run that names a branch. A planning conversation is
+// agent_session is a run over the protocol: a card's work, or the short
+// headless run that names a branch. A planning conversation is
 // not one: it is about no card and leaves no row.
 func agentSession() Table {
 	return Table{

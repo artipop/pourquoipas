@@ -2,6 +2,7 @@ import {createSignal} from 'solid-js'
 
 import {goApp} from './goBridge'
 import {notifySettingsChanged} from './nativeApp'
+import {setHosted} from './buildKind'
 import octoClient from './octoClient'
 import {Utils} from './utils'
 
@@ -132,6 +133,7 @@ export async function hydrateUserSettings(): Promise<void> {
         kept.set(UserSettingKey.AIEnabled, String(machine.aiEnabled))
         kept.set(UserSettingKey.AgentNotifications, String(machine.agentNotifications))
         kept.set(UserSettingKey.PrefillCardFolder, String(machine.prefillCardFolder))
+        setHosted(Boolean(machine.hosted))
     }
     setHydrated((n) => n + 1)
 }

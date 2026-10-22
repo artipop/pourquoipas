@@ -19,8 +19,8 @@ import (
 // What an agent may reach through it is decided here, by a grant. The token
 // names the board, is minted for one agent run and dies with it, so an agent
 // that read every byte of its own configuration still cannot leave cards on
-// another board, and a token found afterwards opens nothing. This is the same
-// bargain the dokku server takes: the model chooses steps, never targets.
+// another board, and a token found afterwards opens nothing: the model chooses
+// steps, never targets.
 
 // BoardGrant is one agent run's permission to work on one board.
 type BoardGrant struct {
@@ -127,10 +127,9 @@ func (m *Manager) BoardToolsURL() string {
 // The server is the app's own, over HTTP on the front door, so it goes by the
 // protocol's HTTP transport — which an agent may not speak: that is a
 // capability it declares in initialize, and one that does not gets no board
-// server rather than one it would refuse. A deploy gets none on purpose: it
-// publishes a branch, and an agent moving its own card would be a loop.
+// server rather than one it would refuse.
 func (m *Manager) sessionBoardServer(s *Session, caps acpsdk.AgentCapabilities) *acpsdk.McpServer {
-	if s.BoardID == "" || s.Deploy != nil || !caps.McpCapabilities.Http {
+	if s.BoardID == "" || !caps.McpCapabilities.Http {
 		return nil
 	}
 	url := m.BoardToolsURL()

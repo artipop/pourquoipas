@@ -84,8 +84,8 @@ func main() {
 	// wait for us to die. In helper mode the call never returns.
 	updater.HandleHelperMode()
 
-	// `pourquoipas mcp dokku` runs this same binary as an MCP server for an agent
-	// session; it must come first, before the board server or a window exists.
+	// `pourquoipas mcp <server>` runs this same binary as an MCP server for an
+	// agent or another app; it must come first, before the board server or a window exists.
 	maybeRunMCP(os.Args[1:])
 
 	// Before anything can be spawned: a packaged app is started by launchd and
@@ -286,6 +286,7 @@ func main() {
 	// Built here rather than in the sources block below: the agent integration
 	// reads it too, and neither half implies the other.
 	vault := openVault()
+	app.aiKeys = newAIKeys(vault)
 
 	// Sources are wired independently of the agent integration, and on purpose:
 	// cards from a phone are useful on a board that runs no agents at all.
@@ -382,6 +383,10 @@ func main() {
 			// The app-wide AI switch, read on every start rather than once:
 			// it is flipped from the settings while the app runs.
 			mgr.SetSwitchedOff(func() bool { return !aiEnabled() })
+			// A model agent runs on its owner's key; a server has no machine
+			// of anybody's for an agent to work on (docs/web-ai-plan.md).
+			mgr.SetModelConnections(app.aiKeys.connection)
+			mgr.SetHosted(hostedBuild)
 			// Where the GitHub token for pull-request polling comes from. It
 			// was `githubToken` in config.json, which is a credential in a
 			// settings file people edit by hand and paste into issues.
@@ -576,7 +581,7 @@ func (r sortingAgent) Ask(ctx context.Context, agent, prompt string) (string, er
 // registry for history's sake: it was written there first, and moving it would
 // take somebody's stored tokens with it for no gain.
 func openVault() secrets.Store {
-	store := secrets.Chain{secrets.Env{Prefix: "POURQUOIPAS_SECRET_"}}
+	store := secrets.Chain{secrets.Env{Prefix: secretEnvPrefix}}
 	if keychain, ok := secrets.OpenKeychain(appDirName); ok {
 		return append(store, keychain)
 	}

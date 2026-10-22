@@ -59,6 +59,8 @@ type App struct {
 	// owners says who may change the machine's settings on a server
 	// (identity_server.go); a desktop asks nobody.
 	owners installOwners
+	// aiKeys are the model providers' keys, by person (aikeys.go).
+	aiKeys *aiKeys
 }
 
 func NewApp(emitter *wailsEmitter) *App {
@@ -279,12 +281,16 @@ func (a *App) InstallAgentAdapter(kind string) (string, error) {
 	return a.mgr.InstallAdapter(kind)
 }
 
-// ListAgents returns the agent registry as JSON: [{"name","kind",…}, …].
-func (a *App) ListAgents() (string, error) {
+// ListAgents returns the signed-in person's agents as JSON: [{"name","kind",…}, …].
+func (a *App) ListAgents(ctx context.Context) (string, error) {
 	if a.mgr == nil {
 		return "[]", nil
 	}
-	out, err := json.Marshal(a.mgr.Agents())
+	person, err := personOf(ctx, a.owners)
+	if err != nil {
+		return "", err
+	}
+	out, err := json.Marshal(agentsOf(a.mgr.Agents(), person))
 	if err != nil {
 		return "", err
 	}
@@ -298,11 +304,25 @@ func (a *App) ListAgents() (string, error) {
 // The page needs the username to recognise an agent among the board's people:
 // the fold from one to the other is this side's (AgentUsername), and writing it
 // a second time in TypeScript would be two answers to "is this an agent".
-func (a *App) ListAgentAccounts() (string, error) {
+func (a *App) ListAgentAccounts(ctx context.Context) (string, error) {
 	if a.mgr == nil {
 		return "[]", nil
 	}
-	out, err := json.Marshal(a.mgr.AgentUsers())
+	person, err := personOf(ctx, a.owners)
+	if err != nil {
+		return "", err
+	}
+	mine := map[string]bool{}
+	for _, entry := range agentsOf(a.mgr.Agents(), person) {
+		mine[entry.Name] = true
+	}
+	accounts := []acp.AgentUser{}
+	for _, account := range a.mgr.AgentUsers() {
+		if mine[account.Name] {
+			accounts = append(accounts, account)
+		}
+	}
+	out, err := json.Marshal(accounts)
 	if err != nil {
 		return "", err
 	}
@@ -311,14 +331,20 @@ func (a *App) ListAgentAccounts() (string, error) {
 
 // AddAgent registers a new agent from a JSON-encoded AgentEntry and returns the
 // created entry as JSON.
-func (a *App) AddAgent(entryJSON string) (string, error) {
+func (a *App) AddAgent(ctx context.Context, entryJSON string) (string, error) {
 	if a.mgr == nil {
 		return "", errACPDisabled
+	}
+	person, err := personOf(ctx, a.owners)
+	if err != nil {
+		return "", err
 	}
 	var entry acp.AgentEntry
 	if err := json.Unmarshal([]byte(entryJSON), &entry); err != nil {
 		return "", err
 	}
+	// Whose it is is the session's answer, never the page's.
+	entry.OwnerID = person
 	saved, err := a.mgr.AddAgent(entry)
 	if err != nil {
 		return "", err
@@ -329,12 +355,15 @@ func (a *App) AddAgent(entryJSON string) (string, error) {
 
 // UpdateAgent replaces an existing agent (matched by name) from a JSON-encoded
 // AgentEntry and returns the saved entry as JSON.
-func (a *App) UpdateAgent(entryJSON string) (string, error) {
+func (a *App) UpdateAgent(ctx context.Context, entryJSON string) (string, error) {
 	if a.mgr == nil {
 		return "", errACPDisabled
 	}
 	var entry acp.AgentEntry
 	if err := json.Unmarshal([]byte(entryJSON), &entry); err != nil {
+		return "", err
+	}
+	if err := a.ownAgent(ctx, entry.ID, entry.Name); err != nil {
 		return "", err
 	}
 	saved, err := a.mgr.UpdateAgent(entry)
@@ -371,9 +400,12 @@ func (a *App) AgentOptions(entryJSON string, refresh bool) (string, error) {
 }
 
 // RemoveAgent deletes an agent registry entry by name.
-func (a *App) RemoveAgent(name string) error {
+func (a *App) RemoveAgent(ctx context.Context, name string) error {
 	if a.mgr == nil {
 		return errACPDisabled
+	}
+	if err := a.ownAgent(ctx, "", name); err != nil {
+		return err
 	}
 	return a.mgr.RemoveAgent(name)
 }
@@ -448,63 +480,6 @@ func (a *App) RemoveProxy(name string) error {
 		return errACPDisabled
 	}
 	return a.mgr.RemoveProxy(name)
-}
-
-// ListDeployTargets returns the deploy registry as JSON:
-// [{"name","sshHost","baseDomain",…}, …].
-func (a *App) ListDeployTargets() (string, error) {
-	if a.mgr == nil {
-		return "[]", nil
-	}
-	out, err := json.Marshal(a.mgr.Deploys())
-	if err != nil {
-		return "", err
-	}
-	return string(out), nil
-}
-
-// AddDeployTarget registers a Dokku destination from a JSON-encoded DeployEntry
-// and returns the created entry as JSON.
-func (a *App) AddDeployTarget(entryJSON string) (string, error) {
-	if a.mgr == nil {
-		return "", errACPDisabled
-	}
-	var entry acp.DeployEntry
-	if err := json.Unmarshal([]byte(entryJSON), &entry); err != nil {
-		return "", err
-	}
-	saved, err := a.mgr.AddDeploy(entry)
-	if err != nil {
-		return "", err
-	}
-	out, _ := json.Marshal(saved)
-	return string(out), nil
-}
-
-// UpdateDeployTarget replaces an existing destination (matched by name) from a
-// JSON-encoded DeployEntry and returns the saved entry as JSON.
-func (a *App) UpdateDeployTarget(entryJSON string) (string, error) {
-	if a.mgr == nil {
-		return "", errACPDisabled
-	}
-	var entry acp.DeployEntry
-	if err := json.Unmarshal([]byte(entryJSON), &entry); err != nil {
-		return "", err
-	}
-	saved, err := a.mgr.UpdateDeploy(entry)
-	if err != nil {
-		return "", err
-	}
-	out, _ := json.Marshal(saved)
-	return string(out), nil
-}
-
-// RemoveDeployTarget deletes a Dokku destination by name.
-func (a *App) RemoveDeployTarget(name string) error {
-	if a.mgr == nil {
-		return errACPDisabled
-	}
-	return a.mgr.RemoveDeploy(name)
 }
 
 // BoardSetupPlan returns what this board needs answered before an agent can
@@ -724,21 +699,6 @@ func (a *App) SetPlanningPrompt(text string) error {
 	return a.mgr.SetPlanningPrompt(text)
 }
 
-// StartCardDeploy publishes a card's branch to its Dokku target without moving
-// the card into the deploy column, and returns the deploy session's id. branch
-// is the one the card is working on (its session's worktree branch); empty lets
-// the card property or the checked-out branch decide.
-func (a *App) StartCardDeploy(cardID, branch string) (string, error) {
-	if a.mgr == nil {
-		return "", errACPDisabled
-	}
-	s, err := a.mgr.StartDeployForCard(cardID, branch)
-	if err != nil {
-		return "", err
-	}
-	return s.ID, nil
-}
-
 // ---- planning ----
 
 // A planning conversation is talking a task over with an agent before a card
@@ -805,9 +765,9 @@ func (a *App) ListPlanning(boardID string) (string, error) {
 }
 
 // GetCardAgent is everything a card shows about its agent in one call: the
-// state of the automation's own session — the branch it works on, so the card
-// can offer to deploy it, and whether something is running, so it can be
-// cancelled — and the question it is waiting on, if any.
+// state of the automation's own session — the branch it works on, and whether
+// something is running, so it can be cancelled — and the question it is
+// waiting on, if any.
 //
 // There is no transcript here: a stage reports itself in the card's comments.
 // JSON: {"session":{…},"question":{…}?,…}.
@@ -1372,4 +1332,35 @@ func (a *App) SkipUpdateVersion() error {
 // process to be gone before it touches anything.
 func (a *App) RestartToUpdate() error {
 	return a.updates.restart()
+}
+
+// agentsOf is the registry as one person sees it: their own agents and the
+// ones nobody owns — every agent of a desktop, and on a server those made
+// before agents had owners.
+func agentsOf(all []acp.AgentEntry, person string) []acp.AgentEntry {
+	out := []acp.AgentEntry{}
+	for _, entry := range all {
+		if entry.OwnerID == "" || entry.OwnerID == person {
+			out = append(out, entry)
+		}
+	}
+	return out
+}
+
+// ownAgent refuses a change to somebody else's agent. An agent nobody can be
+// found by is left for the registry itself to say so.
+func (a *App) ownAgent(ctx context.Context, id, name string) error {
+	person, err := personOf(ctx, a.owners)
+	if err != nil {
+		return err
+	}
+	for _, entry := range a.mgr.Agents() {
+		if (id != "" && entry.ID == id) || (id == "" && strings.EqualFold(entry.Name, name)) {
+			if entry.OwnerID != "" && entry.OwnerID != person {
+				return apperr.New("agents.not-yours", "Agent {name} is somebody else's", "name", entry.Name)
+			}
+			return nil
+		}
+	}
+	return nil
 }

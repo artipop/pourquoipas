@@ -97,11 +97,11 @@ func (m *Manager) RunInbox(ctx context.Context, run InboxRun) (string, error) {
 		s.allowToolPrefix("mcp__" + server.Name + "__")
 	}
 
-	conn, sessionID, cleanup, err := m.openConnection(ctx, s)
+	conv, err := m.openConversation(ctx, s)
 	if err != nil {
 		return "", err
 	}
-	defer cleanup()
+	defer conv.close()
 
-	return m.runTurn(s, conn, sessionID, s.PromptText)
+	return m.runTurn(s, conv, s.PromptText)
 }

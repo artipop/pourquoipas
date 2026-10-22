@@ -10,6 +10,9 @@ import {sendFlashMessage} from '../flashMessages'
 
 import {goApp} from '../../goBridge'
 import {aiEnabled} from '../../aiSwitch'
+import {isHosted} from '../../buildKind'
+import {createLoader} from '../../hooks/loader'
+import {providerName} from '../settings/aiPanel'
 
 import {GoMessage, goError, goMessage} from '../../goMessages'
 
@@ -22,6 +25,9 @@ import './agentsPanel.scss'
 type AgentEntry = {
     name: string
     kind: string
+
+    // For a model agent: whose API it is reached through (anthropic, openai).
+    provider?: string
     binPath?: string
     model?: string
     prompt?: string
@@ -144,12 +150,32 @@ export const AGENT_KINDS = [
     {value: 'acp', label: 'ACP (other)'},
 ]
 
+// MODEL_KIND is an agent that is no program at all: a model reached over its
+// provider's API with the person's key, the loop run by the Go side.
+export const MODEL_KIND = 'model'
+
+export const MODEL_PROVIDERS = ['anthropic', 'openai']
+
+// agentKindOptions is what the kind field offers: on a hosted server there is
+// no machine to run a CLI on, so only a model.
+export function agentKindOptions(modelLabel: string): Array<{value: string, label: string}> {
+    const model = {value: MODEL_KIND, label: modelLabel}
+    return isHosted() ? [model] : [...AGENT_KINDS, model]
+}
+
+// newModelAgent is what a model agent starts as: the first provider, with
+// the model the Go side suggests until the provider has been asked.
+export function newModelAgent(name = ''): {name: string, kind: string, provider: string, model: string} {
+    return {name, kind: MODEL_KIND, provider: 'anthropic', model: 'claude-opus-5-5'}
+}
+
+type ProviderState = {id: string, keySet: boolean, defaultModel?: string}
+
 export function isAgentsAvailable(): boolean {
     return aiEnabled() && Boolean(goApp()?.ListAgents)
 }
 
 // envToText / textToEnv convert between the KEY=VALUE textarea and the env map.
-// Exported: the deploy-target dialog edits an env map the same way.
 export function envToText(env?: {[key: string]: string}): string {
     if (!env) {
         return ''
@@ -230,7 +256,7 @@ export function keptOptions(
     return kept
 }
 
-const emptyForm: AgentEntry = {name: '', kind: 'claude'}
+const emptyForm = (): AgentEntry => (isHosted() ? newModelAgent() : {name: '', kind: 'claude'})
 
 const AgentsPanel = () => {
     const intl = useIntl()
@@ -366,7 +392,7 @@ const AgentsPanel = () => {
     // The entry as the form currently describes it, which is what the probe
     // starts and what "Save" writes.
     const formEntry = (): AgentEntry => ({
-        ...(form() || emptyForm),
+        ...(form() || emptyForm()),
         name: (form()?.name || '').trim(),
         env: textToEnv(envText()),
         args: splitArgv(argsText()),
@@ -379,7 +405,7 @@ const AgentsPanel = () => {
     // environment) are re-read on "Recheck" alone, so typing a path does not
     // start an agent on every keystroke.
     const startAdd = () => {
-        setForm({...emptyForm})
+        setForm(emptyForm())
         setEnvText('')
         setServersText('')
         setArgsText('')
@@ -388,7 +414,7 @@ const AgentsPanel = () => {
         setEditingName(null)
         setError('')
         forgetOptions()
-        probeAgent({...emptyForm}, false)
+        probeAgent(emptyForm(), false)
     }
 
     const startEdit = (agent: AgentEntry) => {
@@ -406,10 +432,47 @@ const AgentsPanel = () => {
 
     // Another kind is another agent, with settings of its own.
     const changeKind = (kind: string) => {
-        setForm((f) => (f ? {...f, kind} : f))
+        setForm((f) => {
+            if (!f) {
+                return f
+            }
+            if (kind === MODEL_KIND && f.kind !== MODEL_KIND) {
+                return {...f, ...newModelAgent(f.name)}
+            }
+            return {...f, kind}
+        })
         forgetOptions()
         probeAgent({...formEntry(), kind}, false)
     }
+
+    // A model agent is chosen from what the provider says the person's key
+    // opens; without a key there is nothing to ask, and the form says where
+    // the key goes.
+    const isModel = () => form()?.kind === MODEL_KIND
+    const modelsListId = (): string | undefined => {
+        if (isModel()) {
+            return 'AgentsPanel__providerModels'
+        }
+        return modelOption() ? 'AgentsPanel__models' : undefined
+    }
+    const [providers] = createLoader(async (): Promise<ProviderState[]> => {
+        try {
+            return (await bindings?.AIProviders?.()) || []
+        } catch {
+            return []
+        }
+    }, [] as ProviderState[])
+    const providerKeySet = () => providers().find((p) => p.id === form()?.provider)?.keySet ?? false
+    const [models] = createLoader(async (key: string): Promise<Array<{id: string, name?: string}>> => {
+        if (!key || !bindings?.AIModels) {
+            return []
+        }
+        try {
+            return (await bindings.AIModels(key)) || []
+        } catch {
+            return []
+        }
+    }, [] as Array<{id: string, name?: string}>, () => (isModel() && providerKeySet() ? form()?.provider || '' : ''))
 
     const closeForm = () => {
         setForm(null)
@@ -520,11 +583,27 @@ const AgentsPanel = () => {
                             <span>{intl.formatMessage({id: 'Agents.kind', defaultMessage: 'Kind'})}</span>
                             <Select
                                 value={form()!.kind}
-                                options={AGENT_KINDS}
+                                options={agentKindOptions(intl.formatMessage({id: 'Agents.kind-model', defaultMessage: 'Model by API key'}))}
                                 onChange={changeKind}
                                 label={intl.formatMessage({id: 'Agents.kind', defaultMessage: 'Kind'})}
                             />
                         </div>
+                        <Show when={isModel()}>
+                            <div class='AgentsPanel__field'>
+                                <span>{intl.formatMessage({id: 'Agents.provider', defaultMessage: 'Provider'})}</span>
+                                <Select
+                                    value={form()!.provider || 'anthropic'}
+                                    options={MODEL_PROVIDERS.map((id) => ({value: id, label: providerName(id)}))}
+                                    onChange={(provider) => updateForm({provider, model: providers().find((p) => p.id === provider)?.defaultModel || ''})}
+                                    label={intl.formatMessage({id: 'Agents.provider', defaultMessage: 'Provider'})}
+                                />
+                            </div>
+                            <Show when={!providerKeySet()}>
+                                <div class='AgentsPanel__adapter AgentsPanel__adapter--missing'>
+                                    <span>{intl.formatMessage({id: 'Agents.provider-no-key', defaultMessage: 'There is no key for this provider yet: add it in Settings → AI. The agent can be saved now and works once the key is there.'})}</span>
+                                </div>
+                            </Show>
+                        </Show>
                         <Show when={adapter() && (!adapter()!.ready || adapter()!.viaNpx)}>
                             <div class={`AgentsPanel__adapter${adapter()!.ready ? '' : ' AgentsPanel__adapter--missing'}`}>
                                 <span>{goMessage(intl, adapter()!.detail)}</span>
@@ -539,16 +618,25 @@ const AgentsPanel = () => {
                             </div>
                         </Show>
                         <label>
-                            {intl.formatMessage({id: 'Agents.model', defaultMessage: 'Model (optional)'})}
+                            {isModel() ? intl.formatMessage({id: 'Agents.model-required', defaultMessage: 'Model'}) : intl.formatMessage({id: 'Agents.model', defaultMessage: 'Model (optional)'})}
                             {/* Free text still, because an agent may take a
                                 model it does not list; the list is what this
                                 one said it has. */}
                             <input
                                 value={form()!.model || ''}
-                                list={modelOption() ? 'AgentsPanel__models' : undefined}
+                                list={modelsListId()}
                                 onInput={(e) => updateForm({model: e.currentTarget.value})}
                             />
-                            <Show when={modelOption()}>
+                            <Show when={isModel() && models().length > 0}>
+                                <datalist id='AgentsPanel__providerModels'>
+                                    <For each={models()}>
+                                        {(model) => (
+                                            <option value={model.id}>{model.name || model.id}</option>
+                                        )}
+                                    </For>
+                                </datalist>
+                            </Show>
+                            <Show when={!isModel() && modelOption()}>
                                 <datalist id='AgentsPanel__models'>
                                     <For each={modelOption()!.values || []}>
                                         {(value) => (
@@ -560,21 +648,24 @@ const AgentsPanel = () => {
                                 </datalist>
                             </Show>
                         </label>
-                        <label>
-                            {intl.formatMessage({id: 'Agents.binPath', defaultMessage: 'Binary path (optional)'})}
-                            <input
-                                value={form()!.binPath || ''}
-                                onInput={(e) => updateForm({binPath: e.currentTarget.value})}
-                            />
-                        </label>
-                        <label>
-                            {intl.formatMessage({id: 'Agents.command', defaultMessage: 'Launch command (argv) — overrides the binary path; wrap the CLI to route it through a proxy. Required for "ACP (other)".'})}
-                            <input
-                                value={commandText()}
-                                placeholder={commandPlaceholders[form()!.kind] || ''}
-                                onInput={(e) => setCommandText(e.currentTarget.value)}
-                            />
-                        </label>
+                        <Show when={!isModel()}>
+                            <label>
+                                {intl.formatMessage({id: 'Agents.binPath', defaultMessage: 'Binary path (optional)'})}
+                                <input
+                                    value={form()!.binPath || ''}
+                                    onInput={(e) => updateForm({binPath: e.currentTarget.value})}
+                                />
+                            </label>
+                            <label>
+                                {intl.formatMessage({id: 'Agents.command', defaultMessage: 'Launch command (argv) — overrides the binary path; wrap the CLI to route it through a proxy. Required for "ACP (other)".'})}
+                                <input
+                                    value={commandText()}
+                                    placeholder={commandPlaceholders[form()!.kind] || ''}
+                                    onInput={(e) => setCommandText(e.currentTarget.value)}
+                                />
+                            </label>
+
+                        </Show>
 
                         {/* What this agent can be told beyond the task, asked
                             of the agent itself. Nothing is drawn for an agent
@@ -641,7 +732,7 @@ const AgentsPanel = () => {
                             protocol has no word for. Only for the kinds whose
                             adapter passes arguments on: for the rest the agent
                             is the CLI, and "Extra CLI args" already reaches it. */}
-                        <Show when={CLI_HANDOFF_KINDS.includes(form()!.kind)}>
+                        <Show when={!isModel() && CLI_HANDOFF_KINDS.includes(form()!.kind)}>
                             <div class='AgentsPanel__options'>
                                 <div class='AgentsPanel__optionsHeader'>
                                     <span>{intl.formatMessage({id: 'Agents.cli', defaultMessage: 'The CLI behind the adapter'})}</span>
@@ -690,32 +781,34 @@ const AgentsPanel = () => {
                             rows={6}
                             onInput={(text) => updateForm({prompt: text})}
                         />
-                        <div class='AgentsPanel__field'>
-                            <span>{intl.formatMessage({id: 'Agents.proxyName', defaultMessage: 'Proxy configuration'})}</span>
-                            <Select
-                                value={form()!.proxyName || ''}
-                                options={[
-                                    {value: '', label: intl.formatMessage({id: 'Agents.proxy-none', defaultMessage: 'No proxy (inherit the app environment)'})},
-                                    ...proxies().map((p) => ({value: p.name, label: p.proxy ? `${p.name} — ${p.proxy}` : p.name})),
-                                ]}
-                                onChange={(next) => updateForm({proxyName: next})}
-                                label={intl.formatMessage({id: 'Agents.proxyName', defaultMessage: 'Proxy configuration'})}
-                            />
-                        </div>
-                        <Show when={proxies().length === 0}>
-                            <div class='AgentsPanel__hint'>
-                                {intl.formatMessage({id: 'Agents.proxy-hint', defaultMessage: 'Configurations are added under "Proxy configurations", beside this section.'})}
+                        <Show when={!isModel()}>
+                            <div class='AgentsPanel__field'>
+                                <span>{intl.formatMessage({id: 'Agents.proxyName', defaultMessage: 'Proxy configuration'})}</span>
+                                <Select
+                                    value={form()!.proxyName || ''}
+                                    options={[
+                                        {value: '', label: intl.formatMessage({id: 'Agents.proxy-none', defaultMessage: 'No proxy (inherit the app environment)'})},
+                                        ...proxies().map((p) => ({value: p.name, label: p.proxy ? `${p.name} — ${p.proxy}` : p.name})),
+                                    ]}
+                                    onChange={(next) => updateForm({proxyName: next})}
+                                    label={intl.formatMessage({id: 'Agents.proxyName', defaultMessage: 'Proxy configuration'})}
+                                />
                             </div>
+                            <Show when={proxies().length === 0}>
+                                <div class='AgentsPanel__hint'>
+                                    {intl.formatMessage({id: 'Agents.proxy-hint', defaultMessage: 'Configurations are added under "Proxy configurations", beside this section.'})}
+                                </div>
+                            </Show>
+                            <label>
+                                {intl.formatMessage({id: 'Agents.env', defaultMessage: 'Environment (KEY=VALUE per line — e.g. CODEX_HOME, OPENAI_API_KEY)'})}
+                                <textarea
+                                    rows={3}
+                                    value={envText()}
+                                    placeholder={'CODEX_HOME=/Users/me/.codex-work'}
+                                    onInput={(e) => setEnvText(e.currentTarget.value)}
+                                />
+                            </label>
                         </Show>
-                        <label>
-                            {intl.formatMessage({id: 'Agents.env', defaultMessage: 'Environment (KEY=VALUE per line — e.g. CODEX_HOME, OPENAI_API_KEY)'})}
-                            <textarea
-                                rows={3}
-                                value={envText()}
-                                placeholder={'CODEX_HOME=/Users/me/.codex-work'}
-                                onInput={(e) => setEnvText(e.currentTarget.value)}
-                            />
-                        </label>
                         <label>
                             {intl.formatMessage({id: 'Agents.mcp-servers', defaultMessage: 'MCP servers (the JSON any MCP client takes) — offered to this agent in every session'})}
                             <textarea
@@ -728,14 +821,16 @@ const AgentsPanel = () => {
                         <div class='AgentsPanel__hint'>
                             {intl.formatMessage({id: 'Agents.mcp-servers-hint', defaultMessage: 'Their tools run without confirmation prompts. A browser server (Playwright, say) is what the "QA" column needs.'})}
                         </div>
-                        <label>
-                            {intl.formatMessage({id: 'Agents.args', defaultMessage: 'Extra CLI args (space-separated)'})}
-                            <input
-                                value={argsText()}
-                                placeholder={'--sandbox workspace-write'}
-                                onInput={(e) => setArgsText(e.currentTarget.value)}
-                            />
-                        </label>
+                        <Show when={!isModel()}>
+                            <label>
+                                {intl.formatMessage({id: 'Agents.args', defaultMessage: 'Extra CLI args (space-separated)'})}
+                                <input
+                                    value={argsText()}
+                                    placeholder={'--sandbox workspace-write'}
+                                    onInput={(e) => setArgsText(e.currentTarget.value)}
+                                />
+                            </label>
+                        </Show>
                         <div class='AgentsPanel__formActions'>
                             <Button
                                 emphasis='primary'

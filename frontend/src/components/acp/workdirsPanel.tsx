@@ -11,6 +11,7 @@ import {sendFlashMessage} from '../flashMessages'
 
 import {goApp} from '../../goBridge'
 import {aiEnabled} from '../../aiSwitch'
+import {isHosted} from '../../buildKind'
 
 import {goError} from '../../goMessages'
 
@@ -44,7 +45,7 @@ export function pathParts(path: string): {head: string, tail: string} {
 }
 
 export function isWorkdirsAvailable(): boolean {
-    return aiEnabled() && Boolean(goApp()?.ListAgentWorkdirs)
+    return aiEnabled() && !isHosted() && Boolean(goApp()?.ListAgentWorkdirs)
 }
 
 type Props = {

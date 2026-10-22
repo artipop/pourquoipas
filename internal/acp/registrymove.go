@@ -41,12 +41,8 @@ func (m *Manager) loadRegistriesLocked() error {
 	if err != nil {
 		return fmt.Errorf("read the proxy registry: %w", err)
 	}
-	deploys, err := m.store.DeployTargets()
-	if err != nil {
-		return fmt.Errorf("read the deploy registry: %w", err)
-	}
 
-	if len(workspaces) == 0 && len(agents) == 0 && len(proxies) == 0 && len(deploys) == 0 {
+	if len(workspaces) == 0 && len(agents) == 0 && len(proxies) == 0 {
 		// Nothing has been written yet. Either this is a fresh install, in
 		// which case the file is empty too and this writes nothing, or it is
 		// the upgrade and the file is what there is.
@@ -56,7 +52,6 @@ func (m *Manager) loadRegistriesLocked() error {
 	m.cfg.Workdirs = workspaces
 	m.cfg.Agents = agents
 	m.cfg.Proxies = proxies
-	m.cfg.Deploys = deploys
 	// An agent saved before proxies had ids still names its configuration; fold
 	// it once, here, so nothing downstream has to know the name was ever a way
 	// of pointing at one.
@@ -144,24 +139,6 @@ func (m *Manager) persistRegistriesLocked() error {
 		return err
 	}
 
-	deployIDs := map[string]string{}
-	takenDeploy := map[string]bool{}
-	for i := range m.cfg.Deploys {
-		if !m.registrable("deploy_target", m.cfg.Deploys[i].Name, takenDeploy) {
-			continue
-		}
-		adopt("deploy_target", m.cfg.Deploys[i].Name, &m.cfg.Deploys[i].ID)
-		saved, err := m.store.SaveDeployTarget(m.cfg.Deploys[i])
-		if err != nil {
-			return fmt.Errorf("save the deploy target %q: %w", m.cfg.Deploys[i].Name, err)
-		}
-		m.cfg.Deploys[i] = saved
-		deployIDs[saved.Name] = saved.ID
-	}
-	if err := m.pruneRegistry("deploy_target", deployIDs, m.store.DeleteDeployTarget); err != nil {
-		return err
-	}
-
 	workspaceIDs := map[string]string{}
 	takenWorkspace := map[string]bool{}
 	for i := range m.cfg.Workdirs {
@@ -211,7 +188,7 @@ func (m *Manager) registrable(kind, name string, taken map[string]bool) bool {
 // registryIDs reads what each registry already holds, as table → name → id.
 func (m *Manager) registryIDs() (map[string]map[string]string, error) {
 	out := map[string]map[string]string{}
-	for _, table := range []string{"proxy", "agent", "deploy_target", "workspace"} {
+	for _, table := range []string{"proxy", "agent", "workspace"} {
 		rows, err := m.store.query(`SELECT name, id FROM ` + table)
 		if err != nil {
 			return nil, fmt.Errorf("read the %s registry: %w", table, err)

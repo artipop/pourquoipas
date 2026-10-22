@@ -343,6 +343,40 @@ asked** — the SDK gives every inbound request its own goroutine — and an
 unanswered one refuses on cancellation or shutdown rather than stalling for
 ever.
 
+**A stage has two executors, and the card cannot tell them apart**
+(`session.go`, `conversation`; `modelconv.go`). An agent is a CLI over ACP, or
+a model over its vendor's API with the person's key (`kind: "model"`,
+`internal/modelapi`, Anthropic's Messages API and OpenAI's chat completions
+through their official SDKs). Everything around a turn — the slot, the timeout,
+a cancel that arrived early, the question on the card, the comment, the stall —
+is the session's and the same for both; `conversation` is the one seam, and a
+model's loop (ask, call the tools it asked for, hand the results back) is ours
+instead of the CLI's. A model is given what a CLI is given by the same means:
+the board's tools are the same `boardmcp` server, reached in memory instead of
+over the front door (`BoardForGrant` is the one adapter for both); the agent's
+MCP servers are reached as an MCP client, remote ones included; a question to
+a person is `ask_person` → `Manager.ask`. What a CLI brings of its own — files
+and a shell — is `modeltools.go`, inside the card's copy and under the same
+policy and the same permission question as a CLI's Bash. A model with no key
+stalls the card (`ai.no-key`) rather than failing a minute later.
+
+**A hosted server has no machine of anybody's** (`SetHosted`, `hostedBuild`):
+no folders, no drafts, no CLI agents, no process a person named —
+an agent's MCP server there is an address, and a stdio server is started only
+when it is this program itself. A model there works with the board's tools
+alone, and the brief says so. The page reads the same answer
+(`MachineSettings.hosted`, `buildKind.ts`) and hides folders, proxies, the
+changes panel and the CLI kinds.
+
+**A model agent is somebody's** (`agent.owner_id`, NULL on a desktop, where
+the one person owns everything): it runs on its owner's key, and the bindings
+list and change the signed-in person's agents only (`agentsOf`, `ownAgent`).
+The key is a credential presented to somebody else, so it is in the secrets
+store under the person (`aikeys.go`: `ai/<provider>` on a desktop,
+`ai/<userID>/<provider>` on a server), checked against the provider before it
+is stored, and the page only ever hears whether there is one. Settings → AI
+holds the switch over all agents and the keys.
+
 **How the app learns the stage is over**: the agent says so, through the board
 tools — `finish_work`, which reports done-or-not and one line about what it did.
 **And the task text says so too** (`resultBrief`), because whether those tools
@@ -472,8 +506,7 @@ in the brief as the first of the four things a finished stage does (`resultBrief
 one comment, with what was done or decided and what a person has to know next —
 not a log of its steps. This side writes one only when the agent did not
 (`commentFirstTurn`, `hasCommented`), so the fallback is a fallback rather than
-a second comment about the same work; a deploy always gets ours, since nothing
-there is holding the board's tools.
+a second comment about the same work.
 
 There were a dozen comments once — started, cancelled, asked, answered, moved
 along the route — and a card whose comments are a log of the machinery is a card
@@ -677,7 +710,8 @@ interrupt, and the archive that carries every board in and out — is
 `sidebarSettingsButton.tsx`, reachable with no board open.
 
 **One switch turns the agents off** (`aiSwitch.ts`, the `aiEnabled` install
-preference, «Агенты работают с карточками» in `settings/appPanel.tsx`). Off,
+preference, «Агенты работают с карточками» in `settings/aiPanel.tsx`, the AI
+section of the settings, over CLI and model agents alike). Off,
 the app is a kanban board and nothing on screen names an agent. The page does
 it at the gates it already had: every `is…Available()` of `components/acp`
 answers no, the setup plan keeps only the name (`withoutAgents`), nothing
@@ -690,14 +724,14 @@ left to finish — the switch means no more, not undo — and nothing is deleted
 so switching back on is the board as it was. The tray keeps its open and quit
 items and loses the dot.
 
-**Three registries are the machine's and are offered from a board anyway**,
-because a registry belongs where it means something: the deploy hosts
-(`deploy_target`, shared by every board that deploys), the agents and the
-proxies under them. A Dokku host means nothing to a board of shopping lists and
-neither does an agent, so each is a door in that board's ⋯ menu, drawn on the
-board's own setup plan (`asks('deploy')`, `asks('agent')`) — `deployTargets
-Dialog.tsx` and `agentsDialog.tsx`, beside «Папки…». The lists themselves are
-unchanged and still one per machine; only where they are asked for moved.
+**Two registries are the machine's and are offered from a board anyway**,
+because a registry belongs where it means something: the agents and the
+proxies under them. An agent means nothing to a board of shopping lists, so it
+is a door in that board's ⋯ menu, drawn on the board's own setup plan
+(`asks('agent')`) — `agentsDialog.tsx`, beside «Папки…». The lists themselves
+are unchanged and still one per machine; only where they are asked for moved.
+Deploy hosts were a third, and went with deploying to Dokku, which is a flow
+step in Gandvík (`../xxvi`) now.
 Agents and proxies are **one door and two sections in it**, agents above: a
 proxy exists to be named by an agent (`AgentEntry.proxyName`), so it is the
 second half of one question rather than a settings section of its own. The
@@ -785,11 +819,10 @@ copy.
 
 **What a board had to be asked before it can run is not that, and each question
 is its own item in the board's ⋯ menu**: «Системный промпт доски…»
-(`boardPromptsDialog.tsx`), «Папки…» (`workdirsDialog.tsx`), «Куда деплоить…»
-(`deployTargetsDialog.tsx`), «Пройти настройку заново…» (the wizard). Which of
-them a board has is **the board's own setup plan** (`BoardSetupPlan`), so the
-menu differs by board exactly as the questions do: one that declares a deploy
-step offers a deploy host, a board of household chores offers folders alone.
+(`boardPromptsDialog.tsx`), «Папки…» (`workdirsDialog.tsx`), «Пройти настройку
+заново…» (the wizard). Which of them a board has is **the board's own setup
+plan** (`BoardSetupPlan`), so the menu differs by board exactly as the questions
+do.
 
 **The first question is the board's own name** (`SetupStepName`), and it is the
 only step that is not about this machine and the only one with no way past it.
@@ -809,16 +842,15 @@ more. **The folder is not a board question**: it is asked on the card, whose
 «Папка» field lists the board's folders and adds one («Добавить папку…»,
 `cardFolderValue.tsx` over `acp/cardFolder.ts`) — registered for the board,
 mirrored into the field, set on the card. A board declaring the retired
-`project` step has it dropped in silence (`retiredSetupSteps`), since every
-board made before carries it (docs/decisions.md). A board may ask for
-others of its own in `setup` (`BoardPropSetup`): a deploy host, and whatever the
-closed set grows later. The set is closed on purpose — a board that could
+`project` or `deploy` step has it dropped in silence (`retiredSetupSteps`),
+since boards made before carry them (docs/decisions.md). A board may ask for
+others of its own in `setup` (`BoardPropSetup`): whatever the closed set grows
+later. The set is closed on purpose — a board that could
 declare arbitrary fields would be a program, and nothing on this side could
 promise the answer fits the registry it is going into.
 
 It used to be read off the board's stages, which is how a step could be *implied*
-at all: a route with a deploy stage needed somewhere to deploy to. With the
-routes gone there is nothing to infer from, so the three are asked of everybody
+at all. With the routes gone there is nothing to infer from, so the three are asked of everybody
 and the rest is the board's to declare.
 
 **Relaxed mode is the word for that, and for the moment it is a word and not a
@@ -844,8 +876,6 @@ What it means today, question by question:
 - **nobody assigned** — nothing starts, and the card sits in the column
   somebody put it in. The assignee field offers every agent on the machine, so
   answering it is one click on the card;
-- **no deploy target** — the deploy button says there is nowhere to publish to,
-  and the card is otherwise untouched.
 
 The rule a new default has to meet is the one those share: it must be sayable
 in one sentence on the screen that leaves the question open, and it must be the
@@ -1067,7 +1097,7 @@ text property the board records as `branchProperty`: a machine's database
 does not travel, and the card does — to another board (`MoveCardToBoard`) or
 another machine. The path is not written, because a path means nothing there.
 
-The branch is named after the card's title, transliterated (`dokku.foldLabel`
+The branch is named after the card's title, transliterated (`branchSlug`
 carries а Cyrillic→Latin table, so «Почини логин» is `pochini-login-…` rather
 than a hash) — or by the agent itself when `agentNamedBranches` is on: a short
 headless ACP session (`naming.go`, the same shape as a source's run) answers
@@ -1075,9 +1105,8 @@ with one name, and anything wrong with the answer falls back to the title. Machi
 agent runs.
 
 Where a session works follows from what it is: an agent gets the card's own
-workspace, because it writes code; a deploy stands in the folder itself, because
-it publishes a branch that already exists; a planning conversation stands there
-too and claims nothing, because it only reads.
+workspace, because it writes code; a planning conversation stands in the folder
+itself and claims nothing, because it only reads.
 
 ## An agent talks back through MCP, not through its output
 
@@ -1121,9 +1150,8 @@ way out rather than read off the event: `noteAgentMove` before the write,
 to say about a card goes where everything else a session says already goes.
 
 **The app serves it, over HTTP, on the front door** (`/acp/board/mcp`,
-`boardapi.go`). The other two MCP servers are subprocesses of the agent because
-they do work of their own — dokku talks ssh, webtest drives a browser — but this
-one *is* the app: the board lives in this process, and the app is already a
+`boardapi.go`). An MCP server that does work of its own is a subprocess of the
+agent, but this one *is* the app: the board lives in this process, and the app is already a
 separate process from the agent, already listening on an origin it can reach. A
 subprocess in between would have been a proxy of ours to ourselves with the tool
 schema written twice. It is not the board's own REST API either, because what it
@@ -1132,8 +1160,7 @@ offers is ours: a column that means something, a folder by name.
 The server carries **a grant token, not a board id**
 (`internal/acp/boardtools.go`): the token names the board, is minted per agent
 run and dies with it, so an agent cannot leave cards anywhere else, and one found
-later opens nothing — the same bargain the dokku server takes, where the model
-picks steps and never targets. The handler is **stateless**, so every request
+later opens nothing: the model picks steps and never targets. The handler is **stateless**, so every request
 carries the grant and no session id outlives the check. Now that the tools reach
 existing cards, every call that names one is checked against the grant's board
 (`grantedCard`): a card id is something an agent can read anywhere, and without
@@ -1144,10 +1171,6 @@ ones — and only when the adapter says it takes them
 (`AgentCapabilities.McpCapabilities.Http`). An agent whose adapter does not is
 an agent with no way to end a stage, since `finish_work` is a tool: it runs, and
 the card waits for a person.
-
-A deploy session could take the same server and does not: it reports through the
-dokku server's own record, and an agent that could move its own card out of the
-column it was started from is a loop with nothing to stop it.
 
 ## A source brings cards in, and the app decides what they become
 

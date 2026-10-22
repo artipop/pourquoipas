@@ -23,7 +23,7 @@ import './boardPromptsDialog.scss'
 // canvas, which is the wrong place twice over: what an agent is told is not a
 // question about columns and arrows, and a fold under a canvas is somewhere
 // nobody scrolls to. The board's ⋯ menu asks each of the board's questions in
-// its own item (the folders dialog, the deploy-target dialog), and this is one of them.
+// its own item (the folders dialog, the agents dialog), and this is one of them.
 //
 // There are exactly two prompts and the screen says so. This one is the
 // board's; the other is the agent's own, in the agents panel in the settings, and it holds

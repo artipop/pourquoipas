@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -11,7 +10,6 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/artipop/pourquoipas/internal/dokku"
 	"github.com/artipop/pourquoipas/internal/feedmcp"
 	"github.com/artipop/pourquoipas/internal/sources"
 	"github.com/artipop/pourquoipas/internal/sources/inbox"
@@ -28,13 +26,11 @@ func maybeRunMCP(args []string) {
 		return
 	}
 	if len(args) < 2 {
-		fmt.Fprintf(os.Stderr, "usage: pourquoipas mcp %s|%s|%s|%s\n", dokku.ServerName, inbox.ServerName, kaiten.ServerName, feedmcp.ServerName)
+		fmt.Fprintf(os.Stderr, "usage: pourquoipas mcp %s|%s|%s\n", inbox.ServerName, kaiten.ServerName, feedmcp.ServerName)
 		os.Exit(2)
 	}
 	var err error
 	switch args[1] {
-	case dokku.ServerName:
-		err = runDokkuMCP()
 	case inbox.ServerName:
 		err = runInboxMCP()
 	case kaiten.ServerName:
@@ -43,7 +39,7 @@ func maybeRunMCP(args []string) {
 		err = runFeedMCP()
 	default:
 		fmt.Fprintf(os.Stderr, "unknown MCP server %q (there are %q, %q and %q)\n",
-			args[1], dokku.ServerName, inbox.ServerName, kaiten.ServerName)
+			args[1], inbox.ServerName, kaiten.ServerName, feedmcp.ServerName)
 		os.Exit(2)
 	}
 	if err != nil {
@@ -75,7 +71,7 @@ func runKaitenMCP() error {
 }
 
 // runFeedMCP bridges one stdio session to the column feed of the running app,
-// or of the server POURQUOIPAS_URL names. It is what another application starts to
+// or of the server PP_URL names. It is what another application starts to
 // read a board (Gandvík's xciii.json manifest).
 func runFeedMCP() error {
 	dir, err := appDataDir("", 0o755)
@@ -86,33 +82,6 @@ func runFeedMCP() error {
 	defer stop()
 	if err := feedmcp.ServeStdio(ctx, dir, os.Stdin, os.Stdout); err != nil &&
 		!errors.Is(err, context.Canceled) && !errors.Is(err, io.EOF) && !strings.Contains(err.Error(), "server is closing") {
-		return err
-	}
-	return nil
-}
-
-func runDokkuMCP() error {
-	raw := os.Getenv(dokku.EnvTarget)
-	if raw == "" {
-		return fmt.Errorf("%s is not set", dokku.EnvTarget)
-	}
-	var target dokku.Target
-	if err := json.Unmarshal([]byte(raw), &target); err != nil {
-		return fmt.Errorf("could not read %s: %w", dokku.EnvTarget, err)
-	}
-	cl, err := dokku.New(target, os.Getenv(dokku.EnvRepo), os.Getenv(dokku.EnvBranch))
-	if err != nil {
-		return err
-	}
-
-	// The agent kills the server by closing stdio; signals are the fallback for
-	// a session torn down from the outside.
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
-
-	// The agent closing our stdio is how a session ends, so EOF is success.
-	if err := dokku.ServeStdio(ctx, cl, os.Getenv(dokku.EnvArtifacts)); err != nil &&
-		!errors.Is(err, context.Canceled) && !errors.Is(err, io.EOF) {
 		return err
 	}
 	return nil

@@ -9,7 +9,7 @@
 # Configured by the environment at `docker run`:
 #   WAILS_SERVER_HOST, WAILS_SERVER_PORT — where the front door listens
 #     (0.0.0.0:8080 here); SERVER_HOST/SERVER_PORT are the same thing.
-#   POURQUOIPAS_DB_TYPE, POURQUOIPAS_DB_DSN — the board's database: sqlite3 (the default,
+#   PP_DB_TYPE, PP_DB_DSN — the board's database: sqlite3 (the default,
 #     a file under /data), postgres or mysql with that driver's connection
 #     string. On the last two the agents and the sources are off for now.
 #   /data — the install's own directory: the SQLite file, uploads, settings.

@@ -48,8 +48,7 @@ folder. If the field names a folder that has since been taken off the list, the
 agent does not start and the card says why: pick another folder or **"No
 folder"**.
 
-"Folders…" is in the menu of every board agents work on; "Where to deploy…" is
-on a board that asked for it.
+"Folders…" is in the menu of every board agents work on.
 
 Every folder in the list is a card of its own: the name, the path under it,
 and — for a repository — its two settings.
@@ -135,7 +134,5 @@ is left exactly where it is.
 
 ## Where the agent works
 
-An agent works on the card's own branch; a deploy stands in the folder itself,
-because it publishes a branch that already exists and needs no copy of its own.
-A conversation with no card («Talk it over with an agent») stands in the folder too and
+An agent works on the card's own branch. A conversation with no card («Talk it over with an agent») stands in the folder too and
 changes nothing in it.

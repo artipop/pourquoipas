@@ -14,7 +14,10 @@ import {goApp} from '../../goBridge'
 
 import {goMessage} from '../../goMessages'
 
-import {AGENT_KINDS, AdapterStatus} from './agentsPanel'
+import {isHosted} from '../../buildKind'
+import {providerName} from '../settings/aiPanel'
+
+import {AdapterStatus, MODEL_KIND, MODEL_PROVIDERS, agentKindOptions, newModelAgent} from './agentsPanel'
 import {syncAgentsToBoard} from './agentSync'
 
 import './agentQuickAdd.scss'
@@ -44,8 +47,12 @@ const AgentQuickAdd = (props: Props) => {
     const intl = useIntl()
     const bindings = goApp()
 
+    // On a hosted server the one kind there is is a model.
     const [name, setName] = createSignal('claude')
-    const [kind, setKind] = createSignal('claude')
+    const [kind, setKind] = createSignal(isHosted() ? MODEL_KIND : 'claude')
+    const [provider, setProvider] = createSignal(newModelAgent().provider)
+    const [model, setModel] = createSignal(newModelAgent().model)
+    const isModel = () => kind() === MODEL_KIND
     const [adapters, reloadAdapters] = createLoader(async (): Promise<AdapterStatus[]> => {
         if (!bindings?.ListAgentAdapters) {
             return []
@@ -88,7 +95,8 @@ const AgentQuickAdd = (props: Props) => {
         setBusy(true)
         setError('')
         try {
-            await bindings.AddAgent(JSON.stringify({name: name().trim(), kind: kind()}))
+            const entry = isModel() ? {name: name().trim(), kind: kind(), provider: provider(), model: model().trim()} : {name: name().trim(), kind: kind()}
+            await bindings.AddAgent(JSON.stringify(entry))
             if (props.board) {
                 await syncAgentsToBoard(props.board)
             }
@@ -116,11 +124,32 @@ const AgentQuickAdd = (props: Props) => {
                 <span>{intl.formatMessage({id: 'AgentQuickAdd.kind', defaultMessage: 'Kind'})}</span>
                 <Select
                     value={kind()}
-                    options={AGENT_KINDS}
+                    options={agentKindOptions(intl.formatMessage({id: 'Agents.kind-model', defaultMessage: 'Model by API key'}))}
                     onChange={setKind}
                     label={intl.formatMessage({id: 'AgentQuickAdd.kind', defaultMessage: 'Kind'})}
                 />
             </div>
+            <Show when={isModel()}>
+                <div class='AgentQuickAdd__field'>
+                    <span>{intl.formatMessage({id: 'Agents.provider', defaultMessage: 'Provider'})}</span>
+                    <Select
+                        value={provider()}
+                        options={MODEL_PROVIDERS.map((id) => ({value: id, label: providerName(id)}))}
+                        onChange={(next) => {
+                            setProvider(next)
+                            setModel(next === 'anthropic' ? newModelAgent().model : '')
+                        }}
+                        label={intl.formatMessage({id: 'Agents.provider', defaultMessage: 'Provider'})}
+                    />
+                </div>
+                <label class='AgentQuickAdd__field'>
+                    {intl.formatMessage({id: 'Agents.model-required', defaultMessage: 'Model'})}
+                    <input
+                        value={model()}
+                        onInput={(e) => setModel(e.currentTarget.value)}
+                    />
+                </label>
+            </Show>
 
             <Show when={adapter() && !adapter()!.ready}>
                 <div class='AgentQuickAdd__warning'>
@@ -140,7 +169,7 @@ const AgentQuickAdd = (props: Props) => {
                 <Button
                     emphasis='primary'
                     onClick={add}
-                    disabled={busy() || !name().trim()}
+                    disabled={busy() || !name().trim() || (isModel() && !model().trim())}
                 >
                     {intl.formatMessage({id: 'AgentQuickAdd.add', defaultMessage: 'Add'})}
                 </Button>

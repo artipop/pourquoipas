@@ -33,9 +33,8 @@ func git(t *testing.T, project string, args ...string) {
 // The columns a board made from the shipped template has, by the names the
 // English template gives them: what the fixtures move cards between.
 const (
-	TemplateWorkColumn   = "In progress"
-	TemplateDeployColumn = "Deploy"
-	TemplateTestColumn   = "QA"
+	TemplateWorkColumn = "In progress"
+	TemplateTestColumn = "QA"
 )
 
 // fakeBoardMeta is the board seen as the few properties this application keeps

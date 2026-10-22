@@ -15,7 +15,6 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/artipop/pourquoipas/internal/apperr"
-	"github.com/artipop/pourquoipas/internal/dokku"
 	"github.com/artipop/pourquoipas/internal/secrets"
 )
 
@@ -68,6 +67,11 @@ type Manager struct {
 
 	seededMu sync.Mutex
 	seeded   map[string]bool // boards whose own settings have been imported
+
+	// What a model agent needs from outside (modelconv.go): whose key it runs
+	// on, and whether this build has a machine of the person's to work on.
+	modelConns ModelConnections
+	hosted     bool
 
 	// switchedOff is the app-wide AI switch (SetSwitchedOff). Nil means on.
 	switchedOff func() bool
@@ -249,15 +253,8 @@ func (m *Manager) recover() {
 // startOptions are the ways a session can differ from a plain card task.
 type startOptions struct {
 	// agent is who works it, resolved by the caller from the card's assignee.
-	// Empty leaves the resolution to startSession, which is what a deploy
-	// started from the card's own button gets.
+	// Empty leaves the resolution to startSession.
 	agent AgentEntry
-	// deploy makes this a deploy session: it resolves a Dokku target, is given
-	// the dokku MCP tools and gets the deploy prompt instead of the card task.
-	deploy bool
-	// deployOverride pins the target by the registry entry's id, because a name
-	// is what somebody renames.
-	deployOverride string
 	// folderName picks a folder explicitly, for a start from the card that does
 	// not say which one it is about.
 	folderName string
@@ -269,8 +266,8 @@ func (m *Manager) StartSessionForEvent(ev CardMoved) (*Session, error) {
 	return m.startSession(ev, startOptions{})
 }
 
-// startSession is the shared launch path: every session — a card's task, a
-// deploy, a browser test — is started here, runs its one turn and ends.
+// startSession is the shared launch path: every card's session is started
+// here, runs its one turn and ends.
 func (m *Manager) startSession(ev CardMoved, opts startOptions) (*Session, error) {
 	// The last line of the switch: a stage queued behind a busy one, or an
 	// edge taken on something that was already in flight, stops here.
@@ -279,47 +276,37 @@ func (m *Manager) startSession(ev CardMoved, opts startOptions) (*Session, error
 	}
 	// Asked before anything is resolved: a card somebody took for themselves is
 	// theirs, and there is no point working out which folder an agent would not
-	// be using. A deploy is unaffected — that is machine work, not the
-	// assignee's. Somebody who wants an agent to work it assigns the agent,
-	// which humanAssignee reads as the opposite answer.
-	if !opts.deploy {
-		m.cfgMu.RLock()
-		known := append([]AgentEntry(nil), m.cfg.Agents...)
-		m.cfgMu.RUnlock()
-		if who := humanAssignee(ev, known); who != "" {
-			return nil, AssignedToHumanError{Who: who}
-		}
+	// be using. Somebody who wants an agent to work it assigns the agent, which
+	// humanAssignee reads as the opposite answer.
+	m.cfgMu.RLock()
+	known := append([]AgentEntry(nil), m.cfg.Agents...)
+	m.cfgMu.RUnlock()
+	if who := humanAssignee(ev, known); who != "" {
+		return nil, AssignedToHumanError{Who: who}
 	}
 
+	// A hosted server has no folders at all: no registry, no drafts. Its
+	// agents are models, and their work is what they say on the card.
 	workdirPath, err := m.resolveWorkdir(ev)
-	if opts.folderName != "" {
+	if m.hosted {
+		workdirPath, err = "", nil
+	} else if opts.folderName != "" {
 		// An explicit choice wins: the console offers one exactly when the card
 		// itself does not say which folder it is about.
 		workdirPath, err = m.resolveNamedWorkdir(opts.folderName)
 	}
 	// No folder is an answer, not a failure: the folder is asked on the card,
-	// and a card nobody has given one is worked in drafts of its own. Not a
-	// deploy — it publishes a branch, and drafts have none.
+	// and a card nobody has given one is worked in drafts of its own.
 	var noFolder errNoWorkdir
-	if errors.As(err, &noFolder) && !opts.deploy {
+	if errors.As(err, &noFolder) && !m.hosted {
 		workdirPath, err = m.cardDrafts(ev.BoardID, ev.CardID)
 	}
 	if err != nil {
 		return nil, err
 	}
-	deploy, deployBranch, err := m.resolveDeploy(ev, workdirPath, opts.deploy, opts.deployOverride)
-	if err != nil {
-		return nil, err
-	}
 	sessionID := uuid.NewString()
-	// Where a deploy's own outcome is recorded (deployreport.go).
-	artifacts, err := m.artifactsDir(sessionID)
-	if err != nil {
-		return nil, err
-	}
 	// Who works it: the caller's answer, which is the card's assignee wherever
-	// a move started this (assignedAgent). A deploy started from the card's own
-	// button names nobody, and falls back to the registry.
+	// a move started this (assignedAgent).
 	agent := opts.agent
 	if agent.Name == "" {
 		resolved, busy, resolveErr := m.resolveSessionAgent(ev, nil)
@@ -332,6 +319,16 @@ func (m *Manager) startSession(ev CardMoved, opts startOptions) (*Session, error
 		agent = resolved
 	}
 
+	if m.hosted && !agent.IsModel() {
+		return nil, apperr.New("agents.cli-not-here", "Agent {name} runs a program on a machine, and this server runs none: give the card an agent that is a model", "name", agent.Name)
+	}
+	// A model with no key would fail at its first request; it is said now,
+	// on the card, as what to do about it.
+	if agent.IsModel() {
+		if _, err := m.modelConnection(agent); err != nil {
+			return nil, err
+		}
+	}
 	net, err := m.resolveNetwork(agent)
 	if err != nil {
 		return nil, err
@@ -345,7 +342,7 @@ func (m *Manager) startSession(ev CardMoved, opts startOptions) (*Session, error
 	// checkout.
 	mode := m.WorkModeFor(ev.BoardID, workdirPath)
 	worktreeAvailable := mode != WorkModePlain
-	if !worktreeAvailable && !opts.deploy {
+	if !worktreeAvailable && workdirPath != "" {
 		m.mu.Lock()
 		var busyCard string
 		for _, other := range m.active {
@@ -364,49 +361,43 @@ func (m *Manager) startSession(ev CardMoved, opts startOptions) (*Session, error
 	// A branch in the folder itself is held by one card until its branch is
 	// merged, so the answer is known before a session is made rather than
 	// after — a card that cannot start must not leave a cancelled run behind.
-	if mode == WorkModeBranch && !opts.deploy {
+	if mode == WorkModeBranch && workdirPath != "" {
 		if err := m.folderIsFree(workdirPath, ev.CardID); err != nil {
 			return nil, err
 		}
 	}
 
 	m.cfgMu.RLock()
-	systemPrompt, deployPrompt := m.cfg.BoardPrompts[ev.BoardID], m.cfg.DeployPrompt
+	systemPrompt := m.cfg.BoardPrompts[ev.BoardID]
 	m.cfgMu.RUnlock()
 
 	// Where the card stands, said in the words the board uses: the agent reads
 	// the column it was dragged into along with the task, and moves the card on
 	// by naming another one (move_card).
-	prompt := composePrompt(ev, agent, systemPrompt, m.boardStanding(ev), worktreeAvailable)
-	if deploy != nil {
-		prompt = composeDeployPrompt(ev, agent, systemPrompt, deployPrompt, "", *deploy, deployBranch)
+	place := placeFolder
+	switch {
+	case workdirPath == "":
+		place = placeNone
+	case worktreeAvailable:
+		place = placeWorktree
 	}
-	// The tools of the deploy server are allowed up front: nobody is watching a
-	// card-triggered run, and an unanswered prompt is a rejected one. Seeding
-	// the session rather than DefaultConfig.AutoAllowTools also reaches installs
-	// whose config.json predates the feature.
+	prompt := composePrompt(ev, agent, systemPrompt, m.boardStanding(ev), place)
 	allowTools := make(map[string]bool)
-	if deploy != nil {
-		allowTools = deployTools()
-	}
 	s := &Session{
-		ID:           sessionID,
-		CardID:       ev.CardID,
-		Title:        ev.Title,
-		BoardID:      ev.BoardID,
-		WorkdirPath:  workdirPath,
-		BaseBranch:   ev.Props["branch"],
-		Agent:        agent,
-		Net:          net,
-		Deploy:       deploy,
-		DeployBranch: deployBranch,
-		Artifacts:    artifacts,
-		ColumnName:   ev.ToColumn.Name,
-		NodeID:       ev.ToColumn.OptionID,
-		PromptText:   prompt,
-		Policy:       agentPolicy(agent),
-		status:       StatusQueued,
-		allowTools:   allowTools,
+		ID:          sessionID,
+		CardID:      ev.CardID,
+		Title:       ev.Title,
+		BoardID:     ev.BoardID,
+		WorkdirPath: workdirPath,
+		BaseBranch:  ev.Props["branch"],
+		Agent:       agent,
+		Net:         net,
+		ColumnName:  ev.ToColumn.Name,
+		NodeID:      ev.ToColumn.OptionID,
+		PromptText:  prompt,
+		Policy:      agentPolicy(agent),
+		status:      StatusQueued,
+		allowTools:  allowTools,
 	}
 	rec := SessionRecord{
 		ID:        s.ID,
@@ -422,12 +413,8 @@ func (m *Manager) startSession(ev CardMoved, opts startOptions) (*Session, error
 
 	m.mu.Lock()
 	m.active[s.ID] = s
-	// byCard is the card's *own* session — the one its console talks to and the
-	// one leaving the column cancels. A deploy started from the card while that
-	// session is alive must not take its place.
-	if live := m.byCard[s.CardID]; live == nil || !opts.deploy {
-		m.byCard[s.CardID] = s
-	}
+	// byCard is the card's own session — the one leaving the column cancels.
+	m.byCard[s.CardID] = s
 	m.mu.Unlock()
 
 	// A session starting is the progress every stall record was waiting for.
@@ -465,34 +452,6 @@ func (m *Manager) CancelSessionForCard(cardID, reason string) bool {
 		m.finishSession(s, StatusCancelled, reason)
 	}
 	return true
-}
-
-// StartDeployForCard publishes a card's branch without moving the card into the
-// deploy column — the "Deploy" button next to the branch the card is working on.
-// branch overrides the card's own "branch" property, which is how the session's
-// worktree branch (the one the agent is actually committing to) gets deployed;
-// empty falls back to the card property and then to the checked-out branch.
-//
-// The branch lives in the folder's shared object store even when it was
-// created in a worktree, so pushing it from the folder itself — which is
-// where a deploy session always runs — reaches it.
-func (m *Manager) StartDeployForCard(cardID, branch string) (*Session, error) {
-	if m.reader == nil {
-		return nil, fmt.Errorf("reading cards is not available")
-	}
-	ctx, cancel := context.WithTimeout(m.rootCtx, 10*time.Second)
-	defer cancel()
-	ev, err := m.forCard(cardID).Reader.CardByID(ctx, cardID)
-	if err != nil {
-		return nil, fmt.Errorf("could not read the card: %w", err)
-	}
-	if b := strings.TrimSpace(branch); b != "" {
-		if ev.Props == nil {
-			ev.Props = map[string]string{}
-		}
-		ev.Props["branch"] = b
-	}
-	return m.startSession(ev, startOptions{deploy: true})
 }
 
 // planningWorkdir picks the registry entry to plan against. An empty name means
@@ -672,12 +631,9 @@ func (m *Manager) emitSession(s *Session, errText string) {
 		"cardId":    s.CardID,
 		"status":    string(status),
 		"error":     errText,
-		// The branch is what the card displays and what its deploy button
-		// publishes; deploy tells a card's own session apart from the deploy
-		// it started, which shares its card id.
+		// The branch is what the card displays.
 		"branch":       s.recordedBranch(),
 		"worktreePath": s.Worktree.Path,
-		"deploy":       s.Deploy != nil,
 		"turn":         turn,
 	})
 }
@@ -771,8 +727,10 @@ func planningPrompt(systemPrompt, planning string, agent AgentEntry, workdir Wor
 	} else {
 		b = fmt.Appendf(b, "%s\n\n", p)
 	}
-	b = fmt.Appendf(b, "Folder: `%s` (%s).", workdir.Name, workdir.Path)
-	return string(b)
+	if workdir.Path != "" {
+		b = fmt.Appendf(b, "Folder: `%s` (%s).", workdir.Name, workdir.Path)
+	}
+	return strings.TrimSpace(string(b))
 }
 
 // cardInputs is the stage's declared reads, valued: what an earlier stage
@@ -858,7 +816,7 @@ func propertyShape(name string, fields []CardProperty) string {
 // and what the agent carries (promptLead), what the stage wants said
 // (stagePrompt — the column's instructions, or its route node's), then the
 // card task.
-func composePrompt(ev CardMoved, agent AgentEntry, systemPrompt, stagePrompt string, useWorktree bool) string {
+func composePrompt(ev CardMoved, agent AgentEntry, systemPrompt, stagePrompt string, place workPlace) string {
 	b := []byte(promptLead(systemPrompt, agent))
 	if p := strings.TrimSpace(stagePrompt); p != "" {
 		b = fmt.Appendf(b, "%s\n\n", p)
@@ -867,32 +825,23 @@ func composePrompt(ev CardMoved, agent AgentEntry, systemPrompt, stagePrompt str
 	if ev.Body != "" {
 		b = fmt.Appendf(b, "\n%s\n", ev.Body)
 	}
-	if useWorktree {
+	switch place {
+	case placeWorktree:
 		b = fmt.Appendf(b, "\nWork in the current directory — it is a git worktree of its own, made for this task. Local commits are fine. Do not run git push.")
-	} else {
+	case placeFolder:
 		b = fmt.Appendf(b, "\nWork in the current directory — it is the person's own working folder. Do not switch branches, do not commit and do not push: leave the changes uncommitted for review.")
+	default:
+		b = fmt.Appendf(b, "\nThere are no files to work in: what you produce is what you write on the card — the comment, the fields, the cards you create.")
 	}
 	return string(b)
 }
 
-// composeDeployPrompt builds the task text of a deploy session: the same brief
-// an ordinary task gets, then the deploy instructions, then the concrete
-// facts — which branch goes where, and what the resulting address should be.
-func composeDeployPrompt(ev CardMoved, agent AgentEntry, systemPrompt, deployPrompt, stagePrompt string, target DeployEntry, branch string) string {
-	b := []byte(promptLead(systemPrompt, agent))
-	if p := strings.TrimSpace(deployPrompt); p != "" {
-		b = fmt.Appendf(b, "%s\n\n", p)
-	} else {
-		b = fmt.Appendf(b, "%s\n\n", DefaultDeployPrompt)
-	}
-	if p := strings.TrimSpace(stagePrompt); p != "" {
-		b = fmt.Appendf(b, "%s\n\n", p)
-	}
-	slug := dokku.AppSlug(branch)
-	b = fmt.Appendf(b, "Card: %s\nBranch: %s\nTarget: %s\nDokku application: %s\nExpected address: %s\n",
-		ev.Title, branch, target.Name, target.AppName(slug), target.URL(slug))
-	if ev.Body != "" {
-		b = fmt.Appendf(b, "\nThe card's description:\n%s\n", ev.Body)
-	}
-	return string(b)
-}
+// workPlace is where a stage's work happens, which is what the brief says
+// about it.
+type workPlace int
+
+const (
+	placeNone workPlace = iota
+	placeFolder
+	placeWorktree
+)

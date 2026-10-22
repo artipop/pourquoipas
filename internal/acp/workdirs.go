@@ -61,16 +61,6 @@ func (m *Manager) WorkdirsForBoard(boardID string) []WorkdirEntry {
 // no git here, where the answer is given, rather than when a card cannot find a
 // branch. Everywhere else passes "", so a folder that becomes a repository
 // later needs nobody to re-add it.
-//
-// TODO: validate the name as a hostname label. A deploy target names its apps
-// and its subdomain after the folder (dokku.AppLabel), so a name that is not
-// a valid DNS label is folded there silently, and two names that fold together
-// would share one subdomain. The check belongs here, where the name is typed.
-//
-// TODO: this entry is also where a preview's own settings belong — config
-// variables for the branch app, whether to request a Let's Encrypt certificate,
-// how long a build may take. They were on the deploy target, which is wrong: a
-// target is a machine, and those describe the thing being deployed.
 func (m *Manager) AddWorkdir(name, path, boardID, kind string, global bool) (WorkdirEntry, error) {
 	if !filepath.IsAbs(path) {
 		return WorkdirEntry{}, apperr.New("folders.not-absolute", "The path has to be absolute: {path}", "path", path)
@@ -336,7 +326,7 @@ func (m *Manager) resolveNamedWorkdir(name string) (string, error) {
 // drafts instead (cardDrafts); a terminal is a conversation first, and
 // StartCardTerminal opens it without a folder instead of refusing (a card can
 // be talked over — wording, a plan — before anybody decides where the work
-// lives). A deploy is refused: it publishes a branch, and drafts have none.
+// lives).
 type errNoWorkdir struct{ error }
 
 func (e errNoWorkdir) Unwrap() error { return e.error }

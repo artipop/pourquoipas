@@ -69,7 +69,7 @@ func TestATemplateIsAskedForNothing(t *testing.T) {
 	asks := boardProps(t, map[string]any{
 		BoardPropSetup: BoardSetup{Steps: []BoardSetupStep{
 			{Kind: SetupStepAgent},
-			{Kind: SetupStepDeploy},
+			{Kind: SetupStepDone},
 		}},
 	})
 	m := setupManager(t, asks)
@@ -119,8 +119,7 @@ func TestEveryBoardIsAskedItsNameFirst(t *testing.T) {
 func TestABoardAsksForTheStepsItNames(t *testing.T) {
 	m := setupManager(t, boardProps(t, map[string]any{
 		BoardPropSetup: BoardSetup{Steps: []BoardSetupStep{
-			{Kind: SetupStepDeploy, Hint: "The Dokku host the previews go to"},
-			{Kind: SetupStepAgent},
+			{Kind: SetupStepAgent, Hint: "The agent that writes the newsletter"},
 			{Kind: SetupStepDone},
 		}},
 	}))
@@ -129,7 +128,7 @@ func TestABoardAsksForTheStepsItNames(t *testing.T) {
 	if !plan.Declared {
 		t.Error("the plan does not say the board asked for it")
 	}
-	if want := []string{SetupStepName, SetupStepDeploy, SetupStepAgent, SetupStepDone}; !equal(kinds(plan), want) {
+	if want := []string{SetupStepName, SetupStepAgent, SetupStepDone}; !equal(kinds(plan), want) {
 		t.Fatalf("steps %v, expected %v", kinds(plan), want)
 	}
 	if plan.Steps[1].Hint == "" {
@@ -202,28 +201,14 @@ func TestAFilledRegistryOffersAnAnswerRatherThanBeingOne(t *testing.T) {
 			t.Errorf("%s: the machine can answer it, and the plan does not say so", kind)
 		}
 	}
-	// Deploying is asked for only by a board that says it needs it — nothing
-	// is inferred any more, so an ordinary board is not asked.
-	if _, asked := first[SetupStepDeploy]; asked {
-		t.Error("deploy: a board that said nothing is asked for it")
-	}
-
-	// A board that does declare it is answered from the registry.
+	// A board made while publishing to Dokku existed still declares the
+	// step; it is dropped in silence, as the folder step was.
 	declaring := setupManager(t, boardProps(t, map[string]any{
-		BoardPropSetup: BoardSetup{Steps: []BoardSetupStep{{Kind: SetupStepDeploy}}},
+		BoardPropSetup: BoardSetup{Steps: []BoardSetupStep{{Kind: "deploy"}, {Kind: SetupStepAgent}}},
 	}))
-	declaring.cfg.Agents = []AgentEntry{{ID: newID(), Name: "claude", Kind: "claude"}}
-	declared := map[string]SetupStep{}
 	for _, s := range declaring.SetupPlanFor("board9").Steps {
-		declared[s.Kind] = s
-	}
-	if declared[SetupStepDeploy].Ready {
-		t.Error("deploy: nothing is registered, and the plan says otherwise")
-	}
-	declaring.cfg.Deploys = []DeployEntry{{Name: "dokku"}}
-	for _, s := range declaring.SetupPlanFor("board9").Steps {
-		if s.Kind == SetupStepDeploy && !s.Ready {
-			t.Error("deploy: a host is registered and the plan does not say so")
+		if s.Kind == "deploy" {
+			t.Error("deploy: a retired step is still asked")
 		}
 	}
 
@@ -246,17 +231,17 @@ func TestAFilledRegistryOffersAnAnswerRatherThanBeingOne(t *testing.T) {
 func TestASkippedStepIsRememberedForThatBoard(t *testing.T) {
 	m := setupManager(t, nil)
 
-	if err := m.RecordSetupStep("board1", SetupStepDeploy, SetupSkipped); err != nil {
+	if err := m.RecordSetupStep("board1", SetupStepAgent, SetupSkipped); err != nil {
 		t.Fatal(err)
 	}
 	for _, s := range m.SetupPlanFor("board1").Steps {
-		if s.Kind == SetupStepDeploy && s.Status != SetupSkipped {
-			t.Errorf("board1 deploy: %q", s.Status)
+		if s.Kind == SetupStepAgent && s.Status != SetupSkipped {
+			t.Errorf("board1 agent: %q", s.Status)
 		}
 	}
 	for _, s := range m.SetupPlanFor("board2").Steps {
-		if s.Kind == SetupStepDeploy && s.Status != SetupPending {
-			t.Errorf("board2 deploy: %q — another board's answer leaked", s.Status)
+		if s.Kind == SetupStepAgent && s.Status != SetupPending {
+			t.Errorf("board2 agent: %q — another board's answer leaked", s.Status)
 		}
 	}
 
@@ -265,27 +250,8 @@ func TestASkippedStepIsRememberedForThatBoard(t *testing.T) {
 	if err := m.RecordSetupStep("board1", "telepathy", SetupSkipped); err == nil {
 		t.Error("an unknown step was recorded")
 	}
-	if err := m.RecordSetupStep("board1", SetupStepDeploy, "postponed"); err == nil {
+	if err := m.RecordSetupStep("board1", SetupStepAgent, "postponed"); err == nil {
 		t.Error("an unknown status was recorded")
-	}
-}
-
-// The board may insist on a step the app calls optional: a route that deploys
-// is not set up until there is somewhere to deploy to.
-func TestABoardCanMakeAnOptionalStepRequired(t *testing.T) {
-	m := setupManager(t, boardProps(t, map[string]any{
-		BoardPropSetup: BoardSetup{Steps: []BoardSetupStep{
-			{Kind: SetupStepDeploy, Required: true},
-		}},
-	}))
-
-	for _, s := range m.SetupPlanFor("board1").Steps {
-		switch s.Kind {
-		case SetupStepDeploy:
-			if s.Optional {
-				t.Error("the board asked for deploy outright and got an optional step")
-			}
-		}
 	}
 }
 

@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/artipop/pourquoipas/internal/apperr"
-	"github.com/artipop/pourquoipas/internal/dokku"
 )
 
 // WorkdirEntry is one named local folder in the registry.
@@ -90,14 +89,19 @@ type AgentEntry struct {
 	// every route on every board and unassigned every card — silently, because
 	// nothing can check a name against a name. Filled in at startup for an
 	// entry written before this field.
-	ID      string            `json:"id,omitempty"`
-	Name    string            `json:"name"`              // shown on screen; the account's username
-	Kind    string            `json:"kind"`              // "claude" | "codex" | "antigravity" | "copilot" | "junie" | "acp"
-	BinPath string            `json:"binPath,omitempty"` // overrides adapter discovery
-	Model   string            `json:"model,omitempty"`   // the model the adapter is asked for
-	Prompt  string            `json:"prompt,omitempty"`  // per-agent system prompt prepended to the task
-	Env     map[string]string `json:"env,omitempty"`     // per-process env (CODEX_HOME, OPENAI_API_KEY, …)
-	Args    []string          `json:"args,omitempty"`    // extra CLI args (sandbox/approval, etc.)
+	ID      string `json:"id,omitempty"`
+	Name    string `json:"name"`              // shown on screen; the account's username
+	Kind    string `json:"kind"`              // "claude" | "codex" | "antigravity" | "copilot" | "junie" | "acp" | "model"
+	BinPath string `json:"binPath,omitempty"` // overrides adapter discovery
+	// Provider is whose API a "model" agent is reached through (modelapi), and
+	// OwnerID whose agent it is — the person whose key it runs on. Empty owner
+	// is the one person at a desktop.
+	Provider string            `json:"provider,omitempty"`
+	OwnerID  string            `json:"ownerId,omitempty"`
+	Model    string            `json:"model,omitempty"`  // the model the adapter is asked for
+	Prompt   string            `json:"prompt,omitempty"` // per-agent system prompt prepended to the task
+	Env      map[string]string `json:"env,omitempty"`    // per-process env (CODEX_HOME, OPENAI_API_KEY, …)
+	Args     []string          `json:"args,omitempty"`   // extra CLI args (sandbox/approval, etc.)
 
 	// CLIArgs are extra arguments for the CLI behind the agent's adapter, for
 	// the things ACP has no word for — Claude's Remote Control is a flag of the
@@ -348,25 +352,6 @@ type ProxyEntry struct {
 	NetworkSettings
 }
 
-// DeployEntry is one named Dokku destination in the registry: where the branch
-// of a card moved into the deploy column is published. A card is mapped to an
-// entry by a select option carrying its name, by the folder it resolved to,
-// or — with a single entry registered — by default.
-//
-// The Dokku half is dokku.Target verbatim, because that is exactly what the MCP
-// subprocess is handed at session start.
-type DeployEntry struct {
-	// ID is what a route's deploy stage points at. Filled in at startup for an
-	// entry written before this field.
-	ID   string `json:"id,omitempty"`
-	Name string `json:"name"` // shown on screen; matches the card "Deploy target" option
-
-	// An entry is the host and the domain, nothing else: what a preview needs
-	// beyond that — environment, TLS, how long a build may take — is a property
-	// of the folder being deployed, not of the machine it lands on.
-	dokku.Target
-}
-
 // IsZero reports whether nothing is configured.
 func (n NetworkSettings) IsZero() bool {
 	return strings.TrimSpace(n.Proxy) == "" &&
@@ -463,7 +448,13 @@ const (
 	AgentKindCopilot     = "copilot"
 	AgentKindJunie       = "junie"
 	AgentKindACP         = "acp"
+	// AgentKindModel is no process at all: a model reached over its vendor's
+	// API with a key, the loop run here (modelconv.go).
+	AgentKindModel = "model"
 )
+
+// IsModel says the agent is a model over an API rather than a CLI over ACP.
+func (a AgentEntry) IsModel() bool { return a.Kind == AgentKindModel }
 
 // AgentKinds lists every accepted kind, in the order the UI offers them.
 var AgentKinds = []string{
@@ -592,11 +583,6 @@ type Config struct {
 	// Not in the file: the `proxy` table. See Workdirs.
 	Proxies []ProxyEntry `json:"-"`
 
-	// Deploys is the registry of named Dokku destinations used by the deploy
-	// column. The matching target is handed to the session's dokku MCP server.
-	// Not in the file: the `deploy_target` table. See Workdirs.
-	Deploys []DeployEntry `json:"-"`
-
 	// BoardPrompts is that instruction, per board: the text prepended to every
 	// prompt a session of that board is given, before the agent's own system
 	// prompt and the card task. Keyed by board id, empty for a board that
@@ -604,10 +590,6 @@ type Config struct {
 	//
 	// Not in the file: `prompt` on the board. See Workdirs.
 	BoardPrompts map[string]string `json:"-"`
-
-	// DeployPrompt is what a deploy session is told to do; the concrete facts
-	// (folder, branch, target, expected URL) are appended to it.
-	DeployPrompt string `json:"deployPrompt"`
 
 	// TestPrompt is what a test session is told to do; the preview URL and the
 	// card's own description (which is the scenario) are appended to it.
@@ -623,9 +605,6 @@ type Config struct {
 	// browser itself is launched — headless, which binary, what viewport — is
 	// the business of the MCP server the agent carries, not of this config.
 	TestTimeoutMinutes int `json:"testTimeoutMinutes"`
-
-	// ArtifactsDir is where screenshots and result.json of test runs are kept.
-	ArtifactsDir string `json:"artifactsDir"`
 
 	// VCSPollSeconds is how often the folders cards wait on are polled for
 	// branch and pull-request events. Zero disables folder watching.
@@ -695,8 +674,6 @@ func DefaultConfig(dataDir string) Config {
 		Workdirs:                 []WorkdirEntry{},
 		Agents:                   []AgentEntry{},
 		Proxies:                  []ProxyEntry{},
-		Deploys:                  []DeployEntry{},
-		DeployPrompt:             DefaultDeployPrompt,
 		TestPrompt:               DefaultTestPrompt,
 		PlanningPrompt:           DefaultPlanningPrompt,
 		WorktreeMode:             "always",
@@ -709,18 +686,13 @@ func DefaultConfig(dataDir string) Config {
 		IdempotencyWindowSeconds: 10,
 		// What an agent is *not* asked about: reading and editing code, and the
 		// shell a coding agent cannot work without — withholding it while Edit
-		// and Write are allowed buys nothing but interruptions. The dokku tools
-		// are the same judgement for a deploy; destroy_deployment is absent
-		// because tearing an environment down is worth a human answer.
+		// and Write are allowed buys nothing but interruptions.
 		AutoAllowTools: []string{
 			"Read", "Grep", "Glob", "Edit", "Write", "MultiEdit", "NotebookEdit", "TodoWrite", "Bash", "Skill",
-			"mcp__dokku__deploy_branch", "mcp__dokku__app_logs",
-			"mcp__dokku__deployment_status", "mcp__dokku__list_deployments",
 		},
 		VCSPollSeconds: 60,
 		GitRemote:      "origin",
 		WorktreeDir:    filepath.Join(dataDir, "worktrees"),
-		ArtifactsDir:   filepath.Join(dataDir, "artifacts"),
 	}
 }
 
@@ -741,20 +713,6 @@ Change nothing in the folder: no files, no state, no branches. This is a
 discussion, not the work.
 
 Start with one short question about what has to be done.`
-
-// DefaultDeployPrompt is the task text a deploy session starts with.
-const DefaultDeployPrompt = `Task: publish this card's branch to Dokku.
-
-Use only the mcp__dokku__* tools: deploy_branch publishes a branch, app_logs
-shows the build and application logs, deployment_status shows the state of the
-processes. Do not run ssh or git push by hand, and do not switch branches.
-
-If the build fails: read the logs, name the cause, and fix it only when the fix
-is obvious and belongs to the deploy (Procfile, environment variables, build
-configuration). Do not rewrite the application's logic — describe the problem
-instead.
-
-End your answer with the preview URL.`
 
 // DefaultTestPrompt is the task text a test session starts with. It is written
 // for a tester, not a developer: the job is to find what is broken on the

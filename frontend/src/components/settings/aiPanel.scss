@@ -1,0 +1,26 @@
+.AIPanel {
+    .AIPanel__provider {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 12px 0;
+        border-top: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+    }
+
+    .AIPanel__providerHead {
+        display: flex;
+        flex-direction: row;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    .AIPanel__state {
+        font-size: var(--text-small);
+        color: rgba(var(--center-channel-color-rgb), 0.64);
+    }
+
+    .AIPanel__state--set {
+        color: rgb(var(--online-indicator-rgb));
+    }
+}

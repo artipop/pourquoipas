@@ -16,7 +16,7 @@ import './workdirsDialog.scss'
 // over: setting up where an agent works is not a question about columns and
 // routes, and a fold under a canvas is a place nobody opens. Which of these
 // screens a board is offered follows what it asks for (its setup plan), so a
-// board of shopping lists is never offered a deploy host or a repository.
+// board of shopping lists is never offered a repository.
 
 type Props = {
     board: Board

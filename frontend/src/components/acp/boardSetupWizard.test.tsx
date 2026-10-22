@@ -25,15 +25,15 @@ const testBoard: Board = TestBlockFactory.createBoard()
 function plan(kinds: Array<SetupStepKind | Partial<SetupStep>>, extra: Partial<SetupPlan> = {}): string {
     const steps = kinds.map((kind) => {
         if (typeof kind === 'string') {
-            return {kind, optional: kind === 'deploy', status: 'pending'}
+            return {kind, optional: false, status: 'pending'}
         }
         return {kind: 'agent', optional: false, status: 'pending', ...kind}
     })
     return JSON.stringify({boardId: testBoard.id, steps, declared: true, automated: true, ...extra})
 }
 
-// The developer board: it publishes, so it is asked everything.
-const FULL_PLAN = plan(['name', 'agent', 'deploy', 'done'])
+// The developer board: it is asked everything there is.
+const FULL_PLAN = plan(['name', 'agent', 'done'])
 
 // A board of household chores: an agent and nothing else.
 const CHORES_PLAN = plan([{kind: 'agent', hint: 'Агент, который составляет списки покупок'}, {kind: 'done'}])
@@ -50,7 +50,6 @@ function stubBindings(overrides: Record<string, unknown> = {}) {
         AddAgent: vi.fn().mockResolvedValue('{}'),
         UpdateAgent: vi.fn().mockResolvedValue('{}'),
         SyncAgentUsers: vi.fn().mockResolvedValue('[]'),
-        AddDeployTarget: vi.fn().mockResolvedValue('{}'),
         SeedBoardAutomation: vi.fn().mockResolvedValue(undefined),
         ...overrides,
     }
@@ -266,33 +265,6 @@ describe('components/acp/boardSetupWizard', () => {
         expect(bindings.AddAgent).not.toHaveBeenCalled()
     })
 
-    test('deploying is skippable, and skipping is remembered', async () => {
-        const bindings = stubBindings({
-            ListAgents: vi.fn().mockResolvedValue(JSON.stringify([{name: 'claude'}])),
-            BoardSetupPlan: vi.fn().mockResolvedValue(plan([
-                {kind: 'agent', status: 'done'},
-                {kind: 'deploy', optional: true},
-                {kind: 'done'},
-            ])),
-        })
-        const onClose = vi.fn()
-        renderWizard(onClose)
-
-        await waitFor(() => expect(screen.getByText('Dokku host')).toBeInTheDocument())
-        userEvent.click(screen.getByRole('button', {name: 'Skip'}))
-
-        await waitFor(() => expect(screen.getByRole('button', {name: 'Done'})).toBeInTheDocument())
-        expect(bindings.AddDeployTarget).not.toHaveBeenCalled()
-
-        // A skip is the one answer no registry can be read for later, so it is
-        // the one the app has to remember.
-        expect(bindings.RecordBoardSetupStep).toHaveBeenCalledWith(testBoard.id, 'deploy', 'skipped')
-
-        userEvent.click(screen.getByRole('button', {name: 'Done'}))
-        await waitFor(() => expect(bindings.SeedBoardAutomation).toHaveBeenCalled())
-        expect(onClose).toHaveBeenCalled()
-    })
-
     test('a board is asked only what it asked to be asked', async () => {
         const bindings = stubBindings({
             ListAgents: vi.fn().mockResolvedValue(JSON.stringify([{name: 'claude'}])),
@@ -304,9 +276,6 @@ describe('components/acp/boardSetupWizard', () => {
         // is also what says the plan has arrived.
         await waitFor(() => expect(screen.getByText('Агент, который составляет списки покупок')).toBeInTheDocument())
 
-        // The question this board cannot answer is not even listed.
-        expect(screen.queryByText('Deploy')).toBeNull()
-
         // The machine already has an agent, so this step says so rather than
         // asking again.
         await waitFor(() => expect(screen.getByText('claude')).toBeInTheDocument())
@@ -315,7 +284,6 @@ describe('components/acp/boardSetupWizard', () => {
 
         // Straight to the end, and the end names this board's own column.
         await waitFor(() => expect(screen.getByRole('button', {name: 'Done'})).toBeInTheDocument())
-        expect(bindings.AddDeployTarget).not.toHaveBeenCalled()
     })
 
     // Leaving early is offered while there is something left to answer. On the
@@ -323,16 +291,17 @@ describe('components/acp/boardSetupWizard', () => {
     // one read as two ways out of a wizard that had already finished.
     test('the last screen offers only Done, and the ones before it offer to leave', async () => {
         stubBindings({
-            BoardSetupPlan: vi.fn().mockResolvedValue(plan([{kind: 'deploy', optional: true}, {kind: 'done'}])),
+            ListAgents: vi.fn().mockResolvedValue(JSON.stringify([{name: 'claude'}])),
+            BoardSetupPlan: vi.fn().mockResolvedValue(plan([{kind: 'agent'}, {kind: 'done'}])),
         })
         const early = renderWizard()
 
-        await waitFor(() => expect(screen.getByRole('button', {name: 'Skip'})).toBeInTheDocument())
+        await waitFor(() => expect(screen.getByRole('button', {name: 'Next'})).toBeInTheDocument())
         expect(screen.getByRole('button', {name: 'I’ll find my way around'})).toBeInTheDocument()
         early.unmount()
 
         stubBindings({
-            BoardSetupPlan: vi.fn().mockResolvedValue(plan([{kind: 'deploy', status: 'skipped', optional: true}, {kind: 'done'}])),
+            BoardSetupPlan: vi.fn().mockResolvedValue(plan([{kind: 'agent', status: 'done'}, {kind: 'done'}])),
         })
         renderWizard()
 

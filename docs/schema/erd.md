@@ -287,6 +287,7 @@ erDiagram
     boards ||--o{ workspace_board : "board_id CASCADE"
     proxy ||--o{ agent : "proxy_id SET NULL"
     users ||--o{ agent : "user_id SET NULL"
+    users ||--o{ agent : "owner_id CASCADE"
     workspace ||--o{ workspace_board : "workspace_id CASCADE"
 
     workspace {
@@ -310,6 +311,7 @@ erDiagram
         name_100 name "On screen and in the account's username. No longer a reference."
         name_32 kind
         id user_id FK "The board account. NULL until one is made, and NULL again if it is deleted: the registry entry is the…"
+        id owner_id FK "The person whose agent this is, and whose model key it runs on. NULL on a desktop, where the one person there…"
         id proxy_id FK "nullable"
         text bin_path "nullable"
         name_100 model "nullable"
@@ -325,17 +327,6 @@ erDiagram
         text ca_cert "nullable"
         name_100 username "nullable"
         text password "Kept apart from the URL so it is entered raw and masked on screen. Still stored in the clear here, exactly as…"
-        millis created_at
-    }
-    deploy_target {
-        id id PK
-        name_100 name
-        name_255 ssh_host
-        name_64 ssh_user "nullable"
-        int ssh_port "nullable"
-        text ssh_key "nullable"
-        name_100 base_app "nullable"
-        name_255 base_domain "nullable"
         millis created_at
     }
 ```

@@ -18,7 +18,6 @@ describe('components/settings/appSettingsDialog', () => {
     const bindings = () => ({
         ListAgents: vi.fn().mockResolvedValue(JSON.stringify([{name: 'claude', kind: 'claude'}])),
         ListAgentAdapters: vi.fn().mockResolvedValue('[]'),
-        ListDeployTargets: vi.fn().mockResolvedValue(JSON.stringify([{name: 'dokku-1', sshHost: 'dokku.example.com'}])),
         ListProxies: vi.fn().mockResolvedValue(JSON.stringify([{name: 'office', proxy: 'http://proxy.example.com:8080'}])),
         GetPlanningPrompt: vi.fn().mockResolvedValue('Think it through.'),
         GetServerAttachment: vi.fn().mockResolvedValue(JSON.stringify({url: '', username: '', running: ''})),
@@ -48,11 +47,11 @@ describe('components/settings/appSettingsDialog', () => {
         await waitFor(() => expect(screen.getByText('Server address')).toBeInTheDocument())
     })
 
-    // Three registries are the machine's and are still not here: an agent, the
-    // proxy it reaches the network through and a Dokku host each mean something
+    // Two registries are the machine's and are still not here: an agent and the
+    // proxy it reaches the network through each mean something
     // only to a board that runs agents, so each is a door on that board's own ⋯
     // menu — bindings or no bindings.
-    test('leaves the agents, their proxies and the deploy hosts to the board', async () => {
+    test('leaves the agents and their proxies to the board', async () => {
         fakeGoSide(bindings())
 
         open()
@@ -60,7 +59,6 @@ describe('components/settings/appSettingsDialog', () => {
         await waitFor(() => expect(screen.getByRole('button', {name: 'The app itself'})).toBeInTheDocument())
         expect(screen.queryByRole('button', {name: 'Agents'})).toBeNull()
         expect(screen.queryByRole('button', {name: 'Proxy configurations'})).toBeNull()
-        expect(screen.queryByRole('button', {name: 'Where to deploy'})).toBeNull()
     })
 
     // What a conversation with an agent opens saying is a setting of the

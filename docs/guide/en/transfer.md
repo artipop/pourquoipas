@@ -29,7 +29,6 @@ SSH keys, tokens and environment variables are not valid on another computer.
 | What | Where to set it up after the move |
 |---|---|
 | Agents — model, environment, MCP servers, proxies | the board's ⋯ menu → [Agents…](./settings/agents.md) |
-| Where to deploy — the Dokku host and the SSH key | on the deploying board: the ⋯ menu → "Where to deploy…" |
 | Proxies | the same window as the agents, under the list |
 | Project folders | the board's ⋯ menu → "Folders…" |
 | Light or dark, language | "Settings" → "The app itself" |

@@ -8,6 +8,7 @@ import (
 	"unicode"
 
 	"github.com/artipop/pourquoipas/internal/apperr"
+	"github.com/artipop/pourquoipas/internal/modelapi"
 )
 
 // Agent registry: named coding agents (claude/codex with their own prompt,
@@ -39,6 +40,17 @@ func validateAgent(a AgentEntry) (AgentEntry, error) {
 	a.Command = command
 	a.Kind = strings.TrimSpace(strings.ToLower(a.Kind))
 	switch {
+	case a.Kind == AgentKindModel:
+		a.Provider = strings.TrimSpace(strings.ToLower(a.Provider))
+		if !knownProvider(a.Provider) {
+			return AgentEntry{}, apperr.New("agents.unknown-provider", "Unknown model provider {provider} (one of: {providers})", "provider", a.Provider, "providers", strings.Join(modelapi.Providers, ", "))
+		}
+		a.Model = strings.TrimSpace(a.Model)
+		if a.Model == "" {
+			return AgentEntry{}, apperr.New("agents.no-model", "An agent that is a model needs the model's name")
+		}
+		// None of the process's fields mean anything without a process.
+		a.BinPath, a.Command, a.Args, a.CLIArgs, a.Env = "", nil, nil, nil, nil
 	case a.Kind == AgentKindACP:
 		if len(a.Command) == 0 {
 			return AgentEntry{}, apperr.New("agents.no-command", "An agent of kind {kind} needs a launch command (the ACP agent's argv)", "kind", AgentKindACP)
@@ -53,7 +65,7 @@ func validateAgent(a AgentEntry) (AgentEntry, error) {
 	}
 	a.CLIArgs = cliArgs
 	a.Options = normalizeOptions(a.Options)
-	servers, err := validateMCPServers(a.MCPServers)
+	servers, err := validateMCPServers(a.MCPServers, a.IsModel())
 	if err != nil {
 		return AgentEntry{}, fmt.Errorf("agent %q: %w", a.Name, err)
 	}
@@ -64,7 +76,7 @@ func validateAgent(a AgentEntry) (AgentEntry, error) {
 
 // validateMCPServers normalizes the agent's own MCP servers. A name has to be
 // usable as a tool prefix and must not shadow one we spawn ourselves.
-func validateMCPServers(servers map[string]AgentMCPServer) (map[string]AgentMCPServer, error) {
+func validateMCPServers(servers map[string]AgentMCPServer, remoteAllowed bool) (map[string]AgentMCPServer, error) {
 	if len(servers) == 0 {
 		return nil, nil
 	}
@@ -88,6 +100,18 @@ func validateMCPServers(servers map[string]AgentMCPServer) (map[string]AgentMCPS
 			}
 		}
 
+		// A model agent is an MCP client of ours and reaches a remote server
+		// itself; a CLI is handed servers in session/new, which carries stdio.
+		if remoteAllowed && strings.TrimSpace(srv.URL) != "" {
+			srv.URL = strings.TrimSpace(srv.URL)
+			srv.Type = strings.ToLower(strings.TrimSpace(srv.Type))
+			if srv.Type != "sse" {
+				srv.Type = "http"
+			}
+			srv.Command, srv.Args = "", nil
+			out[name] = srv
+			continue
+		}
 		// A remote server is a normal thing to paste from a README, and it
 		// would otherwise fail as "no command" — which explains nothing.
 		if strings.TrimSpace(srv.URL) != "" || strings.EqualFold(strings.TrimSpace(srv.Type), "http") || strings.EqualFold(strings.TrimSpace(srv.Type), "sse") {
@@ -149,6 +173,9 @@ func validMCPName(name string) bool {
 func (m *Manager) AddAgent(a AgentEntry) (AgentEntry, error) {
 	a, err := validateAgent(a)
 	if err != nil {
+		return AgentEntry{}, err
+	}
+	if err := m.agentFitsHere(a); err != nil {
 		return AgentEntry{}, err
 	}
 	m.cfgMu.Lock()
@@ -280,6 +307,9 @@ func (m *Manager) UpdateAgent(a AgentEntry) (AgentEntry, error) {
 	if err != nil {
 		return AgentEntry{}, err
 	}
+	if err := m.agentFitsHere(a); err != nil {
+		return AgentEntry{}, err
+	}
 	m.cfgMu.Lock()
 	defer m.cfgMu.Unlock()
 	for i, e := range m.cfg.Agents {
@@ -295,6 +325,8 @@ func (m *Manager) UpdateAgent(a AgentEntry) (AgentEntry, error) {
 			// The account outlives the rename: it is the agent's identity on the
 			// board, and every card assigned to it points at it by that id.
 			a.UserID = e.UserID
+			// So is the owner: whose agent it is does not change by editing it.
+			a.OwnerID = e.OwnerID
 			// The identity is the entry's, not the caller's. A caller that read
 			// the agent, did something else that saved, and then handed the copy
 			// back would otherwise replace a registered agent with one that has
@@ -639,4 +671,22 @@ func sameAgentEntry(existing, edit AgentEntry) bool {
 		return existing.ID == id
 	}
 	return sameAgentName(existing.Name, edit.Name)
+}
+
+// agentFitsHere refuses what this build cannot run, when it is registered
+// rather than when a card is moved: a hosted server starts no program, so an
+// agent there is a model, and its MCP servers are addresses.
+func (m *Manager) agentFitsHere(a AgentEntry) error {
+	if !m.hosted {
+		return nil
+	}
+	if !a.IsModel() {
+		return apperr.New("agents.cli-not-here", "Agent {name} runs a program on a machine, and this server runs none: give the card an agent that is a model", "name", a.Name)
+	}
+	for name, srv := range a.MCPServers {
+		if srv.URL == "" {
+			return apperr.New("mcp.no-processes-here", "The MCP server {name} is a program to start, and this server starts none: give its address (url) instead", "name", name)
+		}
+	}
+	return nil
 }

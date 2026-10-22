@@ -90,14 +90,14 @@ func (m *Manager) agentBranchName(spec WorkSpec, workdir string) string {
 	}
 	s.Worktree.Path = workdir
 
-	conn, sessionID, cleanup, err := m.openConnection(ctx, s)
+	conv, err := m.openConversation(ctx, s)
 	if err != nil {
 		m.log.Info("acp: branch naming skipped", "err", err)
 		return ""
 	}
-	defer cleanup()
+	defer conv.close()
 
-	text, err := m.runTurn(s, conn, sessionID, s.PromptText)
+	text, err := m.runTurn(s, conv, s.PromptText)
 	if err != nil {
 		m.log.Info("acp: branch naming failed, falling back to the title", "err", err)
 		return ""

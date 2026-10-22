@@ -35,7 +35,7 @@ describe('components/acp/boardSetup', () => {
         expect(await readSetupPlan('board-1')).toEqual(NO_SETUP)
 
         // And recording an answer is a no-op rather than a crash.
-        await recordSetupStep('board-1', 'deploy', 'skipped')
+        await recordSetupStep('board-1', 'agent', 'skipped')
     })
 
     test('the plan comes from Go, and a board with no id is not asked for one', async () => {
@@ -56,7 +56,7 @@ describe('components/acp/boardSetup', () => {
         expect(setupNeeded(plan([{kind: 'agent', status: 'done'}]))).toBe(false)
 
         // A skippable question left unanswered is not the board being unset up.
-        expect(setupNeeded(plan([{kind: 'deploy', optional: true, status: 'pending'}]))).toBe(false)
+        expect(setupNeeded(plan([{kind: 'agent', optional: true, status: 'pending'}]))).toBe(false)
 
         // Neither is a board that runs nothing of its own.
         expect(setupNeeded(plan([{kind: 'agent'}], {automated: false}))).toBe(false)
@@ -87,7 +87,7 @@ describe('components/acp/boardSetup', () => {
     test('a step the board never asks for is not a setting worth offering', () => {
         const chores = plan([{kind: 'agent'}, {kind: 'done'}])
         expect(planHasStep(chores, 'agent')).toBe(true)
-        expect(planHasStep(chores, 'deploy')).toBe(false)
-        expect(planHasStep(undefined, 'deploy')).toBe(false)
+        expect(planHasStep(chores, 'browser')).toBe(false)
+        expect(planHasStep(undefined, 'agent')).toBe(false)
     })
 })

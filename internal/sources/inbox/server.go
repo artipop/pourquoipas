@@ -10,8 +10,7 @@
 // pipeline already knows.
 //
 // The address, the source name and the token arrive in the environment rather
-// than as tool arguments, for the reason the dokku server's target does: the
-// model picks what to file, never where.
+// than as tool arguments: the model picks what to file, never where.
 package inbox
 
 import (

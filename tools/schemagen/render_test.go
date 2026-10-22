@@ -214,6 +214,8 @@ func TestTheCollapsedMigrationBuildsTheSchemaTheLadderBuilt(t *testing.T) {
 		"table system_settings": {tightenedKey},
 		// A column's limit stopped being counted in one process's memory.
 		"table agent_session": {"column_key: which column's limit this run counts against"},
+		// An agent became somebody's: the key it runs on is its owner's.
+		"table agent": {"owner_id: the person whose agent this is"},
 		// Its one kind was a conversation cut off in a terminal.
 		"table card_stall":   {terminalsRemoved, wordedByThePage},
 		"table source_event": {wordedByThePage},
@@ -227,6 +229,8 @@ func TestTheCollapsedMigrationBuildsTheSchemaTheLadderBuilt(t *testing.T) {
 		"table stage_queue": routesRemoved,
 		// The watcher polled a branch to fire an edge; there are no edges.
 		"table vcs_seen": routesRemoved,
+		// Publishing a branch to Dokku went to Gandvík as a step of a flow.
+		"table deploy_target": "deploying to Dokku is gone; it is a flow step in Gandvík",
 	}
 
 	for name, w := range wantShape {

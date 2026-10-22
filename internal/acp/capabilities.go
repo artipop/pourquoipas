@@ -69,6 +69,11 @@ const probeTimeout = 3 * time.Minute
 // a form is opened and starting an agent takes seconds; refresh skips the cache,
 // which is the "recheck" button (an account changed, an adapter was updated).
 func (m *Manager) AgentOptions(a AgentEntry, refresh bool) ([]AgentOption, error) {
+	// A model is asked nothing: what it can be told is the provider's request
+	// field, the same for every model of it.
+	if a.Kind == AgentKindModel {
+		return modelOptions(), nil
+	}
 	// The form asks before the entry has a name — an agent is chosen and then
 	// named — and what it is called has no bearing on what it can do.
 	if strings.TrimSpace(a.Name) == "" {
@@ -392,4 +397,20 @@ func (probeClient) ReleaseTerminal(ctx context.Context, params acpsdk.ReleaseTer
 
 func (probeClient) WaitForTerminalExit(ctx context.Context, params acpsdk.WaitForTerminalExitRequest) (acpsdk.WaitForTerminalExitResponse, error) {
 	return acpsdk.WaitForTerminalExitResponse{}, fmt.Errorf("terminal not supported")
+}
+
+// modelOptions is what a model agent offers to set: how hard it thinks, which
+// both dialects take as one of five words. Empty leaves the model's default.
+func modelOptions() []AgentOption {
+	values := make([]AgentOptionValue, 0, 5)
+	for _, v := range []string{"low", "medium", "high", "xhigh", "max"} {
+		values = append(values, AgentOptionValue{Value: v, Name: v})
+	}
+	return []AgentOption{{
+		ID:       "effort",
+		Name:     "Effort",
+		Type:     "select",
+		Category: "thought_level",
+		Values:   values,
+	}}
 }

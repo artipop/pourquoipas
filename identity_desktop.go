@@ -21,3 +21,10 @@ const attachableBuild = true
 
 // ownsTheInstall: the one person at a desktop runs it.
 func ownsTheInstall(context.Context, installOwners) bool { return true }
+
+// personOf is whose a call is. On a desktop it is the one person there, who
+// owns everything the install has; "" says so.
+func personOf(context.Context, installOwners) (string, error) { return "", nil }
+
+// hostedBuild: a desktop has a machine to work on — folders, CLIs, processes.
+const hostedBuild = false

@@ -1,5 +1,6 @@
 import {Board, IPropertyTemplate} from '../../blocks/board'
 import {aiEnabled} from '../../aiSwitch'
+import {isHosted} from '../../buildKind'
 
 import {BOARD_PROP_PROJECT_PROPERTY, boardBranchProperty} from './automation'
 
@@ -11,11 +12,12 @@ export function agentPropertyIds(board: Board): Set<string> {
     return new Set([typeof folder === 'string' ? folder : '', boardBranchProperty(board)].filter(Boolean))
 }
 
-// withoutAgentProperties is what a card shows while the AI is switched off:
-// the board's own fields, and none of the agents'. Only hidden — the values
-// stay on the card, and switching the AI back on brings them back.
+// withoutAgentProperties is what a card shows while the AI is switched off,
+// and on a hosted server, where there is no folder to work in and no branch to
+// work on: the board's own fields, and none of the agents'. Only hidden — the
+// values stay on the card.
 export function withoutAgentProperties(board: Board, templates: IPropertyTemplate[]): IPropertyTemplate[] {
-    if (aiEnabled()) {
+    if (aiEnabled() && !isHosted()) {
         return templates
     }
     const agents = agentPropertyIds(board)

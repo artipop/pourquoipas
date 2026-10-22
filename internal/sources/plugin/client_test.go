@@ -20,7 +20,7 @@ import (
 // stdio, real line framing — without depending on a toolchain being installed
 // to build a second program.
 
-const pluginModeEnv = "POURQUOIPAS_TEST_PLUGIN"
+const pluginModeEnv = "PP_TEST_PLUGIN"
 
 func TestMain(m *testing.M) {
 	if mode := os.Getenv(pluginModeEnv); mode != "" {

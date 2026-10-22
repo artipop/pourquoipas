@@ -15,7 +15,7 @@ was dropped into, and what the board's other columns are called.
 1. **An agent is assigned to the card.** The field is «Who is on it» (on the
    «Development» board it is «Assignee»). A card
    assigned to a person, or to nobody, starts nothing.
-2. **Agents are switched on.** Settings → «Agents work on the cards».
+2. **Agents are switched on.** Settings → «AI» → «Agents work on the cards».
 
 With one agent registered, assigning it is one click on the card; the field
 offers every agent on the machine. Registering one is covered in
@@ -57,7 +57,7 @@ closed, the CLI died), the card keeps its place and the reason is written on it.
 
 - **nobody is assigned** — assign an agent;
 - **a person is assigned** — that is what "I am doing this myself" means;
-- **agents are switched off** — Settings → «Agents work on the cards»;
+- **agents are switched off** — Settings → «AI» → «Agents work on the cards»;
 - **the board has no folder** — the agent still runs, in a scratch directory of
   its own. See ["Folders and branches"](../folders.md);
 - **anything else** — open the card: the reason is written on it.

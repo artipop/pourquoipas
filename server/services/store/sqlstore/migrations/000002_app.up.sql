@@ -74,18 +74,14 @@ CREATE TABLE `workspace_board` (`workspace_id` varchar NOT NULL, `board_id` varc
 --   name: On screen and in the account's username. No longer a reference.
 --   user_id: The board account. NULL until one is made, and NULL again if it is
 --     deleted: the registry entry is the machine's and outlives it.
+--   owner_id: The person whose agent this is, and whose model key it runs on. NULL on
+--     a desktop, where the one person there owns every agent.
 --   settings: env, args, cliArgs, options, autoAllowTools, command,
 --     mcpServers. JSON on purpose: this is how to start a process, it
 --     points at nothing and nothing joins to it.
-CREATE TABLE `agent` (`id` varchar NOT NULL, `name` varchar NOT NULL, `kind` varchar NOT NULL, `user_id` varchar NULL, `proxy_id` varchar NULL, `bin_path` text NULL, `model` varchar NULL, `prompt` text NULL, `settings` text NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`id`), CONSTRAINT `agent_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL, CONSTRAINT `agent_proxy` FOREIGN KEY (`proxy_id`) REFERENCES `proxy` (`id`) ON DELETE SET NULL);
+CREATE TABLE `agent` (`id` varchar NOT NULL, `name` varchar NOT NULL, `kind` varchar NOT NULL, `user_id` varchar NULL, `owner_id` varchar NULL, `proxy_id` varchar NULL, `bin_path` text NULL, `model` varchar NULL, `prompt` text NULL, `settings` text NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`id`), CONSTRAINT `agent_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL, CONSTRAINT `agent_owner` FOREIGN KEY (`owner_id`) REFERENCES `users` (`id`) ON DELETE CASCADE, CONSTRAINT `agent_proxy` FOREIGN KEY (`proxy_id`) REFERENCES `proxy` (`id`) ON DELETE SET NULL);
 
 CREATE UNIQUE INDEX `idx_agent_name` ON `agent` (`name`);
-
--- Where a card's branch is published. Was the `deploys` array in
--- config.json, and a route's stage named it by name.
-CREATE TABLE `deploy_target` (`id` varchar NOT NULL, `name` varchar NOT NULL, `ssh_host` varchar NOT NULL, `ssh_user` varchar NULL, `ssh_port` bigint NULL, `ssh_key` text NULL, `base_app` varchar NULL, `base_domain` varchar NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`id`));
-
-CREATE UNIQUE INDEX `idx_deploy_target_name` ON `deploy_target` (`name`);
 
 -- A run of an agent over ACP. One process, one turn, one verdict.
 --   card_id: NULL for a run that is about no card — naming a branch is one.
@@ -200,10 +196,6 @@ CREATE TABLE `inbox_sort` (`id` varchar NOT NULL, `card_id` varchar NULL, `card_
 -- every query for ever.
 CREATE TABLE `idempotency` (`token` varchar(255) NOT NULL, `session_id` varchar(36) NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`token`), INDEX `idx_idempotency_created` (`created_at`)) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
 
--- Where a card's branch is published. Was the `deploys` array in
--- config.json, and a route's stage named it by name.
-CREATE TABLE `deploy_target` (`id` varchar(36) NOT NULL, `name` varchar(100) NOT NULL, `ssh_host` varchar(255) NOT NULL, `ssh_user` varchar(64) NULL, `ssh_port` bigint NULL, `ssh_key` text NULL, `base_app` varchar(100) NULL, `base_domain` varchar(255) NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`id`), UNIQUE INDEX `idx_deploy_target_name` (`name`)) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
-
 -- Network settings several agents share, so they are edited in one
 -- place. Was the `proxies` array in config.json.
 --   password: Kept apart from the URL so it is entered raw and masked on screen.
@@ -218,10 +210,12 @@ CREATE TABLE `proxy` (`id` varchar(36) NOT NULL, `name` varchar(100) NOT NULL, `
 --   name: On screen and in the account's username. No longer a reference.
 --   user_id: The board account. NULL until one is made, and NULL again if it is
 --     deleted: the registry entry is the machine's and outlives it.
+--   owner_id: The person whose agent this is, and whose model key it runs on. NULL on
+--     a desktop, where the one person there owns every agent.
 --   settings: env, args, cliArgs, options, autoAllowTools, command,
 --     mcpServers. JSON on purpose: this is how to start a process, it
 --     points at nothing and nothing joins to it.
-CREATE TABLE `agent` (`id` varchar(36) NOT NULL, `name` varchar(100) NOT NULL, `kind` varchar(32) NOT NULL, `user_id` varchar(36) NULL, `proxy_id` varchar(36) NULL, `bin_path` text NULL, `model` varchar(100) NULL, `prompt` text NULL, `settings` text NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`id`), UNIQUE INDEX `idx_agent_name` (`name`), CONSTRAINT `agent_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL, CONSTRAINT `agent_proxy` FOREIGN KEY (`proxy_id`) REFERENCES `proxy` (`id`) ON DELETE SET NULL) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
+CREATE TABLE `agent` (`id` varchar(36) NOT NULL, `name` varchar(100) NOT NULL, `kind` varchar(32) NOT NULL, `user_id` varchar(36) NULL, `owner_id` varchar(36) NULL, `proxy_id` varchar(36) NULL, `bin_path` text NULL, `model` varchar(100) NULL, `prompt` text NULL, `settings` text NULL, `created_at` bigint NOT NULL, PRIMARY KEY (`id`), UNIQUE INDEX `idx_agent_name` (`name`), CONSTRAINT `agent_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL, CONSTRAINT `agent_owner` FOREIGN KEY (`owner_id`) REFERENCES `users` (`id`) ON DELETE CASCADE, CONSTRAINT `agent_proxy` FOREIGN KEY (`proxy_id`) REFERENCES `proxy` (`id`) ON DELETE SET NULL) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
 
 -- A board this machine knows about, whoever's it is. What the app's own
 -- tables point at instead of boards(id), which only has the boards
@@ -366,14 +360,6 @@ CREATE TABLE "idempotency" ("token" character varying(255) NOT NULL, "session_id
 -- every query for ever.
 CREATE INDEX "idx_idempotency_created" ON "idempotency" ("created_at");
 
--- Where a card's branch is published. Was the `deploys` array in
--- config.json, and a route's stage named it by name.
-CREATE TABLE "deploy_target" ("id" character varying(36) NOT NULL, "name" character varying(100) NOT NULL, "ssh_host" character varying(255) NOT NULL, "ssh_user" character varying(64) NULL, "ssh_port" bigint NULL, "ssh_key" text NULL, "base_app" character varying(100) NULL, "base_domain" character varying(255) NULL, "created_at" bigint NOT NULL, PRIMARY KEY ("id"));
-
--- Where a card's branch is published. Was the `deploys` array in
--- config.json, and a route's stage named it by name.
-CREATE UNIQUE INDEX "idx_deploy_target_name" ON "deploy_target" ("name");
-
 -- Network settings several agents share, so they are edited in one
 -- place. Was the `proxies` array in config.json.
 --   password: Kept apart from the URL so it is entered raw and masked on screen.
@@ -395,10 +381,12 @@ CREATE UNIQUE INDEX "idx_proxy_name" ON "proxy" ("name");
 --   name: On screen and in the account's username. No longer a reference.
 --   user_id: The board account. NULL until one is made, and NULL again if it is
 --     deleted: the registry entry is the machine's and outlives it.
+--   owner_id: The person whose agent this is, and whose model key it runs on. NULL on
+--     a desktop, where the one person there owns every agent.
 --   settings: env, args, cliArgs, options, autoAllowTools, command,
 --     mcpServers. JSON on purpose: this is how to start a process, it
 --     points at nothing and nothing joins to it.
-CREATE TABLE "agent" ("id" character varying(36) NOT NULL, "name" character varying(100) NOT NULL, "kind" character varying(32) NOT NULL, "user_id" character varying(36) NULL, "proxy_id" character varying(36) NULL, "bin_path" text NULL, "model" character varying(100) NULL, "prompt" text NULL, "settings" text NULL, "created_at" bigint NOT NULL, PRIMARY KEY ("id"), CONSTRAINT "agent_user" FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON DELETE SET NULL, CONSTRAINT "agent_proxy" FOREIGN KEY ("proxy_id") REFERENCES "proxy" ("id") ON DELETE SET NULL);
+CREATE TABLE "agent" ("id" character varying(36) NOT NULL, "name" character varying(100) NOT NULL, "kind" character varying(32) NOT NULL, "user_id" character varying(36) NULL, "owner_id" character varying(36) NULL, "proxy_id" character varying(36) NULL, "bin_path" text NULL, "model" character varying(100) NULL, "prompt" text NULL, "settings" text NULL, "created_at" bigint NOT NULL, PRIMARY KEY ("id"), CONSTRAINT "agent_user" FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON DELETE SET NULL, CONSTRAINT "agent_owner" FOREIGN KEY ("owner_id") REFERENCES "users" ("id") ON DELETE CASCADE, CONSTRAINT "agent_proxy" FOREIGN KEY ("proxy_id") REFERENCES "proxy" ("id") ON DELETE SET NULL);
 
 -- A registered agent. Its board account is a row in users, and the two
 -- are joined by a key rather than by their names happening to match —
@@ -407,6 +395,8 @@ CREATE TABLE "agent" ("id" character varying(36) NOT NULL, "name" character vary
 --   name: On screen and in the account's username. No longer a reference.
 --   user_id: The board account. NULL until one is made, and NULL again if it is
 --     deleted: the registry entry is the machine's and outlives it.
+--   owner_id: The person whose agent this is, and whose model key it runs on. NULL on
+--     a desktop, where the one person there owns every agent.
 --   settings: env, args, cliArgs, options, autoAllowTools, command,
 --     mcpServers. JSON on purpose: this is how to start a process, it
 --     points at nothing and nothing joins to it.

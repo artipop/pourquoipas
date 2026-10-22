@@ -93,13 +93,6 @@ The first answer wins; the others stop showing the question. Dismissing a
 notification means "I know", not "answered" — the card keeps the question until
 somebody answers it.
 
-## Deploying
-
-Deploying is a button on the card, not a column. It runs a session of its own
-against a Dokku host registered in ⋯ menu → «Куда деплоить…», publishes the
-card's branch and writes what happened in a comment. It gets no board tools: a
-deploy that could move its own card is a loop.
-
 ## Talking before there is a card
 
 The arrow beside «Создать» in the board header opens **«Обсудить с агентом…»** —
@@ -117,7 +110,7 @@ each one also its own item in the ⋯ menu:
 3. **an agent** — registering one at all;
 4. **done** — what to do next.
 
-A board may ask for more of its own (a deploy host, so far). Every question
+A board may ask for more of its own, from the steps the app knows. Every question
 except the name may be left unanswered: the board still works, on a default said
 out loud where the question is asked.
 

@@ -187,12 +187,12 @@ There is deliberately **no `window.webSocketBaseURL`** here, unlike v2:
   build the board in the app, *Export board archive*, unzip, keep the
   `board.jsonl`.
 - **Where a setting lives is decided by whose it is.** The registries are the
-  machine's — which agents are installed, where they deploy, how they reach the
-  network — so they are one
+  machine's — which agents are installed and how they reach the network — so
+  they are one
   dialog opened from the sidebar's *«Настройки → Эта машина…»*, beside the theme
   and the language, and are reachable with no board open at all. What a board
-  keeps — the folders its agents work in, what those agents are told first, where
-  it deploys — is asked one question at a time from its ⋯ menu, each item being
+  keeps — the folders its agents work in, what those agents are told first — is
+  asked one question at a time from its ⋯ menu, each item being
   one of the questions its setup plan lists. That menu used to
   be the only door to all of the above, which made machine settings look like a
   property of whichever board happened to be open. A setting that belongs to one
@@ -229,8 +229,7 @@ There is deliberately **no `window.webSocketBaseURL`** here, unlike v2:
   as "already registered" with one click to pass it). Reading them as the answer
   is what made every board after the first appear fully set up and get created
   in silence. The page renders that plan and works nothing out for itself; the
-  wizard walks exactly what the plan lists, which is why a board that never
-  deploys is never asked where to. The wizard opens itself once per board —
+  wizard walks exactly what the plan lists. The wizard opens itself once per board —
   closing it half-way answers nothing, so the header goes on saying *«Доска ещё
   не настроена»* until every question that board asks has an answer, and
   *«Пройти настройку заново…»* in the ⋯ menu is the way back in.
@@ -247,9 +246,6 @@ There is deliberately **no `window.webSocketBaseURL`** here, unlike v2:
   waits where it is.
 - **Taking a card yourself**: assign it to yourself and no agent starts on it.
   Assigning a registered agent, or nobody, hands it back.
-- **Deploying** is a button on the card rather than a column: it publishes the
-  card's branch to a Dokku host from the registry and says in a comment what
-  happened.
 - **Templates** (*«Сохранить как шаблон…»* in the board menu, or the pencil in
   the template picker). A template is a board that has not been made yet: saving
   a working board copies it under its own name, and the template editor is a

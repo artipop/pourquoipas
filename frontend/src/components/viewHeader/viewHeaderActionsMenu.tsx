@@ -18,7 +18,6 @@ import ModalWrapper from '../modalWrapper'
 import {sendFlashMessage} from '../flashMessages'
 import WorkdirsDialog from '../acp/workdirsDialog'
 import BoardPromptsDialog, {isBoardPromptsAvailable} from '../acp/boardPromptsDialog'
-import DeployTargetsDialog from '../acp/deployTargetsDialog'
 import AgentsDialog, {isAgentsDialogAvailable} from '../acp/agentsDialog'
 import BoardSetupWizard from '../acp/boardSetupWizard'
 import {createSetupPlan, isBoardSetupAvailable} from '../acp/boardSetup'
@@ -30,8 +29,7 @@ import {isInboxBoard} from '../acp/inboxView'
 import {goError} from '../../goMessages'
 
 // What this menu holds is what is true of *this board*, and only that. The
-// registries it used to open — agents, where to deploy, how to reach the
-// network — belong to the machine and are in the sidebar's settings, where they
+// registries it used to open — agents, how to reach the network — belong to the machine and are in the sidebar's settings, where they
 // can be reached with no board open at all. Talking a task over with an agent
 // is a way of making cards and lives on the "New" button. Setting the board up
 // is offered by the board's own title while it is unanswered, and by the screen
@@ -83,14 +81,13 @@ const ViewHeaderActionsMenu = (props: Props) => {
     const [showSources, setShowSources] = createSignal(false)
     const [showSorting, setShowSorting] = createSignal(false)
     const [showWorkdirs, setShowWorkdirs] = createSignal(false)
-    const [showDeploys, setShowDeploys] = createSignal(false)
     const [showAgents, setShowAgents] = createSignal(false)
     const [showPrompts, setShowPrompts] = createSignal(false)
     const [showSetup, setShowSetup] = createSignal(false)
 
     // Which of the setup questions this board asks is the board's own answer,
     // and the menu follows it: a board of shopping lists is offered folders and
-    // nothing else, a board that deploys is offered somewhere to deploy to.
+    // nothing else.
     // They were folds of the automation dialog, where setting up where an
     // agent works was a question about columns and routes — which it is not —
     // and a fold under a canvas is a place nobody opens.
@@ -164,24 +161,15 @@ const ViewHeaderActionsMenu = (props: Props) => {
                                 </Show>
 
                                 {/* Who picks the cards up. The registry is the
-                                    machine's, like the deploy hosts under it,
-                                    and it is offered here for the same reason:
+                                    machine's, and it is offered here because
                                     it means nothing on a board no agent works.
                                     In the order the work needs them — the
-                                    folder, who works in it, where it goes. */}
+                                    folder, then who works in it. */}
                                 <Show when={isAgentsDialogAvailable() && asks('agent')}>
                                     <Menu.Text
                                         id='agents'
                                         name={intl.formatMessage({id: 'ViewHeader.agents', defaultMessage: 'Agents…'})}
                                         onClick={() => setShowAgents(true)}
-                                    />
-                                </Show>
-
-                                <Show when={asks('deploy')}>
-                                    <Menu.Text
-                                        id='deploys'
-                                        name={intl.formatMessage({id: 'ViewHeader.deploys', defaultMessage: 'Where to deploy…'})}
-                                        onClick={() => setShowDeploys(true)}
                                     />
                                 </Show>
 
@@ -282,13 +270,6 @@ const ViewHeaderActionsMenu = (props: Props) => {
                     setShowAgents(false)
                     refreshPlan()
                 }}/>
-            </Show>
-            <Show when={showDeploys()}>
-                <DeployTargetsDialog
-                    board={props.board}
-                    onChange={refreshPlan}
-                    onClose={() => setShowDeploys(false)}
-                />
             </Show>
             <Show when={showSetup()}>
                 <BoardSetupWizard

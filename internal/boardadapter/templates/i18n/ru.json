@@ -35,7 +35,6 @@
   "Content from an idea to publication: the agent writes the brief and the draft, a person proofreads and decides.": "Контент от идеи до публикации: агент пишет бриф и черновик, человек вычитывает и решает.",
   "Created": "Создана",
   "Deadline": "Дедлайн",
-  "Deploy": "Деплой",
   "Development": "Разработка",
   "Documentation": "Документация",
   "Documentation pages written by an agent: it works on a branch of the repository, you read the diff and merge.": "Страницы документации, которые пишет агент: он работает в отдельной ветке репозитория, вы читаете диф и вливаете.",

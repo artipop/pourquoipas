@@ -17,10 +17,28 @@ import { Call as $Call, CancellablePromise as $CancellablePromise } from "@wails
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
 import * as boardadapter$0 from "./internal/boardadapter/models.js";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore: Unused imports
+import * as modelapi$0 from "./internal/modelapi/models.js";
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
 import * as $models from "./models.js";
+
+/**
+ * AIModels is what the provider offers the person's key, for the agent form.
+ */
+export function AIModels(provider: string): $CancellablePromise<modelapi$0.Model[] | null> {
+    return $Call.ByID(3594682949, provider);
+}
+
+/**
+ * AIProviders lists the providers and whether the signed-in person has a key
+ * for each.
+ */
+export function AIProviders(): $CancellablePromise<$models.AIProvider[] | null> {
+    return $Call.ByID(249622319);
+}
 
 /**
  * AckAttention says a person has seen this wait, so it stops being announced.
@@ -48,14 +66,6 @@ export function AddAgent(entryJSON: string): $CancellablePromise<string> {
  */
 export function AddAgentWorkdir(name: string, path: string, boardID: string, kind: string, global: boolean): $CancellablePromise<string> {
     return $Call.ByID(1835654711, name, path, boardID, kind, global);
-}
-
-/**
- * AddDeployTarget registers a Dokku destination from a JSON-encoded DeployEntry
- * and returns the created entry as JSON.
- */
-export function AddDeployTarget(entryJSON: string): $CancellablePromise<string> {
-    return $Call.ByID(2858342914, entryJSON);
 }
 
 /**
@@ -141,6 +151,13 @@ export function CheckForUpdate(): $CancellablePromise<void> {
 }
 
 /**
+ * ClearAIProviderKey forgets the person's key and address for a provider.
+ */
+export function ClearAIProviderKey(provider: string): $CancellablePromise<void> {
+    return $Call.ByID(860190604, provider);
+}
+
+/**
  * CloseShareWindow shuts the dialog. It is a binding because the window is the
  * app's own rather than one the page opened, and a page may not close what it
  * did not open.
@@ -204,9 +221,9 @@ export function GetBoardPrompt(boardID: string): $CancellablePromise<string> {
 
 /**
  * GetCardAgent is everything a card shows about its agent in one call: the
- * state of the automation's own session — the branch it works on, so the card
- * can offer to deploy it, and whether something is running, so it can be
- * cancelled — and the question it is waiting on, if any.
+ * state of the automation's own session — the branch it works on, and whether
+ * something is running, so it can be cancelled — and the question it is
+ * waiting on, if any.
  * 
  * There is no transcript here: a stage reports itself in the card's comments.
  * JSON: {"session":{…},"question":{…}?,…}.
@@ -341,7 +358,7 @@ export function ListAgentWorkdirs(boardID: string): $CancellablePromise<string> 
 }
 
 /**
- * ListAgents returns the agent registry as JSON: [{"name","kind",…}, …].
+ * ListAgents returns the signed-in person's agents as JSON: [{"name","kind",…}, …].
  */
 export function ListAgents(): $CancellablePromise<string> {
     return $Call.ByID(578673379);
@@ -371,14 +388,6 @@ export function ListBoardCards(boardID: string): $CancellablePromise<string> {
  */
 export function ListBoards(): $CancellablePromise<string> {
     return $Call.ByID(1557127052);
-}
-
-/**
- * ListDeployTargets returns the deploy registry as JSON:
- * [{"name","sshHost","baseDomain",…}, …].
- */
-export function ListDeployTargets(): $CancellablePromise<string> {
-    return $Call.ByID(2823062448);
 }
 
 /**
@@ -527,13 +536,6 @@ export function RemoveAgentWorkdir(name: string): $CancellablePromise<void> {
 }
 
 /**
- * RemoveDeployTarget deletes a Dokku destination by name.
- */
-export function RemoveDeployTarget(name: string): $CancellablePromise<void> {
-    return $Call.ByID(2956130287, name);
-}
-
-/**
  * RemoveProxy deletes a network configuration by name.
  */
 export function RemoveProxy(name: string): $CancellablePromise<void> {
@@ -610,6 +612,16 @@ export function SelectBoardSource(id: string): $CancellablePromise<string> {
  */
 export function SendSocket(id: string, data: string): $CancellablePromise<void> {
     return $Call.ByID(1898611230, id, data);
+}
+
+/**
+ * SetAIProviderKey stores the person's key for a provider, and the address
+ * for one that is not the vendor's. The key is checked first by asking the
+ * provider for its models: a key it refuses is not stored. An empty key keeps
+ * the one stored and changes only the address.
+ */
+export function SetAIProviderKey(provider: string, key: string, baseURL: string): $CancellablePromise<void> {
+    return $Call.ByID(185465067, provider, key, baseURL);
 }
 
 /**
@@ -748,16 +760,6 @@ export function SourceStatuses(): $CancellablePromise<string> {
 }
 
 /**
- * StartCardDeploy publishes a card's branch to its Dokku target without moving
- * the card into the deploy column, and returns the deploy session's id. branch
- * is the one the card is working on (its session's worktree branch); empty lets
- * the card property or the checked-out branch decide.
- */
-export function StartCardDeploy(cardID: string, branch: string): $CancellablePromise<string> {
-    return $Call.ByID(147191866, cardID, branch);
-}
-
-/**
  * StartPlanning opens a planning conversation on a board and returns it as
  * JSON. folderName may be empty for the board's drafts folder, agentName when
  * only one agent is registered.
@@ -798,14 +800,6 @@ export function TemplateWords(lang: string): $CancellablePromise<boardadapter$0.
  */
 export function UpdateAgent(entryJSON: string): $CancellablePromise<string> {
     return $Call.ByID(1405986229, entryJSON);
-}
-
-/**
- * UpdateDeployTarget replaces an existing destination (matched by name) from a
- * JSON-encoded DeployEntry and returns the saved entry as JSON.
- */
-export function UpdateDeployTarget(entryJSON: string): $CancellablePromise<string> {
-    return $Call.ByID(1131119282, entryJSON);
 }
 
 /**

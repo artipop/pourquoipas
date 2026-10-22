@@ -629,7 +629,7 @@ flowchart TD
     end
     subgraph out["Исходящий: приложение предъявляет чужому сервису"]
         T2["Токен сервиса, OAuth"] --> CH["secrets.Chain,<br/>читается по порядку"]
-        CH --> EV["Окружение POURQUOIPAS_SECRET_*<br/>выигрывает намеренно"]
+        CH --> EV["Окружение PP_*<br/>выигрывает намеренно"]
         CH --> KC["Keychain ОС —<br/>zalando/go-keyring"]
         CH --> FS["secrets.json 0600 —<br/>только там, где keychain нет"]
     end
@@ -671,7 +671,8 @@ Secret Service на Linux). Запасная — файл `<dataDir>/secrets.jso
 сегодня так же хранит пароли прокси и переводится в `0600`
 явным `Chmod`.
 
-Дополнительно — значение из окружения `POURQUOIPAS_SOURCE_<NAME>_TOKEN`, по образцу
+Дополнительно — значение из окружения `PP_SOURCE_<NAME>` (секрет
+`source/<name>`: буквы заглавные, остальное — `_`), по образцу
 `GithubTokenValue()`: настроенное значение, иначе значение из среды.
 
 Плагин секретов не хранит: получает токен в `initialize` и
@@ -1217,8 +1218,8 @@ sequenceDiagram
     participant B as pourquoipas mcp feed — мост
     participant F as Front door: /acp/feed/mcp
     participant L as Доска: Boards, BoardCards
-    X->>B: stdio MCP, POURQUOIPAS_FEED_TOKEN
-    B->>B: адрес: POURQUOIPAS_URL или feed.json
+    X->>B: stdio MCP, PP_FEED_TOKEN
+    B->>B: адрес: PP_URL или feed.json
     B->>F: HTTP MCP, Bearer-токен
     F->>F: хэш токена из feed-access.json
     F->>L: доска по названию, карточки колонки
@@ -1249,10 +1250,10 @@ sequenceDiagram
   порт в `<dataDir>/feed.json`: приложение пишет файл, когда начинает отдавать
   страницы, и удаляет при выходе. Нет файла — ответ «Pourquoi Pas? не запущен», а не
   ошибка соединения. Серверной сборке мост не нужен для поиска: её адрес
-  постоянный и приходит в `POURQUOIPAS_URL`.
+  постоянный и приходит в `PP_URL`.
 - **Ссылка на карточку — только при постоянном адресе.** Ссылка на случайный
   порт умирает к следующему запуску, поэтому `url` в ответе есть, только когда
-  мост знает адрес из `POURQUOIPAS_URL` и передаёт его заголовком `X-Pourquoipas-Base`.
+  мост знает адрес из `PP_URL` и передаёт его заголовком `X-Pourquoipas-Base`.
 - **Версия — время последнего изменения.** Переименованная или перенесённая
   карточка меняет `updated`, и другая сторона обновляет свою копию на месте.
 - **Названия, а не id.** Доску и колонку человек вписывает в форму другого

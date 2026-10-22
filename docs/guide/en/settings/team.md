@@ -1,20 +1,21 @@
 # Your own server
 
 The app on your computer belongs to one person: it never asks who you are, and
-whoever opens the board sees everything. Working as a team is **a separate
-install, on a server**: there are always accounts there, everybody logs in under
-their own name, and the first person to register becomes the administrator.
+whoever opens the board sees everything. A server is **a separate install**,
+reached from a browser and from the phone: there are always accounts there,
+everybody logs in under their own name and works with their own boards, and
+the first person to register becomes the administrator. Which of the two you
+get is decided by the build you installed.
 
-There is no switch in the settings any more. An install used to be moved into
-team mode and back; now it is decided by which build you installed, and no
-restart changes it.
+The app offers no shared work on one board: a board has one owner.
 
 ## What a server gives you
 
-- everybody who opens the board logs in under their own name and password;
-- cards are assigned to people by name, in the same field agents are assigned in;
-- comments appear on cards: there is somebody to address them to;
-- a waiting agent gets an addressee — whoever the card is assigned to.
+- boards open in a browser and on the phone, under your own name and password;
+- the agents on a server are models by API key: everybody has their own key and
+  their own agents, and a server has no folders and runs no programs, see [AI
+  and models by API key](./ai.md);
+- the comments agents leave on cards are shown.
 
 ## The first login
 
@@ -30,15 +31,15 @@ restart changes it.
 
 - **«Send this to whoever is joining»** — a link of the form
   `…/register?t=…`. **«Copy»** puts it on the clipboard; pass it on any
-  way you like. They open the link, choose a name and a password, and land on
-  the boards you add them to.
+  way you like. They open the link, choose a name and a password, and make
+  their own boards.
 - **«New link»** issues another one and retires the previous. That is how a
   link sent to the wrong person is taken back.
 
 Without such a link nobody can register.
 
-A new person sees no boards at all by default: access to a board is membership
-in it, and membership is granted on the board itself.
+A new person starts with an empty list of boards: they do not see anybody
+else's.
 
 ## The list of people
 

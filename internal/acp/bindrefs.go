@@ -18,34 +18,6 @@ import (
 // this target" into "set this column up again from memory". validateColumn
 // then refuses it, which is what routes the column into rememberUnadopted.
 
-// bindDeploy answers with the id a legacy deploy name resolves to, and false
-// when there is nothing to do — an id is already recorded, no name was written,
-// or this machine has no such target and the name has to stay for whoever
-// registers it.
-func bindDeploy(id, name string, deploys []DeployEntry) (string, bool) {
-	if strings.TrimSpace(id) != "" || strings.TrimSpace(name) == "" {
-		return "", false
-	}
-	entry, ok := deployByName(deploys, name)
-	if !ok {
-		return "", false
-	}
-	return entry.ID, true
-}
-
-// deployByName finds a registry entry by the name a person typed. This is the
-// last place a deploy target is looked up by name, and it exists only to stop
-// looking one up by name: everything it resolves is written back as an id.
-func deployByName(deploys []DeployEntry, name string) (DeployEntry, bool) {
-	name = strings.TrimSpace(name)
-	for _, d := range deploys {
-		if strings.EqualFold(strings.TrimSpace(d.Name), name) {
-			return d, true
-		}
-	}
-	return DeployEntry{}, false
-}
-
 // bindAgentRefs folds an agent entry's legacy proxy name into a proxy id.
 func bindAgentRefs(a *AgentEntry, proxies []ProxyEntry) bool {
 	if strings.TrimSpace(a.ProxyID) != "" || strings.TrimSpace(a.ProxyName) == "" {
@@ -61,8 +33,7 @@ func bindAgentRefs(a *AgentEntry, proxies []ProxyEntry) bool {
 
 // bindCrew folds a list of agent names into ids, keeping the order somebody
 // listed them in — the crew is tried in that order, so it is a setting and not
-// a set. A name this machine cannot resolve is kept, exactly as a deploy
-// target's is.
+// a set. A name this machine cannot resolve is kept.
 func bindCrew(ids, names []string, agents []AgentEntry) (bound, kept []string, changed bool) {
 	bound = ids
 	for _, name := range names {
@@ -176,21 +147,6 @@ func agentByName(agents []AgentEntry, name string) (AgentEntry, bool) {
 		}
 	}
 	return AgentEntry{}, false
-}
-
-// deployByID finds a registry entry by id — how a column and a stage name their
-// target now that binding has run.
-func deployByID(deploys []DeployEntry, id string) (DeployEntry, bool) {
-	id = strings.TrimSpace(id)
-	if id == "" {
-		return DeployEntry{}, false
-	}
-	for _, d := range deploys {
-		if d.ID == id {
-			return d, true
-		}
-	}
-	return DeployEntry{}, false
 }
 
 // optionNamed is the last place a column is found by its name, and it exists

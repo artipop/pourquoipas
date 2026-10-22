@@ -8,6 +8,7 @@ import Button from '../../widgets/buttons/button'
 
 import {goApp} from '../../goBridge'
 import {aiEnabled} from '../../aiSwitch'
+import {isHosted} from '../../buildKind'
 import {goError} from '../../goMessages'
 
 import './proxiesPanel.scss'
@@ -34,7 +35,7 @@ function displayProxy(proxy?: string): string {
 }
 
 export function isProxiesAvailable(): boolean {
-    return aiEnabled() && Boolean(goApp()?.ListProxies)
+    return aiEnabled() && !isHosted() && Boolean(goApp()?.ListProxies)
 }
 
 const emptyForm: ProxyEntry = {name: ''}

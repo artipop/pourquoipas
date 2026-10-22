@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// The registries — folders, agents, proxies, deploy targets — as tables rather
+// The registries — folders, agents, proxies — as tables rather
 // than as arrays in config.json.
 //
 // Why they moved: a settings file is a thing nothing can point at. A card named
@@ -178,6 +178,7 @@ type agentSettings struct {
 	AutoAllowTools []string          `json:"autoAllowTools,omitempty"`
 	Command        []string          `json:"command,omitempty"`
 	MCPServers     MCPServerSet      `json:"mcpServers,omitempty"`
+	Provider       string            `json:"provider,omitempty"`
 	// ProxyName is kept for one version so an entry written before proxies had
 	// ids can still find its configuration; proxy_id is what is read.
 	ProxyName string `json:"proxyName,omitempty"`
@@ -205,6 +206,7 @@ func (s *Store) SaveAgent(e AgentEntry, proxyID, userID string) (AgentEntry, err
 		Env: e.Env, Args: e.Args, CLIArgs: e.CLIArgs, Options: e.Options,
 		AutoAllowTools: e.AutoAllowTools, Command: e.Command,
 		MCPServers: e.MCPServers,
+		Provider:   e.Provider,
 		ProxyName:  e.ProxyName,
 	})
 	if e.ProxyID != "" {
@@ -214,13 +216,13 @@ func (s *Store) SaveAgent(e AgentEntry, proxyID, userID string) (AgentEntry, err
 		return e, err
 	}
 	_, err = s.exec(`INSERT INTO agent
-		(id, name, kind, user_id, proxy_id, bin_path, model, prompt, settings, created_at)
-		VALUES (?,?,?,?,?,?,?,?,?,?)
+		(id, name, kind, user_id, owner_id, proxy_id, bin_path, model, prompt, settings, created_at)
+		VALUES (?,?,?,?,?,?,?,?,?,?,?)
 		ON CONFLICT(id) DO UPDATE SET
-			name=excluded.name, kind=excluded.kind, user_id=excluded.user_id,
+			name=excluded.name, kind=excluded.kind, user_id=excluded.user_id, owner_id=excluded.owner_id,
 			proxy_id=excluded.proxy_id, bin_path=excluded.bin_path,
 			model=excluded.model, prompt=excluded.prompt, settings=excluded.settings`,
-		e.ID, e.Name, e.Kind, nullable(userID), nullable(proxyID),
+		e.ID, e.Name, e.Kind, nullable(userID), nullable(e.OwnerID), nullable(proxyID),
 		nullable(e.BinPath), nullable(e.Model), nullable(e.Prompt),
 		string(settings), time.Now().UnixMilli())
 	return e, err
@@ -229,7 +231,8 @@ func (s *Store) SaveAgent(e AgentEntry, proxyID, userID string) (AgentEntry, err
 // Agents is the registry.
 func (s *Store) Agents() ([]AgentEntry, error) {
 	rows, err := s.query(`SELECT id, name, kind, COALESCE(bin_path,''), COALESCE(model,''),
-		COALESCE(prompt,''), COALESCE(settings,''), COALESCE(proxy_id,''), COALESCE(user_id,'')
+		COALESCE(prompt,''), COALESCE(settings,''), COALESCE(proxy_id,''), COALESCE(user_id,''),
+		COALESCE(owner_id,'')
 		FROM agent ORDER BY created_at, id`)
 	if err != nil {
 		return nil, err
@@ -240,7 +243,7 @@ func (s *Store) Agents() ([]AgentEntry, error) {
 		var e AgentEntry
 		var settings string
 		if err := rows.Scan(&e.ID, &e.Name, &e.Kind, &e.BinPath, &e.Model, &e.Prompt, &settings,
-			&e.ProxyID, &e.UserID); err != nil {
+			&e.ProxyID, &e.UserID, &e.OwnerID); err != nil {
 			return nil, err
 		}
 		if settings != "" {
@@ -251,6 +254,7 @@ func (s *Store) Agents() ([]AgentEntry, error) {
 			e.Env, e.Args, e.CLIArgs, e.Options = st.Env, st.Args, st.CLIArgs, st.Options
 			e.AutoAllowTools, e.Command = st.AutoAllowTools, st.Command
 			e.MCPServers, e.ProxyName = st.MCPServers, st.ProxyName
+			e.Provider = st.Provider
 		}
 		// The key column wins over the name kept in the settings blob: the name
 		// is only there to be folded into an id once (bindrefs.go).
@@ -273,51 +277,6 @@ func (s *Store) DeleteAgent(id string) error {
 // than by their names happening to match.
 func (s *Store) SetAgentAccount(agentID, userID string) error {
 	_, err := s.exec(`UPDATE agent SET user_id=? WHERE id=?`, nullable(userID), agentID)
-	return err
-}
-
-// SaveDeployTarget writes one named Dokku destination.
-func (s *Store) SaveDeployTarget(e DeployEntry) (DeployEntry, error) {
-	if e.ID == "" {
-		e.ID = newID()
-	}
-	_, err := s.exec(`INSERT INTO deploy_target
-		(id, name, ssh_host, ssh_user, ssh_port, ssh_key, base_app, base_domain, created_at)
-		VALUES (?,?,?,?,?,?,?,?,?)
-		ON CONFLICT(id) DO UPDATE SET
-			name=excluded.name, ssh_host=excluded.ssh_host, ssh_user=excluded.ssh_user,
-			ssh_port=excluded.ssh_port, ssh_key=excluded.ssh_key,
-			base_app=excluded.base_app, base_domain=excluded.base_domain`,
-		e.ID, e.Name, e.SSHHost, nullable(e.SSHUser), nullableInt(e.SSHPort),
-		nullable(e.SSHKey), nullable(e.BaseApp), nullable(e.BaseDomain),
-		time.Now().UnixMilli())
-	return e, err
-}
-
-// DeployTargets is the registry.
-func (s *Store) DeployTargets() ([]DeployEntry, error) {
-	rows, err := s.query(`SELECT id, name, ssh_host, COALESCE(ssh_user,''), COALESCE(ssh_port,0),
-		COALESCE(ssh_key,''), COALESCE(base_app,''), COALESCE(base_domain,'')
-		FROM deploy_target ORDER BY created_at, id`)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var out []DeployEntry
-	for rows.Next() {
-		var e DeployEntry
-		if err := rows.Scan(&e.ID, &e.Name, &e.SSHHost, &e.SSHUser, &e.SSHPort,
-			&e.SSHKey, &e.BaseApp, &e.BaseDomain); err != nil {
-			return nil, err
-		}
-		out = append(out, e)
-	}
-	return out, rows.Err()
-}
-
-// DeleteDeployTarget removes one.
-func (s *Store) DeleteDeployTarget(id string) error {
-	_, err := s.exec(`DELETE FROM deploy_target WHERE id=?`, id)
 	return err
 }
 

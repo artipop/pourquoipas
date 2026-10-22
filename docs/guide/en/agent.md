@@ -21,7 +21,7 @@ under its own name: open the field and pick it.
 **The list holds every agent on the machine.** A board keeps no crew of its own:
 any registered agent can be assigned on any board. The only thing that takes
 them out of the list is the «Agents work on the cards» switch in
-[the settings](./settings/index.md).
+[the settings](./settings/index.md), section «AI».
 
 The agent reads its task from the **card's description** — there is no separate
 task field. The board's instruction to all its agents is added in front of it
@@ -152,11 +152,10 @@ machine.
 The branch and the directory are on the line under the card's title; the agent's
 question is under it.
 
-Comments appear once the install is in [team mode](./settings/team.md): a
-**«Comments»** button joins the card's toolbar, it opens the panel on the
-right, and the card's face shows their count. While one person works the board
-the comments are written but not drawn: everything worth knowing is either on
-the card or in the diff.
+Comments are shown [on a server](./settings/team.md): the card's toolbar has a
+**«Comments»** button, it opens the panel on the right, and the card's face
+shows their count. On a computer the comments are written but not drawn:
+everything worth knowing is either on the card or in the diff.
 
 If the work could not start — no folder, or another card is holding the folder —
 the reason is shown on the card and goes as soon as something happens on it

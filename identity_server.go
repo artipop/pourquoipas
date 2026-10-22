@@ -32,3 +32,19 @@ func ownsTheInstall(ctx context.Context, owners installOwners) bool {
 	}
 	return owners.HasPermissionTo(session.UserID, model.PermissionManageSystem)
 }
+
+// personOf is whose a call is: the user of the session that made it.
+func personOf(ctx context.Context, owners installOwners) (string, error) {
+	token := sessionTokenOf(ctx)
+	if owners == nil || token == "" {
+		return "", errNobodySignedIn
+	}
+	session, err := owners.GetSession(token)
+	if err != nil || session == nil || session.UserID == "" {
+		return "", errNobodySignedIn
+	}
+	return session.UserID, nil
+}
+
+// hostedBuild: a server has no machine of anybody's to work on (acp.SetHosted).
+const hostedBuild = true

@@ -255,15 +255,15 @@
 
 <header class="masthead">
   <div class="masthead-inner">
-    <p class="kicker">pourquoipas · один файл, 35 таблиц</p>
+    <p class="kicker">pourquoipas · один файл, 34 таблиц</p>
     <h1>Схема базы<span class="dot">.</span></h1>
     <p class="standfirst">Всё, что знает приложение, — про карточку или доску, а карточка это строка
       в <code>blocks</code>. Поэтому база одна: доска (форк Focalboard) и наши таблицы рядом, с настоящими
       внешними ключами между ними.</p>
     <div class="stats">
-      <div class="stat"><b>35</b><span>таблиц</span></div>
-      <div class="stat"><b>22</b><span>внешних ключей</span></div>
-      <div class="stat"><b>14</b><span>из них CASCADE</span></div>
+      <div class="stat"><b>34</b><span>таблиц</span></div>
+      <div class="stat"><b>23</b><span>внешних ключей</span></div>
+      <div class="stat"><b>15</b><span>из них CASCADE</span></div>
       <div class="stat"><b>1</b><span>шаг миграции</span></div>
       <div class="stat"><b>3</b><span>диалекта</span></div>
     </div>
@@ -277,7 +277,7 @@
       <li><a href="#g0"><span class="nav-name">Доска</span><span class="nav-count">14</span></a></li>
       <li><a href="#g1"><span class="nav-name">История доски</span><span class="nav-count">3</span></a></li>
       <li><a href="#g2"><span class="nav-name">На что смотрят ключи</span><span class="nav-count">2</span></a></li>
-      <li><a href="#g3"><span class="nav-name">Реестры</span><span class="nav-count">5</span></a></li>
+      <li><a href="#g3"><span class="nav-name">Реестры</span><span class="nav-count">4</span></a></li>
       <li><a href="#g4"><span class="nav-name">Сессии</span><span class="nav-count">2</span></a></li>
       <li><a href="#g5"><span class="nav-name">Остановки</span><span class="nav-count">1</span></a></li>
       <li><a href="#g6"><span class="nav-name">Работа в папке</span><span class="nav-count">2</span></a></li>
@@ -527,7 +527,7 @@ erDiagram
         </figure>
       </section>
       <section class="group" id="g3">
-        <p class="eyebrow">5 таблиц · 5 ключей</p>
+        <p class="eyebrow">4 таблиц · 6 ключей</p>
         <h2>Реестры</h2>
         <div class="prose"><p>Что знает эта машина: где работать, кем и куда публиковать. Были массивами в <code>config.json</code>, где у записи не было id и ссылаться на неё можно было только по имени — то есть нельзя было переименовать.</p></div>
         <figure class="plate">
@@ -537,6 +537,7 @@ erDiagram
     boards ||--o{ workspace_board : &quot;board_id CASCADE&quot;
     proxy ||--o{ agent : &quot;proxy_id SET NULL&quot;
     users ||--o{ agent : &quot;user_id SET NULL&quot;
+    users ||--o{ agent : &quot;owner_id CASCADE&quot;
     workspace ||--o{ workspace_board : &quot;workspace_id CASCADE&quot;
 
     workspace {
@@ -560,6 +561,7 @@ erDiagram
         name_100 name &quot;On screen and in the account&#x27;s username. No longer a reference.&quot;
         name_32 kind
         id user_id FK &quot;The board account. NULL until one is made, and NULL again if it is deleted: the registry entry is the…&quot;
+        id owner_id FK &quot;The person whose agent this is, and whose model key it runs on. NULL on a desktop, where the one person there…&quot;
         id proxy_id FK &quot;nullable&quot;
         text bin_path &quot;nullable&quot;
         name_100 model &quot;nullable&quot;
@@ -575,17 +577,6 @@ erDiagram
         text ca_cert &quot;nullable&quot;
         name_100 username &quot;nullable&quot;
         text password &quot;Kept apart from the URL so it is entered raw and masked on screen. Still stored in the clear here, exactly as…&quot;
-        millis created_at
-    }
-    deploy_target {
-        id id PK
-        name_100 name
-        name_255 ssh_host
-        name_64 ssh_user &quot;nullable&quot;
-        int ssh_port &quot;nullable&quot;
-        text ssh_key &quot;nullable&quot;
-        name_100 base_app &quot;nullable&quot;
-        name_255 base_domain &quot;nullable&quot;
         millis created_at
     }</pre>
         </figure>

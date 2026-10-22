@@ -27,7 +27,7 @@ import './boardSetupWizard.scss'
 
 // A board made from a template arrives knowing how the work is organised — its
 // columns, its routes, the fields a card picks a folder and an agent with.
-// What it cannot know is the machine: which agent runs, where it deploys. That
+// What it cannot know is the machine: which agent runs. That
 // lives in the desktop registries. Which folder is not asked here: it is the
 // card's question, answered on the card (docs/decisions.md).
 //
@@ -76,7 +76,6 @@ type Props = {
 
 const STEP_NAME: SetupStepKind = 'name'
 const STEP_AGENT: SetupStepKind = 'agent'
-const STEP_DEPLOY: SetupStepKind = 'deploy'
 const STEP_DONE: SetupStepKind = 'done'
 
 const BoardSetupWizard = (props: Props) => {
@@ -104,15 +103,6 @@ const BoardSetupWizard = (props: Props) => {
     // The step being shown, if this board asks for it at all — its own sentence
     // hangs off it.
     const stepAt = (kind: SetupStepKind) => steps().find((s) => s.kind === kind)
-
-    // Skipping is the one answer no registry can be read for later, so it is
-    // recorded; the plan reads it back as the step's status.
-    const skip = (kind: SetupStepKind) => {
-        recordSetupStep(props.board.id, kind, 'skipped').
-            then(() => refreshPlan()).
-            catch(() => undefined)
-        setStep(after(kind))
-    }
 
     // An agent registered on this machine. Which agent works a card is
     // the card's own «Кто занимается», so the step asks for nothing beyond one
@@ -146,9 +136,6 @@ const BoardSetupWizard = (props: Props) => {
             await mutator.changeBoardDescription(props.board.id, props.board.id, props.board.description, described)
         }
     }, STEP_NAME)
-
-    // A Dokku host.
-    const [deploy, setDeploy] = createSignal({name: '', sshHost: '', sshUser: '', sshKey: '', baseDomain: ''})
 
     const refresh = async () => {
         try {
@@ -202,16 +189,6 @@ const BoardSetupWizard = (props: Props) => {
     // Passing a step the machine can already answer — there is an agent — is
     // answering it too, and has to be recorded as one.
     const pass = (answering: SetupStepKind) => run(async () => {}, answering)
-
-    const addDeploy = () => run(async () => {
-        await bindings!.AddDeployTarget!(JSON.stringify({
-            name: deploy().name.trim(),
-            sshHost: deploy().sshHost.trim(),
-            sshUser: deploy().sshUser.trim(),
-            sshKey: deploy().sshKey.trim(),
-            baseDomain: deploy().baseDomain.trim(),
-        }))
-    }, STEP_DEPLOY)
 
     const finish = async () => {
         // Take the board's own columns and routes now, so what it can do is
@@ -366,47 +343,6 @@ const BoardSetupWizard = (props: Props) => {
                     </Show>
                 </div>
             )
-        case STEP_DEPLOY:
-            return (
-                <div class='BoardSetupWizard__step'>
-                    <p>{intl.formatMessage({id: 'BoardSetup.deploy-why', defaultMessage: 'Where a card’s branch is published from the "Deploy" column. Skip it if nothing is deployed from here — everything else still works.'})}</p>
-                    <label>
-                        {intl.formatMessage({id: 'BoardSetup.deploy-name', defaultMessage: 'Name'})}
-                        <input
-                            value={deploy().name}
-                            onInput={(e) => setDeploy({...deploy(), name: e.currentTarget.value})}
-                        />
-                    </label>
-                    <label>
-                        {intl.formatMessage({id: 'BoardSetup.deploy-host', defaultMessage: 'Dokku host'})}
-                        <input
-                            value={deploy().sshHost}
-                            onInput={(e) => setDeploy({...deploy(), sshHost: e.currentTarget.value})}
-                        />
-                    </label>
-                    <label>
-                        {intl.formatMessage({id: 'BoardSetup.deploy-user', defaultMessage: 'SSH user (default dokku)'})}
-                        <input
-                            value={deploy().sshUser}
-                            onInput={(e) => setDeploy({...deploy(), sshUser: e.currentTarget.value})}
-                        />
-                    </label>
-                    <label>
-                        {intl.formatMessage({id: 'BoardSetup.deploy-key', defaultMessage: 'SSH key (absolute path, optional)'})}
-                        <input
-                            value={deploy().sshKey}
-                            onInput={(e) => setDeploy({...deploy(), sshKey: e.currentTarget.value})}
-                        />
-                    </label>
-                    <label>
-                        {intl.formatMessage({id: 'BoardSetup.deploy-domain', defaultMessage: 'Preview domain (optional)'})}
-                        <input
-                            value={deploy().baseDomain}
-                            onInput={(e) => setDeploy({...deploy(), baseDomain: e.currentTarget.value})}
-                        />
-                    </label>
-                </div>
-            )
         default:
             return (
                 <div class='BoardSetupWizard__step'>
@@ -485,21 +421,6 @@ const BoardSetupWizard = (props: Props) => {
                     </Button>
                 </Show>
             )
-        case STEP_DEPLOY:
-            return (
-                <>
-                    <Button
-                        emphasis='primary'
-                        disabled={busy() || !deploy().name.trim() || !deploy().sshHost.trim()}
-                        onClick={addDeploy}
-                    >
-                        {intl.formatMessage({id: 'BoardSetup.save', defaultMessage: 'Save'})}
-                    </Button>
-                    <Button onClick={() => skip(STEP_DEPLOY)}>
-                        {intl.formatMessage({id: 'BoardSetup.skip', defaultMessage: 'Skip'})}
-                    </Button>
-                </>
-            )
         default:
             return (
                 <>
@@ -557,8 +478,6 @@ const BoardSetupWizard = (props: Props) => {
             return intl.formatMessage({id: 'BoardSetup.step-name', defaultMessage: 'Name'})
         case STEP_AGENT:
             return intl.formatMessage({id: 'BoardSetup.step-agent', defaultMessage: 'Agent'})
-        case STEP_DEPLOY:
-            return intl.formatMessage({id: 'BoardSetup.step-deploy', defaultMessage: 'Deploy'})
         default:
             return intl.formatMessage({id: 'BoardSetup.step-done', defaultMessage: 'Ready'})
         }
@@ -598,8 +517,7 @@ const BoardSetupWizard = (props: Props) => {
                 </Show>
 
                 {/* The soft way out, for somebody who would rather look around
-                    first. Nothing here is mandatory any more — a board with no
-                    deploy target is a board that does not deploy — so leaving
+                    first. Nothing here is mandatory any more, so leaving
                     is fine, and the parting note says how to come back. The ✕
                     stays silent: it is the same leaving, chosen quietly.
 

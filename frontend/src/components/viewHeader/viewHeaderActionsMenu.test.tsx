@@ -100,7 +100,6 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
         beforeEach(() => {
             fakeGoSide({
                 ListAgents: vi.fn(),
-                ListDeployTargets: vi.fn(),
                 ListAgentWorkdirs: vi.fn(),
                 ListSources: vi.fn().mockResolvedValue('[]'),
                 ExportBoardAutomation: vi.fn(),
@@ -130,7 +129,7 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
         })
 
         test('the machine registries are not', () => {
-            for (const gone of ['Agents…', 'Deploy targets…', 'Plan a task…']) {
+            for (const gone of ['Agents…', 'Plan a task…']) {
                 expect(screen.queryByRole('button', {name: gone})).toBeNull()
             }
         })
@@ -142,7 +141,7 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
         // A board that asks for nothing is offered nothing: the setup steps in
         // the menu are this board's own, not a fixed list.
         test('a board with no setup questions is offered none of them', () => {
-            for (const gone of ['Folders…', 'Where to deploy…', 'Walk the setup again…', 'The board’s system prompt…']) {
+            for (const gone of ['Folders…', 'Walk the setup again…', 'The board’s system prompt…']) {
                 expect(screen.queryByRole('button', {name: gone})).toBeNull()
             }
         })
@@ -163,7 +162,6 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
         beforeEach(() => {
             fakeGoSide({
                 ListAgents: vi.fn(),
-                ListDeployTargets: vi.fn(),
                 ListAgentWorkdirs: vi.fn(),
                 ListSources: vi.fn().mockResolvedValue('[]'),
                 ExportBoardAutomation: vi.fn(),
@@ -171,7 +169,6 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
                 BoardSetupPlan: vi.fn().mockResolvedValue(JSON.stringify({
                     steps: [
                         {kind: 'agent', optional: false, status: 'pending'},
-                        {kind: 'deploy', optional: true, status: 'pending'},
                     ],
                 })),
             })
@@ -194,14 +191,12 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
 
         // No step asks for a folder any more — a card does — so the folders
         // are offered wherever agents work.
-        test('the folders and the deploy targets are each their own item', async () => {
+        test('the folders are their own item', async () => {
             await waitFor(() => expect(screen.getByRole('button', {name: 'Folders…'})).toBeInTheDocument())
-            expect(screen.getByRole('button', {name: 'Where to deploy…'})).toBeInTheDocument()
         })
 
-        // Who picks the cards up is asked here too, for the reason the deploy
-        // hosts are: the registry is the machine's, and it means nothing on a
-        // board no agent works. It was two sections of the settings dialog,
+        // Who picks the cards up is asked here too: the registry is the
+        // machine's, and it means nothing on a board no agent works. It was two sections of the settings dialog,
         // which is a screen away from the board being set up.
         test('and so is who works the cards', async () => {
             await waitFor(() => expect(screen.getByRole('button', {name: 'Agents…'})).toBeInTheDocument())

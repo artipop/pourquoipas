@@ -49,7 +49,7 @@ code builds a headless server (`-tags server`) that serves the board to a browse
   `linux:package`) / `build:server` / `build:docker`. `EDITION=lifetime` on any
   of them.
 - **A server's database is the environment's** (`database_server.go`):
-  `POURQUOIPAS_DB_TYPE` (`sqlite3`, `postgres`, `mysql`) and `POURQUOIPAS_DB_DSN`. A desktop
+  `PP_DB_TYPE` (`sqlite3`, `postgres`, `mysql`) and `PP_DB_DSN`. A desktop
   is always SQLite. On the other two the board runs and the agents and sources
   are off, because their SQL is SQLite's (`appTablesSupported`).
 - `wails3 task generate:bindings` — run by every build when Go changed, as in
@@ -121,7 +121,8 @@ no session guards (`emitsOnBus`).
   authenticates.
 - **Who is asked is the build** (`identity.go` + `identity_desktop.go`/
   `identity_server.go`, `docs/teamwork.md`): a desktop is one person with a
-  single-user token; a hosted server is a team with `/login` open, and there
+  single-user token; a hosted server is many people with `/login` open, each
+  with their own boards (no shared boards: `docs/deferred.md`), and there
   `/wails/` and both sockets require a session (`requireSession`), with no
   exception: the page bundles the Wails runtime, so nothing it needs before a
   login is behind the guard. A desktop joins a server by logging in
@@ -223,6 +224,14 @@ server.
   `autoAllowTools` arrives as `session/request_permission`, a decision as a form
   elicitation, either one blocks only the request that asked, and an unanswered
   one refuses on cancellation or shutdown.
+- **An agent is a CLI over ACP or a model over its API** (`kind: "model"`,
+  `internal/modelapi`, `modelconv.go`); the session reaches either through one
+  `conversation`, and a model gets the board's tools in memory from the same
+  `boardmcp` server (`BoardForGrant`), files and commands from `modeltools.go`
+  on a desktop only. It runs on its owner's key (`aikeys.go`, the secrets
+  store; the page sees "set" or "not set"). **A hosted server has no machine**
+  (`SetHosted`, `buildKind.ts`): no folders, no CLI agents, no stdio MCP of a
+  person's choosing. `docs/web-ai-plan.md` has what is left.
 - **The stage ends when the agent calls `finish_work`**, and the task text says
   so (`resultBrief`) because a CLI may defer loading the tools.
 - **Attention is one reason: the agent is asking** (`attention.go`,
@@ -276,10 +285,9 @@ server.
   `branchProperty`, `columnProperty`), written through by `persistBoardLocked`.
   `config.json` does not carry them.
 - **A setting lives where its owner is**: machine settings in
-  `settings/appSettingsDialog.tsx`; deploy targets, agents and proxies are
-  machine registries offered from a board's ⋯ menu on its setup plan; UI prefs
-  are the person's, in `preferences` via `/users/me/config`; the install's
-  switches (`aiEnabled`, `agentNotifications`, `prefillCardFolder`) are
+  `settings/appSettingsDialog.tsx`; agents and proxies are machine registries
+  offered from a board's ⋯ menu on its setup plan; UI prefs are the person's,
+  in `preferences` via `/users/me/config`; the install's switches (`aiEnabled`, `agentNotifications`, `prefillCardFolder`) are
   `system_settings` via bindings (`machinesettings.go`). Both are read before
   first paint and after a login (`settingsRead.ts`); a desktop page holds the
   session in memory, never in the browser (`session.ts`).
@@ -325,8 +333,8 @@ keep that spelling).
   failure.
 - **The branch is the product, the copy is the workshop**: `FoldWorktree` when
   a stage ends, remade from the branch on the next one; the branch is written
-  onto the card, the path never. A deploy stands in the folder itself — it
-  publishes a branch that already exists.
+  onto the card, the path never. Publishing a branch is not this app's: deploying
+  to Dokku went to Gandvík (`../xxvi`) as a flow step.
 
 ### An agent talks back through MCP, not through its output
 
@@ -346,7 +354,7 @@ over HTTP on the front door (`/acp/board/mcp`, `boardapi.go`).
   per run; every card id is checked against the grant's board (`grantedCard`).
   The handler is stateless.
 - A session declares the server in `session/new`, when the adapter advertises
-  `mcpCapabilities.http`. A deploy session deliberately does not get the tools.
+  `mcpCapabilities.http`.
 
 ### A source brings cards in, and the app decides what they become
 

@@ -11,10 +11,9 @@
 // board describes — and a person is left with the decisions instead of the
 // dragging.
 //
-// The server is served by the app, over HTTP, on the front door. The other two
-// MCP servers here are subprocesses because they do work of their own — dokku
-// talks ssh, webtest drives a browser — and an agent spawning them is the whole
-// arrangement. This one *is* the app: the board it writes to lives in this
+// The server is served by the app, over HTTP, on the front door. An MCP server
+// that does work of its own is a subprocess the agent spawns; this one *is*
+// the app: the board it writes to lives in this
 // process, and the app is already a separate process from the agent, already
 // listening on an origin the agent can reach. A subprocess in between would
 // have been a proxy of ours to ourselves, with the tool schema written twice.

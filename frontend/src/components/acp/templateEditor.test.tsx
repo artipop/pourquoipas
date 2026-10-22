@@ -35,11 +35,9 @@ function stubBindings() {
     const bindings = {
         ListSetupSteps: vi.fn().mockResolvedValue(JSON.stringify([
             {kind: 'agent', registry: 'agents', optional: false},
-            {kind: 'deploy', registry: 'deploys', optional: true},
             {kind: 'done', optional: false},
         ])),
         ListAgents: vi.fn().mockResolvedValue('[]'),
-        ListDeployTargets: vi.fn().mockResolvedValue('[]'),
     }
     fakeGoSide(bindings)
     return bindings
@@ -94,7 +92,7 @@ describe('components/acp/templateEditor', () => {
 
         const saved = mockedMutator.updateBoard.mock.calls[0][0] as Board
         const setup = JSON.parse(saved.properties[BOARD_PROP_SETUP] as string)
-        expect(setup.steps.map((s: {kind: string}) => s.kind)).toEqual(['agent', 'deploy', 'done'])
+        expect(setup.steps.map((s: {kind: string}) => s.kind)).toEqual(['agent', 'done'])
         expect(setup.steps[0].hint).toBe('Агент, который пишет рассылку')
         await waitFor(() => expect(onClose).toHaveBeenCalled())
     })

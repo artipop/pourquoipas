@@ -188,8 +188,8 @@ beta.22: сервер стартует, прогоняет миграции на
 - `WAILS_SERVER_HOST`/`WAILS_SERVER_PORT` (или `SERVER_HOST`/`SERVER_PORT`) —
   где слушает сервер Wails; в образе `0.0.0.0:8080`. За прокси с TLS ничего
   настраивать не нужно: `Origin` сверяется с `Host` запроса;
-- `POURQUOIPAS_DB_TYPE` — `sqlite3` (по умолчанию), `postgres` или `mysql`, и
-  `POURQUOIPAS_DB_DSN` — строка подключения в синтаксисе драйвера; для SQLite это
+- `PP_DB_TYPE` — `sqlite3` (по умолчанию), `postgres` или `mysql`, и
+  `PP_DB_DSN` — строка подключения в синтаксисе драйвера; для SQLite это
   путь, по умолчанию файл в каталоге данных (`database_server.go`);
 - `/data` — каталог установки (`XDG_CONFIG_HOME`): база SQLite, файлы,
   настройки. Без тома каждый перезапуск — новая установка.

@@ -29,7 +29,6 @@ type Props = {
 type SessionEvent = {
     cardId?: string
     status?: string
-    deploy?: boolean
 }
 
 const ENDED = ['done', 'failed', 'cancelled']
@@ -60,7 +59,7 @@ const FirstRunStrip = (props: Props) => {
     }
 
     const off = onAgentEvent('acp:session', (payload?: SessionEvent) => {
-        if (!payload?.cardId || payload.deploy || hints.shown(HINT_FIRST_RUN)) {
+        if (!payload?.cardId || hints.shown(HINT_FIRST_RUN)) {
             return
         }
         const current = watched()

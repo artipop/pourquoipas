@@ -12,6 +12,7 @@ import Dialog from '../dialog'
 import ServerPanel, {isServerAttachAvailable} from '../acp/serverPanel'
 import MachineMiscPanel from '../acp/machineMiscPanel'
 
+import AIPanel, {isAIPanelAvailable} from './aiPanel'
 import AppPanel from './appPanel'
 import DataPanel from './dataPanel'
 import PeoplePanel from './peoplePanel'
@@ -24,10 +25,10 @@ import './appSettingsDialog.scss'
 // comes in and goes out as an archive, and what it is allowed to interrupt
 // with.
 //
-// The agents, the proxies under them and the deploy hosts are deliberately not
-// here, although all three registries are the machine's: each of them only
+// The agents and the proxies under them are deliberately not
+// here, although both registries are the machine's: each of them only
 // means something to a board that runs agents, so each is offered from that
-// board's own ⋯ menu, as the agents item and the deploy item, and a board of
+// board's own ⋯ menu, as the agents item, and a board of
 // shopping lists shows neither. What a setting depends on is where it is offered, even
 // when where it is stored is the same file.
 //
@@ -79,6 +80,15 @@ const AppSettingsDialog = (props: Props) => {
             name: () => intl.formatMessage({id: 'Settings.section-app', defaultMessage: 'The app itself'}),
             when: () => true,
             body: AppPanel,
+        },
+        {
+
+            // The AI's own section: the switch over all of it, and the keys a
+            // model agent runs on.
+            id: 'ai',
+            name: () => intl.formatMessage({id: 'Settings.section-ai', defaultMessage: 'AI'}),
+            when: isAIPanelAvailable,
+            body: AIPanel,
         },
         {
 

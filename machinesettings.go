@@ -28,6 +28,10 @@ type MachineSettings struct {
 	AIEnabled          bool `json:"aiEnabled"`
 	AgentNotifications bool `json:"agentNotifications"`
 	PrefillCardFolder  bool `json:"prefillCardFolder"`
+	// Hosted is not a switch but what this install is: a server, with no
+	// machine of anybody's to work on — no folders, no CLI agents, no proxies.
+	// The page hides what needs one by it.
+	Hosted bool `json:"hosted"`
 }
 
 type settingsStore interface {
@@ -103,6 +107,7 @@ func (a *App) GetMachineSettings() MachineSettings {
 		AIEnabled:          machine.on(settingAIEnabled),
 		AgentNotifications: machine.on(settingAgentNotifications),
 		PrefillCardFolder:  machine.on(settingPrefillCardFolder),
+		Hosted:             hostedBuild,
 	}
 }
 

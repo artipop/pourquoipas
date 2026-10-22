@@ -11,8 +11,8 @@ import (
 // file in its own directory. Starting a server should not require a database
 // administrator.
 func TestAServerWithNothingSaidKeepsItsBoardsInSQLite(t *testing.T) {
-	t.Setenv("POURQUOIPAS_DB_TYPE", "")
-	t.Setenv("POURQUOIPAS_DB_DSN", "")
+	t.Setenv("PP_DB_TYPE", "")
+	t.Setenv("PP_DB_DSN", "")
 	dbType, dsn, err := boardDatabase("/data/server")
 	if err != nil {
 		t.Fatal(err)
@@ -25,8 +25,8 @@ func TestAServerWithNothingSaidKeepsItsBoardsInSQLite(t *testing.T) {
 // Postgres and MySQL are named by the environment, with the driver's own
 // connection string beside them.
 func TestAServerIsToldItsDatabaseByTheEnvironment(t *testing.T) {
-	t.Setenv("POURQUOIPAS_DB_TYPE", "postgres")
-	t.Setenv("POURQUOIPAS_DB_DSN", "postgres://pourquoipas@db/pourquoipas?sslmode=disable")
+	t.Setenv("PP_DB_TYPE", "postgres")
+	t.Setenv("PP_DB_DSN", "postgres://pourquoipas@db/pourquoipas?sslmode=disable")
 	dbType, dsn, err := boardDatabase("/data/server")
 	if err != nil {
 		t.Fatal(err)
@@ -45,10 +45,10 @@ func TestAServerRefusesADatabaseItCannotOpen(t *testing.T) {
 		{"mysql", ""},
 		{"postgresql", "postgres://db"},
 	} {
-		t.Setenv("POURQUOIPAS_DB_TYPE", tc.dbType)
-		t.Setenv("POURQUOIPAS_DB_DSN", tc.dsn)
+		t.Setenv("PP_DB_TYPE", tc.dbType)
+		t.Setenv("PP_DB_DSN", tc.dsn)
 		if _, _, err := boardDatabase("/data/server"); err == nil {
-			t.Errorf("POURQUOIPAS_DB_TYPE=%q POURQUOIPAS_DB_DSN=%q was accepted", tc.dbType, tc.dsn)
+			t.Errorf("PP_DB_TYPE=%q PP_DB_DSN=%q was accepted", tc.dbType, tc.dsn)
 		}
 	}
 }

@@ -5,6 +5,10 @@ The list of agents opens from the ⋯ menu of a board they work on, as
 under it. The list itself belongs to the machine — it is one list for every
 board, and opening it from a board changes nothing about that.
 
+These are the agents the app starts as a program on this machine. An agent
+can also be a model the app calls with your key: see [AI and models by API
+key](./ai.md).
+
 Claude and Codex do not speak ACP themselves — between the app and their CLIs
 stands an **adapter**, published on npm:
 `@agentclientprotocol/claude-agent-acp` and `@agentclientprotocol/codex-acp`.

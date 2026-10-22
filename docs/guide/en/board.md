@@ -53,13 +53,12 @@ question:
   anything else (["The board's system prompt"](./automation/prompt.md));
 - **«Folders…»** — the folders its agents work in
   (["Folders and branches"](./folders.md));
-- **«Agents…»** and **«Where to deploy…»** — registries of the machine, opened
-  from where they are used;
+- **«Agents…»** — a registry of the machine, opened from where it is used;
 - **«Walk the setup again…»** — the same wizard a new board opens;
 - **«Export»**, at the bottom under a rule.
 
-Which items a board has is the board's own answer: one that publishes nowhere is
-not asked where to deploy.
+Which items a board has is the board's own answer: one no agent works on is not
+asked about agents and folders.
 
 ## Views
 

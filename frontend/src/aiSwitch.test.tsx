@@ -1,8 +1,7 @@
 import {fireEvent, render, screen} from '@solidjs/testing-library'
 import '@testing-library/jest-dom'
 
-import {TestRouter, mockAppStore, wrapIntl} from './testUtils'
-import {AppStoreProvider} from './store'
+import {wrapIntl} from './testUtils'
 import {fakeGoSide} from './test/goSide'
 import {TestBlockFactory} from './test/testBlockFactory'
 import {UserSettingKey, UserSettings} from './userSettings'
@@ -11,7 +10,7 @@ import {isPlanningAvailable} from './components/acp/planningDialog'
 import {NO_SETUP, withoutAgents} from './components/acp/boardSetup'
 import {withoutAgentProperties} from './components/acp/agentProperties'
 import {BOARD_PROP_BRANCH_PROPERTY, BOARD_PROP_PROJECT_PROPERTY} from './components/acp/automation'
-import AppPanel from './components/settings/appPanel'
+import AIPanel, {isAIPanelAvailable} from './components/settings/aiPanel'
 
 describe('the AI switch', () => {
     afterEach(() => {
@@ -84,17 +83,11 @@ describe('the AI switch', () => {
         expect(withoutAgentProperties(board, board.cardProperties).map((t) => t.id)).toEqual([own.id, folder.id, branch.id])
     })
 
-    // The switch is in the app's own settings, and only where the app can run
-    // agents at all.
+    // The switch is in the AI section of the settings, and only where the app
+    // can run agents at all.
     test('is switched from the app’s settings', () => {
-        fakeGoSide({ListAgents: vi.fn(), SetMachineSetting: vi.fn().mockResolvedValue(undefined)})
-        const {container} = render(() => wrapIntl(() => (
-            <AppStoreProvider store={mockAppStore({})}>
-                <TestRouter>
-                    <AppPanel/>
-                </TestRouter>
-            </AppStoreProvider>
-        )))
+        fakeGoSide({ListAgents: vi.fn(), SetMachineSetting: vi.fn().mockResolvedValue(undefined), AIProviders: vi.fn().mockResolvedValue([])})
+        const {container} = render(() => wrapIntl(() => <AIPanel/>))
 
         expect(screen.getByText('Agents work on the cards')).toBeInTheDocument()
         fireEvent.click(container.querySelector('.AppPanel__action .Switch') as HTMLElement)
@@ -102,14 +95,6 @@ describe('the AI switch', () => {
     })
 
     test('is not offered where there are no agents to switch off', () => {
-        render(() => wrapIntl(() => (
-            <AppStoreProvider store={mockAppStore({})}>
-                <TestRouter>
-                    <AppPanel/>
-                </TestRouter>
-            </AppStoreProvider>
-        )))
-
-        expect(screen.queryByText('Agents work on the cards')).not.toBeInTheDocument()
+        expect(isAIPanelAvailable()).toBe(false)
     })
 })

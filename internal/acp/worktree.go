@@ -2,14 +2,14 @@ package acp
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
-
-	"github.com/artipop/pourquoipas/internal/dokku"
 )
 
 // WorktreeInfo describes a session's dedicated git worktree.
@@ -283,12 +283,11 @@ func PruneStale(ctx context.Context, workdirs []string) {
 }
 
 // WorkspaceBranch names the branch after the card it belongs to:
-// "Login via SSO" → login-via-sso-1a2b. The branch is what the card shows
-// and what a deploy publishes, so it ends up in a preview hostname — hence the
-// same folding a Dokku app name gets (dokku.AppSlug: lowercase, [a-z0-9-], cut
-// with a hash), and a blank title falls back to the owner's own id. A title
-// with no ASCII in it keeps only what folding leaves, which for a fully
-// non-Latin title is AppSlug's hash: unreadable, but valid and unique.
+// "Login via SSO" → login-via-sso-1a2b. The branch is what the card shows,
+// and a name that is also a DNS label is one any later tool can use as a
+// hostname (branchSlug: lowercase, [a-z0-9-], cut with a hash); a blank title
+// falls back to the owner's own id. A title with no Latin or Russian in it
+// keeps only the hash: unreadable, but valid and unique.
 //
 // The tail is the *owner's* short id, not the run's. A card is one piece of
 // work: its stages, and the terminals a person opens beside them, share one
@@ -296,7 +295,7 @@ func PruneStale(ctx context.Context, workdirs []string) {
 // three-stage route leave three branches and three checkouts behind — and put
 // the conversation in a different copy from the session that was running.
 func WorkspaceBranch(prefix, title, owner string) string {
-	slug := dokku.AppSlug(title)
+	slug := branchSlug(title)
 	if strings.TrimSpace(title) == "" {
 		slug = shortID(owner)
 	}
@@ -325,4 +324,59 @@ func shortID(id string) string {
 		return "x"
 	}
 	return id
+}
+
+// maxBranchSlug bounds the title half of a branch name.
+const maxBranchSlug = 30
+
+// branchSlug folds a title into a DNS label of at most maxBranchSlug
+// characters. Russian is transliterated, since it is the language of the
+// product's own boards and a hash names nothing; anything else that folds to
+// nothing, or had to be cut, carries a short hash of the title so two titles
+// never meet in one branch.
+func branchSlug(title string) string {
+	trimmed := strings.TrimSpace(title)
+	var b strings.Builder
+	lastDash := false
+	for _, r := range strings.ToLower(trimmed) {
+		if mapped, ok := translit[r]; ok {
+			// A hard or soft sign maps to nothing, not to a dash, or a word
+			// carrying one would come out split by it.
+			if mapped != "" {
+				b.WriteString(mapped)
+				lastDash = false
+			}
+			continue
+		}
+		switch {
+		case (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9'):
+			b.WriteRune(r)
+			lastDash = false
+		case !lastDash && b.Len() > 0:
+			b.WriteByte('-')
+			lastDash = true
+		}
+	}
+	label := strings.Trim(b.String(), "-")
+	switch {
+	case label == "":
+		return "b-" + slugHash(trimmed)
+	case len(label) > maxBranchSlug:
+		return strings.Trim(label[:maxBranchSlug], "-") + "-" + slugHash(trimmed)
+	default:
+		return label
+	}
+}
+
+var translit = map[rune]string{
+	'а': "a", 'б': "b", 'в': "v", 'г': "g", 'д': "d", 'е': "e", 'ё': "e",
+	'ж': "zh", 'з': "z", 'и': "i", 'й': "y", 'к': "k", 'л': "l", 'м': "m",
+	'н': "n", 'о': "o", 'п': "p", 'р': "r", 'с': "s", 'т': "t", 'у': "u",
+	'ф': "f", 'х': "h", 'ц': "ts", 'ч': "ch", 'ш': "sh", 'щ': "sch",
+	'ъ': "", 'ы': "y", 'ь': "", 'э': "e", 'ю': "yu", 'я': "ya",
+}
+
+func slugHash(s string) string {
+	sum := sha256.Sum256([]byte(s))
+	return hex.EncodeToString(sum[:])[:6]
 }

@@ -41,11 +41,11 @@ const version = "0.1.0"
 
 // Environment the bridge is configured through.
 const (
-	EnvToken = "POURQUOIPAS_FEED_TOKEN"
+	EnvToken = "PP_FEED_TOKEN"
 	// EnvURL is the board's address when it is not this machine's running
 	// app: a server build, reached at an address that does not change. It is
 	// also what makes a card's link worth giving — see BaseHeader.
-	EnvURL = "POURQUOIPAS_URL"
+	EnvURL = "PP_URL"
 )
 
 // BaseHeader carries the address the caller reached the board at, when that
@@ -310,7 +310,7 @@ func RemoveHandoff(dataDir string) {
 }
 
 // Endpoint is where the bridge connects, and the stable base to announce with
-// it: POURQUOIPAS_URL when it is given, else the address the running app left — with
+// it: PP_URL when it is given, else the address the running app left — with
 // the secret it left beside it, which is empty for a server.
 func Endpoint(dataDir string) (endpoint, base, secret string, err error) {
 	if raw := strings.TrimSpace(os.Getenv(EnvURL)); raw != "" {

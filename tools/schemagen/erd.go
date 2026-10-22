@@ -239,7 +239,7 @@ func erdGroups() []erdGroup {
 			why: "Что знает эта машина: где работать, кем и куда публиковать. Были\n" +
 				"массивами в `config.json`, где у записи не было id и ссылаться на\n" +
 				"неё можно было только по имени — то есть нельзя было переименовать.",
-			tables: pick(app, "workspace", "workspace_board", "agent", "proxy", "deploy_target"),
+			tables: pick(app, "workspace", "workspace_board", "agent", "proxy"),
 		},
 		{
 			title: "Сессии",

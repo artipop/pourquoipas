@@ -152,7 +152,7 @@ describe('components/acp/agentsPanel', () => {
         await waitFor(() => expect(screen.getByRole('button', {name: 'Kind'})).toBeInTheDocument())
 
         const kind = screen.getByRole('button', {name: 'Kind'})
-        expect(optionsOf(kind)).toEqual(['Claude', 'Codex', 'Antigravity', 'GitHub Copilot', 'JetBrains Junie', 'ACP (other)'])
+        expect(optionsOf(kind)).toEqual(['Claude', 'Codex', 'Antigravity', 'GitHub Copilot', 'JetBrains Junie', 'ACP (other)', 'Model by API key'])
 
         chooseOption(kind, 'JetBrains Junie')
         userEvent.type(screen.getByPlaceholderText('Name'), 'junie-a')

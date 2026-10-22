@@ -941,6 +941,10 @@ table "agent" {
     null = true
     type = varchar(36)
   }
+  column "owner_id" {
+    null = true
+    type = varchar(36)
+  }
   column "proxy_id" {
     null = true
     type = varchar(36)
@@ -973,57 +977,17 @@ table "agent" {
     ref_columns = [table.users.column.id]
     on_delete   = SET_NULL
   }
+  foreign_key "agent_owner" {
+    columns     = [column.owner_id]
+    ref_columns = [table.users.column.id]
+    on_delete   = CASCADE
+  }
   foreign_key "agent_proxy" {
     columns     = [column.proxy_id]
     ref_columns = [table.proxy.column.id]
     on_delete   = SET_NULL
   }
   index "idx_agent_name" {
-    unique  = true
-    columns = [column.name]
-  }
-}
-table "deploy_target" {
-  column "id" {
-    null = false
-    type = varchar(36)
-  }
-  column "name" {
-    null = false
-    type = varchar(100)
-  }
-  column "ssh_host" {
-    null = false
-    type = varchar(255)
-  }
-  column "ssh_user" {
-    null = true
-    type = varchar(64)
-  }
-  column "ssh_port" {
-    null = true
-    type = bigint
-  }
-  column "ssh_key" {
-    null = true
-    type = text
-  }
-  column "base_app" {
-    null = true
-    type = varchar(100)
-  }
-  column "base_domain" {
-    null = true
-    type = varchar(255)
-  }
-  column "created_at" {
-    null = false
-    type = bigint
-  }
-  primary_key {
-    columns = [column.id]
-  }
-  index "idx_deploy_target_name" {
     unique  = true
     columns = [column.name]
   }

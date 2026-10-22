@@ -592,7 +592,6 @@ func TestAgentMCPServersValidation(t *testing.T) {
 		"":            {"без имени", AgentMCPServer{Command: "npx"}},
 		"playwright":  {"без команды", AgentMCPServer{}},
 		"play wright": {"имя не годится в префикс инструмента", AgentMCPServer{Command: "npx"}},
-		"dokku":       {"имя занято встроенным сервером", AgentMCPServer{Command: "npx"}},
 		"remote":      {"удалённый сервер", AgentMCPServer{Type: "http", URL: "https://mcp.example.com"}},
 	}
 	for name, c := range bad {
@@ -636,17 +635,6 @@ func TestAgentMCPServersTravelWithEverySession(t *testing.T) {
 	}
 	if s.toolPrefixAllowed("mcp__other__thing") {
 		t.Error("only the configured server's tools may be allowed")
-	}
-
-	// A deploy session keeps ours first and appends the agent's.
-	target := deployEntry("prod")
-	deploySession := &Session{WorkdirPath: "/project", Agent: agent, Deploy: &target, DeployBranch: "feat/x"}
-	specs, err = sessionMCPServers(deploySession, cfg)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(specs) != 2 || specs[0].Name != "dokku" || specs[1].Name != "playwright" {
-		t.Fatalf("deploy session specs: %+v", specs)
 	}
 }
 

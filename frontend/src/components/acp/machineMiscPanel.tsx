@@ -221,9 +221,7 @@ const MachineMiscPanel = () => {
                                 {intl.formatMessage({id: 'Machine.feed', defaultMessage: 'Access for other applications'})}
                             </span>
                             <span class='MachineMiscPanel__factValue'>
-                                {feedIssued() ?
-                                    intl.formatMessage({id: 'Machine.feed-on', defaultMessage: 'A token is issued: an application that has it can read the cards of a column. Read only — it cannot move or change them.'}) :
-                                    intl.formatMessage({id: 'Machine.feed-off', defaultMessage: 'Other applications — XXVI, for one — can take the cards of a column as tasks. They need a token to do it.'})}
+                                {feedIssued() ? intl.formatMessage({id: 'Machine.feed-on', defaultMessage: 'A token is issued: an application that has it can read the cards of a column. Read only — it cannot move or change them.'}) : intl.formatMessage({id: 'Machine.feed-off', defaultMessage: 'Other applications — XXVI, for one — can take the cards of a column as tasks. They need a token to do it.'})}
                             </span>
                         </div>
                         <Show when={feedIssued()}>
@@ -232,9 +230,7 @@ const MachineMiscPanel = () => {
                             </Button>
                         </Show>
                         <Button onClick={issueFeedToken}>
-                            {feedIssued() ?
-                                intl.formatMessage({id: 'Machine.feed-reissue', defaultMessage: 'New token'}) :
-                                intl.formatMessage({id: 'Machine.feed-issue', defaultMessage: 'Issue a token'})}
+                            {feedIssued() ? intl.formatMessage({id: 'Machine.feed-reissue', defaultMessage: 'New token'}) : intl.formatMessage({id: 'Machine.feed-issue', defaultMessage: 'Issue a token'})}
                         </Button>
                     </div>
                     <Show when={feedToken()}>

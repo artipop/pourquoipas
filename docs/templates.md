@@ -51,13 +51,12 @@ is about.
 
 ## The questions
 
-A board of household chores has nowhere to deploy to and nothing to test, and a
+A board of household chores has no code to work on and nothing to test, and a
 wizard that asks anyway reads as a broken feature. So the template names the
 steps — from the closed set the app implements, because a template that could
 invent a question would be a program:
 
 - **Агент, который берёт карточки**;
-- **Куда деплоить** — only for a template that asks for it;
 - **Как этим пользоваться** — asks nothing; it is the last page.
 
 Each step takes a line of the template's own beside the usual explanation
@@ -86,8 +85,7 @@ Everything after it is about the machine and can be left for later.
 Everything a template carries is on the board already, so the copy is an
 ordinary duplicate; *«Сохранить как шаблон…»* adds two things Focalboard's own
 duplicate loses — the board's own name, and the questions it declares. What it
-deliberately does not carry is the machine: the agents and deploy targets it
-named live in *«Настройки → Эта машина…»* and are this install's, the folders
+deliberately does not carry is the machine: the agents it named live in *«Настройки → Эта машина…»* and are this install's, the folders
 belong to the board they were added on, and a board made from the template asks
 for them again.
 

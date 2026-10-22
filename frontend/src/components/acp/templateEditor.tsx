@@ -184,7 +184,7 @@ const TemplateEditor = (props: Props) => {
                             when={setup()}
                             fallback={
                                 <div class='TemplateEditor__hint'>
-                                    {intl.formatMessage({id: 'TemplateEditor.setup-implied', defaultMessage: 'Worked out from the automation above: a template that deploys asks where to, one that tests asks for a browser. Name the steps yourself if that is not what you want.'})}
+                                    {intl.formatMessage({id: 'TemplateEditor.setup-implied', defaultMessage: 'Worked out from the automation above: every template asks for a name and an agent. Name the steps yourself if that is not what you want.'})}
                                     <Button onClick={() => setSetup({steps: impliedSetupSteps(defs())})}>
                                         {intl.formatMessage({id: 'TemplateEditor.setup-declare', defaultMessage: 'Name the steps'})}
                                     </Button>
@@ -256,8 +256,6 @@ export function stepTitle(intl: IntlShape, kind: string): string {
     switch (kind) {
     case 'agent':
         return intl.formatMessage({id: 'TemplateEditor.step-agent', defaultMessage: 'An agent to pick cards up'})
-    case 'deploy':
-        return intl.formatMessage({id: 'TemplateEditor.step-deploy', defaultMessage: 'Somewhere to deploy to'})
     case 'browser':
         return intl.formatMessage({id: 'TemplateEditor.step-browser', defaultMessage: 'A browser for test runs'})
     default:

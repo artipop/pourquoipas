@@ -15,7 +15,7 @@ import {aiEnabled} from '../../aiSwitch'
 // renders it; it works nothing out for itself, because a second opinion here
 // would be a second answer to drift from the first.
 
-export type SetupStepKind = 'name' | 'agent' | 'deploy' | 'browser' | 'done'
+export type SetupStepKind = 'name' | 'agent' | 'browser' | 'done'
 export type SetupStepStatus = 'pending' | 'done' | 'skipped'
 
 export type SetupStep = {

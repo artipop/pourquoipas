@@ -8,18 +8,15 @@ import (
 )
 
 // A board arrives knowing how the work on it is organised. What it cannot know
-// is the machine: which agent runs, in which folder, where it publishes, what
-// it drives a browser with. The setup wizard asks for that — and *what* it asks
-// is the board's business, because a board of household chores has nowhere to
-// deploy to and nothing to test, and an unanswerable question reads as a broken
-// feature.
+// is the machine: which agent runs, in which folder. The setup wizard asks for
+// that — and *what* it asks is the board's business, because an unanswerable
+// question reads as a broken feature.
 //
 // So the steps are a plan, resolved here, out of three things:
 //
 //   - what the board asks for, in a property of its own (BoardPropSetup), the
 //     way it already carries its columns and its routes;
-//   - failing that, what its automation implies — a board that runs a deploy
-//     needs somewhere to deploy to;
+//   - failing that, what every board needs — a name and an agent;
 //   - and what this machine already has, so a question already answered is not
 //     asked again.
 //
@@ -36,21 +33,22 @@ const (
 	// second one made from the developer template is a second the developer template in the
 	// sidebar, and the moment to say what this one is for is the moment it is
 	// made.
-	SetupStepName   = "name"
-	SetupStepAgent  = "agent"  // the agent that picks a card up
-	SetupStepDeploy = "deploy" // a Dokku host to publish a branch to
-	SetupStepDone   = "done"   // no question: how to use what was set up
+	SetupStepName  = "name"
+	SetupStepAgent = "agent" // the agent that picks a card up
+	SetupStepDone  = "done"  // no question: how to use what was set up
 )
 
 // retiredSetupSteps are kinds this app used to ask and no longer does. Every
 // board made before carries them in its declaration, so they are dropped in
 // silence rather than warned about as a step from a newer app.
 //
+// "deploy" was a Dokku host to publish a branch to; publishing went with Dokku.
+//
 // "project" was the folder. A card without one works in the board's drafts
 // folder, so the question stopped being one the board could not do without,
 // and it is asked where it has an answer: on the card, whose folder field adds
 // a folder the first time one is wanted (docs/decisions.md).
-var retiredSetupSteps = map[string]bool{"project": true}
+var retiredSetupSteps = map[string]bool{"project": true, "deploy": true}
 
 // Setup step status.
 const (
@@ -80,15 +78,12 @@ type SetupStepDef struct {
 	Optional bool `json:"optional"`
 }
 
-// SetupStepDefs is the closed set, in the order a wizard walks them. The order
-// is the order the work needs them in: publishing means nothing without an
-// agent.
+// SetupStepDefs is the closed set, in the order a wizard walks them.
 var SetupStepDefs = []SetupStepDef{
 	// No registry: what answers it is the board itself, so there is nothing on
 	// this machine that could have answered it already.
 	{Kind: SetupStepName},
 	{Kind: SetupStepAgent, Registry: "agents"},
-	{Kind: SetupStepDeploy, Registry: "deploys", Optional: true},
 	{Kind: SetupStepDone},
 }
 
@@ -116,8 +111,7 @@ type BoardSetupStep struct {
 	// explanation — "the agent that writes your newsletter", say. It is text and
 	// nothing else: a board cannot describe a field, only comment on one.
 	Hint string `json:"hint,omitempty"`
-	// Required overrides an optional step for this board: a board whose route
-	// deploys cannot be set up without somewhere to deploy to.
+	// Required overrides an optional step for this board.
 	Required bool `json:"required,omitempty"`
 }
 
@@ -281,10 +275,9 @@ func setupSteps(declared BoardSetup) []BoardSetupStep {
 // stages. Anything else a board declares is kept because nothing else could
 // have produced it.
 var inferredSetupKinds = map[string]bool{
-	SetupStepName:   true,
-	SetupStepAgent:  true,
-	SetupStepDeploy: true,
-	SetupStepDone:   true,
+	SetupStepName:  true,
+	SetupStepAgent: true,
+	SetupStepDone:  true,
 }
 
 // impliedSetup is what the board's own stages need. A board with no automation
@@ -317,7 +310,7 @@ func (m *Manager) setupStatus(def SetupStepDef, states map[string]string) string
 }
 
 // registryFilled says the machine can already answer this step — there is a
-// agent, somewhere to deploy to. It is deliberately not
+// agent. It is deliberately not
 // the same as the step being *answered*: setting up one board must not mark the
 // next one set up, or every board after the first is created in silence, which
 // is what this used to do. The wizard shows it as "already registered" and lets
@@ -328,8 +321,6 @@ func (m *Manager) registryFilled(registry string) bool {
 	switch registry {
 	case "agents":
 		return len(m.cfg.Agents) > 0
-	case "deploys":
-		return len(m.cfg.Deploys) > 0
 	}
 	return false
 }

@@ -13,7 +13,6 @@ import (
 	acpsdk "github.com/coder/acp-go-sdk"
 
 	"github.com/artipop/pourquoipas/internal/apperr"
-	"github.com/artipop/pourquoipas/internal/dokku"
 	"github.com/artipop/pourquoipas/internal/procgroup"
 )
 
@@ -47,19 +46,10 @@ type Session struct {
 	Agent       AgentEntry      // resolved agent (kind/bin/model/env/prompt)
 	Net         NetworkSettings // resolved proxy configuration (Agent.ProxyName)
 
-	// Deploy is set only for a session started by the deploy column: it is the
-	// Dokku destination the session's MCP server is configured from, and its
-	// presence is what turns those tools on.
-	Deploy       *DeployEntry
-	DeployBranch string
 	// mcpConfigured records that we handed this session an MCP server of our
 	// own, which is what makes the agent's "may I launch MCP?" prompt ours to
 	// answer rather than the user's.
 	mcpConfigured bool
-
-	// Artifacts is the session's own directory for evidence: screenshots and
-	// the test verdict, the deploy outcome. Empty disables recording.
-	Artifacts string
 
 	// ColumnKey/ColumnName are the column the card was in when the session
 	// started: what the column's limit is counted against, and what the queue
@@ -118,15 +108,9 @@ func (s *Session) Status() SessionStatus {
 }
 
 // recordedBranch is the branch the session is filed under: the worktree it
-// created, or — for a deploy session, which works in the folder itself — the
-// branch it publishes.
+// created, if it created one.
 func (s *Session) recordedBranch() string {
-	switch {
-	case s.Worktree.Branch != "":
-		return s.Worktree.Branch
-	default:
-		return s.DeployBranch
-	}
+	return s.Worktree.Branch
 }
 
 // setFinalText keeps the agent's closing words for the route to read: an edge
@@ -249,18 +233,18 @@ func (m *Manager) runSession(s *Session) {
 		s.PromptText = joinPrompts(s.PromptText, state)
 	}
 
-	// 2. Agent connection.
-	conn, acpSessionID, cleanup, err := m.openConnection(m.rootCtx, s)
+	// 2. The agent: a process over ACP, or a model over its API.
+	conv, err := m.openConversation(m.rootCtx, s)
 	if err != nil {
 		m.finishSession(s, StatusFailed, err.Error())
 		m.comment(s, failComment(s, err.Error()))
 		m.cleanupWorktree(s)
 		return
 	}
-	defer cleanup()
+	defer conv.close()
 
 	// 3. The card's task, which is the whole of the session.
-	m.runCardTask(s, conn, acpSessionID)
+	m.runCardTask(s, conv)
 
 	// 4. Worktree cleanup for unsuccessful sessions.
 	m.cleanupWorktree(s)
@@ -274,15 +258,16 @@ func (m *Manager) runSession(s *Session) {
 // stamp the moment the worktree exists. The card is left for the two things
 // only it can carry: what the agent did, and why it could not.
 func (m *Manager) prepareWorkdir(s *Session) error {
+	// No folder: a model on a hosted server. There is nothing to claim, and
+	// the card is where its work goes.
+	if s.WorkdirPath == "" {
+		m.persistStatus(s, StatusRunning, "")
+		return nil
+	}
 	// A planning session only reads, so a branch of its own would be a branch
 	// left behind by a conversation that changed nothing. It is the one case
 	// nothing may override.
 	if s.Planning {
-		return m.workInTheFolderItself(s)
-	}
-	// A deploy publishes a branch that already exists, so it stands in the
-	// folder itself. An agent writes code, and gets the card's own workspace.
-	if s.Deploy != nil {
 		return m.workInTheFolderItself(s)
 	}
 
@@ -306,8 +291,7 @@ func (m *Manager) prepareWorkdir(s *Session) error {
 	if err := m.store.UpdateSession(s.ID, StatusRunning, "", ws.Cwd, ws.Cwd, ws.Branch, "", nil); err != nil {
 		m.log.Warn("acp: failed to persist workspace info", "session", s.ID, "err", err)
 	}
-	// The card shows the branch and offers to deploy it, and this is the
-	// first moment it exists.
+	// The card shows the branch, and this is the first moment it exists.
 	m.emitSession(s, "")
 	return nil
 }
@@ -355,8 +339,8 @@ func (m *Manager) cleanupWorktree(s *Session) {
 // runCardTask runs the card's task, reports it and ends. There is no second
 // turn: a stage is exactly the piece of work a card asked for, and it ends when
 // the agent's turn does.
-func (m *Manager) runCardTask(s *Session, conn *acpsdk.ClientSideConnection, acpSessionID acpsdk.SessionId) {
-	finalText, err := m.runTurn(s, conn, acpSessionID, s.PromptText)
+func (m *Manager) runCardTask(s *Session, conv conversation) {
+	finalText, err := m.runTurn(s, conv, s.PromptText)
 	// What the route reads is the agent's one line when it gave one, ahead of
 	// the rest of what it said: an edge may test either.
 	if r, reported := s.stageReport(); reported {
@@ -389,7 +373,6 @@ func (m *Manager) commentFirstTurn(s *Session, finalText string, err error) {
 	case err != nil:
 		m.finishSession(s, StatusFailed, err.Error())
 		m.comment(s, failComment(s, err.Error()))
-		m.applyDeployOutcome(s)
 	default:
 		if r, reported := s.stageReport(); reported && !r.ok {
 			m.finishSession(s, StatusFailed, "the agent could not finish the work")
@@ -399,10 +382,9 @@ func (m *Manager) commentFirstTurn(s *Session, finalText string, err error) {
 			return
 		}
 		m.finishSession(s, StatusDone, "")
-		if s.Deploy != nil || !s.hasCommented() {
+		if !s.hasCommented() {
 			m.comment(s, doneComment(s, finalText))
 		}
-		m.applyDeployOutcome(s)
 	}
 }
 
@@ -500,7 +482,7 @@ func (m *Manager) openConnection(ctx context.Context, s *Session) (*acpsdk.Clien
 // runTurn sends one prompt and returns the agent's final message text. It holds
 // a concurrency slot only while the agent is actually working, so an idle
 // console never starves other cards.
-func (m *Manager) runTurn(s *Session, conn *acpsdk.ClientSideConnection, acpSessionID acpsdk.SessionId, prompt string) (string, error) {
+func (m *Manager) runTurn(s *Session, conv conversation, prompt string) (string, error) {
 	select {
 	case m.sem <- struct{}{}:
 		defer func() { <-m.sem }()
@@ -533,36 +515,86 @@ func (m *Manager) runTurn(s *Session, conn *acpsdk.ClientSideConnection, acpSess
 	s.finalBuf.Reset()
 	s.finalMu.Unlock()
 
+	if err := conv.turn(ctx, prompt); err != nil {
+		return "", err
+	}
+	s.finalMu.Lock()
+	final := s.finalBuf.String()
+	s.finalMu.Unlock()
+	return final, nil
+}
+
+// conversation is a session's line to whatever does the work: an agent
+// process over ACP (acpConversation, below) or a model over its vendor's API
+// (modelConversation, modelconv.go). Everything around a turn — the slot, the
+// timeout, a cancel that arrived early — is runTurn's and the same for both.
+type conversation interface {
+	// turn runs one prompt to its end. The reply's text goes to the session's
+	// finalBuf as it arrives; a turn stopped by ctx marks the session
+	// cancelled and returns no error, as an agent that obeyed a cancel does.
+	turn(ctx context.Context, prompt string) error
+	// done closes when the other end is gone for good.
+	done() <-chan struct{}
+	close()
+}
+
+// openConversation picks the line by the agent's kind.
+func (m *Manager) openConversation(ctx context.Context, s *Session) (conversation, error) {
+	if s.Agent.IsModel() {
+		return m.openModelConversation(ctx, s)
+	}
+	// Every way a session starts comes through here — a card, planning, a
+	// source, a branch name — so this is where a hosted server refuses to
+	// start a program.
+	if m.hosted {
+		return nil, apperr.New("agents.cli-not-here", "Agent {name} runs a program on a machine, and this server runs none: give the card an agent that is a model", "name", s.Agent.Name)
+	}
+	conn, id, cleanup, err := m.openConnection(ctx, s)
+	if err != nil {
+		return nil, err
+	}
+	return &acpConversation{m: m, s: s, conn: conn, id: id, cleanup: cleanup}, nil
+}
+
+type acpConversation struct {
+	m       *Manager
+	s       *Session
+	conn    *acpsdk.ClientSideConnection
+	id      acpsdk.SessionId
+	cleanup func()
+}
+
+func (c *acpConversation) done() <-chan struct{} { return c.conn.Done() }
+func (c *acpConversation) close()                { c.cleanup() }
+
+func (c *acpConversation) turn(ctx context.Context, prompt string) error {
+	s := c.s
 	cancelACP := func() {
 		s.mu.Lock()
 		already := s.cancelSent
 		s.cancelSent = true
 		s.mu.Unlock()
 		if !already {
-			_ = conn.Cancel(context.Background(), acpsdk.CancelNotification{SessionId: acpSessionID})
+			_ = c.conn.Cancel(context.Background(), acpsdk.CancelNotification{SessionId: c.id})
 		}
 	}
 	stop := context.AfterFunc(ctx, cancelACP)
 	defer stop()
 
-	resp, err := conn.Prompt(ctx, acpsdk.PromptRequest{
-		SessionId: acpSessionID,
+	resp, err := c.conn.Prompt(ctx, acpsdk.PromptRequest{
+		SessionId: c.id,
 		Prompt:    []acpsdk.ContentBlock{acpsdk.TextBlock(prompt)},
 	})
 	if err != nil {
 		if ctx.Err() == context.DeadlineExceeded && !s.wasCancelled() {
-			return "", fmt.Errorf("the turn timed out (%s)", m.cfg.SessionTimeout())
+			return fmt.Errorf("the turn timed out (%s)", c.m.cfg.SessionTimeout())
 		}
-		return "", fmt.Errorf("session/prompt: %w", err)
+		return fmt.Errorf("session/prompt: %w", err)
 	}
 	if resp.StopReason == acpsdk.StopReasonCancelled {
 		s.markCancelled()
 	}
-
-	s.finalMu.Lock()
-	final := s.finalBuf.String()
-	s.finalMu.Unlock()
-	return final, nil
+	return nil
 }
 
 // sdkLogger returns a session-scoped logger for SDK connections that drops
@@ -817,23 +849,14 @@ func (s *Session) wasCancelled() bool {
 
 func doneComment(s *Session, finalText string) string {
 	var b strings.Builder
-	if s.Deploy != nil {
-		// "Finished" is not "succeeded" — whether the app is up is in the
-		// agent's own text below, so the header stays neutral.
-		b.WriteString("Сессия деплоя завершена.\n\n")
-	} else {
-		b.WriteString("Агент завершил работу.\n\n")
-	}
+	b.WriteString("Агент завершил работу.\n\n")
 	if t := strings.TrimSpace(finalText); t != "" {
 		b.WriteString(truncateRunes(t, 4000))
 		b.WriteString("\n\n")
 	}
-	if s.Deploy != nil {
-		slug := dokku.AppSlug(s.DeployBranch)
-		fmt.Fprintf(&b, "Ветка: `%s`\nПриложение Dokku: `%s`\nАдрес: %s\n",
-			s.DeployBranch, s.Deploy.AppName(slug), s.Deploy.URL(slug))
-		fmt.Fprintf(&b, "Если агент правил файлы, изменения не закоммичены: `git -C %s diff`", s.WorkdirPath)
-		return b.String()
+	if s.WorkdirPath == "" {
+		// No folder: the agent's words are the whole of its work.
+		return strings.TrimSpace(b.String())
 	}
 	if s.Worktree.Branch != "" {
 		// One fact: the branch. A copy is that branch checked out elsewhere —

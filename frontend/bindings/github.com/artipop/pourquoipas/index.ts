@@ -7,5 +7,6 @@ export {
 };
 
 export type {
+    AIProvider,
     MachineSettings
 } from "./models.js";

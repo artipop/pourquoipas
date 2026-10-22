@@ -95,9 +95,9 @@ const InboxServerName = "inbox"
 // token rather than finding them, so the agent's own process has no way to
 // reach anything else this app serves.
 const (
-	EnvInboxURL    = "POURQUOIPAS_INBOX_URL"
-	EnvInboxSource = "POURQUOIPAS_INBOX_SOURCE"
-	EnvInboxToken  = "POURQUOIPAS_INBOX_TOKEN"
+	EnvInboxURL    = "PP_INBOX_URL"
+	EnvInboxSource = "PP_INBOX_SOURCE"
+	EnvInboxToken  = "PP_INBOX_TOKEN"
 )
 
 // agentConn is an agent behind the interface the runner polls. Poll runs one

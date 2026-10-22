@@ -88,7 +88,11 @@ func (m *Manager) StartPlanning(boardID, folderName, agentName string) (Planning
 	}
 	cwd := workdir.Path
 	folder := workdir.Name
-	if cwd == "" {
+	if m.hosted {
+		// No folders on a hosted server, drafts included: the conversation
+		// has the board and nothing else.
+		cwd, folder = "", ""
+	} else if cwd == "" {
 		// No folder is a valid answer: the conversation stands in the board's
 		// drafts, the same place every conversation without one has.
 		cwd = m.boardFolder(boardID)
@@ -146,18 +150,18 @@ func (m *Manager) runPlanning(ctx context.Context, chat *planningChat, opening s
 
 	s := chat.s
 	// A message sent while the agent is still starting waits in the queue.
-	conn, sessionID, cleanup, err := m.openConnection(ctx, s)
+	conv, err := m.openConversation(ctx, s)
 	if err != nil {
 		chat.fail(s.Net.redactProxySecret(err.Error()))
 		m.emitPlanning(chat)
 		return
 	}
-	defer cleanup()
+	defer conv.close()
 	// Watched rather than asked each turn: an agent that dies between turns
 	// takes the conversation with it, and the dialog should say so at once.
 	go func() {
 		select {
-		case <-conn.Done():
+		case <-conv.done():
 			chat.stop()
 		case <-ctx.Done():
 		}
@@ -179,7 +183,7 @@ func (m *Manager) runPlanning(ctx context.Context, chat *planningChat, opening s
 			}
 			chat.mu.Unlock()
 
-			reply, err := m.runTurn(s, conn, sessionID, prompt)
+			reply, err := m.runTurn(s, conv, prompt)
 			stopped := s.wasCancelled()
 			// A stopped reply is not a cancelled conversation: the next message
 			// is a new turn (runTurn starts each one uncancelled).

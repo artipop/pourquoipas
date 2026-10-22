@@ -4,7 +4,9 @@ App settings live in one window: at the bottom of the left-hand list, under
 "Add board", the **"Settings"** button with a cog. They apply to all boards.
 Sections:
 
-- **"The app itself"** — theme, language, AI agents, help and feedback;
+- **"The app itself"** — theme, language, help and feedback;
+- **"AI"** — the "Agents work on the cards" switch and the model keys, see
+  [AI and models by API key](./ai.md);
 - **"Updates"** — the app's version and moving to a newer one, see
   [Updates](./updates.md);
 - **«People»** — who is on the server and who runs it; the section is shown to
@@ -19,8 +21,7 @@ Sections:
 Sections this build does not support are not shown: on a machine without
 agents, "The app itself", "Updates", "Import and export" and "Other" remain.
 
-The agents are not here. Their list is a registry of the machine, as the deploy
-hosts are, but it means something only to a board agents work on: it opens from
+The agents are not here. Their list is a registry of the machine, but it means something only to a board agents work on: it opens from
 that board's ⋯ menu as **"Agents…"**, and the proxies are in the same window
 under them. See [Agents, npx and Node.js](./agents.md).
 
@@ -40,13 +41,13 @@ under them. See [Agents, npx and Node.js](./agents.md).
 
 ## AI agents
 
-The **"Agents work on the cards"** switch in "The app itself" turns everything
+The **"Agents work on the cards"** switch in "AI" turns everything
 to do with agents on and off. It is on by default.
 
 When it is off, the app is a plain kanban board:
 
-- a board's ⋯ menu has no "Agents…", "Folders…", the board's system prompt or
-  "Where to deploy…", and the board setup never opens by itself;
+- a board's ⋯ menu has no "Agents…", "Folders…" or the board's system prompt,
+  and the board setup never opens by itself;
 - moving a card into a column starts nothing;
 - a card has no "Changes" and none of the agents' fields — the folder and the
   branch; the assignee field offers people only;
@@ -173,6 +174,3 @@ into an export and into a template.
 
 Settings of a specific board — project folders and agent instructions — are
 asked from the board's own ⋯ menu, one item per question.
-
-**«Where to deploy…»** is there too, and only on a board that asked for it: no
-other board has any use for a deploy host.

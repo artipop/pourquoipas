@@ -307,12 +307,6 @@ func TestTheBoardServerIsOfferedOnlyToAnAgentThatSpeaksHTTP(t *testing.T) {
 	if got := m.sessionBoardServer(&Session{ID: "sess-stdio", BoardID: "board-1"}, stdio); got != nil {
 		t.Error("an agent with no HTTP transport was handed a server it cannot reach")
 	}
-	// A deploy reads the board for nobody and moves its own card nowhere: it
-	// gets no tools, whatever it speaks.
-	deploy := &Session{ID: "sess-deploy", BoardID: "board-1", CardID: "card-1", Deploy: &DeployEntry{Name: "prod"}}
-	if got := m.sessionBoardServer(deploy, http); got != nil {
-		t.Error("a deploy session was handed the board's tools")
-	}
 }
 
 func TestTheGrantTakesTheColumnPropertyFromTheBoard(t *testing.T) {

@@ -1,13 +1,12 @@
 # The board's system prompt
 
 The board menu (⋯ in the header) → **"The board's system prompt…"**. This is
-what an agent is told before anything else: before the card's task, before the
-deploy instructions, before anything you type in a conversation.
+what an agent is told before anything else: before the card's task and before
+anything you type in a conversation.
 
 It is added to:
 
 - a session a card being moved into a column starts;
-- a deploy session;
 - a conversation opened by "Talk it over with an agent".
 
 Write here what is true of the whole board: "answer in Russian", "these are

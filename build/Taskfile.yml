@@ -198,7 +198,7 @@ tasks:
       Usage: task run:docker [TAG=pourquoipas:latest] [PORT=8080]
       The container listens on 8080; PORT is the host side. The database and
       the rest are the environment's (build/docker/Dockerfile.server) — run
-      `docker run` yourself to pass POURQUOIPAS_DB_TYPE and POURQUOIPAS_DB_DSN.
+      `docker run` yourself to pass PP_DB_TYPE and PP_DB_DSN.
     deps:
       - task: build:docker
     cmds:

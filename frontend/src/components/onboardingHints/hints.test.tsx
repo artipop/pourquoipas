@@ -175,12 +175,5 @@ describe('components/onboardingHints', () => {
 
             expect(screen.queryByRole('status')).toBeNull()
         })
-
-        test('a deploy is not the first run', () => {
-            renderStrip(storeWith())
-            handlers['acp:session']({sessionId: 's1', cardId: 'card-1', status: 'running', deploy: true})
-
-            expect(screen.queryByRole('status')).toBeNull()
-        })
     })
 })

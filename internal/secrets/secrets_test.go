@@ -84,8 +84,8 @@ func TestAnUnreadableFileIsNotOverwritten(t *testing.T) {
 }
 
 func TestACredentialFromTheEnvironmentIsFound(t *testing.T) {
-	t.Setenv("POURQUOIPAS_SOURCE_MAIL_TOKEN", "из окружения")
-	store := Env{Prefix: "POURQUOIPAS_SOURCE_"}
+	t.Setenv("PP_SOURCE_MAIL_TOKEN", "из окружения")
+	store := Env{Prefix: "PP_SOURCE_"}
 
 	got, err := store.Get("mail-token")
 	if err != nil || got != "из окружения" {
@@ -109,12 +109,12 @@ func TestTheEnvironmentWinsOverWhatWasStored(t *testing.T) {
 	if err := file.Set("mail-token", "из файла"); err != nil {
 		t.Fatal(err)
 	}
-	chain := Chain{Env{Prefix: "POURQUOIPAS_SOURCE_"}, file}
+	chain := Chain{Env{Prefix: "PP_SOURCE_"}, file}
 
 	if got, _ := chain.Get("mail-token"); got != "из файла" {
 		t.Fatalf("without the variable the stored one answers: %q", got)
 	}
-	t.Setenv("POURQUOIPAS_SOURCE_MAIL_TOKEN", "из окружения")
+	t.Setenv("PP_SOURCE_MAIL_TOKEN", "из окружения")
 	if got, _ := chain.Get("mail-token"); got != "из окружения" {
 		t.Fatalf("got %q", got)
 	}
@@ -124,7 +124,7 @@ func TestTheEnvironmentWinsOverWhatWasStored(t *testing.T) {
 // environment.
 func TestAChainWritesWhereItCan(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "secrets.json")
-	chain := Chain{Env{Prefix: "POURQUOIPAS_SOURCE_"}, NewFileStore(path)}
+	chain := Chain{Env{Prefix: "PP_SOURCE_"}, NewFileStore(path)}
 
 	if err := chain.Set("почта", "t0k"); err != nil {
 		t.Fatal(err)

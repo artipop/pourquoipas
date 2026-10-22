@@ -31,8 +31,8 @@ DSN, потому что это настройка соединения). Уда
 
 > Картинка — `docs/schema/erd.md`, она генерируется из `tools/schemagen`.
 
-**Реестры больше не в файле.** Папки, агенты, прокси и деплой-цели — таблицы
-(`workspace`, `agent`, `proxy`, `deploy_target`), и `config.json` их больше не
+**Реестры больше не в файле.** Папки, агенты и прокси — таблицы
+(`workspace`, `agent`, `proxy`), и `config.json` их больше не
 несёт: поля в `Config` помечены `json:"-"` и заполняются из базы на старте. Карточка называет папку id записи, и **под этим же id доска заводит
 опцию поля «Папка»**, так что карточка хранит обычный select, который
 оказывается ссылкой.
@@ -113,7 +113,6 @@ flowchart TB
     subgraph machine["Машина — таблицы реестров, не едут"]
         WD["Папка<br/>workspace.id"]
         AG["Агент<br/>agent.id"]
-        DT["Деплой-цель<br/>deploy_target.id"]
         ACC["Аккаунт агента<br/>users.id"]
     end
 
@@ -138,7 +137,6 @@ flowchart TB
     ACC -->|"агент, которого запускает перенос"| SESS
 
     SESS -->|"card_id + node_id"| CARD
-    SESS -->|"deploy_target_id"| DT
     CLAIM -->|"owner = card_id"| CARD
     CLAIM -->|"workspace_id"| WD
 ```

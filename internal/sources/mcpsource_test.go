@@ -17,7 +17,7 @@ import (
 // actually breaks is a real process with real stdio, and proving it must not
 // depend on a toolchain being installed to build a second program.
 
-const mcpModeEnv = "POURQUOIPAS_TEST_MCP"
+const mcpModeEnv = "PP_TEST_MCP"
 
 func TestMain(m *testing.M) {
 	if mode := os.Getenv(mcpModeEnv); mode != "" {
