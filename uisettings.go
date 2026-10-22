@@ -14,14 +14,10 @@ import (
 
 // What the install remembers about its own UI — the language and theme a
 // person picked, where they were last, every a do-not-show-again switch. It lives
-// here, in the app's own data, rather than in the browser: the desktop window
-// opens on a loopback origin the browser has no lasting memory for (a random
-// port per launch — docs/deferred.md, moving off localStorage), and a
-// preference a person set is the install's to keep, the way any desktop app
-// keeps one. The page hydrates its localStorage from this before the first
-// render (userSettings.ts) and writes back through SetUIPreference; in a
-// plain browser or as a Mattermost plugin there is no Go side, and
-// localStorage stays the whole memory there.
+// here, in the app's own data, rather than in the browser, whose wails://
+// storage outlives the database. The page holds these in memory, hydrated
+// before the first render (userSettings.ts, pageStorage.ts), and writes back
+// through SetUIPreference.
 type uiSettings struct {
 	// Language predates Preferences by one release; it is folded into the map
 	// on read and never written again.

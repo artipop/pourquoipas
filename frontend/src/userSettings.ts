@@ -1,5 +1,6 @@
 import {goApp} from './goBridge'
 import {notifySettingsChanged} from './nativeApp'
+import {pageStorage} from './pageStorage'
 import {Utils} from './utils'
 
 export enum UserSettingKey {
@@ -49,12 +50,9 @@ export enum UserSettingKey {
 }
 
 // The keys the install keeps for itself, in <dataDir>/ui-settings.json on the
-// Go side. localStorage is only a boot-time cache for these: the desktop
-// window opens on a loopback origin with a random port, and everything the
-// browser stored under the previous one is unreachable by the next launch —
-// docs/deferred.md, moving off localStorage. The rest of the enum stays
-// browser-only on purpose: the emoji-mart keys are the library's own, and
-// welcomePageViewed lives in the user's server-side config.
+// Go side; a desktop window holds them only in memory (pageStorage.ts). The
+// rest of the enum stays in localStorage on purpose: the emoji-mart keys are the
+// library's own, and welcomePageViewed lives in the user's server-side config.
 const installKept = new Set<string>([
     UserSettingKey.Language,
     UserSettingKey.Theme,
@@ -74,7 +72,11 @@ const installKept = new Set<string>([
     UserSettingKey.PrefillCardFolder,
 ])
 
-// hydrateUserSettings fills localStorage with what the install remembers,
+function storageFor(key: string) {
+    return installKept.has(key) ? pageStorage() : localStorage
+}
+
+// hydrateUserSettings fills the page's storage with what the install remembers,
 // before the first render (main.tsx awaits it): the theme and the language
 // have to be right on the first paint, not a correction after it.
 export async function hydrateUserSettings(): Promise<void> {
@@ -88,7 +90,7 @@ export async function hydrateUserSettings(): Promise<void> {
         const prefs = JSON.parse((await bindings.GetUIPreferences()) || '{}')
         for (const [key, value] of Object.entries(prefs)) {
             if (installKept.has(key) && typeof value === 'string') {
-                localStorage.setItem(key, value)
+                storageFor(key).setItem(key, value)
             }
         }
     } catch (e) {
@@ -119,7 +121,7 @@ export async function reportLanguage(lang: string): Promise<void> {
 
 export class UserSettings {
     static get(key: UserSettingKey): string | null {
-        return localStorage.getItem(key)
+        return storageFor(key).getItem(key)
     }
 
     static set(key: UserSettingKey, value: string | null): void {
@@ -127,12 +129,12 @@ export class UserSettings {
             return
         }
         if (value === null) {
-            localStorage.removeItem(key)
+            storageFor(key).removeItem(key)
         } else {
-            localStorage.setItem(key, value)
+            storageFor(key).setItem(key, value)
         }
 
-        // Write-through: the localStorage write above answers this session,
+        // Write-through: the write above answers this session,
         // the install remembers for the next one. Fire and forget — a
         // refused write must not block the switch being made.
         if (installKept.has(key)) {
@@ -369,7 +371,7 @@ export function exportUserSettingsBlob(): string {
 
 function exportUserSettings(): string {
     const keys = Object.values(UserSettingKey)
-    const settings = Object.fromEntries(keys.map((key) => [key, localStorage.getItem(key)]))
+    const settings = Object.fromEntries(keys.map((key) => [key, storageFor(key).getItem(key)]))
     settings.timestamp = `${Date.now()}`
     return JSON.stringify(settings)
 }
@@ -395,9 +397,9 @@ function importUserSettings(json: string): string[] {
     for (const [key, value] of Object.entries(settings)) {
         if (Object.values(UserSettingKey).includes(key as UserSettingKey)) {
             if (value) {
-                localStorage.setItem(key, value as string)
+                storageFor(key).setItem(key, value as string)
             } else {
-                localStorage.removeItem(key)
+                storageFor(key).removeItem(key)
             }
             importedKeys.push(key)
         }

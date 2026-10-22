@@ -27,10 +27,13 @@ server's `/ws` is **tunnelled through Go** instead (`sockettunnel.go`,
 `BusSocket`): the page subscribes to `socket:<id>`, asks `OpenSocket`, Go dials
 the server and puts its frames on the bus; the page's frames go back as
 `SendSocket`, in order. The agents' events come off the bus too
-(`agentEvents.ts`). The bootstrap says `window.pageOnWails`,
-and clears `localStorage` on the first load of each launch: the store outlives
-the app and its database, and a remembered board that is gone opened the error
-page. Two traps of the scheme handler, measured on macOS: WKWebView sends no
+(`agentEvents.ts`). The bootstrap says `window.pageOnWails`
+and hands the session over in `window.seededSession`. **A desktop page keeps
+its data out of the browser** (`pageStorage.ts`): the session and the keys the
+install keeps are held in memory and hydrated from Go, because `wails://`
+storage outlives the app and its database, and a remembered board that was
+gone opened the error page on a fresh install. What is only the page's own
+(emoji-mart, `randomIcons`) stays in `localStorage`. Two traps of the scheme handler, measured on macOS: WKWebView sends no
 `Content-Length` and `httputil.ReverseProxy` dropped every body
 (`boardRouter.ServeHTTP` says unknown instead); WebKit hands it no body at all
 for a `FormData` or a `Blob` (`sendableForm` sends the encoded bytes). In
@@ -701,13 +704,14 @@ cosmetics those panels grew inside the settings dialog moved to
 
 **What a person picked for the UI is kept by the install**, not by the
 browser: `<dataDir>/ui-settings.json` (`GetUIPreferences`/`SetUIPreference`),
-because the desktop window opens on a loopback origin with a random port and
-localStorage forgot everything on every launch. `main.tsx` hydrates
-localStorage from it before the first render — the theme and the language
+because a preference is the install's to keep and must not outlive its
+database in the browser. `main.tsx` hydrates the page from it before the first
+render — the theme and the language
 have to be right on the first paint — and `UserSettings.set` writes through;
 `installKept` in `userSettings.ts` names the keys that travel, and the
-session token deliberately is not one of them. In a plain browser there is no Go side, and
-localStorage stays the whole memory there. **The theme and the language are settings like the rest of them**,
+session token deliberately is not one of them. On a desktop those keys live only in memory
+(`pageStorage.ts`); in a plain browser there is no Go side, and localStorage
+stays the whole memory there. **The theme and the language are settings like the rest of them**,
 and are `settings/appPanel.tsx` with the link to the manual: they spent a while
 in the corner of the board on the grounds that they are changed while looking at
 it, and what that cost was two icon menus and a question mark standing in for

@@ -54,11 +54,9 @@ const MainApp = () => {
     )
 }
 
-// The first paint waits for the install's own memory: the desktop window's
-// localStorage is empty on every launch (a loopback origin with a random
-// port), and the theme and the language have to be right when the page
-// appears, not corrected after it. One binding call over loopback; a build
-// with no Go side resolves it at once.
+// The first paint waits for the install's own memory: a desktop window keeps its
+// data out of the browser (pageStorage.ts), and the theme and the language have
+// to be right when the page appears. A build with no Go side resolves it at once.
 async function boot() {
     installGoBridge()
 

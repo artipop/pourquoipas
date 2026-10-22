@@ -275,7 +275,8 @@ server.
   `settings/appSettingsDialog.tsx`; deploy targets, agents and proxies are
   machine registries offered from a board's ⋯ menu on its setup plan; UI prefs
   are kept by the install in `<dataDir>/ui-settings.json` (`installKept` in
-  `userSettings.ts`), hydrated into localStorage before first paint.
+  `userSettings.ts`), hydrated before first paint; a desktop page holds
+  them and the session in memory, never in the browser (`pageStorage.ts`).
 - **A theme is a Mattermost theme config** (`frontend/src/theme/`,
   `docs/themes.md`), shipped as pairs (light/dark) with `themeMode` choosing the
   half; `_tokens.scss` is the first paint and a test holds it equal to the

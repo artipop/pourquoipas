@@ -1,5 +1,6 @@
 import {ParentComponent, createEffect, onSettled} from 'solid-js'
 
+import {sessionToken} from '../session'
 import wsClient from '../wsclient'
 
 type Props = {
@@ -17,7 +18,7 @@ const WithWebSockets: ParentComponent<Props> = (props) => {
             return
         }
 
-        const token = localStorage.getItem('boardSessionId') || queryString.get('r') || ''
+        const token = sessionToken() || queryString.get('r') || ''
         if (token) {
             wsClient.authenticate(token)
         }
@@ -29,7 +30,7 @@ const WithWebSockets: ParentComponent<Props> = (props) => {
             return
         }
 
-        const token = localStorage.getItem('boardSessionId') || queryString.get('r') || ''
+        const token = sessionToken() || queryString.get('r') || ''
         if (wsClient.token !== token) {
             wsClient.authenticate(token)
         }

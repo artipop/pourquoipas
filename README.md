@@ -64,7 +64,7 @@ The Go code is platform-agnostic — the same files build for every OS:
   under — the standard answer to DNS rebinding.
 - `proxy.go` — a reverse proxy to the in-process server, sitting behind the
   front door on everything but `/wails/`. It injects a bootstrap `<script>` into
-  the served HTML that seeds the single-user session token into `localStorage`
+  the served HTML that seeds the single-user session token
   and **tells the page there is a Go side** (see below), and nothing else.
 
   **The bindings** are Wails' own, generated from `App` into
@@ -234,10 +234,9 @@ There is deliberately **no `window.webSocketBaseURL`** here, unlike v2:
   closing it half-way answers nothing, so the header goes on saying *«Доска ещё
   не настроена»* until every question that board asks has an answer, and
   *«Пройти настройку заново…»* in the ⋯ menu is the way back in.
-  Having been offered it is remembered in the store, not in the page: the app
-  publishes itself on a fresh port every launch, so `localStorage` is keyed by
-  an origin that does not survive a restart — anything the page has to remember
-  between runs has to be asked of Go.
+  Having been offered it is remembered in the store, not in the page: a desktop page
+  keeps no data in the browser (`pageStorage.ts`), so anything it has to
+  remember between runs is asked of Go.
 - **What starts an agent** is a card being moved into a column while it is
   assigned to one. Nothing else: a column is an ordinary option of the board's
   status field, and there is no registry saying what any of them does. The agent

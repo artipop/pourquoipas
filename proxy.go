@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -17,7 +16,7 @@ import (
 
 // bootstrapScript is injected into the served index.html <head>, before any app
 // JS runs. It
-//   - seeds the single-user session token into localStorage, and
+//   - seeds the single-user session token, and
 //   - tells the page there is a Go side behind this origin (window.hasGoSide),
 //     which is what makes goApp (frontend/src/goBridge.ts) hand out the
 //     bindings generated from App.
@@ -36,43 +35,31 @@ import (
 func bootstrapScript(sessionToken string, boardOnBus bool) string {
 	return fmt.Sprintf(`<script>
 (function () {
+  window.hasGoSide = true;
+  window.pageOnWails = %t;
+  window.boardOnBus = %t;
   // In single-user mode this is the session the API synthesizes, seeded before
   // any app script runs. On a hosted server it is empty and the page logs in.
+  var seeded = %q;
+  if (window.pageOnWails) {
+    window.seededSession = seeded;
+    return;
+  }
   try {
-    // A desktop page's storage outlives the app and its database; it is kept
-    // for one launch, as it was when every launch had a new origin.
-    var launch = %q;
-    if (launch && localStorage.getItem('launch') !== launch) {
-      localStorage.clear();
-      localStorage.setItem('launch', launch);
-    }
-    var seeded = %q;
     if (seeded) { localStorage.setItem('boardSessionId', seeded); }
-    // The same token a second way, for the front door (frontdoor.go): the Wails
-    // runtime makes its own fetches and a WebSocket carries no header a page
-    // can set, so what guards those routes is a cookie. Written here and by
-    // octoClient at login, because a login navigates without reloading.
+    // The same token a second way, for a server build's guard (mode_server.go):
+    // the Wails runtime makes its own fetches and a WebSocket carries no header
+    // a page can set. Written here and by octoClient at login, because a login
+    // navigates without reloading.
     var token = localStorage.getItem('boardSessionId') || '';
     if (token) {
       document.cookie = 'boardSession=' + token + '; path=/; SameSite=Strict' +
         (location.protocol === 'https:' ? '; Secure' : '');
     }
   } catch (e) {}
-
-  window.hasGoSide = true;
-  window.pageOnWails = %t;
-  window.boardOnBus = %t;
 })();
-</script>`, pageLaunch, sessionToken, pageOnWails, boardOnBus)
+</script>`, pageOnWails, boardOnBus, sessionToken)
 }
-
-// pageLaunch is this run of a desktop app; empty on a server.
-var pageLaunch = func() string {
-	if !pageOnWails {
-		return ""
-	}
-	return strconv.FormatInt(time.Now().UnixNano(), 36)
-}()
 
 // newServerProxy builds what the front door puts behind everything that is not
 // /wails/ or /acp/: the page, and the board the page talks to. In a release

@@ -1,6 +1,8 @@
-// The board session token, kept twice: a header for the board, a cookie for the
-// front door — which can be handed neither a header on a WebSocket handshake
-// nor one on the Wails runtime's own fetches (frontdoor.go).
+import {pageStorage} from './pageStorage'
+
+// The board session token, kept twice: a header for the board, a cookie for a
+// server build's guard, which can be handed neither a header on a WebSocket
+// handshake nor one on the Wails runtime's own fetches (mode_server.go).
 
 const TOKEN_KEY = 'boardSessionId'
 
@@ -8,17 +10,17 @@ const TOKEN_KEY = 'boardSessionId'
 const COOKIE = 'boardSession'
 
 export function sessionToken(): string {
-    return localStorage.getItem(TOKEN_KEY) || ''
+    return pageStorage().getItem(TOKEN_KEY) || ''
 }
 
 // rememberSession stores a token both ways.
 export function rememberSession(token: string): void {
-    localStorage.setItem(TOKEN_KEY, token)
+    pageStorage().setItem(TOKEN_KEY, token)
     writeCookie(token)
 }
 
 export function forgetSession(): void {
-    localStorage.removeItem(TOKEN_KEY)
+    pageStorage().removeItem(TOKEN_KEY)
     writeCookie('')
 }
 

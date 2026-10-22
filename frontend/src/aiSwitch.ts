@@ -9,8 +9,7 @@ import {UserSettings} from './userSettings'
 //
 // Read through to the setting on every call rather than held in a signal of
 // its own: this module is imported before main.tsx hydrates the install's
-// settings into localStorage, so a value taken at import would be the last
-// launch's origin's, which on the desktop is nobody's. The signal is only a
+// settings, so a value taken at import would be a guess. The signal is only a
 // clock that tells tracked readers to ask again.
 const [changed, setChanged] = createSignal(0)
 

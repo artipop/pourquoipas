@@ -21,5 +21,8 @@ export interface IAppWindow extends Window {
 
     // The page shows this machine's own board, whose changes come on the bus.
     boardOnBus?: boolean
+
+    // The session a desktop window starts with (pageStorage.ts).
+    seededSession?: string
     webkit?: {messageHandlers: {nativeApp?: {postMessage: <T>(message: T) => void}}}
 }
