@@ -28,7 +28,7 @@ export async function loadAppWords(lang: string): Promise<boolean> {
         return false
     }
     asking = lang
-    let got: {fields?: string[], words?: Record<string, string>} | undefined
+    let got: {fields?: string[] | null, words?: Record<string, string | undefined> | null} | undefined
     try {
         // eslint-disable-next-line new-cap
         got = await goApp()?.TemplateWords?.(lang)

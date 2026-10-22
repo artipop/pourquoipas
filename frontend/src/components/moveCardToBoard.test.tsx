@@ -79,11 +79,12 @@ describe('components/moveCardToBoard', () => {
         fireEvent.click(screen.getByText('Разработка'))
         fireEvent.click(await screen.findByText('В работе'))
 
-        expect(move).toHaveBeenCalledWith(card, work.id, 'work-status', 'work-doing')
+        expect(move).toHaveBeenCalledWith(card, work.id, 'work-status', 'work-doing', undefined, 'work-todo')
     })
 
     // Moving without naming a column is a real answer: a column of the same
-    // name on the new board keeps the card where it stood.
+    // name on the new board keeps the card where it stood, and a card whose
+    // column did not travel stands in the first one rather than in none.
     test('moves the card without a column when none is picked', async () => {
         const move = vi.spyOn(mutator, 'moveCardToBoard').mockResolvedValue(card)
         open()
@@ -91,6 +92,6 @@ describe('components/moveCardToBoard', () => {
         fireEvent.click(screen.getByText('Разработка'))
         fireEvent.click(await screen.findByText('Just move it'))
 
-        expect(move).toHaveBeenCalledWith(card, work.id, 'work-status', undefined)
+        expect(move).toHaveBeenCalledWith(card, work.id, 'work-status', undefined, undefined, 'work-todo')
     })
 })

@@ -4,10 +4,10 @@ import {Board} from '../../blocks/board'
 import {Card} from '../../blocks/card'
 import {BoardView} from '../../blocks/boardView'
 import octoClient from '../../octoClient'
-import {getVisibleAndHiddenGroups} from '../../boardUtils'
+import {getVisibleAndHiddenGroups, withoutEmptyGroup} from '../../boardUtils'
 import {oldestView} from '../../store/views'
+import {sortCards} from '../../store/cards'
 
-import ViewHeader from '../viewHeader/viewHeader'
 import ViewTitle from '../viewTitle'
 import Kanban from '../kanban/kanban'
 import Table from '../table/table'
@@ -47,7 +47,8 @@ const BoardTemplateSelectorPreview = (props: Props) => {
                         setActiveView(oldestView(views))
                     }
                     if (cards.length > 0) {
-                        setActiveTemplateCards(cards as Card[])
+                        // In the order the board made from it shows them.
+                        setActiveTemplateCards(sortCards([...cards] as Card[], {}, activeTemplate, oldestView(views), {}))
                     }
                 }
             })
@@ -70,29 +71,22 @@ const BoardTemplateSelectorPreview = (props: Props) => {
         if (!view) {
             return {visible: [], hidden: []}
         }
-        return getVisibleAndHiddenGroups(activeTemplateCards(), view.fields.visibleOptionIds, view.fields.hiddenOptionIds, groupByProperty())
+        const all = getVisibleAndHiddenGroups(activeTemplateCards(), view.fields.visibleOptionIds, view.fields.hiddenOptionIds, groupByProperty())
+        return {visible: withoutEmptyGroup(all.visible), hidden: []}
     })
 
     return (
         <Show when={props.activeTemplate}>
             <div class='BoardTemplateSelectorPreview'>
+                {/* A picture of the board a person is about to get, and
+                    nothing to press: the title and the columns with their
+                    cards, without the filter, the totals and the add buttons
+                    that the board itself has. */}
                 <Show when={activeView()}>
                     <div class='top-head'>
                         <ViewTitle
                             board={props.activeTemplate!}
                             readonly={true}
-                        />
-                        <ViewHeader
-                            board={props.activeTemplate!}
-                            activeView={activeView()!}
-                            cards={activeTemplateCards()}
-                            views={[activeView()!]}
-                            groupByProperty={groupByProperty()}
-                            addCard={() => null}
-                            addCardFromTemplate={() => null}
-                            addCardTemplate={() => null}
-                            editCardTemplate={() => null}
-                            readonly={false}
                         />
                     </div>
                 </Show>
@@ -107,7 +101,7 @@ const BoardTemplateSelectorPreview = (props: Props) => {
                             visibleGroups={groups().visible}
                             hiddenGroups={groups().hidden}
                             selectedCardIds={[]}
-                            readonly={false}
+                            readonly={true}
                             onCardClicked={() => null}
                             addCard={() => Promise.resolve()}
                             addCardFromTemplate={() => Promise.resolve()}
@@ -123,7 +117,7 @@ const BoardTemplateSelectorPreview = (props: Props) => {
                             views={[activeView()!]}
                             visibleGroups={groups().visible}
                             selectedCardIds={[]}
-                            readonly={false}
+                            readonly={true}
                             cardIdToFocusOnRender={''}
                             onCardClicked={() => null}
                             addCard={() => Promise.resolve()}
@@ -135,7 +129,7 @@ const BoardTemplateSelectorPreview = (props: Props) => {
                             board={props.activeTemplate!}
                             cards={activeTemplateCards()}
                             activeView={activeView()!}
-                            readonly={false}
+                            readonly={true}
                             selectedCardIds={[]}
                             onCardClicked={() => null}
                             addCard={() => Promise.resolve()}
@@ -147,7 +141,7 @@ const BoardTemplateSelectorPreview = (props: Props) => {
                                 board={props.activeTemplate!}
                                 cards={activeTemplateCards()}
                                 activeView={activeView()!}
-                                readonly={false}
+                                readonly={true}
                                 dateDisplayProperty={dateDisplayProperty()}
                                 showCard={() => null}
                                 addCard={() => Promise.resolve()}

@@ -29,6 +29,19 @@ export function columnProperty(board: Board, name?: string): IPropertyTemplate |
     return properties.find((p) => p.name === name) || properties[0]
 }
 
+// cardColumnProperty is the property whose options are the columns a new card
+// stands in: the view's grouping when it is a select, else the board's first
+// select — the same answer Go gives (boardmodel.ColumnPropertyName) — and
+// never the folder, whose empty value is an answer of its own: no folder yet.
+export function cardColumnProperty(board: Board, groupBy?: IPropertyTemplate): IPropertyTemplate | undefined {
+    const folder = board.properties?.[BOARD_PROP_PROJECT_PROPERTY]
+    const selects = selectProperties(board).filter((p) => p.id !== folder)
+    if (groupBy && selects.some((p) => p.id === groupBy.id)) {
+        return groupBy
+    }
+    return selects[0]
+}
+
 export function boardColumns(board: Board, propertyName?: string): BoardColumn[] {
     const property = columnProperty(board, propertyName)
     return (property?.options || []).map((o: IPropertyOption) => ({optionId: o.id, name: o.value, color: o.color}))

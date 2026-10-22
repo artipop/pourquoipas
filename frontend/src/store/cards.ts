@@ -143,7 +143,7 @@ function manualOrder(activeView: BoardView, cardA: Card, cardB: Card) {
     return indexA - indexB
 }
 
-function sortCards(cards: Card[], lastCommentByCard: {[key: string]: CommentBlock}, board: Board, activeView: BoardView, usersById: {[key: string]: IUser}): Card[] {
+export function sortCards(cards: Card[], lastCommentByCard: {[key: string]: CommentBlock}, board: Board, activeView: BoardView, usersById: {[key: string]: IUser}): Card[] {
     if (!activeView) {
         return cards
     }

@@ -153,31 +153,33 @@ export default function KanbanColumnHeader(props: Props): JSX.Element {
                     />
                 </Label>
             </Show>
-            <KanbanCalculation
-                cards={props.group.cards}
-                menuOpen={props.calculationMenuOpen}
-                value={calculationValue()}
-                property={calculationProperty()}
-                onMenuClose={props.onCalculationMenuClose}
-                onMenuOpen={props.onCalculationMenuOpen}
-                cardProperties={props.board.cardProperties}
-                readonly={props.readonly || !canEditBoardProperties()}
-                onChange={(data: {calculation: string, propertyId: string}) => {
-                    if (data.calculation === calculationValue() && data.propertyId === calculationProperty().id) {
-                        return
-                    }
+            <Show when={props.activeView.fields.kanbanCalculationsShown}>
+                <KanbanCalculation
+                    cards={props.group.cards}
+                    menuOpen={props.calculationMenuOpen}
+                    value={calculationValue()}
+                    property={calculationProperty()}
+                    onMenuClose={props.onCalculationMenuClose}
+                    onMenuOpen={props.onCalculationMenuOpen}
+                    cardProperties={props.board.cardProperties}
+                    readonly={props.readonly || !canEditBoardProperties()}
+                    onChange={(data: {calculation: string, propertyId: string}) => {
+                        if (data.calculation === calculationValue() && data.propertyId === calculationProperty().id) {
+                            return
+                        }
 
-                    const newCalculations = {
-                        ...props.activeView.fields.kanbanCalculations,
-                    }
-                    newCalculations[props.group.option.id] = {
-                        calculation: data.calculation,
-                        propertyId: data.propertyId,
-                    }
+                        const newCalculations = {
+                            ...props.activeView.fields.kanbanCalculations,
+                        }
+                        newCalculations[props.group.option.id] = {
+                            calculation: data.calculation,
+                            propertyId: data.propertyId,
+                        }
 
-                    mutator.changeViewKanbanCalculations(props.board.id, props.activeView.id, props.activeView.fields.kanbanCalculations, newCalculations)
-                }}
-            />
+                        mutator.changeViewKanbanCalculations(props.board.id, props.activeView.id, props.activeView.fields.kanbanCalculations, newCalculations)
+                    }}
+                />
+            </Show>
             <div class='octo-spacer'/>
             <Show when={!props.readonly}>
                 <BoardPermissionGate permissions={[Permission.ManageBoardProperties]}>

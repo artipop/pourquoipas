@@ -52,7 +52,7 @@ describe('components/kanban/calculations/KanbanCalculationOptions', () => {
         )
 
         const {getByText} = render(component)
-        const countUniqueValuesOption = getByText('Count Unique Values')
+        const countUniqueValuesOption = getByText('Count unique values')
         expect(countUniqueValuesOption).toBeDefined()
         userEvent.hover(countUniqueValuesOption)
 
@@ -128,15 +128,15 @@ describe('components/kanban/calculations/KanbanCalculationOptions', () => {
 
         const {getAllByText} = render(component)
 
-        const earliestDateMenu = getAllByText('Earliest Date')
+        const earliestDateMenu = getAllByText('Earliest')
         expect(earliestDateMenu).toBeDefined()
         expect(earliestDateMenu.length).toBe(1)
 
-        const latestDateMenu = getAllByText('Latest Date')
+        const latestDateMenu = getAllByText('Latest')
         expect(latestDateMenu).toBeDefined()
         expect(latestDateMenu.length).toBe(1)
 
-        const dateRangeMenu = getAllByText('Date Range')
+        const dateRangeMenu = getAllByText('Range')
         expect(dateRangeMenu).toBeDefined()
         expect(dateRangeMenu.length).toBe(1)
     })

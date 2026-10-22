@@ -50,6 +50,16 @@ function getOptionGroups(cards: Card[], visibleOptionIds: string[], hiddenOption
     const hiddenGroups = groupCardsByOptions(cards, hiddenOptionIds, groupByProperty)
     return {visible: visibleGroups, hidden: hiddenGroups}
 }
+
+// withoutEmptyGroup drops the group of cards with no value while it holds
+// none. The columns are the options, and a column for "no status" read as one
+// more stage nobody had made; every way a card is created puts it in the first
+// column, so the group shows only for a card that lost its value — its option
+// deleted, say — and then it is where that card can be found.
+export function withoutEmptyGroup(groups: BoardGroup[]): BoardGroup[] {
+    return groups.filter((g) => g.option.id !== '' || g.cards.length > 0)
+}
+
 export function getVisibleAndHiddenGroups(cards: Card[], visibleOptionIds: string[], hiddenOptionIds: string[], groupByProperty?: IPropertyTemplate): {visible: BoardGroup[], hidden: BoardGroup[]} {
     if (groupByProperty?.type === 'createdBy' || groupByProperty?.type === 'updatedBy' || groupByProperty?.type === 'person') {
         return getPersonGroups(cards, groupByProperty, hiddenOptionIds)

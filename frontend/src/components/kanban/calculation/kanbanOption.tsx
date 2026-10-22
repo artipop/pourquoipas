@@ -1,7 +1,8 @@
 import {For, Show, createSignal} from 'solid-js'
 import type {JSX} from '@solidjs/web'
 
-import {Option as SelectOption, typesByOptions} from '../../calculations/options'
+import {Option as SelectOption, optionLabelString, typesByOptions} from '../../calculations/options'
+import {useIntl} from '../../../intl'
 import {IPropertyTemplate} from '../../../blocks/board'
 import ChevronRight from '../../../widgets/icons/chevronRight'
 import {Constants} from '../../../constants'
@@ -14,6 +15,7 @@ type OptionProps = SelectOption & {
 }
 
 const Option = (props: {data: OptionProps}): JSX.Element => {
+    const intl = useIntl()
     const [submenu, setSubmenu] = createSignal(false)
     const [height, setHeight] = createSignal(0)
     const [menuOptionRight, setMenuOptionRight] = createSignal(0)
@@ -61,7 +63,7 @@ const Option = (props: {data: OptionProps}): JSX.Element => {
             }}
         >
             <span>
-                {props.data.label} <Show when={props.data.value !== 'count'}><ChevronRight/></Show>
+                {optionLabelString(props.data, intl)} <Show when={props.data.value !== 'count'}><ChevronRight/></Show>
             </span>
 
             <Show when={submenu() && props.data.value !== 'count'}>

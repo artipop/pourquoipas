@@ -12,6 +12,7 @@ import OptionsIcon from '../../widgets/icons/options'
 import Menu from '../../widgets/menu'
 import MenuWrapper from '../../widgets/menuWrapper'
 import {Utils} from '../../utils'
+import mutator from '../../mutator'
 
 import ModalWrapper from '../modalWrapper'
 import {sendFlashMessage} from '../flashMessages'
@@ -121,6 +122,20 @@ const ViewHeaderActionsMenu = (props: Props) => {
                     label={intl.formatMessage({id: 'ViewHeader.view-header-menu', defaultMessage: 'View header menu'})}
                     menu={
                         <Menu position='left'>
+                            {/* A total beside each column is off until a
+                                board asks for one — a board that sums its
+                                points, say. Per view, like the totals. The
+                                inbox's columns are its sources, and nothing
+                                there is summed. */}
+                            <Show when={props.activeView.fields.viewType === 'board' && !onInbox()}>
+                                <Menu.Switch
+                                    id='kanbanCalculationsShown'
+                                    name={intl.formatMessage({id: 'ViewHeader.column-totals', defaultMessage: 'Column totals'})}
+                                    isOn={Boolean(props.activeView.fields.kanbanCalculationsShown)}
+                                    onClick={() => mutator.changeViewKanbanCalculationsShown(props.board.id, props.activeView.id, !props.activeView.fields.kanbanCalculationsShown)}
+                                />
+                                <Menu.Separator/>
+                            </Show>
                             <Show when={!onInbox()}>
                                 {/* What the board's agents are told first. Its
                                     own item for the same reason the folders

@@ -26,6 +26,7 @@ describe('src/components/kanban/kanbanColumnHeader', () => {
 
         },
     }
+    activeView.fields.kanbanCalculationsShown = true
     const option: IPropertyOption = {
         id: 'id1',
         value: 'Title',
@@ -50,6 +51,31 @@ describe('src/components/kanban/kanbanColumnHeader', () => {
         console.error = vi.fn()
     })
     beforeEach(vi.resetAllMocks)
+
+    // A count beside every column is noise on a board nobody sums: the totals
+    // are drawn only on a view that asked for them.
+    test('draws no totals on a view that did not ask for them', () => {
+        const quiet = {...activeView, fields: {...activeView.fields, kanbanCalculationsShown: false}}
+        const {container} = render(() => wrapDNDIntl(() =>
+            <AppStoreProvider store={store}>
+                <KanbanColumnHeader
+                    board={board}
+                    activeView={quiet}
+                    group={{option, cards: [card]}}
+                    intl={intl}
+                    readonly={false}
+                    addCard={vi.fn()}
+                    propertyNameChanged={vi.fn()}
+                    onDropToColumn={vi.fn()}
+                    calculationMenuOpen={false}
+                    onCalculationMenuOpen={vi.fn()}
+                    onCalculationMenuClose={vi.fn()}
+                />
+            </AppStoreProvider>,
+        ))
+        expect(container.querySelector('.KanbanCalculation')).toBeNull()
+    })
+
     test('should match snapshot', () => {
         const {container} = render(() => wrapDNDIntl(() =>
             <AppStoreProvider store={store}>

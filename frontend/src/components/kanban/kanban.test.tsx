@@ -45,6 +45,7 @@ describe('src/component/kanban/kanban', () => {
 
         },
     }
+    activeView.fields.kanbanCalculationsShown = true
     const optionQ1: IPropertyOption = {
         color: 'propColorOrange',
         id: 'property_value_id_1',
@@ -556,6 +557,7 @@ describe('src/component/kanban/kanban', () => {
 
         },
     }
+    activeView.fields.kanbanCalculationsShown = true
     activeView.fields.defaultTemplateId = card3.id
     const optionQ1: IPropertyOption = {
         color: 'propColorOrange',

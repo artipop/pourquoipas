@@ -188,7 +188,7 @@ func (w *Writer) MoveCardToBoard(ctx context.Context, cardID, toBoardID, column 
 		}
 	}
 	if strings.TrimSpace(column) == "" {
-		return nil
+		return w.standInFirstColumn(cardID, toBoardID)
 	}
 	board, err := w.app.GetBoard(toBoardID)
 	if err != nil {
@@ -209,6 +209,41 @@ func (w *Writer) MoveCardToBoard(ctx context.Context, cardID, toBoardID, column 
 	propID, optionID, ok := boardmodel.FindSelectOption(schema, property, column)
 	if !ok {
 		return fmt.Errorf("board %s has no column %q", toBoardID, column)
+	}
+	patch := &model.CardPatch{UpdatedProperties: map[string]any{propID: optionID}}
+	_, err = w.app.PatchCard(patch, cardID, model.SingleUser, false)
+	return err
+}
+
+// standInFirstColumn puts a card carried to a board without a column named into
+// the board's first column. Its values travel by property, and the column
+// property of the board it left is not this board's: without this it stood in
+// none.
+func (w *Writer) standInFirstColumn(cardID, boardID string) error {
+	board, err := w.app.GetBoard(boardID)
+	if err != nil {
+		return fmt.Errorf("get board %s: %w", boardID, err)
+	}
+	schema, err := model.ParsePropertySchema(board)
+	if err != nil {
+		return err
+	}
+	views, err := w.app.GetBlocks(boardID, boardID, model.TypeView)
+	if err != nil {
+		return fmt.Errorf("get views of board %s: %w", boardID, err)
+	}
+	propID, optionID, ok := boardmodel.IntakeColumn(board, schema, views)
+	if !ok {
+		return nil
+	}
+	card, err := w.cardBlock(cardID)
+	if err != nil {
+		return err
+	}
+	if props, _ := card.Fields["properties"].(map[string]any); props != nil {
+		if current, _ := props[propID].(string); current != "" {
+			return nil
+		}
 	}
 	patch := &model.CardPatch{UpdatedProperties: map[string]any{propID: optionID}}
 	_, err = w.app.PatchCard(patch, cardID, model.SingleUser, false)

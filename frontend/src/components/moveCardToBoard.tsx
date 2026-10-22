@@ -4,6 +4,7 @@ import type {Component} from 'solid-js'
 import {FormattedMessage, useIntl} from '../intl'
 
 import mutator from '../mutator'
+
 import {Board, IPropertyOption, IPropertyTemplate} from '../blocks/board'
 import {Card} from '../blocks/card'
 import {getCard} from '../store/cards'
@@ -11,6 +12,8 @@ import {getMySortedBoards} from '../store/boards'
 import {useAppSelector} from '../store/hooks'
 
 import Label from '../widgets/label'
+
+import {cardColumnProperty} from './acp/automation'
 
 import Dialog from './dialog'
 import './moveCardToBoard.scss'
@@ -26,12 +29,13 @@ export function openMoveCardToBoard(cardId: string): void {
 }
 
 // columnPropertyOf is the property whose options a person reads as the board's
-// columns: its first select property, which is what a new board groups by. The
-// board's own views would be a better answer, and they are the one the server
-// gives — but the views of a board nobody has opened are not loaded here, and
-// asking for them to fill a list would make opening this dialog a download.
+// columns: its first select property other than the folder, which is what a
+// new board groups by. The board's own views would be a better answer, and they
+// are the one the server gives — but the views of a board nobody has opened are
+// not loaded here, and asking for them to fill a list would make opening this
+// dialog a download.
 function columnPropertyOf(board: Board): IPropertyTemplate|undefined {
-    return board.cardProperties.find((property) => property.type === 'select')
+    return cardColumnProperty(board)
 }
 
 const MoveCardToBoardDialog: Component<{cardId: string, onClose: () => void}> = (props) => {
@@ -57,7 +61,7 @@ const MoveCardToBoardDialog: Component<{cardId: string, onClose: () => void}> = 
         setBusy(true)
         setError('')
         try {
-            await mutator.moveCardToBoard(moved, board.id, columnProperty()?.id, option?.id)
+            await mutator.moveCardToBoard(moved, board.id, columnProperty()?.id, option?.id, undefined, columnProperty()?.options[0]?.id)
             props.onClose()
         } catch (e: any) {
             setError(String(e?.message || e))

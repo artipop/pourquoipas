@@ -41,8 +41,13 @@ menu:
 
 ## The «⋯» menu in the board header
 
-This is where the board answers the questions about this machine, one menu item
-per question:
+The first item on a kanban is **«Column totals»**: a switch that shows a number
+beside each column's name — the number of cards unless told otherwise. Clicking
+the number picks what to count: the sum of a number field, for instance.
+Without the switch there are no numbers. Each view has its own.
+
+The rest is the board's questions about this machine, one menu item per
+question:
 
 - **«The board’s system prompt…»** — what this board's agents are told before
   anything else (["The board's system prompt"](./automation/prompt.md));
@@ -51,7 +56,7 @@ per question:
 - **«Agents…»** and **«Where to deploy…»** — registries of the machine, opened
   from where they are used;
 - **«Walk the setup again…»** — the same wizard a new board opens;
-- **«Save as a template…»** and the exports, at the bottom under a rule.
+- **«Export»**, at the bottom under a rule.
 
 Which items a board has is the board's own answer: one that publishes nowhere is
 not asked where to deploy.
@@ -85,6 +90,12 @@ finished. «Done», «In review», «Blocked» are sentences, not settings.
 
 The board's first column is separated from the rest by a vertical rule. What
 arrives is to the left of it; what the board does with it is to the right.
+
+A card always stands in some column. When none was chosen as it was made — with
+**«New»** in the header, in a table or calendar view, by an agent, or when it
+was moved from another board — it stands in the first. A column for cards with
+no status appears only while such a card exists: when the column it stood in was
+deleted, for instance.
 
 ## A card in another app
 

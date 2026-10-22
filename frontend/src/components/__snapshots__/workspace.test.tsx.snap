@@ -31,11 +31,20 @@ exports[`src/components/workspace > return workspace and showcard 1`] = `
                   <div
                     class="logo-title"
                   >
-                    <img
-                      alt=""
+                    <picture
                       class="AppLogoIcon Icon"
-                      src="test-file-stub"
-                    />
+                    >
+                      <img
+                        alt=""
+                        class="AppLogoIcon__day"
+                        src="test-file-stub"
+                      />
+                      <img
+                        alt=""
+                        class="AppLogoIcon__night"
+                        src="test-file-stub"
+                      />
+                    </picture>
                     <span>
                       Pourquoi Pas?
                     </span>
@@ -439,24 +448,7 @@ exports[`src/components/workspace > return workspace and showcard 1`] = `
               <!---->
               
               <!---->
-              <div
-                class="KanbanCalculation"
-              >
-                <button
-                  title="3"
-                  type="button"
-                >
-                  
-                  <span>
-                    3
-                  </span>
-                  
-                  <!---->
-                </button>
-                <!---->
-                
-                <!---->
-              </div>
+              
               <div
                 class="octo-spacer"
               />
@@ -511,24 +503,7 @@ exports[`src/components/workspace > return workspace and showcard 1`] = `
                 />
               </span>
               <!---->
-              <div
-                class="KanbanCalculation"
-              >
-                <button
-                  title="0"
-                  type="button"
-                >
-                  
-                  <span>
-                    0
-                  </span>
-                  
-                  <!---->
-                </button>
-                <!---->
-                
-                <!---->
-              </div>
+              
               <div
                 class="octo-spacer"
               />
@@ -1073,24 +1048,7 @@ exports[`src/components/workspace > return workspace readonly and showcard 1`] =
               <!---->
               
               <!---->
-              <div
-                class="KanbanCalculation"
-              >
-                <button
-                  title="3"
-                  type="button"
-                >
-                  
-                  <span>
-                    3
-                  </span>
-                  
-                  <!---->
-                </button>
-                <!---->
-                
-                <!---->
-              </div>
+              
               <div
                 class="octo-spacer"
               />
@@ -1124,24 +1082,7 @@ exports[`src/components/workspace > return workspace readonly and showcard 1`] =
                 />
               </span>
               <!---->
-              <div
-                class="KanbanCalculation"
-              >
-                <button
-                  title="0"
-                  type="button"
-                >
-                  
-                  <span>
-                    0
-                  </span>
-                  
-                  <!---->
-                </button>
-                <!---->
-                
-                <!---->
-              </div>
+              
               <div
                 class="octo-spacer"
               />
@@ -1425,11 +1366,20 @@ exports[`src/components/workspace > should match snapshot 1`] = `
                   <div
                     class="logo-title"
                   >
-                    <img
-                      alt=""
+                    <picture
                       class="AppLogoIcon Icon"
-                      src="test-file-stub"
-                    />
+                    >
+                      <img
+                        alt=""
+                        class="AppLogoIcon__day"
+                        src="test-file-stub"
+                      />
+                      <img
+                        alt=""
+                        class="AppLogoIcon__night"
+                        src="test-file-stub"
+                      />
+                    </picture>
                     <span>
                       Pourquoi Pas?
                     </span>
@@ -1907,24 +1857,7 @@ exports[`src/components/workspace > should match snapshot 1`] = `
               <!---->
               
               <!---->
-              <div
-                class="KanbanCalculation"
-              >
-                <button
-                  title="3"
-                  type="button"
-                >
-                  
-                  <span>
-                    3
-                  </span>
-                  
-                  <!---->
-                </button>
-                <!---->
-                
-                <!---->
-              </div>
+              
               <div
                 class="octo-spacer"
               />
@@ -1979,24 +1912,7 @@ exports[`src/components/workspace > should match snapshot 1`] = `
                 />
               </span>
               <!---->
-              <div
-                class="KanbanCalculation"
-              >
-                <button
-                  title="0"
-                  type="button"
-                >
-                  
-                  <span>
-                    0
-                  </span>
-                  
-                  <!---->
-                </button>
-                <!---->
-                
-                <!---->
-              </div>
+              
               <div
                 class="octo-spacer"
               />
@@ -2541,24 +2457,7 @@ exports[`src/components/workspace > should match snapshot with readonly 1`] = `
               <!---->
               
               <!---->
-              <div
-                class="KanbanCalculation"
-              >
-                <button
-                  title="3"
-                  type="button"
-                >
-                  
-                  <span>
-                    3
-                  </span>
-                  
-                  <!---->
-                </button>
-                <!---->
-                
-                <!---->
-              </div>
+              
               <div
                 class="octo-spacer"
               />
@@ -2592,24 +2491,7 @@ exports[`src/components/workspace > should match snapshot with readonly 1`] = `
                 />
               </span>
               <!---->
-              <div
-                class="KanbanCalculation"
-              >
-                <button
-                  title="0"
-                  type="button"
-                >
-                  
-                  <span>
-                    0
-                  </span>
-                  
-                  <!---->
-                </button>
-                <!---->
-                
-                <!---->
-              </div>
+              
               <div
                 class="octo-spacer"
               />

@@ -176,7 +176,7 @@ exports[`components/calculations/Calculation > should match snapshot - option ch
               id="id-0-option-2"
               role="option"
             >
-              Count Empty
+              Count empty
             </div>
             <div
               aria-selected="false"
@@ -184,7 +184,7 @@ exports[`components/calculations/Calculation > should match snapshot - option ch
               id="id-0-option-3"
               role="option"
             >
-              Count Not Empty
+              Count not empty
             </div>
             <div
               aria-selected="false"
@@ -192,7 +192,7 @@ exports[`components/calculations/Calculation > should match snapshot - option ch
               id="id-0-option-4"
               role="option"
             >
-              Percent Empty
+              Percent empty
             </div>
             <div
               aria-selected="false"
@@ -200,7 +200,7 @@ exports[`components/calculations/Calculation > should match snapshot - option ch
               id="id-0-option-5"
               role="option"
             >
-              Percent Not Empty
+              Percent not empty
             </div>
             <div
               aria-selected="false"

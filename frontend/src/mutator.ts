@@ -903,6 +903,19 @@ class Mutator {
         )
     }
 
+    async changeViewKanbanCalculationsShown(boardId: string, viewId: string, shown: boolean): Promise<void> {
+        await undoManager.perform(
+            async () => {
+                await octoClient.patchBlock(boardId, viewId, {updatedFields: {kanbanCalculationsShown: shown}})
+            },
+            async () => {
+                await octoClient.patchBlock(boardId, viewId, {updatedFields: {kanbanCalculationsShown: !shown}})
+            },
+            'show column totals',
+            this.undoGroupId,
+        )
+    }
+
     async changeViewColumnCalculations(boardId: string, viewId: string, oldCalculations: Record<string, string>, calculations: Record<string, string>, description = 'updated kanban calculations'): Promise<void> {
         await undoManager.perform(
             async () => {
@@ -1083,6 +1096,7 @@ class Mutator {
         columnPropertyId?: string,
         columnOptionId?: string,
         description = 'move card to board',
+        firstColumnOptionId?: string,
     ): Promise<Card | undefined> {
         const fromBoardId = card.boardId
         if (fromBoardId === toBoardId) {
@@ -1098,8 +1112,12 @@ class Mutator {
                 }
                 updateAllBoardsAndBlocks([], [moved])
                 const movedCard = moved as Card
-                if (columnPropertyId && columnOptionId) {
-                    await this.changePropertyValue(toBoardId, movedCard, columnPropertyId, columnOptionId, description)
+
+                // No column chosen keeps the one that travelled by name, and a
+                // card whose column did not travel stands in the first.
+                const column = columnOptionId || (movedCard.fields.properties[columnPropertyId || ''] ? undefined : firstColumnOptionId)
+                if (columnPropertyId && column) {
+                    await this.changePropertyValue(toBoardId, movedCard, columnPropertyId, column, description)
                 }
                 return movedCard
             },

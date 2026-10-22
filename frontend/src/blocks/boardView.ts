@@ -32,6 +32,11 @@ type BoardViewFields = {
     columnWidths: Record<string, number>
     columnCalculations: Record<string, string>
     kanbanCalculations: Record<string, KanbanCalculationFields>
+
+    // Whether a kanban's column headers show their totals. Off unless asked
+    // for: a count beside every column is noise on a board nobody sums, and a
+    // board that sums points says so once, here.
+    kanbanCalculationsShown?: boolean
     defaultTemplateId: string
 }
 
@@ -58,6 +63,7 @@ function createBoardView(block?: Block): BoardView {
             columnWidths: {...(block?.fields.columnWidths || {})},
             columnCalculations: {...(block?.fields.columnCalculations) || {}},
             kanbanCalculations: {...(block?.fields.kanbanCalculations) || {}},
+            kanbanCalculationsShown: Boolean(block?.fields.kanbanCalculationsShown),
             defaultTemplateId: block?.fields.defaultTemplateId || '',
         },
     }

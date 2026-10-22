@@ -49,156 +49,6 @@ exports[`components/boardTemplateSelector/boardTemplateSelectorPreview > should 
         </div>
         
       </div>
-      <!---->
-      <div
-        class="ViewHeader"
-      >
-        <div
-          class="viewSelector"
-        >
-          <div>
-            <div
-              aria-label="View menu"
-              class="MenuWrapper"
-              role="button"
-            >
-              <div>
-                <span
-                  class="viewTitle"
-                >
-                  View
-                </span>
-              </div>
-              <button
-                type="button"
-              >
-                <i
-                  class="CompassIcon icon-chevron-down DropdownIcon"
-                />
-              </button>
-              <!---->
-              
-              <!---->
-            </div>
-            <!---->
-            
-            <!---->
-          </div>
-        </div>
-        <div
-          class="octo-spacer"
-        />
-        <div
-          class="ModalWrapper"
-        >
-          <button
-            type="button"
-          >
-            
-            <span>
-              Filter
-            </span>
-            
-            <!---->
-          </button>
-        </div>
-        <div
-          aria-label="menuwrapper"
-          class="MenuWrapper"
-          role="button"
-        >
-          <button
-            type="button"
-          >
-            
-            <span>
-              Sort
-            </span>
-            
-            <!---->
-          </button>
-          <!---->
-          
-          <!---->
-        </div>
-        <!---->
-        <div
-          class="board-search-field"
-        >
-          <i
-            class="CompassIcon icon-magnify board-search-icon"
-          />
-          <!---->
-          <input
-            class="Editable "
-            placeholder="Search cards"
-            title=""
-          />
-          <!---->
-        </div>
-        <!---->
-        <div
-          class="ViewHeader__actions"
-        >
-          <div
-            class="ModalWrapper"
-          >
-            <div
-              aria-label="View header menu"
-              class="MenuWrapper"
-              role="button"
-            >
-              <button
-                type="button"
-              >
-                <i
-                  class="CompassIcon icon-dots-horizontal OptionsIcon"
-                />
-              </button>
-              <!---->
-              
-              <!---->
-            </div>
-          </div>
-          <!---->
-          
-          <!---->
-        </div>
-        <div
-          class="ViewHeader__newCard"
-        >
-          <div
-            class="ButtonWithMenu"
-          >
-            <div
-              class="button-text"
-            >
-              New
-            </div>
-            <div
-              aria-label="menuwrapper"
-              class="MenuWrapper"
-              role="button"
-            >
-              <div
-                class="button-dropdown"
-              >
-                <i
-                  class="CompassIcon icon-chevron-down DropdownIcon"
-                />
-              </div>
-              <!---->
-              
-              <!---->
-            </div>
-          </div>
-          <!---->
-          
-          <!---->
-        </div>
-        <!---->
-      </div>
-      <!---->
     </div>
     <!---->
     <div
@@ -223,50 +73,11 @@ exports[`components/boardTemplateSelector/boardTemplateSelectorPreview > should 
           <!---->
           
           <!---->
-          <div
-            class="KanbanCalculation"
-          >
-            <button
-              title="1"
-              type="button"
-            >
-              
-              <span>
-                1
-              </span>
-              
-              <!---->
-            </button>
-            <!---->
-            
-            <!---->
-          </div>
+          
           <div
             class="octo-spacer"
           />
-          <div
-            aria-label="menuwrapper"
-            class="MenuWrapper"
-            role="button"
-          >
-            <button
-              type="button"
-            >
-              <i
-                class="CompassIcon icon-dots-horizontal OptionsIcon"
-              />
-            </button>
-            <!---->
-            
-            <!---->
-          </div>
-          <button
-            type="button"
-          >
-            <i
-              class="CompassIcon icon-plus AddIcon"
-            />
-          </button>
+          
           <!---->
         </div>
         <div
@@ -281,57 +92,19 @@ exports[`components/boardTemplateSelector/boardTemplateSelectorPreview > should 
             class="Label propColorOrange "
           >
             <input
-              class="Editable "
+              class="Editable readonly "
               placeholder="New Select"
+              readonly=""
               spellcheck=""
               title="Q1"
             />
           </span>
           <!---->
-          <div
-            class="KanbanCalculation"
-          >
-            <button
-              title="0"
-              type="button"
-            >
-              
-              <span>
-                0
-              </span>
-              
-              <!---->
-            </button>
-            <!---->
-            
-            <!---->
-          </div>
+          
           <div
             class="octo-spacer"
           />
-          <div
-            aria-label="menuwrapper"
-            class="MenuWrapper"
-            role="button"
-          >
-            <button
-              type="button"
-            >
-              <i
-                class="CompassIcon icon-dots-horizontal OptionsIcon"
-              />
-            </button>
-            <!---->
-            
-            <!---->
-          </div>
-          <button
-            type="button"
-          >
-            <i
-              class="CompassIcon icon-plus AddIcon"
-            />
-          </button>
+          
           <!---->
         </div>
         <div
@@ -346,57 +119,19 @@ exports[`components/boardTemplateSelector/boardTemplateSelectorPreview > should 
             class="Label propColorBlue "
           >
             <input
-              class="Editable "
+              class="Editable readonly "
               placeholder="New Select"
+              readonly=""
               spellcheck=""
               title="Q2"
             />
           </span>
           <!---->
-          <div
-            class="KanbanCalculation"
-          >
-            <button
-              title="0"
-              type="button"
-            >
-              
-              <span>
-                0
-              </span>
-              
-              <!---->
-            </button>
-            <!---->
-            
-            <!---->
-          </div>
+          
           <div
             class="octo-spacer"
           />
-          <div
-            aria-label="menuwrapper"
-            class="MenuWrapper"
-            role="button"
-          >
-            <button
-              type="button"
-            >
-              <i
-                class="CompassIcon icon-dots-horizontal OptionsIcon"
-              />
-            </button>
-            <!---->
-            
-            <!---->
-          </div>
-          <button
-            type="button"
-          >
-            <i
-              class="CompassIcon icon-plus AddIcon"
-            />
-          </button>
+          
           <!---->
         </div>
         <!---->
@@ -404,22 +139,7 @@ exports[`components/boardTemplateSelector/boardTemplateSelectorPreview > should 
         <!---->
         
         <!---->
-        <div
-          class="octo-board-header-cell narrow"
-        >
-          <button
-            type="button"
-          >
-            <i
-              class="CompassIcon icon-plus AddIcon"
-            />
-            <span>
-              Add a group
-            </span>
-            
-            <!---->
-          </button>
-        </div>
+        
         <!---->
       </div>
       <div
@@ -453,22 +173,7 @@ exports[`components/boardTemplateSelector/boardTemplateSelectorPreview > should 
                 />
               </svg>
             </span>
-            <div
-              aria-label="menuwrapper"
-              class="MenuWrapper optionsMenu"
-              role="button"
-            >
-              <button
-                type="button"
-              >
-                <i
-                  class="CompassIcon icon-dots-horizontal OptionsIcon"
-                />
-              </button>
-              <!---->
-              
-              <!---->
-            </div>
+            
             <div
               class="octo-icontitle"
             >
@@ -508,51 +213,13 @@ exports[`components/boardTemplateSelector/boardTemplateSelectorPreview > should 
             
             <!---->
           </div>
-          <button
-            type="button"
-          >
-            <i
-              class="CompassIcon icon-plus AddIcon"
-            />
-            <span>
-              New
-            </span>
-            
-            <!---->
-          </button>
         </div>
         <div
           class="octo-board-column"
-        >
-          <button
-            type="button"
-          >
-            <i
-              class="CompassIcon icon-plus AddIcon"
-            />
-            <span>
-              New
-            </span>
-            
-            <!---->
-          </button>
-        </div>
+        />
         <div
           class="octo-board-column"
-        >
-          <button
-            type="button"
-          >
-            <i
-              class="CompassIcon icon-plus AddIcon"
-            />
-            <span>
-              New
-            </span>
-            
-            <!---->
-          </button>
-        </div>
+        />
         <!---->
         
         <!---->

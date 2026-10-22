@@ -176,7 +176,8 @@ describe('components/boardTemplateSelector/boardTemplateSelectorPreview', () => 
     // view by title showed an empty inbox for every template and said nothing
     // about what the template is for.
     test('previews the view the template was made with, not the one that sorts first', async () => {
-        const viewOf = (id: string, title: string, createAt: number) => ({
+        // Told apart by what they draw, since the preview draws no view title.
+        const viewOf = (id: string, title: string, createAt: number, viewType: string) => ({
             id,
             workspaceId: 'workspace',
             title,
@@ -184,7 +185,7 @@ describe('components/boardTemplateSelector/boardTemplateSelectorPreview', () => 
             createAt,
             fields: {
                 groupById: 'group-prop-id',
-                viewType: 'board',
+                viewType,
                 visibleOptionIds: ['group-prop-id'],
                 hiddenOptionIds: [],
                 visiblePropertyIds: ['group-prop-id'],
@@ -193,8 +194,8 @@ describe('components/boardTemplateSelector/boardTemplateSelectorPreview', () => 
             },
         })
         vi.mocked(octoClient.getAllBlocks).mockResolvedValueOnce([
-            viewOf('v-inbox', 'Входящие', 2000),
-            viewOf('v-work', 'Дела', 1000),
+            viewOf('v-inbox', 'Входящие', 2000, 'table'),
+            viewOf('v-work', 'Дела', 1000, 'board'),
         ] as never)
 
         const {container} = render(() => wrapDNDIntl(() =>
@@ -207,8 +208,8 @@ describe('components/boardTemplateSelector/boardTemplateSelectorPreview', () => 
         ))
 
         await waitFor(() => expect(container.querySelector('.top-head')).not.toBeNull())
-        const title = container.querySelector('.ViewHeader input, .ViewHeader .viewTitle') as HTMLInputElement | null
-        expect(title?.value ?? title?.textContent).toBe('Дела')
+        await waitFor(() => expect(container.querySelector('.Kanban')).not.toBeNull())
+        expect(container.querySelector('.Table')).toBeNull()
     })
 
     test('should be null without activeTemplate', () => {

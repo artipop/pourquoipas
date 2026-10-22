@@ -29,6 +29,32 @@ exports[`components/viewHeader/viewHeaderActionsMenu > return menu 1`] = `
             class="menu-options"
           >
             <div
+              aria-label="Column totals"
+              class="MenuOption SwitchOption menu-option"
+              role="button"
+              tabindex="-1"
+            >
+              <div
+                class="noicon"
+              />
+              <div
+                class="menu-name"
+              >
+                Column totals
+              </div>
+              <div
+                class="Switch override-main size--small"
+              >
+                <div
+                  class="octo-switch-inner"
+                />
+              </div>
+              <!---->
+            </div>
+            <div
+              class="MenuOption MenuSeparator menu-separator"
+            />
+            <div
               class="MenuOption MenuSeparator menu-separator"
             />
             <div
@@ -122,6 +148,32 @@ exports[`components/viewHeader/viewHeaderActionsMenu > return menu and verify ca
             class="menu-options"
           >
             <div
+              aria-label="Column totals"
+              class="MenuOption SwitchOption menu-option"
+              role="button"
+              tabindex="-1"
+            >
+              <div
+                class="noicon"
+              />
+              <div
+                class="menu-name"
+              >
+                Column totals
+              </div>
+              <div
+                class="Switch override-main size--small"
+              >
+                <div
+                  class="octo-switch-inner"
+                />
+              </div>
+              <!---->
+            </div>
+            <div
+              class="MenuOption MenuSeparator menu-separator"
+            />
+            <div
               class="MenuOption MenuSeparator menu-separator"
             />
             <div
@@ -214,6 +266,32 @@ exports[`components/viewHeader/viewHeaderActionsMenu > return menu and verify ca
           <div
             class="menu-options"
           >
+            <div
+              aria-label="Column totals"
+              class="MenuOption SwitchOption menu-option"
+              role="button"
+              tabindex="-1"
+            >
+              <div
+                class="noicon"
+              />
+              <div
+                class="menu-name"
+              >
+                Column totals
+              </div>
+              <div
+                class="Switch override-main size--small"
+              >
+                <div
+                  class="octo-switch-inner"
+                />
+              </div>
+              <!---->
+            </div>
+            <div
+              class="MenuOption MenuSeparator menu-separator"
+            />
             <div
               class="MenuOption MenuSeparator menu-separator"
             />

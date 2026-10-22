@@ -6,7 +6,7 @@ exports[`components/kanban/calculations/Option > base case 1`] = `
     class="KanbanCalculationOptions_CustomOption "
   >
     <span>
-      Count Unique Values
+      Count unique values
        
       <i
         class="CompassIcon icon-chevron-right ChevronRightIcon"

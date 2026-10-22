@@ -282,70 +282,6 @@ exports[`components/centerPanel > return centerPanel and > click on card to show
           class="octo-board-header-cell KanbanColumnHeader"
           style="opacity: 1;"
         >
-          <span
-            class="Label empty "
-            title="Items with an empty name property will go here. This column cannot be removed."
-          >
-            No name
-          </span>
-          <!---->
-          
-          <!---->
-          
-          <!---->
-          <div
-            class="KanbanCalculation"
-          >
-            <button
-              class="Button"
-              title="0"
-              type="button"
-            >
-              
-              <span>
-                0
-              </span>
-              
-              <!---->
-            </button>
-            <!---->
-            
-            <!---->
-          </div>
-          <div
-            class="octo-spacer"
-          />
-          <div
-            aria-label="menuwrapper"
-            class="MenuWrapper"
-            role="button"
-          >
-            <button
-              class="IconButton"
-              type="button"
-            >
-              <i
-                class="CompassIcon icon-dots-horizontal OptionsIcon"
-              />
-            </button>
-            <!---->
-            
-            <!---->
-          </div>
-          <button
-            class="IconButton"
-            type="button"
-          >
-            <i
-              class="CompassIcon icon-plus AddIcon"
-            />
-          </button>
-          <!---->
-        </div>
-        <div
-          class="octo-board-header-cell KanbanColumnHeader"
-          style="opacity: 1;"
-        >
           
           <!---->
           
@@ -361,25 +297,7 @@ exports[`components/centerPanel > return centerPanel and > click on card to show
             />
           </span>
           <!---->
-          <div
-            class="KanbanCalculation"
-          >
-            <button
-              class="Button"
-              title="2"
-              type="button"
-            >
-              
-              <span>
-                2
-              </span>
-              
-              <!---->
-            </button>
-            <!---->
-            
-            <!---->
-          </div>
+          
           <div
             class="octo-spacer"
           />
@@ -429,25 +347,7 @@ exports[`components/centerPanel > return centerPanel and > click on card to show
             />
           </span>
           <!---->
-          <div
-            class="KanbanCalculation"
-          >
-            <button
-              class="Button"
-              title="0"
-              type="button"
-            >
-              
-              <span>
-                0
-              </span>
-              
-              <!---->
-            </button>
-            <!---->
-            
-            <!---->
-          </div>
+          
           <div
             class="octo-spacer"
           />
@@ -509,25 +409,8 @@ exports[`components/centerPanel > return centerPanel and > click on card to show
         <div
           class="octo-board-column"
         >
-          <button
-            class="Button"
-            type="button"
-          >
-            <i
-              class="CompassIcon icon-plus AddIcon"
-            />
-            <span>
-              New
-            </span>
-            
-            <!---->
-          </button>
-        </div>
-        <div
-          class="octo-board-column"
-        >
           <div
-            class="KanbanCard"
+            class="KanbanCard onboardingCard"
             style="opacity: 1;"
           >
             
@@ -586,7 +469,6 @@ exports[`components/centerPanel > return centerPanel and > click on card to show
             <!---->
             
             <!---->
-            
             <!---->
             
             <!---->
@@ -1018,81 +900,6 @@ exports[`components/centerPanel > return centerPanel and > click on new card to 
         <div
           class="table-row-container"
         >
-          <div
-            class="octo-table-group"
-          >
-            <div
-              class="octo-group-header-cell expanded"
-              style="opacity: 1;"
-            >
-              <div
-                class="octo-table-cell"
-                style="width: 100px;"
-              >
-                <button
-                  class="IconButton octo-table-cell__expand "
-                  type="button"
-                >
-                  <i
-                    class="CompassIcon icon-menu-right"
-                  />
-                </button>
-                <!---->
-                <span
-                  class="Label empty "
-                  title="Items with an empty name property will go here. This column cannot be removed."
-                >
-                  No name
-                </span>
-                <!---->
-                
-                <!---->
-                
-                <!---->
-              </div>
-              <button
-                class="Button"
-                type="button"
-              >
-                
-                <span>
-                  0
-                </span>
-                
-                <!---->
-              </button>
-              <!---->
-              <div
-                aria-label="menuwrapper"
-                class="MenuWrapper"
-                role="button"
-              >
-                <button
-                  class="IconButton"
-                  type="button"
-                >
-                  <i
-                    class="CompassIcon icon-dots-horizontal OptionsIcon"
-                  />
-                </button>
-                <!---->
-                
-                <!---->
-              </div>
-              <button
-                class="IconButton"
-                type="button"
-              >
-                <i
-                  class="CompassIcon icon-plus AddIcon"
-                />
-              </button>
-              <!---->
-            </div>
-            <!---->
-            
-            <!---->
-          </div>
           <div
             class="octo-table-group"
           >
@@ -1658,57 +1465,6 @@ exports[`components/centerPanel > return centerPanel and > press touch 1 with re
                   />
                 </button>
                 <!---->
-                <span
-                  class="Label empty "
-                  title="Items with an empty name property will go here. This column cannot be removed."
-                >
-                  No name
-                </span>
-                <!---->
-                
-                <!---->
-                
-                <!---->
-              </div>
-              <button
-                class="Button"
-                type="button"
-              >
-                
-                <span>
-                  0
-                </span>
-                
-                <!---->
-              </button>
-              <!---->
-              
-              <!---->
-            </div>
-            <!---->
-            
-            <!---->
-          </div>
-          <div
-            class="octo-table-group"
-          >
-            <div
-              class="octo-group-header-cell expanded"
-              style="opacity: 1;"
-            >
-              <div
-                class="octo-table-cell"
-                style="width: 100px;"
-              >
-                <button
-                  class="IconButton octo-table-cell__expand readonly"
-                  type="button"
-                >
-                  <i
-                    class="CompassIcon icon-menu-right"
-                  />
-                </button>
-                <!---->
                 
                 <!---->
                 
@@ -2250,81 +2006,6 @@ exports[`components/centerPanel > return centerPanel and > press touch ctrl+d fo
         <div
           class="table-row-container"
         >
-          <div
-            class="octo-table-group"
-          >
-            <div
-              class="octo-group-header-cell expanded"
-              style="opacity: 1;"
-            >
-              <div
-                class="octo-table-cell"
-                style="width: 100px;"
-              >
-                <button
-                  class="IconButton octo-table-cell__expand "
-                  type="button"
-                >
-                  <i
-                    class="CompassIcon icon-menu-right"
-                  />
-                </button>
-                <!---->
-                <span
-                  class="Label empty "
-                  title="Items with an empty name property will go here. This column cannot be removed."
-                >
-                  No name
-                </span>
-                <!---->
-                
-                <!---->
-                
-                <!---->
-              </div>
-              <button
-                class="Button"
-                type="button"
-              >
-                
-                <span>
-                  0
-                </span>
-                
-                <!---->
-              </button>
-              <!---->
-              <div
-                aria-label="menuwrapper"
-                class="MenuWrapper"
-                role="button"
-              >
-                <button
-                  class="IconButton"
-                  type="button"
-                >
-                  <i
-                    class="CompassIcon icon-dots-horizontal OptionsIcon"
-                  />
-                </button>
-                <!---->
-                
-                <!---->
-              </div>
-              <button
-                class="IconButton"
-                type="button"
-              >
-                <i
-                  class="CompassIcon icon-plus AddIcon"
-                />
-              </button>
-              <!---->
-            </div>
-            <!---->
-            
-            <!---->
-          </div>
           <div
             class="octo-table-group"
           >
@@ -3018,81 +2699,6 @@ exports[`components/centerPanel > return centerPanel and > press touch del for o
                   />
                 </button>
                 <!---->
-                <span
-                  class="Label empty "
-                  title="Items with an empty name property will go here. This column cannot be removed."
-                >
-                  No name
-                </span>
-                <!---->
-                
-                <!---->
-                
-                <!---->
-              </div>
-              <button
-                class="Button"
-                type="button"
-              >
-                
-                <span>
-                  0
-                </span>
-                
-                <!---->
-              </button>
-              <!---->
-              <div
-                aria-label="menuwrapper"
-                class="MenuWrapper"
-                role="button"
-              >
-                <button
-                  class="IconButton"
-                  type="button"
-                >
-                  <i
-                    class="CompassIcon icon-dots-horizontal OptionsIcon"
-                  />
-                </button>
-                <!---->
-                
-                <!---->
-              </div>
-              <button
-                class="IconButton"
-                type="button"
-              >
-                <i
-                  class="CompassIcon icon-plus AddIcon"
-                />
-              </button>
-              <!---->
-            </div>
-            <!---->
-            
-            <!---->
-          </div>
-          <div
-            class="octo-table-group"
-          >
-            <div
-              class="octo-group-header-cell expanded"
-              style="opacity: 1;"
-            >
-              <div
-                class="octo-table-cell"
-                style="width: 100px;"
-              >
-                <button
-                  class="IconButton octo-table-cell__expand "
-                  type="button"
-                >
-                  <i
-                    class="CompassIcon icon-menu-right"
-                  />
-                </button>
-                <!---->
                 
                 <!---->
                 
@@ -3746,81 +3352,6 @@ exports[`components/centerPanel > return centerPanel and > press touch esc for o
         <div
           class="table-row-container"
         >
-          <div
-            class="octo-table-group"
-          >
-            <div
-              class="octo-group-header-cell expanded"
-              style="opacity: 1;"
-            >
-              <div
-                class="octo-table-cell"
-                style="width: 100px;"
-              >
-                <button
-                  class="IconButton octo-table-cell__expand "
-                  type="button"
-                >
-                  <i
-                    class="CompassIcon icon-menu-right"
-                  />
-                </button>
-                <!---->
-                <span
-                  class="Label empty "
-                  title="Items with an empty name property will go here. This column cannot be removed."
-                >
-                  No name
-                </span>
-                <!---->
-                
-                <!---->
-                
-                <!---->
-              </div>
-              <button
-                class="Button"
-                type="button"
-              >
-                
-                <span>
-                  0
-                </span>
-                
-                <!---->
-              </button>
-              <!---->
-              <div
-                aria-label="menuwrapper"
-                class="MenuWrapper"
-                role="button"
-              >
-                <button
-                  class="IconButton"
-                  type="button"
-                >
-                  <i
-                    class="CompassIcon icon-dots-horizontal OptionsIcon"
-                  />
-                </button>
-                <!---->
-                
-                <!---->
-              </div>
-              <button
-                class="IconButton"
-                type="button"
-              >
-                <i
-                  class="CompassIcon icon-plus AddIcon"
-                />
-              </button>
-              <!---->
-            </div>
-            <!---->
-            
-            <!---->
-          </div>
           <div
             class="octo-table-group"
           >
@@ -4514,81 +4045,6 @@ exports[`components/centerPanel > return centerPanel and > press touch esc for o
                   />
                 </button>
                 <!---->
-                <span
-                  class="Label empty "
-                  title="Items with an empty name property will go here. This column cannot be removed."
-                >
-                  No name
-                </span>
-                <!---->
-                
-                <!---->
-                
-                <!---->
-              </div>
-              <button
-                class="Button"
-                type="button"
-              >
-                
-                <span>
-                  0
-                </span>
-                
-                <!---->
-              </button>
-              <!---->
-              <div
-                aria-label="menuwrapper"
-                class="MenuWrapper"
-                role="button"
-              >
-                <button
-                  class="IconButton"
-                  type="button"
-                >
-                  <i
-                    class="CompassIcon icon-dots-horizontal OptionsIcon"
-                  />
-                </button>
-                <!---->
-                
-                <!---->
-              </div>
-              <button
-                class="IconButton"
-                type="button"
-              >
-                <i
-                  class="CompassIcon icon-plus AddIcon"
-                />
-              </button>
-              <!---->
-            </div>
-            <!---->
-            
-            <!---->
-          </div>
-          <div
-            class="octo-table-group"
-          >
-            <div
-              class="octo-group-header-cell expanded"
-              style="opacity: 1;"
-            >
-              <div
-                class="octo-table-cell"
-                style="width: 100px;"
-              >
-                <button
-                  class="IconButton octo-table-cell__expand "
-                  type="button"
-                >
-                  <i
-                    class="CompassIcon icon-menu-right"
-                  />
-                </button>
-                <!---->
                 
                 <!---->
                 
@@ -5242,81 +4698,6 @@ exports[`components/centerPanel > return centerPanel and > press touch esc for t
         <div
           class="table-row-container"
         >
-          <div
-            class="octo-table-group"
-          >
-            <div
-              class="octo-group-header-cell expanded"
-              style="opacity: 1;"
-            >
-              <div
-                class="octo-table-cell"
-                style="width: 100px;"
-              >
-                <button
-                  class="IconButton octo-table-cell__expand "
-                  type="button"
-                >
-                  <i
-                    class="CompassIcon icon-menu-right"
-                  />
-                </button>
-                <!---->
-                <span
-                  class="Label empty "
-                  title="Items with an empty name property will go here. This column cannot be removed."
-                >
-                  No name
-                </span>
-                <!---->
-                
-                <!---->
-                
-                <!---->
-              </div>
-              <button
-                class="Button"
-                type="button"
-              >
-                
-                <span>
-                  0
-                </span>
-                
-                <!---->
-              </button>
-              <!---->
-              <div
-                aria-label="menuwrapper"
-                class="MenuWrapper"
-                role="button"
-              >
-                <button
-                  class="IconButton"
-                  type="button"
-                >
-                  <i
-                    class="CompassIcon icon-dots-horizontal OptionsIcon"
-                  />
-                </button>
-                <!---->
-                
-                <!---->
-              </div>
-              <button
-                class="IconButton"
-                type="button"
-              >
-                <i
-                  class="CompassIcon icon-plus AddIcon"
-                />
-              </button>
-              <!---->
-            </div>
-            <!---->
-            
-            <!---->
-          </div>
           <div
             class="octo-table-group"
           >
@@ -6010,81 +5391,6 @@ exports[`components/centerPanel > return centerPanel and > press touch esc for t
                   />
                 </button>
                 <!---->
-                <span
-                  class="Label empty "
-                  title="Items with an empty name property will go here. This column cannot be removed."
-                >
-                  No name
-                </span>
-                <!---->
-                
-                <!---->
-                
-                <!---->
-              </div>
-              <button
-                class="Button"
-                type="button"
-              >
-                
-                <span>
-                  0
-                </span>
-                
-                <!---->
-              </button>
-              <!---->
-              <div
-                aria-label="menuwrapper"
-                class="MenuWrapper"
-                role="button"
-              >
-                <button
-                  class="IconButton"
-                  type="button"
-                >
-                  <i
-                    class="CompassIcon icon-dots-horizontal OptionsIcon"
-                  />
-                </button>
-                <!---->
-                
-                <!---->
-              </div>
-              <button
-                class="IconButton"
-                type="button"
-              >
-                <i
-                  class="CompassIcon icon-plus AddIcon"
-                />
-              </button>
-              <!---->
-            </div>
-            <!---->
-            
-            <!---->
-          </div>
-          <div
-            class="octo-table-group"
-          >
-            <div
-              class="octo-group-header-cell expanded"
-              style="opacity: 1;"
-            >
-              <div
-                class="octo-table-cell"
-                style="width: 100px;"
-              >
-                <button
-                  class="IconButton octo-table-cell__expand "
-                  type="button"
-                >
-                  <i
-                    class="CompassIcon icon-menu-right"
-                  />
-                </button>
-                <!---->
                 
                 <!---->
                 
@@ -6738,81 +6044,6 @@ exports[`components/centerPanel > return centerPanel and > press touch esc for t
         <div
           class="table-row-container"
         >
-          <div
-            class="octo-table-group"
-          >
-            <div
-              class="octo-group-header-cell expanded"
-              style="opacity: 1;"
-            >
-              <div
-                class="octo-table-cell"
-                style="width: 100px;"
-              >
-                <button
-                  class="IconButton octo-table-cell__expand "
-                  type="button"
-                >
-                  <i
-                    class="CompassIcon icon-menu-right"
-                  />
-                </button>
-                <!---->
-                <span
-                  class="Label empty "
-                  title="Items with an empty name property will go here. This column cannot be removed."
-                >
-                  No name
-                </span>
-                <!---->
-                
-                <!---->
-                
-                <!---->
-              </div>
-              <button
-                class="Button"
-                type="button"
-              >
-                
-                <span>
-                  0
-                </span>
-                
-                <!---->
-              </button>
-              <!---->
-              <div
-                aria-label="menuwrapper"
-                class="MenuWrapper"
-                role="button"
-              >
-                <button
-                  class="IconButton"
-                  type="button"
-                >
-                  <i
-                    class="CompassIcon icon-dots-horizontal OptionsIcon"
-                  />
-                </button>
-                <!---->
-                
-                <!---->
-              </div>
-              <button
-                class="IconButton"
-                type="button"
-              >
-                <i
-                  class="CompassIcon icon-plus AddIcon"
-                />
-              </button>
-              <!---->
-            </div>
-            <!---->
-            
-            <!---->
-          </div>
           <div
             class="octo-table-group"
           >
@@ -7506,81 +6737,6 @@ exports[`components/centerPanel > return centerPanel and > select one card and c
                   />
                 </button>
                 <!---->
-                <span
-                  class="Label empty "
-                  title="Items with an empty name property will go here. This column cannot be removed."
-                >
-                  No name
-                </span>
-                <!---->
-                
-                <!---->
-                
-                <!---->
-              </div>
-              <button
-                class="Button"
-                type="button"
-              >
-                
-                <span>
-                  0
-                </span>
-                
-                <!---->
-              </button>
-              <!---->
-              <div
-                aria-label="menuwrapper"
-                class="MenuWrapper"
-                role="button"
-              >
-                <button
-                  class="IconButton"
-                  type="button"
-                >
-                  <i
-                    class="CompassIcon icon-dots-horizontal OptionsIcon"
-                  />
-                </button>
-                <!---->
-                
-                <!---->
-              </div>
-              <button
-                class="IconButton"
-                type="button"
-              >
-                <i
-                  class="CompassIcon icon-plus AddIcon"
-                />
-              </button>
-              <!---->
-            </div>
-            <!---->
-            
-            <!---->
-          </div>
-          <div
-            class="octo-table-group"
-          >
-            <div
-              class="octo-group-header-cell expanded"
-              style="opacity: 1;"
-            >
-              <div
-                class="octo-table-cell"
-                style="width: 100px;"
-              >
-                <button
-                  class="IconButton octo-table-cell__expand "
-                  type="button"
-                >
-                  <i
-                    class="CompassIcon icon-menu-right"
-                  />
-                </button>
-                <!---->
                 
                 <!---->
                 
@@ -8234,81 +7390,6 @@ exports[`components/centerPanel > return centerPanel and > select one card and c
         <div
           class="table-row-container"
         >
-          <div
-            class="octo-table-group"
-          >
-            <div
-              class="octo-group-header-cell expanded"
-              style="opacity: 1;"
-            >
-              <div
-                class="octo-table-cell"
-                style="width: 100px;"
-              >
-                <button
-                  class="IconButton octo-table-cell__expand "
-                  type="button"
-                >
-                  <i
-                    class="CompassIcon icon-menu-right"
-                  />
-                </button>
-                <!---->
-                <span
-                  class="Label empty "
-                  title="Items with an empty name property will go here. This column cannot be removed."
-                >
-                  No name
-                </span>
-                <!---->
-                
-                <!---->
-                
-                <!---->
-              </div>
-              <button
-                class="Button"
-                type="button"
-              >
-                
-                <span>
-                  0
-                </span>
-                
-                <!---->
-              </button>
-              <!---->
-              <div
-                aria-label="menuwrapper"
-                class="MenuWrapper"
-                role="button"
-              >
-                <button
-                  class="IconButton"
-                  type="button"
-                >
-                  <i
-                    class="CompassIcon icon-dots-horizontal OptionsIcon"
-                  />
-                </button>
-                <!---->
-                
-                <!---->
-              </div>
-              <button
-                class="IconButton"
-                type="button"
-              >
-                <i
-                  class="CompassIcon icon-plus AddIcon"
-                />
-              </button>
-              <!---->
-            </div>
-            <!---->
-            
-            <!---->
-          </div>
           <div
             class="octo-table-group"
           >
@@ -9276,70 +8357,6 @@ exports[`components/centerPanel > should match snapshot for Kanban 1`] = `
           class="octo-board-header-cell KanbanColumnHeader"
           style="opacity: 1;"
         >
-          <span
-            class="Label empty "
-            title="Items with an empty name property will go here. This column cannot be removed."
-          >
-            No name
-          </span>
-          <!---->
-          
-          <!---->
-          
-          <!---->
-          <div
-            class="KanbanCalculation"
-          >
-            <button
-              class="Button"
-              title="0"
-              type="button"
-            >
-              
-              <span>
-                0
-              </span>
-              
-              <!---->
-            </button>
-            <!---->
-            
-            <!---->
-          </div>
-          <div
-            class="octo-spacer"
-          />
-          <div
-            aria-label="menuwrapper"
-            class="MenuWrapper"
-            role="button"
-          >
-            <button
-              class="IconButton"
-              type="button"
-            >
-              <i
-                class="CompassIcon icon-dots-horizontal OptionsIcon"
-              />
-            </button>
-            <!---->
-            
-            <!---->
-          </div>
-          <button
-            class="IconButton"
-            type="button"
-          >
-            <i
-              class="CompassIcon icon-plus AddIcon"
-            />
-          </button>
-          <!---->
-        </div>
-        <div
-          class="octo-board-header-cell KanbanColumnHeader"
-          style="opacity: 1;"
-        >
           
           <!---->
           
@@ -9355,25 +8372,7 @@ exports[`components/centerPanel > should match snapshot for Kanban 1`] = `
             />
           </span>
           <!---->
-          <div
-            class="KanbanCalculation"
-          >
-            <button
-              class="Button"
-              title="1"
-              type="button"
-            >
-              
-              <span>
-                1
-              </span>
-              
-              <!---->
-            </button>
-            <!---->
-            
-            <!---->
-          </div>
+          
           <div
             class="octo-spacer"
           />
@@ -9423,25 +8422,7 @@ exports[`components/centerPanel > should match snapshot for Kanban 1`] = `
             />
           </span>
           <!---->
-          <div
-            class="KanbanCalculation"
-          >
-            <button
-              class="Button"
-              title="0"
-              type="button"
-            >
-              
-              <span>
-                0
-              </span>
-              
-              <!---->
-            </button>
-            <!---->
-            
-            <!---->
-          </div>
+          
           <div
             class="octo-spacer"
           />
@@ -9503,25 +8484,8 @@ exports[`components/centerPanel > should match snapshot for Kanban 1`] = `
         <div
           class="octo-board-column"
         >
-          <button
-            class="Button"
-            type="button"
-          >
-            <i
-              class="CompassIcon icon-plus AddIcon"
-            />
-            <span>
-              New
-            </span>
-            
-            <!---->
-          </button>
-        </div>
-        <div
-          class="octo-board-column"
-        >
           <div
-            class="KanbanCard"
+            class="KanbanCard onboardingCard"
             style="opacity: 1;"
           >
             
@@ -9580,7 +8544,6 @@ exports[`components/centerPanel > should match snapshot for Kanban 1`] = `
             <!---->
             
             <!---->
-            
             <!---->
             
             <!---->
@@ -9912,70 +8875,6 @@ exports[`components/centerPanel > should match snapshot for Kanban, not shared 1
           class="octo-board-header-cell KanbanColumnHeader"
           style="opacity: 1;"
         >
-          <span
-            class="Label empty "
-            title="Items with an empty name property will go here. This column cannot be removed."
-          >
-            No name
-          </span>
-          <!---->
-          
-          <!---->
-          
-          <!---->
-          <div
-            class="KanbanCalculation"
-          >
-            <button
-              class="Button"
-              title="0"
-              type="button"
-            >
-              
-              <span>
-                0
-              </span>
-              
-              <!---->
-            </button>
-            <!---->
-            
-            <!---->
-          </div>
-          <div
-            class="octo-spacer"
-          />
-          <div
-            aria-label="menuwrapper"
-            class="MenuWrapper"
-            role="button"
-          >
-            <button
-              class="IconButton"
-              type="button"
-            >
-              <i
-                class="CompassIcon icon-dots-horizontal OptionsIcon"
-              />
-            </button>
-            <!---->
-            
-            <!---->
-          </div>
-          <button
-            class="IconButton"
-            type="button"
-          >
-            <i
-              class="CompassIcon icon-plus AddIcon"
-            />
-          </button>
-          <!---->
-        </div>
-        <div
-          class="octo-board-header-cell KanbanColumnHeader"
-          style="opacity: 1;"
-        >
           
           <!---->
           
@@ -9991,25 +8890,7 @@ exports[`components/centerPanel > should match snapshot for Kanban, not shared 1
             />
           </span>
           <!---->
-          <div
-            class="KanbanCalculation"
-          >
-            <button
-              class="Button"
-              title="1"
-              type="button"
-            >
-              
-              <span>
-                1
-              </span>
-              
-              <!---->
-            </button>
-            <!---->
-            
-            <!---->
-          </div>
+          
           <div
             class="octo-spacer"
           />
@@ -10059,25 +8940,7 @@ exports[`components/centerPanel > should match snapshot for Kanban, not shared 1
             />
           </span>
           <!---->
-          <div
-            class="KanbanCalculation"
-          >
-            <button
-              class="Button"
-              title="0"
-              type="button"
-            >
-              
-              <span>
-                0
-              </span>
-              
-              <!---->
-            </button>
-            <!---->
-            
-            <!---->
-          </div>
+          
           <div
             class="octo-spacer"
           />
@@ -10139,25 +9002,8 @@ exports[`components/centerPanel > should match snapshot for Kanban, not shared 1
         <div
           class="octo-board-column"
         >
-          <button
-            class="Button"
-            type="button"
-          >
-            <i
-              class="CompassIcon icon-plus AddIcon"
-            />
-            <span>
-              New
-            </span>
-            
-            <!---->
-          </button>
-        </div>
-        <div
-          class="octo-board-column"
-        >
           <div
-            class="KanbanCard"
+            class="KanbanCard onboardingCard"
             style="opacity: 1;"
           >
             
@@ -10216,7 +9062,6 @@ exports[`components/centerPanel > should match snapshot for Kanban, not shared 1
             <!---->
             
             <!---->
-            
             <!---->
             
             <!---->
@@ -10579,81 +9424,6 @@ exports[`components/centerPanel > should match snapshot for Table 1`] = `
         <div
           class="table-row-container"
         >
-          <div
-            class="octo-table-group"
-          >
-            <div
-              class="octo-group-header-cell expanded"
-              style="opacity: 1;"
-            >
-              <div
-                class="octo-table-cell"
-                style="width: 100px;"
-              >
-                <button
-                  class="IconButton octo-table-cell__expand "
-                  type="button"
-                >
-                  <i
-                    class="CompassIcon icon-menu-right"
-                  />
-                </button>
-                <!---->
-                <span
-                  class="Label empty "
-                  title="Items with an empty name property will go here. This column cannot be removed."
-                >
-                  No name
-                </span>
-                <!---->
-                
-                <!---->
-                
-                <!---->
-              </div>
-              <button
-                class="Button"
-                type="button"
-              >
-                
-                <span>
-                  0
-                </span>
-                
-                <!---->
-              </button>
-              <!---->
-              <div
-                aria-label="menuwrapper"
-                class="MenuWrapper"
-                role="button"
-              >
-                <button
-                  class="IconButton"
-                  type="button"
-                >
-                  <i
-                    class="CompassIcon icon-dots-horizontal OptionsIcon"
-                  />
-                </button>
-                <!---->
-                
-                <!---->
-              </div>
-              <button
-                class="IconButton"
-                type="button"
-              >
-                <i
-                  class="CompassIcon icon-plus AddIcon"
-                />
-              </button>
-              <!---->
-            </div>
-            <!---->
-            
-            <!---->
-          </div>
           <div
             class="octo-table-group"
           >

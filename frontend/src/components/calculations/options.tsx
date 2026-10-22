@@ -42,6 +42,10 @@ export const optionLabelString = (option: Option, intl: IntlShape): string => {
     switch (option.value) {
     case 'none': return intl.formatMessage({id: 'Calculations.Options.none.label', defaultMessage: 'None'})
     case 'count': return intl.formatMessage({id: 'Calculations.Options.count.label', defaultMessage: 'Count'})
+    case 'countEmpty': return intl.formatMessage({id: 'Calculations.Options.countEmpty.label', defaultMessage: 'Count empty'})
+    case 'countNotEmpty': return intl.formatMessage({id: 'Calculations.Options.countNotEmpty.label', defaultMessage: 'Count not empty'})
+    case 'percentEmpty': return intl.formatMessage({id: 'Calculations.Options.percentEmpty.label', defaultMessage: 'Percent empty'})
+    case 'percentNotEmpty': return intl.formatMessage({id: 'Calculations.Options.percentNotEmpty.label', defaultMessage: 'Percent not empty'})
     case 'countValue': return intl.formatMessage({id: 'Calculations.Options.countValue.label', defaultMessage: 'Count value'})
     case 'countChecked': return intl.formatMessage({id: 'Calculations.Options.countChecked.label', defaultMessage: 'Count checked'})
     case 'percentChecked': return intl.formatMessage({id: 'Calculations.Options.percentChecked.label', defaultMessage: 'Percent checked'})
@@ -65,6 +69,10 @@ export const optionDisplayNameString = (option: Option, intl: IntlShape): string
     switch (option.value) {
     case 'none': return intl.formatMessage({id: 'Calculations.Options.none.displayName', defaultMessage: 'Calculate'})
     case 'count': return intl.formatMessage({id: 'Calculations.Options.count.displayName', defaultMessage: 'Count'})
+    case 'countEmpty': return intl.formatMessage({id: 'Calculations.Options.countEmpty.displayName', defaultMessage: 'Empty'})
+    case 'countNotEmpty': return intl.formatMessage({id: 'Calculations.Options.countNotEmpty.displayName', defaultMessage: 'Not empty'})
+    case 'percentEmpty': return intl.formatMessage({id: 'Calculations.Options.percentEmpty.displayName', defaultMessage: 'Empty'})
+    case 'percentNotEmpty': return intl.formatMessage({id: 'Calculations.Options.percentNotEmpty.displayName', defaultMessage: 'Not empty'})
     case 'countValue': return intl.formatMessage({id: 'Calculations.Options.countValue.displayName', defaultMessage: 'Values'})
     case 'countChecked': return intl.formatMessage({id: 'Calculations.Options.countChecked.displayName', defaultMessage: 'Checked'})
     case 'percentChecked': return intl.formatMessage({id: 'Calculations.Options.percentChecked.displayName', defaultMessage: 'Checked'})

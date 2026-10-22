@@ -463,6 +463,13 @@ func (w *Writer) CreateCard(ctx context.Context, spec acp.NewCard) (string, erro
 			return "", fmt.Errorf("board %s has no column %q in the property %q", board.ID, spec.Column, spec.Property)
 		}
 		properties[propID] = optionID
+	} else if views, err := w.boardViews(board.ID); err == nil {
+		// No column named: the first one, as the page and the sources do. A
+		// card in no column stands in a column for «no status», which the
+		// board does not draw while it is empty.
+		if propID, optionID, ok := boardmodel.IntakeColumn(board, schema, views); ok {
+			properties[propID] = optionID
+		}
 	}
 	for _, option := range spec.Options {
 		propID, optionID, ok := boardmodel.FindOptionByName(schema, option)

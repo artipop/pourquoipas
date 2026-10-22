@@ -16,7 +16,7 @@ import {Utils} from '../utils'
 import {UserSettings} from '../userSettings'
 import {personName} from '../userDisplay'
 import {getCurrentCard} from '../store/cards'
-import {getVisibleAndHiddenGroups} from '../boardUtils'
+import {getVisibleAndHiddenGroups, withoutEmptyGroup} from '../boardUtils'
 
 import {getClientConfig} from '../store/clientConfig'
 
@@ -54,6 +54,7 @@ import {createSetupPlan, markSetupOffered, shouldOfferSetup} from './acp/boardSe
 import {personProperty} from './acp/attentionAudience'
 import FirstRunStrip from './onboardingHints/firstRunStrip'
 import {soleWorkdirOption} from './acp/workdirSync'
+import {cardColumnProperty} from './acp/automation'
 import {agentAccountId, firstTaskCard, firstTaskColumns} from './acp/firstTask'
 
 // FullCalendar is half a megabyte of source, and a board opens on its kanban:
@@ -199,6 +200,14 @@ const CenterPanel = (props: Props) => {
             } else {
                 delete properties[groupByProperty.id]
             }
+        }
+
+        // A card stands in a column from the moment it exists: with no group
+        // dropped into, the first one. The board's columns are its stages, and
+        // a card in none of them would stand in a column for «no status».
+        const column = cardColumnProperty(board, groupByProperty)
+        if (column && !properties[column.id] && column.options.length > 0) {
+            properties[column.id] = column.options[0].id
         }
 
         // Last, and never over an answer already given: the filter and the
@@ -433,7 +442,7 @@ const CenterPanel = (props: Props) => {
                 })
             }
         }
-        return {visible: vg, hidden: hg}
+        return {visible: withoutEmptyGroup(vg), hidden: withoutEmptyGroup(hg)}
     })
 
     return (
