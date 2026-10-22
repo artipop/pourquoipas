@@ -22,7 +22,13 @@ scheme handler (the asset server answers an upgrade with 501), so **the board's
 changes come on the Wails bus**: the board's websocket hub also hands every
 broadcast to a sink (`ws.Server.SetSink`), which a desktop sets to
 `Event.Emit("board:ws", …)`, and the page's `wsclient.ts` is given a `BusFeed`
-in place of a socket (`busSocket.ts`, `window.boardOnBus`). An attached
+in place of a socket (`busSocket.ts`, `window.boardOnBus`). **What a socket
+sends one user, the bus carries only for the single user** (`emitForUser`):
+categories and the boards filed in them are per person, and an agent's account
+joining a board gets a «Boards» category of its own; heard by the page, it
+filed the person's board under the agent's category and the board left the
+sidebar. The server also refuses to file a board under a category that is not
+the filer's (`AddUpdateUserCategoryBoard`). An attached
 server's `/ws` is **tunnelled through Go** instead (`sockettunnel.go`,
 `BusSocket`): the page subscribes to `socket:<id>`, asks `OpenSocket`, Go dials
 the server and puts its frames on the bus; the page's frames go back as
@@ -730,6 +736,9 @@ proxies under them. An agent means nothing to a board of shopping lists, so it
 is a door in that board's ⋯ menu, drawn on the board's own setup plan
 (`asks('agent')`) — `agentsDialog.tsx`, beside «Папки…». The lists themselves
 are unchanged and still one per machine; only where they are asked for moved.
+The agents are also listed in Settings → AI (`aiPanel.tsx`, the same
+`AgentsPanel`), under the keys: a key saved there makes an agent, and «which
+agents do I have» is looked for in the settings.
 Deploy hosts were a third, and went with deploying to Dokku, which is a flow
 step in Gandvík (`../xxvi`) now.
 Agents and proxies are **one door and two sections in it**, agents above: a

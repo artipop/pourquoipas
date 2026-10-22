@@ -21,9 +21,10 @@ Sections:
 Sections this build does not support are not shown: on a machine without
 agents, "The app itself", "Updates", "Import and export" and "Other" remain.
 
-The agents are not here. Their list is a registry of the machine, but it means something only to a board agents work on: it opens from
-that board's ⋯ menu as **"Agents…"**, and the proxies are in the same window
-under them. See [Agents, npx and Node.js](./agents.md).
+The list of agents of both kinds — a CLI on this machine and a model by key —
+is in **"AI"**, under the keys, see [AI and models by API key](./ai.md). The
+same list opens from a board's ⋯ menu as **"Agents…"**, with the proxies under
+the agents. See [Agents, npx and Node.js](./agents.md).
 
 ## The app itself: theme, language, help
 

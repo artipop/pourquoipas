@@ -26,6 +26,10 @@ Below it, under **«Model keys»**, are the providers:
 
 Each provider says **«Key is set»** or **«No key»**.
 
+Under the keys is **"Agents"**: all your agents of both kinds, the same list
+as the board's ⋯ menu → «Agents…». A model agent's row names its provider and
+model.
+
 ## Adding a key
 
 1. Settings → «AI».
@@ -43,6 +47,12 @@ save». **«Remove the key»** removes the key and the address.
 A key given in the environment the app was started in
 (`PP_AI_ANTHROPIC`, `PP_AI_OPENAI`, the address in `PP_AI_OPENAI_URL`) is
 changed there, and the row says so instead of showing fields.
+
+The first key of a provider makes a model agent by itself — «Claude» or
+«OpenAI» — on a model from the list the provider gave when the key was checked.
+«The agent … is made on this key» appears under the button. It can be chosen
+in the inbox sorting and assigned to a card at once, and its model is changed
+in the agent list.
 
 ## Adding a model agent
 

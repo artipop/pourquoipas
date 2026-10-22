@@ -17,6 +17,9 @@ The app offers no shared work on one board: a board has one owner.
   and models by API key](./ai.md);
 - the comments agents leave on cards are shown.
 
+What else differs from a computer is the table in [Computer and
+server](../modes.md).
+
 ## The first login
 
 1. Install the server build and open its address in a browser.

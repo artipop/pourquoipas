@@ -9,8 +9,10 @@ This file is the map: the rules that break things silently when forgotten, and
 where the reasoning lives. The reasoning itself is in `docs/architecture.md`
 (how each subsystem is shaped and why), `docs/decisions.md` (rejected
 alternatives and post-mortems), `docs/deferred.md` (what was thought through and
-not built) and `docs/todo.md` (what is known and open). Read the relevant
-section of `docs/architecture.md` before changing anything structural.
+not built) and `docs/todo.md` (what is known and open). What works in which
+mode — desktop, desktop attached to a server, server in a browser, phone — is
+`docs/modes.md`. Read the relevant section of `docs/architecture.md` before
+changing anything structural.
 
 ## What this is
 
@@ -251,7 +253,7 @@ server.
 - **The agent writes the comment** (`comment_card`), one, at the end; this side
   writes one only when the agent did not (`commentFirstTurn`, `hasCommented`).
   "Nothing happened" is state, never a comment: one stall record per card
-  (`card_stall`, `stall.go`). Comments are drawn only in team mode.
+  (`card_stall`, `stall.go`). Comments are drawn only on a server (`teamMode`).
 - The card's changes are git and nothing else (`cardDiff.tsx`, `carddiff.go`),
   never cached, the committed half read by branch name because the copy is
   folded away when a stage ends; the button is drawn on a stored count
@@ -285,9 +287,10 @@ server.
   `branchProperty`, `columnProperty`), written through by `persistBoardLocked`.
   `config.json` does not carry them.
 - **A setting lives where its owner is**: machine settings in
-  `settings/appSettingsDialog.tsx`; agents and proxies are machine registries
-  offered from a board's ⋯ menu on its setup plan; UI prefs are the person's,
-  in `preferences` via `/users/me/config`; the install's switches (`aiEnabled`, `agentNotifications`, `prefillCardFolder`) are
+  `settings/appSettingsDialog.tsx`; agents are listed in its AI section and in a
+  board's ⋯ menu, proxies in the latter; UI prefs are the person's, in
+  `preferences` via `/users/me/config`; the install's switches (`aiEnabled`,
+  `agentNotifications`, `prefillCardFolder`) are
   `system_settings` via bindings (`machinesettings.go`). Both are read before
   first paint and after a login (`settingsRead.ts`); a desktop page holds the
   session in memory, never in the browser (`session.ts`).

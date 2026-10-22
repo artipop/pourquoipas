@@ -14,12 +14,21 @@ It has to be filled in by hand: the app assigns nobody by itself. A card
 assigned to a person, or to nobody, is left alone — it simply stands where it
 was put.
 
-To make an agent appear in the assignment list, register it: the board's ⋯ menu
-→ [Agents…](./settings/agents.md). After registration it becomes a board member
-under its own name: open the field and pick it.
+An agent is one of two kinds, and a card does not tell them apart:
 
-**The list holds every agent on the machine.** A board keeps no crew of its own:
-any registered agent can be assigned on any board. The only thing that takes
+- **a program on this computer** — Claude, Codex and other ACP agents
+  ([Agents, npx and Node.js](./settings/agents.md));
+- **a model by API key** — the app calls Anthropic or OpenAI itself, with your
+  key ([AI and models by API key](./settings/ai.md)). A server has only these,
+  and they have no folders ([Computer and server](./modes.md)).
+
+To make an agent appear in the assignment list, add it: «Settings → AI» or the
+board's ⋯ menu → «Agents…». A model agent is also made by itself when you save
+a provider's first key. After that the agent is a board member under its own
+name: open the field and pick it.
+
+**The list holds all your agents.** A board keeps no crew of its own: any agent
+can be assigned on any board. The only thing that takes
 them out of the list is the «Agents work on the cards» switch in
 [the settings](./settings/index.md), section «AI».
 

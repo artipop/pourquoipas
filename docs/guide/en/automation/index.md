@@ -18,8 +18,9 @@ was dropped into, and what the board's other columns are called.
 2. **Agents are switched on.** Settings → «AI» → «Agents work on the cards».
 
 With one agent registered, assigning it is one click on the card; the field
-offers every agent on the machine. Registering one is covered in
-["Agents, npx and Node.js"](../settings/agents.md).
+offers all your agents. Agents are added in «Settings → AI»: a program on the
+computer (["Agents, npx and Node.js"](../settings/agents.md)) or a model by key
+([AI and models by API key](../settings/ai.md)).
 
 ## What the agent is given
 
