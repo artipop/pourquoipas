@@ -59,13 +59,14 @@ card»; no template was called that, so nobody ever saw it.
 | Category | Steps | Drawn in |
 |---|---|---|
 | base | open a card — over the board's first card | `kanbanCard.tsx` (`onboarding` prop, set by `kanban.tsx` on the first card of the first column) |
-| card | who works on the card · the folder · the description is the task · comments (team) | the property rows (`cardDetailProperties.tsx`), `cardDetailContents.tsx`, the Comments button (`cardDialog.tsx`) |
+| card | who works on the card · the folder · the description is the task · comments | the property rows (`cardDetailProperties.tsx`), `cardDetailContents.tsx`, the Comments button (`cardDialog.tsx`) |
 | board | the columns · «Создать» → «Обсудить с агентом…» · the board's ⋯ menu · add a view · copy a link · share (team) | `kanban.tsx`, `viewHeader.tsx`, `kanbanCard.tsx`, `centerPanel.tsx` |
 | sidebar | «Входящие» · the board list · personal categories (team) · search | `sidebarInboxItem.tsx`, `sidebarCategory.tsx`, `boardsSwitcher.tsx` |
 
 **Steps are named and depend on the switches** (`tourScript` in `index.ts`):
 with the agents off the steps about agents are left out, and a Focalboard feature
-that needs a second person is shown only in team mode. A step's saved number is
+that needs a second person (sharing, personal categories) is shown only in team
+mode; comments are toured everywhere, being the agent's result. A step's saved number is
 its place in the list for the current switches, so the manager's «Next» and
 «Done» and the dots read the same answer.
 
@@ -84,8 +85,8 @@ The tips carry no pictures: the gifs they had showed Focalboard's interface.
 
 `onboardingHints/firstRunStrip.tsx`: one strip under the board's header while
 the first card an agent works is running — that its questions appear on the card
-and in a notification, where its result is (a comment in team mode; «Изменения»
-and the folder on a desktop of one, where comments are not drawn), and that it
+and in a notification, where its result is (a comment, and on a desktop also
+«Изменения» in the folder; `isHosted` picks the text), and that it
 moves the card into the column whose name says what happened. It goes when the
 card leaves the column it was running in, the run ends or it is closed, and it
 never comes back. Driven by `acp:session` on the event socket; nothing is

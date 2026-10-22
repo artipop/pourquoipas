@@ -6,7 +6,6 @@ import {Card} from '../blocks/card'
 import {useAppSelector} from '../store/hooks'
 import {getCardContents} from '../store/contents'
 import {getCardComments} from '../store/comments'
-import {getTeamMode} from '../store/clientConfig'
 import {ContentBlock} from '../blocks/contentBlock'
 import {CommentBlock} from '../blocks/commentBlock'
 import MessageIcon from '../widgets/icons/message'
@@ -77,14 +76,8 @@ const calculateBadges = (contents: ContentsType, comments: CommentBlock[]): Badg
 const CardBadges = (props: Props) => {
     const contents = useAppSelector((state) => getCardContents(props.card.id)(state))
 
-    // The comment count is drawn where a comment has somebody to be addressed
-    // to: an install of one person has the panel switched off, so a number on
-    // the card's face would point at something nobody can open (docs/
-    // teamwork.md). Agents write comments in either mode — they are just not
-    // what the card advertises while nobody can read them.
-    const teamMode = useAppSelector<boolean>(getTeamMode)
     const comments = useAppSelector((state) => getCardComments(props.card.id)(state))
-    const badges = createMemo(() => calculateBadges(contents(), teamMode() ? comments() : []))
+    const badges = createMemo(() => calculateBadges(contents(), comments()))
     const intl = useIntl()
 
     return (

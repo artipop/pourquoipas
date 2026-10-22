@@ -49,7 +49,6 @@ An answer given anywhere closes the question everywhere.
 | | Computer | Server in a browser |
 |---|---|---|
 | Logging in with a name and a password | no | yes |
-| Comments on a card | written, not shown | shown |
 | «Share» | no | yes |
 | «Inbox» | your own | one for everybody logged in |
 | Inbox sources | yes | yes |

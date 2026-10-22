@@ -253,7 +253,7 @@ server.
 - **The agent writes the comment** (`comment_card`), one, at the end; this side
   writes one only when the agent did not (`commentFirstTurn`, `hasCommented`).
   "Nothing happened" is state, never a comment: one stall record per card
-  (`card_stall`, `stall.go`). Comments are drawn only on a server (`teamMode`).
+  (`card_stall`, `stall.go`). Comments are drawn in every install.
 - The card's changes are git and nothing else (`cardDiff.tsx`, `carddiff.go`),
   never cached, the committed half read by branch name because the copy is
   folded away when a stage ends; the button is drawn on a stored count

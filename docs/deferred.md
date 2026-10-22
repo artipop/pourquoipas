@@ -561,7 +561,6 @@ Windows, `gtk3` на Linux.
   «Поделиться» (`shareBoard`);
 - адресат ожидания по «Кто занимается» и подписке на карточку
   (`attentionAudience.ts`, `/subscriptions`, `followBlock`);
-- комментарии рисуются только при `teamMode`;
 - таблица `notification_hints` и два поля частоты в конфиге — задел под
   рассылку подписчикам, которой нет.
 

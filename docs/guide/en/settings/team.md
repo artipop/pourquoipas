@@ -15,7 +15,6 @@ The app offers no shared work on one board: a board has one owner.
 - the agents on a server are models by API key: everybody has their own key and
   their own agents, and a server has no folders and runs no programs, see [AI
   and models by API key](./ai.md);
-- the comments agents leave on cards are shown.
 
 What else differs from a computer is the table in [Computer and
 server](../modes.md).

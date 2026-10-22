@@ -18,7 +18,16 @@ exports[`components/cardBadges > should match snapshot 1`] = `
       </svg>
     </span>
     <!---->
-    
+    <span
+      title="Comments"
+    >
+      <i
+        class="CompassIcon icon-message-text-outline MessageIcon"
+      />
+      <!---->
+      3
+      <!---->
+    </span>
     <!---->
     <span
       title="Checkboxes"

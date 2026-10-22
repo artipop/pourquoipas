@@ -32,8 +32,8 @@ To walk the wizard again, use the board's menu: **"Walk the setup again…"**.
 While an agent works on the first card, a strip is shown under the board's
 header: where the agent's questions will appear, where to look for the result,
 and that the agent moves the card itself into the column whose name says what
-happened. On a machine of one person the result is in the folder and under
-**"Changes"** on the card; on a server it is also in a comment. The
+happened. On a computer the result is a comment on the card, and the changes in
+the folder are under **"Changes"**; on a server it is the comment. The
 strip goes when the card leaves its column or the agent finishes, and does not
 come back. To put it away sooner, press **"Close"**.
 
@@ -43,7 +43,7 @@ The tour is a few tips over the board's real elements, in order:
 
 1. a card — open any one;
 2. in the card — the field for who works on it, the folder, the description
-   (which is the task itself); on a server, the comments too;
+   (which is the task itself), the comments;
 3. on the board — the columns, **"New"** → **"Talk it over with an agent…"**,
    the board's **"⋯"** menu, views and a link to a card; on a server,
    the "Share" button too;

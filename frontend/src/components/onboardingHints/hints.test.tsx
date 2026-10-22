@@ -162,8 +162,10 @@ describe('components/onboardingHints', () => {
             await waitFor(() => expect(screen.queryByRole('status')).toBeNull())
         })
 
-        test('in a team, says the result arrives as a comment', async () => {
-            renderStrip(storeWith([], true))
+        // The agent's result is a comment in every install; a desktop adds the
+        // changes in the folder.
+        test('says the result arrives as a comment', async () => {
+            renderStrip(storeWith())
             handlers['acp:session']({sessionId: 's1', cardId: 'card-1', status: 'running'})
 
             await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('arrives as a comment'))

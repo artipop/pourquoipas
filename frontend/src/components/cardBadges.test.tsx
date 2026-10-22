@@ -82,26 +82,18 @@ describe('components/cardBadges', () => {
         expect(screen.getByTitle('Checkboxes')).toHaveTextContent('3/7')
     })
 
-    // A count is an invitation to open something, and on an install of one
-    // person there is nothing to open: the panel that draws comments is off
-    // (docs/teamwork.md). The comments are in the store either way — agents
-    // write them in both modes.
-    it('says nothing about comments while one person works the board', () => {
-        render(() => wrapDNDIntl(() =>
-            <AppStoreProvider store={store}>
-                <CardBadges card={card}/>
-            </AppStoreProvider>,
-        ))
-        expect(screen.queryByTitle('Comments')).toBeNull()
-    })
-
-    it('counts the comments once there is somebody to have said them', () => {
-        const team = mockAppStore({...state, clientConfig: {value: {...defaultConfig, teamMode: true}}})
-        render(() => wrapDNDIntl(() =>
-            <AppStoreProvider store={team}>
-                <CardBadges card={card}/>
-            </AppStoreProvider>,
-        ))
-        expect(screen.getByTitle('Comments')).toHaveTextContent('3')
+    // The comments are counted in every install: an agent's result is one, and
+    // a desktop used to write it and say nothing about it on the card.
+    it('counts the comments on a desktop as on a server', () => {
+        for (const teamMode of [false, true]) {
+            const configured = mockAppStore({...state, clientConfig: {value: {...defaultConfig, teamMode}}})
+            const {unmount} = render(() => wrapDNDIntl(() =>
+                <AppStoreProvider store={configured}>
+                    <CardBadges card={card}/>
+                </AppStoreProvider>,
+            ))
+            expect(screen.getByTitle('Comments')).toHaveTextContent('3')
+            unmount()
+        }
     })
 })

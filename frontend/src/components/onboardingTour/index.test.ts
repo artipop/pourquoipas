@@ -23,13 +23,18 @@ describe('onboardingTour/tourScript', () => {
         ])
     })
 
+    // An agent's result is a comment, so the card's comments are toured on a
+    // desktop of one person as well.
+    test('the comments are toured in every install', () => {
+        expect(tourScript(TOUR_CARD, {ai: true, team: false})).toContain(CardTourSteps.ADD_COMMENTS)
+    })
+
     test('with the agents off, nothing about an agent is shown', () => {
         expect(tourScript(TOUR_CARD, {ai: false, team: true})).toEqual([CardTourSteps.ADD_DESCRIPTION, CardTourSteps.ADD_COMMENTS])
         expect(tourScript(TOUR_BOARD, {ai: false, team: false})).toEqual([BoardTourSteps.ADD_VIEW, BoardTourSteps.COPY_LINK])
     })
 
-    test('comments, sharing and personal categories are shown only where there is a second person', () => {
-        expect(tourScript(TOUR_CARD, {ai: true, team: false})).not.toContain(CardTourSteps.ADD_COMMENTS)
+    test('sharing and personal categories are shown only where there is a second person', () => {
         expect(tourScript(TOUR_BOARD, {ai: true, team: false})).not.toContain(BoardTourSteps.SHARE_BOARD)
         expect(tourScript(TOUR_SIDEBAR, {ai: true, team: false})).not.toContain(SidebarTourSteps.MANAGE_CATEGORIES)
         expect(tourScript(TOUR_BOARD, {ai: true, team: true})).toContain(BoardTourSteps.SHARE_BOARD)

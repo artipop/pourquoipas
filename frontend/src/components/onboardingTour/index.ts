@@ -5,8 +5,9 @@
 //
 // A step is named, not numbered. Which steps a category has depends on what is
 // switched on: with the agents off nothing about an agent is shown, and a
-// Focalboard feature that only works with a second person (comments, sharing,
-// personal categories) is shown only in team mode. The number a tip is saved
+// Focalboard feature that only works with a second person (sharing, personal
+// categories) is shown only in team mode. Comments are not one of those: an
+// agent's result is a comment, in every install. The number a tip is saved
 // under is its position in the list for the current switches, so the dots, the
 // «Next» and the «Done» all read one answer (tourSteps).
 
@@ -71,7 +72,7 @@ export function tourScript(category: string, flags: TourFlags): string[] {
         return [
             ...when(flags.ai, CardTourSteps.ASSIGN_AGENT, CardTourSteps.PICK_FOLDER),
             CardTourSteps.ADD_DESCRIPTION,
-            ...when(flags.team, CardTourSteps.ADD_COMMENTS),
+            CardTourSteps.ADD_COMMENTS,
         ]
     case TOUR_BOARD:
         return [

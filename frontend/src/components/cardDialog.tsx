@@ -12,7 +12,6 @@ import octoClient from '../octoClient'
 import {getCardAttachments} from '../store/attachments'
 import {getCard} from '../store/cards'
 import {getCardComments} from '../store/comments'
-import {getTeamMode} from '../store/clientConfig'
 import {getCardContents} from '../store/contents'
 import {useAppSelector, useAppStore} from '../store/hooks'
 import {Utils} from '../utils'
@@ -61,7 +60,6 @@ const CardDialog = (props: Props): JSX.Element => {
     const contents = useAppSelector((state) => getCardContents(props.cardId)(state))
     const comments = useAppSelector((state) => getCardComments(props.cardId)(state))
     const attachments = useAppSelector((state) => getCardAttachments(props.cardId)(state))
-    const teamMode = useAppSelector<boolean>(getTeamMode)
     const canCommentBoardCards = useHasCurrentBoardPermissions([Permission.CommentBoardCards])
     const intl = useIntl()
     const {actions} = useAppStore()
@@ -260,12 +258,10 @@ const CardDialog = (props: Props): JSX.Element => {
         return onAgentEvent('acp:session', () => refreshCardAgent(props.cardId))
     })
 
-    // Comments are a conversation between people, so they are drawn where there
-    // is a second person to have one with: an install of one person has them
-    // switched off entirely, and everything an agent writes goes on being
-    // written (docs/teamwork.md).
+    // Comments are drawn in every install: an agent's result is one, and on a
+    // desktop it used to be written and never shown.
     const commentsBtn = (): JSX.Element => (
-        <Show when={teamMode() && Boolean(card()) && !isTemplate()}>
+        <Show when={Boolean(card()) && !isTemplate()}>
             <Button
                 icon={<CompassIcon icon='message-text-outline'/>}
                 class='cardFollowBtn cardFollowBtn--attach cardFollowBtn--comments'

@@ -161,10 +161,9 @@ machine.
 The branch and the directory are on the line under the card's title; the agent's
 question is under it.
 
-Comments are shown [on a server](./settings/team.md): the card's toolbar has a
-**«Comments»** button, it opens the panel on the right, and the card's face
-shows their count. On a computer the comments are written but not drawn:
-everything worth knowing is either on the card or in the diff.
+The agent's result is a comment. The card's toolbar has a **«Comments»**
+button, it opens the panel on the right, and the card's face shows their count.
+It is the same on a computer and on a server.
 
 If the work could not start — no folder, or another card is holding the folder —
 the reason is shown on the card and goes as soon as something happens on it

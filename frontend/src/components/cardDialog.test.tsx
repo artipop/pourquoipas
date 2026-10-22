@@ -395,10 +395,9 @@ describe('components/cardDialog', () => {
         expect(await screen.findByRole('button', {name: 'Changes'})).toBeInTheDocument()
     })
 
-    // A comment is said to a person who reads it later, so on an install of one
-    // person there is nobody to say it to and the button is not there at all
-    // (docs/teamwork.md).
-    it('offers no comments while one person works the board', async () => {
+    // The comments are offered in every install, a desktop included: an
+    // agent's result is a comment, and it used to be written and never shown.
+    it('offers the comments while one person works the board', async () => {
         render(() => wrapDNDIntl(() =>
             <AppStoreProvider store={store}>
                 <CardDialog
@@ -413,7 +412,7 @@ describe('components/cardDialog', () => {
                 />
             </AppStoreProvider>,
         ))
-        expect(screen.queryByRole('button', {name: 'Comments'})).toBeNull()
+        expect(screen.getByRole('button', {name: 'Comments'})).toBeInTheDocument()
     })
 
     // The comments share the panel beside the card rather than getting one of their

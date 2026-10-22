@@ -520,14 +520,12 @@ nobody reads, with the one thing worth reading buried in it. Everything that was
 narrated there is shown instead: the branch and the worktree on the card's
 stamp, the question on the card's face, the stall in its own record.
 
-**And the card draws them only where somebody can be talked to**
-(`docs/teamwork.md`). A comment is a thing said to a person who will read it
-later, and on an install of one person that is nobody. So
-the panel and the badge hang off `teamMode` in the client config — one answer
-from the Go side, the same one the board server was started with — and an
-install of one person writes comments it never draws. What that costs there is that the agent's own comment is written
-and not drawn; what the card cannot show for itself is shown on the card
-instead.
+**And the card draws them in every install.** They used to hang off
+`teamMode` — a comment being a thing said to a second person, and an install of
+one person having none — so a desktop wrote the agent's result and never drew
+it. With no team work at all (`docs/deferred.md`) the flag meant only "server
+build", and the comment is the agent's result before it is anything said to a
+colleague: the panel and the badge are drawn on a desktop too.
 
 **The changes are the other thing the panel holds** (`cardDiff.tsx`,
 `internal/acp/carddiff.go`). A card comes back to a person to be decided about,
