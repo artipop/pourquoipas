@@ -256,14 +256,6 @@ export function GetMachineSettings(): $CancellablePromise<$models.MachineSetting
 }
 
 /**
- * GetPlanningPrompt returns the instructions a planning conversation opens
- * with, falling back to the default when the config has none.
- */
-export function GetPlanningPrompt(): $CancellablePromise<string> {
-    return $Call.ByID(2206681972);
-}
-
-/**
  * GetServerAttachment reports which board this desktop works — its own, or a
  * hosted server. JSON: {"url":…,"username":…,"running":…}, where url and
  * running disagreeing is the app saying a restart is owed: which board the page
@@ -637,13 +629,6 @@ export function SetInboxSorting(settingsJSON: string): $CancellablePromise<strin
  */
 export function SetMachineSetting(key: string, on: boolean): $CancellablePromise<void> {
     return $Call.ByID(3885037380, key, on);
-}
-
-/**
- * SetPlanningPrompt stores the instructions a planning conversation opens with.
- */
-export function SetPlanningPrompt(text: string): $CancellablePromise<void> {
-    return $Call.ByID(2682910128, text);
 }
 
 /**

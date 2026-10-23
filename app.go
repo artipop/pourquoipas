@@ -614,23 +614,6 @@ func (a *App) SetBoardPrompt(boardID, text string) error {
 	return a.mgr.SetBoardPrompt(boardID, text)
 }
 
-// GetPlanningPrompt returns the instructions a planning conversation opens
-// with, falling back to the default when the config has none.
-func (a *App) GetPlanningPrompt() (string, error) {
-	if a.mgr == nil {
-		return acp.DefaultPlanningPrompt, nil
-	}
-	return a.mgr.PlanningPrompt(), nil
-}
-
-// SetPlanningPrompt stores the instructions a planning conversation opens with.
-func (a *App) SetPlanningPrompt(text string) error {
-	if a.mgr == nil {
-		return errACPDisabled
-	}
-	return a.mgr.SetPlanningPrompt(text)
-}
-
 // ---- planning ----
 
 // A planning conversation is talking a task over with an agent before a card

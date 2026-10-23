@@ -134,7 +134,7 @@ func (m *Manager) StartPlanning(boardID, folderName, agentName string) (Planning
 	m.mu.Unlock()
 
 	systemPrompt := m.BoardPrompt(boardID)
-	opening := planningPrompt(systemPrompt, m.PlanningPrompt(), agent, workdir, m.boardAbout(boardID))
+	opening := planningPrompt(systemPrompt, agent, workdir, m.boardAbout(boardID))
 
 	m.wg.Add(1)
 	go m.runPlanning(ctx, chat, opening)

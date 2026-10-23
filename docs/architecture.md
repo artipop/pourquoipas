@@ -342,9 +342,12 @@ and are to leave the list when that code moves out, never to join it.
 repository's mode and base branch in «Папки…», the card's «Ветка» field, the
 branch on the case stamp and «Изменения» are parked behind that one flag. The
 work is still done on a branch in a copy of its own and recorded on the card;
-the switches in «Прочее» for agent-named branches, the planning prompt and
-filling a new card's folder in are parked the same way, on their defaults, and
-«Сообщать, когда агент ждёт ответа» moved to «ИИ».
+the switches in «Прочее» for agent-named branches and filling a new card's
+folder in are parked the same way, on their defaults, and «Сообщать, когда
+агент ждёт ответа» moved to «ИИ». What a planning conversation is
+(`DefaultPlanningPrompt`: talk the task over, change nothing, make the cards
+agreed on) is the app's to say and is not a setting: it was editable once, and
+the board's prompt and the agent's own already carry what a person adds.
 
 **In Go the line was already there.** `server/` knows "machine users" — the
 accounts agents and sources are named by (`model.UserKindAgent`,

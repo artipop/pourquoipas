@@ -6,12 +6,10 @@ import {useIntl} from '../../intl'
 
 import {UserSettings} from '../../userSettings'
 import Button from '../../widgets/buttons/button'
-import {sendFlashMessage} from '../flashMessages'
 
 import {goApp} from '../../goBridge'
 
 import {isAgentsAvailable} from './agentsPanel'
-import PromptField from './promptField'
 
 import './machineMiscPanel.scss'
 
@@ -21,32 +19,19 @@ import './machineMiscPanel.scss'
 // value (GetAgentNamedBranches).
 const OFFER_NAMED_BRANCHES = false
 
-// The planning prompt — what an agent is told when a conversation opens with no
-// card — is parked too: it is an instruction to the agent with a working
-// default (DefaultPlanningPrompt), not something a person needs to see.
-const OFFER_PLANNING_PROMPT = false
-
 // Filling a new card's folder in on a board with one folder is on by default
 // and is not offered as a switch: it writes an ordinary value the card shows
 // and that can be changed, so there is nothing to decide in advance.
 const OFFER_PREFILL_FOLDER = false
 
 // The settings that belong to the install rather than to any board, and that
-// have nowhere better to be: what a planning terminal opens saying, and the
-// couple of facts a person needs before opening config.json by hand.
-//
-// The planning prompt lived in the planning dialog, beside the project and the
-// agent, back when that dialog was reached from a board's menu. It is a setting
-// of this machine and it is edited once, so it belongs with the other settings
-// of this machine — and the dialog it left is now what it always should have
-// been: a place to open a terminal.
+// have nowhere better to be: access for other applications, and the couple of
+// facts a person needs before opening config.json by hand.
 
 const MachineMiscPanel = () => {
     const intl = useIntl()
     const bindings = goApp()
 
-    const [prompt, setPrompt] = createSignal('')
-    const [savedPrompt, setSavedPrompt] = createSignal('')
     const [namedBranches, setNamedBranches] = createSignal(false)
     const [error, setError] = createSignal('')
 
@@ -67,11 +52,6 @@ const MachineMiscPanel = () => {
         // Not awaited: onSettled reads a returned promise as a cleanup value.
         void (async () => {
             try {
-                if (bindings?.GetPlanningPrompt) {
-                    const stored = await bindings.GetPlanningPrompt()
-                    setPrompt(stored)
-                    setSavedPrompt(stored)
-                }
                 if (bindings?.GetAgentNamedBranches) {
                     setNamedBranches(await bindings.GetAgentNamedBranches())
                 }
@@ -114,51 +94,12 @@ const MachineMiscPanel = () => {
         }
     }
 
-    const savePrompt = async () => {
-        if (!bindings?.SetPlanningPrompt) {
-            return
-        }
-        setError('')
-        try {
-            await bindings.SetPlanningPrompt(prompt())
-            setSavedPrompt(prompt())
-            sendFlashMessage({
-                content: intl.formatMessage({id: 'Machine.planning-prompt-saved', defaultMessage: 'Saved'}),
-                severity: 'normal',
-            })
-        } catch (e: any) {
-            setError(String(e?.message || e))
-        }
-    }
-
     return (
         <div class='MachineMiscPanel'>
             <div class='MachineMiscPanel__subtitle'>
                 {intl.formatMessage({id: 'Machine.subtitle', defaultMessage: 'Settings of this install: they apply to every board on it.'})}
             </div>
             <div class='MachineMiscPanel__content'>
-                <Show when={OFFER_PLANNING_PROMPT && Boolean(bindings?.GetPlanningPrompt)}>
-                    <PromptField
-                        label={intl.formatMessage({
-                            id: 'Machine.planning-prompt',
-                            defaultMessage: 'What an agent is told when a conversation is opened without a card (the board\'s own instructions and the agent\'s come before it, the project after)',
-                        })}
-                        value={prompt()}
-
-                        // Ten rows: the default instructions are eight lines,
-                        // and a box that cuts off its own default reads as a
-                        // bug rather than as a setting.
-                        rows={10}
-                        onInput={setPrompt}
-                    >
-                        <Show when={prompt() !== savedPrompt()}>
-                            <Button onClick={savePrompt}>
-                                {intl.formatMessage({id: 'Machine.save-planning-prompt', defaultMessage: 'Save the instructions'})}
-                            </Button>
-                        </Show>
-                    </PromptField>
-                </Show>
-
                 {/* Named by the agent, spelled by the machine otherwise: the
                     switch is here because it is about how this machine spends
                     agent runs, not about any board. */}

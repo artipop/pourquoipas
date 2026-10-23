@@ -26,7 +26,6 @@ describe('components/settings/appSettingsDialog', () => {
         ListAgents: vi.fn().mockResolvedValue(JSON.stringify([{name: 'claude', kind: 'claude'}])),
         ListAgentAdapters: vi.fn().mockResolvedValue('[]'),
         ListProxies: vi.fn().mockResolvedValue(JSON.stringify([{name: 'office', proxy: 'http://proxy.example.com:8080'}])),
-        GetPlanningPrompt: vi.fn().mockResolvedValue('Think it through.'),
         GetServerAttachment: vi.fn().mockResolvedValue(JSON.stringify({url: '', username: '', running: ''})),
     })
 

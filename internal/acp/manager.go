@@ -720,7 +720,7 @@ func resolveArgv0(argv []string) []string {
 // person's first message: the board's system prompt, the agent's own, the
 // planning instructions a person can edit, and the one fact nobody should have
 // to type — which folder the agent is standing in.
-func planningPrompt(systemPrompt, planning string, agent AgentEntry, workdir WorkdirEntry, about BoardAbout) string {
+func planningPrompt(systemPrompt string, agent AgentEntry, workdir WorkdirEntry, about BoardAbout) string {
 	b := []byte(promptLead(systemPrompt, agent))
 
 	// What the board is, in the person's words: the cards agreed on are made
@@ -734,11 +734,10 @@ func planningPrompt(systemPrompt, planning string, agent AgentEntry, workdir Wor
 	if strings.TrimSpace(about.Title+about.Description) != "" {
 		b = append(b, '\n')
 	}
-	if p := strings.TrimSpace(planning); p == "" {
-		b = fmt.Appendf(b, "%s\n\n", DefaultPlanningPrompt)
-	} else {
-		b = fmt.Appendf(b, "%s\n\n", p)
-	}
+	// What this conversation is — talking a task over, not doing it — is the
+	// app's to say and is not a setting: an agent without it takes the first
+	// message for the task and starts on it.
+	b = fmt.Appendf(b, "%s\n\n", DefaultPlanningPrompt)
 	if workdir.Path != "" {
 		b = fmt.Appendf(b, "Folder: `%s` (%s).", workdir.Name, workdir.Path)
 	}

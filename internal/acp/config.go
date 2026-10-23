@@ -595,11 +595,6 @@ type Config struct {
 	// card's own description (which is the scenario) are appended to it.
 	TestPrompt string `json:"testPrompt"`
 
-	// PlanningPrompt is what a planning terminal is opened with; the folder it
-	// stands in is appended to it. Unlike the three above it is edited where it
-	// is used — in the planning dialog, beside the folder and the agent.
-	PlanningPrompt string `json:"planningPrompt"`
-
 	// TestTimeoutMinutes replaces SessionTimeoutMinutes for a test turn, which
 	// clicks through a whole scenario and needs longer than a code edit. How the
 	// browser itself is launched — headless, which binary, what viewport — is
@@ -675,7 +670,6 @@ func DefaultConfig(dataDir string) Config {
 		Agents:                   []AgentEntry{},
 		Proxies:                  []ProxyEntry{},
 		TestPrompt:               DefaultTestPrompt,
-		PlanningPrompt:           DefaultPlanningPrompt,
 		WorktreeMode:             "always",
 		MaxConcurrent:            3,
 		SessionTimeoutMinutes:    15,
