@@ -11,6 +11,8 @@ import CloseIcon from '../../widgets/icons/close'
 
 import {HINT_FIRST_RUN, useHints} from '../onboardingHints/hints'
 
+import {SHOW_GIT} from './gitShown'
+
 import {onAgentEvent} from './agentEvents'
 
 import './firstRunStrip.scss'
@@ -96,7 +98,7 @@ const FirstRunStrip = (props: Props) => {
                     <b>{intl.formatMessage({id: 'FirstRun.working', defaultMessage: 'The agent is working on “{title}”.'}, {title: card()!.title})}</b>
                     {' '}
                     <Show
-                        when={hosted}
+                        when={hosted || !SHOW_GIT}
                         fallback={intl.formatMessage({id: 'FirstRun.how-desktop', defaultMessage: 'If it has a question, the question appears on the card and in a notification. Its result arrives as a comment on the card, and what it changes in the folder is under “Changes”. When it is done, it moves the card into the column whose name says what happened.'})}
                     >
                         {intl.formatMessage({id: 'FirstRun.how-server', defaultMessage: 'If it has a question, the question appears on the card and in a notification. Its result arrives as a comment on the card. When it is done, it moves the card into the column whose name says what happened.'})}

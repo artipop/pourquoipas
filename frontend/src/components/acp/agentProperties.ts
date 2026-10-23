@@ -3,6 +3,7 @@ import {aiEnabled} from '../../aiSwitch'
 import {isHosted} from '../../buildKind'
 
 import {BOARD_PROP_PROJECT_PROPERTY, boardBranchProperty} from './automation'
+import {SHOW_GIT} from './gitShown'
 
 // The card fields that are the agents' own: where the work is (the folder) and
 // what it is on (the branch). The board records each by id, so they are found
@@ -18,7 +19,9 @@ export function agentPropertyIds(board: Board): Set<string> {
 // values stay on the card.
 export function withoutAgentProperties(board: Board, templates: IPropertyTemplate[]): IPropertyTemplate[] {
     if (aiEnabled() && !isHosted()) {
-        return templates
+        // The branch is git, and git is not shown (gitShown.ts).
+        const branch = boardBranchProperty(board)
+        return SHOW_GIT || !branch ? templates : templates.filter((t) => t.id !== branch)
     }
     const agents = agentPropertyIds(board)
     return agents.size ? templates.filter((t) => !agents.has(t.id)) : templates

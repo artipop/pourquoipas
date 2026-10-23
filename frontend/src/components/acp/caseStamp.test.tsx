@@ -4,6 +4,7 @@ import '@testing-library/jest-dom'
 import {fakeGoSide} from '../../test/goSide'
 
 import CaseStamp from './caseStamp'
+import {SHOW_GIT} from './gitShown'
 
 function cardBindings(state: any) {
     return {GetCardAgent: vi.fn().mockResolvedValue(JSON.stringify(state))}
@@ -29,7 +30,7 @@ describe('components/acp/caseStamp', () => {
     // and it is one place, not two. A copy is the branch checked out
     // elsewhere, and stamping «branch» and «worktree» side by side read as the
     // app having created two things: the complaint this screen started from.
-    it('stamps one line for where the work lives, plus the session', async () => {
+    it.skipIf(!SHOW_GIT)('stamps one line for where the work lives, plus the session', async () => {
         fakeGoSide(cardBindings({
             session: {
                 status: 'finished',
@@ -52,7 +53,7 @@ describe('components/acp/caseStamp', () => {
     // The line is named after the folder's setting. A person who chose
     // a copy of its own and reads BRANCH off the card concludes the setting
     // did not take — which is exactly what happened.
-    it('names the line worktree when the workspace is a copy, and says the base', async () => {
+    it.skipIf(!SHOW_GIT)('names the line worktree when the workspace is a copy, and says the base', async () => {
         fakeGoSide(cardBindings({
             work: {mode: 'worktree', base: 'main', started: true, here: true},
             session: {
@@ -79,7 +80,7 @@ describe('components/acp/caseStamp', () => {
 
     // A resumable terminal is a case still open, and it names its branch even
     // though no session is running right now.
-    it('falls back to what a resumable terminal knows', async () => {
+    it.skipIf(!SHOW_GIT)('falls back to what a resumable terminal knows', async () => {
         fakeGoSide(cardBindings({
             resume: {available: true, branch: 'pourquoipas/card-9', cwd: '/tmp/wt/card-9'},
         }))
@@ -92,7 +93,7 @@ describe('components/acp/caseStamp', () => {
 
     // A folder with no branch — an ordinary folder, or the board's drafts —
     // is the one case the directory itself is the fact worth stamping.
-    it('stamps the folder when there is no branch', async () => {
+    it.skipIf(!SHOW_GIT)('stamps the folder when there is no branch', async () => {
         fakeGoSide(cardBindings({
             resume: {available: true, cwd: '/Users/someone/notes'},
         }))
@@ -100,5 +101,20 @@ describe('components/acp/caseStamp', () => {
         render(() => <CaseStamp cardId='card-4'/>)
 
         expect(await screen.findByText('notes')).toBeInTheDocument()
+    })
+
+    // Git is kept off the screen (gitShown.ts): the stamp says what the
+    // session is doing and nothing about branches or copies.
+    it.skipIf(SHOW_GIT)('with git off the screen, stamps the session only', async () => {
+        fakeGoSide(cardBindings({
+            work: {mode: 'worktree', base: 'main', started: true, here: true},
+            session: {status: 'finished', branch: 'pourquoipas/card-9', worktree: '/tmp/copy'},
+        }))
+
+        render(() => <CaseStamp cardId='card-9'/>)
+
+        expect(await screen.findByText('finished')).toBeInTheDocument()
+        expect(screen.queryByText('pourquoipas/card-9')).toBeNull()
+        expect(screen.queryByText('main')).toBeNull()
     })
 })

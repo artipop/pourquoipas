@@ -9,6 +9,7 @@ import {aiEnabled, setAIEnabled} from './aiSwitch'
 import {isPlanningAvailable} from './components/acp/planningDialog'
 import {withoutAgentProperties} from './components/acp/agentProperties'
 import {BOARD_PROP_BRANCH_PROPERTY, BOARD_PROP_PROJECT_PROPERTY} from './components/acp/automation'
+import {SHOW_GIT} from './components/acp/gitShown'
 import AIPanel, {isAIPanelAvailable} from './components/acp/aiPanel'
 
 describe('the AI switch', () => {
@@ -56,14 +57,16 @@ describe('the AI switch', () => {
         board.cardProperties = [own, folder, branch]
         board.properties = {...board.properties, [BOARD_PROP_PROJECT_PROPERTY]: folder.id, [BOARD_PROP_BRANCH_PROPERTY]: branch.id}
 
-        expect(withoutAgentProperties(board, board.cardProperties).map((t) => t.id)).toEqual([own.id, folder.id, branch.id])
+        // The branch is git, which is kept off the screen (gitShown.ts).
+        const shown = SHOW_GIT ? [own.id, folder.id, branch.id] : [own.id, folder.id]
+        expect(withoutAgentProperties(board, board.cardProperties).map((t) => t.id)).toEqual(shown)
 
         fakeGoSide({SetMachineSetting: vi.fn().mockResolvedValue(undefined)})
         setAIEnabled(false)
         expect(withoutAgentProperties(board, board.cardProperties).map((t) => t.id)).toEqual([own.id])
 
         setAIEnabled(true)
-        expect(withoutAgentProperties(board, board.cardProperties).map((t) => t.id)).toEqual([own.id, folder.id, branch.id])
+        expect(withoutAgentProperties(board, board.cardProperties).map((t) => t.id)).toEqual(shown)
     })
 
     // The switch is in the AI section of the settings, and only where the app

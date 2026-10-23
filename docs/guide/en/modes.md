@@ -20,7 +20,7 @@ There is no shared work on one board: a board has one owner.
 |---|---|---|
 | An agent that is a program (Claude, Codex and others over ACP) | yes | no |
 | A model by API key (Anthropic, OpenAI and compatible) | yes | yes |
-| Folders, branches, the «Changes» button, the «Folder» field | yes | no |
+| Folders and the «Folder» field | yes | no |
 | Files and commands for a model | in the card's copy | no: the model writes its result on the card |
 | «Talk it over with an agent» | yes | yes |
 | Inbox sorting by an agent | yes | yes |

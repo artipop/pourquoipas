@@ -16,6 +16,7 @@ import {resetExtensions} from '../extensions'
 
 import CardDialog from './cardDialog'
 import {installAgentFeatures} from './acp/install'
+import {SHOW_GIT} from './acp/gitShown'
 
 vi.mock('../mutator')
 vi.mock('../octoClient')
@@ -356,7 +357,7 @@ describe('components/cardDialog', () => {
     // The changes are worth a button only when there are some. On «На ревью»
     // the card's working copy has already been folded away, so the count comes
     // from what the Go side recorded as the work moved — never from a look.
-    it('offers the changes only when the card has some', async () => {
+    it.skipIf(!SHOW_GIT)('offers the changes only when the card has some', async () => {
         const bindings = {
             GetCardAgent: vi.fn().mockResolvedValue('{}'),
             GetCardDiff: vi.fn(),

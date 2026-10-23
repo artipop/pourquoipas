@@ -338,6 +338,14 @@ board. Three shapes:
 things that are not the agents — the inbox, templates, attaching to a server —
 and are to leave the list when that code moves out, never to join it.
 
+**Git is kept off the screen** (`acp/gitShown.ts`, `SHOW_GIT = false`): the
+repository's mode and base branch in «Папки…», the card's «Ветка» field, the
+branch on the case stamp and «Изменения» are parked behind that one flag. The
+work is still done on a branch in a copy of its own and recorded on the card;
+the switches in «Прочее» for agent-named branches, the planning prompt and
+filling a new card's folder in are parked the same way, on their defaults, and
+«Сообщать, когда агент ждёт ответа» moved to «ИИ».
+
 **In Go the line was already there.** `server/` knows "machine users" — the
 accounts agents and sources are named by (`model.UserKindAgent`,
 `api/machineusers.go`) — and an `agent` flag on a comment in a card's history;

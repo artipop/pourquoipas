@@ -9,6 +9,7 @@ import mutator from '../../mutator'
 import {fakeGoSide} from '../../test/goSide'
 
 import WorkdirsPanel, {isWorkdirsAvailable} from './workdirsPanel'
+import {SHOW_GIT} from './gitShown'
 
 vi.mock('../../mutator')
 const mockedMutator = vi.mocked(mutator)
@@ -58,7 +59,7 @@ describe('components/acp/workdirsPanel', () => {
     // What a folder is decides what work in it looks like, so the list says
     // it — and says the one setting a repository has, the branch work starts
     // from.
-    test('says which folders are repositories, and lets the base branch be changed', async () => {
+    test.skipIf(!SHOW_GIT)('says which folders are repositories, and lets the base branch be changed', async () => {
         const setBase = vi.fn().mockResolvedValue('{}')
         const bindings = {
             ListAgentWorkdirs: vi.fn().mockResolvedValue(JSON.stringify([

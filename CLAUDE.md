@@ -265,6 +265,9 @@ server.
   writes one only when the agent did not (`commentFirstTurn`, `hasCommented`).
   "Nothing happened" is state, never a comment: one stall record per card
   (`card_stall`, `stall.go`). Comments are drawn in every install.
+- **Git is off the screen** (`acp/gitShown.ts`): folder mode, base branch, the
+  «Ветка» field, the branch on the stamp and «Изменения» are parked behind
+  `SHOW_GIT`; the work is still a branch in a copy of its own.
 - The card's changes are git and nothing else (`cardDiff.tsx`, `carddiff.go`),
   never cached, the committed half read by branch name because the copy is
   folded away when a stage ends; the button is drawn on a stored count

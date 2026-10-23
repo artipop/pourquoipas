@@ -25,7 +25,11 @@ about agents on and off. Off, it takes the agents out of the assignee field and
 their fields off the cards; the agents connected are kept. What else goes is in
 [Settings](./index.md#ai-agents).
 
-Below it is **"Agents"**: the list of your agents. A row says what the agent
+Under it is **"Notify me when an agent is waiting"**: a notification with the
+agent's question, answered right in it (see [Agent
+notifications](./index.md#agent-notifications)).
+
+Below that is **"Agents"**: the list of your agents. A row says what the agent
 is: "Claude · program on this computer" or "Anthropic (Claude) ·
 claude-opus-5-5 · Model by API key". Each has **"Edit"** and **"Remove"**.
 

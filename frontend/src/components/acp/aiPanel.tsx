@@ -7,6 +7,7 @@ import {goApp} from '../../goBridge'
 
 import AgentsPanel from './agentsPanel'
 import ProxiesPanel, {isProxiesAvailable} from './proxiesPanel'
+import {agentNotificationsOn, setAgentNotifications} from './attention'
 
 import '../settings/appPanel.scss'
 import './aiPanel.scss'
@@ -49,6 +50,30 @@ const AIPanel = () => {
             </section>
 
             <Show when={aiEnabled()}>
+                {/* Only about interrupting: the card's own badge and the dot
+                    on the tray icon are part of the card and stay. One switch
+                    for the page's notification and the system's, which the Go
+                    side reads too (alerts.go, machinesettings.go). */}
+                <section class='AppPanel__group'>
+                    <div class='AppPanel__action'>
+                        <div class='AppPanel__actionText'>
+                            <span class='AppPanel__actionName'>
+                                {intl.formatMessage({id: 'Sidebar.agent-notifications', defaultMessage: 'Notify me when an agent is waiting'})}
+                            </span>
+                            <span class='AppPanel__actionHint'>
+                                {intl.formatMessage({
+                                    id: 'Machine.agent-notifications-hint',
+                                    defaultMessage: 'The notification shows the question itself, and the agent can be answered right in it; when the app is in the background it comes from the system instead. The dot on the card and the dot on the tray icon stay even with this off.',
+                                })}
+                            </span>
+                        </div>
+                        <Switch
+                            isOn={agentNotificationsOn()}
+                            onChanged={setAgentNotifications}
+                        />
+                    </div>
+                </section>
+
                 <section class='AppPanel__group'>
                     <h4 class='AppPanel__groupTitle'>
                         {intl.formatMessage({id: 'Machine.section-agents', defaultMessage: 'Agents'})}

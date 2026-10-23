@@ -5,6 +5,7 @@ import {aiEnabled} from '../../aiSwitch'
 
 import {cardAgentState, refreshCardAgent} from './cardAgentState'
 
+import {SHOW_GIT} from './gitShown'
 import './caseStamp.scss'
 
 // The line of provenance under a card's title: which branch the work is on,
@@ -62,7 +63,10 @@ const CaseStamp = (props: Props) => {
         // either way: it is the one handle git commands accept, and the
         // copy's path rides in the tooltip. Only a folder with no branch
         // shows the directory instead.
-        if (branch()) {
+        if (!SHOW_GIT) {
+            // Git is not shown (gitShown.ts): the stamp says only what the
+            // session is doing.
+        } else if (branch()) {
             const label = workMode() === 'worktree' ? 'worktree' : 'branch'
             out.push({key: 'branch', label, value: branch(), title: worktree() || undefined})
 

@@ -23,6 +23,7 @@ import CardAgentHeader from './cardAgentHeader'
 import {cardChangesPanel} from './cardChanges'
 import {FolderRowToAdd, assigneeRow, branchRow, folderRow} from './cardAgentProperties'
 import {soleWorkdirOption} from './workdirSync'
+import {SHOW_GIT} from './gitShown'
 import MachineMiscPanel from './machineMiscPanel'
 
 // Everything the agents add to the board, plugged in through extensions.tsx.
@@ -53,7 +54,9 @@ export function installAgentFeatures(): void {
     addToSlot('app', AttentionNotifications)
     addToSlot('cardBadges', CardAgentBadges)
     addToSlot('cardDetailTop', CardAgentHeader)
-    addCardSidePanel(cardChangesPanel)
+    if (SHOW_GIT) {
+        addCardSidePanel(cardChangesPanel)
+    }
     addCardPropertyRow(assigneeRow)
     addCardPropertyRow(branchRow)
     addCardPropertyRow(folderRow)

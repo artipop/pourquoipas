@@ -17,6 +17,7 @@ import {goError} from '../../goMessages'
 
 import {Workdir, fieldNames, findWorkdirProperty, syncWorkdirsToBoard, useWorkdirHere} from './workdirSync'
 
+import {SHOW_GIT} from './gitShown'
 import './workdirsPanel.scss'
 
 // The folders this board's agents work in — one card per folder, not one row.
@@ -346,7 +347,7 @@ const WorkdirsPanel = (props: Props) => {
                                         buttons rather than a select, because
                                         the answer is then readable while the
                                         list is being read. */}
-                                    <Show when={workdir.git}>
+                                    <Show when={SHOW_GIT && workdir.git}>
                                         <div class='WorkdirsPanel__repo'>
                                             <div class='WorkdirsPanel__field'>
                                                 <span class='WorkdirsPanel__label'>

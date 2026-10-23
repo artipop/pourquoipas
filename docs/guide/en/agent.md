@@ -108,35 +108,6 @@ Notifications are switched off in
 and the dot beside the clock stay either way — a notification is about the
 question, they are about the agent still waiting.
 
-## The changes, read by eye
-
-The card's toolbar has a **«Changes»** button. It appears on a card that has
-something to show: with no work started, or nothing changed, there is no button.
-
-It opens the diff on the right — what has been done on this card:
-
-- **«On the branch»** — what is already committed on top of the main branch;
-- **«Not committed»** — what is changed but not committed, and new files git
-  does not track yet.
-
-At the top: the branch name, what it was cut from, and how many files and lines
-in total. Each file folds away when its row is clicked. The arrows button
-(«Read the folder again») reads everything again; the diff itself refreshes when the
-agent finishes something.
-
-It can be read after the work is over, too. When an agent finishes, the card's
-working copy is folded away and the branch stays — so the committed half is read
-from the branch even in a column where the copy is gone. The uncommitted half
-lives only while the copy does; a folder with unsaved work is never folded away.
-
-The panel beside the card is narrow, so its header has **«Open in a separate
-window»** — the same thing full screen.
-
-Any card can be looked at, but there is nothing to show until somebody has
-worked it. The panel says so: the work has not started, or it started on another
-machine — a working copy lives on the machine the agent worked on and does not
-travel with the card.
-
 ## The history: who did what to the card
 
 The card's toolbar has a **«History»** button. It opens a list of what happened
@@ -157,8 +128,8 @@ machine.
 
 ## What is visible on the card
 
-The branch and the directory are on the line under the card's title; the agent's
-question is under it.
+What the agent is doing is on the line under the card's title; its question is
+under it.
 
 The agent's result is a comment. The card's toolbar has a **«Comments»**
 button, it opens the panel on the right, and the card's face shows their count.

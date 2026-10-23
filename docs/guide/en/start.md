@@ -24,8 +24,8 @@ board and the hints.
 While an agent works on the first card, a strip is shown under the board's
 header: where the agent's questions will appear, where to look for the result,
 and that the agent moves the card itself into the column whose name says what
-happened. On a computer the result is a comment on the card, and the changes in
-the folder are under **"Changes"**; on a server it is the comment. The
+happened. The result is a comment on the card, and what the agent made in the
+folder is in the folder itself. The
 strip goes when the card leaves its column or the agent finishes, and does not
 come back. To put it away sooner, press **"Close"**.
 
@@ -52,7 +52,6 @@ about each of them once, when it happens:
 - an agent asks its first question — a hint by the amber badge on the card;
 - an agent moves a card itself for the first time — a hint on that card;
 - the inbox has a card for the first time — a hint on it;
-- **"Changes"** appears on a card for the first time — a hint by the button.
 
 One hint is shown at a time. **"Got it"** puts it away for good.
 

@@ -6,16 +6,30 @@ import {useIntl} from '../../intl'
 
 import {UserSettings} from '../../userSettings'
 import Button from '../../widgets/buttons/button'
-import Switch from '../../widgets/switch'
 import {sendFlashMessage} from '../flashMessages'
 
 import {goApp} from '../../goBridge'
 
-import {agentNotificationsOn, setAgentNotifications} from './attention'
 import {isAgentsAvailable} from './agentsPanel'
 import PromptField from './promptField'
 
 import './machineMiscPanel.scss'
+
+// The switch for agent-named branches is parked, not deleted: git is kept out
+// of what a person is asked about, and a branch named after the card is good
+// enough. Flip this back to offer it again; the Go side still reads the stored
+// value (GetAgentNamedBranches).
+const OFFER_NAMED_BRANCHES = false
+
+// The planning prompt — what an agent is told when a conversation opens with no
+// card — is parked too: it is an instruction to the agent with a working
+// default (DefaultPlanningPrompt), not something a person needs to see.
+const OFFER_PLANNING_PROMPT = false
+
+// Filling a new card's folder in on a board with one folder is on by default
+// and is not offered as a switch: it writes an ordinary value the card shows
+// and that can be changed, so there is nothing to decide in advance.
+const OFFER_PREFILL_FOLDER = false
 
 // The settings that belong to the install rather than to any board, and that
 // have nowhere better to be: what a planning terminal opens saying, and the
@@ -123,38 +137,7 @@ const MachineMiscPanel = () => {
                 {intl.formatMessage({id: 'Machine.subtitle', defaultMessage: 'Settings of this install: they apply to every board on it.'})}
             </div>
             <div class='MachineMiscPanel__content'>
-                {/* The card's own indicator is not a setting — it is part of
-                    the card — and neither is the dot on the tray icon, which is
-                    the same indicator for somebody who is not looking at the
-                    board. This is only about interrupting, which is why it is a
-                    setting at all, and why it is offered only where there is an
-                    agent that could ask.
-
-                    One switch for both places the interruption reaches: the
-                    notification the page draws, and — when the app is in the
-                    background — the system's own, which the Go side posts and
-                    reads this very setting for (alerts.go, machinesettings.go). */}
-                <Show when={isAgentsAvailable()}>
-                    <div class='MachineMiscPanel__setting'>
-                        <div class='MachineMiscPanel__fact'>
-                            <span class='MachineMiscPanel__factName'>
-                                {intl.formatMessage({id: 'Sidebar.agent-notifications', defaultMessage: 'Notify me when an agent is waiting'})}
-                            </span>
-                            <span class='MachineMiscPanel__factValue'>
-                                {intl.formatMessage({
-                                    id: 'Machine.agent-notifications-hint',
-                                    defaultMessage: 'The notification shows the question itself, and the agent can be answered right in it; when the app is in the background it comes from the system instead. The dot on the card and the dot on the tray icon stay even with this off.',
-                                })}
-                            </span>
-                        </div>
-                        <Switch
-                            isOn={agentNotificationsOn()}
-                            onChanged={setAgentNotifications}
-                        />
-                    </div>
-                </Show>
-
-                <Show when={Boolean(bindings?.GetPlanningPrompt)}>
+                <Show when={OFFER_PLANNING_PROMPT && Boolean(bindings?.GetPlanningPrompt)}>
                     <PromptField
                         label={intl.formatMessage({
                             id: 'Machine.planning-prompt',
@@ -179,17 +162,19 @@ const MachineMiscPanel = () => {
                 {/* Named by the agent, spelled by the machine otherwise: the
                     switch is here because it is about how this machine spends
                     agent runs, not about any board. */}
-                <label class='MachineMiscPanel__toggle'>
-                    <input
-                        type='checkbox'
-                        checked={namedBranches()}
-                        onChange={(e) => toggleNamedBranches(e.currentTarget.checked)}
-                    />
-                    {intl.formatMessage({id: 'Machine.named-branches', defaultMessage: 'The agent names each card’s branch'})}
-                </label>
-                <p class='MachineMiscPanel__hint'>
-                    {intl.formatMessage({id: 'Machine.named-branches-hint', defaultMessage: 'A short agent run before the card’s first branch; a slow or odd answer falls back to the card’s title.'})}
-                </p>
+                <Show when={OFFER_NAMED_BRANCHES}>
+                    <label class='MachineMiscPanel__toggle'>
+                        <input
+                            type='checkbox'
+                            checked={namedBranches()}
+                            onChange={(e) => toggleNamedBranches(e.currentTarget.checked)}
+                        />
+                        {intl.formatMessage({id: 'Machine.named-branches', defaultMessage: 'The agent names each card’s branch'})}
+                    </label>
+                    <p class='MachineMiscPanel__hint'>
+                        {intl.formatMessage({id: 'Machine.named-branches-hint', defaultMessage: 'A short agent run before the card’s first branch; a slow or odd answer falls back to the card’s title.'})}
+                    </p>
+                </Show>
 
                 {/* A default, not a rule: it writes an ordinary value onto the
                     card, which is visible and can be changed or cleared. Only
@@ -197,7 +182,7 @@ const MachineMiscPanel = () => {
                     there is a question, and nothing here is going to guess it.
                     Offered where the other agent settings are, since a board
                     with no agent has no folder field to fill. */}
-                <Show when={isAgentsAvailable()}>
+                <Show when={OFFER_PREFILL_FOLDER && isAgentsAvailable()}>
                     <label class='MachineMiscPanel__toggle'>
                         <input
                             type='checkbox'

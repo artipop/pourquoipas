@@ -78,7 +78,7 @@ const FolderLockHint = (props: {board: Board, card: Card}) => {
                     when={work()?.started && !work()?.here}
                     fallback={intl.formatMessage({
                         id: 'CardDetail.folder-locked',
-                        defaultMessage: 'The card is already working in “{folder}”, where its branch is. For another folder, make a new card.',
+                        defaultMessage: 'The card is already working in “{folder}”. For another folder, make a new card.',
                     }, {folder: folderName(props.board, props.card)})}
                 >
                     {intl.formatMessage({

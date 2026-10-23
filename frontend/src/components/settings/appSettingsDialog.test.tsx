@@ -54,42 +54,45 @@ describe('components/settings/appSettingsDialog', () => {
         await waitFor(() => expect(screen.getByText('Server address')).toBeInTheDocument())
     })
 
-    // Two registries are the machine's and are still not here: an agent and the
-    // proxy it reaches the network through each mean something
-    // only to a board that runs agents, so each is a door on that board's own ⋯
-    // menu — bindings or no bindings.
-    test('leaves the agents and their proxies to the board', async () => {
+    // Agents and proxies are not sections of their own: they are in «AI».
+    test('keeps the agents and their proxies inside the AI section', async () => {
         fakeGoSide(bindings())
 
         open()
 
-        await waitFor(() => expect(screen.getByRole('button', {name: 'The app itself'})).toBeInTheDocument())
+        await waitFor(() => expect(screen.getByRole('button', {name: 'AI'})).toBeInTheDocument())
         expect(screen.queryByRole('button', {name: 'Agents'})).toBeNull()
         expect(screen.queryByRole('button', {name: 'Proxy configurations'})).toBeNull()
     })
 
-    // What a conversation with an agent opens saying is a setting of the
-    // install, and used to be edited in the dialog that opens one — which made
-    // it look like part of opening it.
-    test('carries the instructions a card-less conversation starts with', async () => {
+    // What a card-less conversation opens with is an instruction to the agent
+    // with a working default, and is not offered (OFFER_PLANNING_PROMPT); nor
+    // are agent-named branches (git is kept off the screen) or the switch for
+    // filling a new card's folder in, which is simply on.
+    test('offers no planning prompt, named branches or folder prefill switch', async () => {
         fakeGoSide(bindings())
 
         open()
         userEvent.click(screen.getByRole('button', {name: 'Other'}))
 
-        await waitFor(() => expect(screen.getByRole('textbox')).toHaveValue('Think it through.'))
+        await waitFor(() => expect(screen.getByText(/config\.json/)).toBeInTheDocument())
+        expect(screen.queryByRole('textbox')).toBeNull()
+        expect(screen.queryByText('The agent names each card’s branch')).toBeNull()
+        expect(screen.queryByText('Fill a new card’s folder in when the board has only one')).toBeNull()
     })
 
-    // Whether an agent may interrupt is a setting of the install like the rest
-    // of them, and it was the last thing left in the sidebar's menu.
-    test('carries whether an agent waiting may interrupt', async () => {
+    // Whether an agent may interrupt is an AI setting, beside the switch that
+    // turns the agents on, and not in «Other».
+    test('carries whether an agent waiting may interrupt, in AI', async () => {
         fakeGoSide(bindings())
 
         open()
-        userEvent.click(screen.getByRole('button', {name: 'Other'}))
-
+        userEvent.click(screen.getByRole('button', {name: 'AI'}))
         await waitFor(() => expect(screen.getByText('Notify me when an agent is waiting')).toBeInTheDocument())
-        expect(document.querySelector('.Switch')).toBeTruthy()
+
+        userEvent.click(screen.getByRole('button', {name: 'Other'}))
+        await waitFor(() => expect(screen.getByText(/config\.json/)).toBeInTheDocument())
+        expect(screen.queryByText('Notify me when an agent is waiting')).toBeNull()
     })
 
     // Carrying boards in and out is not part of the agent integration: a build

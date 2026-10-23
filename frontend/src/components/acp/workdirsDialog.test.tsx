@@ -8,6 +8,7 @@ import {TestBlockFactory} from '../../test/testBlockFactory'
 import {fakeGoSide} from '../../test/goSide'
 
 import WorkdirsDialog from './workdirsDialog'
+import {SHOW_GIT} from './gitShown'
 
 vi.mock('../../mutator')
 
@@ -21,7 +22,7 @@ describe('components/acp/workdirsDialog', () => {
 
     // The choice is on the repository's own row: it is a fact about that
     // repository, so it holds on every board the folder is offered on.
-    test('asks how a repository is worked in, on its own row', async () => {
+    test.skipIf(!SHOW_GIT)('asks how a repository is worked in, on its own row', async () => {
         const bindings = {
             ListAgentWorkdirs: vi.fn().mockResolvedValue(JSON.stringify([
                 {name: 'code', path: '/tmp/code', git: true, base: 'main', mode: 'worktree'},

@@ -31,6 +31,7 @@ describe('the seam between the board and the agents', () => {
         const importing = Object.entries(sources).
             filter(([, text]) => (/(from |import )'[./]*(components\/)?acp\//).test(text)).
             map(([path]) => path.replace(/^\.\//, ''))
+
         // The glob has to have read the board for the check to mean anything.
         expect(Object.keys(sources)).toContain('./components/cardDialog.tsx')
         expect(importing).toContain('main.tsx')

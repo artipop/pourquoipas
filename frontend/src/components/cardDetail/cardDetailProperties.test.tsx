@@ -15,6 +15,8 @@ import {PropertyType} from '../../properties/types'
 import {installAgentFeatures} from '../acp/install'
 import {resetExtensions} from '../../extensions'
 
+import {SHOW_GIT} from '../acp/gitShown'
+
 import CardDetailProperties from './cardDetailProperties'
 
 vi.mock('../../mutator')
@@ -140,7 +142,7 @@ describe('components/cardDetail/CardDetailProperties', () => {
     // The branch field is the machine's record: the board says which property
     // it is (branchProperty), and the row is not a door — no menu on the
     // name, no editor on the value. The machine writes it, the person reads it.
-    it('renders the branch property read-only, without its menu', () => {
+    it.skipIf(!SHOW_GIT)('renders the branch property read-only, without its menu', () => {
         const branchBoard = TestBlockFactory.createBoard()
         branchBoard.cardProperties = [
             {id: 'prop_branch', name: 'Ветка', type: 'text', options: []},

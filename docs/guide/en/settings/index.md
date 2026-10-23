@@ -13,9 +13,8 @@ Sections:
   the administrator alone, see ["Your own server"](./team.md);
 - **"Import and export"** — board archive export and import, see
   [Moving](../transfer.md);
-- **"Other"** — the instruction for conversations without a card, "Notify me
-  when an agent is waiting", "Fill a new card's folder in when the board has
-  only one", ["Access for other applications"](#access-for-other-applications) and install details. The section is gone while the AI is off
+- **"Other"** — ["Access for other applications"](#access-for-other-applications)
+  and install details. The section is gone while the AI is off
   (see [AI agents](#ai-agents)).
 
 Sections this build does not support are not shown: on a machine without
@@ -49,7 +48,7 @@ When it is off, the app is a plain kanban board:
 - a board's ⋯ menu has no "Folders…" or the board's system prompt, and "AI"
   has no list of agents;
 - moving a card into a column starts nothing;
-- a card has no "Changes" and none of the agents' fields — the folder and the
+- a card has none of the agents' fields — the folder and the
   branch; the assignee field offers people only;
 - there are no agent notifications and no dot on the icon next to the clock;
 - the settings have no "Other" section, and the phone has no "Waiting" tab.
@@ -65,7 +64,8 @@ and language are kept by the install itself and survive a restart.
 
 ## Agent notifications
 
-The **"Notify me when an agent is waiting"** switch is in the "Other" section.
+The **"Notify me when an agent is waiting"** switch is in the "AI" section,
+under the agents switch.
 A notification carries the question itself and its buttons: it can be answered
 from there without opening the card.
 
@@ -112,15 +112,6 @@ To quit for real, use **"Quit"** in the icon's menu (or ⌘Q while the window is
 open). Quitting stops the agents that are working: if one never said how it
 ended, its card stays in its column with the reason written on it.
 
-## The agent's instructions
-
-The "Other" section holds the text an agent is given in a conversation with no
-card. Like the rest of the application's instructions it is written in English:
-the app is used in more than one language, and this text is read by a model.
-Yours can be in any language — like the board's system prompt and the cards
-themselves it is passed through as it is, and the agent answers in the language
-of what it was given.
-
 ## Access for other applications
 
 Another application can take the cards of one column as its own tasks — XXVI
@@ -164,7 +155,7 @@ Close the app before editing the file: it reads the file at startup.
 | `testTimeoutMinutes` | how long one test run may take (30) |
 | `sessionIdleMinutes` | how long a session waits between turns (30) |
 | `autoAllowTools` | which tools an agent may use without asking. A session started by a card has nobody to ask, so anything not on the list is refused for it |
-| `worktreeMode` | what to do in a repository on a board that was never asked: `always` — a copy of its own per card, `never` — a branch in the folder itself. The folder's own answer on this board (board menu → "Folders…") wins — see [Folders and branches](../folders.md) |
+| `worktreeMode` | what to do in a repository on a board that was never asked: `always` — a copy of its own per card, `never` — a branch in the folder itself. |
 | `artifactsDir` | where screenshots and reports of test runs are kept |
 
 Columns are not in this file: they belong to the board itself and travel with it

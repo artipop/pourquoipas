@@ -11,6 +11,8 @@ import {mockAppStore, wrapIntl} from '../../testUtils'
 
 import FirstRunStrip from '../acp/firstRunStrip'
 
+import {SHOW_GIT} from '../acp/gitShown'
+
 import HintTip from './hintTip'
 import {HINT_FIRST_RUN, cardMovedFrom} from './hints'
 
@@ -152,7 +154,7 @@ describe('components/onboardingHints', () => {
             handlers['acp:session']({sessionId: 's1', cardId: 'card-1', status: 'running'})
 
             await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('The agent is working on “Fix the build”.'))
-            expect(screen.getByRole('status')).toHaveTextContent('under “Changes”')
+            expect(screen.getByRole('status')).toHaveTextContent(SHOW_GIT ? 'under “Changes”' : 'arrives as a comment')
 
             // The agent moves the card on when it is done.
             setCards([cardIn('done')])
