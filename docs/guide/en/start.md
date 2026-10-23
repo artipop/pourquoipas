@@ -1,31 +1,23 @@
 # First run
 
-This page is about what the app shows on a new board: the last step of the
-setup, the first task, the tour of the board and the hints.
+This page is about where to begin: an agent, a first card, the tour of the
+board and the hints.
 
-## The last step of the setup
+## Where to begin
 
-A new board opens with the setup wizard: name and agent. The wizard does not ask
-for a folder — it is chosen on the card, in its «Folder» field (see [Folders and
-branches](./folders.md)). Its last step, **"Ready"**, has three actions.
-
-- **"Set the first task"**. Write what needs doing in the **"Your first task, in
-  one sentence"** field and press the button. The app makes a card in the first
-  column, assigns it to the agent, moves it into the second column and opens
-  it. The move is what starts the agent — just as if you had dragged the card
-  yourself (see [How the board starts an agent](./automation/index.md)). With
-  several agents, a choice of agent is under the field. The agent runs under
-  your own account with its provider and uses that account's quota.
-
-  The field is there only when an agent is registered on the machine, AI is on,
-  and the board has two columns and a field for who works on a card. Otherwise
-  there is an **"Open “Where to start”"** button instead: every board made from
-  a template has that card, and it explains how to work with the board.
-- **"Show how the board works"** closes the wizard and starts the tour of this
-  board.
-- **"Done"** just closes the wizard.
-
-To walk the wizard again, use the board's menu: **"Walk the setup again…"**.
+1. **Connect an agent**: "Settings" → "AI" → **"Connect an agent…"** — a
+   program on this computer or a model by API key (see [Connecting
+   agents](./settings/ai.md)).
+2. **Make a board from a template** ("Add board" at the bottom of the list on
+   the left). The board opens at once, with no questions; its name and
+   description are changed on the board itself.
+3. **Open the "Where to start" card** — every board made from a template has
+   it, and it explains how to work with that board.
+4. **Set a task**: a new card, what needs doing in its description, the agent
+   in its assignee field, and move the card into the second column. The move is
+   what starts the agent (see [How the board starts an
+   agent](./automation/index.md)). The folder it works in is chosen on the card,
+   in its «Folder» field (see [Folders and branches](./folders.md)).
 
 ## While the agent works on the first card
 
@@ -64,7 +56,7 @@ about each of them once, when it happens:
 
 One hint is shown at a time. **"Got it"** puts it away for good.
 
-## Showing the tour again
+## Showing the tour
 
 **"Settings"** → **"The app itself"** → **"The tour"** → **"Show"**. The tour
 starts on the board that is open, and the hints that were put away come back

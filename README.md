@@ -186,56 +186,28 @@ There is deliberately **no `window.webSocketBaseURL`** here, unlike v2:
   replaces an installed copy with an edited one. Authoring is not by hand:
   build the board in the app, *Export board archive*, unzip, keep the
   `board.jsonl`.
-- **Where a setting lives is decided by whose it is.** The registries are the
-  machine's — which agents are installed and how they reach the network — so
-  they are one
-  dialog opened from the sidebar's *«Настройки → Эта машина…»*, beside the theme
-  and the language, and are reachable with no board open at all. What a board
-  keeps — the folders its agents work in, what those agents are told first — is
-  asked one question at a time from its ⋯ menu, each item being
-  one of the questions its setup plan lists. That menu used to
-  be the only door to all of the above, which made machine settings look like a
-  property of whichever board happened to be open. A setting that belongs to one
-  *screen* goes with it: what feeds the inbox is asked on «Входящие», the one
-  board every source writes to, whose ⋯ menu offers *«Источники…»* and nothing
-  besides.
-  Registering an agent does not require going there — the setup wizard offers
-  the short form (a name and a kind) where the choice is being made, and the
-  full form stays in the settings. A folder marked "on every board" joins only
-  boards that already have a «Папка» field.
+- **Where a setting lives is decided by whose it is.** Agents are the
+  person's: they are connected in one place, *«Настройки → ИИ»*, with one form
+  for a program on this computer (ACP) or a model by API key, and the proxies
+  under them. No agent is a board member, and any of a person's agents may be
+  assigned a card on any board. What a board keeps — the folders its agents
+  work in, what those agents are told first — is in its ⋯ menu. A setting that
+  belongs to one *screen* goes with it: what feeds the inbox is asked on
+  «Входящие», whose ⋯ menu offers *«Источники…»*. A folder marked "on every
+  board" joins only boards that already have a «Папка» field.
 - **What a board tells its agents first is the board's** (the `prompt` property
   on the board itself, edited in *«Системный промпт доски…»*). It was one string
   shared by every board on the machine, labelled "board system prompt" while
   being nothing of the kind — which meant the household board and the code board
   shared it and so nobody could write anything useful in it.
-- **First run**: a board made from a template opens a setup wizard by itself.
-  Four questions are every board's — its name, a folder, an agent, and a last
-  screen saying what to do next — and a template may declare more of its own in
-  `setup`, add a sentence to a step ("the folder with your household notes") or
-  insist on one the app calls optional. It may only name steps from the closed
-  set `internal/acp/setup.go` implements, so a board cannot ask for something
-  nothing can fill.
+- **First run**: a board made from a template opens as it is and asks nothing;
+  its «С чего начать» card says how to start. The folder is the card's
+  question, asked in its «Папка» field.
   **A folder does not have to be a git repository.** What git buys — a branch
-  per card, something to publish, every transition that waits for one — is
-  offered to the folders that have it and simply absent from the ones that
-  do not, so a board of household chores sends an agent into a folder of notes
-  and nobody is told to `git init` their shopping list. A step of the plan carries what its answer must satisfy
-  (`requires: ["git"]`), and `CheckBoardSetupAnswer` enforces it where the
-  question is asked rather than on a card three steps later. `BoardSetupPlan`
-  resolves the whole answer in Go: the four questions every board has, whatever
-  the board declared of its own, and how far *this board* has got through them. **Setup is per board, not per machine.** Every step's status is
-  read from the `board_setup` table, keyed by board — the registries are the
-  machine's and say only that a step *can* be answered quickly (`ready`, shown
-  as "already registered" with one click to pass it). Reading them as the answer
-  is what made every board after the first appear fully set up and get created
-  in silence. The page renders that plan and works nothing out for itself; the
-  wizard walks exactly what the plan lists. The wizard opens itself once per board —
-  closing it half-way answers nothing, so the header goes on saying *«Доска ещё
-  не настроена»* until every question that board asks has an answer, and
-  *«Пройти настройку заново…»* in the ⋯ menu is the way back in.
-  Having been offered it is remembered in the store, not in the page: a desktop page
-  keeps no data in the browser (`session.ts`, `userSettings.ts`), so anything
-  it has to remember between runs is kept by the board server.
+  per card, a diff of what the agent changed — is offered to the folders that
+  have it and simply absent from the ones that do not, so a board of household
+  chores sends an agent into a folder of notes and nobody is told to `git init`
+  their shopping list.
 - **What starts an agent** is a card being moved into a column while it is
   assigned to one. Nothing else: a column is an ordinary option of the board's
   status field, and there is no registry saying what any of them does. The agent

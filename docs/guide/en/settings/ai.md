@@ -1,97 +1,113 @@
-# AI and models by API key
+# Connecting agents
 
-An agent in Pourquoi Pas? is one of two kinds:
+Agents are connected in one place — **"Settings" → "AI"** — and they are yours,
+not a board's. Any of your agents can be made the assignee of a card on any
+board: it is in the assignee field ("Assignee", "Who does it" and the like)
+next to the people. There is nothing to add to a board.
 
-- **A CLI on this machine** — Claude, Codex and other ACP agents. The app
-  starts their program, and it works in the card's folder. How to add them is
-  in [Agents, npx and Node.js](./agents.md).
-- **«Model by API key»** — a model the app calls itself, with your API key.
-  Nothing has to be installed; only the key is needed.
+An agent is one of two kinds:
 
-Both are added in the same window and assigned to a card the same way, with
-the «Who does it» field. Questions, the comment, moving the card and the
-notifications are the same too.
+- **"Program on this computer"** — Claude Code, Codex, GitHub Copilot,
+  JetBrains Junie, Antigravity or another ACP agent. The app starts the
+  program; it works under your own account with its provider and in the card's
+  folder. Only on a computer.
+- **"Model by API key"** — a model from Anthropic, OpenAI or any service that
+  speaks the OpenAI API. The app calls it itself, on your key. Nothing to
+  install. On a computer and on a server alike.
 
-## The AI section of the settings
+Both are assigned, started and asked the same way: questions, the comment,
+moving the card and notifications are the same for both.
 
-**Settings → «AI»**. At the top is the switch **«Agents work on the cards»**:
-it turns everything about agents, of both kinds, on and off. What disappears
-when it is off is in [Settings](./index.md#ai-agents).
+## The "AI" section
 
-Below it, under **«Model keys»**, are the providers:
+At the top is the **"Agents work on the cards"** switch. It turns everything
+about agents on and off. Off, it takes the agents out of the assignee field and
+their fields off the cards; the agents connected are kept. What else goes is in
+[Settings](./index.md#ai-agents).
 
-- **Anthropic (Claude)**;
-- **OpenAI** — and any service with the same API: OpenRouter, a local model.
-  For those, fill in the address, for example `https://openrouter.ai/api/v1`.
+Below it is **"Agents"**: the list of your agents. A row says what the agent
+is: "Claude · program on this computer" or "Anthropic (Claude) ·
+claude-opus-5-5 · Model by API key". Each has **"Edit"** and **"Remove"**.
 
-Each provider says **«Key is set»** or **«No key»**.
+Further down, on a computer only, are **"Proxy configurations"**: network
+settings a program agent can refer to by name.
 
-Under the keys is **"Agents"**: all your agents of both kinds, the same list
-as the board's ⋯ menu → «Agents…». A model agent's row names its provider and
-model.
+## Connecting a program
 
-## Adding a key
+1. **"Connect an agent…"**.
+2. **"Program on this computer"**.
+3. **"Program"** — Claude, Codex, Antigravity, GitHub Copilot, JetBrains Junie
+   or "ACP (other)". For "ACP (other)" fill in **"Command that starts it over
+   ACP"**, for instance `gemini --acp`.
+4. If the program cannot be started, the line under the field says why, with
+   **"Install adapter"** beside it — see [Program agents, npx and
+   Node.js](./agents.md).
+5. **"Name"** is filled in with the program's name; it is the name the agent is
+   picked by on a card, and can be changed before connecting.
+6. **"Connect"**.
 
-1. Settings → «AI».
-2. Paste the key into **«API key»** in the provider's row. Leave the address
-   empty when you call the provider itself.
-3. **«Check and save»**. The app asks the provider for its models with this
-   key. If the provider accepts it, «The provider accepted the key.» appears;
-   if not, its answer does, and the key is not stored.
+## Connecting a model by key
 
-The key is kept in the system keychain (on a server, in a file only the app
-can read) and is never shown again: the field is always empty. To change the
-address and keep the key, leave the key field empty and press «Check and
-save». **«Remove the key»** removes the key and the address.
+1. **"Connect an agent…"**.
+2. **"Model by API key"**. On a server there is nothing to choose: it is the
+   only kind there.
+3. **"Provider"** — Anthropic (Claude) or OpenAI. OpenAI also stands for any
+   service with the same API: OpenRouter, a local model; for those fill in the
+   **"Address (optional)"**, for instance `https://openrouter.ai/api/v1`.
+4. **"API key"** — paste the key. When you already have a key for this
+   provider there is no field: it says **"Key is set"** and the key's last
+   characters instead.
+5. **"Model"** is filled in with the default; the field suggests the models the
+   provider opens to your key.
+6. **"Name"** — "Claude" or "OpenAI", can be changed.
+7. **"Connect"**. While the key is checked the button says "Checking the key…":
+   the app asks the provider for its list of models. If the provider refuses the
+   key, its answer is under the form, and neither the key nor the agent is
+   saved.
 
-A key given in the environment the app was started in
-(`PP_AI_ANTHROPIC`, `PP_AI_OPENAI`, the address in `PP_AI_OPENAI_URL`) is
-changed there, and the row says so instead of showing fields.
+The key is the provider's, not the agent's: every agent of yours on that
+provider runs on it, and a second agent on the same provider does not ask for
+it. To change it — **"Edit"** on any such agent → **"Replace the key"**;
+**"Remove the key"** removes the key and the address, and that provider's
+agents do not start until a key is there again.
 
-The first key of a provider makes a model agent by itself — «Claude» or
-«OpenAI» — on a model from the list the provider gave when the key was checked.
-«The agent … is made on this key» appears under the button. It can be chosen
-in the inbox sorting and assigned to a card at once, and its model is changed
-in the agent list.
+The key is kept in the system keychain (on a server, in a file only the app may
+read) and is never shown again. A key set in the environment the app was
+started in (`PP_AI_ANTHROPIC`, `PP_AI_OPENAI`, the address `PP_AI_OPENAI_URL`)
+is changed there, and the form says so.
 
-## Adding a model agent
+A card assigned to a model with no key does not start and says on it "There is
+no API key for …: add one in Settings → AI".
 
-1. The board's ⋯ menu → **«Agents…»** → **«Add agent…»**.
-2. **«Kind»** — **«Model by API key»**.
-3. **«Provider»** — Anthropic (Claude) or OpenAI.
-4. **«Model»** — the model's name. With a key set, the field suggests the
-   models the provider opens to that key. For Anthropic the default is
-   `claude-opus-5-5`.
-5. Under «Agent settings» you can choose **effort** — how hard the model
-   thinks, from `low` to `max`. Left unchosen, it is the model's default.
-6. The agent's prompt and MCP servers are as for any agent. A model's MCP
-   server may be remote: `{"docs": {"url": "https://…/mcp"}}`.
-7. **«Save»**.
+## "More settings"
 
-When the provider has no key yet, the form says so. The agent can be saved
-anyway and works once the key is there. A card assigned to a model with no key
-does not start and says on itself «There is no API key for …: add one in
-Settings → AI».
+Everything under **"More settings"** has a working default, and none of it is
+needed for a first card.
+
+- **"Agent system prompt"** — what the agent hears at the start of every
+  session, after the board's ([The board's system prompt](../automation/prompt.md)).
+- **"MCP servers"** — the JSON any MCP client takes. For a model, and on a
+  server, by address only: `{"docs": {"url": "https://…/mcp"}}`.
+- A program also has **"Model (optional)"**, **"Binary path"**, **"Launch
+  command (argv)"**, and **"Agent settings"** — what the program reports about
+  itself (Fast mode or effort, say); to learn them the app starts the program
+  when you open "More settings". Then **"Proxy configuration"**,
+  **"Environment"** and **"Extra CLI args"**; Claude also has **"The CLI behind
+  the adapter"** with Remote control.
 
 ## What a model can do
 
-**On a computer** a model works in the card's folder the way a CLI does: in
-the same working copy and on the same branch. It reads files, searches them,
-writes and edits them, and runs commands. A command that is not on the
-agent's allowed list arrives as a question on the card — «Run the command:
-…?» — with the answers «Allow», «Allow always» and «Refuse». A card with no
-folder is worked in the card's drafts.
+**On a computer** a model works in the card's folder, like a program: in the
+same working copy and on the same branch. It reads files, searches them, writes
+and edits them and runs commands. A command not on the allowed list arrives as
+a question on the card — "Run the command: …?" — with "Allow", "Allow always"
+and "Refuse". With no folder on the card the model works in the card's drafts.
 
 **On a server** a model has no files and no commands: its work is what it
-writes on the card. The comment, field values, the move to a column, new
-cards.
+writes on the card. The comment, field values, the move to a column, new cards.
 
-Either way the model may ask you something in the middle of its work — the
-question appears on the card, in a notification and on the phone, as any
-agent's does.
+## Whose agents and keys
 
-## Whose key
-
-The key is yours. On a computer there is one per install. On a server every
-registered person has their own key and their own agents: you do not see
-anybody else's agents, and your agent runs on your key.
+Yours. On a computer, one set per install. On a server everyone signed in has
+their own agents and keys: you see nobody else's agents, in the list or in the
+assignee field, and your agent runs on your key.

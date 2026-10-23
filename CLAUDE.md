@@ -98,7 +98,7 @@ Tests:
 
 ## Architecture
 
-Ten ideas hold this together. Each is a section of `docs/architecture.md`
+Eleven ideas hold this together. Each is a section of `docs/architecture.md`
 with the same title; what follows is the part that must not be forgotten.
 
 ### The front door owns the origin
@@ -204,6 +204,18 @@ is a board server with cgo SQLite; the phone app is a window per server onto
   `calendar.ts`, `combobox.ts`). **Nothing may import React or Redux** —
   `no-restricted-imports` in `eslint.config.ts` fails the lint.
 
+### The board knows nothing of the agents
+
+The board is Focalboard's and is to be contributed back some day as «Focalboard
+2»; only our own AI by subscription is closed. **The board calls
+`frontend/src/extensions.tsx` and imports nothing that fills it**: sources,
+filters, named slots, card side panels, card property rows and settings
+sections, registered once from `main.tsx` (`components/acp/install.ts`). A new
+agent feature goes behind a seam, never inline in a Focalboard component;
+`src/seams.test.ts` fails when a board file starts importing `components/acp`.
+In Go, `server/` knows only machine users and the agent flag on a comment;
+`internal/boardadapter` is the one bridge.
+
 ### A card moved into a column is a session, and it answers through MCP
 
 `internal/acp` is the agent integration and is board-agnostic;
@@ -286,8 +298,11 @@ server.
   `branchProperty`, `columnProperty`), written through by `persistBoardLocked`.
   `config.json` does not carry them.
 - **A setting lives where its owner is**: machine settings in
-  `settings/appSettingsDialog.tsx`; agents are listed in its AI section and in a
-  board's ⋯ menu, proxies in the latter; UI prefs are the person's, in
+  `settings/appSettingsDialog.tsx`; **agents are connected there and nowhere
+  else** — Settings → AI (`acp/aiPanel.tsx`): one list, one «Подключить
+  агента…», one form for a program over ACP or a model by key, the key typed
+  into the agent's form and kept per provider; proxies under the agents. No
+  board has an agents screen, and nothing quick-adds one. UI prefs are the person's, in
   `preferences` via `/users/me/config`; the install's switches (`aiEnabled`,
   `agentNotifications`, `prefillCardFolder`) are
   `system_settings` via bindings (`machinesettings.go`). Both are read before
@@ -298,12 +313,11 @@ server.
   half; `_tokens.scss` is the first paint and a test holds it equal to the
   shipped configs. **The choice of theme is closed** (`themeChoiceOpen()`): the
   look is made from the app icon, and only light or dark is a person's.
-- **Board setup is three questions** — name, agent, done (`impliedSetup`,
-  `BoardSetupPlan`) — and a board may declare its own (`BoardPropSetup`). The
-  first is the board's name, unique case-insensitively (`boardTitle.ts`). **The
-  folder is the card's question**, added from its «Папка» field
-  (`cardFolder.ts`); a card without one is worked in its own drafts
-  (`cardDrafts`).
+- **A board asks nothing when it is made**: the setup wizard and its Go plan
+  were removed, and a board from a template opens as it is. Board names are
+  unique case-insensitively (`boardTitle.ts`). **The folder is the card's
+  question**, added from its «Папка» field (`cardFolder.ts`); a card without
+  one is worked in its own drafts (`cardDrafts`).
   **Every question may be left unanswered** ("relaxed mode", a word and not a
   flag): the default must be sayable in one sentence where the question is asked
   and must keep a person able to work.
@@ -311,8 +325,9 @@ server.
   (`assignedAgent`, by account id then by username); `humanAssignee` vetoes a
   session on a person's card. Agent accounts are made when the agent is
   registered (`EnsureAgentAccounts`); `AgentUsername` keeps letters of any
-  script. Every registered agent is offered on every board
-  (`agentAssignees.ts`); the AI switch is the only thing that narrows the list.
+  script. **No agent is a board member**: a person's agents are offered on
+  every board through `extensions.tsx` (`agentAssignees.ts`), somebody else's
+  never, and none with the AI switch off.
 
 ### A folder hands out a workspace, and the card owns it
 
@@ -384,7 +399,7 @@ over HTTP on the front door (`/acp/board/mcp`, `boardapi.go`).
   `id AND board_id`. Properties travel by name.
 - **An agent may do the carrying** (`internal/inboxsort`, `docs/sources.md`
   §29), off until a person turns it on from the inbox's ⋯ menu. It decides by
-  each board's description (asked with its name in the setup wizard) and a
+  each board's description (edited on the board) and a
   summary of its cards the agent writes into `board_summary`. A card it files
   stands in the first column **silently** (`SortBoard.FileCard`) — never through
   the notifying move. Decisions are `inbox_sort`; like sources, the package

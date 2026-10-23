@@ -26,9 +26,10 @@ There is no shared work on one board: a board has one owner.
 | Inbox sorting by an agent | yes | yes |
 | Proxies for agents | yes | no |
 
-Agents are added in **«Settings → AI»** or in a board's ⋯ menu →
-**«Agents…»** — it is one list ([AI and models by API key](./settings/ai.md)).
-Model keys and agents are yours: on a server other people do not see them.
+Agents are connected in **«Settings → AI»** ([Connecting
+agents](./settings/ai.md)); in a browser on a server the form offers models by
+key only. Keys and agents are yours: on a server other people do not see them,
+and any agent of yours can be assigned on any board of yours.
 
 A computer attached to a server works the server's cards with its own agents:
 the programs, models and folders of that computer.

@@ -30,9 +30,8 @@ const ViewTitle = (props: Props) => {
     const boards = useAppSelector<Board[]>(getMySortedBoards)
 
     // Two boards with one name is a sidebar nobody can read, so the rename is
-    // refused rather than allowed and mourned. Refused *here*, where the name
-    // is typed: the wizard's first step asks the same question and answers it
-    // with the same rule (boardTitle.ts).
+    // refused rather than allowed and mourned, here where the name is typed
+    // (boardTitle.ts).
     const onEditTitleSave = () => {
         if (titleTaken(boards(), title(), props.board.id)) {
             sendFlashMessage({

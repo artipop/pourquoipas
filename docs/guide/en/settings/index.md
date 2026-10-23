@@ -5,8 +5,8 @@ App settings live in one window: at the bottom of the left-hand list, under
 Sections:
 
 - **"The app itself"** — theme, language, help and feedback;
-- **"AI"** — the "Agents work on the cards" switch and the model keys, see
-  [AI and models by API key](./ai.md);
+- **"AI"** — the "Agents work on the cards" switch, the agents and the
+  proxies, see [Connecting agents](./ai.md);
 - **"Updates"** — the app's version and moving to a newer one, see
   [Updates](./updates.md);
 - **«People»** — who is on the server and who runs it; the section is shown to
@@ -21,10 +21,9 @@ Sections:
 Sections this build does not support are not shown: on a machine without
 agents, "The app itself", "Updates", "Import and export" and "Other" remain.
 
-The list of agents of both kinds — a CLI on this machine and a model by key —
-is in **"AI"**, under the keys, see [AI and models by API key](./ai.md). The
-same list opens from a board's ⋯ menu as **"Agents…"**, with the proxies under
-the agents. See [Agents, npx and Node.js](./agents.md).
+Agents of both kinds — programs on this computer and models by key — are
+connected in **"AI"**, where their list and the proxies are too: see
+[Connecting agents](./ai.md) and [Program agents, npx and Node.js](./agents.md).
 
 ## The app itself: theme, language, help
 
@@ -47,8 +46,8 @@ to do with agents on and off. It is on by default.
 
 When it is off, the app is a plain kanban board:
 
-- a board's ⋯ menu has no "Agents…", "Folders…" or the board's system prompt,
-  and the board setup never opens by itself;
+- a board's ⋯ menu has no "Folders…" or the board's system prompt, and "AI"
+  has no list of agents;
 - moving a card into a column starts nothing;
 - a card has no "Changes" and none of the agents' fields — the folder and the
   branch; the assignee field offers people only;

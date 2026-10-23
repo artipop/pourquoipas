@@ -11,8 +11,8 @@ Sorting is off until you turn it on.
 1. Open the inbox board, the **⋯** menu → **"Sorting the inbox…"**.
 2. In **"Agent that sorts"** pick an agent. The list is your agents of both
    kinds: programs on the computer and models by key ([Agent](../agent.md)).
-   When the list is empty, add a model key in «Settings → AI» — a model agent
-   is made by itself ([AI and models by API key](../settings/ai.md)).
+   When the list is empty, connect an agent in «Settings → AI» → «Connect an
+   agent…» ([Connecting agents](../settings/ai.md)).
 3. Tick **"Sort cards from sources as they arrive"**.
 
 From then on, every card a source brings moves to a matching board a few seconds

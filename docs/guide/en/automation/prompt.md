@@ -19,7 +19,7 @@ card's task and nothing else.
 | Prompt | Where it is set | Where it holds |
 |---|---|---|
 | The board's | the board menu → "The board's system prompt…" | every agent of this board |
-| The agent's | the board's ⋯ menu → "Agents…" | that agent, on **every** board |
+| The agent's | "Settings" → "AI" → the agent → "Edit" → "More settings" | that agent, on **every** board |
 
 The agent is given them in that order — the board's prompt, then the agent's
 own, then the card's task. The order is printed in the window too, under the
@@ -49,6 +49,6 @@ itself, or in the board's prompt.
 ## Where each of them is kept
 
 The board's prompt lives **on the board**: it travels with it into an archive
-export and onto another machine. The agent's prompt lives in the machine's
-registry — it is about the agent rather than about the board, and it does not
-travel.
+export and onto another machine. The agent's prompt lives with the agent,
+in «Settings → AI» — it is about the agent rather than about the board, and it
+does not travel.

@@ -22,9 +22,8 @@ description"** (the button with an eye). A field opens under the title. While
 the description is visible the same button reads **"Hide description"**. Hiding
 does not delete the text — it stays on the board.
 
-The description is also asked when a board is made, on the **"Name"** step, in
-the **"Description"** field. The agent that sorts the inbox reads it to decide
-which cards to move to this board — see [Sorting the inbox](./inbox/sorting.md).
+The agent that sorts the inbox reads the description to decide which cards to
+move to this board — see [Sorting the inbox](./inbox/sorting.md).
 The field may be left empty.
 
 ## The board menu: «⋯» in the list on the left
@@ -46,19 +45,16 @@ beside each column's name — the number of cards unless told otherwise. Clickin
 the number picks what to count: the sum of a number field, for instance.
 Without the switch there are no numbers. Each view has its own.
 
-The rest is the board's questions about this machine, one menu item per
-question:
+Then, with the agents on:
 
 - **«The board’s system prompt…»** — what this board's agents are told before
   anything else (["The board's system prompt"](./automation/prompt.md));
 - **«Folders…»** — the folders its agents work in
-  (["Folders and branches"](./folders.md));
-- **«Agents…»** — a registry of the machine, opened from where it is used;
-- **«Walk the setup again…»** — the same wizard a new board opens;
+  (["Folders and branches"](./folders.md)); on a computer only;
 - **«Export»**, at the bottom under a rule.
 
-Which items a board has is the board's own answer: one no agent works on is not
-asked about agents and folders.
+There are no agents in a board's menu: they are yours, not the board's, and are
+connected in «Settings → AI» ([Connecting agents](./settings/ai.md)).
 
 ## Views
 

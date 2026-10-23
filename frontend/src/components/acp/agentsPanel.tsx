@@ -862,7 +862,7 @@ const AgentsPanel = () => {
                             />
                         </label>
                         <div class='AgentsPanel__hint'>
-                            {intl.formatMessage({id: 'Agents.name-hint', defaultMessage: 'A card is given to the agent by this name in its «Assignee» field, on any board.'})}
+                            {intl.formatMessage({id: 'Agents.name-hint', defaultMessage: 'A card is given to the agent by this name, in its assignee field, on any board.'})}
                         </div>
 
                         <button

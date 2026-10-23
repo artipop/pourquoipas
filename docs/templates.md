@@ -32,7 +32,6 @@ nobody was looking at.
 |---|---|---|
 | **Columns** | the board it was saved from | the new board's kanban is grouped the same way, with the same column names — which is what an agent reads |
 | **The board's prompt** | *«Системный промпт доски…»* on that board | every agent working the new board is told it first |
-| **Questions to ask** | the list in *«Шаблон»*, the one thing edited there | the setup wizard walks exactly these, in this order |
 
 They live in the template board's own properties, so they travel with it and
 belong to the new board from the moment it is made: editing them there does not
@@ -49,36 +48,13 @@ and writes the id down. Adding a *new* property to a template is still
 hand-editing JSONL, which is what «[Свойства в шаблонах](deferred.md)» in the deferred work
 is about.
 
-## The questions
+## No questions
 
-A board of household chores has no code to work on and nothing to test, and a
-wizard that asks anyway reads as a broken feature. So the template names the
-steps — from the closed set the app implements, because a template that could
-invent a question would be a program:
-
-- **Агент, который берёт карточки**;
-- **Как этим пользоваться** — asks nothing; it is the last page.
-
-Each step takes a line of the template's own beside the usual explanation
-(«Агент, который составляет списки»), and an optional step can be marked as one
-that cannot be skipped.
-
-A template that names nothing gets the three steps every board has — name,
-agent, done — which is the sensible default. The folder is not a step: a card
-picks or adds it in its «Папка» field, and a template declaring the old
-`project` step has it dropped. *«Назвать шаги»* takes over from that
-default; *«Снова выводить из автоматизации»* hands it back.
-
-## What the wizard asks first
-
-The board's own name, and it is the one step with no way past it. A board
-arrives called what its template is called, so the second one made from
-«Разработка» is a second «Разработка» in the sidebar — and the moment to say
-what this one is for is the moment it is made. Names are unique: the step
-refuses one another board has, and so does renaming a board by its title
-(`boardTitle.ts`, one rule for both doors).
-
-Everything after it is about the machine and can be left for later.
+A board made from a template asks nothing: it opens with its columns, its
+prompt and its «С чего начать» card. Templates used to declare the steps of a
+setup wizard (`setup`); the wizard was removed, and a `setup` a template still
+carries is ignored. Board names are unique (`boardTitle.ts`), and a second
+board made from «Разработка» is renamed on the board itself.
 
 ## Saving a working board as a template
 
@@ -136,6 +112,4 @@ inbox board the app makes itself (`EnsureInboxBoard`), not on a board made from
 a template.
 
 Content is the smallest of them: its columns are a brief, a draft and
-proofreading, it publishes nowhere, and its `setup` declares only
-project/agent/done — so the wizard for a board made from it asks for a folder
-and an agent and nothing else.
+proofreading, and it publishes nowhere.

@@ -14,9 +14,7 @@ import './workdirsDialog.scss'
 //
 // It was a fold of that dialog, under the canvas, and that was wrong twice
 // over: setting up where an agent works is not a question about columns and
-// routes, and a fold under a canvas is a place nobody opens. Which of these
-// screens a board is offered follows what it asks for (its setup plan), so a
-// board of shopping lists is never offered a repository.
+// routes, and a fold under a canvas is a place nobody opens.
 
 type Props = {
     board: Board

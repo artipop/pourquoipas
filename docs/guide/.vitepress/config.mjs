@@ -63,8 +63,8 @@ const ru = {
                 items: [
                     {text: 'Обзор', link: '/settings/'},
                     {text: 'Светлая и тёмная', link: '/settings/themes'},
-                    {text: 'ИИ и модели по ключу', link: '/settings/ai'},
-                    {text: 'Агенты, npx и Node.js', link: '/settings/agents'},
+                    {text: 'Подключение агентов', link: '/settings/ai'},
+                    {text: 'Программы-агенты, npx и Node.js', link: '/settings/agents'},
                     {text: 'Свой сервер', link: '/settings/team'},
                     {text: 'Компьютер и сервер: что где работает', link: '/modes'},
                     {text: 'Обновления', link: '/settings/updates'},
@@ -151,8 +151,8 @@ const en = {
                 items: [
                     {text: 'Overview', link: '/en/settings/'},
                     {text: 'Light and dark', link: '/en/settings/themes'},
-                    {text: 'AI and models by API key', link: '/en/settings/ai'},
-                    {text: 'Agents, npx and Node.js', link: '/en/settings/agents'},
+                    {text: 'Connecting agents', link: '/en/settings/ai'},
+                    {text: 'Program agents, npx and Node.js', link: '/en/settings/agents'},
                     {text: 'Your own server', link: '/en/settings/team'},
                     {text: 'Computer and server: what works where', link: '/en/modes'},
                     {text: 'Updates', link: '/en/settings/updates'},

@@ -18,16 +18,15 @@ was dropped into, and what the board's other columns are called.
 2. **Agents are switched on.** Settings → «AI» → «Agents work on the cards».
 
 With one agent registered, assigning it is one click on the card; the field
-offers all your agents. Agents are added in «Settings → AI»: a program on the
-computer (["Agents, npx and Node.js"](../settings/agents.md)) or a model by key
-([AI and models by API key](../settings/ai.md)).
+offers all your agents. Agents are connected in «Settings → AI»: a program on the
+computer or a model by key ([Connecting agents](../settings/ai.md)).
 
 ## What the agent is given
 
 In this order:
 
 1. **the board's system prompt** — ["The board's system prompt"](./prompt.md);
-2. **the agent's own prompt**, from the registry, which holds on every board;
+2. **the agent's own prompt**, from its settings in «Settings → AI», the same on every board;
 3. **the card**: its title and its description. There is no separate "task"
    field — the description is the task;
 4. **where the card stands**: the name of the column it was just moved into, and

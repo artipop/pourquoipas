@@ -54,7 +54,7 @@ const AIPanel = () => {
                         {intl.formatMessage({id: 'Machine.section-agents', defaultMessage: 'Agents'})}
                     </h4>
                     <span class='AppPanel__actionHint'>
-                        {intl.formatMessage({id: 'Agents.subtitle', defaultMessage: 'An agent works a card it is assigned to in the card’s «Assignee» field, on any board. Moving the card into another column starts it.'})}
+                        {intl.formatMessage({id: 'Agents.subtitle', defaultMessage: 'An agent works the cards it is the assignee of, on any board. Moving such a card into another column starts it.'})}
                     </span>
                     <AgentsPanel/>
                 </section>

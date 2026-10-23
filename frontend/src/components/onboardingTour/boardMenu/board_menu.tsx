@@ -19,7 +19,7 @@ const BoardMenuTourStep = (): JSX.Element => {
     const screen = (
         <FormattedMessage
             id='OnboardingTour.BoardMenu.Body'
-            defaultMessage='Here is what the board tells its agents (its system prompt), its folders and agents, and the setup questions to walk again.'
+            defaultMessage='Here is what the board tells its agents (its system prompt) and its folders. The agents themselves are yours and are connected in Settings → AI.'
         />
     )
 

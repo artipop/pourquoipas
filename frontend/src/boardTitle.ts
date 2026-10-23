@@ -6,9 +6,8 @@
 // board list all become a guess, and a board made from a template arrives
 // carrying the template's name, so the second one collides by default.
 //
-// Enforced where a name is *given* (the setup wizard's first step) and where it
-// is changed (the board's own title), which is every door a person types one
-// through. Trimmed and case-insensitive, because two boards a person cannot
+// Enforced where a name is changed (the board's own title), which is the door
+// a person types one through. Trimmed and case-insensitive, because two boards a person cannot
 // tell apart on screen are two boards with the same name whatever the bytes
 // say.
 export function titleTaken(

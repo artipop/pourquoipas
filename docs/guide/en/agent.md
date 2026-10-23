@@ -16,26 +16,25 @@ was put.
 
 An agent is one of two kinds, and a card does not tell them apart:
 
-- **a program on this computer** — Claude, Codex and other ACP agents
-  ([Agents, npx and Node.js](./settings/agents.md));
+- **a program on this computer** — Claude Code, Codex and other ACP agents;
 - **a model by API key** — the app calls Anthropic or OpenAI itself, with your
-  key ([AI and models by API key](./settings/ai.md)). A server has only these,
-  and they have no folders ([Computer and server](./modes.md)).
+  key. A server has only these, and they have no folders ([Computer and
+  server](./modes.md)).
 
-To make an agent appear in the assignment list, add it: «Settings → AI» or the
-board's ⋯ menu → «Agents…». A model agent is also made by itself when you save
-a provider's first key. After that the agent is a board member under its own
-name: open the field and pick it.
+Both are connected in «Settings → AI» → «Connect an agent…» ([Connecting
+agents](./settings/ai.md)). After that the agent is in the assignment field on
+any board, next to the people: open the field and pick it. The agent does not
+become a member of the board, and there is nothing to add to it.
 
-**The list holds all your agents.** A board keeps no crew of its own: any agent
-can be assigned on any board. The only thing that takes
-them out of the list is the «Agents work on the cards» switch in
+**The list holds all your agents, and only yours.** A board keeps no crew of
+its own; on a server nobody else's agents are in it. The only thing that takes
+yours out of the list is the «Agents work on the cards» switch in
 [the settings](./settings/index.md), section «AI».
 
 The agent reads its task from the **card's description** — there is no separate
 task field. The board's instruction to all its agents is added in front of it
 (["The board's system prompt"](./automation/prompt.md)), and so is the agent's
-own prompt from the registry.
+own prompt («Agent system prompt» in its settings).
 
 ## What starts the work
 

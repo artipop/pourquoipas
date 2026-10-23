@@ -30,7 +30,7 @@ Before the task it gets, in this order:
 
 1. **the board's prompt** — ⋯ menu → «Системный промпт доски…», what is true of
    every card here;
-2. **the agent's own prompt** — Settings → «Агенты…», what is true of that agent
+2. **the agent's own prompt** — Settings → AI → the agent, what is true of that agent
    on every board;
 3. **the card**: its title and its description. There is no separate "task"
    field — the description *is* the task;
@@ -101,18 +101,11 @@ changes nothing in it; the cards you agree on it creates itself, on that board.
 
 ## What a board is asked before any of this works
 
-Four questions, in the setup wizard (⋯ menu → «Пройти настройку заново…») and
-each one also its own item in the ⋯ menu:
-
-1. **the board's name** — the one question that is about the board rather than
-   about this machine, and the only one with no way past it;
-2. **a folder** — where an agent works;
-3. **an agent** — registering one at all;
-4. **done** — what to do next.
-
-A board may ask for more of its own, from the steps the app knows. Every question
-except the name may be left unanswered: the board still works, on a default said
-out loud where the question is asked.
+Nothing. A board made from a template opens as it is; its name and description
+are edited on the board. The agent is connected once, in Settings → AI, and is
+offered on every board; the folder is chosen on the card, in its «Папка» field.
+Every question an agent's work raises may be left unanswered: the board still
+works, on a default said out loud where the question is asked.
 
 ## What is not here any more
 

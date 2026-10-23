@@ -6,7 +6,7 @@ now keeps the rules and points here for the reasoning. Rejected alternatives
 and post-mortems in Russian are in `decisions.md`, what was deliberately not
 built is in `deferred.md`.
 
-Eleven ideas hold this together. Read them before changing anything structural.
+Twelve ideas hold this together. Read them before changing anything structural.
 
 ## The front door owns the origin
 
@@ -300,6 +300,49 @@ ones that shape. Nothing may import React or Redux again: `no-restricted-imports
 in `eslint.config.ts` fails the lint, which is cheaper than finding a React
 component rendered from Solid at runtime — which is exactly how that guard
 earned its place.
+
+## The board knows nothing of the agents
+
+The board is Focalboard's, and the plan is to give it back some day as
+«Focalboard 2» — Solid, Wails, the server build, the inbox and everything else
+open; only our own AI by subscription is not (`decisions.md`). So the agents
+sit **on top** of the board, in the page and in Go, and the board does not
+import them.
+
+**In the page the board calls `src/extensions.tsx` and nothing else.** What a
+feature adds is registered there once, from `main.tsx`
+(`components/acp/install.ts` for the agents), and the board builds and runs
+with nothing registered — the tests that do not install the agents are that
+board. Three shapes:
+
+- **sources** the board asks: people it knows besides its members
+  (`addBoardUsersSource` — the person's agents), defaults for a new card
+  (`addNewCardDefaults` — a board's only folder);
+- **filters** it runs a list through: the card fields it shows
+  (`addCardPropertiesFilter` — the folder and the branch go when the agents
+  are off or on a server), who a person field may be set to
+  (`addAssigneesFilter`);
+- **slots**, named places where registered components are drawn:
+  `app` (the notification stack), `cardBadges` (the question badge and the
+  folder chip on a kanban card), `cardDetailTop` (the case stamp and the
+  question under a card's title), `cardPropertiesEnd`, `boardMenu`,
+  `newCardMenu` («Обсудить с агентом…»), `boardHeader` (the first-run strip);
+  and three registries of the same kind: card side panels beside History and
+  Comments («Изменения»), card property rows a feature answers for (the
+  folder, the branch, the assignee's tour step), settings sections («ИИ»,
+  «Прочее»). A menu item opens its dialog through `openExtensionDialog`,
+  because a menu takes what it drew with it when it closes.
+
+`src/seams.test.ts` holds the line: a board file that starts importing
+`components/acp` fails it. The files it still allows import that directory for
+things that are not the agents — the inbox, templates, attaching to a server —
+and are to leave the list when that code moves out, never to join it.
+
+**In Go the line was already there.** `server/` knows "machine users" — the
+accounts agents and sources are named by (`model.UserKindAgent`,
+`api/machineusers.go`) — and an `agent` flag on a comment in a card's history;
+everything else is `internal/acp`, and `internal/boardadapter` is the one
+package that imports both.
 
 ## A card moved into a column is a session, and it answers through MCP
 
@@ -714,11 +757,11 @@ interrupt, and the archive that carries every board in and out — is
 `sidebarSettingsButton.tsx`, reachable with no board open.
 
 **One switch turns the agents off** (`aiSwitch.ts`, the `aiEnabled` install
-preference, «Агенты работают с карточками» in `settings/aiPanel.tsx`, the AI
+preference, «Агенты работают с карточками» in `acp/aiPanel.tsx`, the AI
 section of the settings, over CLI and model agents alike). Off,
 the app is a kanban board and nothing on screen names an agent. The page does
 it at the gates it already had: every `is…Available()` of `components/acp`
-answers no, the setup plan keeps only the name (`withoutAgents`), nothing
+answers no, nothing
 waits (`useAttention`), the agents' card fields are hidden
 (`withoutAgentProperties` — the folder and the branch) and the assignee field offers people only. Go reads the same key
 (`aiEnabled` in `machinesettings.go`) through `Manager.SetSwitchedOff`: a card move
@@ -728,22 +771,24 @@ left to finish — the switch means no more, not undo — and nothing is deleted
 so switching back on is the board as it was. The tray keeps its open and quit
 items and loses the dot.
 
-**Two registries are the machine's and are offered from a board anyway**,
-because a registry belongs where it means something: the agents and the
-proxies under them. An agent means nothing to a board of shopping lists, so it
-is a door in that board's ⋯ menu, drawn on the board's own setup plan
-(`asks('agent')`) — `agentsDialog.tsx`, beside «Папки…». The lists themselves
-are unchanged and still one per machine; only where they are asked for moved.
-The agents are also listed in Settings → AI (`aiPanel.tsx`, the same
-`AgentsPanel`), under the keys: a key saved there makes an agent, and «which
-agents do I have» is looked for in the settings.
-Deploy hosts were a third, and went with deploying to Dokku, which is a flow
-step in Gandvík (`../xxvi`) now.
-Agents and proxies are **one door and two sections in it**, agents above: a
-proxy exists to be named by an agent (`AgentEntry.proxyName`), so it is the
-second half of one question rather than a settings section of its own. The
-cosmetics those panels grew inside the settings dialog moved to
-`styles/_settingsPanel.scss`, or the same panel would have two designs.
+**Agents are connected in one place, and it is not a board** (`acp/aiPanel.tsx`,
+Settings → AI). An agent is its owner's (`agent.owner_id`; a desktop's are
+`SingleUser`'s), so nothing about it is a board's to ask. One list, one button
+(«Подключить агента…») and one form (`acp/agentsPanel.tsx`) for both kinds:
+the form's first question is the kind — a program on this computer, or a model
+by API key — and a server, which runs no programs, does not ask it. A model's
+key is typed into the agent's own form and belongs to the provider, not the
+agent (`aikeys.go`): `SetAIProviderKey` checks it, stores it and returns the
+models it opens, and makes no agent — a key on its own was a separate «Model
+keys» block once, made an agent of its own, and was the second way to connect
+the same thing. What has a working default is under «Ещё настройки», and the
+program is started to ask its options only when that is opened. The proxies
+are the section under the agents, on a desktop only: a proxy exists to be
+named by an agent (`AgentEntry.proxyName`). The board's ⋯ menu had an
+«Агенты…» door and the setup wizard and planning each had a quick-add form;
+all three are gone, and planning links to the settings (`openSettings.ts`).
+Deploy hosts were a third registry, and went with deploying to Dokku, which is
+a flow step in Gandvík (`../xxvi`) now.
 
 **What a person picked for the UI is the person's**: the theme, the language,
 the last team, board and view, the name format live in the board's
@@ -824,45 +869,26 @@ account on a hosting service. The address is printed on the panel as well as put
 in the `mailto:`, since a webview that refuses to open one leaves nothing to
 copy.
 
-**What a board had to be asked before it can run is not that, and each question
-is its own item in the board's ⋯ menu**: «Системный промпт доски…»
-(`boardPromptsDialog.tsx`), «Папки…» (`workdirsDialog.tsx`), «Пройти настройку
-заново…» (the wizard). Which of them a board has is **the board's own setup
-plan** (`BoardSetupPlan`), so the menu differs by board exactly as the questions
-do.
+**What a board's agents need is in the board's ⋯ menu, drawn by the agents**:
+«Системный промпт доски…» (`boardPromptsDialog.tsx`) and «Папки…»
+(`workdirsDialog.tsx`, on a desktop only), both through the `boardMenu` slot
+(`acp/agentMenus.tsx`). A board asks nothing when it is made: the setup wizard
+(name → agent → first task) and its plan in Go (`setup.go`, `BoardPropSetup`,
+`board_setup`) were removed, and a board made from a template opens as it is,
+as in Focalboard. Its name and description are edited on the board.
 
-**The first question is the board's own name** (`SetupStepName`), and it is the
-only step that is not about this machine and the only one with no way past it.
-A board arrives called what its template is called, so the second one made from
-«Разработка» is a second «Разработка» in the sidebar — and names are unique:
-the step refuses one another board has, and so does renaming a board by its
-title. One rule, `boardTitle.ts`, used at both doors a person types a name
-through; trimmed and case-insensitive, because two boards nobody can tell apart
-on screen are two boards with the same name whatever the bytes say. The wizard
-reads the other names through `listBoards()` rather than the store, so it needs
-no provider around it in a test.
+Names are unique: renaming a board to one another board has is refused
+(`boardTitle.ts`); trimmed and case-insensitive, because two boards nobody can
+tell apart on screen are two boards with the same name whatever the bytes say.
 
-**Three questions are every board's** (`impliedSetup`): its name, an agent, and
-the last screen saying what to do with what was set up. The agent is what a card
-needs to be worked at all, and nothing about a board implies more than that any
-more. **The folder is not a board question**: it is asked on the card, whose
-«Папка» field lists the board's folders and adds one («Добавить папку…»,
-`cardFolderValue.tsx` over `acp/cardFolder.ts`) — registered for the board,
-mirrored into the field, set on the card. A board declaring the retired
-`project` or `deploy` step has it dropped in silence (`retiredSetupSteps`),
-since boards made before carry them (docs/decisions.md). A board may ask for
-others of its own in `setup` (`BoardPropSetup`): whatever the closed set grows
-later. The set is closed on purpose — a board that could
-declare arbitrary fields would be a program, and nothing on this side could
-promise the answer fits the registry it is going into.
-
-It used to be read off the board's stages, which is how a step could be *implied*
-at all. With the routes gone there is nothing to infer from, so the three are asked of everybody
-and the rest is the board's to declare.
+**The folder is not a board question**: it is asked on the card, whose «Папка»
+field lists the board's folders and adds one («Добавить папку…»,
+`acp/cardFolderValue.tsx` over `acp/cardFolder.ts`) — registered for the board,
+mirrored into the field, set on the card.
 
 **Relaxed mode is the word for that, and for the moment it is a word and not a
-thing.** Every setup question may be left unanswered — «Пропустить» in the
-wizard, or a chip nobody ticked — and the board still works, on a default this
+thing.** Every question an agent's work raises may be left unanswered and the board
+still works, on a default this
 side picks. What makes it a mode rather than a pile of accidents is that each
 default is *named where the question is asked*, so leaving one is a choice with
 a stated consequence rather than a screen somebody escaped from. There is
@@ -902,13 +928,11 @@ lives with the line rather than being re-derived at each call site. **"Сохр�
 (`OFFER_SAVE_AS_TEMPLATE`, one line in `viewHeaderActionsMenu.tsx`): the
 machinery is untouched and still reached by the template picker's pencil, but
 making a template is the rarest thing anybody does on a board and it stood one
-slot from the things a board is set up with. Registering an agent needs none
-of these screens: `agentQuickAdd.tsx` is the two-field form, used by the card
-and the setup wizard alike.
+slot from the things a board is set up with.
 
 **The registry is not an answer by itself.** A card names its folder with an
 option of the board's own field, so anything that adds a folder mirrors the
-registry into it (`workdirSync.ts`), the wizard included — and a folder somebody
+registry into it (`workdirSync.ts`) — and a folder somebody
 has already added is offered rather than refused («использовать здесь»:
 `AttachAgentWorkdir` for one no board claimed, `ShareAgentWorkdir` for one
 another board owns), because one checkout worked from two boards is an ordinary
@@ -938,19 +962,23 @@ third answer only a hand-built board could give.
 **The account is made when the agent is registered** (`AddAgent` →
 `EnsureAgentAccounts`), because that is the moment it becomes a name a card can
 be assigned to — and it needs no board: an account is a row in the board
-server's own users table, which is what every board reads when it offers people
-to assign a card to. There was a sync instead, `syncAgentsToBoard`, run from
-wherever a board happened to be open, and it was a sync in search of an event:
-register an agent in the settings, never open a board's own screens, and the
-agent had no account anywhere. Running it on every board render was worse —
-finding-then-creating is not atomic, so one agent got three accounts. A
-registry that predates this is caught up once, at startup (`ensureAgentAccounts`
-in `Manager.Start`). Every registered agent may be assigned a card on any board:
-the board keeps no crew of its own, so the only thing that narrows the field is
-the AI switch (`agentAssignees.ts`). `SyncAgentUsers` survives for the board
-*membership*,
-which is the board's own business and decides only whether the agent is listed
-under «участники доски» or found by search.
+server's own users table. A registry that predates this is caught up once, at
+startup (`ensureAgentAccounts` in `Manager.Start`).
+
+**No agent is a member of a board.** Any agent of the person signed in may be
+assigned a card on any board, so the board learns them the way it learns
+anything the agents add — through a seam (`extensions.tsx`): the store asks
+the registered sources for people it knows besides its members when it loads a
+board (`fetchBoardMembers` in `store/index.tsx`), and `acp/agentAssignees.ts`
+answers with `ListAgentAccounts` (the person's agents, with account ids). The
+person field then runs the assignee filters: somebody else's agent, which a
+server's team search finds, is dropped, and with the AI switch off every agent
+is. Agents used to be made members of each board they were synced to
+(`SyncAgentUsers`); those memberships are dropped at launch
+(`RetireAgentUser`), and nothing makes new ones. An agent writes to a board it
+is not a member of because its writes go through `boardadapter.Writer`, which
+stamps the author and checks no membership, and on an attached desktop through
+the person's own session.
 
 The username is `AgentUsername`, and it keeps letters of **any** script. It
 folded to `a-z0-9` once, on a board whose every label is Russian: «клаус» became
@@ -1256,7 +1284,7 @@ machine's registry. Only the share dialog may pick a server's board.
 
 The inbox is **grouped by what brought the card**, and that needs no property of
 ours: a source has a board account, exactly as an agent does and for the same
-reason (`EnsureSourceUser` beside `EnsureAgentUsers`), so the card is *authored*
+reason (`EnsureSourceUser` beside `EnsureAgentAccounts`), so the card is *authored*
 by its source and the board groups by "created by" out of the box. What a person
 typed stays theirs. The account is named after the source rather than prefixed,
 because the board shows the username wherever it names an author.
@@ -1416,7 +1444,7 @@ processes on one database; nothing here does that, and the honest answer when
 something does is a key of the row's own rather than a clock.
 
 **A closed set is a `CHECK`, a growing one is not.** `checkout.mode`,
-`workspace_board.mode`, `agent_session.status`, `board_setup.status` and
+`workspace_board.mode`, `agent_session.status` and
 `source_event.outcome` are constrained in the schema, because what they may
 hold is closed by the model — there is no fourth way to work a folder. An agent
 kind is a vendor CLI, a `session_event` kind is an event name, and a

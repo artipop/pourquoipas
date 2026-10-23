@@ -21,7 +21,7 @@ const AssignAgentTourStep = (): JSX.Element => {
     const screen = (
         <FormattedMessage
             id='OnboardingTour.AssignAgent.Body'
-            defaultMessage='Put an agent in this field and the card is the agent’s to work. Nothing starts yet: the agent takes the card when the card is moved into another column.'
+            defaultMessage='Put an agent in this field and the card is the agent’s to work. Nothing starts yet: the agent takes the card when the card is moved into another column. Agents are connected in Settings → AI.'
         />
     )
 

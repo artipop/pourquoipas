@@ -30,22 +30,19 @@ setup wizard. Three rules came out of it.
 
 ## Where it starts
 
-The setup wizard (`boardSetupWizard.tsx`, `internal/acp/setup.go`) is the first
-run and nothing is put in front of it. Its last page offers three ways on, each
-given by the board that opened it (`centerPanel.tsx`):
+Nothing is put in front of the board. The setup wizard that was the first run
+(name → agent → «Поставить первую задачу») was removed: it asked what the board
+itself answers (its name, edited on the board) and what is not a board's
+question at all (the agent, which is the person's and is connected in Settings
+→ AI). A board made from a template opens as it is, as in Focalboard, and the
+way in is three things that are always there:
 
-- **«Поставить первую задачу»** — one field, one sentence (`firstTask.ts`). The
-  app makes a card assigned to an agent, in the board's first column, and then
-  moves it into the second and opens it. Made and then moved, because a card
-  starts when it is *moved* into a column (`trigger.go`: the adapter only turns
-  an update into a `CardMoved`); a card created in a column starts nothing. No
-  configuration was added for it. The agent's board account comes from
-  `SyncAgentUsers`, because the wizard may have registered the agent a moment
-  ago. The page says the run uses the person's own agent account and its quota.
-- Offered only when an agent is registered, the agents are on, and the board has
-  two columns and a person field. Otherwise the page points at the board's own
-  «С чего начать» card and offers to open it.
-- **«Показать, как устроена доска»** — starts the tour on this board.
+- **Settings → AI → «Подключить агента…»** — the one place an agent is
+  connected (`docs/architecture.md`, «Agents are connected in one place»);
+- **«С чего начать»** — every template's first card, saying how that board
+  works and how to start the first task: connect an agent, assign the card to
+  it, move it into the second column;
+- **the tour**, from Settings → «Приложение» → «Тур по доске».
 
 ## The tour
 
@@ -74,7 +71,8 @@ A tip is drawn where its element is, so it has to be somewhere always drawn: the
 comments tip used to live inside the comments panel, which is closed until
 somebody opens it, and held the tour at a step nobody could see.
 
-The categories move on by themselves: an open card on the tour's board starts
+The tour is started from the settings only, now that no wizard offers it. The
+categories move on by themselves: an open card on the tour's board starts
 the card's part (`useStartCardTour`); the card's part finished and the card
 closed starts the board's (`centerPanel.tsx`); the board's finished starts the
 sidebar's (`inbox.tsx`).
@@ -83,7 +81,7 @@ The tips carry no pictures: the gifs they had showed Focalboard's interface.
 
 ## While the first card runs
 
-`onboardingHints/firstRunStrip.tsx`: one strip under the board's header while
+`acp/firstRunStrip.tsx` (the `boardHeader` slot): one strip under the board's header while
 the first card an agent works is running — that its questions appear on the card
 and in a notification, where its result is (a comment, and on a desktop also
 «Изменения» in the folder; `isHosted` picks the text), and that it
@@ -120,8 +118,7 @@ by its new column, so where it was is kept outside it.
 Every template opens with a card that says how that board works, written for the
 board's own work. It is marked `readFirst` in the template's data rather than
 found by its title, and `createCard` keeps the mark, because the page rewrites a
-card's fields wholesale on every edit. The wizard's fallback and the strip lead
-to it.
+card's fields wholesale on every edit. The strip leads to it.
 
 ## Settings
 
@@ -135,17 +132,16 @@ a route that no longer existed.
 A browser against a real build from an empty data directory. A build without the
 `production` tag uses `pourquoipas-dev`, so this never touches a real install:
 `go build -tags server,frontend`, run with a data directory of its own, and
-drive `http://localhost:8080`. The whole path, not the entry point: template →
-wizard → first task → what the agent left on the card and its branch.
+drive `http://localhost:8080`. The whole path, not the entry point: connect an
+agent → template → «С чего начать» → a card moved → what the agent left on the
+card and its branch.
 
 ## Open questions
 
-- **No agent installed at all.** The first task and the strip need one. The
-  wizard offers to install an adapter through npx; whether onboarding waits for
-  that or teaches the board without an agent is a product decision.
-- **What the first task says.** The field is empty with a neutral placeholder: a
-  prefilled suggestion per template would be concrete, but one that does not fit
-  the person's project is worse than an empty field.
-- **The landing.** `site/` has no mention of «Входящие» — mail, a tracker,
-  share-from-a-phone, webhooks — which is half the product; the first task is
-  also the most demonstrable thing here.
+- **Nothing starts the tour by itself.** The wizard offered it; without the
+  wizard it is in the settings only, and a newcomer finds «С чего начать» on the
+  board instead. Whether the first board a person opens should start the tour,
+  as Focalboard's welcome board did, is open.
+- **No agent connected at all.** «С чего начать» says to connect one; the form
+  offers to install an adapter through npx. Whether onboarding should teach the
+  board without an agent is a product decision.

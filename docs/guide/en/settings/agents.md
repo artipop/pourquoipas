@@ -1,27 +1,22 @@
-# Agents: adapters, npx and Node.js
+# Program agents: adapters, npx and Node.js
 
-The list of agents opens from the ⋯ menu of a board they work on, as
-**"Agents…"**; the proxies an agent refers to by name are in the same window,
-under it. The list itself belongs to the machine — it is one list for every
-board, and opening it from a board changes nothing about that.
-
-These are the agents the app starts as a program on this machine. An agent
-can also be a model the app calls with your key: see [AI and models by API
-key](./ai.md).
+This page is about the program agents the app starts on this computer, and what
+to do when one does not start. How to connect an agent is in [Connecting
+agents](./ai.md).
 
 Claude and Codex do not speak ACP themselves — between the app and their CLIs
 stands an **adapter**, published on npm:
 `@agentclientprotocol/claude-agent-acp` and `@agentclientprotocol/codex-acp`.
 That is why these two kinds need **Node.js** on the machine. Antigravity,
 GitHub Copilot and JetBrains Junie speak ACP themselves and need no adapter;
-the "ACP (other)" kind is launched by whatever you put in the "Launch command
-(argv)" field.
+"ACP (other)" is launched by whatever you put in the "Command that starts it
+over ACP" field.
 
 ## Installing the adapter
 
 You do not have to install the adapter in advance: if it is missing but `npx`
-is present, the app launches the adapter through it. Under the "Kind" field in
-the "Agents" window there is then a line like:
+is present, the app launches the adapter through it. Under the "Program" field
+of the agent's form there is then a line like:
 
 > `codex-acp` is not installed — it will run through npx (the first run takes
 > longer)
@@ -52,8 +47,8 @@ terminal have `npx` but the app cannot see it".
 
 The search order:
 
-1. **"Binary path"** and **"Launch command (argv)"** on the agent itself — if
-   filled in, they are used and nothing is guessed;
+1. **"Binary path"** and **"Launch command (argv)"** on the agent itself (under
+   "More settings") — if filled in, they are used and nothing is guessed;
 2. **your shell's PATH** — the same thing `which npx` prints in a terminal.
    Version managers (nvm, fnm, mise, asdf, volta) land here if they are hooked
    up in `~/.zshrc`, `~/.bashrc` or `~/.zprofile`;

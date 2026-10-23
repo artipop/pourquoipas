@@ -13,8 +13,8 @@ import {BOARD_PROP_BRANCH_PROPERTY, BOARD_PROP_PROJECT_PROPERTY, boardBranchProp
 // board's, and a folder nobody put in the field is a folder no card can pick.
 //
 // It lives here rather than in the folders panel because the panel is not the
-// only place a folder is added — the setup wizard adds one too, and a folder
-// added there used to reach the registry and stop, leaving the card's field
+// only place a folder is added — a card's «Папка» field adds one too, and a
+// folder added elsewhere used to reach the registry and stop, leaving the card's field
 // empty and the person who had just answered the question with nothing to
 // choose. Anything that adds a folder calls this.
 
