@@ -3,7 +3,6 @@ package acp
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -402,8 +401,6 @@ func TestAgentUsersKeepsRussianNames(t *testing.T) {
 
 // fakeBoardUsers records what the manager asked to provision and retire.
 type fakeBoardUsers struct {
-	boardID  string
-	agents   []AgentUser
 	accounts []AgentUser
 	retired  []AgentUser
 	err      error
@@ -447,59 +444,30 @@ func (f *fakeBoardUsers) RetireAgentUser(_ context.Context, agent AgentUser) (in
 	return 1, nil
 }
 
-func (f *fakeBoardUsers) EnsureAgentUsers(_ context.Context, boardID string, agents []AgentUser) ([]AgentUser, error) {
-	f.boardID = boardID
-	f.agents = agents
-	if f.err != nil {
-		return nil, f.err
-	}
-	out := make([]AgentUser, 0, len(agents))
-	for i, a := range agents {
-		a.UserID = fmt.Sprintf("uid-%d", i)
-		a.Created = true
-		out = append(out, a)
-	}
-	return out, nil
-}
-
-func TestSyncAgentUsers(t *testing.T) {
-	m := agentManager(t, "", AgentEntry{Name: "Codex Acct1", Kind: "codex"}, AgentEntry{Name: "claude", Kind: "claude"})
-
-	// Without a board-users implementation the feature is simply unavailable.
-	if _, err := m.SyncAgentUsers(context.Background(), "board1"); err == nil {
-		t.Error("expected an error without a BoardUsers implementation")
-	}
-
+// Every registered agent is offered on every board, so the page asks for the
+// accounts with their ids, and an agent registered before accounts were made at
+// registration gets one on the way.
+func TestAgentAccountsCarryTheirIDs(t *testing.T) {
+	m := agentManager(t, "", AgentEntry{Name: "Codex Acct1", Kind: "codex"}, AgentEntry{Name: "claude", Kind: "claude", UserID: "u-claude"})
 	users := &fakeBoardUsers{}
 	m.SetBoardUsers(users)
-	got, err := m.SyncAgentUsers(context.Background(), "board1")
+
+	got, err := m.AgentAccounts(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
-	if users.boardID != "board1" || len(got) != 2 {
-		t.Fatalf("sync passed board=%q agents=%+v", users.boardID, got)
+	if len(users.accounts) != 1 || users.accounts[0].Username != "codex-acct1" {
+		t.Fatalf("only the agent without an account should be provisioned, got %+v", users.accounts)
 	}
-	if got[0].Name != "Codex Acct1" || got[0].Username != "codex-acct1" {
-		t.Errorf("first account = %+v, want the folded username", got[0])
-	}
-	if got[0].UserID == "" || !got[0].Created {
-		t.Errorf("provisioning result not returned: %+v", got[0])
-	}
-
-	// An empty registry is a no-op, not an error: the UI syncs on every change,
-	// including the ones that leave nothing to provision.
-	empty := agentManager(t, "")
-	empty.SetBoardUsers(&fakeBoardUsers{})
-	synced, err := empty.SyncAgentUsers(context.Background(), "board1")
-	if err != nil || len(synced) != 0 {
-		t.Errorf("empty registry sync = %+v, err = %v", synced, err)
+	if len(got) != 2 || got[1].UserID != "u-claude" {
+		t.Fatalf("accounts = %+v", got)
 	}
 }
 
-func TestRemoveAgentRetiresItsAccount(t *testing.T) {
-	cfgPath := filepath.Join(t.TempDir(), "config.json")
+// Removing an agent touches no board: it was never a member of one.
+func TestRemoveAgentLeavesTheBoardsAlone(t *testing.T) {
 	users := &fakeBoardUsers{}
-	m := agentManager(t, cfgPath, AgentEntry{Name: "Codex Acct1", Kind: "codex"})
+	m := agentManager(t, filepath.Join(t.TempDir(), "config.json"), AgentEntry{Name: "Codex Acct1", Kind: "codex"})
 	m.SetBoardUsers(users)
 
 	if err := m.RemoveAgent("codex acct1"); err != nil { // name match is loose
@@ -508,28 +476,11 @@ func TestRemoveAgentRetiresItsAccount(t *testing.T) {
 	if len(m.Agents()) != 0 {
 		t.Errorf("entry not removed: %+v", m.Agents())
 	}
-	if len(users.retired) != 1 || users.retired[0].Username != "codex-acct1" {
-		t.Fatalf("account not retired: %+v", users.retired)
+	if len(users.retired) != 0 {
+		t.Errorf("removal touched board memberships: %+v", users.retired)
 	}
-
-	// A retirement that fails is reported, but the entry stays removed — the
-	// registry is the source of truth and it has already been written.
-	m2 := agentManager(t, cfgPath, AgentEntry{Name: "claude", Kind: "claude"})
-	m2.SetBoardUsers(&fakeBoardUsers{retryErr: fmt.Errorf("board app is not ready")})
-	err := m2.RemoveAgent("claude")
-	if err == nil || !strings.Contains(err.Error(), "board app is not ready") {
-		t.Errorf("expected the retirement failure to surface, got %v", err)
-	}
-	if len(m2.Agents()) != 0 {
-		t.Errorf("entry should still be removed: %+v", m2.Agents())
-	}
-
-	// Removing an unknown agent is still an error, and touches no account.
 	if err := m.RemoveAgent("nope"); err == nil {
 		t.Error("removing a missing agent should fail")
-	}
-	if len(users.retired) != 1 {
-		t.Errorf("a failed removal must not retire anything: %+v", users.retired)
 	}
 }
 

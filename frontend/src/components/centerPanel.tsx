@@ -47,15 +47,11 @@ import Table from './table/table'
 
 import Gallery from './gallery/gallery'
 import {FINISHED, TOUR_BOARD, TOUR_CARD} from './onboardingTour'
-import {patchPreferences, startTour, useOnTourBoard} from './onboardingTour/tourState'
+import {patchPreferences, useOnTourBoard} from './onboardingTour/tourState'
 import ShareBoardTourStep from './onboardingTour/shareBoard/shareBoard'
-import BoardSetupWizard from './acp/boardSetupWizard'
-import {createSetupPlan, markSetupOffered, shouldOfferSetup} from './acp/boardSetup'
-import {personProperty} from './acp/attentionAudience'
 import FirstRunStrip from './onboardingHints/firstRunStrip'
 import {soleWorkdirOption} from './acp/workdirSync'
 import {cardColumnProperty} from './acp/automation'
-import {agentAccountId, firstTaskCard, firstTaskColumns} from './acp/firstTask'
 
 // FullCalendar is half a megabyte of source, and a board opens on its kanban:
 // the calendar arrives when somebody switches to it.
@@ -77,26 +73,6 @@ type Props = {
 const CenterPanel = (props: Props) => {
     const intl = useIntl()
     const [selectedCardIds, setSelectedCardIds] = createSignal<string[]>([])
-
-    // A board that runs something on a machine that cannot run it yet. The
-    // wizard opens by itself once per board and never stands anywhere after
-    // that: there used to be a header badge calling the board half-configured,
-    // but the app has stopped treating almost anything as mandatory. What replaced the badge is a parting note (the
-    // wizard says how to come back) and the standing way in: the board menu
-    // opens the setup wizard.
-    const [showSetup, setShowSetup] = createSignal(false)
-    const [plan, refreshPlan] = createSetupPlan(() => props.board)
-    createEffect(() => [props.board, plan()] as const, ([board, current]) => {
-        // The plan of the board just left is still on hand until the next one
-        // arrives, and offering on its word would mark the new board offered.
-        if (current.boardId === board.id && shouldOfferSetup(current)) {
-            // Marked as offered when it opens, not when it closes: closing the
-            // window, quitting mid-way or never touching it again all mean the
-            // same thing — it has had its turn.
-            markSetupOffered(board.id).catch(() => undefined)
-            setShowSetup(true)
-        }
-    })
 
     const [cardIdToFocusOnRender, setCardIdToFocusOnRender] = createSignal('')
 
@@ -259,43 +235,11 @@ const CenterPanel = (props: Props) => {
 
     const addEmptyCardAndShow = () => addCard('', true)
 
-    // What the setup wizard's last page offers (docs/onboarding.md). The first
-    // task needs two columns and a person field; without them it is not
-    // offered at all.
-    const firstColumns = () => firstTaskColumns(props.board, props.groupByProperty, groups().visible.map((g) => g.option))
-    const firstTaskOffer = () => {
-        const columns = firstColumns()
-        if (!columns || !personProperty(props.board)) {
-            return undefined
-        }
-        return {column: columns.to.value, start: startFirstTask}
-    }
-
-    const startFirstTask = async (title: string, agent: string) => {
-        const columns = firstColumns()
-        const userId = await agentAccountId(props.board.id, agent)
-        const card = columns && userId ? firstTaskCard(props.board, columns, title, userId, newCardProperties(columns.from.id)) : undefined
-        if (!columns || !card) {
-            throw new Error(intl.formatMessage({id: 'BoardSetup.first-task-failed', defaultMessage: 'The card could not be made: the board needs two columns and a field for who works on a card.'}))
-        }
-        const made = createCard(await mutator.insertBlock(props.board.id, card, 'first task'))
-        await mutator.changeViewCardOrder(props.board.id, props.activeView.id, props.activeView.fields.cardOrder, [...props.activeView.fields.cardOrder, made.id], 'first task')
-        await mutator.changePropertyValue(props.board.id, made, columns.property.id, columns.to.id, 'first task')
-        showCard(made.id)
-    }
-
     // The card a board made from a template opens with, marked so rather than
     // found by its title.
     const readFirstCard = () => {
         const card = props.cards.find((c) => c.fields.readFirst)
         return card ? {title: card.title, open: () => showCard(card.id)} : undefined
-    }
-
-    const showTour = () => {
-        const userId = me()?.id
-        if (userId) {
-            startTour(userId, props.board.id, actions.users.patchProps)
-        }
     }
 
     // The card's tips are done and the card is closed: the board's own start,
@@ -448,20 +392,6 @@ const CenterPanel = (props: Props) => {
             class='BoardComponent'
             onClick={backgroundClicked}
         >
-            <Show when={showSetup()}>
-                <RootPortal>
-                    <BoardSetupWizard
-                        board={props.board}
-                        onClose={() => {
-                            setShowSetup(false)
-                            refreshPlan()
-                        }}
-                        firstTask={firstTaskOffer()}
-                        readFirst={readFirstCard()}
-                        onShowTour={showTour}
-                    />
-                </RootPortal>
-            </Show>
             <Show when={props.shownCardId}>
                 <RootPortal>
                     <CardDialog
@@ -510,7 +440,7 @@ const CenterPanel = (props: Props) => {
                 />
                 <FirstRunStrip
                     cards={props.cards}
-                    columnPropertyId={firstColumns()?.property.id}
+                    columnPropertyId={cardColumnProperty(props.board, props.groupByProperty)?.id}
                     readFirst={readFirstCard()}
                 />
             </div>

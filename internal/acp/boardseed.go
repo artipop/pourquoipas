@@ -16,12 +16,7 @@ import (
 // own keys — of which there is exactly one, `trackingTemplateId` — and a prefix
 // here would only be the product's name written into stored data, where a
 // rename becomes a migration.
-//
-// BoardPropSetup is not about the board but about this machine: the questions
-// it has to be asked before an agent can work a card of it. It is read in
-// setup.go.
 const (
-	BoardPropSetup = "setup"
 	// BoardPropPrompt is what this board's agents are told first. It is the
 	// board's, for the same reason its columns are: a household board and a
 	// code board want different first words, and a board carried to another
@@ -100,10 +95,6 @@ type CardProperty struct {
 // SetBoardMeta supplies the board's own property store.
 func (m *Manager) SetBoardMeta(b BoardMeta) { m.meta = b }
 
-// SeedBoard takes a board's own automation into the registry on demand — what
-// the first card move would do anyway, asked for early by the setup wizard.
-func (m *Manager) SeedBoard(boardID string) { m.seedFromBoard(boardID) }
-
 // listenBeforeSpeaking makes sure a board has been read before this machine
 // writes anything back to it. Every edit is written through in full
 // (persistBoardLocked), so an edit made before the board was ever read would
@@ -128,11 +119,6 @@ func (m *Manager) listenBeforeSpeaking(boards ...string) {
 // board per run: the import is idempotent anyway (anything already registered
 // is left alone), and the point of the flag is to not read the board on every
 // card move.
-//
-// The exception is a board still holding entries this machine could not use.
-// Registering the missing agent is what the setup wizard is for, and it seeds
-// the board again on the way out — so the answer takes effect there rather
-// than at the next launch.
 func (m *Manager) seedFromBoard(boardID string) {
 	if boardID == "" || m.meta == nil {
 		return

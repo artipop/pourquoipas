@@ -35,8 +35,13 @@ func TestAProvidersKeyIsCheckedStoredAndNeverShown(t *testing.T) {
 	if _, err := app.SetAIProviderKey(ctx, modelapi.ProviderOpenAI, "sk-bad", provider.URL+"/v1"); err == nil {
 		t.Fatal("a key the provider refused was stored")
 	}
-	if _, err := app.SetAIProviderKey(ctx, modelapi.ProviderOpenAI, "sk-good-1234", provider.URL+"/v1"); err != nil {
+	saved, err := app.SetAIProviderKey(ctx, modelapi.ProviderOpenAI, "sk-good-1234", provider.URL+"/v1")
+	if err != nil {
 		t.Fatal(err)
+	}
+	// The form picks the agent's model from what the key opens.
+	if len(saved.Models) != 1 || saved.Models[0].ID != "gpt-test" {
+		t.Errorf("the check returned %+v", saved)
 	}
 
 	listed, err := app.AIProviders(ctx)

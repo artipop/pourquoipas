@@ -26,55 +26,6 @@ const agentEmailDomain = "agents.invalid"
 
 var _ acp.BoardUsers = (*EventsBackend)(nil)
 
-// EnsureAgentUsers creates the missing agent accounts and makes every agent a
-// member of the board. Idempotent: an existing account is reused, and an
-// existing membership is left as it is. Accounts are never deleted — a card can
-// still name an agent long after its registry entry is gone.
-func (b *EventsBackend) EnsureAgentUsers(ctx context.Context, boardID string, agents []acp.AgentUser) ([]acp.AgentUser, error) {
-	b.mu.Lock()
-	a := b.app
-	b.mu.Unlock()
-	if a == nil {
-		return nil, fmt.Errorf("board app is not ready")
-	}
-	if boardID == "" {
-		return nil, fmt.Errorf("no board given")
-	}
-	board, err := a.GetBoard(boardID)
-	if err != nil {
-		return nil, fmt.Errorf("get board %s: %w", boardID, err)
-	}
-	if board == nil {
-		return nil, fmt.Errorf("board %s was not found", boardID)
-	}
-
-	out := make([]acp.AgentUser, 0, len(agents))
-	for _, agent := range agents {
-		agent, err := b.ensureAccount(agent)
-		if err != nil {
-			return out, err
-		}
-		if agent.UserID == "" {
-			continue
-		}
-
-		// Membership is what puts the agent into the board's person picker
-		// without searching for it.
-		member := &model.BoardMember{
-			BoardID:         boardID,
-			UserID:          agent.UserID,
-			SchemeEditor:    true,
-			SchemeCommenter: true,
-			SchemeViewer:    true,
-		}
-		if _, err := a.AddMemberToBoard(member); err != nil {
-			return out, fmt.Errorf("adding %q to the board's members: %w", agent.Username, err)
-		}
-		out = append(out, agent)
-	}
-	return out, nil
-}
-
 // EnsureAgentAccounts creates the accounts and stops there — no board is
 // involved, because an account is not a board's business: it is the name the
 // machine's registry is known by, and every board reads the same table when it

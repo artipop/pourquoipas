@@ -9,6 +9,16 @@ import {fakeGoSide} from '../../test/goSide'
 import AgentsPanel, {isAgentsAvailable, keptOptions, remoteControlOf, withRemoteControl} from './agentsPanel'
 import {textToServers} from './mcpServers'
 
+// The name is prefilled with the program's; a test types its own over it.
+const typeName = (name: string) => {
+    const field = screen.getByPlaceholderText('Name')
+    userEvent.clear(field)
+    userEvent.type(field, name)
+}
+
+// What has a working default is folded under «More settings».
+const openMore = async () => userEvent.click(await screen.findByRole('button', {name: 'More settings'}))
+
 describe('components/acp/agentsPanel', () => {
     afterEach(() => {
         fakeGoSide()
@@ -36,16 +46,17 @@ describe('components/acp/agentsPanel', () => {
         ))
         await waitFor(() => expect(screen.getByText('default-agent')).toBeInTheDocument())
 
-        userEvent.click(screen.getByRole('button', {name: 'Add agent…'}))
+        userEvent.click(screen.getByRole('button', {name: 'Connect an agent…'}))
 
         // Two dropdowns in the form: the agent kind, then the proxy configuration.
-        await waitFor(() => expect(screen.getByRole('button', {name: 'Kind'})).toBeInTheDocument())
+        await waitFor(() => expect(screen.getByRole('button', {name: 'Program'})).toBeInTheDocument())
 
-        chooseOption(screen.getByRole('button', {name: 'Kind'}), 'Codex')
-        userEvent.type(screen.getByPlaceholderText('Name'), 'codex-a')
+        chooseOption(screen.getByRole('button', {name: 'Program'}), 'Codex')
+        typeName('codex-a')
+        await openMore()
         userEvent.type(screen.getByPlaceholderText('CODEX_HOME=/Users/me/.codex-work'), 'CODEX_HOME=/tmp/x')
 
-        userEvent.click(screen.getByRole('button', {name: 'Save'}))
+        userEvent.click(screen.getByRole('button', {name: 'Connect'}))
         await waitFor(() => expect(bindings.AddAgent).toHaveBeenCalled())
         const payload = JSON.parse(bindings.AddAgent.mock.calls[0][0])
         expect(payload).toMatchObject({name: 'codex-a', kind: 'codex', env: {CODEX_HOME: '/tmp/x'}})
@@ -68,22 +79,23 @@ describe('components/acp/agentsPanel', () => {
         render(() => wrapIntl(() =>
             <AgentsPanel/>,
         ))
-        await waitFor(() => expect(screen.getByRole('button', {name: 'Add agent…'})).toBeInTheDocument())
+        await waitFor(() => expect(screen.getByRole('button', {name: 'Connect an agent…'})).toBeInTheDocument())
 
-        userEvent.click(screen.getByRole('button', {name: 'Add agent…'}))
-        await waitFor(() => expect(screen.getByRole('button', {name: 'Kind'})).toBeInTheDocument())
+        userEvent.click(screen.getByRole('button', {name: 'Connect an agent…'}))
+        await waitFor(() => expect(screen.getByRole('button', {name: 'Program'})).toBeInTheDocument())
 
-        userEvent.type(screen.getByPlaceholderText('Name'), 'proxied')
+        typeName('proxied')
 
         // The launch command is offered for claude too, and quoted arguments
         // stay a single argv element.
+        await openMore()
         userEvent.type(screen.getByPlaceholderText('proxychains4 -q -f /etc/myproxy.conf claude-agent-acp'), 'proxychains4 -f "/etc/my conf.conf" claude-agent-acp')
 
         // The network settings themselves live in the proxy registry; the agent
         // only names one.
         chooseOption(screen.getByRole('button', {name: 'Proxy configuration'}), 'office — http://proxy.example.com:8080')
 
-        userEvent.click(screen.getByRole('button', {name: 'Save'}))
+        userEvent.click(screen.getByRole('button', {name: 'Connect'}))
         await waitFor(() => expect(bindings.AddAgent).toHaveBeenCalled())
         const payload = JSON.parse(bindings.AddAgent.mock.calls[0][0])
         expect(payload).toMatchObject({
@@ -119,7 +131,7 @@ describe('components/acp/agentsPanel', () => {
         ))
         await waitFor(() => expect(bindings.ListAgentAdapters).toHaveBeenCalled())
 
-        userEvent.click(screen.getByRole('button', {name: 'Add agent…'}))
+        userEvent.click(screen.getByRole('button', {name: 'Connect an agent…'}))
 
         // The default kind is claude, which this machine cannot start.
         await waitFor(() => expect(screen.getByText('claude-agent-acp was not found: give the agent a binPath or a command')).toBeInTheDocument())
@@ -128,7 +140,7 @@ describe('components/acp/agentsPanel', () => {
         await waitFor(() => expect(bindings.InstallAgentAdapter).toHaveBeenCalledWith('claude'))
 
         // An installed kind says nothing at all.
-        chooseOption(screen.getByRole('button', {name: 'Kind'}), 'Codex')
+        chooseOption(screen.getByRole('button', {name: 'Program'}), 'Codex')
         await waitFor(() => expect(screen.queryByText('claude-agent-acp was not found: give the agent a binPath or a command')).not.toBeInTheDocument())
     })
 
@@ -146,22 +158,23 @@ describe('components/acp/agentsPanel', () => {
         render(() => wrapIntl(() =>
             <AgentsPanel/>,
         ))
-        await waitFor(() => expect(screen.getByRole('button', {name: 'Add agent…'})).toBeInTheDocument())
+        await waitFor(() => expect(screen.getByRole('button', {name: 'Connect an agent…'})).toBeInTheDocument())
 
-        userEvent.click(screen.getByRole('button', {name: 'Add agent…'}))
-        await waitFor(() => expect(screen.getByRole('button', {name: 'Kind'})).toBeInTheDocument())
+        userEvent.click(screen.getByRole('button', {name: 'Connect an agent…'}))
+        await waitFor(() => expect(screen.getByRole('button', {name: 'Program'})).toBeInTheDocument())
 
-        const kind = screen.getByRole('button', {name: 'Kind'})
-        expect(optionsOf(kind)).toEqual(['Claude', 'Codex', 'Antigravity', 'GitHub Copilot', 'JetBrains Junie', 'ACP (other)', 'Model by API key'])
+        const kind = screen.getByRole('button', {name: 'Program'})
+        expect(optionsOf(kind)).toEqual(['Claude', 'Codex', 'Antigravity', 'GitHub Copilot', 'JetBrains Junie', 'ACP (other)'])
 
         chooseOption(kind, 'JetBrains Junie')
-        userEvent.type(screen.getByPlaceholderText('Name'), 'junie-a')
+        typeName('junie-a')
 
         // The kind carries its own default launch flags, so the command input
         // only shows them as a placeholder and stays empty.
+        await openMore()
         expect(screen.getByPlaceholderText('junie --acp=true')).toHaveValue('')
 
-        userEvent.click(screen.getByRole('button', {name: 'Save'}))
+        userEvent.click(screen.getByRole('button', {name: 'Connect'}))
         await waitFor(() => expect(bindings.AddAgent).toHaveBeenCalled())
         const payload = JSON.parse(bindings.AddAgent.mock.calls[0][0])
         expect(payload).toMatchObject({name: 'junie-a', kind: 'junie', command: []})
@@ -182,17 +195,18 @@ describe('components/acp/agentsPanel', () => {
         render(() => wrapIntl(() =>
             <AgentsPanel/>,
         ))
-        await waitFor(() => expect(screen.getByRole('button', {name: 'Add agent…'})).toBeInTheDocument())
-        userEvent.click(screen.getByRole('button', {name: 'Add agent…'}))
+        await waitFor(() => expect(screen.getByRole('button', {name: 'Connect an agent…'})).toBeInTheDocument())
+        userEvent.click(screen.getByRole('button', {name: 'Connect an agent…'}))
         await waitFor(() => expect(screen.getByPlaceholderText('Name')).toBeInTheDocument())
 
-        userEvent.type(screen.getByPlaceholderText('Name'), 'jojo')
+        typeName('jojo')
 
         // Pasted the way a server's own README gives it, wrapper and all.
+        await openMore()
         const field = screen.getByRole('textbox', {name: /MCP servers/})
         fireEvent.input(field, {target: {value: '{"mcpServers": {"playwright": {"command": "npx", "args": ["-y", "@playwright/mcp@latest"]}}}'}})
 
-        userEvent.click(screen.getByRole('button', {name: 'Save'}))
+        userEvent.click(screen.getByRole('button', {name: 'Connect'}))
         await waitFor(() => expect(bindings.AddAgent).toHaveBeenCalled())
         expect(JSON.parse(bindings.AddAgent.mock.calls[0][0])).toMatchObject({
             name: 'jojo',
@@ -224,13 +238,14 @@ describe('components/acp/agentsPanel', () => {
         render(() => wrapIntl(() =>
             <AgentsPanel/>,
         ))
-        await waitFor(() => expect(screen.getByRole('button', {name: 'Add agent…'})).toBeInTheDocument())
-        userEvent.click(screen.getByRole('button', {name: 'Add agent…'}))
+        await waitFor(() => expect(screen.getByRole('button', {name: 'Connect an agent…'})).toBeInTheDocument())
+        userEvent.click(screen.getByRole('button', {name: 'Connect an agent…'}))
         await waitFor(() => expect(screen.getByPlaceholderText('Name')).toBeInTheDocument())
 
-        userEvent.type(screen.getByPlaceholderText('Name'), 'jojo')
+        typeName('jojo')
+        await openMore()
         fireEvent.input(screen.getByRole('textbox', {name: /MCP servers/}), {target: {value: 'playwright = npx'}})
-        userEvent.click(screen.getByRole('button', {name: 'Save'}))
+        userEvent.click(screen.getByRole('button', {name: 'Connect'}))
 
         // Saving half a configuration is worse than not saving it.
         await waitFor(() => expect(screen.getByText(/must be valid JSON/)).toBeInTheDocument())
@@ -256,6 +271,7 @@ describe('components/acp/agentsPanel', () => {
         ))
         await waitFor(() => expect(screen.getByText('jojo')).toBeInTheDocument())
         userEvent.click(screen.getAllByRole('button', {name: 'Edit'})[0])
+        await openMore()
 
         // Reloaded as the same JSON, wrapper included, so it can be edited and
         // pasted onwards.
@@ -293,6 +309,7 @@ describe('components/acp/agentsPanel', () => {
         ))
         await waitFor(() => expect(screen.getByText('clyde')).toBeInTheDocument())
         userEvent.click(screen.getAllByRole('button', {name: 'Edit'})[0])
+        await openMore()
 
         await waitFor(() => expect(bindings.AgentOptions).toHaveBeenCalled())
         expect(bindings.AgentOptions.mock.calls[0][1]).toBe(false)
@@ -325,11 +342,12 @@ describe('components/acp/agentsPanel', () => {
         ))
         await waitFor(() => expect(screen.getByText('plain')).toBeInTheDocument())
         userEvent.click(screen.getAllByRole('button', {name: 'Edit'})[0])
+        await openMore()
 
         await waitFor(() => expect(screen.getByText('This agent has no settings of its own.')).toBeInTheDocument())
 
         // Only the two the form always has: the kind and the proxy.
-        expect(screen.getByRole('button', {name: 'Kind'})).toBeInTheDocument()
+        expect(screen.getByRole('button', {name: 'Program'})).toBeInTheDocument()
         expect(screen.getByRole('button', {name: 'Proxy configuration'})).toBeInTheDocument()
     })
 
@@ -353,6 +371,7 @@ describe('components/acp/agentsPanel', () => {
         ))
         await waitFor(() => expect(screen.getByText('clyde')).toBeInTheDocument())
         userEvent.click(screen.getAllByRole('button', {name: 'Edit'})[0])
+        await openMore()
         await waitFor(() => expect(bindings.AgentOptions).toHaveBeenCalledTimes(1))
 
         // The button says "Asking the agent…" until that first answer is in.
@@ -391,6 +410,7 @@ describe('components/acp/agentsPanel', () => {
         ))
         await waitFor(() => expect(screen.getByText('clyde')).toBeInTheDocument())
         userEvent.click(screen.getAllByRole('button', {name: 'Edit'})[0])
+        await openMore()
 
         const toggle = await screen.findByRole('checkbox', {name: /Remote control/})
         expect(toggle).not.toBeChecked()
@@ -426,6 +446,7 @@ describe('components/acp/agentsPanel', () => {
         ))
         await waitFor(() => expect(screen.getByText('cx')).toBeInTheDocument())
         userEvent.click(screen.getAllByRole('button', {name: 'Edit'})[0])
+        await openMore()
 
         await waitFor(() => expect(screen.getByRole('button', {name: 'Save'})).toBeInTheDocument())
         expect(screen.queryByRole('checkbox', {name: /Remote control/})).not.toBeInTheDocument()

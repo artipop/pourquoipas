@@ -20,6 +20,7 @@ import {MODEL_PROVIDERS, providerName} from './modelProviders'
 import {ProxyEntry} from './proxiesPanel'
 import PromptField from './promptField'
 import {MCPServers, mcpServersPlaceholder, serversToText, textToServers} from './mcpServers'
+import {invalidateAgentUsers} from './agentAssignees'
 
 import './agentsPanel.scss'
 
@@ -140,8 +141,8 @@ const commandPlaceholders: {[kind: string]: string} = {
     acp: 'gemini --acp',
 }
 
-// The agent kinds the manager knows, in the order they are offered. Exported
-// because the setup wizard asks the same question.
+// The programs the manager knows how to start over ACP, in the order they are
+// offered.
 export const AGENT_KINDS = [
     {value: 'claude', label: 'Claude'},
     {value: 'codex', label: 'Codex'},
@@ -155,20 +156,20 @@ export const AGENT_KINDS = [
 // provider's API with the person's key, the loop run by the Go side.
 export const MODEL_KIND = 'model'
 
-// agentKindOptions is what the kind field offers: on a hosted server there is
-// no machine to run a CLI on, so only a model.
-export function agentKindOptions(modelLabel: string): Array<{value: string, label: string}> {
-    const model = {value: MODEL_KIND, label: modelLabel}
-    return isHosted() ? [model] : [...AGENT_KINDS, model]
-}
-
 // newModelAgent is what a model agent starts as: the first provider, with
 // the model the Go side suggests until the provider has been asked.
 export function newModelAgent(name = ''): {name: string, kind: string, provider: string, model: string} {
     return {name, kind: MODEL_KIND, provider: 'anthropic', model: 'claude-opus-5-5'}
 }
 
-type ProviderState = {id: string, keySet: boolean, defaultModel?: string}
+type ProviderState = {
+    id: string
+    keySet: boolean
+    fromEnv?: boolean
+    keyHint?: string
+    baseUrl?: string
+    defaultModel?: string
+}
 
 export function isAgentsAvailable(): boolean {
     return aiEnabled() && Boolean(goApp()?.ListAgents)
@@ -255,8 +256,29 @@ export function keptOptions(
     return kept
 }
 
+// A new agent starts as the one thing this build can run: a program on this
+// machine, or on a server a model.
 const emptyForm = (): AgentEntry => (isHosted() ? newModelAgent() : {name: '', kind: 'claude'})
 
+// suggestedName is what a new agent is called until somebody types a name: the
+// program, or the provider, with a number when that is taken.
+export function suggestedName(entry: {kind: string, provider?: string}, taken: string[]): string {
+    let base = entry.kind
+    if (entry.kind === MODEL_KIND) {
+        base = entry.provider === 'openai' ? 'OpenAI' : 'Claude'
+    }
+    const used = new Set(taken.map((n) => n.toLowerCase()))
+    let name = base
+    for (let i = 2; used.has(name.toLowerCase()); i++) {
+        name = `${base} ${i}`
+    }
+    return name
+}
+
+// Every agent a person has, of both kinds, and the one way to connect another:
+// a program on this machine spoken to over ACP, or a model reached with the
+// person's API key. What has a working default — environment, MCP servers,
+// proxy, the agent's own settings — is under «More settings».
 const AgentsPanel = () => {
     const intl = useIntl()
     const bindings = goApp()
@@ -264,6 +286,8 @@ const AgentsPanel = () => {
     const [agents, setAgents] = createSignal<AgentEntry[]>([])
     const [proxies, setProxies] = createSignal<ProxyEntry[]>([])
     const [form, setForm] = createSignal<AgentEntry | null>(null)
+    const [nameTouched, setNameTouched] = createSignal(false)
+    const [more, setMore] = createSignal(false)
     const [envText, setEnvText] = createSignal('')
     const [serversText, setServersText] = createSignal('')
     const [argsText, setArgsText] = createSignal('')
@@ -276,7 +300,15 @@ const AgentsPanel = () => {
     const [editingName, setEditingName] = createSignal<string | null>(null)
     const [adapters, setAdapters] = createSignal<AdapterStatus[]>([])
     const [installing, setInstalling] = createSignal('')
+    const [busy, setBusy] = createSignal(false)
     const [error, setError] = createSignal('')
+
+    // The key typed into the form, if any. It is the provider's, not the
+    // agent's: every model agent of that provider runs on it.
+    const [keyText, setKeyText] = createSignal('')
+    const [replacingKey, setReplacingKey] = createSignal(false)
+    const [baseUrl, setBaseUrl] = createSignal('')
+    const [checkedModels, setCheckedModels] = createSignal<Array<{id: string, name?: string}>>([])
 
     // What the agent being edited says it can be configured with. Empty until
     // it has been asked, and empty for good if it declares nothing.
@@ -295,8 +327,8 @@ const AgentsPanel = () => {
                 setProxies(JSON.parse(await bindings.ListProxies()) || [])
             }
 
-            // Whether the chosen kind can start at all is knowable here, and
-            // the alternative is finding out on a card an hour later.
+            // Whether the chosen program can start at all is knowable here,
+            // and the alternative is finding out on a card an hour later.
             if (bindings.ListAgentAdapters) {
                 setAdapters(JSON.parse(await bindings.ListAgentAdapters()) || [])
             }
@@ -309,8 +341,35 @@ const AgentsPanel = () => {
         refresh()
     })
 
-    // The adapter for the kind being edited, and the one action that fixes it.
-    const adapter = () => adapters().find((a) => a.kind === form()?.kind)
+    const [providers, reloadProviders] = createLoader(async (): Promise<ProviderState[]> => {
+        try {
+            return (await bindings?.AIProviders?.()) || []
+        } catch {
+            return []
+        }
+    }, [] as ProviderState[])
+
+    const isModel = () => form()?.kind === MODEL_KIND
+    const provider = () => providers().find((p) => p.id === form()?.provider)
+    const providerKeySet = () => provider()?.keySet ?? false
+    const askingForKey = () => isModel() && !provider()?.fromEnv && (!providerKeySet() || replacingKey())
+
+    // The models a key opens: what the check just returned, or else what the
+    // provider says for the key already stored.
+    const [storedModels] = createLoader(async (key: string): Promise<Array<{id: string, name?: string}>> => {
+        if (!key || !bindings?.AIModels) {
+            return []
+        }
+        try {
+            return (await bindings.AIModels(key)) || []
+        } catch {
+            return []
+        }
+    }, [] as Array<{id: string, name?: string}>, () => (isModel() && providerKeySet() ? form()?.provider || '' : ''))
+    const models = () => (checkedModels().length > 0 ? checkedModels() : storedModels())
+
+    // The adapter for the program being edited, and the one action that fixes it.
+    const adapter = () => (isModel() ? undefined : adapters().find((a) => a.kind === form()?.kind))
     const installAdapter = async () => {
         if (!bindings?.InstallAgentAdapter || !form()?.kind) {
             return
@@ -336,9 +395,8 @@ const AgentsPanel = () => {
 
     // Which settings an agent has is the agent's own answer: it is started the
     // way a session would start it and asked, over ACP, what it can be
-    // configured with. So Fast mode appears for an agent that has Fast mode and
-    // for no other, and an agent that grows a setting shows it here without
-    // anything being taught about it.
+    // configured with. Asked when «More settings» is opened, not before:
+    // asking starts the program.
     //
     // probeToken drops an answer that arrives after the form moved on to
     // another agent, which is easy to do while a probe takes a second or two.
@@ -352,7 +410,7 @@ const AgentsPanel = () => {
     }
 
     const probeAgent = async (entry: AgentEntry, recheck: boolean) => {
-        if (!bindings?.AgentOptions) {
+        if (!bindings?.AgentOptions || entry.kind === MODEL_KIND) {
             return
         }
 
@@ -389,7 +447,7 @@ const AgentsPanel = () => {
     }
 
     // The entry as the form currently describes it, which is what the probe
-    // starts and what "Save" writes.
+    // starts and what saving writes.
     const formEntry = (): AgentEntry => ({
         ...(form() || emptyForm()),
         name: (form()?.name || '').trim(),
@@ -399,83 +457,122 @@ const AgentsPanel = () => {
         cliArgs: splitArgv(cliArgsText()),
     })
 
-    // The agent is asked when the form opens and when the kind changes — the
-    // moments its answer can differ. The launch details (binary, command,
-    // environment) are re-read on "Recheck" alone, so typing a path does not
-    // start an agent on every keystroke.
+    const openForm = (entry: AgentEntry, editing: string | null) => {
+        setForm({...entry})
+        setEnvText(envToText(entry.env))
+        setServersText(serversToText(entry.mcpServers))
+        setArgsText(joinArgv(entry.args))
+        setCommandText(joinArgv(entry.command))
+        setCliArgsText(joinArgv(entry.cliArgs))
+        setEditingName(editing)
+        setNameTouched(Boolean(editing))
+        setMore(false)
+        setKeyText('')
+        setReplacingKey(false)
+        setCheckedModels([])
+        setError('')
+        forgetOptions()
+    }
+
     const startAdd = () => {
-        setForm(emptyForm())
-        setEnvText('')
-        setServersText('')
-        setArgsText('')
-        setCommandText('')
-        setCliArgsText('')
-        setEditingName(null)
-        setError('')
-        forgetOptions()
-        probeAgent(emptyForm(), false)
+        const entry = emptyForm()
+        openForm({...entry, name: suggestedName(entry, agents().map((a) => a.name))}, null)
     }
 
-    const startEdit = (agent: AgentEntry) => {
-        setForm({...agent})
-        setEnvText(envToText(agent.env))
-        setServersText(serversToText(agent.mcpServers))
-        setArgsText(joinArgv(agent.args))
-        setCommandText(joinArgv(agent.command))
-        setCliArgsText(joinArgv(agent.cliArgs))
-        setEditingName(agent.name)
-        setError('')
-        forgetOptions()
-        probeAgent(agent, false)
-    }
+    const startEdit = (agent: AgentEntry) => openForm(agent, agent.name)
 
-    // Another kind is another agent, with settings of its own.
+    const updateForm = (patch: Partial<AgentEntry>) => setForm((f) => {
+        if (!f) {
+            return f
+        }
+        const next = {...f, ...patch}
+        if (!nameTouched() && !editingName()) {
+            next.name = suggestedName(next, agents().map((a) => a.name))
+        }
+        return next
+    })
+
+    // A program or a model: another kind is another agent, with settings of
+    // its own.
     const changeKind = (kind: string) => {
-        setForm((f) => {
-            if (!f) {
-                return f
-            }
-            if (kind === MODEL_KIND && f.kind !== MODEL_KIND) {
-                return {...f, ...newModelAgent(f.name)}
-            }
-            return {...f, kind}
-        })
+        const current = form()
+        if (!current) {
+            return
+        }
+        if (kind === MODEL_KIND && current.kind !== MODEL_KIND) {
+            const model = newModelAgent(current.name)
+            updateForm({...model, model: providers().find((p) => p.id === model.provider)?.defaultModel || model.model})
+        } else if (kind !== MODEL_KIND) {
+            updateForm({kind, provider: undefined, model: current.kind === MODEL_KIND ? '' : current.model})
+        }
+        setBaseUrl(kind === MODEL_KIND ? provider()?.baseUrl || '' : '')
+        setCheckedModels([])
         forgetOptions()
-        probeAgent({...formEntry(), kind}, false)
+        if (more()) {
+            probeAgent({...formEntry(), kind}, false)
+        }
     }
 
-    // A model agent is chosen from what the provider says the person's key
-    // opens; without a key there is nothing to ask, and the form says where
-    // the key goes.
-    const isModel = () => form()?.kind === MODEL_KIND
-    const modelsListId = (): string | undefined => {
-        if (isModel()) {
-            return 'AgentsPanel__providerModels'
-        }
-        return modelOption() ? 'AgentsPanel__models' : undefined
+    const changeProvider = (id: string) => {
+        updateForm({provider: id, model: providers().find((p) => p.id === id)?.defaultModel || ''})
+        setBaseUrl(providers().find((p) => p.id === id)?.baseUrl || '')
+        setKeyText('')
+        setReplacingKey(false)
+        setCheckedModels([])
     }
-    const [providers] = createLoader(async (): Promise<ProviderState[]> => {
-        try {
-            return (await bindings?.AIProviders?.()) || []
-        } catch {
-            return []
+
+    const toggleMore = () => {
+        const open = !more()
+        setMore(open)
+        if (open && !probed() && !probing()) {
+            probeAgent(formEntry(), false)
         }
-    }, [] as ProviderState[])
-    const providerKeySet = () => providers().find((p) => p.id === form()?.provider)?.keySet ?? false
-    const [models] = createLoader(async (key: string): Promise<Array<{id: string, name?: string}>> => {
-        if (!key || !bindings?.AIModels) {
-            return []
-        }
-        try {
-            return (await bindings.AIModels(key)) || []
-        } catch {
-            return []
-        }
-    }, [] as Array<{id: string, name?: string}>, () => (isModel() && providerKeySet() ? form()?.provider || '' : ''))
+    }
 
     const closeForm = () => {
         setForm(null)
         forgetOptions()
+    }
+
+    // A key typed into the form is checked with the provider and stored first:
+    // an agent on a key the provider refuses would fail on its first card.
+    const saveKey = async (): Promise<boolean> => {
+        if (!isModel() || !bindings?.SetAIProviderKey) {
+            return true
+        }
+        const typed = keyText().trim()
+        const urlChanged = baseUrl().trim() !== (provider()?.baseUrl || '')
+        if (!typed && !(urlChanged && providerKeySet())) {
+            if (!providerKeySet() && !provider()?.fromEnv) {
+                setError(intl.formatMessage({id: 'Agents.key-required', defaultMessage: 'Enter the API key: the agent runs on it.'}))
+                return false
+            }
+            return true
+        }
+        const checked = await bindings.SetAIProviderKey(form()!.provider || 'anthropic', typed, baseUrl().trim())
+        setCheckedModels(checked?.models || [])
+        if (!form()!.model?.trim() && checked?.suggested) {
+            updateForm({model: checked.suggested})
+        }
+        setKeyText('')
+        setReplacingKey(false)
+        reloadProviders()
+        return true
+    }
+
+    const clearKey = async () => {
+        if (!bindings?.ClearAIProviderKey || !form()?.provider) {
+            return
+        }
+        setError('')
+        try {
+            await bindings.ClearAIProviderKey(form()!.provider!)
+            setBaseUrl('')
+            setCheckedModels([])
+            reloadProviders()
+        } catch (e) {
+            setError(goError(intl, e))
+        }
     }
 
     const saveForm = async () => {
@@ -490,26 +587,34 @@ const AgentsPanel = () => {
             setError(intl.formatMessage({id: 'Agents.mcp-servers-invalid', defaultMessage: 'MCP servers must be valid JSON: a server name mapped to its command and args, the same block any MCP client takes.'}))
             return
         }
-        const entry: AgentEntry = {
-            ...formEntry(),
-
-            // Settings the agent no longer offers are dropped rather than kept
-            // as a line in the config nobody can see or unset — switching the
-            // kind is how they get there. Only a probe that answered may do
-            // this: an agent that could not be asked keeps what it has.
-            options: probed() ? keptOptions(form()!.options, agentOptions()) : form()!.options,
-            mcpServers,
-        }
+        setBusy(true)
         try {
+            if (!await saveKey()) {
+                return
+            }
+            const entry: AgentEntry = {
+                ...formEntry(),
+
+                // Settings the agent no longer offers are dropped rather than
+                // kept as a line in the config nobody can see or unset —
+                // switching the program is how they get there. Only a probe that
+                // answered may do this: an agent that could not be asked keeps
+                // what it has.
+                options: probed() ? keptOptions(form()!.options, agentOptions()) : form()!.options,
+                mcpServers,
+            }
             if (editingName()) {
                 await bindings.UpdateAgent!(JSON.stringify(entry))
             } else {
                 await bindings.AddAgent!(JSON.stringify(entry))
             }
             closeForm()
+            invalidateAgentUsers()
             await refresh()
         } catch (e) {
             setError(goError(intl, e))
+        } finally {
+            setBusy(false)
         }
     }
 
@@ -520,27 +625,32 @@ const AgentsPanel = () => {
         setError('')
         try {
             await bindings.RemoveAgent(name)
+            invalidateAgentUsers()
             await refresh()
         } catch (e) {
             setError(goError(intl, e))
         }
     }
 
-    const updateForm = (patch: Partial<AgentEntry>) => setForm((f) => (f ? {...f, ...patch} : f))
-
-    // What an agent is, in the list: the kind's own name, and for a model the
-    // provider and the model it runs on.
+    // What an agent is, in the list: the program, or the provider and model.
     const kindLabel = (agent: AgentEntry): string => {
         if (agent.kind === MODEL_KIND) {
-            const model = intl.formatMessage({id: 'Agents.kind-model', defaultMessage: 'Model by API key'})
-            return [model, providerName(agent.provider || ''), agent.model].filter(Boolean).join(' · ')
+            const viaKey = intl.formatMessage({id: 'Agents.kind-model', defaultMessage: 'Model by API key'})
+            return [providerName(agent.provider || ''), agent.model, viaKey].filter(Boolean).join(' · ')
         }
-        return AGENT_KINDS.find((k) => k.value === agent.kind)?.label || agent.kind
+        const program = AGENT_KINDS.find((k) => k.value === agent.kind)?.label || agent.kind
+        return `${program} · ${intl.formatMessage({id: 'Agents.kind-program', defaultMessage: 'program on this computer'})}`
     }
 
     // The model is asked for by the field above, so it is not asked for twice.
     const tunableOptions = () => agentOptions().filter((o) => o.id !== MODEL_OPTION_ID)
     const modelOption = () => agentOptions().find((o) => o.id === MODEL_OPTION_ID)
+    const modelsListId = (): string | undefined => {
+        if (isModel()) {
+            return 'AgentsPanel__providerModels'
+        }
+        return modelOption() ? 'AgentsPanel__models' : undefined
+    }
 
     // The switch is a reading of the arguments rather than a state of its own,
     // so typing the flag by hand and ticking the box are the same thing.
@@ -548,23 +658,56 @@ const AgentsPanel = () => {
     const setRemoteControl = (on: boolean, name: string) =>
         setCliArgsText(joinArgv(withRemoteControl(splitArgv(cliArgsText()), on, name)))
 
+    const saveLabel = () => {
+        if (busy() && isModel() && keyText().trim()) {
+            return intl.formatMessage({id: 'AI.checking', defaultMessage: 'Checking the key…'})
+        }
+        return editingName() ? intl.formatMessage({id: 'Agents.save', defaultMessage: 'Save'}) : intl.formatMessage({id: 'Agents.connect', defaultMessage: 'Connect'})
+    }
+
+    const modelField = () => (
+        <label>
+            {isModel() ? intl.formatMessage({id: 'Agents.model-required', defaultMessage: 'Model'}) : intl.formatMessage({id: 'Agents.model', defaultMessage: 'Model (optional)'})}
+            {/* Free text still, because an agent may take a model it does not
+                list; the list is what this one said it has. */}
+            <input
+                value={form()!.model || ''}
+                list={modelsListId()}
+                onInput={(e) => updateForm({model: e.currentTarget.value})}
+            />
+            <Show when={isModel() && models().length > 0}>
+                <datalist id='AgentsPanel__providerModels'>
+                    <For each={models()}>
+                        {(model) => (
+                            <option value={model.id}>{model.name || model.id}</option>
+                        )}
+                    </For>
+                </datalist>
+            </Show>
+            <Show when={!isModel() && modelOption()}>
+                <datalist id='AgentsPanel__models'>
+                    <For each={modelOption()!.values || []}>
+                        {(value) => (
+                            <option value={value.value}>{value.name}</option>
+                        )}
+                    </For>
+                </datalist>
+            </Show>
+        </label>
+    )
+
     return (
         <div class='AgentsPanel'>
-            <div class='AgentsPanel__subtitle'>
-                {intl.formatMessage({id: 'Agents.subtitle', defaultMessage: 'Agents of two kinds: a CLI on this machine (Claude, Codex, Antigravity, GitHub Copilot, JetBrains Junie or any other ACP agent) and a model by API key, reached with your key from Settings → AI. A card goes to the agent it is assigned to.'})}
-            </div>
             <div class='AgentsPanel__content'>
                 <Show when={agents().length === 0 && !form()}>
                     <div class='AgentsPanel__empty'>
-                        {intl.formatMessage({id: 'Agents.empty', defaultMessage: 'No agents registered yet.'})}
+                        {intl.formatMessage({id: 'Agents.empty', defaultMessage: 'No agents connected yet.'})}
                     </div>
                 </Show>
 
                 <For each={agents()}>
                     {(agent) => (
-                        <div
-                            class='AgentsPanel__row'
-                        >
+                        <div class='AgentsPanel__row'>
                             <span class='AgentsPanel__name'>{agent.name}</span>
                             <span class='AgentsPanel__kind'>{kindLabel(agent)}</span>
                             <Button onClick={() => startEdit(agent)}>
@@ -579,273 +722,347 @@ const AgentsPanel = () => {
 
                 <Show when={form()}>
                     <div class='AgentsPanel__form'>
+                        {/* The one question that shapes the rest. A server has
+                            no machine to run a program on, so it is not asked
+                            there (docs/modes.md). */}
+                        <Show when={!isHosted()}>
+                            <div
+                                class='AgentsPanel__source'
+                                role='radiogroup'
+                                aria-label={intl.formatMessage({id: 'Agents.source', defaultMessage: 'How the agent is connected'})}
+                            >
+                                <button
+                                    type='button'
+                                    role='radio'
+                                    aria-checked={String(!isModel())}
+                                    class={`AgentsPanel__sourceOption${isModel() ? '' : ' AgentsPanel__sourceOption--on'}`}
+                                    onClick={() => changeKind(isModel() ? 'claude' : form()!.kind)}
+                                >
+                                    <span class='AgentsPanel__sourceName'>{intl.formatMessage({id: 'Agents.source-program', defaultMessage: 'Program on this computer'})}</span>
+                                    <span class='AgentsPanel__hint'>{intl.formatMessage({id: 'Agents.source-program-hint', defaultMessage: 'Claude Code, Codex, GitHub Copilot, JetBrains Junie, Antigravity or another ACP agent, signed in with your own account. Works in the card’s folder.'})}</span>
+                                </button>
+                                <button
+                                    type='button'
+                                    role='radio'
+                                    aria-checked={String(isModel())}
+                                    class={`AgentsPanel__sourceOption${isModel() ? ' AgentsPanel__sourceOption--on' : ''}`}
+                                    onClick={() => changeKind(MODEL_KIND)}
+                                >
+                                    <span class='AgentsPanel__sourceName'>{intl.formatMessage({id: 'Agents.source-model', defaultMessage: 'Model by API key'})}</span>
+                                    <span class='AgentsPanel__hint'>{intl.formatMessage({id: 'Agents.source-model-hint', defaultMessage: 'Anthropic, OpenAI or any service that speaks the OpenAI API, paid with your key.'})}</span>
+                                </button>
+                            </div>
+                        </Show>
+
+                        <Show
+                            when={isModel()}
+                            fallback={
+                                <>
+                                    <div class='AgentsPanel__field'>
+                                        <span>{intl.formatMessage({id: 'Agents.program', defaultMessage: 'Program'})}</span>
+                                        <Select
+                                            value={form()!.kind}
+                                            options={AGENT_KINDS}
+                                            onChange={changeKind}
+                                            label={intl.formatMessage({id: 'Agents.program', defaultMessage: 'Program'})}
+                                        />
+                                    </div>
+                                    <Show when={adapter() && (!adapter()!.ready || adapter()!.viaNpx)}>
+                                        <div class={`AgentsPanel__adapter${adapter()!.ready ? '' : ' AgentsPanel__adapter--missing'}`}>
+                                            <span>{goMessage(intl, adapter()!.detail)}</span>
+                                            <Show when={adapter()!.package && bindings?.InstallAgentAdapter}>
+                                                <Button
+                                                    onClick={installAdapter}
+                                                    disabled={Boolean(installing())}
+                                                >
+                                                    {installing() === adapter()!.kind ? intl.formatMessage({id: 'Agents.adapter-installing', defaultMessage: 'Installing…'}) : intl.formatMessage({id: 'Agents.adapter-install', defaultMessage: 'Install adapter'})}
+                                                </Button>
+                                            </Show>
+                                        </div>
+                                    </Show>
+                                    {/* Another ACP agent is nothing until it is
+                                        told what to start. */}
+                                    <Show when={form()!.kind === 'acp'}>
+                                        <label>
+                                            {intl.formatMessage({id: 'Agents.command-acp', defaultMessage: 'Command that starts it over ACP'})}
+                                            <input
+                                                value={commandText()}
+                                                placeholder={commandPlaceholders.acp}
+                                                onInput={(e) => setCommandText(e.currentTarget.value)}
+                                            />
+                                        </label>
+                                    </Show>
+                                </>
+                            }
+                        >
+                            <div class='AgentsPanel__field'>
+                                <span>{intl.formatMessage({id: 'Agents.provider', defaultMessage: 'Provider'})}</span>
+                                <Select
+                                    value={form()!.provider || 'anthropic'}
+                                    options={MODEL_PROVIDERS.map((id) => ({value: id, label: providerName(id)}))}
+                                    onChange={changeProvider}
+                                    label={intl.formatMessage({id: 'Agents.provider', defaultMessage: 'Provider'})}
+                                />
+                            </div>
+                            <Show
+                                when={askingForKey()}
+                                fallback={
+                                    <div class='AgentsPanel__key'>
+                                        <span>
+                                            {provider()?.fromEnv ? intl.formatMessage({id: 'AI.key-from-env', defaultMessage: 'The key comes from the environment the app was started in, and is changed there.'}) : intl.formatMessage({id: 'AI.key-set', defaultMessage: 'Key is set'})}
+                                            <Show when={provider()?.keyHint}>
+                                                {' '}<code class='AgentsPanel__keyHint'>{provider()!.keyHint}</code>
+                                            </Show>
+                                        </span>
+                                        <Show when={!provider()?.fromEnv}>
+                                            <Button onClick={() => setReplacingKey(true)}>
+                                                {intl.formatMessage({id: 'Agents.key-replace', defaultMessage: 'Replace the key'})}
+                                            </Button>
+                                            <Button onClick={clearKey}>
+                                                {intl.formatMessage({id: 'AI.clear', defaultMessage: 'Remove the key'})}
+                                            </Button>
+                                        </Show>
+                                    </div>
+                                }
+                            >
+                                <label>
+                                    {intl.formatMessage({id: 'AI.key', defaultMessage: 'API key'})}
+                                    <input
+                                        type='password'
+                                        autocomplete='off'
+                                        value={keyText()}
+                                        onInput={(e) => setKeyText(e.currentTarget.value)}
+                                    />
+                                </label>
+                                <div class='AgentsPanel__hint'>
+                                    {intl.formatMessage({id: 'Agents.key-hint', defaultMessage: 'Checked with the provider before it is saved. The app keeps it and never shows it again; every agent of this provider runs on it.'})}
+                                </div>
+                            </Show>
+                            <label>
+                                {form()!.provider === 'openai' ? intl.formatMessage({id: 'AI.base-url-openai', defaultMessage: 'Address (optional) — for any service that speaks the OpenAI API: OpenRouter, a local model'}) : intl.formatMessage({id: 'AI.base-url', defaultMessage: 'Address (optional)'})}
+                                <input
+                                    value={baseUrl()}
+                                    placeholder={form()!.provider === 'openai' ? 'https://api.openai.com/v1' : 'https://api.anthropic.com'}
+                                    onInput={(e) => setBaseUrl(e.currentTarget.value)}
+                                />
+                            </label>
+                            {modelField()}
+                        </Show>
+
                         <label>
                             {intl.formatMessage({id: 'Agents.name', defaultMessage: 'Name'})}
                             <input
                                 value={form()!.name}
                                 disabled={Boolean(editingName())}
                                 placeholder={intl.formatMessage({id: 'Agents.name-placeholder', defaultMessage: 'Name'})}
-                                onInput={(e) => updateForm({name: e.currentTarget.value})}
-                            />
-                        </label>
-                        <div class='AgentsPanel__field'>
-                            <span>{intl.formatMessage({id: 'Agents.kind', defaultMessage: 'Kind'})}</span>
-                            <Select
-                                value={form()!.kind}
-                                options={agentKindOptions(intl.formatMessage({id: 'Agents.kind-model', defaultMessage: 'Model by API key'}))}
-                                onChange={changeKind}
-                                label={intl.formatMessage({id: 'Agents.kind', defaultMessage: 'Kind'})}
-                            />
-                        </div>
-                        <Show when={isModel()}>
-                            <div class='AgentsPanel__field'>
-                                <span>{intl.formatMessage({id: 'Agents.provider', defaultMessage: 'Provider'})}</span>
-                                <Select
-                                    value={form()!.provider || 'anthropic'}
-                                    options={MODEL_PROVIDERS.map((id) => ({value: id, label: providerName(id)}))}
-                                    onChange={(provider) => updateForm({provider, model: providers().find((p) => p.id === provider)?.defaultModel || ''})}
-                                    label={intl.formatMessage({id: 'Agents.provider', defaultMessage: 'Provider'})}
-                                />
-                            </div>
-                            <Show when={!providerKeySet()}>
-                                <div class='AgentsPanel__adapter AgentsPanel__adapter--missing'>
-                                    <span>{intl.formatMessage({id: 'Agents.provider-no-key', defaultMessage: 'There is no key for this provider yet: add it in Settings → AI. The agent can be saved now and works once the key is there.'})}</span>
-                                </div>
-                            </Show>
-                        </Show>
-                        <Show when={adapter() && (!adapter()!.ready || adapter()!.viaNpx)}>
-                            <div class={`AgentsPanel__adapter${adapter()!.ready ? '' : ' AgentsPanel__adapter--missing'}`}>
-                                <span>{goMessage(intl, adapter()!.detail)}</span>
-                                <Show when={adapter()!.package && bindings?.InstallAgentAdapter}>
-                                    <Button
-                                        onClick={installAdapter}
-                                        disabled={Boolean(installing())}
-                                    >
-                                        {installing() === adapter()!.kind ? intl.formatMessage({id: 'Agents.adapter-installing', defaultMessage: 'Installing…'}) : intl.formatMessage({id: 'Agents.adapter-install', defaultMessage: 'Install adapter'})}
-                                    </Button>
-                                </Show>
-                            </div>
-                        </Show>
-                        <label>
-                            {isModel() ? intl.formatMessage({id: 'Agents.model-required', defaultMessage: 'Model'}) : intl.formatMessage({id: 'Agents.model', defaultMessage: 'Model (optional)'})}
-                            {/* Free text still, because an agent may take a
-                                model it does not list; the list is what this
-                                one said it has. */}
-                            <input
-                                value={form()!.model || ''}
-                                list={modelsListId()}
-                                onInput={(e) => updateForm({model: e.currentTarget.value})}
-                            />
-                            <Show when={isModel() && models().length > 0}>
-                                <datalist id='AgentsPanel__providerModels'>
-                                    <For each={models()}>
-                                        {(model) => (
-                                            <option value={model.id}>{model.name || model.id}</option>
-                                        )}
-                                    </For>
-                                </datalist>
-                            </Show>
-                            <Show when={!isModel() && modelOption()}>
-                                <datalist id='AgentsPanel__models'>
-                                    <For each={modelOption()!.values || []}>
-                                        {(value) => (
-                                            <option
-                                                value={value.value}
-                                            >{value.name}</option>
-                                        )}
-                                    </For>
-                                </datalist>
-                            </Show>
-                        </label>
-                        <Show when={!isModel()}>
-                            <label>
-                                {intl.formatMessage({id: 'Agents.binPath', defaultMessage: 'Binary path (optional)'})}
-                                <input
-                                    value={form()!.binPath || ''}
-                                    onInput={(e) => updateForm({binPath: e.currentTarget.value})}
-                                />
-                            </label>
-                            <label>
-                                {intl.formatMessage({id: 'Agents.command', defaultMessage: 'Launch command (argv) — overrides the binary path; wrap the CLI to route it through a proxy. Required for "ACP (other)".'})}
-                                <input
-                                    value={commandText()}
-                                    placeholder={commandPlaceholders[form()!.kind] || ''}
-                                    onInput={(e) => setCommandText(e.currentTarget.value)}
-                                />
-                            </label>
-
-                        </Show>
-
-                        {/* What this agent can be told beyond the task, asked
-                            of the agent itself. Nothing is drawn for an agent
-                            that declares nothing — there is no choice to make. */}
-                        <div class='AgentsPanel__options'>
-                            <div class='AgentsPanel__optionsHeader'>
-                                <span>{intl.formatMessage({id: 'Agents.options', defaultMessage: 'Agent settings'})}</span>
-                                <Show when={bindings?.AgentOptions}>
-                                    <Button
-                                        onClick={() => probeAgent(formEntry(), true)}
-                                        disabled={probing()}
-                                    >
-                                        {probing() ? intl.formatMessage({id: 'Agents.options-probing', defaultMessage: 'Asking the agent…'}) : intl.formatMessage({id: 'Agents.options-recheck', defaultMessage: 'Recheck'})}
-                                    </Button>
-                                </Show>
-                            </div>
-                            <For each={tunableOptions()}>
-                                {(option) => (
-                                    <div
-                                        class='AgentsPanel__option'
-                                    >
-                                        <div class='AgentsPanel__field'>
-                                            <span>{option.name || option.id}</span>
-                                            <Select
-                                                value={form()!.options?.[option.id] || ''}
-                                                options={[
-                                                    {
-                                                        value: '',
-                                                        label: intl.formatMessage(
-                                                            {id: 'Agents.option-default', defaultMessage: 'As the agent has it ({current})'},
-                                                            {current: optionValueLabel(option, option.current)},
-                                                        ),
-                                                    },
-                                                    ...optionValues(option).map((value) => ({value: value.value, label: value.name || value.value})),
-                                                ]}
-                                                onChange={(next) => updateForm({options: {...form()!.options, [option.id]: next}})}
-                                                label={option.name || option.id}
-                                            />
-                                        </div>
-                                        <Show when={option.description}>
-                                            <div class='AgentsPanel__hint'>{option.description}</div>
-                                        </Show>
-                                    </div>
-                                )}
-                            </For>
-                            <Show when={probing() && tunableOptions().length === 0}>
-                                <div class='AgentsPanel__hint'>
-                                    {intl.formatMessage({id: 'Agents.options-asking', defaultMessage: 'Starting the agent to ask what it supports…'})}
-                                </div>
-                            </Show>
-                            <Show when={probed() && !probing() && tunableOptions().length === 0}>
-                                <div class='AgentsPanel__hint'>
-                                    {intl.formatMessage({id: 'Agents.options-none', defaultMessage: 'This agent has no settings of its own.'})}
-                                </div>
-                            </Show>
-                            <Show when={probeError() && !probing()}>
-                                <div class='AgentsPanel__hint'>
-                                    {intl.formatMessage({id: 'Agents.options-failed', defaultMessage: 'Could not ask the agent what it supports: {error}'}, {error: probeError()})}
-                                </div>
-                            </Show>
-                        </div>
-
-                        {/* What the CLI behind the adapter can do and the
-                            protocol has no word for. Only for the kinds whose
-                            adapter passes arguments on: for the rest the agent
-                            is the CLI, and "Extra CLI args" already reaches it. */}
-                        <Show when={!isModel() && CLI_HANDOFF_KINDS.includes(form()!.kind)}>
-                            <div class='AgentsPanel__options'>
-                                <div class='AgentsPanel__optionsHeader'>
-                                    <span>{intl.formatMessage({id: 'Agents.cli', defaultMessage: 'The CLI behind the adapter'})}</span>
-                                </div>
-                                <label class='AgentsPanel__checkbox'>
-                                    <input
-                                        type='checkbox'
-                                        checked={remoteControl().on}
-                                        onChange={(e) => setRemoteControl(e.currentTarget.checked, remoteControl().name)}
-                                    />
-                                    {intl.formatMessage({id: 'Agents.remote-control', defaultMessage: 'Remote control — drive this agent\'s sessions from claude.ai or the Claude app'})}
-                                </label>
-                                <Show when={remoteControl().on}>
-                                    <label>
-                                        {intl.formatMessage({id: 'Agents.remote-control-name', defaultMessage: 'Session name prefix in claude.ai (optional)'})}
-
-                                        {/* The board's title used to stand in
-                                            here, back when this was opened from
-                                            a board. The agent belongs to the
-                                            machine, so its own name is the
-                                            honest default. */}
-                                        <input
-                                            value={remoteControl().name}
-                                            placeholder={form()!.name}
-                                            onInput={(e) => setRemoteControl(true, e.currentTarget.value)}
-                                        />
-                                    </label>
-                                </Show>
-                                <label>
-                                    {intl.formatMessage({id: 'Agents.cli-args', defaultMessage: 'Arguments for the CLI behind the adapter'})}
-                                    <input
-                                        value={cliArgsText()}
-                                        placeholder={'--fallback-model sonnet'}
-                                        onInput={(e) => setCliArgsText(e.currentTarget.value)}
-                                    />
-                                </label>
-                                <div class='AgentsPanel__hint'>
-                                    {intl.formatMessage({id: 'Agents.cli-args-hint', defaultMessage: 'Handed to the CLI at session start. An argument it does not know shows up here as its own error when the agent is rechecked, not later on a card.'})}
-                                </div>
-                            </div>
-                        </Show>
-
-                        <PromptField
-                            label={intl.formatMessage({id: 'Agents.prompt', defaultMessage: 'Agent system prompt'})}
-                            value={form()!.prompt || ''}
-                            rows={6}
-                            onInput={(text) => updateForm({prompt: text})}
-                        />
-                        <Show when={!isModel()}>
-                            <div class='AgentsPanel__field'>
-                                <span>{intl.formatMessage({id: 'Agents.proxyName', defaultMessage: 'Proxy configuration'})}</span>
-                                <Select
-                                    value={form()!.proxyName || ''}
-                                    options={[
-                                        {value: '', label: intl.formatMessage({id: 'Agents.proxy-none', defaultMessage: 'No proxy (inherit the app environment)'})},
-                                        ...proxies().map((p) => ({value: p.name, label: p.proxy ? `${p.name} — ${p.proxy}` : p.name})),
-                                    ]}
-                                    onChange={(next) => updateForm({proxyName: next})}
-                                    label={intl.formatMessage({id: 'Agents.proxyName', defaultMessage: 'Proxy configuration'})}
-                                />
-                            </div>
-                            <Show when={proxies().length === 0}>
-                                <div class='AgentsPanel__hint'>
-                                    {intl.formatMessage({id: 'Agents.proxy-hint', defaultMessage: 'Configurations are added under "Proxy configurations", beside this section.'})}
-                                </div>
-                            </Show>
-                            <label>
-                                {intl.formatMessage({id: 'Agents.env', defaultMessage: 'Environment (KEY=VALUE per line — e.g. CODEX_HOME, OPENAI_API_KEY)'})}
-                                <textarea
-                                    rows={3}
-                                    value={envText()}
-                                    placeholder={'CODEX_HOME=/Users/me/.codex-work'}
-                                    onInput={(e) => setEnvText(e.currentTarget.value)}
-                                />
-                            </label>
-                        </Show>
-                        <label>
-                            {intl.formatMessage({id: 'Agents.mcp-servers', defaultMessage: 'MCP servers (the JSON any MCP client takes) — offered to this agent in every session'})}
-                            <textarea
-                                rows={7}
-                                value={serversText()}
-                                placeholder={mcpServersPlaceholder}
-                                onInput={(e) => setServersText(e.currentTarget.value)}
+                                onInput={(e) => {
+                                    setNameTouched(true)
+                                    setForm((f) => (f ? {...f, name: e.currentTarget.value} : f))
+                                }}
                             />
                         </label>
                         <div class='AgentsPanel__hint'>
-                            {intl.formatMessage({id: 'Agents.mcp-servers-hint', defaultMessage: 'Their tools run without confirmation prompts. A browser server (Playwright, say) is what the "QA" column needs.'})}
+                            {intl.formatMessage({id: 'Agents.name-hint', defaultMessage: 'A card is given to the agent by this name in its «Assignee» field, on any board.'})}
                         </div>
-                        <Show when={!isModel()}>
+
+                        <button
+                            type='button'
+                            class='AgentsPanel__more'
+                            aria-expanded={String(more())}
+                            onClick={toggleMore}
+                        >
+                            {intl.formatMessage({id: 'Agents.more', defaultMessage: 'More settings'})}
+                        </button>
+
+                        <Show when={more()}>
+                            <Show when={!isModel()}>
+                                {modelField()}
+                                <label>
+                                    {intl.formatMessage({id: 'Agents.binPath', defaultMessage: 'Binary path (optional)'})}
+                                    <input
+                                        value={form()!.binPath || ''}
+                                        onInput={(e) => updateForm({binPath: e.currentTarget.value})}
+                                    />
+                                </label>
+                                <Show when={form()!.kind !== 'acp'}>
+                                    <label>
+                                        {intl.formatMessage({id: 'Agents.command', defaultMessage: 'Launch command (argv) — overrides the binary path; wrap the CLI to route it through a proxy.'})}
+                                        <input
+                                            value={commandText()}
+                                            placeholder={commandPlaceholders[form()!.kind] || ''}
+                                            onInput={(e) => setCommandText(e.currentTarget.value)}
+                                        />
+                                    </label>
+                                </Show>
+
+                                {/* What this agent can be told beyond the task,
+                                    asked of the agent itself. Nothing is drawn
+                                    for an agent that declares nothing — there is
+                                    no choice to make. */}
+                                <div class='AgentsPanel__options'>
+                                    <div class='AgentsPanel__optionsHeader'>
+                                        <span>{intl.formatMessage({id: 'Agents.options', defaultMessage: 'Agent settings'})}</span>
+                                        <Show when={bindings?.AgentOptions}>
+                                            <Button
+                                                onClick={() => probeAgent(formEntry(), true)}
+                                                disabled={probing()}
+                                            >
+                                                {probing() ? intl.formatMessage({id: 'Agents.options-probing', defaultMessage: 'Asking the agent…'}) : intl.formatMessage({id: 'Agents.options-recheck', defaultMessage: 'Recheck'})}
+                                            </Button>
+                                        </Show>
+                                    </div>
+                                    <For each={tunableOptions()}>
+                                        {(option) => (
+                                            <div class='AgentsPanel__option'>
+                                                <div class='AgentsPanel__field'>
+                                                    <span>{option.name || option.id}</span>
+                                                    <Select
+                                                        value={form()!.options?.[option.id] || ''}
+                                                        options={[
+                                                            {
+                                                                value: '',
+                                                                label: intl.formatMessage(
+                                                                    {id: 'Agents.option-default', defaultMessage: 'As the agent has it ({current})'},
+                                                                    {current: optionValueLabel(option, option.current)},
+                                                                ),
+                                                            },
+                                                            ...optionValues(option).map((value) => ({value: value.value, label: value.name || value.value})),
+                                                        ]}
+                                                        onChange={(next) => updateForm({options: {...form()!.options, [option.id]: next}})}
+                                                        label={option.name || option.id}
+                                                    />
+                                                </div>
+                                                <Show when={option.description}>
+                                                    <div class='AgentsPanel__hint'>{option.description}</div>
+                                                </Show>
+                                            </div>
+                                        )}
+                                    </For>
+                                    <Show when={probing() && tunableOptions().length === 0}>
+                                        <div class='AgentsPanel__hint'>
+                                            {intl.formatMessage({id: 'Agents.options-asking', defaultMessage: 'Starting the agent to ask what it supports…'})}
+                                        </div>
+                                    </Show>
+                                    <Show when={probed() && !probing() && tunableOptions().length === 0}>
+                                        <div class='AgentsPanel__hint'>
+                                            {intl.formatMessage({id: 'Agents.options-none', defaultMessage: 'This agent has no settings of its own.'})}
+                                        </div>
+                                    </Show>
+                                    <Show when={probeError() && !probing()}>
+                                        <div class='AgentsPanel__hint'>
+                                            {intl.formatMessage({id: 'Agents.options-failed', defaultMessage: 'Could not ask the agent what it supports: {error}'}, {error: probeError()})}
+                                        </div>
+                                    </Show>
+                                </div>
+
+                                {/* What the CLI behind the adapter can do and the
+                                    protocol has no word for. Only for the kinds
+                                    whose adapter passes arguments on: for the rest
+                                    the agent is the CLI, and "Extra CLI args"
+                                    already reaches it. */}
+                                <Show when={CLI_HANDOFF_KINDS.includes(form()!.kind)}>
+                                    <div class='AgentsPanel__options'>
+                                        <div class='AgentsPanel__optionsHeader'>
+                                            <span>{intl.formatMessage({id: 'Agents.cli', defaultMessage: 'The CLI behind the adapter'})}</span>
+                                        </div>
+                                        <label class='AgentsPanel__checkbox'>
+                                            <input
+                                                type='checkbox'
+                                                checked={remoteControl().on}
+                                                onChange={(e) => setRemoteControl(e.currentTarget.checked, remoteControl().name)}
+                                            />
+                                            {intl.formatMessage({id: 'Agents.remote-control', defaultMessage: 'Remote control — drive this agent\'s sessions from claude.ai or the Claude app'})}
+                                        </label>
+                                        <Show when={remoteControl().on}>
+                                            <label>
+                                                {intl.formatMessage({id: 'Agents.remote-control-name', defaultMessage: 'Session name prefix in claude.ai (optional)'})}
+                                                <input
+                                                    value={remoteControl().name}
+                                                    placeholder={form()!.name}
+                                                    onInput={(e) => setRemoteControl(true, e.currentTarget.value)}
+                                                />
+                                            </label>
+                                        </Show>
+                                        <label>
+                                            {intl.formatMessage({id: 'Agents.cli-args', defaultMessage: 'Arguments for the CLI behind the adapter'})}
+                                            <input
+                                                value={cliArgsText()}
+                                                placeholder={'--fallback-model sonnet'}
+                                                onInput={(e) => setCliArgsText(e.currentTarget.value)}
+                                            />
+                                        </label>
+                                        <div class='AgentsPanel__hint'>
+                                            {intl.formatMessage({id: 'Agents.cli-args-hint', defaultMessage: 'Handed to the CLI at session start. An argument it does not know shows up here as its own error when the agent is rechecked, not later on a card.'})}
+                                        </div>
+                                    </div>
+                                </Show>
+                            </Show>
+
+                            <PromptField
+                                label={intl.formatMessage({id: 'Agents.prompt', defaultMessage: 'Agent system prompt'})}
+                                value={form()!.prompt || ''}
+                                rows={6}
+                                onInput={(text) => updateForm({prompt: text})}
+                            />
+                            <Show when={!isModel()}>
+                                <div class='AgentsPanel__field'>
+                                    <span>{intl.formatMessage({id: 'Agents.proxyName', defaultMessage: 'Proxy configuration'})}</span>
+                                    <Select
+                                        value={form()!.proxyName || ''}
+                                        options={[
+                                            {value: '', label: intl.formatMessage({id: 'Agents.proxy-none', defaultMessage: 'No proxy (inherit the app environment)'})},
+                                            ...proxies().map((p) => ({value: p.name, label: p.proxy ? `${p.name} — ${p.proxy}` : p.name})),
+                                        ]}
+                                        onChange={(next) => updateForm({proxyName: next})}
+                                        label={intl.formatMessage({id: 'Agents.proxyName', defaultMessage: 'Proxy configuration'})}
+                                    />
+                                </div>
+                                <Show when={proxies().length === 0}>
+                                    <div class='AgentsPanel__hint'>
+                                        {intl.formatMessage({id: 'Agents.proxy-hint', defaultMessage: 'Configurations are added under «Proxy configurations», below the agents.'})}
+                                    </div>
+                                </Show>
+                                <label>
+                                    {intl.formatMessage({id: 'Agents.env', defaultMessage: 'Environment (KEY=VALUE per line — e.g. CODEX_HOME, OPENAI_API_KEY)'})}
+                                    <textarea
+                                        rows={3}
+                                        value={envText()}
+                                        placeholder={'CODEX_HOME=/Users/me/.codex-work'}
+                                        onInput={(e) => setEnvText(e.currentTarget.value)}
+                                    />
+                                </label>
+                            </Show>
                             <label>
-                                {intl.formatMessage({id: 'Agents.args', defaultMessage: 'Extra CLI args (space-separated)'})}
-                                <input
-                                    value={argsText()}
-                                    placeholder={'--sandbox workspace-write'}
-                                    onInput={(e) => setArgsText(e.currentTarget.value)}
+                                {intl.formatMessage({id: 'Agents.mcp-servers', defaultMessage: 'MCP servers (the JSON any MCP client takes) — offered to this agent in every session'})}
+                                <textarea
+                                    rows={7}
+                                    value={serversText()}
+                                    placeholder={mcpServersPlaceholder}
+                                    onInput={(e) => setServersText(e.currentTarget.value)}
                                 />
                             </label>
+                            <div class='AgentsPanel__hint'>
+                                {intl.formatMessage({id: 'Agents.mcp-servers-hint', defaultMessage: 'Their tools run without confirmation prompts. A browser server (Playwright, say) is what the "QA" column needs.'})}
+                            </div>
+                            <Show when={!isModel()}>
+                                <label>
+                                    {intl.formatMessage({id: 'Agents.args', defaultMessage: 'Extra CLI args (space-separated)'})}
+                                    <input
+                                        value={argsText()}
+                                        placeholder={'--sandbox workspace-write'}
+                                        onInput={(e) => setArgsText(e.currentTarget.value)}
+                                    />
+                                </label>
+                            </Show>
                         </Show>
+
                         <div class='AgentsPanel__formActions'>
                             <Button
                                 emphasis='primary'
                                 onClick={saveForm}
+                                disabled={busy() || !form()!.name.trim() || (isModel() && !form()!.model?.trim() && !keyText().trim())}
                             >
-                                {intl.formatMessage({id: 'Agents.save', defaultMessage: 'Save'})}
+                                {saveLabel()}
                             </Button>
                             <Button onClick={closeForm}>
                                 {intl.formatMessage({id: 'Agents.cancel', defaultMessage: 'Cancel'})}
@@ -860,17 +1077,8 @@ const AgentsPanel = () => {
                             emphasis='primary'
                             onClick={startAdd}
                         >
-                            {intl.formatMessage({id: 'Agents.add', defaultMessage: 'Add agent…'})}
+                            {intl.formatMessage({id: 'Agents.add', defaultMessage: 'Connect an agent…'})}
                         </Button>
-                    </div>
-                </Show>
-
-                {/* Where these become usable is a board, and a board is not
-                    open here — so this says where that happens rather than
-                    offering a button that would need one. */}
-                <Show when={!form() && agents().length > 0}>
-                    <div class='AgentsPanel__hint'>
-                        {intl.formatMessage({id: 'Agents.assignable-hint', defaultMessage: 'A board picks these up on its own: each agent becomes a member of it under its own name, so a card can be assigned to one the way it is assigned to anybody.'})}
                     </div>
                 </Show>
 

@@ -6,8 +6,6 @@ exports[`components/centerPanel > return centerPanel and > click on card to show
     class="BoardComponent"
   >
     
-    <!---->
-    
     <div
       class="top-head"
     >
@@ -592,8 +590,6 @@ exports[`components/centerPanel > return centerPanel and > click on new card to 
   <div
     class="BoardComponent"
   >
-    
-    <!---->
     
     <div
       class="top-head"
@@ -1266,8 +1262,6 @@ exports[`components/centerPanel > return centerPanel and > press touch 1 with re
     class="BoardComponent"
   >
     
-    <!---->
-    
     <div
       class="top-head"
     >
@@ -1698,8 +1692,6 @@ exports[`components/centerPanel > return centerPanel and > press touch ctrl+d fo
   <div
     class="BoardComponent"
   >
-    
-    <!---->
     
     <div
       class="top-head"
@@ -2372,8 +2364,6 @@ exports[`components/centerPanel > return centerPanel and > press touch del for o
     class="BoardComponent"
   >
     
-    <!---->
-    
     <div
       class="top-head"
     >
@@ -3044,8 +3034,6 @@ exports[`components/centerPanel > return centerPanel and > press touch esc for o
   <div
     class="BoardComponent"
   >
-    
-    <!---->
     
     <div
       class="top-head"
@@ -3718,8 +3706,6 @@ exports[`components/centerPanel > return centerPanel and > press touch esc for o
     class="BoardComponent"
   >
     
-    <!---->
-    
     <div
       class="top-head"
     >
@@ -4390,8 +4376,6 @@ exports[`components/centerPanel > return centerPanel and > press touch esc for t
   <div
     class="BoardComponent"
   >
-    
-    <!---->
     
     <div
       class="top-head"
@@ -5064,8 +5048,6 @@ exports[`components/centerPanel > return centerPanel and > press touch esc for t
     class="BoardComponent"
   >
     
-    <!---->
-    
     <div
       class="top-head"
     >
@@ -5736,8 +5718,6 @@ exports[`components/centerPanel > return centerPanel and > press touch esc for t
   <div
     class="BoardComponent"
   >
-    
-    <!---->
     
     <div
       class="top-head"
@@ -6410,8 +6390,6 @@ exports[`components/centerPanel > return centerPanel and > select one card and c
     class="BoardComponent"
   >
     
-    <!---->
-    
     <div
       class="top-head"
     >
@@ -7082,8 +7060,6 @@ exports[`components/centerPanel > return centerPanel and > select one card and c
   <div
     class="BoardComponent"
   >
-    
-    <!---->
     
     <div
       class="top-head"
@@ -7756,8 +7732,6 @@ exports[`components/centerPanel > should match snapshot for Gallery 1`] = `
     class="BoardComponent"
   >
     
-    <!---->
-    
     <div
       class="top-head"
     >
@@ -8080,8 +8054,6 @@ exports[`components/centerPanel > should match snapshot for Kanban 1`] = `
   <div
     class="BoardComponent"
   >
-    
-    <!---->
     
     <div
       class="top-head"
@@ -8599,8 +8571,6 @@ exports[`components/centerPanel > should match snapshot for Kanban, not shared 1
     class="BoardComponent"
   >
     
-    <!---->
-    
     <div
       class="top-head"
     >
@@ -9116,8 +9086,6 @@ exports[`components/centerPanel > should match snapshot for Table 1`] = `
   <div
     class="BoardComponent"
   >
-    
-    <!---->
     
     <div
       class="top-head"

@@ -127,12 +127,6 @@ CREATE TABLE `card_stall` (`card_id` varchar NOT NULL, `node_id` varchar NULL, `
 --     only while a working copy does, and the committed half survives it.
 CREATE TABLE `card_changes` (`card_id` varchar NOT NULL, `branch` varchar NULL, `base` varchar NULL, `files` bigint NOT NULL, `added` bigint NOT NULL, `removed` bigint NOT NULL, `dirty` bigint NOT NULL, `computed_at` bigint NOT NULL, PRIMARY KEY (`card_id`), CONSTRAINT `card_changes_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE CASCADE);
 
--- Which setup questions a board has been asked. It is about this machine
--- — the answers are folders and hosts here — so it cannot live in the
--- browser's storage, which the desktop window forgets on every launch.
---   changed_at: Was `at`. AT is a keyword in Postgres and a name not worth having.
-CREATE TABLE `board_setup` (`board_id` varchar NOT NULL, `step` varchar NOT NULL, `status` varchar NOT NULL, `changed_at` bigint NOT NULL, PRIMARY KEY (`board_id`, `step`), CONSTRAINT `board_setup_board` FOREIGN KEY (`board_id`) REFERENCES `board_ref` (`board_id`) ON DELETE CASCADE, CONSTRAINT `board_setup_status` CHECK (`status` IN ('pending', 'done', 'skipped', 'offered')));
-
 -- The directory and the branch one owner holds in one workspace. The
 -- owner is a card, or a board for a conversation with no card — two
 -- nullable columns rather than one string, because a foreign key cannot
@@ -246,12 +240,6 @@ CREATE TABLE `card_ref` (`card_id` varchar(36) NOT NULL, `board_id` varchar(36) 
 --     one board, all have to be counting the same sessions.
 --   finished_at: NULL means the session is still live.
 CREATE TABLE `agent_session` (`id` varchar(36) NOT NULL, `card_id` varchar(36) NULL, `board_id` varchar(36) NULL, `agent_kind` varchar(32) NOT NULL, `acp_session_id` varchar(100) NULL, `status` varchar(24) NOT NULL, `column_key` varchar(128) NULL, `cwd` text NULL, `worktree_path` text NULL, `branch` varchar(255) NULL, `started_at` bigint NOT NULL, `finished_at` bigint NULL, `error_text` text NULL, PRIMARY KEY (`id`), INDEX `idx_agent_session_card` (`card_id`, `started_at`), CONSTRAINT `agent_session_card` FOREIGN KEY (`card_id`) REFERENCES `card_ref` (`card_id`) ON DELETE CASCADE, CONSTRAINT `agent_session_board` FOREIGN KEY (`board_id`) REFERENCES `board_ref` (`board_id`) ON DELETE CASCADE, CONSTRAINT `agent_session_status` CHECK (`status` IN ('queued', 'running', 'idle', 'waiting_permission', 'done', 'failed', 'cancelled'))) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
-
--- Which setup questions a board has been asked. It is about this machine
--- — the answers are folders and hosts here — so it cannot live in the
--- browser's storage, which the desktop window forgets on every launch.
---   changed_at: Was `at`. AT is a keyword in Postgres and a name not worth having.
-CREATE TABLE `board_setup` (`board_id` varchar(36) NOT NULL, `step` varchar(32) NOT NULL, `status` varchar(16) NOT NULL, `changed_at` bigint NOT NULL, PRIMARY KEY (`board_id`, `step`), CONSTRAINT `board_setup_board` FOREIGN KEY (`board_id`) REFERENCES `board_ref` (`board_id`) ON DELETE CASCADE, CONSTRAINT `board_setup_status` CHECK (`status` IN ('pending', 'done', 'skipped', 'offered'))) CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
 
 -- What a board's cards are about, written by an agent from their titles.
 -- It is what the inbox is sorted by beside the board's own description:
@@ -440,12 +428,6 @@ CREATE TABLE "agent_session" ("id" character varying(36) NOT NULL, "card_id" cha
 --     one board, all have to be counting the same sessions.
 --   finished_at: NULL means the session is still live.
 CREATE INDEX "idx_agent_session_card" ON "agent_session" ("card_id", "started_at");
-
--- Which setup questions a board has been asked. It is about this machine
--- — the answers are folders and hosts here — so it cannot live in the
--- browser's storage, which the desktop window forgets on every launch.
---   changed_at: Was `at`. AT is a keyword in Postgres and a name not worth having.
-CREATE TABLE "board_setup" ("board_id" character varying(36) NOT NULL, "step" character varying(32) NOT NULL, "status" character varying(16) NOT NULL, "changed_at" bigint NOT NULL, PRIMARY KEY ("board_id", "step"), CONSTRAINT "board_setup_board" FOREIGN KEY ("board_id") REFERENCES "board_ref" ("board_id") ON DELETE CASCADE, CONSTRAINT "board_setup_status" CHECK ("status" IN ('pending', 'done', 'skipped', 'offered')));
 
 -- What a board's cards are about, written by an agent from their titles.
 -- It is what the inbox is sorted by beside the board's own description:

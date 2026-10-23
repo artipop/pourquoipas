@@ -297,9 +297,10 @@ func (a *App) ListAgents(ctx context.Context) (string, error) {
 	return string(out), nil
 }
 
-// ListAgentAccounts returns the registry as the board knows it — the name a
-// person typed and the username it was provisioned under — as JSON:
-// [{"name","username"}, …].
+// ListAgentAccounts returns the person's agents as the board knows them — the
+// name a person typed, the username and the account id — as JSON:
+// [{"name","username","userId"}, …]. These are offered as assignees on every
+// board; no agent is a member of one.
 //
 // The page needs the username to recognise an agent among the board's people:
 // the fold from one to the other is this side's (AgentUsername), and writing it
@@ -316,8 +317,12 @@ func (a *App) ListAgentAccounts(ctx context.Context) (string, error) {
 	for _, entry := range agentsOf(a.mgr.Agents(), person) {
 		mine[entry.Name] = true
 	}
+	all, err := a.mgr.AgentAccounts(ctx)
+	if err != nil {
+		return "", err
+	}
 	accounts := []acp.AgentUser{}
-	for _, account := range a.mgr.AgentUsers() {
+	for _, account := range all {
 		if mine[account.Name] {
 			accounts = append(accounts, account)
 		}
@@ -410,22 +415,6 @@ func (a *App) RemoveAgent(ctx context.Context, name string) error {
 	return a.mgr.RemoveAgent(name)
 }
 
-// SyncAgentUsers gives every registered agent a board account and adds it to
-// the board's members, so cards can be assigned to an agent in a person
-// property. Returns the accounts as JSON: [{"name","username","userId",
-// "created"}, …].
-func (a *App) SyncAgentUsers(boardID string) (string, error) {
-	if a.mgr == nil {
-		return "", errACPDisabled
-	}
-	users, err := a.mgr.SyncAgentUsers(context.Background(), boardID)
-	if err != nil {
-		return "", err
-	}
-	out, _ := json.Marshal(users)
-	return string(out), nil
-}
-
 // ListProxies returns the proxy registry as JSON: [{"name","proxy",…}, …].
 func (a *App) ListProxies() (string, error) {
 	if a.mgr == nil {
@@ -480,63 +469,6 @@ func (a *App) RemoveProxy(name string) error {
 		return errACPDisabled
 	}
 	return a.mgr.RemoveProxy(name)
-}
-
-// BoardSetupPlan returns what this board needs answered before an agent can
-// work a card on it: which steps, in which order, which of them may be skipped
-// and which are already answered by this machine. It is one answer to one
-// question — the wizard walks it and the board menu reads it to know which
-// registries are worth opening at all.
-func (a *App) BoardSetupPlan(boardID string) (string, error) {
-	if a.mgr == nil {
-		return "", errACPDisabled
-	}
-	out, err := json.Marshal(a.mgr.SetupPlanFor(boardID))
-	if err != nil {
-		return "", err
-	}
-	return string(out), nil
-}
-
-// MarkBoardSetupOffered remembers that the setup wizard has opened itself for
-// this board. It is stored beside the rest of the board's setup rather than in
-// the page: the desktop app serves itself on a fresh port every launch, so the
-// page's own storage is a fresh one too.
-func (a *App) MarkBoardSetupOffered(boardID string) error {
-	if a.mgr == nil {
-		return errACPDisabled
-	}
-	return a.mgr.MarkSetupOffered(boardID)
-}
-
-// RecordBoardSetupStep remembers what was done with a step — skipping above
-// all, which is the one answer no registry can be read for.
-func (a *App) RecordBoardSetupStep(boardID, step, status string) error {
-	if a.mgr == nil {
-		return errACPDisabled
-	}
-	return a.mgr.RecordSetupStep(boardID, step, status)
-}
-
-// ListSetupSteps returns the closed set of setup steps this build can carry
-// out, so a board can only ask for one that exists.
-func (a *App) ListSetupSteps() (string, error) {
-	out, err := json.Marshal(acp.SetupStepDefs)
-	if err != nil {
-		return "", err
-	}
-	return string(out), nil
-}
-
-// SeedBoardAutomation takes what a board carries of its own — the instructions
-// it gives its agents — into the registry now, rather than waiting for the
-// first card to be moved. Idempotent.
-func (a *App) SeedBoardAutomation(boardID string) error {
-	if a.mgr == nil {
-		return errACPDisabled
-	}
-	a.mgr.SeedBoard(boardID)
-	return nil
 }
 
 // SetAgentWorkdirMode records how a folder that is a repository is worked in

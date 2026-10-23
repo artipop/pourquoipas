@@ -3,12 +3,9 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
-	"log"
 	"strings"
 	"time"
 
-	"github.com/artipop/pourquoipas/internal/acp"
 	"github.com/artipop/pourquoipas/internal/apperr"
 	"github.com/artipop/pourquoipas/internal/modelapi"
 	"github.com/artipop/pourquoipas/internal/secrets"
@@ -114,9 +111,11 @@ func (a *App) AIProviders(ctx context.Context) ([]AIProvider, error) {
 	return out, nil
 }
 
-// AIKeySaved is what saving a key did: the agent it made, when it made one.
+// AIKeySaved is what checking the key found: the models it opens, and the one
+// the agent form starts on.
 type AIKeySaved struct {
-	Agent string `json:"agent,omitempty"`
+	Models    []modelapi.Model `json:"models"`
+	Suggested string           `json:"suggested,omitempty"`
 }
 
 // SetAIProviderKey stores the person's key for a provider, and the address
@@ -124,10 +123,8 @@ type AIKeySaved struct {
 // provider for its models: a key it refuses is not stored. An empty key keeps
 // the one stored and changes only the address.
 //
-// A key nobody can use is a key that looks broken: everything that runs a
-// model picks an agent, not a key. So the first key of a provider also makes
-// the person an agent on it, on a model the provider just listed, which the
-// inbox sorting and a card's assignee field offer at once.
+// It makes no agent: a key is entered while an agent is being connected
+// (Settings → AI), and the agent is the form's to save.
 func (a *App) SetAIProviderKey(ctx context.Context, provider, key, baseURL string) (AIKeySaved, error) {
 	person, err := personOf(ctx, a.owners)
 	if err != nil {
@@ -160,51 +157,7 @@ func (a *App) SetAIProviderKey(ctx context.Context, provider, key, baseURL strin
 	if err != nil {
 		return AIKeySaved{}, err
 	}
-	return AIKeySaved{Agent: a.ensureModelAgent(person, provider, models)}, nil
-}
-
-// ensureModelAgent makes the person an agent on the provider unless they have
-// one, and returns its name; "" when nothing was made. A failure is logged and
-// not returned: the key is saved either way, and an agent can be added by hand.
-func (a *App) ensureModelAgent(person, provider string, models []modelapi.Model) string {
-	if a.mgr == nil {
-		return ""
-	}
-	taken := map[string]bool{}
-	for _, entry := range a.mgr.Agents() {
-		taken[strings.ToLower(entry.Name)] = true
-		if entry.IsModel() && entry.Provider == provider && (entry.OwnerID == "" || entry.OwnerID == person) {
-			return ""
-		}
-	}
-	name := providerAgentName(provider)
-	for i := 2; taken[strings.ToLower(name)]; i++ {
-		name = fmt.Sprintf("%s %d", providerAgentName(provider), i)
-	}
-	saved, err := a.mgr.AddAgent(acp.AgentEntry{
-		Name:     name,
-		Kind:     acp.AgentKindModel,
-		Provider: provider,
-		Model:    modelapi.SuggestModel(provider, models),
-		OwnerID:  person,
-	})
-	if err != nil {
-		log.Printf("ai: no agent was made for the %s key: %v", provider, err)
-		return ""
-	}
-	return saved.Name
-}
-
-// providerAgentName is what the agent a key makes is called: the name people
-// know the models by.
-func providerAgentName(provider string) string {
-	switch provider {
-	case modelapi.ProviderAnthropic:
-		return "Claude"
-	case modelapi.ProviderOpenAI:
-		return "OpenAI"
-	}
-	return provider
+	return AIKeySaved{Models: models, Suggested: modelapi.SuggestModel(provider, models)}, nil
 }
 
 // keyHint is a key's last four characters behind an ellipsis.

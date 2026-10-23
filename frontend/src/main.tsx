@@ -11,6 +11,8 @@ import {useAppSelector} from './store/hooks'
 import {AppStoreProvider, createAppStore} from './store'
 import mutator from './mutator'
 import {installGoBridge} from './goBridge'
+import {onBoardUsersChanged} from './extensions'
+import {installAgentFeatures} from './components/acp/install'
 
 import '@mattermost/compass-icons/css/compass-icons.css'
 
@@ -63,6 +65,9 @@ async function boot() {
     // its actions handed over before the first render.
     const store = createAppStore()
     mutator.setActions(store.actions)
+
+    installAgentFeatures()
+    onBoardUsersChanged(() => store.actions.boards.fetchExtraBoardUsers())
 
     render(() => (
         <AppStoreProvider store={store}>

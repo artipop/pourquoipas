@@ -493,22 +493,14 @@ erDiagram
 
 ## Защёлки
 
-Не сущности, а ответы «это уже сделано»: событие обработано, шаг
-мастера пройден. Связей между собой у них нет.
+Не сущность, а ответ «это уже сделано»: событие обработано.
 
 ```mermaid
 erDiagram
-    board_ref ||--o{ board_setup : "board_id CASCADE"
 
     idempotency {
         name_255 token PK
         id session_id "nullable"
         millis created_at
-    }
-    board_setup {
-        id board_id PK, FK
-        name_32 step PK
-        name_16 status "pending | done | skipped | offered"
-        millis changed_at "Was `at`. AT is a keyword in Postgres and a name not worth having."
     }
 ```

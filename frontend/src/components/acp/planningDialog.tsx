@@ -10,9 +10,10 @@ import Dialog from '../dialog'
 
 import {goApp} from '../../goBridge'
 import {aiEnabled} from '../../aiSwitch'
+import {onBoardUsersChanged} from '../../extensions'
+import {openSettings} from '../settings/openSettings'
 
 import {onAgentEvent} from './agentEvents'
-import AgentQuickAdd from './agentQuickAdd'
 import FolderChoices from './folderChoices'
 import AttentionAnswers from './attentionAnswers'
 import {useAttention} from './attention'
@@ -69,7 +70,6 @@ const PlanningDialog = (props: Props) => {
 
     const [agents, setAgents] = createSignal<NamedEntry[]>([])
     const [agentName, setAgentName] = createSignal('')
-    const [addingAgent, setAddingAgent] = createSignal(false)
     const [chats, setChats] = createSignal<PlanningChat[]>([])
     const [openID, setOpenID] = createSignal('')
     const [draft, setDraft] = createSignal('')
@@ -135,9 +135,13 @@ const PlanningDialog = (props: Props) => {
             }
             setStreaming((current) => current + payload.text)
         })
+
+        // An agent connected in the settings meanwhile is offered at once.
+        const offAgents = onBoardUsersChanged(() => refreshAgents())
         return () => {
             offPlanning()
             offChunk()
+            offAgents()
         }
     })
 
@@ -359,27 +363,16 @@ const PlanningDialog = (props: Props) => {
                                                     </button>
                                                 )}
                                             </For>
-                                            <Show when={!addingAgent()}>
-                                                <button
-                                                    type='button'
-                                                    class='PlanningDialog__pickAdd'
-                                                    onClick={() => setAddingAgent(true)}
-                                                >
-                                                    {intl.formatMessage({id: 'Planning.add-agent', defaultMessage: 'Add an agent…'})}
-                                                </button>
-                                            </Show>
+                                            {/* An agent is connected in one place,
+                                                and the list here follows it. */}
+                                            <button
+                                                type='button'
+                                                class='PlanningDialog__pickAdd'
+                                                onClick={() => openSettings('ai')}
+                                            >
+                                                {intl.formatMessage({id: 'Planning.add-agent', defaultMessage: 'Connect an agent in Settings → AI…'})}
+                                            </button>
                                         </div>
-                                        <Show when={addingAgent()}>
-                                            <AgentQuickAdd
-                                                board={props.board}
-                                                onAdded={async (name) => {
-                                                    setAddingAgent(false)
-                                                    await refreshAgents()
-                                                    setAgentName(name)
-                                                }}
-                                                onCancel={() => setAddingAgent(false)}
-                                            />
-                                        </Show>
                                     </div>
                                 </Show>
                             </section>

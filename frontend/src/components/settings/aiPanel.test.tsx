@@ -8,69 +8,121 @@ import {wrapIntl} from '../../testUtils'
 import {fakeGoSide} from '../../test/goSide'
 import {setHosted} from '../../buildKind'
 import {isWorkdirsAvailable} from '../acp/workdirsPanel'
-import {agentKindOptions} from '../acp/agentsPanel'
 
 import AIPanel from './aiPanel'
 
 describe('components/settings/aiPanel', () => {
-    afterEach(() => setHosted(false))
+    afterEach(() => {
+        setHosted(false)
+        fakeGoSide()
+    })
 
-    // A key goes to the Go side and is never shown again: the panel only says
-    // whether there is one.
-    test('saves a key without ever showing one', async () => {
-        const setKey = vi.fn().mockResolvedValue({agent: 'OpenAI'})
+    // One way to connect an agent by key: the key is typed into the agent's
+    // own form, checked with the provider, and the agent is saved on it.
+    test('connects a model agent with a new key', async () => {
+        const SetAIProviderKey = vi.fn().mockResolvedValue({models: [{id: 'claude-x'}], suggested: 'claude-x'})
+        const AddAgent = vi.fn().mockResolvedValue('{}')
         fakeGoSide({
-            ListAgents: vi.fn(),
-            AIProviders: vi.fn().mockResolvedValue([
-                {id: 'anthropic', keySet: true, keyHint: '…ab12'},
-                {id: 'openai', keySet: false},
-            ]),
-            SetAIProviderKey: setKey,
+            ListAgents: vi.fn().mockResolvedValue('[]'),
+            AIProviders: vi.fn().mockResolvedValue([{id: 'anthropic', keySet: false, defaultModel: 'claude-opus'}, {id: 'openai', keySet: false}]),
+            SetAIProviderKey,
+            AddAgent,
         })
         render(() => wrapIntl(() => <AIPanel/>))
 
-        await waitFor(() => expect(screen.getByText('…ab12')).toBeInTheDocument())
-        expect(screen.getByText('No key')).toBeInTheDocument()
+        userEvent.click(await screen.findByRole('button', {name: 'Connect an agent…'}))
+        userEvent.click(screen.getByRole('radio', {name: /Model by API key/}))
 
-        const keys = screen.getAllByLabelText('API key') as HTMLInputElement[]
-        expect(keys.every((input) => input.value === '' && input.type === 'password')).toBe(true)
+        const key = await screen.findByLabelText('API key') as HTMLInputElement
+        expect(key.type).toBe('password')
+        userEvent.type(key, 'sk-new')
+        expect(screen.getByPlaceholderText('Name')).toHaveValue('Claude')
 
-        userEvent.type(keys[1], 'sk-new')
-        userEvent.click(screen.getAllByRole('button', {name: 'Check and save'})[1])
-        await waitFor(() => expect(setKey).toHaveBeenCalledWith('openai', 'sk-new', ''))
-        await waitFor(() => expect(screen.getByText('The provider accepted the key.')).toBeInTheDocument())
-
-        // A key nothing can pick looks broken; the first one makes an agent,
-        // and the panel says where it is offered.
-        expect(screen.getByText(/The agent «OpenAI» is made on this key/)).toBeInTheDocument()
+        userEvent.click(screen.getByRole('button', {name: 'Connect'}))
+        await waitFor(() => expect(AddAgent).toHaveBeenCalled())
+        expect(SetAIProviderKey).toHaveBeenCalledWith('anthropic', 'sk-new', '')
+        expect(JSON.parse(AddAgent.mock.calls[0][0])).toMatchObject({name: 'Claude', kind: 'model', provider: 'anthropic', model: expect.stringMatching(/^claude-/)})
     })
 
-    // A hosted server has no machine to work on: no folders, and the only
-    // kind of agent is a model.
-    test('a hosted server offers no folders and only model agents', () => {
-        fakeGoSide({ListAgents: vi.fn(), ListAgentWorkdirs: vi.fn()})
-        expect(isWorkdirsAvailable()).toBe(true)
-        expect(agentKindOptions('Model').map((o) => o.value)).toContain('claude')
+    // A key the provider refuses is not stored, and no agent is made on it.
+    test('a refused key makes no agent', async () => {
+        const AddAgent = vi.fn()
+        fakeGoSide({
+            ListAgents: vi.fn().mockResolvedValue('[]'),
+            AIProviders: vi.fn().mockResolvedValue([{id: 'anthropic', keySet: false, defaultModel: 'claude-opus'}]),
+            SetAIProviderKey: vi.fn().mockRejectedValue(new Error('bad key')),
+            AddAgent,
+        })
+        render(() => wrapIntl(() => <AIPanel/>))
 
+        userEvent.click(await screen.findByRole('button', {name: 'Connect an agent…'}))
+        userEvent.click(screen.getByRole('radio', {name: /Model by API key/}))
+        userEvent.type(await screen.findByLabelText('API key'), 'sk-bad')
+        userEvent.click(screen.getByRole('button', {name: 'Connect'}))
+
+        await waitFor(() => expect(screen.getByText(/bad key/)).toBeInTheDocument())
+        expect(AddAgent).not.toHaveBeenCalled()
+    })
+
+    // The provider's key is shared by its agents: a second agent on it is not
+    // asked for the key again, and the key itself never comes back.
+    test('a key already set is named, not asked for', async () => {
+        const SetAIProviderKey = vi.fn()
+        const AddAgent = vi.fn().mockResolvedValue('{}')
+        fakeGoSide({
+            ListAgents: vi.fn().mockResolvedValue('[]'),
+            AIProviders: vi.fn().mockResolvedValue([{id: 'anthropic', keySet: true, keyHint: '…ab12', defaultModel: 'claude-opus'}]),
+            AIModels: vi.fn().mockResolvedValue([]),
+            SetAIProviderKey,
+            AddAgent,
+        })
+        render(() => wrapIntl(() => <AIPanel/>))
+
+        userEvent.click(await screen.findByRole('button', {name: 'Connect an agent…'}))
+        userEvent.click(screen.getByRole('radio', {name: /Model by API key/}))
+        await waitFor(() => expect(screen.getByText('…ab12')).toBeInTheDocument())
+        expect(screen.queryByLabelText('API key')).toBeNull()
+
+        userEvent.click(screen.getByRole('button', {name: 'Connect'}))
+        await waitFor(() => expect(AddAgent).toHaveBeenCalled())
+        expect(SetAIProviderKey).not.toHaveBeenCalled()
+    })
+
+    // A hosted server has no machine to work on: no folders, no programs, no
+    // proxies — the one kind of agent there is a model.
+    test('a hosted server connects models only', async () => {
+        fakeGoSide({
+            ListAgents: vi.fn().mockResolvedValue('[]'),
+            ListAgentWorkdirs: vi.fn(),
+            ListProxies: vi.fn().mockResolvedValue('[]'),
+            AIProviders: vi.fn().mockResolvedValue([{id: 'anthropic', keySet: false}]),
+        })
+        expect(isWorkdirsAvailable()).toBe(true)
         setHosted(true)
         expect(isWorkdirsAvailable()).toBe(false)
-        expect(agentKindOptions('Model').map((o) => o.value)).toEqual(['model'])
+
+        render(() => wrapIntl(() => <AIPanel/>))
+        userEvent.click(await screen.findByRole('button', {name: 'Connect an agent…'}))
+
+        expect(await screen.findByLabelText('API key')).toBeInTheDocument()
+        expect(screen.queryByRole('radio', {name: /Program on this computer/})).toBeNull()
+        expect(screen.queryByText('Proxy configurations')).toBeNull()
     })
 
-    // The agents are listed here too, both kinds in one list, so they can be
-    // found and edited with no board open.
-    test('lists the agents of both kinds', async () => {
+    // Both kinds in one list, with the proxies under them.
+    test('lists the agents of both kinds, and the proxies', async () => {
         fakeGoSide({
             ListAgents: vi.fn().mockResolvedValue(JSON.stringify([
                 {name: 'claude', kind: 'claude'},
                 {name: 'OpenAI', kind: 'model', provider: 'openai', model: 'gpt-5'},
             ])),
+            ListProxies: vi.fn().mockResolvedValue('[]'),
             AIProviders: vi.fn().mockResolvedValue([{id: 'openai', keySet: true}]),
         })
         render(() => wrapIntl(() => <AIPanel/>))
 
-        await waitFor(() => expect(screen.getByText('Model by API key · OpenAI · gpt-5')).toBeInTheDocument())
-        expect(screen.getByText('Claude')).toBeInTheDocument()
-        expect(screen.getByRole('button', {name: 'Add agent…'})).toBeInTheDocument()
+        await waitFor(() => expect(screen.getByText('OpenAI · gpt-5 · Model by API key')).toBeInTheDocument())
+        expect(screen.getByText('Claude · program on this computer')).toBeInTheDocument()
+        expect(screen.getByText('Proxy configurations')).toBeInTheDocument()
     })
 })

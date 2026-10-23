@@ -7,7 +7,6 @@ import {TestBlockFactory} from './test/testBlockFactory'
 import {UserSettingKey, UserSettings} from './userSettings'
 import {aiEnabled, setAIEnabled} from './aiSwitch'
 import {isPlanningAvailable} from './components/acp/planningDialog'
-import {NO_SETUP, withoutAgents} from './components/acp/boardSetup'
 import {withoutAgentProperties} from './components/acp/agentProperties'
 import {BOARD_PROP_BRANCH_PROPERTY, BOARD_PROP_PROJECT_PROPERTY} from './components/acp/automation'
 import AIPanel, {isAIPanelAvailable} from './components/settings/aiPanel'
@@ -45,22 +44,6 @@ describe('the AI switch', () => {
         setAIEnabled(false)
 
         expect(isPlanningAvailable()).toBe(false)
-    })
-
-    // The board's name is a question about the board; the rest of the setup is
-    // about where agents work and who they are, and a board that is not
-    // automated never opens the wizard by itself.
-    test('switched off, the setup asks only for the board’s name', () => {
-        const plan = withoutAgents({
-            ...NO_SETUP,
-            automated: true,
-            steps: [
-                {kind: 'name', optional: false, status: 'pending'},
-                {kind: 'agent', optional: false, status: 'pending'},
-            ],
-        })
-        expect(plan.steps.map((s) => s.kind)).toEqual(['name'])
-        expect(plan.automated).toBe(false)
     })
 
     // The folder and the branch are the agents' fields; the board's own stay.

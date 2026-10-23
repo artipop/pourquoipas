@@ -160,8 +160,6 @@ exports[`src/components/workspace > return workspace and showcard 1`] = `
         class="BoardComponent"
       >
         
-        <!---->
-        
         <div
           class="top-head"
         >
@@ -881,8 +879,6 @@ exports[`src/components/workspace > return workspace readonly and showcard 1`] =
         class="BoardComponent"
       >
         
-        <!---->
-        
         <div
           class="top-head"
         >
@@ -1568,8 +1564,6 @@ exports[`src/components/workspace > should match snapshot 1`] = `
       <div
         class="BoardComponent"
       >
-        
-        <!---->
         
         <div
           class="top-head"
@@ -2289,8 +2283,6 @@ exports[`src/components/workspace > should match snapshot with readonly 1`] = `
       <div
         class="BoardComponent"
       >
-        
-        <!---->
         
         <div
           class="top-head"

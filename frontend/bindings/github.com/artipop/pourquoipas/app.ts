@@ -124,17 +124,6 @@ export function AttachServer(entryJSON: string): $CancellablePromise<string> {
 }
 
 /**
- * BoardSetupPlan returns what this board needs answered before an agent can
- * work a card on it: which steps, in which order, which of them may be skipped
- * and which are already answered by this machine. It is one answer to one
- * question — the wizard walks it and the board menu reads it to know which
- * registries are worth opening at all.
- */
-export function BoardSetupPlan(boardID: string): $CancellablePromise<string> {
-    return $Call.ByID(1459048039, boardID);
-}
-
-/**
  * CancelSession cancels the live agent session of a card, if any.
  */
 export function CancelSession(cardID: string): $CancellablePromise<boolean> {
@@ -325,9 +314,10 @@ export function IssueFeedToken(): $CancellablePromise<string> {
 }
 
 /**
- * ListAgentAccounts returns the registry as the board knows it — the name a
- * person typed and the username it was provisioned under — as JSON:
- * [{"name","username"}, …].
+ * ListAgentAccounts returns the person's agents as the board knows them — the
+ * name a person typed, the username and the account id — as JSON:
+ * [{"name","username","userId"}, …]. These are offered as assignees on every
+ * board; no agent is a member of one.
  * 
  * The page needs the username to recognise an agent among the board's people:
  * the fold from one to the other is this side's (AgentUsername), and writing it
@@ -417,14 +407,6 @@ export function ListProxies(): $CancellablePromise<string> {
 }
 
 /**
- * ListSetupSteps returns the closed set of setup steps this build can carry
- * out, so a board can only ask for one that exists.
- */
-export function ListSetupSteps(): $CancellablePromise<string> {
-    return $Call.ByID(2043833985);
-}
-
-/**
  * ListSourcePlugins is what a source can be made *of*: the manifests this
  * machine knows, from the registry and from <dataDir>/sources/manifests. The
  * dialog builds its form out of one of these — the fields to ask for, and
@@ -449,16 +431,6 @@ export function ListSources(): $CancellablePromise<string> {
  */
 export function ListUnattachedWorkdirs(): $CancellablePromise<string> {
     return $Call.ByID(2295735147);
-}
-
-/**
- * MarkBoardSetupOffered remembers that the setup wizard has opened itself for
- * this board. It is stored beside the rest of the board's setup rather than in
- * the page: the desktop app serves itself on a fresh port every launch, so the
- * page's own storage is a fresh one too.
- */
-export function MarkBoardSetupOffered(boardID: string): $CancellablePromise<void> {
-    return $Call.ByID(2575414996, boardID);
 }
 
 /**
@@ -503,14 +475,6 @@ export function OpenSocket(id: string, path: string): $CancellablePromise<void> 
  */
 export function PickDirectory(title: string): $CancellablePromise<string> {
     return $Call.ByID(1347829059, title);
-}
-
-/**
- * RecordBoardSetupStep remembers what was done with a step — skipping above
- * all, which is the one answer no registry can be read for.
- */
-export function RecordBoardSetupStep(boardID: string, step: string, status: string): $CancellablePromise<void> {
-    return $Call.ByID(1701875219, boardID, step, status);
 }
 
 /**
@@ -582,15 +546,6 @@ export function SayToPlanning(id: string, text: string): $CancellablePromise<voi
 }
 
 /**
- * SeedBoardAutomation takes what a board carries of its own — the instructions
- * it gives its agents — into the registry now, rather than waiting for the
- * first card to be moved. Idempotent.
- */
-export function SeedBoardAutomation(boardID: string): $CancellablePromise<void> {
-    return $Call.ByID(4053050179, boardID);
-}
-
-/**
  * SelectBoardSource changes which board the page shows — this machine's own, or
  * the server this desktop is attached to.
  * 
@@ -620,10 +575,8 @@ export function SendSocket(id: string, data: string): $CancellablePromise<void> 
  * provider for its models: a key it refuses is not stored. An empty key keeps
  * the one stored and changes only the address.
  * 
- * A key nobody can use is a key that looks broken: everything that runs a
- * model picks an agent, not a key. So the first key of a provider also makes
- * the person an agent on it, on a model the provider just listed, which the
- * inbox sorting and a card's assignee field offer at once.
+ * It makes no agent: a key is entered while an agent is being connected
+ * (Settings → AI), and the agent is the form's to save.
  */
 export function SetAIProviderKey(provider: string, key: string, baseURL: string): $CancellablePromise<$models.AIKeySaved> {
     return $Call.ByID(185465067, provider, key, baseURL);
@@ -778,16 +731,6 @@ export function StartPlanning(boardID: string, folderName: string, agentName: st
  */
 export function StopPlanningReply(id: string): $CancellablePromise<void> {
     return $Call.ByID(854167512, id);
-}
-
-/**
- * SyncAgentUsers gives every registered agent a board account and adds it to
- * the board's members, so cards can be assigned to an agent in a person
- * property. Returns the accounts as JSON: [{"name","username","userId",
- * "created"}, …].
- */
-export function SyncAgentUsers(boardID: string): $CancellablePromise<string> {
-    return $Call.ByID(1383233333, boardID);
 }
 
 /**

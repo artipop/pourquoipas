@@ -255,15 +255,15 @@
 
 <header class="masthead">
   <div class="masthead-inner">
-    <p class="kicker">pourquoipas · один файл, 34 таблиц</p>
+    <p class="kicker">pourquoipas · один файл, 33 таблиц</p>
     <h1>Схема базы<span class="dot">.</span></h1>
     <p class="standfirst">Всё, что знает приложение, — про карточку или доску, а карточка это строка
       в <code>blocks</code>. Поэтому база одна: доска (форк Focalboard) и наши таблицы рядом, с настоящими
       внешними ключами между ними.</p>
     <div class="stats">
-      <div class="stat"><b>34</b><span>таблиц</span></div>
-      <div class="stat"><b>23</b><span>внешних ключей</span></div>
-      <div class="stat"><b>15</b><span>из них CASCADE</span></div>
+      <div class="stat"><b>33</b><span>таблиц</span></div>
+      <div class="stat"><b>22</b><span>внешних ключей</span></div>
+      <div class="stat"><b>14</b><span>из них CASCADE</span></div>
       <div class="stat"><b>1</b><span>шаг миграции</span></div>
       <div class="stat"><b>3</b><span>диалекта</span></div>
     </div>
@@ -283,7 +283,7 @@
       <li><a href="#g6"><span class="nav-name">Работа в папке</span><span class="nav-count">2</span></a></li>
       <li><a href="#g7"><span class="nav-name">Входящие</span><span class="nav-count">2</span></a></li>
       <li><a href="#g8"><span class="nav-name">Разбор входящих</span><span class="nav-count">2</span></a></li>
-      <li><a href="#g9"><span class="nav-name">Защёлки</span><span class="nav-count">2</span></a></li>
+      <li><a href="#g9"><span class="nav-name">Защёлки</span><span class="nav-count">1</span></a></li>
     </ul>
   </nav>
 
@@ -735,24 +735,17 @@ erDiagram
         </figure>
       </section>
       <section class="group" id="g9">
-        <p class="eyebrow">2 таблиц · 1 ключ</p>
+        <p class="eyebrow">1 таблиц</p>
         <h2>Защёлки</h2>
-        <div class="prose"><p>Не сущности, а ответы «это уже сделано»: событие обработано, шаг мастера пройден. Связей между собой у них нет.</p></div>
+        <div class="prose"><p>Не сущность, а ответ «это уже сделано»: событие обработано.</p></div>
         <figure class="plate">
           <pre class="mermaid">%%{init: {&#x27;theme&#x27;:&#x27;base&#x27;,&#x27;themeVariables&#x27;:{&#x27;fontFamily&#x27;:&#x27;ui-monospace, SFMono-Regular, Menlo, Consolas, monospace&#x27;,&#x27;fontSize&#x27;:&#x27;13px&#x27;,&#x27;primaryColor&#x27;:&#x27;#ffffff&#x27;,&#x27;primaryTextColor&#x27;:&#x27;#14171d&#x27;,&#x27;primaryBorderColor&#x27;:&#x27;#aab3bf&#x27;,&#x27;secondaryColor&#x27;:&#x27;#f4f6f8&#x27;,&#x27;tertiaryColor&#x27;:&#x27;#ffffff&#x27;,&#x27;lineColor&#x27;:&#x27;#7c8493&#x27;,&#x27;textColor&#x27;:&#x27;#14171d&#x27;,&#x27;nodeBorder&#x27;:&#x27;#aab3bf&#x27;,&#x27;mainBkg&#x27;:&#x27;#ffffff&#x27;,&#x27;attributeBackgroundColorOdd&#x27;:&#x27;#ffffff&#x27;,&#x27;attributeBackgroundColorEven&#x27;:&#x27;#f4f6f8&#x27;}}}%%
 erDiagram
-    board_ref ||--o{ board_setup : &quot;board_id CASCADE&quot;
 
     idempotency {
         name_255 token PK
         id session_id &quot;nullable&quot;
         millis created_at
-    }
-    board_setup {
-        id board_id PK, FK
-        name_32 step PK
-        name_16 status &quot;pending | done | skipped | offered&quot;
-        millis changed_at &quot;Was `at`. AT is a keyword in Postgres and a name not worth having.&quot;
     }</pre>
         </figure>
       </section>

@@ -279,10 +279,9 @@ func erdGroups() []erdGroup {
 			tables: pick(app, "board_summary", "inbox_sort"),
 		},
 		{
-			title: "Защёлки",
-			why: "Не сущности, а ответы «это уже сделано»: событие обработано, шаг\n" +
-				"мастера пройден. Связей между собой у них нет.",
-			tables: pick(app, "idempotency", "board_setup"),
+			title:  "Защёлки",
+			why:    "Не сущность, а ответ «это уже сделано»: событие обработано.",
+			tables: pick(app, "idempotency"),
 		},
 	}
 }

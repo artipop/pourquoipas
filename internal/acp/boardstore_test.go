@@ -66,7 +66,7 @@ func TestTheBoardsInstructionsAreTakenFromTheBoard(t *testing.T) {
 	m, meta, _ := storeManager(t)
 	meta.props = map[string]any{BoardPropPrompt: "Отвечай по-русски."}
 
-	m.SeedBoard("board1")
+	m.seedFromBoard("board1")
 
 	if got := m.BoardPrompt("board1"); got != "Отвечай по-русски." {
 		t.Fatalf("the machine took %q from the board", got)

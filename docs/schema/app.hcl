@@ -1194,35 +1194,6 @@ table "card_changes" {
     on_delete   = CASCADE
   }
 }
-table "board_setup" {
-  column "board_id" {
-    null = false
-    type = varchar(36)
-  }
-  column "step" {
-    null = false
-    type = varchar(32)
-  }
-  column "status" {
-    null = false
-    type = varchar(16)
-  }
-  column "changed_at" {
-    null = false
-    type = bigint
-  }
-  primary_key {
-    columns = [column.board_id, column.step]
-  }
-  foreign_key "board_setup_board" {
-    columns     = [column.board_id]
-    ref_columns = [table.board_ref.column.board_id]
-    on_delete   = CASCADE
-  }
-  check "board_setup_status" {
-    expr = "`status` IN ('pending', 'done', 'skipped', 'offered')"
-  }
-}
 table "checkout" {
   column "id" {
     null = false

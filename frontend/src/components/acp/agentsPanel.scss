@@ -160,4 +160,68 @@
         color: rgb(var(--error-text-rgb, 210, 75, 78));
         padding-top: 8px;
     }
+
+    // How the agent is connected: two choices side by side, each saying what
+    // it means, because the rest of the form follows from it.
+    .AgentsPanel__source {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 8px;
+    }
+
+    .AgentsPanel__sourceOption {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+        padding: 10px 12px;
+        border: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+        border-radius: var(--radius-sm);
+        background: transparent;
+        color: inherit;
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+
+        &--on {
+            border-color: rgb(var(--button-bg-rgb));
+            box-shadow: inset 0 0 0 1px rgb(var(--button-bg-rgb));
+        }
+    }
+
+    .AgentsPanel__sourceName {
+        font-weight: 600;
+    }
+
+    // A key that is set is named by its last characters, never shown.
+    .AgentsPanel__key {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+    }
+
+    .AgentsPanel__keyHint {
+        font-family: var(--font-mono);
+    }
+
+    .AgentsPanel__more {
+        align-self: flex-start;
+        padding: 2px 0;
+        border: 0;
+        background: transparent;
+        color: rgb(var(--link-color-rgb));
+        font: inherit;
+        font-size: 13px;
+        cursor: pointer;
+
+        &::before {
+            content: '▸ ';
+        }
+
+        &[aria-expanded='true']::before {
+            content: '▾ ';
+        }
+    }
 }

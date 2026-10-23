@@ -1,38 +1,24 @@
 // The Wails-generated Go bindings are PascalCase methods, not constructors.
 /* eslint-disable new-cap */
-import {For, Show, createSignal, onSettled} from 'solid-js'
+import {Show, createSignal} from 'solid-js'
 
-import {useIntl, IntlShape} from '../../intl'
+import {useIntl} from '../../intl'
 
 import {Board} from '../../blocks/board'
 import mutator from '../../mutator'
 import Button from '../../widgets/buttons/button'
 import Dialog from '../dialog'
 
-import {goApp} from '../../goBridge'
-import {aiEnabled} from '../../aiSwitch'
-
 import {goError} from '../../goMessages'
 
-import {
-    BoardSetup,
-    BoardSetupStep,
-    SetupStepDef,
-    boardAutomationProperties,
-    boardColumns,
-    columnProperty,
-    impliedSetupSteps,
-    readBoardSetup,
-} from './automation'
+import {boardColumns, columnProperty} from './automation'
 
 import './templateEditor.scss'
 
 // A template is a board that has not been made yet: its columns, what happens
-// in each of them, the routes cards take across it, and the questions it needs
-// answered about the machine before any of that can run.
+// in each of them, the routes cards take across it.
 //
-// What is edited here is only the last of those, plus the three things the
-// template list shows — its name, its icon and what it is for. The automation
+// What is edited here is only what the template list shows — its name, its icon and what it is for. The automation
 // is **shown and not edited**: a template is made by building the board and
 // saving it (the save-as-template item), so the routes it carries are already the
 // ones that worked, and the way to change them is to change the board and save
@@ -52,54 +38,16 @@ type Props = {
 
 const TemplateEditor = (props: Props) => {
     const intl = useIntl()
-    const bindings = goApp()
 
     const [title, setTitle] = createSignal(props.board.title)
     const [icon, setIcon] = createSignal(props.board.icon || '')
     const [description, setDescription] = createSignal(props.board.description || '')
-    const [setup, setSetup] = createSignal<BoardSetup | undefined>(readBoardSetup(props.board))
-    const [defs, setDefs] = createSignal<SetupStepDef[]>([])
     const [error, setError] = createSignal('')
-
-    onSettled(() => {
-        // Not awaited: onSettled reads a returned promise as a cleanup value.
-        void (async () => {
-            if (!bindings?.ListSetupSteps) {
-                return
-            }
-            try {
-                setDefs(JSON.parse(await bindings.ListSetupSteps()) || [])
-            } catch (e) {
-                setError(goError(intl, e))
-            }
-        })()
-    })
 
     const columns = () => boardColumns(props.board, columnProperty(props.board)?.name)
 
     // The columns a board made from this template arrives with.
     const columnLine = () => columns().map((c) => c.name)
-
-    const steps = () => setup()?.steps || []
-    const stepAt = (kind: string) => steps().find((s) => s.kind === kind)
-
-    const setStep = (kind: string, patch: Partial<BoardSetupStep> | null) => {
-        const current = steps()
-        if (patch === null) {
-            setSetup({steps: current.filter((s) => s.kind !== kind)})
-            return
-        }
-        if (!current.some((s) => s.kind === kind)) {
-            // Kept in the app's own order rather than the order they were
-            // ticked: the wizard walks them in the order the work needs them.
-            const order = defs().map((d) => d.kind)
-            const next = [...current, {kind, ...patch}]
-            next.sort((a, b) => order.indexOf(a.kind) - order.indexOf(b.kind))
-            setSetup({steps: next})
-            return
-        }
-        setSetup({steps: current.map((s) => (s.kind === kind ? {...s, ...patch} : s))})
-    }
 
     const save = async () => {
         setError('')
@@ -109,7 +57,6 @@ const TemplateEditor = (props: Props) => {
                 title: title().trim() || props.board.title,
                 icon: icon(),
                 description: description(),
-                properties: boardAutomationProperties(props.board, setup()),
             }
             await mutator.updateBoard(next, props.board, 'edit template')
             props.onSaved?.()
@@ -123,7 +70,7 @@ const TemplateEditor = (props: Props) => {
         <Dialog
             class='TemplateEditor'
             title={<span>{intl.formatMessage({id: 'TemplateEditor.title', defaultMessage: 'Template'})}</span>}
-            subtitle={<span>{intl.formatMessage({id: 'TemplateEditor.subtitle', defaultMessage: 'A board made from this template arrives with the columns below. Its name, what it is for, and what it asks about this machine are set here.'})}</span>}
+            subtitle={<span>{intl.formatMessage({id: 'TemplateEditor.subtitle', defaultMessage: 'A board made from this template arrives with the columns below. Its name and what it is for are set here.'})}</span>}
             onClose={props.onClose}
         >
             <div class='TemplateEditor__content'>
@@ -154,8 +101,7 @@ const TemplateEditor = (props: Props) => {
                 </div>
 
                 {/* What the template carries, in the words the board uses. It is
-                    read here and changed on a board: the routes came off one,
-                    and «Колонки и маршруты…» is where a route is drawn. */}
+                    read here and changed on a board. */}
                 <div class='TemplateEditor__carries'>
                     <div class='TemplateEditor__sectionTitle'>
                         {intl.formatMessage({id: 'TemplateEditor.carries', defaultMessage: 'What the template carries'})}
@@ -166,70 +112,10 @@ const TemplateEditor = (props: Props) => {
                         </span>
                         <span>{columnLine().join(' · ') || '—'}</span>
                     </div>
-                    <Show when={aiEnabled()}>
-                        <div class='TemplateEditor__hint'>
-                            {intl.formatMessage({id: 'TemplateEditor.carries-hint', defaultMessage: 'Columns are changed on the board itself, and come back here when the board is saved as a template again.'})}
-                        </div>
-                    </Show>
-                </div>
-
-                {/* The setup questions are the agents'; with the AI switched
-                    off a template is its columns and its name. */}
-                <Show when={aiEnabled()}>
-                    <div class='TemplateEditor__setup'>
-                        <div class='TemplateEditor__sectionTitle'>
-                            {intl.formatMessage({id: 'TemplateEditor.setup', defaultMessage: 'What to ask when a board is made from this'})}
-                        </div>
-                        <Show
-                            when={setup()}
-                            fallback={
-                                <div class='TemplateEditor__hint'>
-                                    {intl.formatMessage({id: 'TemplateEditor.setup-implied', defaultMessage: 'Worked out from the automation above: every template asks for a name and an agent. Name the steps yourself if that is not what you want.'})}
-                                    <Button onClick={() => setSetup({steps: impliedSetupSteps(defs())})}>
-                                        {intl.formatMessage({id: 'TemplateEditor.setup-declare', defaultMessage: 'Name the steps'})}
-                                    </Button>
-                                </div>
-                            }
-                        >
-                            <For each={defs()}>
-                                {(def) => (
-                                    <div class='TemplateEditor__step'>
-                                        <label class='TemplateEditor__stepOn'>
-                                            <input
-                                                type='checkbox'
-                                                checked={Boolean(stepAt(def.kind))}
-                                                disabled={def.kind === 'done'}
-                                                onChange={(e) => setStep(def.kind, e.currentTarget.checked ? {} : null)}
-                                            />
-                                            {stepTitle(intl, def.kind)}
-                                        </label>
-                                        <Show when={stepAt(def.kind) && def.kind !== 'done'}>
-                                            <input
-                                                class='TemplateEditor__stepHint'
-                                                value={stepAt(def.kind)?.hint || ''}
-                                                placeholder={intl.formatMessage({id: 'TemplateEditor.step-hint', defaultMessage: 'A line of your own beside the question'})}
-                                                onInput={(e) => setStep(def.kind, {hint: e.currentTarget.value})}
-                                            />
-                                            <Show when={def.optional}>
-                                                <label class='TemplateEditor__stepRequired'>
-                                                    <input
-                                                        type='checkbox'
-                                                        checked={Boolean(stepAt(def.kind)?.required)}
-                                                        onChange={(e) => setStep(def.kind, {required: e.currentTarget.checked})}
-                                                    />
-                                                    {intl.formatMessage({id: 'TemplateEditor.step-required', defaultMessage: 'cannot be skipped'})}
-                                                </label>
-                                            </Show>
-                                        </Show>
-                                    </div>
-                                )}
-                            </For>
-                            <Button onClick={() => setSetup(undefined)}>
-                                {intl.formatMessage({id: 'TemplateEditor.setup-auto', defaultMessage: 'Work them out from the automation again'})}
-                            </Button>
-                        </Show>
+                    <div class='TemplateEditor__hint'>
+                        {intl.formatMessage({id: 'TemplateEditor.carries-hint', defaultMessage: 'Columns are changed on the board itself, and come back here when the board is saved as a template again.'})}
                     </div>
-                </Show>
+                </div>
 
                 <div class='TemplateEditor__actions'>
                     <Button
@@ -249,18 +135,6 @@ const TemplateEditor = (props: Props) => {
             </div>
         </Dialog>
     )
-}
-
-// stepTitle names a setup step the way the wizard asks it.
-export function stepTitle(intl: IntlShape, kind: string): string {
-    switch (kind) {
-    case 'agent':
-        return intl.formatMessage({id: 'TemplateEditor.step-agent', defaultMessage: 'An agent to pick cards up'})
-    case 'browser':
-        return intl.formatMessage({id: 'TemplateEditor.step-browser', defaultMessage: 'A browser for test runs'})
-    default:
-        return intl.formatMessage({id: 'TemplateEditor.step-done', defaultMessage: 'How to use it (asks nothing)'})
-    }
 }
 
 export default TemplateEditor

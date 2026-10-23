@@ -295,6 +295,16 @@ func (m *Manager) ensureAgentAccounts() {
 		m.log.Warn("acp: some agents have no board account", "err", err)
 	}
 	m.recordAgentAccounts(made)
+
+	// An agent is its owner's, not a board's: any of them may be assigned a
+	// card on any board, so none is a member of one. Installs from before that
+	// made every agent a member of every board it was synced to; those
+	// memberships go here, once per launch, and cost nothing when there are none.
+	for _, agent := range agents {
+		if _, err := m.primary().Users.RetireAgentUser(m.rootCtx, agent); err != nil {
+			m.log.Warn("acp: an agent is still a member of a board", "agent", agent.Name, "err", err)
+		}
+	}
 }
 
 // UpdateAgent replaces an existing agent and persists.
@@ -341,35 +351,39 @@ func (m *Manager) UpdateAgent(a AgentEntry) (AgentEntry, error) {
 	return AgentEntry{}, apperr.New("agents.not-found", "Agent {name} was not found", "name", a.Name)
 }
 
-// AgentUsers returns the registry as board accounts, in registry order.
+// AgentUsers returns the registry as board accounts, in registry order, with
+// the account id where one has been recorded.
 func (m *Manager) AgentUsers() []AgentUser {
 	m.cfgMu.RLock()
 	defer m.cfgMu.RUnlock()
 	out := make([]AgentUser, 0, len(m.cfg.Agents))
 	for _, a := range m.cfg.Agents {
 		if username := AgentUsername(a.Name); username != "" {
-			out = append(out, AgentUser{Name: a.Name, Username: username})
+			out = append(out, AgentUser{Name: a.Name, Username: username, UserID: a.UserID})
 		}
 	}
 	return out
 }
 
-// SyncAgentUsers gives every registered agent a board account and makes it a
-// member of the board, so a card can be assigned to an agent in a person
-// property. Idempotent, and a no-op on an empty registry — the UI runs it
-// whenever the registry or the board it is looking at changes, not on demand.
-// Accounts are never removed: a card may still name one long after the registry
-// entry is gone.
-func (m *Manager) SyncAgentUsers(ctx context.Context, boardID string) ([]AgentUser, error) {
-	if m.users == nil {
-		return nil, fmt.Errorf("creating agent accounts is not available")
-	}
+// AgentAccounts is AgentUsers with every account made: the page offers these
+// as assignees on any board, and an agent with no account cannot be offered.
+func (m *Manager) AgentAccounts(ctx context.Context) ([]AgentUser, error) {
 	agents := m.AgentUsers()
-	if len(agents) == 0 {
-		return nil, nil
+	missing := []AgentUser{}
+	for _, a := range agents {
+		if a.UserID == "" {
+			missing = append(missing, a)
+		}
 	}
-
-	return m.forBoard(boardID).Users.EnsureAgentUsers(ctx, boardID, agents)
+	if len(missing) == 0 || m.users == nil {
+		return agents, nil
+	}
+	made, err := m.primary().Users.EnsureAgentAccounts(ctx, missing)
+	m.recordAgentAccounts(made)
+	if err != nil {
+		return nil, err
+	}
+	return m.AgentUsers(), nil
 }
 
 // PlanningPrompt returns the instructions a planning terminal is opened with.
@@ -393,24 +407,13 @@ func (m *Manager) SetPlanningPrompt(text string) error {
 	return m.persistConfigLocked()
 }
 
-// RemoveAgent deletes a registry entry by name, persists the config and takes
-// the agent's account off the boards it was a member of — an unregistered agent
-// must stop being offered as an assignee. The account survives (cards may still
-// name it), so re-registering the agent restores the same identity.
+// RemoveAgent deletes a registry entry by name and persists the config. The
+// account survives (cards may still name it), so re-registering the agent
+// restores the same identity; it stops being offered because the page offers
+// the registry, not the accounts.
 func (m *Manager) RemoveAgent(name string) error {
-	removed, err := m.removeAgentEntry(name)
-	if err != nil {
-		return err
-	}
-	if m.users == nil {
-		return nil
-	}
-	if _, err := m.primary().Users.RetireAgentUser(context.Background(), removed); err != nil {
-		// The entry is already gone; the account is the part left dangling, so
-		// say so rather than pretend the removal failed.
-		return apperr.Wrap(err, "agents.account-left", "Agent {name} was removed from the registry, but its account is still a member of the board", "name", removed.Name)
-	}
-	return nil
+	_, err := m.removeAgentEntry(name)
+	return err
 }
 
 // removeAgentEntry drops the entry from the registry and returns it as an

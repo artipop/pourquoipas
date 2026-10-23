@@ -49,36 +49,6 @@ func (c *Client) ensureAccount(agent acp.AgentUser) (acp.AgentUser, error) {
 	return agent, nil
 }
 
-// EnsureAgentUsers puts the agents into one board's members, which is what
-// makes the name resolve in its person picker without searching for it.
-func (c *Client) EnsureAgentUsers(_ context.Context, boardID string, agents []acp.AgentUser) ([]acp.AgentUser, error) {
-	if boardID == "" {
-		return nil, fmt.Errorf("no board given")
-	}
-	out := make([]acp.AgentUser, 0, len(agents))
-	for _, agent := range agents {
-		filled, err := c.ensureAccount(agent)
-		if err != nil {
-			return out, err
-		}
-		if filled.UserID == "" {
-			continue
-		}
-		member := &model.BoardMember{
-			BoardID:         boardID,
-			UserID:          filled.UserID,
-			SchemeEditor:    true,
-			SchemeCommenter: true,
-			SchemeViewer:    true,
-		}
-		if _, resp := c.api.AddMemberToBoard(member); resp != nil && resp.Error != nil {
-			return out, fmt.Errorf("adding %q to the board's members: %w", filled.Username, resp.Error)
-		}
-		out = append(out, filled)
-	}
-	return out, nil
-}
-
 // RetireAgentUser drops the agent's board memberships and reports how many. The
 // account stays: cards may still name it. A request per board, because the
 // board has no route for "the memberships of one user" and adding one for a

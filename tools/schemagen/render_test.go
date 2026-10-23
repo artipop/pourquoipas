@@ -231,6 +231,8 @@ func TestTheCollapsedMigrationBuildsTheSchemaTheLadderBuilt(t *testing.T) {
 		"table vcs_seen": routesRemoved,
 		// Publishing a branch to Dokku went to Gandvík as a step of a flow.
 		"table deploy_target": "deploying to Dokku is gone; it is a flow step in Gandvík",
+		// The board setup wizard was removed; nothing asks a board questions.
+		"table board_setup": "the setup wizard is gone; a board made from a template opens as it is",
 	}
 
 	for name, w := range wantShape {

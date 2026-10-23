@@ -12,8 +12,6 @@ import Mutator from '../mutator'
 import {Constants} from '../constants'
 import {UserSettings} from '../userSettings'
 
-import {fakeGoSide, goSide} from '../test/goSide'
-
 import CenterPanel from './centerPanel'
 Object.defineProperty(Constants, 'versionString', {value: '1.0.0'})
 
@@ -134,89 +132,6 @@ describe('components/centerPanel', () => {
         vi.clearAllMocks()
     })
 
-    // The setup wizard: it opens once per board, and what it leaves unanswered
-    // is what the header quietly goes on saying.
-    describe('the setup a board still needs', () => {
-        const setupBoard = TestBlockFactory.createBoard()
-        setupBoard.id = 'board-needing-setup'
-        setupBoard.teamId = 'team-id'
-
-        // A stand-in for the store: what Go remembers about this board, which
-        // is the whole point — it outlives the page, and the page is what a
-        // restart throws away.
-        const stubPlan = (steps: Array<Record<string, unknown>>) => {
-            let offered = false
-            fakeGoSide({
-                BoardSetupPlan: vi.fn().mockImplementation(() => Promise.resolve(JSON.stringify({
-                    boardId: setupBoard.id, steps, declared: true, automated: true, offered,
-                }))),
-                MarkBoardSetupOffered: vi.fn().mockImplementation(() => {
-                    offered = true
-                    return Promise.resolve()
-                }),
-                RecordBoardSetupStep: vi.fn().mockResolvedValue(undefined),
-                ListAgentWorkdirs: vi.fn().mockResolvedValue('[]'),
-                ListAgents: vi.fn().mockResolvedValue('[]'),
-            })
-        }
-        const renderPanel = () => render(() => wrapDNDIntl(() =>
-            <AppStoreProvider store={store}>
-                <TestRouter>
-                    <CenterPanel
-                        cards={[card1]}
-                        views={[activeView]}
-                        board={setupBoard}
-                        activeView={activeView}
-                        readonly={false}
-                        showCard={vi.fn()}
-                        groupByProperty={groupProperty}
-                    />
-                </TestRouter>
-            </AppStoreProvider>,
-        ))
-
-        afterEach(() => {
-            fakeGoSide()
-            localStorage.clear()
-        })
-
-        test('opens by itself for a board that has not been through it', async () => {
-            stubPlan([{kind: 'name', optional: false, status: 'pending'}, {kind: 'done', optional: false, status: 'done'}])
-            renderPanel()
-            await waitFor(() => expect(screen.getByText('Set up this board: Name')).toBeInTheDocument())
-        })
-
-        // Closing it half-way is an answer to "have you seen this?", not to any
-        // of the questions in it: nothing here is mandatory, so no badge nags
-        // about it afterwards — the wizard said how to come back, and the
-        // modal does not return by itself.
-        // Throwing the page away and building it again is what a restart looks
-        // like from here — and localStorage would not have survived it, because
-        // the app serves itself on a fresh port, and therefore a fresh origin,
-        // every launch.
-        test('does not open twice, and nothing nags afterwards', async () => {
-            stubPlan([{kind: 'name', optional: false, status: 'pending'}, {kind: 'done', optional: false, status: 'done'}])
-            const first = renderPanel()
-            await waitFor(() => expect(screen.getByText('Set up this board: Name')).toBeInTheDocument())
-            await waitFor(() => expect(goSide.MarkBoardSetupOffered).toHaveBeenCalledWith(setupBoard.id))
-            first.unmount()
-
-            localStorage.clear()
-            renderPanel()
-            await waitFor(() => expect(screen.queryByText('Set up this board: Name')).toBeNull())
-            expect(screen.queryByText('This board is not set up yet')).toBeNull()
-        })
-
-        // The soft way out is a button, and it says how to come back.
-        test('leaving through «Разберусь сам» closes the wizard', async () => {
-            stubPlan([{kind: 'name', optional: false, status: 'pending'}, {kind: 'done', optional: false, status: 'done'}])
-            renderPanel()
-            await waitFor(() => expect(screen.getByText('Set up this board: Name')).toBeInTheDocument())
-
-            screen.getByText('I’ll find my way around').click()
-            await waitFor(() => expect(screen.queryByText('Set up this board: Name')).toBeNull())
-        })
-    })
     test('should match snapshot for Kanban, not shared', () => {
         const {container} = render(() => wrapDNDIntl(() =>
             <AppStoreProvider store={store}>

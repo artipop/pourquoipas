@@ -25,10 +25,9 @@ import './appSettingsDialog.scss'
 // comes in and goes out as an archive, and what it is allowed to interrupt
 // with.
 //
-// The agents are in the AI section as well as behind a board's ⋯ menu: a
-// person looking for «which agents do I have» looks in the settings, and a key
-// saved there makes an agent the same section has to show. The proxies stay
-// with the board's agents dialog, under them.
+// Agents are the person's, not a board's, so they are connected here and
+// nowhere else: the AI section has the switch, the agents of both kinds and the
+// proxies a program may be started behind.
 //
 // All of it used to be reached through a board's ⋯ menu, which put settings
 // behind a board and made them unreachable when none was open; then through the
@@ -57,6 +56,9 @@ type Section = {
 
 type Props = {
     onClose: () => void
+
+    // The section to open on, when another screen sent the person here.
+    section?: string
 }
 
 const AppSettingsDialog = (props: Props) => {
@@ -81,8 +83,7 @@ const AppSettingsDialog = (props: Props) => {
         },
         {
 
-            // The AI's own section: the switch over all of it, and the keys a
-            // model agent runs on.
+            // The AI's own section: the switch over all of it, and the agents.
             id: 'ai',
             name: () => intl.formatMessage({id: 'Settings.section-ai', defaultMessage: 'AI'}),
             when: isAIPanelAvailable,
@@ -128,7 +129,7 @@ const AppSettingsDialog = (props: Props) => {
     ]
 
     const offered = () => sections.filter((s) => s.when())
-    const [current, setCurrent] = createSignal(offered()[0]?.id || 'app')
+    const [current, setCurrent] = createSignal(props.section || offered()[0]?.id || 'app')
     const section = () => offered().find((s) => s.id === current()) || offered()[0]
 
     return (

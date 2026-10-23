@@ -114,15 +114,15 @@ type AgentUser struct {
 }
 
 // BoardUsers keeps board accounts in step with the agent registry, so an agent
-// can be picked in a person property like any other member. Assigning one is
+// can be picked in a person property on any board without being its member. Assigning one is
 // how a card names its agent, so a board without this cannot name one at all.
 type BoardUsers interface {
 	// EnsureAgentAccounts needs no board: an account is the machine's, made when
 	// an agent is registered.
 	EnsureAgentAccounts(ctx context.Context, agents []AgentUser) ([]AgentUser, error)
-	EnsureAgentUsers(ctx context.Context, boardID string, agents []AgentUser) ([]AgentUser, error)
-	// RetireAgentUser drops board memberships and reports how many. The account
-	// stays: cards may still name it.
+	// RetireAgentUser drops the board memberships an agent was given when agents
+	// were made members of boards, and reports how many. The account stays:
+	// cards may still name it.
 	RetireAgentUser(ctx context.Context, agent AgentUser) (int, error)
 	AssignCardAgent(ctx context.Context, cardID string, agent AgentUser) error
 }

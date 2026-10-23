@@ -88,44 +88,6 @@ type SessionEventRecord struct {
 	CreatedAt time.Time       `json:"createdAt"`
 }
 
-// SaveSetupStep records what was done with one step of a board's setup. It
-// lives here rather than in the browser because it is about this machine: the
-// same install seen from the server build, or after the page's storage is
-// cleared, has to remember that a question was deliberately passed over.
-func (s *Store) SaveSetupStep(st SetupStepState) error {
-	if st.At.IsZero() {
-		st.At = time.Now()
-	}
-	if err := s.ensureBoardRef(st.BoardID, true); err != nil {
-		return err
-	}
-	_, err := s.exec(`INSERT INTO board_setup (board_id, step, status, changed_at)
-		VALUES (?,?,?,?)
-		ON CONFLICT(board_id, step) DO UPDATE SET status=excluded.status, changed_at=excluded.changed_at`,
-		st.BoardID, st.Step, st.Status, st.At.UnixMilli())
-	return err
-}
-
-// SetupSteps returns what is recorded about a board's setup.
-func (s *Store) SetupSteps(boardID string) ([]SetupStepState, error) {
-	rows, err := s.query(`SELECT board_id, step, status, changed_at FROM board_setup WHERE board_id=?`, boardID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var out []SetupStepState
-	for rows.Next() {
-		var st SetupStepState
-		var at int64
-		if err := rows.Scan(&st.BoardID, &st.Step, &st.Status, &at); err != nil {
-			return nil, err
-		}
-		st.At = time.UnixMilli(at)
-		out = append(out, st)
-	}
-	return out, rows.Err()
-}
-
 // Every write that names a card or a board makes the row its foreign key points
 // at first — an upsert rather than a read, because a card this side has never
 // heard of is the ordinary case on the first write about it.

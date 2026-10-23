@@ -473,7 +473,7 @@ func (m *Manager) planningWorkdir(name string) (WorkdirEntry, error) {
 func (m *Manager) planningAgent(name string) (AgentEntry, error) {
 	agents := m.Agents()
 	if len(agents) == 0 {
-		return AgentEntry{}, apperr.New("agents.none", "No agents are registered (the board's menu, Agents…)")
+		return AgentEntry{}, apperr.New("agents.none", "No agents are connected (Settings → AI)")
 	}
 	if name == "" {
 		if len(agents) > 1 {

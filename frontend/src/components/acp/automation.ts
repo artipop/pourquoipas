@@ -49,11 +49,6 @@ export function boardColumns(board: Board, propertyName?: string): BoardColumn[]
 
 // The board's own keys, spelled as Go spells them
 // (internal/acp/boardseed.go). A board made from a template brings them.
-//
-// BOARD_PROP_SETUP is the questions a board asks the machine when one is made
-// from it: which steps, in which order, with the template's own hint beside
-// each.
-export const BOARD_PROP_SETUP = 'setup'
 
 // What this board's agents are told first. Nothing here writes it — the page
 // asks Go for it (GetBoardPrompts/SetBoardPrompts) and Go keeps it on the board —
@@ -76,72 +71,4 @@ export const BOARD_PROP_BRANCH_PROPERTY = 'branchProperty'
 export function boardBranchProperty(board: {properties?: Record<string, unknown>}): string {
     const recorded = board.properties?.[BOARD_PROP_BRANCH_PROPERTY]
     return typeof recorded === 'string' ? recorded : ''
-}
-
-// BoardSetupStep is one question the template asks the machine when a board is
-// made from it. Only the kind and the order are the template's to choose: what
-// each step does is the app's, so a template can never ask for something no
-// registry can hold.
-export type BoardSetupStep = {
-    kind: string
-    hint?: string
-    required?: boolean
-}
-
-export type BoardSetup = {
-    steps: BoardSetupStep[]
-}
-
-// SetupStepDef is a step this build can carry out, as Go lists them.
-export type SetupStepDef = {
-    kind: string
-    registry?: string
-    optional: boolean
-}
-
-function readProperty<T>(board: Board, key: string, fallback: T): T {
-    const properties = board.properties || {}
-    const raw = properties[key]
-    if (raw === undefined || raw === null || raw === '') {
-        return fallback
-    }
-    if (typeof raw === 'string') {
-        try {
-            return JSON.parse(raw) as T
-        } catch {
-            return fallback
-        }
-    }
-    return raw as unknown as T
-}
-
-export function readBoardSetup(board: Board): BoardSetup | undefined {
-    const setup = readProperty<BoardSetup | undefined>(board, BOARD_PROP_SETUP, undefined)
-    return setup && Array.isArray(setup.steps) ? setup : undefined
-}
-
-// boardAutomationProperties returns the board's properties with the setup
-// questions in them. They are written as JSON text rather than as objects
-// because that is what the board's property map is typed to hold, and Go reads
-// either.
-export function boardAutomationProperties(
-    board: Board,
-    setup: BoardSetup | undefined,
-): Record<string, string | string[]> {
-    const properties = {...(board.properties || {})}
-
-    if (setup) {
-        properties[BOARD_PROP_SETUP] = JSON.stringify(setup)
-    } else {
-        delete properties[BOARD_PROP_SETUP]
-    }
-    return properties
-}
-
-// impliedSetupSteps is what the app asks for when a template says nothing, and
-// it is only ever used to fill the editor in when somebody chooses to name the
-// steps by hand. Nothing runs off this copy: an undeclared template is resolved
-// on the Go side.
-export function impliedSetupSteps(defs: SetupStepDef[]): BoardSetupStep[] {
-    return defs.map((d) => ({kind: d.kind}))
 }

@@ -38,7 +38,6 @@ func appTables() []Table {
 		idempotency(),
 		cardStall(),
 		cardChanges(),
-		boardSetup(),
 		checkout(),
 		sourceItem(),
 		sourceEvent(),
@@ -438,31 +437,6 @@ func cardChanges() Table {
 		},
 		PK:  []string{"card_id"},
 		FKs: []FK{cardFK("card_changes")},
-	}
-}
-
-// board_setup is what the setup wizard has already asked about a board.
-func boardSetup() Table {
-	return Table{
-		Name: "board_setup",
-		Why: "Which setup questions a board has been asked. It is about this machine\n" +
-			"— the answers are folders and hosts here — so it cannot live in the\n" +
-			"browser's storage, which the desktop window forgets on every launch.",
-		Columns: []Column{
-			{Name: "board_id", Type: ID()},
-			{Name: "step", Type: Name(32)},
-			{Name: "status", Type: Name(16)},
-			{Name: "changed_at", Type: Millis(),
-				Why: "Was `at`. AT is a keyword in Postgres and a name not worth having."},
-		},
-		PK: []string{"board_id", "step"},
-		Checks: []Check{{
-			Name: "board_setup_status", Column: "status",
-			// 'offered' is the wizard's own row rather than a step's answer:
-			// it records that a board was shown the wizard at all.
-			Values: []string{"pending", "done", "skipped", "offered"},
-		}},
-		FKs: []FK{boardFK("board_setup")},
 	}
 }
 

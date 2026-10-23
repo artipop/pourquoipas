@@ -17,23 +17,20 @@ import mutator from '../../mutator'
 import ModalWrapper from '../modalWrapper'
 import {sendFlashMessage} from '../flashMessages'
 import WorkdirsDialog from '../acp/workdirsDialog'
+import {isWorkdirsAvailable} from '../acp/workdirsPanel'
 import BoardPromptsDialog, {isBoardPromptsAvailable} from '../acp/boardPromptsDialog'
-import AgentsDialog, {isAgentsDialogAvailable} from '../acp/agentsDialog'
-import BoardSetupWizard from '../acp/boardSetupWizard'
-import {createSetupPlan, isBoardSetupAvailable} from '../acp/boardSetup'
 import SourcesDialog, {isSourcesAvailable} from '../acp/sourcesDialog'
 import InboxSortingDialog, {isInboxSortingAvailable} from '../acp/inboxSortingDialog'
 import TemplateEditor from '../acp/templateEditor'
 import {isSaveAsTemplateAvailable, saveBoardAsTemplate} from '../acp/saveAsTemplate'
 import {isInboxBoard} from '../acp/inboxView'
 import {goError} from '../../goMessages'
+import {aiEnabled} from '../../aiSwitch'
 
-// What this menu holds is what is true of *this board*, and only that. The
-// registries it used to open — agents, how to reach the network — belong to the machine and are in the sidebar's settings, where they
-// can be reached with no board open at all. Talking a task over with an agent
-// is a way of making cards and lives on the "New" button. Setting the board up
-// is offered by the board's own title while it is unanswered, and by the screen
-// below afterwards.
+// What this menu holds is what is true of *this board*, and only that. Agents
+// are the person's, not a board's: they are connected in Settings → AI and
+// any of them may be assigned a card on any board. Talking a task over with an agent
+// is a way of making cards and lives on the "New" button.
 //
 // The inbox board is the one board about where cards come from, so its menu
 // offers the sources dialog and the sorting that carries their cards on — and
@@ -81,18 +78,10 @@ const ViewHeaderActionsMenu = (props: Props) => {
     const [showSources, setShowSources] = createSignal(false)
     const [showSorting, setShowSorting] = createSignal(false)
     const [showWorkdirs, setShowWorkdirs] = createSignal(false)
-    const [showAgents, setShowAgents] = createSignal(false)
     const [showPrompts, setShowPrompts] = createSignal(false)
-    const [showSetup, setShowSetup] = createSignal(false)
 
-    // Which of the setup questions this board asks is the board's own answer,
-    // and the menu follows it: a board of shopping lists is offered folders and
-    // nothing else.
-    // They were folds of the automation dialog, where setting up where an
-    // agent works was a question about columns and routes — which it is not —
-    // and a fold under a canvas is a place nobody opens.
-    const [plan, refreshPlan] = createSetupPlan(() => props.board)
-    const asks = (kind: string) => (plan()?.steps || []).some((s) => s.kind === kind)
+    // A template is a board being written, not one agents work on.
+    const agentsWork = () => aiEnabled() && !props.board.isTemplate
 
     // The template a board was saved as, held so the editor opens on it: it is
     // a board of its own and the page has not navigated to it.
@@ -140,7 +129,7 @@ const ViewHeaderActionsMenu = (props: Props) => {
                                     route canvas, and a fold under a canvas is
                                     somewhere nobody scrolls to. Offered where
                                     the board is one agents work on. */}
-                                <Show when={isBoardPromptsAvailable() && asks('agent')}>
+                                <Show when={isBoardPromptsAvailable() && agentsWork()}>
                                     <Menu.Text
                                         id='boardPrompts'
                                         name={intl.formatMessage({id: 'ViewHeader.board-prompts', defaultMessage: 'The board’s system prompt…'})}
@@ -148,36 +137,12 @@ const ViewHeaderActionsMenu = (props: Props) => {
                                     />
                                 </Show>
 
-                                {/* No setup step asks for a folder any more — a card
-                                    does — so the folders are offered wherever
-                                    agents work, which is where a card can name
-                                    one. */}
-                                <Show when={asks('agent')}>
+                                {/* A server has no folders (docs/modes.md). */}
+                                <Show when={agentsWork() && isWorkdirsAvailable()}>
                                     <Menu.Text
                                         id='workdirs'
                                         name={intl.formatMessage({id: 'ViewHeader.workdirs', defaultMessage: 'Folders…'})}
                                         onClick={() => setShowWorkdirs(true)}
-                                    />
-                                </Show>
-
-                                {/* Who picks the cards up. The registry is the
-                                    machine's, and it is offered here because
-                                    it means nothing on a board no agent works.
-                                    In the order the work needs them — the
-                                    folder, then who works in it. */}
-                                <Show when={isAgentsDialogAvailable() && asks('agent')}>
-                                    <Menu.Text
-                                        id='agents'
-                                        name={intl.formatMessage({id: 'ViewHeader.agents', defaultMessage: 'Agents…'})}
-                                        onClick={() => setShowAgents(true)}
-                                    />
-                                </Show>
-
-                                <Show when={isBoardSetupAvailable() && (plan()?.steps.length || 0) > 0}>
-                                    <Menu.Text
-                                        id='setup'
-                                        name={intl.formatMessage({id: 'ViewHeader.setup', defaultMessage: 'Walk the setup again…'})}
-                                        onClick={() => setShowSetup(true)}
                                     />
                                 </Show>
 
@@ -210,8 +175,7 @@ const ViewHeaderActionsMenu = (props: Props) => {
 
                             {/* Carrying the board out is not a setting of it,
                                 and it used to open this menu: what a person
-                                comes here for — what the board runs, what it
-                                was asked at setup — stood under two exports
+                                comes here for — what the board runs — stood under two exports
                                 nobody uses twice. Last, behind a line. There is
                                 no import beside them on purpose: an archive
                                 brings boards, plural, so it is taken in where
@@ -253,31 +217,13 @@ const ViewHeaderActionsMenu = (props: Props) => {
             <Show when={showWorkdirs()}>
                 <WorkdirsDialog
                     board={props.board}
-                    onClose={() => {
-                        setShowWorkdirs(false)
-                        refreshPlan()
-                    }}
+                    onClose={() => setShowWorkdirs(false)}
                 />
             </Show>
             <Show when={showPrompts()}>
                 <BoardPromptsDialog
                     board={props.board}
                     onClose={() => setShowPrompts(false)}
-                />
-            </Show>
-            <Show when={showAgents()}>
-                <AgentsDialog onClose={() => {
-                    setShowAgents(false)
-                    refreshPlan()
-                }}/>
-            </Show>
-            <Show when={showSetup()}>
-                <BoardSetupWizard
-                    board={props.board}
-                    onClose={() => {
-                        setShowSetup(false)
-                        refreshPlan()
-                    }}
                 />
             </Show>
             <Show when={showSources()}>

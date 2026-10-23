@@ -1,4 +1,4 @@
-import {Show, createSignal} from 'solid-js'
+import {Show, createEffect, createSignal} from 'solid-js'
 
 import {FormattedMessage, useIntl} from '../../intl'
 
@@ -6,6 +6,7 @@ import SettingsIcon from '../../widgets/icons/settings'
 import RootPortal from '../rootPortal'
 import AppSettingsDialog from '../settings/appSettingsDialog'
 import {updateWaiting, useUpdateState} from '../settings/updates'
+import {requestedSettings, settingsOpened} from '../settings/openSettings'
 
 import './sidebarSettingsButton.scss'
 
@@ -20,6 +21,16 @@ import './sidebarSettingsButton.scss'
 const SidebarSettingsButton = () => {
     const intl = useIntl()
     const [showSettings, setShowSettings] = createSignal(false)
+    const [section, setSection] = createSignal<string | undefined>(undefined)
+
+    // Another screen asked for a section (openSettings.ts).
+    createEffect(requestedSettings, (wanted) => {
+        if (wanted) {
+            setSection(wanted)
+            setShowSettings(true)
+            settingsOpened()
+        }
+    })
 
     // A new version is only ever shown inside this dialog, and nobody opens a
     // settings dialog to find out whether there is one. The dot is the whole of
@@ -33,7 +44,10 @@ const SidebarSettingsButton = () => {
                 type='button'
                 class='SidebarSettingsButton__entry'
                 aria-label={intl.formatMessage({id: 'Sidebar.settings', defaultMessage: 'Settings'})}
-                onClick={() => setShowSettings(true)}
+                onClick={() => {
+                    setSection(undefined)
+                    setShowSettings(true)
+                }}
             >
                 <SettingsIcon/>
                 <FormattedMessage
@@ -53,7 +67,10 @@ const SidebarSettingsButton = () => {
                 which is invisible on the light theme's paper. */}
             <Show when={showSettings()}>
                 <RootPortal>
-                    <AppSettingsDialog onClose={() => setShowSettings(false)}/>
+                    <AppSettingsDialog
+                        section={section()}
+                        onClose={() => setShowSettings(false)}
+                    />
                 </RootPortal>
             </Show>
         </div>

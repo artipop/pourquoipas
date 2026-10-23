@@ -164,12 +164,6 @@ func TestAValueOutsideAClosedSetIsRefused(t *testing.T) {
 			[]any{"worktee"},
 		},
 		{
-			"a setup step in a state the wizard never writes",
-			`INSERT INTO board_setup (board_id, step, status, changed_at)
-			 VALUES ('board-1', 'workdir', ?, 1)`,
-			[]any{"answered"},
-		},
-		{
 			"an outcome no rule produces",
 			`INSERT INTO source_event (id, source, outcome, created_at)
 			 VALUES ('e1', 'mail', ?, 1)`,
@@ -188,10 +182,6 @@ func TestAValueOutsideAClosedSetIsRefused(t *testing.T) {
 	if _, err := db.Exec(`INSERT INTO agent_session (id, card_id, agent_kind, status, started_at)
 		VALUES ('s2', 'card-1', 'claude', 'running', 1)`); err != nil {
 		t.Errorf("a status the code writes was refused: %v", err)
-	}
-	if _, err := db.Exec(`INSERT INTO board_setup (board_id, step, status, changed_at)
-		VALUES ('board-1', 'workdir', 'skipped', 1)`); err != nil {
-		t.Errorf("a setup status the code writes was refused: %v", err)
 	}
 }
 

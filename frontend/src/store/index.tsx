@@ -8,6 +8,8 @@ import {createContext, createStore, ParentComponent} from 'solid-js'
 
 import octoClient from '../octoClient'
 
+import {extraBoardUsers} from '../extensions'
+
 import type {StoreContext, StoreDeps} from './context'
 import {UsersState, initialUsersState, createUsersActions} from './users'
 import {TeamsState, initialTeamsState, createTeamsActions} from './teams'
@@ -78,8 +80,19 @@ const createActions = (ctx: StoreContext) => {
         // get the users actions closed over here, so callers see one argument.
         boards: {
             ...boardsBase,
-            fetchBoardMembers: (args: {teamId: string, boardId: string}) =>
-                boardsBase.fetchBoardMembers(args, users.setBoardUsers),
+            fetchBoardMembers: async (args: {teamId: string, boardId: string}) => {
+                await boardsBase.fetchBoardMembers(args, users.setBoardUsers)
+                users.addBoardUsers(await extraBoardUsers(args.boardId))
+            },
+
+            // The people a board knows besides its members (extensions.ts),
+            // asked again when their source says they changed.
+            fetchExtraBoardUsers: async () => {
+                const boardId = ctx.state.boards.current
+                if (boardId) {
+                    users.addBoardUsers(await extraBoardUsers(boardId))
+                }
+            },
             updateMembersEnsuringBoardsAndUsers: (members: Parameters<typeof boardsBase.updateMembersEnsuringBoardsAndUsers>[0]) =>
                 boardsBase.updateMembersEnsuringBoardsAndUsers(members, users),
         },
