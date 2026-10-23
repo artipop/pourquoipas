@@ -1,7 +1,7 @@
 import {Events} from '@wailsio/runtime'
 
-import {goApp} from '../../goBridge'
-import {pageOnWails} from '../../busSocket'
+import {goApp} from './goBridge'
+import {pageOnWails} from './busSocket'
 
 // What the agents are doing, as it happens. A browser hears it on one shared
 // socket (/acp/events/ws); a desktop window, on the Wails bus.

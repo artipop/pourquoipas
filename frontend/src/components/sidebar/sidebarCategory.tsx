@@ -27,7 +27,7 @@ import CreateNewFolder from '../../widgets/icons/newFolder'
 import CreateCategory from '../createCategory/createCategory'
 import {useAppSelector} from '../../store/hooks'
 import {useRouteMatch} from '../../hooks/routerMatch'
-import {isInboxBoard} from '../acp/inboxView'
+import {isInboxBoard} from '../inbox/inboxView'
 import {getCurrentCard} from '../../store/cards'
 import {Utils} from '../../utils'
 

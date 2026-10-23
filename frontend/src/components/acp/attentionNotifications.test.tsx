@@ -47,7 +47,7 @@ const waitingOnCard = {
 // vi.mock is hoisted above the imports, so what it captures has to be too.
 const {handlers} = vi.hoisted(() => ({handlers: {} as Record<string, (payload?: any) => void>}))
 
-vi.mock('./agentEvents', () => ({
+vi.mock('../../goEvents', () => ({
     onAgentEvent: (event: string, handler: (payload?: any) => void) => {
         handlers[event] = handler
         return () => delete handlers[event]

@@ -130,7 +130,7 @@ viper с ~25 пакетами ушёл из `go.mod` (`docs/fork-shrink-removed.
   ли пункт меню. Переехал в `bindings.ts`;
 - `actionLabel` (четыре строки перевода) жил в редакторе маршрутов, а нужен
   ещё и сводке шаблона — из-за этого `templateEditor` тащил холст. Переехал в
-  `automation.ts`.
+  `boardFields.ts`.
 
 Инициализация emoji-mart ушла из `main.tsx` в `widgets/emojiData.ts`:
 `ensureEmojiData()` догружает библиотеку и данные при первой надобности и

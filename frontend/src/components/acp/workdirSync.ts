@@ -6,7 +6,7 @@ import mutator from '../../mutator'
 import {Utils, IDType} from '../../utils'
 import {goApp} from '../../goBridge'
 
-import {BOARD_PROP_BRANCH_PROPERTY, BOARD_PROP_PROJECT_PROPERTY, boardBranchProperty} from './automation'
+import {BOARD_PROP_BRANCH_PROPERTY, BOARD_PROP_PROJECT_PROPERTY, boardBranchProperty} from '../../boardFields'
 
 // Mirroring the folder registry into the board's own field, which is the only
 // way a card can name a folder: the registry is the machine's, the field is the

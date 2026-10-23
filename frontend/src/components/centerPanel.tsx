@@ -34,6 +34,8 @@ import {
 
 import {ExtensionSlot, withNewCardDefaults} from '../extensions'
 
+import {cardColumnProperty} from '../boardFields'
+
 import ShareBoardButton from './shareBoard/shareBoardButton'
 import ShareBoardLoginButton from './shareBoard/shareBoardLoginButton'
 
@@ -49,7 +51,6 @@ import Gallery from './gallery/gallery'
 import {FINISHED, TOUR_BOARD, TOUR_CARD} from './onboardingTour'
 import {patchPreferences, useOnTourBoard} from './onboardingTour/tourState'
 import ShareBoardTourStep from './onboardingTour/shareBoard/shareBoard'
-import {cardColumnProperty} from './acp/automation'
 
 // FullCalendar is half a megabyte of source, and a board opens on its kanban:
 // the calendar arrives when somebody switches to it.

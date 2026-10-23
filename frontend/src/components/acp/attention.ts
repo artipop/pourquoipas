@@ -10,7 +10,7 @@ import {aiEnabled} from '../../aiSwitch'
 import {GoMessage, goMessage} from '../../goMessages'
 import type {IntlShape} from '../../intl'
 
-import {onAgentEvent} from './agentEvents'
+import {onAgentEvent} from '../../goEvents'
 
 // Which cards are waiting for a person.
 //

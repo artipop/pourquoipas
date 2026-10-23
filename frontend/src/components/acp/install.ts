@@ -16,7 +16,7 @@ import FirstRunStrip from './firstRunStrip'
 import AIPanel, {isAIPanelAvailable} from './aiPanel'
 import {agentBoardUsers, assignableFilter} from './agentAssignees'
 import {withoutAgentProperties} from './agentProperties'
-import {BoardAgentMenuItems, PlanningMenuItem} from './agentMenus'
+import {BoardAgentMenuItems, InboxSortingMenuItem, PlanningMenuItem} from './agentMenus'
 import AttentionNotifications from './attentionNotifications'
 import CardAgentBadges from './cardAgentBadges'
 import CardAgentHeader from './cardAgentHeader'
@@ -63,6 +63,7 @@ export function installAgentFeatures(): void {
     addToSlot('cardPropertiesEnd', FolderRowToAdd)
     addToSlot('newCardMenu', PlanningMenuItem)
     addToSlot('boardMenu', BoardAgentMenuItems)
+    addToSlot('inboxMenu', InboxSortingMenuItem)
     addToSlot('boardHeader', FirstRunStrip)
 
     // The AI's own section, right after the app itself; «Other», whose every

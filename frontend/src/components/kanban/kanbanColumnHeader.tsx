@@ -29,7 +29,7 @@ import {personNameById} from '../../userDisplay'
 
 import BoardPermissionGate from '../permissions/boardPermissionGate'
 
-import {isInboxBoard} from '../acp/inboxView'
+import {isInboxBoard} from '../inbox/inboxView'
 
 import {KanbanCalculation} from './calculation/calculation'
 

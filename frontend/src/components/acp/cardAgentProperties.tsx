@@ -11,9 +11,10 @@ import type {CardPropertyRow, SlotProps} from '../../extensions'
 import AssignAgentTourStep from '../onboardingTour/assignAgent/assign_agent'
 import PickFolderTourStep from '../onboardingTour/pickFolder/pick_folder'
 
+import {boardBranchProperty} from '../../boardFields'
+
 import CardFolderValue from './cardFolderValue'
 
-import {boardBranchProperty} from './automation'
 import {cardAgentState} from './cardAgentState'
 import {fieldNames, findWorkdirProperty} from './workdirSync'
 import {canAddFolder} from './cardFolder'

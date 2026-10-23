@@ -4,7 +4,8 @@ import mutator from '../../mutator'
 
 import {fakeGoSide} from '../../test/goSide'
 
-import {BOARD_PROP_PROJECT_PROPERTY} from './automation'
+import {BOARD_PROP_PROJECT_PROPERTY} from '../../boardFields'
+
 import {canAddFolder, pickFolderForBoard} from './cardFolder'
 
 vi.mock('../../mutator')

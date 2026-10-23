@@ -25,7 +25,7 @@ import {Utils} from '../../utils'
 
 import {Constants} from '../../constants'
 
-import TemplateEditor from '../acp/templateEditor'
+import TemplateEditor from '../templates/templateEditor'
 
 import BoardTemplateSelectorPreview from './boardTemplateSelectorPreview'
 import BoardTemplateSelectorItem from './boardTemplateSelectorItem'

@@ -218,6 +218,9 @@ export type SlotProps = {
     // Items of a board's ⋯ menu, before Export. Not drawn on the inbox.
     boardMenu: {board: Board, activeView: BoardView}
 
+    // Items of the inbox's ⋯ menu, after «Sources…».
+    inboxMenu: {board: Board}
+
     // Items of the «New» button's menu, after the card templates.
     newCardMenu: {board: Board}
 

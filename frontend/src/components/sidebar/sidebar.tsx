@@ -48,7 +48,7 @@ import mutator from '../../mutator'
 
 import {Board} from '../../blocks/board'
 
-import {isInboxBoard} from '../acp/inboxView'
+import {isInboxBoard} from '../inbox/inboxView'
 
 import {useRouteMatch} from '../../hooks/routerMatch'
 

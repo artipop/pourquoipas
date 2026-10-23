@@ -148,7 +148,7 @@ mocks the bindings module for the suite, and a test installs its Go side with
 **Events come back over a socket, not the Wails bus** (`eventsws.go`,
 `/acp/events/ws`; tunnelled in a desktop window), because the bus only reaches windows the app owns and a page
 opened in a browser hears nothing. `emitter.go` sends every event both
-ways; the page listens only on the socket (`components/acp/agentEvents.ts`). A
+ways; the page listens only on the socket (`goEvents.ts`). A
 new UI event needs nothing but `Emit`.
 
 **`/m` is the board on a phone** (`pages/mobile/`): four screens, and it asks
@@ -212,7 +212,8 @@ The board is Focalboard's and is to be contributed back some day as «Focalboard
 filters, named slots, card side panels, card property rows and settings
 sections, registered once from `main.tsx` (`components/acp/install.ts`). A new
 agent feature goes behind a seam, never inline in a Focalboard component;
-`src/seams.test.ts` fails when a board file starts importing `components/acp`.
+`src/seams.test.ts` fails when a board file starts importing `components/acp`
+(only `main.tsx` and the phone's page may).
 In Go, `server/` knows only machine users and the agent flag on a comment;
 `internal/boardadapter` is the one bridge.
 

@@ -14,7 +14,8 @@ import {isHosted} from '../../buildKind'
 import {onBoardUsersChanged} from '../../extensions'
 import {openSettings} from '../settings/openSettings'
 
-import {onAgentEvent} from './agentEvents'
+import {onAgentEvent} from '../../goEvents'
+
 import FolderChoices from './folderChoices'
 import AttentionAnswers from './attentionAnswers'
 import {useAttention} from './attention'

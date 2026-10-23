@@ -4,7 +4,7 @@ import {For, Show, createEffect, createSignal, onSettled} from 'solid-js'
 
 import {useIntl} from '../../intl'
 import type {IntlShape} from '../../intl'
-import {onAgentEvent} from '../../components/acp/agentEvents'
+import {onAgentEvent} from '../../goEvents'
 import {attentionHeading, questionText, useAttention} from '../../components/acp/attention'
 import AttentionAnswers from '../../components/acp/attentionAnswers'
 import {aiEnabled} from '../../aiSwitch'

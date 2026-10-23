@@ -27,7 +27,7 @@ const permission: Attention = {
     awaiting: true,
 }
 
-vi.mock('./agentEvents', () => ({onAgentEvent: () => () => undefined}))
+vi.mock('../../goEvents', () => ({onAgentEvent: () => () => undefined}))
 
 describe('components/acp/attentionAnswers', () => {
     beforeEach(() => vi.clearAllMocks())

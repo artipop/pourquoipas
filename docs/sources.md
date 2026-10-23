@@ -732,7 +732,7 @@ Secret Service на Linux). Запасная — файл `<dataDir>/secrets.jso
 
 ## 19. UI
 
-По образцу остальных реестров: `frontend/src/components/acp/sourcesDialog.tsx` из
+По образцу остальных реестров: `frontend/src/components/inbox/sourcesDialog.tsx` из
 меню доски «Входящие» и ниоткуда больше (доска есть всегда — её заводит
 приложение), локальные сигналы, feature-detect биндингов, вызовы
 `ListSources`/`AddSource`/`UpdateSource`/`RemoveSource`/`SetSourceCredential`. Слайс
@@ -753,7 +753,7 @@ Secret Service на Linux). Запасная — файл `<dataDir>/secrets.jso
 Отдельный канал оповещения не заводится: `acp:attention` и
 `attentionNotifications.tsx` уже существуют и доводят событие до уведомления;
 `needs-reauth` — ровно этот случай. Новое событие подсистемы доставляется тем же
-способом, что и события агентов, — сокетом `/acp/events/ws` (`agentEvents.ts`),
+способом, что и события агентов, — сокетом `/acp/events/ws` (`goEvents.ts`),
 а не шиной Wails: шина доходит только до окон десктопного приложения, а доска,
 открытая с телефона, не услышала бы ничего.
 

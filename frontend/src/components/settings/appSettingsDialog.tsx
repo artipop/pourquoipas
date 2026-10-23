@@ -9,7 +9,7 @@ import {registeredSettingsSections} from '../../extensions'
 
 import Dialog from '../dialog'
 
-import ServerPanel, {isServerAttachAvailable} from '../acp/serverPanel'
+import ServerPanel, {isServerAttachAvailable} from './serverPanel'
 
 import AppPanel from './appPanel'
 import DataPanel from './dataPanel'

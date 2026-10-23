@@ -16,13 +16,12 @@ import mutator from '../../mutator'
 
 import ModalWrapper from '../modalWrapper'
 import {sendFlashMessage} from '../flashMessages'
-import SourcesDialog, {isSourcesAvailable} from '../acp/sourcesDialog'
-import InboxSortingDialog, {isInboxSortingAvailable} from '../acp/inboxSortingDialog'
-import TemplateEditor from '../acp/templateEditor'
-import {isSaveAsTemplateAvailable, saveBoardAsTemplate} from '../acp/saveAsTemplate'
-import {isInboxBoard} from '../acp/inboxView'
+import SourcesDialog, {isSourcesAvailable} from '../inbox/sourcesDialog'
+import TemplateEditor from '../templates/templateEditor'
+import {isSaveAsTemplateAvailable, saveBoardAsTemplate} from '../templates/saveAsTemplate'
+import {isInboxBoard} from '../inbox/inboxView'
 import {goError} from '../../goMessages'
-import {ExtensionSlot} from '../../extensions'
+import {ExtensionSlot, hasSlot} from '../../extensions'
 
 // What this menu holds is what is true of *this board*, and only that. Agents
 // are the person's, not a board's: they are connected in Settings → AI and
@@ -73,7 +72,6 @@ function onExportCsvTrigger(board: Board, activeView: BoardView, cards: Card[], 
 const ViewHeaderActionsMenu = (props: Props) => {
     const intl = useIntl()
     const [showSources, setShowSources] = createSignal(false)
-    const [showSorting, setShowSorting] = createSignal(false)
 
     // The template a board was saved as, held so the editor opens on it: it is
     // a board of its own and the page has not navigated to it.
@@ -89,13 +87,12 @@ const ViewHeaderActionsMenu = (props: Props) => {
 
     const onInbox = () => isInboxBoard(props.board)
     const offerSources = () => isSourcesAvailable() && onInbox()
-    const offerSorting = () => isInboxSortingAvailable() && onInbox()
 
     return (
         <ModalWrapper>
             {/* On the inbox with no sources to offer, the menu would be an empty
                 one: a button that opens nothing is worse than no button. */}
-            <Show when={!onInbox() || offerSources() || offerSorting()}>
+            <Show when={!onInbox() || offerSources() || hasSlot('inboxMenu')}>
                 <MenuWrapper
                     label={intl.formatMessage({id: 'ViewHeader.view-header-menu', defaultMessage: 'View header menu'})}
                     menu={
@@ -140,11 +137,10 @@ const ViewHeaderActionsMenu = (props: Props) => {
 
                             {/* Where what the sources bring goes next — the
                                 other half of the inbox, so beside them. */}
-                            <Show when={offerSorting()}>
-                                <Menu.Text
-                                    id='inboxSorting'
-                                    name={intl.formatMessage({id: 'ViewHeader.inbox-sorting', defaultMessage: 'Sorting the inbox…'})}
-                                    onClick={() => setShowSorting(true)}
+                            <Show when={onInbox()}>
+                                <ExtensionSlot
+                                    name='inboxMenu'
+                                    board={props.board}
                                 />
                             </Show>
 
@@ -192,11 +188,6 @@ const ViewHeaderActionsMenu = (props: Props) => {
             <Show when={showSources()}>
                 <SourcesDialog
                     onClose={() => setShowSources(false)}
-                />
-            </Show>
-            <Show when={showSorting()}>
-                <InboxSortingDialog
-                    onClose={() => setShowSorting(false)}
                 />
             </Show>
             <Show when={template()}>

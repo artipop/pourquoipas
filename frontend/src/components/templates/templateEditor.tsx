@@ -11,7 +11,7 @@ import Dialog from '../dialog'
 
 import {goError} from '../../goMessages'
 
-import {boardColumns, columnProperty} from './automation'
+import {boardColumns, columnProperty} from '../../boardFields'
 
 import './templateEditor.scss'
 

@@ -14,7 +14,7 @@ import {isHosted} from '../../buildKind'
 
 import {GoMessage, goError, goMessage} from '../../goMessages'
 
-import {onAgentEvent} from './agentEvents'
+import {onAgentEvent} from '../../goEvents'
 
 import './cardDiff.scss'
 

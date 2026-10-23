@@ -7,9 +7,10 @@ import type {CardSidePanel} from '../../extensions'
 import HintTip from '../onboardingHints/hintTip'
 import {HINT_CHANGES} from '../onboardingHints/hints'
 
+import {onAgentEvent} from '../../goEvents'
+
 import CardDiffPanel, {isCardDiffAvailable} from './cardDiff'
 import {cardAgentState, refreshCardAgent} from './cardAgentState'
-import {onAgentEvent} from './agentEvents'
 
 // «Changes» in a card's dialog: what the agent changed in the card's folder,
 // read from git (cardDiff.tsx). Plugged in as a side panel (extensions.tsx).

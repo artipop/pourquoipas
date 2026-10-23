@@ -3,7 +3,7 @@
 import {Accessor, createSignal, onSettled} from 'solid-js'
 
 import {goApp} from '../../goBridge'
-import {onAgentEvent} from '../acp/agentEvents'
+import {onAgentEvent} from '../../goEvents'
 
 // Where the app is in replacing itself.
 //

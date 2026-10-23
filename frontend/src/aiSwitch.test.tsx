@@ -8,7 +8,7 @@ import {UserSettingKey, UserSettings} from './userSettings'
 import {aiEnabled, setAIEnabled} from './aiSwitch'
 import {isPlanningAvailable} from './components/acp/planningDialog'
 import {withoutAgentProperties} from './components/acp/agentProperties'
-import {BOARD_PROP_BRANCH_PROPERTY, BOARD_PROP_PROJECT_PROPERTY} from './components/acp/automation'
+import {BOARD_PROP_BRANCH_PROPERTY, BOARD_PROP_PROJECT_PROPERTY} from './boardFields'
 import {SHOW_GIT} from './components/acp/gitShown'
 import AIPanel, {isAIPanelAvailable} from './components/acp/aiPanel'
 

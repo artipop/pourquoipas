@@ -1,6 +1,6 @@
-import {Board, createBoard} from '../../blocks/board'
+import {Board, createBoard} from './blocks/board'
 
-import {boardColumns, cardColumnProperty} from './automation'
+import {boardColumns, cardColumnProperty} from './boardFields'
 
 function boardWith(properties: Record<string, unknown>): Board {
     return {

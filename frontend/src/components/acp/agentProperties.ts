@@ -2,7 +2,8 @@ import {Board, IPropertyTemplate} from '../../blocks/board'
 import {aiEnabled} from '../../aiSwitch'
 import {isHosted} from '../../buildKind'
 
-import {BOARD_PROP_PROJECT_PROPERTY, boardBranchProperty} from './automation'
+import {BOARD_PROP_PROJECT_PROPERTY, boardBranchProperty} from '../../boardFields'
+
 import {SHOW_GIT} from './gitShown'
 
 // The card fields that are the agents' own: where the work is (the folder) and

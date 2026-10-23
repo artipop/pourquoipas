@@ -32,7 +32,7 @@ import {getMe} from '../store/users'
 import {getHiddenBoardIDs} from '../store/sidebar'
 
 import CenterPanel from './centerPanel'
-import TemplateEditor from './acp/templateEditor'
+import TemplateEditor from './templates/templateEditor'
 import BoardTemplateSelector from './boardTemplateSelector/boardTemplateSelector'
 import GuestNoBoards from './guestNoBoards'
 

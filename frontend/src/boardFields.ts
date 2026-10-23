@@ -1,4 +1,4 @@
-import {Board, IPropertyOption, IPropertyTemplate} from '../../blocks/board'
+import {Board, IPropertyOption, IPropertyTemplate} from './blocks/board'
 
 // What this application keeps on a board: the instructions it gives its agents,
 // the questions it asks when it is set up, and which of the board's own

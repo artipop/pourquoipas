@@ -21,7 +21,7 @@ const mockedOctoClient = vi.mocked(octoClient)
 
 // The agent event socket, kept where a test can make a session start.
 const {handlers} = vi.hoisted(() => ({handlers: {} as Record<string, (payload?: any) => void>}))
-vi.mock('../acp/agentEvents', () => ({
+vi.mock('../../goEvents', () => ({
     onAgentEvent: (event: string, handler: (payload?: any) => void) => {
         handlers[event] = handler
         return () => delete handlers[event]

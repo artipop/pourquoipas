@@ -1,6 +1,6 @@
-import {fakeGoSide} from '../../test/goSide'
+import {fakeGoSide} from './test/goSide'
 
-import {onAgentEvent} from './agentEvents'
+import {onAgentEvent} from './goEvents'
 
 const anyGlobal = globalThis as any
 

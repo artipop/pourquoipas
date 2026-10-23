@@ -33,7 +33,7 @@ server's `/ws` is **tunnelled through Go** instead (`sockettunnel.go`,
 `BusSocket`): the page subscribes to `socket:<id>`, asks `OpenSocket`, Go dials
 the server and puts its frames on the bus; the page's frames go back as
 `SendSocket`, in order. The agents' events come off the bus too
-(`agentEvents.ts`). The bootstrap says `window.pageOnWails`
+(`goEvents.ts`). The bootstrap says `window.pageOnWails`
 and hands the session over in `window.seededSession`. **A desktop page keeps
 its data out of the browser**: the session is held in memory (`session.ts`) and
 the settings come from the database (`userSettings.ts`), because `wails://`
@@ -163,7 +163,7 @@ the page it serves is the one it embeds.
 running JS in the windows the application owns, so a page opened in a browser hears
 nothing. `eventsws.go` broadcasts the same events over a socket on the
 front door instead (`/acp/events/ws`), `emitter.go` sends every event both ways, and
-the page listens only on the socket — `components/acp/agentEvents.ts`, one shared
+the page listens only on the socket — `goEvents.ts`, one shared
 connection for the whole page, with backoff and a "look again" nudge to every
 subscriber when it reconnects. A new UI event needs nothing but `Emit`.
 
@@ -334,9 +334,12 @@ board. Three shapes:
   because a menu takes what it drew with it when it closes.
 
 `src/seams.test.ts` holds the line: a board file that starts importing
-`components/acp` fails it. The files it still allows import that directory for
-things that are not the agents — the inbox, templates, attaching to a server —
-and are to leave the list when that code moves out, never to join it.
+`components/acp` fails it. Only `main.tsx`, which installs the agents, and the
+phone's page, which is the agents' own screen, may. What lived in that
+directory and is not the agents moved out of it: templates
+(`components/templates/`), the inbox and its sources (`components/inbox/`),
+attaching to a server (`settings/serverPanel.tsx`), the board's field helpers
+(`boardFields.ts`) and the socket Go's events come on (`goEvents.ts`).
 
 **Git is kept off the screen** (`acp/gitShown.ts`, `SHOW_GIT = false`): the
 repository's mode and base branch in «Папки…», the card's «Ветка» field, the
@@ -657,7 +660,7 @@ over it: no nodes, no edges, no per-node anything. What was there — a route
 canvas, a column registry, an editor with a tab per route — is described in
 `docs/decisions.md` under what it cost and why it went.
 
-A template is **shown and not edited**: `templateEditor.tsx` is a form — name,
+A template is **shown and not edited**: `templates/templateEditor.tsx` is a form — name,
 icon, what it is for, and the setup questions — with the board's own columns
 listed in words beside them. A template is made by building a board and saving
 it («Сохранить как шаблон…», `saveAsTemplate.ts`, which copies the board under

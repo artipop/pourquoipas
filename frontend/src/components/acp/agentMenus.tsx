@@ -11,6 +11,7 @@ import PlanningDialog, {isPlanningAvailable} from './planningDialog'
 import BoardPromptsDialog, {isBoardPromptsAvailable} from './boardPromptsDialog'
 import WorkdirsDialog from './workdirsDialog'
 import {isWorkdirsAvailable} from './workdirsPanel'
+import InboxSortingDialog, {isInboxSortingAvailable} from './inboxSortingDialog'
 
 // The agents' items in the board's menus (extensions.tsx). Each opens its
 // dialog through the extension host, because a menu takes what it drew with
@@ -35,6 +36,21 @@ export const PlanningMenuItem = (props: SlotProps['newCardMenu']) => {
                         />
                     </RootPortal>
                 ))}
+            />
+        </Show>
+    )
+}
+
+// The inbox's ⋯ menu: where what the sources bring goes next, decided by an
+// agent — the other half of the inbox, so beside the sources.
+export const InboxSortingMenuItem = (props: SlotProps['inboxMenu']) => {
+    const intl = useIntl()
+    return (
+        <Show when={isInboxSortingAvailable() && Boolean(props.board)}>
+            <Menu.Text
+                id='inboxSorting'
+                name={intl.formatMessage({id: 'ViewHeader.inbox-sorting', defaultMessage: 'Sorting the inbox…'})}
+                onClick={() => openExtensionDialog((close) => <InboxSortingDialog onClose={close}/>)}
             />
         </Show>
     )

@@ -13,7 +13,7 @@ import {useAppSelector} from '../store/hooks'
 
 import Label from '../widgets/label'
 
-import {cardColumnProperty} from './acp/automation'
+import {cardColumnProperty} from '../boardFields'
 
 import Dialog from './dialog'
 import './moveCardToBoard.scss'

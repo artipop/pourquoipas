@@ -11,9 +11,9 @@ import CloseIcon from '../../widgets/icons/close'
 
 import {HINT_FIRST_RUN, useHints} from '../onboardingHints/hints'
 
-import {SHOW_GIT} from './gitShown'
+import {onAgentEvent} from '../../goEvents'
 
-import {onAgentEvent} from './agentEvents'
+import {SHOW_GIT} from './gitShown'
 
 import './firstRunStrip.scss'
 

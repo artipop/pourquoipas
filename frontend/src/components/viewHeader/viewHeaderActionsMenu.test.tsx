@@ -189,10 +189,11 @@ describe('components/viewHeader/viewHeaderActionsMenu', () => {
         })
     })
 
-    // A build with no Go side behind it — the plugin, a browser — has no
-    // sources to offer, and an inbox menu with nothing in it is a button that
-    // opens an empty box.
+    // The board on its own — no Go side, nothing plugged in — has no sources
+    // to offer, and an inbox menu with nothing in it is a button that opens an
+    // empty box.
     test('with nothing to offer, «Входящие» has no menu at all', () => {
+        resetExtensions()
         render(() =>
             wrapIntl(() =>
                 <AppStoreProvider store={mockAppStore({...state, ...withAnInbox})}>
