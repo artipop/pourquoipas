@@ -353,8 +353,8 @@ describe('components/cardDetail/CardDetail', () => {
         expect(tourTip.length).toBe(2)
         expect(tourTip[1]).toHaveTextContent('Description')
 
-        // On a desktop of one there are no comments, so the description is
-        // the card's last tip and «Done» finishes the card's part.
+        // Comments are drawn in every install, so after the description the
+        // tour goes on to them rather than finishing the card's part.
 
         mockedOctoClient.patchUserConfig.mockResolvedValueOnce([])
 
@@ -366,7 +366,7 @@ describe('components/cardDetail/CardDetail', () => {
             'user_id_1',
             {
                 updatedFields: {
-                    onboardingTourStep: '999',
+                    onboardingTourStep: '3',
                 },
             },
         )

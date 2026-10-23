@@ -61,8 +61,8 @@ them. Run `git init` in a folder you added a month ago and it is a repository �
 nothing to reconfigure.
 
 A folder is added with one button, **Add a folder…**, and repositories stand in
-the same list as plain folders — including where the agent asks "Which folder
-will you work in?".
+the same list as plain folders — including where «Talk it over with an agent»
+asks "Which folder will the agent read?".
 
 ## The card's branch
 
