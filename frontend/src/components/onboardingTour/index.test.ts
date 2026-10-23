@@ -31,6 +31,12 @@ describe('onboardingTour/tourScript', () => {
 
     test('with the agents off, nothing about an agent is shown', () => {
         expect(tourScript(TOUR_CARD, {ai: false, team: true})).toEqual([CardTourSteps.ADD_DESCRIPTION, CardTourSteps.ADD_COMMENTS])
+
+        // A server has no folders, so a tip anchored on the folder row would
+        // hold the tour at a step nobody can see.
+        expect(tourScript(TOUR_CARD, {ai: true, team: true, folders: false})).toEqual([
+            CardTourSteps.ASSIGN_AGENT, CardTourSteps.ADD_DESCRIPTION, CardTourSteps.ADD_COMMENTS,
+        ])
         expect(tourScript(TOUR_BOARD, {ai: false, team: false})).toEqual([BoardTourSteps.ADD_VIEW, BoardTourSteps.COPY_LINK])
     })
 

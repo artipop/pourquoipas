@@ -34,8 +34,8 @@ come back. To put it away sooner, press **"Close"**.
 The tour is a few tips over the board's real elements, in order:
 
 1. a card — open any one;
-2. in the card — the field for who works on it, the folder, the description
-   (which is the task itself), the comments;
+2. in the card — the field for who works on it, the folder (not on a server),
+   the description (which is the task itself), the comments;
 3. on the board — the columns, **"New"** → **"Talk it over with an agent…"**,
    the board's **"⋯"** menu, views and a link to a card; on a server,
    the "Share" button too;

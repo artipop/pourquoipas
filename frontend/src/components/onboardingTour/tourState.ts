@@ -2,6 +2,7 @@ import {createEffect} from 'solid-js'
 import type {Accessor} from 'solid-js'
 
 import {aiEnabled} from '../../aiSwitch'
+import {isHosted} from '../../buildKind'
 import octoClient from '../../octoClient'
 import {getTeamMode} from '../../store/clientConfig'
 import {getCurrentBoard} from '../../store/boards'
@@ -23,7 +24,7 @@ import {BaseTourSteps, TOUR_BASE, TOUR_CARD, TourFlags, tourStepNumber} from './
 
 export function useTourFlags(): Accessor<TourFlags> {
     const team = useAppSelector(getTeamMode)
-    return () => ({ai: aiEnabled(), team: team()})
+    return () => ({ai: aiEnabled(), team: team(), folders: !isHosted()})
 }
 
 // Whether the board on screen is the one the tour was started on. Asked by id:

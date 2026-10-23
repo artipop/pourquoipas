@@ -55,11 +55,12 @@ export const TOUR_ORDER = [
     TOUR_SIDEBAR,
 ]
 
-// What the tour may talk about: whether agents are switched on, and whether
-// there is a second person.
+// What the tour may talk about: whether agents are switched on, whether a card
+// has a folder to pick (not on a server), and whether there is a second person.
 export type TourFlags = {
     ai: boolean
     team: boolean
+    folders?: boolean
 }
 
 // tourScript is the steps of one category, in order, for these switches.
@@ -70,7 +71,8 @@ export function tourScript(category: string, flags: TourFlags): string[] {
         return [BaseTourSteps.OPEN_A_CARD]
     case TOUR_CARD:
         return [
-            ...when(flags.ai, CardTourSteps.ASSIGN_AGENT, CardTourSteps.PICK_FOLDER),
+            ...when(flags.ai, CardTourSteps.ASSIGN_AGENT),
+            ...when(flags.ai && flags.folders !== false, CardTourSteps.PICK_FOLDER),
             CardTourSteps.ADD_DESCRIPTION,
             CardTourSteps.ADD_COMMENTS,
         ]
