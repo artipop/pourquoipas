@@ -158,6 +158,15 @@ func (c *Client) IsBoardTemplate(_ context.Context, boardID string) (bool, error
 	return board.IsTemplate, nil
 }
 
+// BoardAbout is the board's title and description.
+func (c *Client) BoardAbout(_ context.Context, boardID string) (acp.BoardAbout, error) {
+	board, _, err := c.board(boardID)
+	if err != nil {
+		return acp.BoardAbout{}, err
+	}
+	return acp.BoardAbout{Title: board.Title, Description: board.Description}, nil
+}
+
 // CardProperties is the board's card fields — see boardmodel.ReadCardProperties.
 func (c *Client) CardProperties(_ context.Context, boardID string) ([]acp.CardProperty, error) {
 	_, schema, err := c.board(boardID)

@@ -71,8 +71,10 @@ A task can be talked through before it becomes a card: the arrow beside
 «New» in the board header → **«Talk it over with an agent…»**.
 
 First it asks **which agent** and **which folder** — the board's folders, «The board’s
-drafts» and «Add a folder…». After that it is an ordinary conversation: you
-write, the agent answers, «Stop» interrupts it.
+drafts» and «Add a folder…»; on a server no folder is asked. After that it is
+an ordinary conversation: you write, the agent answers, «Stop» interrupts it.
+From the start the agent knows the board's name and its description — the
+clearer the description, the less it has to ask.
 
 In such a conversation the agent changes nothing in the folder — its
 instructions and the tool policy hold it to reading — and the cards you agree on

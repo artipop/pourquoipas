@@ -280,7 +280,8 @@ server.
   and `boardadapter.Writer` stamps it instead of `model.SingleUser`.
 - **Planning is a conversation with no card** (`planning.go`,
   `planningDialog.tsx`): read-only policy, several turns, and the cards it
-  agrees on are created through the board tools.
+  agrees on are created through the board tools. It opens with the board's
+  name and description (`BoardAbout`).
 - Templates (`docs/templates.md`): the marker (`TemplateMarkerProperty`) is the
   app's to give, and copies are disowned at launch; which templates are ours is
   `createdBy`, and nobody may write to one (`Board.IsInstallTemplate`). They

@@ -106,6 +106,9 @@ func (m *recordingMeta) CardProperties(context.Context, string) ([]acp.CardPrope
 }
 
 func (m *recordingMeta) IsBoardTemplate(context.Context, string) (bool, error) { return false, nil }
+func (m *recordingMeta) BoardAbout(context.Context, string) (acp.BoardAbout, error) {
+	return acp.BoardAbout{}, nil
+}
 
 type recordingReader struct{}
 

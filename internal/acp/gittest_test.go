@@ -51,6 +51,9 @@ type fakeBoardMeta struct {
 	// names and list_card_fields answers with.
 	cardProps []CardProperty
 
+	// about is the board's name and description.
+	about BoardAbout
+
 	// written is what each board was told to keep, by board id — the board
 	// database stands in for itself here.
 	written map[string]map[string]any
@@ -94,4 +97,8 @@ func (f *fakeBoardMeta) CardProperties(context.Context, string) ([]CardProperty,
 
 func (f *fakeBoardMeta) IsBoardTemplate(context.Context, string) (bool, error) {
 	return f.template, nil
+}
+
+func (f *fakeBoardMeta) BoardAbout(context.Context, string) (BoardAbout, error) {
+	return f.about, nil
 }

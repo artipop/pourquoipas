@@ -40,6 +40,9 @@ func (k *knownCards) SetBoardProperties(context.Context, string, map[string]any,
 	return nil
 }
 func (k *knownCards) IsBoardTemplate(context.Context, string) (bool, error) { return false, nil }
+func (k *knownCards) BoardAbout(context.Context, string) (BoardAbout, error) {
+	return BoardAbout{}, nil
+}
 func (k *knownCards) BoardColumnOptions(context.Context, string) ([]Column, error) {
 	return nil, nil
 }

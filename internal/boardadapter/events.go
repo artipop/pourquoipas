@@ -226,6 +226,21 @@ func (b *EventsBackend) IsBoardTemplate(_ context.Context, boardID string) (bool
 	return board != nil && board.IsTemplate, nil
 }
 
+// BoardAbout is the board's title and description.
+func (b *EventsBackend) BoardAbout(_ context.Context, boardID string) (acp.BoardAbout, error) {
+	b.mu.Lock()
+	a := b.app
+	b.mu.Unlock()
+	if a == nil {
+		return acp.BoardAbout{}, fmt.Errorf("board app is not ready")
+	}
+	board, err := a.GetBoard(boardID)
+	if err != nil || board == nil {
+		return acp.BoardAbout{}, fmt.Errorf("get board %s: %w", boardID, err)
+	}
+	return acp.BoardAbout{Title: board.Title, Description: board.Description}, nil
+}
+
 // appUserLookup reads usernames through the app layer.
 func (b *EventsBackend) appUserLookup() boardmodel.UserLookup {
 	b.mu.Lock()

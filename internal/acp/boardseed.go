@@ -58,6 +58,12 @@ func boardProp(props map[string]any, key string) (any, bool) {
 // its agents and which of its fields are which — and whether the board is
 // itself a template. Optional: without it a board brings nothing and keeps
 // nothing.
+// BoardAbout is a board's own name and description.
+type BoardAbout struct {
+	Title       string
+	Description string
+}
+
 type BoardMeta interface {
 	BoardProperties(ctx context.Context, boardID string) (map[string]any, error)
 	// SetBoardProperties writes the named properties onto the board and removes
@@ -79,6 +85,9 @@ type BoardMeta interface {
 	// Nothing runs in a template — no card moves in it, no session starts from
 	// it — so nothing about this machine is asked for on its behalf.
 	IsBoardTemplate(ctx context.Context, boardID string) (bool, error)
+	// BoardAbout is what a person called the board and wrote about what it is
+	// for: a conversation about the board's work opens with it.
+	BoardAbout(ctx context.Context, boardID string) (BoardAbout, error)
 }
 
 // CardProperty is one field of a board's cards: what it is called, what kind of

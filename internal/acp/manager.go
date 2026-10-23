@@ -720,8 +720,20 @@ func resolveArgv0(argv []string) []string {
 // person's first message: the board's system prompt, the agent's own, the
 // planning instructions a person can edit, and the one fact nobody should have
 // to type — which folder the agent is standing in.
-func planningPrompt(systemPrompt, planning string, agent AgentEntry, workdir WorkdirEntry) string {
+func planningPrompt(systemPrompt, planning string, agent AgentEntry, workdir WorkdirEntry, about BoardAbout) string {
 	b := []byte(promptLead(systemPrompt, agent))
+
+	// What the board is, in the person's words: the cards agreed on are made
+	// on it, so its name and what it is for are what the conversation is about.
+	if t := strings.TrimSpace(about.Title); t != "" {
+		b = fmt.Appendf(b, "The board: %s\n", t)
+	}
+	if d := strings.TrimSpace(about.Description); d != "" {
+		b = fmt.Appendf(b, "What the board is for: %s\n", d)
+	}
+	if strings.TrimSpace(about.Title+about.Description) != "" {
+		b = append(b, '\n')
+	}
 	if p := strings.TrimSpace(planning); p == "" {
 		b = fmt.Appendf(b, "%s\n\n", DefaultPlanningPrompt)
 	} else {

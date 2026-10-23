@@ -134,7 +134,7 @@ func (m *Manager) StartPlanning(boardID, folderName, agentName string) (Planning
 	m.mu.Unlock()
 
 	systemPrompt := m.BoardPrompt(boardID)
-	opening := planningPrompt(systemPrompt, m.PlanningPrompt(), agent, workdir)
+	opening := planningPrompt(systemPrompt, m.PlanningPrompt(), agent, workdir, m.boardAbout(boardID))
 
 	m.wg.Add(1)
 	go m.runPlanning(ctx, chat, opening)
@@ -378,4 +378,24 @@ func planningPolicy(agent AgentEntry) ToolPolicy {
 		policy = append(policy, "Bash("+cmd+"*)")
 	}
 	return append(policy, agent.AutoAllowTools...)
+}
+
+// boardAbout reads the board's name and description, or nothing: a
+// conversation still opens on a board that cannot be read.
+func (m *Manager) boardAbout(boardID string) BoardAbout {
+	if boardID == "" || m.meta == nil {
+		return BoardAbout{}
+	}
+	parent := m.rootCtx
+	if parent == nil {
+		parent = context.Background()
+	}
+	ctx, cancel := context.WithTimeout(parent, 10*time.Second)
+	defer cancel()
+	about, err := m.forBoard(boardID).Meta.BoardAbout(ctx, boardID)
+	if err != nil {
+		m.log.Warn("acp: cannot read the board's name and description", "board", boardID, "err", err)
+		return BoardAbout{}
+	}
+	return about
 }
