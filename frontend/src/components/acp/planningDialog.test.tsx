@@ -7,6 +7,7 @@ import {wrapIntl} from '../../testUtils'
 import {Board, createBoard} from '../../blocks/board'
 
 import {fakeGoSide} from '../../test/goSide'
+import {setHosted} from '../../buildKind'
 
 import PlanningDialog, {isPlanningAvailable} from './planningDialog'
 
@@ -73,6 +74,21 @@ describe('components/acp/planningDialog', () => {
         await userEvent.click(await screen.findByRole('button', {name: 'The board’s drafts'}))
 
         await waitFor(() => expect(bindings.StartPlanning).toHaveBeenCalledWith('board-1', '', 'planner'))
+    })
+
+    // A server has no folders (docs/modes.md): nothing is asked about one,
+    // and the conversation is held in the board's drafts.
+    it('on a server asks no folder and starts in the drafts', async () => {
+        const bindings = planningBindings()
+        fakeGoSide(bindings)
+        setHosted(true)
+
+        render(() => wrapIntl(() => <PlanningDialog board={board} onClose={vi.fn()}/>))
+
+        await userEvent.click(await screen.findByRole('button', {name: 'Start'}))
+        expect(screen.queryByRole('button', {name: 'Add a folder…'})).toBeNull()
+        await waitFor(() => expect(bindings.StartPlanning).toHaveBeenCalledWith('board-1', '', 'planner'))
+        setHosted(false)
     })
 
     // A conversation outlives the dialog, so opening it again has to find what

@@ -1,0 +1,18 @@
+.CardDetail__asking {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 12px 0 0;
+    padding: 12px 16px;
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(var(--away-indicator-rgb), 0.5);
+    background: rgba(var(--away-indicator-rgb), 0.08);
+}
+
+.CardDetail__askingHeading {
+    font-weight: 600;
+}
+
+.CardDetail__askingText {
+    white-space: pre-wrap;
+}

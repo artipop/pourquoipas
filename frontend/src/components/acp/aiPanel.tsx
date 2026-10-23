@@ -4,10 +4,11 @@ import {useIntl} from '../../intl'
 import Switch from '../../widgets/switch'
 import {aiEnabled, setAIEnabled} from '../../aiSwitch'
 import {goApp} from '../../goBridge'
-import AgentsPanel from '../acp/agentsPanel'
-import ProxiesPanel, {isProxiesAvailable} from '../acp/proxiesPanel'
 
-import './appPanel.scss'
+import AgentsPanel from './agentsPanel'
+import ProxiesPanel, {isProxiesAvailable} from './proxiesPanel'
+
+import '../settings/appPanel.scss'
 import './aiPanel.scss'
 
 // Everything about the AI, in the one place it is set up: whether agents work

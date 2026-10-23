@@ -15,6 +15,9 @@ import {CsvExporter} from '../../csvExporter'
 import {fakeGoSide} from '../../test/goSide'
 import {setHosted} from '../../buildKind'
 
+import {installAgentFeatures} from '../acp/install'
+import {resetExtensions} from '../../extensions'
+
 import ViewHeaderActionsMenu from './viewHeaderActionsMenu'
 
 vi.mock('../../archiver')
@@ -40,6 +43,10 @@ const withAnInbox = {
 }
 
 describe('components/viewHeader/viewHeaderActionsMenu', () => {
+    // Drawn as main.tsx draws it: with the agents' parts plugged in.
+    beforeEach(() => installAgentFeatures())
+    afterEach(() => resetExtensions())
+
     const state = {
         users: {
             me: {

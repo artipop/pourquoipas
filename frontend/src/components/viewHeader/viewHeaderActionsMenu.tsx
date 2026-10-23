@@ -16,16 +16,13 @@ import mutator from '../../mutator'
 
 import ModalWrapper from '../modalWrapper'
 import {sendFlashMessage} from '../flashMessages'
-import WorkdirsDialog from '../acp/workdirsDialog'
-import {isWorkdirsAvailable} from '../acp/workdirsPanel'
-import BoardPromptsDialog, {isBoardPromptsAvailable} from '../acp/boardPromptsDialog'
 import SourcesDialog, {isSourcesAvailable} from '../acp/sourcesDialog'
 import InboxSortingDialog, {isInboxSortingAvailable} from '../acp/inboxSortingDialog'
 import TemplateEditor from '../acp/templateEditor'
 import {isSaveAsTemplateAvailable, saveBoardAsTemplate} from '../acp/saveAsTemplate'
 import {isInboxBoard} from '../acp/inboxView'
 import {goError} from '../../goMessages'
-import {aiEnabled} from '../../aiSwitch'
+import {ExtensionSlot} from '../../extensions'
 
 // What this menu holds is what is true of *this board*, and only that. Agents
 // are the person's, not a board's: they are connected in Settings → AI and
@@ -77,11 +74,6 @@ const ViewHeaderActionsMenu = (props: Props) => {
     const intl = useIntl()
     const [showSources, setShowSources] = createSignal(false)
     const [showSorting, setShowSorting] = createSignal(false)
-    const [showWorkdirs, setShowWorkdirs] = createSignal(false)
-    const [showPrompts, setShowPrompts] = createSignal(false)
-
-    // A template is a board being written, not one agents work on.
-    const agentsWork = () => aiEnabled() && !props.board.isTemplate
 
     // The template a board was saved as, held so the editor opens on it: it is
     // a board of its own and the page has not navigated to it.
@@ -123,28 +115,11 @@ const ViewHeaderActionsMenu = (props: Props) => {
                                 <Menu.Separator/>
                             </Show>
                             <Show when={!onInbox()}>
-                                {/* What the board's agents are told first. Its
-                                    own item for the same reason the folders
-                                    have one: it was a fold at the bottom of the
-                                    route canvas, and a fold under a canvas is
-                                    somewhere nobody scrolls to. Offered where
-                                    the board is one agents work on. */}
-                                <Show when={isBoardPromptsAvailable() && agentsWork()}>
-                                    <Menu.Text
-                                        id='boardPrompts'
-                                        name={intl.formatMessage({id: 'ViewHeader.board-prompts', defaultMessage: 'The board’s system prompt…'})}
-                                        onClick={() => setShowPrompts(true)}
-                                    />
-                                </Show>
-
-                                {/* A server has no folders (docs/modes.md). */}
-                                <Show when={agentsWork() && isWorkdirsAvailable()}>
-                                    <Menu.Text
-                                        id='workdirs'
-                                        name={intl.formatMessage({id: 'ViewHeader.workdirs', defaultMessage: 'Folders…'})}
-                                        onClick={() => setShowWorkdirs(true)}
-                                    />
-                                </Show>
+                                <ExtensionSlot
+                                    name='boardMenu'
+                                    board={props.board}
+                                    activeView={props.activeView}
+                                />
 
                                 <Show when={OFFER_SAVE_AS_TEMPLATE && isSaveAsTemplateAvailable() && !props.board.isTemplate}>
                                     <Menu.Text
@@ -213,18 +188,6 @@ const ViewHeaderActionsMenu = (props: Props) => {
                 >
                     <IconButton icon={<OptionsIcon/>}/>
                 </MenuWrapper>
-            </Show>
-            <Show when={showWorkdirs()}>
-                <WorkdirsDialog
-                    board={props.board}
-                    onClose={() => setShowWorkdirs(false)}
-                />
-            </Show>
-            <Show when={showPrompts()}>
-                <BoardPromptsDialog
-                    board={props.board}
-                    onClose={() => setShowPrompts(false)}
-                />
             </Show>
             <Show when={showSources()}>
                 <SourcesDialog

@@ -10,9 +10,16 @@ import messagesRu from '../../../i18n/ru.json'
 
 import {fakeGoSide} from '../../test/goSide'
 
+import {installAgentFeatures} from '../acp/install'
+import {resetExtensions} from '../../extensions'
+
 import AppSettingsDialog from './appSettingsDialog'
 
 describe('components/settings/appSettingsDialog', () => {
+    // Drawn as main.tsx draws it: with the agents' sections plugged in.
+    beforeEach(() => installAgentFeatures())
+    afterEach(() => resetExtensions())
+
     const store = mockAppStore({teams: {current: {id: 'team-id'}}})
 
     const bindings = () => ({

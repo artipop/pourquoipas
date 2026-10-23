@@ -7,11 +7,12 @@ import userEvent from '@testing-library/user-event'
 import {wrapIntl} from '../../testUtils'
 import {fakeGoSide} from '../../test/goSide'
 import {setHosted} from '../../buildKind'
-import {isWorkdirsAvailable} from '../acp/workdirsPanel'
+
+import {isWorkdirsAvailable} from './workdirsPanel'
 
 import AIPanel from './aiPanel'
 
-describe('components/settings/aiPanel', () => {
+describe('components/acp/aiPanel', () => {
     afterEach(() => {
         setHosted(false)
         fakeGoSide()

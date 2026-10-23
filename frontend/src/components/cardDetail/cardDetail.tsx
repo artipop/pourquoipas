@@ -4,6 +4,7 @@ import type {JSX} from '@solidjs/web'
 import {FormattedMessage, useIntl, IntlShape} from '../../intl'
 
 import {BlockIcons} from '../../blockIcons'
+import {ExtensionSlot} from '../../extensions'
 import {Card} from '../../blocks/card'
 import {BoardView} from '../../blocks/boardView'
 import {Board} from '../../blocks/board'
@@ -28,10 +29,6 @@ import {BlockData} from '../blocksEditor/blocks/types'
 import {ClientConfig} from '../../config/clientConfig'
 import {getClientConfig} from '../../store/clientConfig'
 import type {AppStore} from '../../store'
-
-import CaseStamp, {isCaseStampAvailable} from '../acp/caseStamp'
-import AttentionAnswers from '../acp/attentionAnswers'
-import {attentionHeading, questionText, useCardAttention} from '../acp/attention'
 
 import {CardDetailProvider} from './cardDetailContext'
 import CardDetailContents from './cardDetailContents'
@@ -194,9 +191,6 @@ const CardDetail = (props: Props): JSX.Element => {
         }
     }))
 
-    // The agent's open question on this card, if it has one.
-    const asking = useCardAttention(() => props.card?.id || '')
-
     return (
         <Show when={props.card}>
             <div class='CardDetail'>
@@ -240,27 +234,12 @@ const CardDetail = (props: Props): JSX.Element => {
                     spellCheck={true}
                 />
 
-                {/* Where the work on this card lives, stamped under its name. */}
-                <Show when={isCaseStampAvailable()}>
-                    <CaseStamp cardId={props.card.id}/>
-                </Show>
-
-                {/* What the agent is asking about this card, where the card's
-                    own amber badge promises it will be. The notification says
-                    the same thing and is answered the same way, but it is
-                    dismissible and this is not: a question outlives being
-                    read, and the card is where somebody comes back to it. */}
-                <Show when={asking()}>
-                    {(wait) => (
-                        <div class='CardDetail__asking'>
-                            <span class='CardDetail__askingHeading'>{attentionHeading(intl, wait())}</span>
-                            <Show when={wait().text}>
-                                <span class='CardDetail__askingText'>{questionText(intl, wait())}</span>
-                            </Show>
-                            <AttentionAnswers target={wait()}/>
-                        </div>
-                    )}
-                </Show>
+                <ExtensionSlot
+                    name='cardDetailTop'
+                    board={props.board}
+                    card={props.card}
+                    readonly={props.readonly}
+                />
 
                 {/* Property list */}
 

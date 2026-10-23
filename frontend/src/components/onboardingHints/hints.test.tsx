@@ -9,7 +9,8 @@ import {AppStoreProvider} from '../../store'
 import {TestBlockFactory} from '../../test/testBlockFactory'
 import {mockAppStore, wrapIntl} from '../../testUtils'
 
-import FirstRunStrip from './firstRunStrip'
+import FirstRunStrip from '../acp/firstRunStrip'
+
 import HintTip from './hintTip'
 import {HINT_FIRST_RUN, cardMovedFrom} from './hints'
 

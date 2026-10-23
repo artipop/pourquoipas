@@ -12,6 +12,8 @@ import {TestRouter, mockAppStore, wrapDNDIntl, hoverOver} from '../../testUtils'
 import {AppStoreProvider} from '../../store'
 
 import {fakeGoSide} from '../../test/goSide'
+import {installAgentFeatures} from '../acp/install'
+import {resetExtensions} from '../../extensions'
 
 import KanbanCard from './kanbanCard'
 
@@ -301,89 +303,95 @@ describe('src/components/kanban/kanbanCard', () => {
     // An agent holding its turn open on a question is the one thing about a
     // card a person has to notice without opening it — and it is noticed on the
     // card the agent is working, not on the board as a whole.
-    test('shows that the card agent is waiting for a person', async () => {
-        fakeGoSide({ListAttention: vi.fn().mockResolvedValue(JSON.stringify([
-            {key: 'q:q-1', questionId: 'q-1', cardId: card.id, agent: 'clauuus', reason: 'question', awaiting: true},
-        ]))})
+    // What the agents draw on a card, plugged in as main.tsx plugs it.
+    describe('with the agents installed', () => {
+        beforeEach(() => installAgentFeatures())
+        afterEach(() => resetExtensions())
 
-        render(() => wrapDNDIntl(() =>
-            <AppStoreProvider store={store}>
-                <KanbanCard
-                    card={card}
-                    board={board}
-                    visiblePropertyTemplates={[propertyTemplate]}
-                    visibleBadges={false}
-                    isSelected={false}
-                    readonly={false}
-                    onDrop={vi.fn()}
-                    showCard={vi.fn()}
-                    isManualSort={false}
-                    index={0}
-                    groupId='group-1'
-                />
-            </AppStoreProvider>,
-        ), {wrapper: TestRouter})
+        test('shows that the card agent is waiting for a person', async () => {
+            fakeGoSide({ListAttention: vi.fn().mockResolvedValue(JSON.stringify([
+                {key: 'q:q-1', questionId: 'q-1', cardId: card.id, agent: 'clauuus', reason: 'question', awaiting: true},
+            ]))})
 
-        expect(await screen.findByTitle('clauuus is asking')).toBeInTheDocument()
-        fakeGoSide()
-    })
+            render(() => wrapDNDIntl(() =>
+                <AppStoreProvider store={store}>
+                    <KanbanCard
+                        card={card}
+                        board={board}
+                        visiblePropertyTemplates={[propertyTemplate]}
+                        visibleBadges={false}
+                        isSelected={false}
+                        readonly={false}
+                        onDrop={vi.fn()}
+                        showCard={vi.fn()}
+                        isManualSort={false}
+                        index={0}
+                        groupId='group-1'
+                    />
+                </AppStoreProvider>,
+            ), {wrapper: TestRouter})
 
-    // Where the card goes next is not answered on its face. Two buttons stood
-    // here for a while, and what that cost was a face saying two things at
-    // once: what the work is, and a decision about it.
-    test('does not offer where the card goes next on its face', async () => {
-        const bindings = {
-            ListAttention: vi.fn().mockResolvedValue('[]'),
-            MarkCardOutcome: vi.fn().mockResolvedValue(undefined),
-        }
-        fakeGoSide(bindings)
+            expect(await screen.findByTitle('clauuus is asking')).toBeInTheDocument()
+            fakeGoSide()
+        })
 
-        render(() => wrapDNDIntl(() =>
-            <AppStoreProvider store={store}>
-                <KanbanCard
-                    card={card}
-                    board={board}
-                    visiblePropertyTemplates={[propertyTemplate]}
-                    visibleBadges={false}
-                    isSelected={false}
-                    readonly={false}
-                    onDrop={vi.fn()}
-                    showCard={vi.fn()}
-                    isManualSort={false}
-                    index={0}
-                    groupId='group-1'
-                />
-            </AppStoreProvider>,
-        ), {wrapper: TestRouter})
+        // Where the card goes next is not answered on its face. Two buttons stood
+        // here for a while, and what that cost was a face saying two things at
+        // once: what the work is, and a decision about it.
+        test('does not offer where the card goes next on its face', async () => {
+            const bindings = {
+                ListAttention: vi.fn().mockResolvedValue('[]'),
+                MarkCardOutcome: vi.fn().mockResolvedValue(undefined),
+            }
+            fakeGoSide(bindings)
 
-        await waitFor(() => expect(bindings.ListAttention).toHaveBeenCalled())
-        expect(screen.queryByRole('button', {name: /Деплой/})).toBeNull()
-        expect(screen.queryByRole('button', {name: /В работе/})).toBeNull()
-        fakeGoSide()
-    })
+            render(() => wrapDNDIntl(() =>
+                <AppStoreProvider store={store}>
+                    <KanbanCard
+                        card={card}
+                        board={board}
+                        visiblePropertyTemplates={[propertyTemplate]}
+                        visibleBadges={false}
+                        isSelected={false}
+                        readonly={false}
+                        onDrop={vi.fn()}
+                        showCard={vi.fn()}
+                        isManualSort={false}
+                        index={0}
+                        groupId='group-1'
+                    />
+                </AppStoreProvider>,
+            ), {wrapper: TestRouter})
 
-    test('says nothing on a card no agent is waiting on', async () => {
-        fakeGoSide({ListAttention: vi.fn().mockResolvedValue('[]')})
+            await waitFor(() => expect(bindings.ListAttention).toHaveBeenCalled())
+            expect(screen.queryByRole('button', {name: /Деплой/})).toBeNull()
+            expect(screen.queryByRole('button', {name: /В работе/})).toBeNull()
+            fakeGoSide()
+        })
 
-        render(() => wrapDNDIntl(() =>
-            <AppStoreProvider store={store}>
-                <KanbanCard
-                    card={card}
-                    board={board}
-                    visiblePropertyTemplates={[propertyTemplate]}
-                    visibleBadges={false}
-                    isSelected={false}
-                    readonly={false}
-                    onDrop={vi.fn()}
-                    showCard={vi.fn()}
-                    isManualSort={false}
-                    index={0}
-                    groupId='group-1'
-                />
-            </AppStoreProvider>,
-        ), {wrapper: TestRouter})
+        test('says nothing on a card no agent is waiting on', async () => {
+            fakeGoSide({ListAttention: vi.fn().mockResolvedValue('[]')})
 
-        expect(screen.queryByRole('status')).toBeNull()
-        fakeGoSide()
+            render(() => wrapDNDIntl(() =>
+                <AppStoreProvider store={store}>
+                    <KanbanCard
+                        card={card}
+                        board={board}
+                        visiblePropertyTemplates={[propertyTemplate]}
+                        visibleBadges={false}
+                        isSelected={false}
+                        readonly={false}
+                        onDrop={vi.fn()}
+                        showCard={vi.fn()}
+                        isManualSort={false}
+                        index={0}
+                        groupId='group-1'
+                    />
+                </AppStoreProvider>,
+            ), {wrapper: TestRouter})
+
+            expect(screen.queryByRole('status')).toBeNull()
+            fakeGoSide()
+        })
     })
 })

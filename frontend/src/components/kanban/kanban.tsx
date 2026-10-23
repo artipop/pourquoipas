@@ -21,7 +21,7 @@ import {dragAndDropRearrange} from '../cardDetail/cardDetailContentsUtility'
 import {getCurrentBoardTemplates} from '../../store/cards'
 import BoardPermissionGate from '../permissions/boardPermissionGate'
 
-import {withoutAgentProperties} from '../acp/agentProperties'
+import {shownCardProperties} from '../../extensions'
 
 import ColumnsTourStep from '../onboardingTour/columns/columns'
 
@@ -69,7 +69,7 @@ const Kanban = (props: Props) => {
     )
 
     const visiblePropertyTemplates = () => {
-        return withoutAgentProperties(props.board, props.board.cardProperties.filter(
+        return shownCardProperties(props.board, props.board.cardProperties.filter(
             (template: IPropertyTemplate) => props.activeView.fields.visiblePropertyIds.includes(template.id),
         ))
     }

@@ -12,6 +12,9 @@ import {fakeGoSide} from '../../test/goSide'
 import propsRegistry from '../../properties'
 import {PropertyType} from '../../properties/types'
 
+import {installAgentFeatures} from '../acp/install'
+import {resetExtensions} from '../../extensions'
+
 import CardDetailProperties from './cardDetailProperties'
 
 vi.mock('../../mutator')
@@ -27,6 +30,10 @@ vi.mock('../acp/cardAgentState', () => ({
 }))
 
 describe('components/cardDetail/CardDetailProperties', () => {
+    // Drawn as main.tsx draws it: with the agents' parts plugged in.
+    beforeEach(() => installAgentFeatures())
+    afterEach(() => resetExtensions())
+
     const board = TestBlockFactory.createBoard()
     board.cardProperties = [
         {

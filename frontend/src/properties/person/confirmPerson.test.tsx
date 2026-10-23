@@ -15,6 +15,8 @@ import mutator from '../../mutator'
 import {fakeGoSide} from '../../test/goSide'
 import {setAIEnabled} from '../../aiSwitch'
 import {invalidateAgentUsers} from '../../components/acp/agentAssignees'
+import {installAgentFeatures} from '../../components/acp/install'
+import {resetExtensions} from '../../extensions'
 
 import PersonProperty from './property'
 
@@ -231,6 +233,8 @@ describe('properties/person', () => {
     // With the agents switched off an agent is nobody to hand a card to, so it
     // stops being offered; a person is untouched.
     test('with the agents off no agent is offered, and a person still is', async () => {
+        // The rule is the agents' own, plugged into the field (extensions.tsx).
+        installAgentFeatures()
         fakeGoSide({
             ListAgentAccounts: vi.fn().mockResolvedValue(JSON.stringify([
                 {name: 'клаус', username: 'username-4'},
@@ -238,6 +242,7 @@ describe('properties/person', () => {
             ])),
         })
         setAIEnabled(false)
+        mockedOctoClient.searchTeamUsers.mockResolvedValueOnce([...additionalUsers, {...additionalUsers[0], id: 'user-id-6', username: 'username-6'}])
 
         const store = mockAppStore(state)
         const renderResult = render(() => wrapIntl(() =>
@@ -257,12 +262,14 @@ describe('properties/person', () => {
         const userProperty = renderResult.container.querySelector(".Person input[role='combobox']")
         userEvent.click(userProperty as Element)
 
-        await waitFor(() => expect(renderResult.getByText('username-1')).not.toBeNull())
-        expect(renderResult.queryByText('username-4')).toBeNull()
-        expect(renderResult.queryByText('username-5')).toBeNull()
+        // A person in the menu says it has opened.
+        await waitFor(() => expect(screen.getByText('username-6')).not.toBeNull())
+        expect(screen.queryByText('username-4')).toBeNull()
+        expect(screen.queryByText('username-5')).toBeNull()
 
         setAIEnabled(true)
         invalidateAgentUsers()
         fakeGoSide()
+        resetExtensions()
     })
 })

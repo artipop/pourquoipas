@@ -5,14 +5,12 @@ import type {Component} from 'solid-js'
 import {useIntl} from '../../intl'
 import {useAppSelector} from '../../store/hooks'
 import {getMe} from '../../store/users'
-import {aiEnabled} from '../../aiSwitch'
+import {registeredSettingsSections} from '../../extensions'
 
 import Dialog from '../dialog'
 
 import ServerPanel, {isServerAttachAvailable} from '../acp/serverPanel'
-import MachineMiscPanel from '../acp/machineMiscPanel'
 
-import AIPanel, {isAIPanelAvailable} from './aiPanel'
 import AppPanel from './appPanel'
 import DataPanel from './dataPanel'
 import PeoplePanel from './peoplePanel'
@@ -25,9 +23,8 @@ import './appSettingsDialog.scss'
 // comes in and goes out as an archive, and what it is allowed to interrupt
 // with.
 //
-// Agents are the person's, not a board's, so they are connected here and
-// nowhere else: the AI section has the switch, the agents of both kinds and the
-// proxies a program may be started behind.
+// The agents are the person's, not a board's, so they are connected here: the
+// AI section, added by the agents' own code (components/acp/install.ts).
 //
 // All of it used to be reached through a board's ⋯ menu, which put settings
 // behind a board and made them unreachable when none was open; then through the
@@ -83,14 +80,6 @@ const AppSettingsDialog = (props: Props) => {
         },
         {
 
-            // The AI's own section: the switch over all of it, and the agents.
-            id: 'ai',
-            name: () => intl.formatMessage({id: 'Settings.section-ai', defaultMessage: 'AI'}),
-            when: isAIPanelAvailable,
-            body: AIPanel,
-        },
-        {
-
             // Directly after the app itself, because it is the app talking
             // about the app — and because it is the one section that sometimes
             // has something to say before anybody comes looking.
@@ -117,18 +106,17 @@ const AppSettingsDialog = (props: Props) => {
             when: () => true,
             body: DataPanel,
         },
-        {
-
-            // Every setting in it is about agents, so with the AI switched off
-            // it is not drawn at all.
-            id: 'misc',
-            name: () => intl.formatMessage({id: 'Machine.section-misc', defaultMessage: 'Other'}),
-            when: aiEnabled,
-            body: MachineMiscPanel,
-        },
     ]
 
-    const offered = () => sections.filter((s) => s.when())
+    // What features add (extensions.tsx): the AI section among them.
+    const added = registeredSettingsSections().map((s) => ({...s, name: () => s.name(intl)}))
+    const all: Section[] = [
+        sections[0],
+        ...added.filter((s) => s.first),
+        ...sections.slice(1),
+        ...added.filter((s) => !s.first),
+    ]
+    const offered = () => all.filter((s) => s.when())
     const [current, setCurrent] = createSignal(props.section || offered()[0]?.id || 'app')
     const section = () => offered().find((s) => s.id === current()) || offered()[0]
 

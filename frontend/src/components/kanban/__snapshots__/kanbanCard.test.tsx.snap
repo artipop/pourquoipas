@@ -13,7 +13,6 @@ exports[`src/components/kanban/kanbanCard > return kanbanCard and click on copy 
     style="opacity: 1;"
     tabindex="0"
   >
-    
     <span
       aria-label="Drag the card into another app, such as a terminal"
       class="KanbanCard__dragOut"
@@ -257,11 +256,6 @@ exports[`src/components/kanban/kanbanCard > return kanbanCard and click on copy 
       <!---->
     </div>
     <!---->
-    
-    <!---->
-    
-    <!---->
-    
     <!---->
     
     <!---->
@@ -286,7 +280,6 @@ exports[`src/components/kanban/kanbanCard > return kanbanCard and click on delet
     style="opacity: 1;"
     tabindex="0"
   >
-    
     <span
       aria-label="Drag the card into another app, such as a terminal"
       class="KanbanCard__dragOut"
@@ -530,11 +523,6 @@ exports[`src/components/kanban/kanbanCard > return kanbanCard and click on delet
       <!---->
     </div>
     <!---->
-    
-    <!---->
-    
-    <!---->
-    
     <!---->
     
     <!---->
@@ -559,7 +547,6 @@ exports[`src/components/kanban/kanbanCard > return kanbanCard and click on dupli
     style="opacity: 1;"
     tabindex="0"
   >
-    
     <span
       aria-label="Drag the card into another app, such as a terminal"
       class="KanbanCard__dragOut"
@@ -803,11 +790,6 @@ exports[`src/components/kanban/kanbanCard > return kanbanCard and click on dupli
       <!---->
     </div>
     <!---->
-    
-    <!---->
-    
-    <!---->
-    
     <!---->
     
     <!---->
@@ -825,7 +807,6 @@ exports[`src/components/kanban/kanbanCard > should match snapshot 1`] = `
     class="KanbanCard"
     style="opacity: 1;"
   >
-    
     <span
       aria-label="Drag the card into another app, such as a terminal"
       class="KanbanCard__dragOut"
@@ -886,11 +867,6 @@ exports[`src/components/kanban/kanbanCard > should match snapshot 1`] = `
       <!---->
     </div>
     <!---->
-    
-    <!---->
-    
-    <!---->
-    
     <!---->
     
     <!---->
@@ -908,7 +884,6 @@ exports[`src/components/kanban/kanbanCard > should match snapshot with readonly 
     class="KanbanCard"
     style="opacity: 1;"
   >
-    
     <span
       aria-label="Drag the card into another app, such as a terminal"
       class="KanbanCard__dragOut"
@@ -954,11 +929,6 @@ exports[`src/components/kanban/kanbanCard > should match snapshot with readonly 
       <!---->
     </div>
     <!---->
-    
-    <!---->
-    
-    <!---->
-    
     <!---->
     
     <!---->

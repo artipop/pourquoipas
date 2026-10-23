@@ -20,7 +20,7 @@ import OptionsIcon from '../../widgets/icons/options'
 import Tooltip from '../../widgets/tooltip'
 import ConfirmationDialogBox, {ConfirmationDialogBoxProps} from '../confirmationDialogBox'
 import CardActionsMenu from '../cardActionsMenu/cardActionsMenu'
-import {withoutAgentProperties} from '../acp/agentProperties'
+import {shownCardProperties} from '../../extensions'
 
 import {useColumnResize} from './tableColumnResizeContext'
 
@@ -84,7 +84,7 @@ const TableRow = (props: Props) => {
     }
 
     const visiblePropertyTemplates = () =>
-        withoutAgentProperties(props.board, props.visiblePropertyIds.map((id) => props.board.cardProperties.find((t) => t.id === id)).filter((i) => i) as IPropertyTemplate[])
+        shownCardProperties(props.board, props.visiblePropertyIds.map((id) => props.board.cardProperties.find((t) => t.id === id)).filter((i) => i) as IPropertyTemplate[])
 
     const classes = () => {
         const {card, board} = props

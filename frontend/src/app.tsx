@@ -5,7 +5,7 @@ import {IntlProvider} from './intl'
 import {SortableProvider} from './hooks/sortable'
 import {FlashMessages} from './components/flashMessages'
 import MoveCardToBoard from './components/moveCardToBoard'
-import AttentionNotifications from './components/acp/attentionNotifications'
+import {ExtensionDialogs, ExtensionSlot} from './extensions'
 import {getLanguage} from './store/language'
 import {useAppSelector, useAppStore} from './store/hooks'
 import AppRouter from './router'
@@ -28,18 +28,14 @@ const App: Component = () => {
             <SortableProvider>
                 <FlashMessages milliseconds={2000}/>
 
-                {/* Outside the router: an agent waiting for an answer is worth
-                    saying wherever in the app the person happens to be. */}
-                <AttentionNotifications/>
+                {/* What features draw over the whole window, and the dialogs
+                    their menu items open (extensions.tsx). */}
+                <ExtensionSlot name='app'/>
+                <ExtensionDialogs/>
 
-                {/* The route's own question, put in front of whoever caused it.
-                    Mounted beside the notification stack and outside the router
-                    for the same reason: it belongs to the window a person is
-                    in, not to a screen. */}
-
-                {/* Outside the router as well: the card menu that asks for it
-                    unmounts as soon as it is clicked, so the dialog cannot
-                    live inside the menu. */}
+                {/* Outside the router: the card menu that asks for it unmounts
+                    as soon as it is clicked, so the dialog cannot live inside
+                    the menu. */}
                 <MoveCardToBoard/>
                 <div id='frame'>
                     <div id='main'>

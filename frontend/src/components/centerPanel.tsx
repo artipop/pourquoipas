@@ -32,7 +32,7 @@ import {
     getOnboardingTourStep,
 } from '../store/users'
 
-import {aiEnabled} from '../aiSwitch'
+import {ExtensionSlot, withNewCardDefaults} from '../extensions'
 
 import ShareBoardButton from './shareBoard/shareBoardButton'
 import ShareBoardLoginButton from './shareBoard/shareBoardLoginButton'
@@ -49,8 +49,6 @@ import Gallery from './gallery/gallery'
 import {FINISHED, TOUR_BOARD, TOUR_CARD} from './onboardingTour'
 import {patchPreferences, useOnTourBoard} from './onboardingTour/tourState'
 import ShareBoardTourStep from './onboardingTour/shareBoard/shareBoard'
-import FirstRunStrip from './onboardingHints/firstRunStrip'
-import {soleWorkdirOption} from './acp/workdirSync'
 import {cardColumnProperty} from './acp/automation'
 
 // FullCalendar is half a megabyte of source, and a board opens on its kanban:
@@ -163,7 +161,7 @@ const CenterPanel = (props: Props) => {
     }
 
     // What a new card is born with: the view's own filter, the group it was
-    // dropped into, and the board's folder when the board has only one.
+    // dropped into, its column, and what features default (extensions.tsx).
     const newCardProperties = (groupByOptionId?: string): Record<string, string> => {
         const {activeView, board, groupByProperty} = props
 
@@ -184,18 +182,7 @@ const CenterPanel = (props: Props) => {
             properties[column.id] = column.options[0].id
         }
 
-        // Last, and never over an answer already given: the filter and the
-        // group are what a person did, and this is only a default. A board
-        // grouped by its folder is left alone entirely — there the empty group
-        // means «no folder yet», and filling it in would make that group
-        // impossible to add a card to.
-        // With the AI switched off the folder is a field nobody is shown.
-        const folder = aiEnabled() ? soleWorkdirOption(board) : undefined
-        if (folder && UserSettings.prefillCardFolder &&
-            folder.propertyId !== groupByProperty?.id && !properties[folder.propertyId]) {
-            properties[folder.propertyId] = folder.optionId
-        }
-        return properties
+        return withNewCardDefaults(board, properties, groupByProperty)
     }
 
     const addCard = async (groupByOptionId?: string, show = false, properties: Record<string, string> = {}): Promise<void> => {
@@ -438,7 +425,9 @@ const CenterPanel = (props: Props) => {
                     editCardTemplate={editCardTemplate}
                     readonly={props.readonly}
                 />
-                <FirstRunStrip
+                <ExtensionSlot
+                    name='boardHeader'
+                    board={props.board}
                     cards={props.cards}
                     columnPropertyId={cardColumnProperty(props.board, props.groupByProperty)?.id}
                     readFirst={readFirstCard()}

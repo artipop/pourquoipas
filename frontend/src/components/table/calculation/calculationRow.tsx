@@ -12,7 +12,7 @@ import {BoardView} from '../../../blocks/boardView'
 import {Card} from '../../../blocks/card'
 import {Options} from '../../calculations/options'
 
-import {withoutAgentProperties} from '../../acp/agentProperties'
+import {shownCardProperties} from '../../../extensions'
 
 import {TableCalculationOptions} from './tableCalculationOptions'
 
@@ -37,7 +37,7 @@ const CalculationRow = (props: Props): JSX.Element => {
 
     const visiblePropertyTemplates = createMemo(() => ([
         titleTemplate,
-        ...withoutAgentProperties(props.board, props.activeView.fields.visiblePropertyIds.map((id) => props.board.cardProperties.find((t) => t.id === id)).filter((i) => i) as IPropertyTemplate[]),
+        ...shownCardProperties(props.board, props.activeView.fields.visiblePropertyIds.map((id) => props.board.cardProperties.find((t) => t.id === id)).filter((i) => i) as IPropertyTemplate[]),
     ]))
 
     const selectedCalculations = () => props.activeView.fields.columnCalculations || []

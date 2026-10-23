@@ -61,8 +61,6 @@ exports[`components/cardDetail/CardDetailProperties > cancel on delete dialog sh
       <!---->
       
       <!---->
-      
-      <!---->
     </div>
     <div
       class="octo-propertyrow"
@@ -100,11 +98,8 @@ exports[`components/cardDetail/CardDetailProperties > cancel on delete dialog sh
       <!---->
       
       <!---->
-      
-      <!---->
     </div>
     <!---->
-    
     <!---->
     
     <!---->
@@ -200,8 +195,6 @@ exports[`components/cardDetail/CardDetailProperties > should match snapshot 1`] 
       <!---->
       
       <!---->
-      
-      <!---->
     </div>
     <div
       class="octo-propertyrow"
@@ -239,11 +232,8 @@ exports[`components/cardDetail/CardDetailProperties > should match snapshot 1`] 
       <!---->
       
       <!---->
-      
-      <!---->
     </div>
     <!---->
-    
     <!---->
     
     <!---->
@@ -339,8 +329,6 @@ exports[`components/cardDetail/CardDetailProperties > should show property types
       <!---->
       
       <!---->
-      
-      <!---->
     </div>
     <div
       class="octo-propertyrow"
@@ -378,11 +366,8 @@ exports[`components/cardDetail/CardDetailProperties > should show property types
       <!---->
       
       <!---->
-      
-      <!---->
     </div>
     <!---->
-    
     <!---->
     
     <!---->

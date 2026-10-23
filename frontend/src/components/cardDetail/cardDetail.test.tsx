@@ -14,6 +14,9 @@ import {createTextBlock} from '../../blocks/textBlock'
 
 import {fakeGoSide} from '../../test/goSide'
 
+import {installAgentFeatures} from '../acp/install'
+import {resetExtensions} from '../../extensions'
+
 import CardDetail from './cardDetail'
 
 globalThis.fetch = FetchMock.fn
@@ -32,6 +35,10 @@ afterEach(() => {
 })
 
 describe('components/cardDetail/CardDetail', () => {
+    // Drawn as main.tsx draws it: with the agents' parts plugged in.
+    beforeEach(() => installAgentFeatures())
+    afterEach(() => resetExtensions())
+
     const board = TestBlockFactory.createBoard()
 
     const view = TestBlockFactory.createBoardView(board)

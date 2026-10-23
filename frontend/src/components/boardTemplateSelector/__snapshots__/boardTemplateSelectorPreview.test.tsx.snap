@@ -153,7 +153,6 @@ exports[`components/boardTemplateSelector/boardTemplateSelectorPreview > should 
             class="KanbanCard onboardingCard"
             style="opacity: 1;"
           >
-            
             <span
               aria-label="Drag the card into another app, such as a terminal"
               class="KanbanCard__dragOut"
@@ -201,14 +200,9 @@ exports[`components/boardTemplateSelector/boardTemplateSelectorPreview > should 
               <!---->
             </div>
             <!---->
-            
             <!---->
             
             <!---->
-            <!---->
-            
-            <!---->
-            
             <!---->
             
             <!---->

@@ -1,4 +1,4 @@
-import {Show, createSignal, onSettled} from 'solid-js'
+import {For, Show, createSignal} from 'solid-js'
 import type {JSX} from '@solidjs/web'
 
 import {FormattedMessage, useIntl} from '../intl'
@@ -27,21 +27,18 @@ import {Block, createBlock} from '../blocks/block'
 import {Permission} from '../constants'
 import {useHasCurrentBoardPermissions} from '../hooks/permissions'
 
+import {registeredCardSidePanels} from '../extensions'
+
 import BoardPermissionGate from './permissions/boardPermissionGate'
 
-import CardDiffPanel, {isCardDiffAvailable} from './acp/cardDiff'
 import CardComments from './cardDetail/cardComments'
 import CardHistory from './cardDetail/cardHistory'
-import {cardAgentState, refreshCardAgent} from './acp/cardAgentState'
-import {onAgentEvent} from './acp/agentEvents'
 
 import CardDetail from './cardDetail/cardDetail'
 import Dialog from './dialog'
 
 import CardActionsMenu from './cardActionsMenu/cardActionsMenu'
 import AddCommentTourStep from './onboardingTour/addComments/addComments'
-import HintTip from './onboardingHints/hintTip'
-import {HINT_CHANGES} from './onboardingHints/hints'
 import './cardDialog.scss'
 
 type Props = {
@@ -72,8 +69,10 @@ const CardDialog = (props: Props): JSX.Element => {
     // (docs/teamwork.md); the changes are what the work amounts to. Both are
     // about the card without being part of it, which is why neither is in its
     // body.
-    const [side, setSide] = createSignal<'' | 'comments' | 'diff' | 'history'>('')
-    const toggleSide = (which: 'comments' | 'diff' | 'history') => setSide(side() === which ? '' : which)
+    // Which panel stands beside the card: comments, history, or one a feature
+    // registered (extensions.tsx).
+    const [side, setSide] = createSignal('')
+    const toggleSide = (which: string) => setSide(side() === which ? '' : which)
     const makeTemplateClicked = async () => {
         const currentCard = card()
         if (!currentCard) {
@@ -243,21 +242,6 @@ const CardDialog = (props: Props): JSX.Element => {
         )
     }
 
-    // What the card knows about its agent: the branch the work is on, and how
-    // much that work amounts to — which is what the changes button is drawn on.
-    const agentState = cardAgentState(props.cardId)
-    onSettled(() => {
-        if (!isCardDiffAvailable()) {
-            return undefined
-        }
-        refreshCardAgent(props.cardId)
-
-        // The work moves while the dialog is open — an agent commits, a stage
-        // ends — and a session event is the cheapest thing that means "look
-        // again".
-        return onAgentEvent('acp:session', () => refreshCardAgent(props.cardId))
-    })
-
     // Comments are drawn in every install: an agent's result is one, and on a
     // desktop it used to be written and never shown.
     const commentsBtn = (): JSX.Element => (
@@ -282,38 +266,19 @@ const CardDialog = (props: Props): JSX.Element => {
         </Show>
     )
 
-    // Drawn only where there is something to read. What decides is the count
-    // the Go side keeps as the work moves (GetCardAgent's `changes`), not a
-    // live look: on «На ревью» — the stage this is for — the card's working
-    // copy has already been folded away, and asking git per card is a process
-    // per card. A card nobody has worked on gets no button rather than a button
-    // that opens «ничего не изменено».
-    const hasChanges = () => {
-        const changes = agentState().changes
-        return Boolean(changes && (changes.files > 0 || changes.dirty > 0))
-    }
-    const diffBtn = (): JSX.Element => (
-        <Show when={isCardDiffAvailable() && Boolean(card()) && !isTemplate() && hasChanges()}>
-            <Button
-                icon={<CompassIcon icon='file-patch-outline'/>}
-                class='cardFollowBtn cardFollowBtn--attach'
-                emphasis='gray'
-                size='medium'
-                active={side() === 'diff'}
-                onClick={() => toggleSide('diff')}
-            >
-                {intl.formatMessage({id: 'CardDiff.title', defaultMessage: 'Changes'})}
-            </Button>
-            <span class='cardDialog__tourAnchor'>
-                <HintTip
-                    id={HINT_CHANGES}
-                    wanted={true}
-                    class='HintTip--button'
-                    placement='bottom-end'
-                    title={intl.formatMessage({id: 'Hint.changes.title', defaultMessage: 'What the agent changed'})}
-                    body={intl.formatMessage({id: 'Hint.changes.body', defaultMessage: 'The changes the agent made in the folder, read from git: what is committed on the card’s branch and what is not committed yet.'})}
-                />
-            </span>
+    // The panels features add, each with its own button.
+    const featureBtns = (): JSX.Element => (
+        <Show when={card() && !isTemplate()}>
+            <For each={registeredCardSidePanels()}>
+                {(panel) => (
+                    <panel.Button
+                        board={props.board}
+                        card={card()!}
+                        active={side() === panel.id}
+                        toggle={() => toggleSide(panel.id)}
+                    />
+                )}
+            </For>
         </Show>
     )
 
@@ -341,7 +306,7 @@ const CardDialog = (props: Props): JSX.Element => {
                 class='cardDialog'
                 onClose={props.onClose}
                 toolsMenu={!props.readonly && menu()}
-                toolbar={<>{historyBtn()}{diffBtn()}{commentsBtn()}{attachBtn()}</>}
+                toolbar={<>{historyBtn()}{featureBtns()}{commentsBtn()}{attachBtn()}</>}
             >
                 <Show when={isTemplate()}>
                     <div class='banner'>
@@ -396,12 +361,16 @@ const CardDialog = (props: Props): JSX.Element => {
                                     onClose={() => setSide('')}
                                 />
                             </Show>
-                            <Show when={side() === 'diff'}>
-                                <CardDiffPanel
-                                    cardId={props.cardId}
-                                    onClose={() => setSide('')}
-                                />
-                            </Show>
+                            <For each={registeredCardSidePanels()}>
+                                {(panel) => (
+                                    <Show when={side() === panel.id && card()}>
+                                        <panel.Panel
+                                            card={card()!}
+                                            onClose={() => setSide('')}
+                                        />
+                                    </Show>
+                                )}
+                            </For>
                             <Show when={side() === 'history'}>
                                 <CardHistory
                                     cardId={props.cardId}

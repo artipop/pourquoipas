@@ -11,8 +11,8 @@ import Menu from '../../widgets/menu'
 import MenuWrapper from '../../widgets/menuWrapper'
 import {sendFlashMessage} from '../flashMessages'
 
-import {canAddFolder, pickFolderForBoard} from '../acp/cardFolder'
-import {fieldNames} from '../acp/workdirSync'
+import {canAddFolder, pickFolderForBoard} from './cardFolder'
+import {fieldNames} from './workdirSync'
 
 type Props = {
     board: Board

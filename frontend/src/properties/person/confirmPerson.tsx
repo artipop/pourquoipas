@@ -14,7 +14,7 @@ import {useHasPermissions} from '../../hooks/permissions'
 import {Permission} from '../../constants'
 import ConfirmAddUserForNotifications from '../../components/confirmAddUserForNotifications'
 import PersonSelector from '../../components/personSelector'
-import {assignableFilter} from '../../components/acp/agentAssignees'
+import {assignableUsers} from '../../extensions'
 
 const ConfirmPerson = (props: PropertyProps): JSX.Element => {
     const [confirmAddUser, setConfirmAddUser] = createSignal<IUser|null>(null)
@@ -101,9 +101,7 @@ const ConfirmPerson = (props: PropertyProps): JSX.Element => {
                 emptyDisplayValue={emptyDisplayValue()}
                 clearLabel={intl.formatMessage({id: 'PropertyValueElement.clear', defaultMessage: 'Clear'})}
 
-                // Every agent on this machine may be assigned a card on any
-                // board — with the agents switched off, none of them may.
-                offerable={assignableFilter()}
+                offerable={assignableUsers}
                 property={props.property}
                 onChange={onChange}
             />

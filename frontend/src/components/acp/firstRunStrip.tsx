@@ -8,9 +8,10 @@ import {isHosted} from '../../buildKind'
 import Button from '../../widgets/buttons/button'
 import IconButton from '../../widgets/buttons/iconButton'
 import CloseIcon from '../../widgets/icons/close'
-import {onAgentEvent} from '../acp/agentEvents'
 
-import {HINT_FIRST_RUN, useHints} from './hints'
+import {HINT_FIRST_RUN, useHints} from '../onboardingHints/hints'
+
+import {onAgentEvent} from './agentEvents'
 
 import './firstRunStrip.scss'
 

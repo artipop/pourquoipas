@@ -12,7 +12,10 @@ import {AppStoreProvider} from '../store'
 
 import {fakeGoSide} from '../test/goSide'
 
+import {resetExtensions} from '../extensions'
+
 import CardDialog from './cardDialog'
+import {installAgentFeatures} from './acp/install'
 
 vi.mock('../mutator')
 vi.mock('../octoClient')
@@ -30,6 +33,10 @@ const mockedOctoClient = vi.mocked(octoClient)
 mockedUtils.createGuid.mockReturnValue('test-id')
 
 describe('components/cardDialog', () => {
+    // Drawn as main.tsx draws it: with the agents' parts plugged in.
+    beforeEach(() => installAgentFeatures())
+    afterEach(() => resetExtensions())
+
     const board = TestBlockFactory.createBoard()
     board.cardProperties = []
     board.id = 'test-id'

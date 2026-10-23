@@ -1,4 +1,4 @@
-import {For, Show, createSignal} from 'solid-js'
+import {For, Show} from 'solid-js'
 import type {JSX} from '@solidjs/web'
 
 import {FormattedMessage, useIntl} from '../../intl'
@@ -10,8 +10,7 @@ import Menu from '../../widgets/menu'
 import {useAppSelector} from '../../store/hooks'
 import {getCurrentBoardTemplates} from '../../store/cards'
 import {getCurrentView} from '../../store/views'
-import RootPortal from '../rootPortal'
-import PlanningDialog, {isPlanningAvailable} from '../acp/planningDialog'
+import {ExtensionSlot} from '../../extensions'
 
 import NewCardButtonTemplateItem from './newCardButtonTemplateItem'
 import EmptyCardButton from './emptyCardButton'
@@ -31,11 +30,6 @@ const NewCardButton = (props: Props): JSX.Element => {
     const cardTemplates = useAppSelector(getCurrentBoardTemplates)
     const currentView = useAppSelector(getCurrentView)
     const intl = useIntl()
-
-    // Talking a task through with an agent is a way of making cards, so it is
-    // here rather than in the board's menu, where it used to sit among the
-    // settings. What comes out of the conversation are cards on this board.
-    const [planning, setPlanning] = createSignal(false)
 
     const defaultTemplateID = () => {
         const id = currentView().fields.defaultTemplateId
@@ -93,35 +87,15 @@ const NewCardButton = (props: Props): JSX.Element => {
                     onClick={() => props.addCardTemplate()}
                 />
 
-                <Show when={isPlanningAvailable()}>
-                    <Menu.Separator/>
-                    <Menu.Text
-                        id='planTask'
-                        name={intl.formatMessage({id: 'ViewHeader.plan-task', defaultMessage: 'Talk it over with an agent…'})}
-                        onClick={() => setPlanning(true)}
-                    />
-                </Show>
+                <ExtensionSlot
+                    name='newCardMenu'
+                    board={props.board}
+                />
             </Menu>
         </ButtonWithMenu>
     )
 
-    return (
-        <>
-            {button}
-
-            {/* Out of the header's flex row entirely: a wrapper around the
-                button to hang a dialog off would be a layout change to pay for
-                a dialog that is usually not there. */}
-            <Show when={planning()}>
-                <RootPortal>
-                    <PlanningDialog
-                        board={props.board}
-                        onClose={() => setPlanning(false)}
-                    />
-                </RootPortal>
-            </Show>
-        </>
-    )
+    return button
 }
 
 export default NewCardButton

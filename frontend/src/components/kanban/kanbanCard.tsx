@@ -7,7 +7,6 @@ import {Card} from '../../blocks/card'
 import {useListSortable} from '../../hooks/sortable'
 import mutator from '../../mutator'
 import {Utils} from '../../utils'
-import CompassIcon from '../../widgets/icons/compassIcon'
 import MenuWrapper from '../../widgets/menuWrapper'
 import Tooltip from '../../widgets/tooltip'
 import PropertyValueElement from '../propertyValueElement'
@@ -16,17 +15,12 @@ import './kanbanCard.scss'
 import CardBadges from '../cardBadges'
 import CardActionsMenu from '../cardActionsMenu/cardActionsMenu'
 import CardActionsMenuIcon from '../cardActionsMenu/cardActionsMenuIcon'
-import {attentionHeading, useCardAttention} from '../acp/attention'
-import {findWorkdirProperty} from '../acp/workdirSync'
-import {aiEnabled} from '../../aiSwitch'
 import {cardAsText} from '../../cardText'
-import {useAppSelector, useAppStore} from '../../store/hooks'
-import {getBoardUsers} from '../../store/users'
-import {createLoader} from '../../hooks/loader'
+import {useAppStore} from '../../store/hooks'
+import {ExtensionSlot} from '../../extensions'
 import {isInboxBoard} from '../acp/inboxView'
-import {loadAgentUsers} from '../acp/agentAssignees'
 import HintTip from '../onboardingHints/hintTip'
-import {HINT_AGENT_MOVE, HINT_INBOX, HINT_QUESTION, cardMovedFrom} from '../onboardingHints/hints'
+import {HINT_INBOX} from '../onboardingHints/hints'
 import {getCardContents} from '../../store/contents'
 import GripIcon from '../../widgets/icons/grip'
 import {OnboardingCardClassName} from '../onboardingTour'
@@ -72,54 +66,6 @@ const KanbanCard = (props: Props) => {
     )
     const visiblePropertyTemplates = () => props.visiblePropertyTemplates || []
 
-    // Where this card's work lives, on the card's face. It is the one property
-    // that decides what an agent can do here at all, and reading it meant
-    // opening the card — while on a board of several folders, which folder a
-    // card belongs to is most of what the board is being scanned for.
-    //
-    // The card's own field and nothing else: the board's drafts folder is where a
-    // conversation stands when the card names no folder, not an answer the card
-    // gives, and printing it here would say the card belongs to a project it
-    // does not. An empty field draws nothing.
-    //
-    // Left out when the view already lists the property, or the same fact would
-    // stand on the card twice.
-    const folderChip = () => {
-        if (!aiEnabled()) {
-            return ''
-        }
-        const property = findWorkdirProperty(props.board, props.board.cardProperties)
-        if (!property || visiblePropertyTemplates().some((t) => t.id === property.id)) {
-            return ''
-        }
-        const value = props.card.fields.properties[property.id]
-        const optionId = Array.isArray(value) ? value[0] : value
-        return property.options.find((o) => o.id === optionId)?.value || ''
-    }
-
-    // An agent that has stopped to ask something is the one thing about a card
-    // that a person has to notice without opening it: its turn stays open until
-    // somebody answers, and the answer is inside the card.
-    const attention = useCardAttention(() => props.card.id)
-    const agentTitle = () => (attention() ? attentionHeading(intl, attention()!) : '')
-    const showsAgent = () => aiEnabled() && Boolean(attention())
-
-    // The hints a card can carry (docs/onboarding.md). An agent's move is told
-    // apart from a person's by who last wrote the card: an agent's writes are
-    // signed with its own account.
-    const boardUsers = useAppSelector(getBoardUsers)
-    const [agentUsers] = createLoader(() => loadAgentUsers(), [] as string[])
-    const movedFrom = cardMovedFrom(props.card.id, props.groupId)
-    const movedByAgent = () => aiEnabled() && Boolean(movedFrom) &&
-        agentUsers().includes(boardUsers()[props.card.modifiedBy]?.username || '')
-
-    const openCard = (e: MouseEvent) => {
-        // The card is a click target of its own; this is the same destination
-        // said twice, and the stopped propagation keeps it from being opened
-        // twice over.
-        e.stopPropagation()
-        props.showCard(props.card.id)
-    }
     const classes = () => {
         let name = props.isSelected ? 'KanbanCard selected' : 'KanbanCard'
         if (props.isManualSort && isOver()) {
@@ -197,41 +143,10 @@ const KanbanCard = (props: Props) => {
         <>
             <div
                 ref={props.readonly || props.dragDisabled ? undefined : cardRef}
-                class={[classes(), {'KanbanCard--agent': showsAgent(), [OnboardingCardClassName]: Boolean(props.onboarding)}]}
+                class={[classes(), {[OnboardingCardClassName]: Boolean(props.onboarding)}]}
                 style={{opacity: isDragging() ? 0.5 : 1}}
                 onClick={handleOnClick}
             >
-                {/* The agent's question, from the card's bottom-right
-                    corner: amber, because the machine needs a person here, and
-                    a click away from the card where it is answered. It stands
-                    in a strip the card reserves for it (`KanbanCard--agent`),
-                    so nothing on the card runs under it. */}
-                <Show when={showsAgent()}>
-                    <Show
-                        when={!props.readonly}
-                        fallback={
-                            <span
-                                class='KanbanCard__asking'
-                                role='status'
-                                title={agentTitle()}
-                                aria-label={agentTitle()}
-                            >
-                                <CompassIcon icon='help-circle-outline'/>
-                            </span>
-                        }
-                    >
-                        <button
-                            type='button'
-                            class='KanbanCard__asking'
-                            title={agentTitle()}
-                            aria-label={agentTitle()}
-                            onClick={openCard}
-                        >
-                            <CompassIcon icon='help-circle-outline'/>
-                        </button>
-                    </Show>
-                </Show>
-
                 <span
                     class='KanbanCard__dragOut'
                     draggable='true'
@@ -301,12 +216,15 @@ const KanbanCard = (props: Props) => {
                         </Tooltip>
                     )}
                 </For>
-                <Show when={folderChip()}>
-                    <div class='KanbanCard__folder'>
-                        <CompassIcon icon='folder-outline'/>
-                        <span>{folderChip()}</span>
-                    </div>
-                </Show>
+                <ExtensionSlot
+                    name='cardBadges'
+                    board={props.board}
+                    card={props.card}
+                    readonly={props.readonly}
+                    groupId={props.groupId}
+                    visiblePropertyIds={visiblePropertyTemplates().map((t) => t.id)}
+                    showCard={props.showCard}
+                />
                 <Show when={props.visibleBadges}>
                     <CardBadges card={props.card}/>
                 </Show>
@@ -314,22 +232,6 @@ const KanbanCard = (props: Props) => {
                     <OpenCardTourStep/>
                     <CopyLinkTourStep/>
                 </Show>
-                <HintTip
-                    id={HINT_QUESTION}
-                    wanted={showsAgent()}
-                    class='HintTip--card'
-                    placement='right-end'
-                    title={intl.formatMessage({id: 'Hint.question.title', defaultMessage: 'The agent is asking'})}
-                    body={intl.formatMessage({id: 'Hint.question.body', defaultMessage: 'The agent working this card has stopped to ask something, and waits until somebody answers. Open the card: the question is under its title, and choosing one of the options is the answer. The notification about it answers the same way.'})}
-                />
-                <HintTip
-                    id={HINT_AGENT_MOVE}
-                    wanted={movedByAgent()}
-                    class='HintTip--card'
-                    placement='right-end'
-                    title={intl.formatMessage({id: 'Hint.agent-move.title', defaultMessage: 'The agent moved the card'})}
-                    body={intl.formatMessage({id: 'Hint.agent-move.body', defaultMessage: 'It chose this column by its name, as the one that says what happened. Renaming the columns is how you tell agents what each of them means.'})}
-                />
                 <HintTip
                     id={HINT_INBOX}
                     wanted={Boolean(props.onboarding) && isInboxBoard(props.board)}

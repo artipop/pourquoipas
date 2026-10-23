@@ -12,7 +12,10 @@ import Mutator from '../mutator'
 import {Constants} from '../constants'
 import {UserSettings} from '../userSettings'
 
+import {resetExtensions} from '../extensions'
+
 import CenterPanel from './centerPanel'
+import {installAgentFeatures} from './acp/install'
 Object.defineProperty(Constants, 'versionString', {value: '1.0.0'})
 
 vi.mock('../utils')
@@ -24,6 +27,10 @@ const mockedOctoClient = vi.mocked(octoClient)
 mockedUtils.createGuid.mockReturnValue('test-id')
 mockedUtils.generateClassName = (await vi.importActual<typeof import('../utils')>('../utils')).Utils.generateClassName
 describe('components/centerPanel', () => {
+    // Drawn as main.tsx draws it: with the agents' parts plugged in.
+    beforeEach(() => installAgentFeatures())
+    afterEach(() => resetExtensions())
+
     const board = TestBlockFactory.createBoard()
     board.id = '1'
     board.teamId = 'team-id'

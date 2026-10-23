@@ -266,7 +266,6 @@ exports[`components/centerPanel > return centerPanel and > click on card to show
         <!---->
       </div>
       <!---->
-      
       <!---->
     </div>
     <div
@@ -411,7 +410,6 @@ exports[`components/centerPanel > return centerPanel and > click on card to show
             class="KanbanCard onboardingCard"
             style="opacity: 1;"
           >
-            
             <span
               aria-label="Drag the card into another app, such as a terminal"
               class="KanbanCard__dragOut"
@@ -463,14 +461,9 @@ exports[`components/centerPanel > return centerPanel and > click on card to show
               </div>
             </div>
             <!---->
-            
             <!---->
             
             <!---->
-            <!---->
-            
-            <!---->
-            
             <!---->
             
             <!---->
@@ -479,7 +472,6 @@ exports[`components/centerPanel > return centerPanel and > click on card to show
             class="KanbanCard"
             style="opacity: 1;"
           >
-            
             <span
               aria-label="Drag the card into another app, such as a terminal"
               class="KanbanCard__dragOut"
@@ -531,11 +523,6 @@ exports[`components/centerPanel > return centerPanel and > click on card to show
               </div>
             </div>
             <!---->
-            
-            <!---->
-            
-            <!---->
-            
             <!---->
             
             <!---->
@@ -851,7 +838,6 @@ exports[`components/centerPanel > return centerPanel and > click on new card to 
         <!---->
       </div>
       <!---->
-      
       <!---->
     </div>
     <div
@@ -1396,7 +1382,6 @@ exports[`components/centerPanel > return centerPanel and > press touch 1 with re
         <!---->
       </div>
       <!---->
-      
       <!---->
     </div>
     <div
@@ -1953,7 +1938,6 @@ exports[`components/centerPanel > return centerPanel and > press touch ctrl+d fo
         <!---->
       </div>
       <!---->
-      
       <!---->
     </div>
     <div
@@ -2624,7 +2608,6 @@ exports[`components/centerPanel > return centerPanel and > press touch del for o
         <!---->
       </div>
       <!---->
-      
       <!---->
     </div>
     <div
@@ -3295,7 +3278,6 @@ exports[`components/centerPanel > return centerPanel and > press touch esc for o
         <!---->
       </div>
       <!---->
-      
       <!---->
     </div>
     <div
@@ -3966,7 +3948,6 @@ exports[`components/centerPanel > return centerPanel and > press touch esc for o
         <!---->
       </div>
       <!---->
-      
       <!---->
     </div>
     <div
@@ -4637,7 +4618,6 @@ exports[`components/centerPanel > return centerPanel and > press touch esc for t
         <!---->
       </div>
       <!---->
-      
       <!---->
     </div>
     <div
@@ -5308,7 +5288,6 @@ exports[`components/centerPanel > return centerPanel and > press touch esc for t
         <!---->
       </div>
       <!---->
-      
       <!---->
     </div>
     <div
@@ -5979,7 +5958,6 @@ exports[`components/centerPanel > return centerPanel and > press touch esc for t
         <!---->
       </div>
       <!---->
-      
       <!---->
     </div>
     <div
@@ -6650,7 +6628,6 @@ exports[`components/centerPanel > return centerPanel and > select one card and c
         <!---->
       </div>
       <!---->
-      
       <!---->
     </div>
     <div
@@ -7321,7 +7298,6 @@ exports[`components/centerPanel > return centerPanel and > select one card and c
         <!---->
       </div>
       <!---->
-      
       <!---->
     </div>
     <div
@@ -7992,7 +7968,6 @@ exports[`components/centerPanel > should match snapshot for Gallery 1`] = `
         <!---->
       </div>
       <!---->
-      
       <!---->
     </div>
     <div
@@ -8315,7 +8290,6 @@ exports[`components/centerPanel > should match snapshot for Kanban 1`] = `
         <!---->
       </div>
       <!---->
-      
       <!---->
     </div>
     <div
@@ -8460,7 +8434,6 @@ exports[`components/centerPanel > should match snapshot for Kanban 1`] = `
             class="KanbanCard onboardingCard"
             style="opacity: 1;"
           >
-            
             <span
               aria-label="Drag the card into another app, such as a terminal"
               class="KanbanCard__dragOut"
@@ -8512,14 +8485,9 @@ exports[`components/centerPanel > should match snapshot for Kanban 1`] = `
               </div>
             </div>
             <!---->
-            
             <!---->
             
             <!---->
-            <!---->
-            
-            <!---->
-            
             <!---->
             
             <!---->
@@ -8831,7 +8799,6 @@ exports[`components/centerPanel > should match snapshot for Kanban, not shared 1
         <!---->
       </div>
       <!---->
-      
       <!---->
     </div>
     <div
@@ -8976,7 +8943,6 @@ exports[`components/centerPanel > should match snapshot for Kanban, not shared 1
             class="KanbanCard onboardingCard"
             style="opacity: 1;"
           >
-            
             <span
               aria-label="Drag the card into another app, such as a terminal"
               class="KanbanCard__dragOut"
@@ -9028,14 +8994,9 @@ exports[`components/centerPanel > should match snapshot for Kanban, not shared 1
               </div>
             </div>
             <!---->
-            
             <!---->
             
             <!---->
-            <!---->
-            
-            <!---->
-            
             <!---->
             
             <!---->
@@ -9347,7 +9308,6 @@ exports[`components/centerPanel > should match snapshot for Table 1`] = `
         <!---->
       </div>
       <!---->
-      
       <!---->
     </div>
     <div

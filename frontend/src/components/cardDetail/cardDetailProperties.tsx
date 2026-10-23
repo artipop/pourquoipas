@@ -1,5 +1,7 @@
 import {For, Show, createEffect, createSignal} from 'solid-js'
 
+import {Dynamic} from '@solidjs/web'
+
 import AddIcon from '../../widgets/icons/add'
 
 import {FormattedMessage, useIntl} from '../../intl'
@@ -19,23 +21,13 @@ import ConfirmationDialogBox, {ConfirmationDialogBoxProps} from '../confirmation
 import {sendFlashMessage} from '../flashMessages'
 import Menu from '../../widgets/menu'
 import {IDType, Utils} from '../../utils'
-import AssignAgentTourStep from '../onboardingTour/assignAgent/assign_agent'
-import PickFolderTourStep from '../onboardingTour/pickFolder/pick_folder'
 import {useStartCardTour} from '../onboardingTour/tourState'
 import {Permission} from '../../constants'
 import {useHasCurrentBoardPermissions} from '../../hooks/permissions'
 import propRegistry from '../../properties'
 import {PropertyType} from '../../properties/types'
-import {aiEnabled} from '../../aiSwitch'
 
-import {boardBranchProperty} from '../acp/automation'
-import {cardAgentState} from '../acp/cardAgentState'
-import {fieldNames, findWorkdirProperty} from '../acp/workdirSync'
-import {canAddFolder} from '../acp/cardFolder'
-import {withoutAgentProperties} from '../acp/agentProperties'
-import {personProperty} from '../acp/attentionAudience'
-
-import CardFolderValue from './cardFolderValue'
+import {ExtensionSlot, cardPropertyRow, shownCardProperties} from '../../extensions'
 
 type Props = {
     board: Board
@@ -54,53 +46,6 @@ const CardDetailProperties = (props: Props) => {
 
     // An open card is what moves the tour from the board to the card.
     useStartCardTour()
-
-    // The two rows the card's part of the tour points at: who works the card,
-    // found by type as everywhere else, and the board's folder field.
-    const isAssigneeProperty = (t: IPropertyTemplate) => t.id === personProperty(props.board)?.id
-
-    // The branch field is the machine's record — where the card's work lives —
-    // and the card knows *what kind* of place that is. The board records which
-    // property it is (branchProperty); the card's own state says whether
-    // its workspace is a copy or a branch in the folder. The stamp under the
-    // title already names its line after the mode, and a field under it saying
-    // the branch field over the same value read as the setting not having taken.
-    const branchPropertyId = () => boardBranchProperty(props.board)
-    const agentState = () => cardAgentState(props.card.id)()
-    const isBranchProperty = (t: IPropertyTemplate) => t.id !== '' && t.id === branchPropertyId()
-    const branchLabel = (t: IPropertyTemplate) => {
-        if (agentState().work?.mode === 'worktree') {
-            return intl.formatMessage({id: 'CardDetail.worktree-property', defaultMessage: 'Worktree'})
-        }
-        return t.name
-    }
-
-    // The folder stops being a choice once the card has a workspace. Work on a
-    // card lives in one place — a copy and a branch, or a branch in the folder
-    // itself — and it was claimed under the folder the card named then: moving
-    // the card to another folder afterwards does not move the work, it only
-    // makes the card describe somewhere the work is not. The claim is the fact
-    // to read, not the column the card stands in, because that is exactly what
-    // "the work has started" means here — a folder was taken for this card.
-    //
-    // Refusing it in the one place a person changes it, rather than refusing
-    // later and further away: an agent standing on a card whose field says one
-    // folder and whose branch is in another is a state nobody can read back.
-    const workdirProperty = () => findWorkdirProperty(props.board, props.board.cardProperties)
-    const workdirLocked = () => Boolean(agentState().work?.started)
-
-    // Started somewhere, and not on this machine: a card travels and the
-    // workspace does not.
-    const workElsewhere = () => Boolean(agentState().work?.started && !agentState().work?.here)
-    const isWorkdirProperty = (t: IPropertyTemplate) => t.id !== '' && t.id === workdirProperty()?.id
-    const offerFolderRow = () => aiEnabled() && canAddFolder() && !workdirProperty() &&
-        !props.readonly && canEditBoardProperties() && canEditBoardCards()
-    const lockedFolderName = () => {
-        const property = workdirProperty()
-        const value = property && props.card.fields.properties[property.id]
-        const optionId = Array.isArray(value) ? value[0] : value
-        return property?.options.find((o) => o.id === optionId)?.value || ''
-    }
 
     createEffect(
         () => props.board.cardProperties.find((property) => property.id === newTemplateId()),
@@ -197,108 +142,103 @@ const CardDetailProperties = (props: Props) => {
 
     return (
         <div class='octo-propertylist CardDetailProperties'>
-            <For each={withoutAgentProperties(props.board, props.board.cardProperties)}>
-                {(propertyTemplate: IPropertyTemplate) => (
-                    <>
-                        <div
-                            class={['octo-propertyrow', {
-                                'octo-propertyrow--assignee': isAssigneeProperty(propertyTemplate),
-                                'octo-propertyrow--folder': isWorkdirProperty(propertyTemplate),
-                            }]}
-                        >
-                            <Show
-                                when={!props.readonly && canEditBoardProperties() && !isBranchProperty(propertyTemplate)}
-                                fallback={
-                                    <div class='octo-propertyname octo-propertyname--readonly'>
-                                        {isBranchProperty(propertyTemplate) ? branchLabel(propertyTemplate) : propertyTemplate.name}
-                                    </div>
-                                }
-                            >
-                                <MenuWrapper
-                                    isOpen={propertyTemplate.id === newTemplateId()}
-                                    menu={
-                                        <PropertyMenu
-                                            propertyId={propertyTemplate.id}
-                                            propertyName={propertyTemplate.name}
-                                            propertyType={propRegistry.get(propertyTemplate.type)}
-                                            onTypeAndNameChanged={(newType: PropertyType, newName: string) => onPropertyChangeSetAndOpenConfirmationDialog(newType, newName, propertyTemplate)}
-                                            onDelete={() => onPropertyDeleteSetAndOpenConfirmationDialog(propertyTemplate)}
+            <For each={shownCardProperties(props.board, props.board.cardProperties)}>
+                {(propertyTemplate: IPropertyTemplate) => {
+                    // A feature that answers for this property (extensions.tsx).
+                    const row = () => cardPropertyRow(props.board, propertyTemplate)
+                    const valueReadonly = () => props.readonly || !canEditBoardCards() || Boolean(row()?.readonly?.(props.board, props.card, propertyTemplate))
+                    return (
+                        <>
+                            <div class={['octo-propertyrow', row()?.rowClass || '']}>
+                                <Show
+                                    when={!props.readonly && canEditBoardProperties() && !row()?.Name}
+                                    fallback={
+                                        <div class='octo-propertyname octo-propertyname--readonly'>
+                                            <Show
+                                                when={row()?.Name}
+                                                fallback={propertyTemplate.name}
+                                            >
+                                                {(name) => (
+                                                    <Dynamic
+                                                        component={name()}
+                                                        board={props.board}
+                                                        card={props.card}
+                                                        template={propertyTemplate}
+                                                    />
+                                                )}
+                                            </Show>
+                                        </div>
+                                    }
+                                >
+                                    <MenuWrapper
+                                        isOpen={propertyTemplate.id === newTemplateId()}
+                                        menu={
+                                            <PropertyMenu
+                                                propertyId={propertyTemplate.id}
+                                                propertyName={propertyTemplate.name}
+                                                propertyType={propRegistry.get(propertyTemplate.type)}
+                                                onTypeAndNameChanged={(newType: PropertyType, newName: string) => onPropertyChangeSetAndOpenConfirmationDialog(newType, newName, propertyTemplate)}
+                                                onDelete={() => onPropertyDeleteSetAndOpenConfirmationDialog(propertyTemplate)}
+                                            />
+                                        }
+                                    >
+                                        <div class='octo-propertyname'><Button>{propertyTemplate.name}</Button></div>
+                                    </MenuWrapper>
+                                </Show>
+                                <Show
+                                    when={row()?.Value}
+                                    fallback={
+                                        <PropertyValueElement
+                                            readOnly={valueReadonly()}
+                                            card={props.card}
+                                            board={props.board}
+                                            propertyTemplate={propertyTemplate}
+                                            showEmptyPlaceholder={true}
                                         />
                                     }
                                 >
-                                    <div class='octo-propertyname'><Button>{propertyTemplate.name}</Button></div>
-                                </MenuWrapper>
-                            </Show>
-                            <Show
-                                when={isWorkdirProperty(propertyTemplate)}
-                                fallback={
-                                    <PropertyValueElement
-                                        readOnly={props.readonly || !canEditBoardCards() || isBranchProperty(propertyTemplate)}
-                                        card={props.card}
-                                        board={props.board}
-                                        propertyTemplate={propertyTemplate}
-                                        showEmptyPlaceholder={true}
-                                    />
-                                }
-                            >
-                                <CardFolderValue
-                                    board={props.board}
-                                    card={props.card}
-                                    property={propertyTemplate}
-                                    readOnly={props.readonly || !canEditBoardCards() || workdirLocked()}
-                                />
-                            </Show>
-                            <Show when={isAssigneeProperty(propertyTemplate)}>
-                                <AssignAgentTourStep/>
-                            </Show>
-                            <Show when={isWorkdirProperty(propertyTemplate)}>
-                                <PickFolderTourStep/>
-                            </Show>
-                        </div>
-
-                        {/* Under the row rather than beside the value: the row is
-                        one line of name and value, and the reason a field
-                        cannot be changed is a sentence. */}
-                        <Show when={isWorkdirProperty(propertyTemplate) && workdirLocked()}>
-                            <div class='octo-propertyhint'>
-                                <Show
-                                    when={workElsewhere()}
-                                    fallback={intl.formatMessage({
-                                        id: 'CardDetail.folder-locked',
-                                        defaultMessage: 'The card is already working in “{folder}”, where its branch is. For another folder, make a new card.',
-                                    }, {folder: lockedFolderName()})}
-                                >
-                                    {/* Work exists and this machine does not
-                                    hold it. Nothing here can continue it — the
-                                    same folder has to be on this machine — so
-                                    the honest thing is to say where it is and
-                                    on what branch, and let the person get
-                                    there themselves (docs/deferred.md). */}
-                                    {intl.formatMessage({
-                                        id: 'CardDetail.folder-locked-elsewhere',
-                                        defaultMessage: 'Work on this card has started on another machine, in “{folder}”, branch “{branch}”. To carry on here, that folder with that branch has to be on this machine.',
-                                    }, {folder: lockedFolderName(), branch: agentState().work?.branch || '—'})}
+                                    {(value) => (
+                                        <Dynamic
+                                            component={value()}
+                                            board={props.board}
+                                            card={props.card}
+                                            template={propertyTemplate}
+                                            readonly={valueReadonly()}
+                                        />
+                                    )}
+                                </Show>
+                                <Show when={row()?.InRow}>
+                                    {(inRow) => (
+                                        <Dynamic
+                                            component={inRow()}
+                                            board={props.board}
+                                            card={props.card}
+                                            template={propertyTemplate}
+                                        />
+                                    )}
                                 </Show>
                             </div>
-                        </Show>
-                    </>
-                )}
+                            <Show when={row()?.Below}>
+                                {(below) => (
+                                    <Dynamic
+                                        component={below()}
+                                        board={props.board}
+                                        card={props.card}
+                                        template={propertyTemplate}
+                                    />
+                                )}
+                            </Show>
+                        </>
+                    )
+                }}
             </For>
 
-            {/* A board that has never had a folder has no field for one, and
-                the card is where a folder is asked now: the row stands in for
-                the field until the first folder added from it makes one. */}
-            <Show when={offerFolderRow()}>
-                <div class='octo-propertyrow octo-propertyrow--folder'>
-                    <div class='octo-propertyname octo-propertyname--readonly'>{fieldNames(intl).folder}</div>
-                    <CardFolderValue
-                        board={props.board}
-                        card={props.card}
-                        readOnly={false}
-                    />
-                    <PickFolderTourStep/>
-                </div>
-            </Show>
+            <ExtensionSlot
+                name='cardPropertiesEnd'
+                board={props.board}
+                card={props.card}
+                readonly={props.readonly}
+            />
 
             <Show when={showConfirmationDialog()}>
                 <ConfirmationDialogBox

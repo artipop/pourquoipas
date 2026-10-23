@@ -10,12 +10,19 @@ import {TestBlockFactory} from '../../test/testBlockFactory'
 
 import {fakeGoSide} from '../../test/goSide'
 
+import {installAgentFeatures} from '../acp/install'
+import {resetExtensions} from '../../extensions'
+
 import NewCardButton from './newCardButton'
 
 const board = TestBlockFactory.createBoard()
 const activeView = TestBlockFactory.createBoardView(board)
 
 describe('components/viewHeader/newCardButton', () => {
+    // Drawn as main.tsx draws it: with the agents' parts plugged in.
+    beforeEach(() => installAgentFeatures())
+    afterEach(() => resetExtensions())
+
     const state = {
         users: {
             me: {

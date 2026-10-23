@@ -9,7 +9,7 @@ import {aiEnabled, setAIEnabled} from './aiSwitch'
 import {isPlanningAvailable} from './components/acp/planningDialog'
 import {withoutAgentProperties} from './components/acp/agentProperties'
 import {BOARD_PROP_BRANCH_PROPERTY, BOARD_PROP_PROJECT_PROPERTY} from './components/acp/automation'
-import AIPanel, {isAIPanelAvailable} from './components/settings/aiPanel'
+import AIPanel, {isAIPanelAvailable} from './components/acp/aiPanel'
 
 describe('the AI switch', () => {
     afterEach(() => {

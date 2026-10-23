@@ -10,6 +10,7 @@ import Dialog from '../dialog'
 
 import {goApp} from '../../goBridge'
 import {aiEnabled} from '../../aiSwitch'
+import {isHosted} from '../../buildKind'
 import {onBoardUsersChanged} from '../../extensions'
 import {openSettings} from '../settings/openSettings'
 
@@ -318,8 +319,11 @@ const PlanningDialog = (props: Props) => {
                                     when={askingAgent()}
                                     fallback={
                                         <>
+                                            {/* A server has no folders (docs/modes.md):
+                                                the conversation is held in the
+                                                board's drafts without asking. */}
                                             <div class='PlanningDialog__ask'>
-                                                {intl.formatMessage({id: 'Planning.ask-folder', defaultMessage: 'Which folder will the agent read?'})}
+                                                {isHosted() ? intl.formatMessage({id: 'Planning.ask-start', defaultMessage: 'Start the conversation'}) : intl.formatMessage({id: 'Planning.ask-folder', defaultMessage: 'Which folder will the agent read?'})}
                                             </div>
                                             <div class='PlanningDialog__picker'>
                                                 {/* The answered question, kept in
@@ -337,11 +341,25 @@ const PlanningDialog = (props: Props) => {
                                                     </button>
                                                 </Show>
 
-                                                <FolderChoices
-                                                    board={props.board}
-                                                    disabled={busy()}
-                                                    onPick={start}
-                                                />
+                                                <Show
+                                                    when={!isHosted()}
+                                                    fallback={
+                                                        <button
+                                                            type='button'
+                                                            class='PlanningDialog__agentChoice'
+                                                            disabled={busy()}
+                                                            onClick={() => start('')}
+                                                        >
+                                                            {intl.formatMessage({id: 'Planning.start', defaultMessage: 'Start'})}
+                                                        </button>
+                                                    }
+                                                >
+                                                    <FolderChoices
+                                                        board={props.board}
+                                                        disabled={busy()}
+                                                        onPick={start}
+                                                    />
+                                                </Show>
                                             </div>
                                         </>
                                     }

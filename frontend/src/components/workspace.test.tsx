@@ -11,7 +11,10 @@ import {AppStoreProvider} from '../store'
 import {Constants} from '../constants'
 import {Utils} from '../utils'
 
+import {resetExtensions} from '../extensions'
+
 import Workspace from './workspace'
+import {installAgentFeatures} from './acp/install'
 
 Object.defineProperty(Constants, 'versionString', {value: '1.0.0'})
 vi.useFakeTimers()
@@ -100,6 +103,10 @@ vi.mock('../hooks/routerMatch', () => ({
 }))
 
 describe('src/components/workspace', () => {
+    // Drawn as main.tsx draws it: with the agents' parts plugged in.
+    beforeEach(() => installAgentFeatures())
+    afterEach(() => resetExtensions())
+
     beforeEach(() => {
         mockRouteParams.boardId = board.id
         mockRouteParams.viewId = activeView.id
