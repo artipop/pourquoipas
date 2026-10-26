@@ -8,7 +8,7 @@ exports[`components/blocksEditor/blocks/attachment > should match Display snapsh
   >
     <a
       download="test-filename"
-      href="#"
+      href="test.jpg"
     >
       📎 
       test-filename

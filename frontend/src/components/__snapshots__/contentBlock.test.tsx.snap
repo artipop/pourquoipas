@@ -452,7 +452,11 @@ exports[`components/contentBlock > should match snapshot with imageBlock 1`] = `
         style="flex:none;height:100%"
       />
       <!---->
-      
+      <p
+        role="status"
+      >
+        Loading…
+      </p>
       <!---->
     </div>
     <div

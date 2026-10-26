@@ -13,7 +13,16 @@ exports[`components/blocksEditor/editor > should match snapshot 1`] = `
     >
       <div
         class="MarkdownEditor octo-editor  active"
-      />
+      >
+        <div
+          class="octo-editor-preview"
+          data-testid="preview-element"
+        >
+          <p>
+            test-value
+          </p>
+        </div>
+      </div>
     </div>
     <!---->
   </div>

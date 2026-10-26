@@ -1,5 +1,7 @@
 import {render, screen, fireEvent} from '@solidjs/testing-library'
 
+import {wrapIntl} from '../../../../testUtils'
+
 import octoClient from '../../../../octoClient'
 
 import VideoBlock from '.'
@@ -11,21 +13,21 @@ describe('components/blocksEditor/blocks/video', () => {
         const mockedOcto = vi.mocked(octoClient)
         mockedOcto.getFileAsDataUrl.mockResolvedValue({url: 'test.jpg'})
         const Component = VideoBlock.Display
-        const {container} = render(() =>
+        const {container} = render(() => wrapIntl(() =>
             <Component
                 onChange={vi.fn()}
                 value={{file: 'test', filename: 'test-filename'}}
                 onCancel={vi.fn()}
                 onSave={vi.fn()}
             />,
-        )
+        ))
         await screen.findByTestId('video')
         expect(container).toMatchSnapshot()
     })
 
     test('should match Display snapshot with empty value', async () => {
         const Component = VideoBlock.Display
-        const {container} = render(() =>
+        const {container} = render(() => wrapIntl(() =>
             <Component
                 onChange={vi.fn()}
                 value={{file: '', filename: ''}}
@@ -33,47 +35,47 @@ describe('components/blocksEditor/blocks/video', () => {
                 onSave={vi.fn()}
                 currentBoardId=''
             />,
-        )
+        ))
         expect(container).toMatchSnapshot()
     })
 
     test('should match Input snapshot', async () => {
         const Component = VideoBlock.Input
-        const {container} = render(() =>
+        const {container} = render(() => wrapIntl(() =>
             <Component
                 onChange={vi.fn()}
                 value={{file: 'test', filename: 'test-filename'}}
                 onCancel={vi.fn()}
                 onSave={vi.fn()}
             />,
-        )
+        ))
         expect(container).toMatchSnapshot()
     })
 
     test('should match Input snapshot with empty input', async () => {
         const Component = VideoBlock.Input
-        const {container} = render(() =>
+        const {container} = render(() => wrapIntl(() =>
             <Component
                 onChange={vi.fn()}
                 value={{file: '', filename: ''}}
                 onCancel={vi.fn()}
                 onSave={vi.fn()}
             />,
-        )
+        ))
         expect(container).toMatchSnapshot()
     })
 
     test('should emit onSave on change', async () => {
         const onSave = vi.fn()
         const Component = VideoBlock.Input
-        render(() =>
+        render(() => wrapIntl(() =>
             <Component
                 onChange={vi.fn()}
                 value={{file: 'test', filename: 'test-filename'}}
                 onCancel={vi.fn()}
                 onSave={onSave}
             />,
-        )
+        ))
 
         expect(onSave).not.toHaveBeenCalled()
         const input = screen.getByTestId('video-input')

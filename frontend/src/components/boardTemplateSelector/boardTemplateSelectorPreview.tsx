@@ -1,4 +1,4 @@
-import {Loading, Match, Show, Switch, createEffect, createMemo, createSignal, lazy} from 'solid-js'
+import {Match, Show, Switch, createMemo, lazy} from 'solid-js'
 
 import {Board} from '../../blocks/board'
 import {Card} from '../../blocks/card'
@@ -6,6 +6,11 @@ import {BoardView} from '../../blocks/boardView'
 import octoClient from '../../octoClient'
 import {getVisibleAndHiddenGroups, withoutEmptyGroup} from '../../boardUtils'
 import {oldestView} from '../../store/views'
+import {createLoader} from '../../hooks/loader'
+import {useIntl} from '../../intl'
+
+import {AsyncContent, LoadError, LoadingMessage} from '../asyncContent'
+import {loadCalendar} from '../calendar/calendarLoader'
 import {sortCards} from '../../store/cards'
 
 import ViewTitle from '../viewTitle'
@@ -16,46 +21,31 @@ import Gallery from '../gallery/gallery'
 
 import './boardTemplateSelectorPreview.scss'
 
-// FullCalendar is half a megabyte of source and the calendar view is the one
-// nobody opens first, so it arrives when a calendar is actually drawn.
-const CalendarFullView = lazy(() => import('../calendar/fullCalendar'))
-
 type Props = {
     activeTemplate: Board|null
 }
 
 const BoardTemplateSelectorPreview = (props: Props) => {
-    const [activeView, setActiveView] = createSignal<BoardView|null>(null)
-    const [activeTemplateCards, setActiveTemplateCards] = createSignal<Card[]>([])
+    const intl = useIntl()
+    const CalendarFullView = lazy(() => loadCalendar(intl.locale))
+    const [preview, reload, loading, error] = createLoader(async (id: string | undefined) => ({
+        id,
+        blocks: id ? await octoClient.getAllBlocks(id) : [],
+    }), undefined as {id: string | undefined, blocks: Awaited<ReturnType<typeof octoClient.getAllBlocks>>} | undefined,
+    () => props.activeTemplate?.id)
 
-    createEffect(() => props.activeTemplate, (activeTemplate) => {
-        let isSubscribed = true
-        if (activeTemplate) {
-            setActiveTemplateCards([])
-            setActiveView(null)
-            octoClient.getAllBlocks(activeTemplate.id).then((blocks) => {
-                if (isSubscribed) {
-                    const cards = blocks.filter((b) => b.type === 'card')
-
-                    // The view the template was made with, which is the one a
-                    // board made from it opens on — not the one whose title
-                    // sorts first. Templates used to carry an inbox view that
-                    // sorted before their own, and the preview of every one of
-                    // them was an empty inbox that said nothing about it.
-                    const views = blocks.filter((b) => b.type === 'view') as BoardView[]
-                    if (views.length > 0) {
-                        setActiveView(oldestView(views))
-                    }
-                    if (cards.length > 0) {
-                        // In the order the board made from it shows them.
-                        setActiveTemplateCards(sortCards([...cards] as Card[], {}, activeTemplate, oldestView(views), {}))
-                    }
-                }
-            })
-        }
-        return () => {
-            isSubscribed = false
-        }
+    // The loader keeps its last answer during a refresh. Only a matching
+    // template may draw that answer; switching templates clears the preview.
+    const blocks = () => (preview()?.id === props.activeTemplate?.id ? preview()?.blocks || [] : [])
+    const activeView = createMemo(() => {
+        const views = blocks().filter((block) => block.type === 'view') as BoardView[]
+        return views.length ? oldestView(views) : null
+    })
+    const activeTemplateCards = createMemo(() => {
+        const template = props.activeTemplate
+        const view = activeView()
+        const cards = blocks().filter((block) => block.type === 'card') as Card[]
+        return template && view ? sortCards(cards, {}, template, view, {}) : cards
     })
 
     const dateDisplayProperty = createMemo(() => {
@@ -82,6 +72,12 @@ const BoardTemplateSelectorPreview = (props: Props) => {
                     nothing to press: the title and the columns with their
                     cards, without the filter, the totals and the add buttons
                     that the board itself has. */}
+                <Show when={error()}>
+                    <LoadError onRetry={reload}/>
+                </Show>
+                <Show when={loading()}>
+                    <LoadingMessage/>
+                </Show>
                 <Show when={activeView()}>
                     <div class='top-head'>
                         <ViewTitle
@@ -136,7 +132,7 @@ const BoardTemplateSelectorPreview = (props: Props) => {
                         />
                     </Match>
                     <Match when={activeView()?.fields.viewType === 'calendar'}>
-                        <Loading fallback={null}>
+                        <AsyncContent>
                             <CalendarFullView
                                 board={props.activeTemplate!}
                                 cards={activeTemplateCards()}
@@ -146,7 +142,7 @@ const BoardTemplateSelectorPreview = (props: Props) => {
                                 showCard={() => null}
                                 addCard={() => Promise.resolve()}
                             />
-                        </Loading>
+                        </AsyncContent>
                     </Match>
                 </Switch>
             </div>

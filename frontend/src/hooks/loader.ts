@@ -10,7 +10,7 @@ import type {Accessor} from 'solid-js'
 //
 // The latest question wins: an answer for a key already left, or overtaken by
 // a reload, is dropped. A failed read keeps the answer that was there.
-export type Loader<T> = [value: Accessor<T>, reload: () => void, loading: Accessor<boolean>]
+export type Loader<T> = [value: Accessor<T>, reload: () => void, loading: Accessor<boolean>, error: Accessor<unknown>]
 
 export function createLoader<T, K = undefined>(
     load: (key: K) => Promise<T>,
@@ -21,24 +21,35 @@ export function createLoader<T, K = undefined>(
     const [box, setBox] = createSignal<{value: T}>({value: initial})
     const [asked, setAsked] = createSignal(0)
     const [loading, setLoading] = createSignal(true)
+    const [error, setError] = createSignal<{cause: unknown}>({cause: undefined})
 
     createEffect(() => [key(), asked()] as const, ([current]) => {
         let live = true
         setLoading(true)
-        load(current).then((next) => {
+        setError({cause: undefined})
+        const failed = (cause: unknown) => {
+            if (live) {
+                setError({cause})
+                setLoading(false)
+            }
+        }
+        let pending: Promise<T>
+        try {
+            pending = load(current)
+        } catch (cause) {
+            failed(cause)
+            return undefined
+        }
+        pending.then((next) => {
             if (live) {
                 setBox({value: next})
                 setLoading(false)
             }
-        }, () => {
-            if (live) {
-                setLoading(false)
-            }
-        })
+        }, failed)
         return () => {
             live = false
         }
     })
 
-    return [() => box().value, () => setAsked((n) => n + 1), loading]
+    return [() => box().value, () => setAsked((n) => n + 1), loading, () => error().cause]
 }

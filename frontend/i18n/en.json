@@ -1,4 +1,7 @@
 {
+  "AsyncContent.loading": "Loading…",
+  "AsyncContent.failed": "Could not load this content.",
+  "AsyncContent.retry": "Try again",
   "AI.base-url": "Address (optional)",
   "AI.base-url-openai": "Address (optional) — for any service that speaks the OpenAI API: OpenRouter, a local model",
   "AI.checking": "Checking the key…",

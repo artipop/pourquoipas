@@ -1,7 +1,8 @@
-import {createEffect, createSignal, onSettled} from 'solid-js'
+import {Show, onSettled} from 'solid-js'
 
 import {BlockInputProps, ContentType} from '../types'
-import octoClient from '../../../../octoClient'
+import {createFileLoader} from '../../../../hooks/fileLoader'
+import {LoadError, LoadingMessage} from '../../../asyncContent'
 
 import './attachment.scss'
 
@@ -18,29 +19,26 @@ const Attachment: ContentType<FileInfo> = {
     runSlashCommand: (): void => {},
     editable: false,
     Display: (props: BlockInputProps<FileInfo>) => {
-        const [fileDataUrl, setFileDataUrl] = createSignal<string|null>(null)
-
-        createEffect(() => props.value, () => {
-            if (!fileDataUrl() && props.value && props.value.file && typeof props.value.file === 'string') {
-                octoClient.getFileAsDataUrl(props.currentBoardId || '', props.value.file).then((fileURL) => {
-                    setFileDataUrl(fileURL.url || '')
-                })
-            }
-        })
+        const [fileInfo, reload, loading, error] = createFileLoader(() => props.currentBoardId, () => props.value?.file)
+        const fileDataUrl = () => fileInfo().url
 
         return (
-            <div
-                class='AttachmentView'
-                data-testid='attachment'
-            >
-                <a
-                    href={fileDataUrl() || '#'}
-                    onClick={(e) => e.stopPropagation()}
-                    download={props.value.filename}
+            <>
+                <Show when={loading()}><LoadingMessage/></Show>
+                <Show when={error()}><LoadError onRetry={reload}/></Show>
+                <div
+                    class='AttachmentView'
+                    data-testid='attachment'
                 >
-                    {'📎'} {props.value.filename}
-                </a>
-            </div>
+                    <a
+                        href={fileDataUrl() || '#'}
+                        onClick={(e) => e.stopPropagation()}
+                        download={props.value.filename}
+                    >
+                        {'📎'} {props.value.filename}
+                    </a>
+                </div>
+            </>
         )
     },
     Input: (props: BlockInputProps<FileInfo>) => {

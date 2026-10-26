@@ -56,6 +56,10 @@ const EmojiPlugin = (props: Props): JSX.Element => {
                     map((e): EmojiResult => ({id: e.id, name: e.name, colons: `:${e.id}:`, native: e.skins?.[0]?.native || ''})).
                     filter((e) => Boolean(e.native))
                 setOptions(found)
+            }).catch(() => {
+                if (!cancelled) {
+                    setOptions([])
+                }
             })
         return () => {
             cancelled = true

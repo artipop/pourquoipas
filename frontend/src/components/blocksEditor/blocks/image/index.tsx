@@ -1,7 +1,8 @@
-import {Show, createEffect, createSignal, onSettled} from 'solid-js'
+import {Show, onSettled} from 'solid-js'
 
 import {BlockInputProps, ContentType} from '../types'
-import octoClient from '../../../../octoClient'
+import {createFileLoader} from '../../../../hooks/fileLoader'
+import {LoadError, LoadingMessage} from '../../../asyncContent'
 
 import './image.scss'
 
@@ -19,24 +20,21 @@ const Image: ContentType<FileInfo> = {
     runSlashCommand: (): void => {},
     editable: false,
     Display: (props: BlockInputProps<FileInfo>) => {
-        const [imageDataUrl, setImageDataUrl] = createSignal<string|null>(null)
-
-        createEffect(() => props.value, () => {
-            if (!imageDataUrl() && props.value && props.value.file && typeof props.value.file === 'string') {
-                octoClient.getFileAsDataUrl(props.currentBoardId || '', props.value.file).then((fileURL) => {
-                    setImageDataUrl(fileURL.url || '')
-                })
-            }
-        })
+        const [fileInfo, reload, loading, error] = createFileLoader(() => props.currentBoardId, () => props.value?.file)
+        const imageDataUrl = () => fileInfo().url
 
         return (
-            <Show when={imageDataUrl()}>
-                <img
-                    data-testid='image'
-                    class='ImageView'
-                    src={imageDataUrl()!}
-                />
-            </Show>
+            <>
+                <Show when={loading()}><LoadingMessage/></Show>
+                <Show when={error()}><LoadError onRetry={reload}/></Show>
+                <Show when={imageDataUrl()}>
+                    <img
+                        data-testid='image'
+                        class='ImageView'
+                        src={imageDataUrl()!}
+                    />
+                </Show>
+            </>
         )
     },
     Input: (props: BlockInputProps<FileInfo>) => {

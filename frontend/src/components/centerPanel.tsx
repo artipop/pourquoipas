@@ -1,4 +1,4 @@
-import {Loading, Match, Show, Switch, createEffect, createMemo, createSignal, lazy, onSettled} from 'solid-js'
+import {Match, Show, Switch, createEffect, createMemo, createSignal, lazy, onSettled} from 'solid-js'
 
 import {useIntl} from '../intl'
 
@@ -36,6 +36,9 @@ import {ExtensionSlot, withNewCardDefaults} from '../extensions'
 
 import {cardColumnProperty} from '../boardFields'
 
+import {AsyncContent} from './asyncContent'
+import {loadCalendar} from './calendar/calendarLoader'
+
 import ShareBoardButton from './shareBoard/shareBoardButton'
 import ShareBoardLoginButton from './shareBoard/shareBoardLoginButton'
 
@@ -54,7 +57,6 @@ import ShareBoardTourStep from './onboardingTour/shareBoard/shareBoard'
 
 // FullCalendar is half a megabyte of source, and a board opens on its kanban:
 // the calendar arrives when somebody switches to it.
-const CalendarFullView = lazy(() => import('./calendar/fullCalendar'))
 
 type Props = {
     clientConfig?: ClientConfig
@@ -71,6 +73,7 @@ type Props = {
 
 const CenterPanel = (props: Props) => {
     const intl = useIntl()
+    const CalendarFullView = lazy(() => loadCalendar(intl.locale))
     const [selectedCardIds, setSelectedCardIds] = createSignal<string[]>([])
 
     const [cardIdToFocusOnRender, setCardIdToFocusOnRender] = createSignal('')
@@ -469,7 +472,7 @@ const CenterPanel = (props: Props) => {
                     />
                 </Match>
                 <Match when={props.activeView.fields.viewType === 'calendar'}>
-                    <Loading fallback={null}>
+                    <AsyncContent>
                         <CalendarFullView
                             board={props.board}
                             cards={props.cards}
@@ -481,7 +484,7 @@ const CenterPanel = (props: Props) => {
                                 addCard('', true, properties)
                             }}
                         />
-                    </Loading>
+                    </AsyncContent>
                 </Match>
                 <Match when={props.activeView.fields.viewType === 'gallery'}>
                     <Gallery

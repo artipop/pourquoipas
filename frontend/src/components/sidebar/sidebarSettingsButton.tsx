@@ -1,4 +1,6 @@
-import {Loading, Show, createEffect, createSignal, lazy} from 'solid-js'
+import {Show, createEffect, createSignal, lazy} from 'solid-js'
+
+import {AsyncContent} from '../asyncContent'
 
 import {FormattedMessage, useIntl} from '../../intl'
 
@@ -45,6 +47,12 @@ const SidebarSettingsButton = () => {
                 type='button'
                 class='SidebarSettingsButton__entry'
                 aria-label={intl.formatMessage({id: 'Sidebar.settings', defaultMessage: 'Settings'})}
+                onPointerEnter={() => {
+                    void AppSettingsDialog.preload().catch(() => undefined)
+                }}
+                onFocus={() => {
+                    void AppSettingsDialog.preload().catch(() => undefined)
+                }}
                 onClick={() => {
                     setSection(undefined)
                     setShowSettings(true)
@@ -68,12 +76,12 @@ const SidebarSettingsButton = () => {
                 which is invisible on the light theme's paper. */}
             <Show when={showSettings()}>
                 <RootPortal>
-                    <Loading fallback={null}>
+                    <AsyncContent>
                         <AppSettingsDialog
                             section={section()}
                             onClose={() => setShowSettings(false)}
                         />
-                    </Loading>
+                    </AsyncContent>
                 </RootPortal>
             </Show>
         </div>

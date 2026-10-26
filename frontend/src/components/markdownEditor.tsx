@@ -1,8 +1,10 @@
-import {Loading, Show, createSignal, lazy} from 'solid-js'
+import {Show, createSignal, lazy} from 'solid-js'
 import type {JSX} from '@solidjs/web'
 
 import {Utils} from '../utils'
 import './markdownEditor.scss'
+
+import {AsyncContent} from './asyncContent'
 
 const MarkdownEditorInput = lazy(() => import('./markdownEditorInput/markdownEditorInput'))
 
@@ -31,31 +33,36 @@ const MarkdownEditor = (props: Props): JSX.Element => {
         props.onBlur && props.onBlur(newText)
     }
 
+    const preview = () => (
+        <div
+            data-testid='preview-element'
+            class={props.text ? 'octo-editor-preview' : 'octo-editor-preview octo-placeholder'}
+            innerHTML={html()}
+            onFocusIn={() => {
+                if (!props.readonly) {
+                    void MarkdownEditorInput.preload().catch(() => undefined)
+                }
+            }}
+            onClick={(e) => {
+                const element = e.target as Element
+                if (element.tagName.toLowerCase() === 'a') {
+                    e.stopPropagation()
+                    return
+                }
+                if (!props.readonly) {
+                    setIsEditing(true)
+                }
+            }}
+        />
+    )
+
     return (
         <div class={`MarkdownEditor octo-editor ${props.class || ''} ${isEditing() ? 'active' : ''}`}>
             <Show
                 when={isEditing()}
-                fallback={
-                    <div
-                        data-testid='preview-element'
-                        class={props.text ? 'octo-editor-preview' : 'octo-editor-preview octo-placeholder'}
-                        innerHTML={html()}
-                        onClick={(e) => {
-                            const LINK_TAG_NAME = 'a'
-                            const element = e.target as Element
-                            if (element.tagName.toLowerCase() === LINK_TAG_NAME) {
-                                e.stopPropagation()
-                                return
-                            }
-
-                            if (!props.readonly && !isEditing()) {
-                                setIsEditing(true)
-                            }
-                        }}
-                    />
-                }
+                fallback={preview()}
             >
-                <Loading fallback={<></>}>
+                <AsyncContent fallback={preview()}>
                     <MarkdownEditorInput
                         id={props.id}
                         onChange={props.onChange}
@@ -66,7 +73,7 @@ const MarkdownEditor = (props: Props): JSX.Element => {
                         isEditing={isEditing()}
                         saveOnEnter={props.saveOnEnter}
                     />
-                </Loading>
+                </AsyncContent>
             </Show>
         </div>
     )

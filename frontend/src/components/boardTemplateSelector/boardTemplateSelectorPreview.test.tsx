@@ -1,6 +1,8 @@
-import {render, waitFor} from '@solidjs/testing-library'
+import {render, waitFor, screen, fireEvent} from '@solidjs/testing-library'
 
-import {IPropertyTemplate} from '../../blocks/board'
+import {createSignal, flush} from 'solid-js'
+
+import {Board, IPropertyTemplate} from '../../blocks/board'
 import {TestRouter, mockAppStore, wrapDNDIntl} from '../../testUtils'
 import {AppStoreProvider} from '../../store'
 
@@ -210,6 +212,56 @@ describe('components/boardTemplateSelector/boardTemplateSelectorPreview', () => 
         await waitFor(() => expect(container.querySelector('.top-head')).not.toBeNull())
         await waitFor(() => expect(container.querySelector('.Kanban')).not.toBeNull())
         expect(container.querySelector('.Table')).toBeNull()
+    })
+
+    test('clears a previous preview and ignores a slow answer after switching templates', async () => {
+        const blocks = await octoClient.getAllBlocks('fixture')
+        let slowReady!: (value: typeof blocks) => void
+        let latestReady!: (value: typeof blocks) => void
+        vi.mocked(octoClient.getAllBlocks).
+            mockResolvedValueOnce(blocks).
+            mockReturnValueOnce(new Promise((resolve) => {
+                slowReady = resolve
+            })).
+            mockReturnValueOnce(new Promise((resolve) => {
+                latestReady = resolve
+            }))
+        const first = (store.state as any).boards.templates[0] as Board
+        const [template, setTemplate] = createSignal<Board | null>(first)
+        const {container} = render(() => wrapDNDIntl(() =>
+            <AppStoreProvider store={store}>
+                <TestRouter><BoardTemplateSelectorPreview activeTemplate={template()}/></TestRouter>
+            </AppStoreProvider>,
+        ))
+        await waitFor(() => expect(container.querySelector('.Kanban')).not.toBeNull())
+        setTemplate({...first, id: 'slow'})
+        flush()
+        expect(container.querySelector('.top-head')).toBeNull()
+        expect(screen.getByRole('status')).toHaveTextContent('Loading…')
+        setTemplate({...first, id: 'latest'})
+        flush()
+        latestReady(blocks)
+        await waitFor(() => expect(container.querySelector('.Kanban')).not.toBeNull())
+        slowReady(blocks.map((block) => (block.type === 'view' ? {...block, fields: {...block.fields, viewType: 'table'}} : block)))
+        await Promise.resolve()
+        flush()
+        expect(container.querySelector('.Table')).toBeNull()
+        setTemplate(null)
+        flush()
+        expect(container).toBeEmptyDOMElement()
+    })
+
+    test('lets a failed preview be tried again', async () => {
+        vi.mocked(octoClient.getAllBlocks).mockRejectedValueOnce(new Error('Unavailable'))
+        const {container} = render(() => wrapDNDIntl(() =>
+            <AppStoreProvider store={store}>
+                <TestRouter><BoardTemplateSelectorPreview activeTemplate={(store.state as any).boards.templates[0]}/></TestRouter>
+            </AppStoreProvider>,
+        ))
+        expect(await screen.findByRole('alert')).toHaveTextContent('Could not load this content.')
+        fireEvent.click(screen.getByRole('button', {name: 'Try again'}))
+        await waitFor(() => expect(container.querySelector('.Kanban')).not.toBeNull())
+        expect(screen.queryByRole('alert')).toBeNull()
     })
 
     test('should be null without activeTemplate', () => {

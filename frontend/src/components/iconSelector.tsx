@@ -1,8 +1,10 @@
-import {Loading, Show, lazy} from 'solid-js'
+import {Show, lazy} from 'solid-js'
 import type {Component} from 'solid-js'
 import type {JSX} from '@solidjs/web'
 
 import {useIntl} from '../intl'
+import {ensureEmojiData} from '../widgets/emojiData'
+import {loadEmojiLocale} from '../widgets/emojiLocale'
 
 import RandomIcon from '../widgets/icons/random'
 import DeleteIcon from '../widgets/icons/delete'
@@ -11,9 +13,7 @@ import Menu from '../widgets/menu'
 import MenuWrapper from '../widgets/menuWrapper'
 import './iconSelector.scss'
 
-// emoji-mart and its data set arrive with the picker, which opens from a
-// submenu and not before.
-const EmojiPicker = lazy(() => import('../widgets/emojiPicker'))
+import {AsyncContent} from './asyncContent'
 
 type Props = {
     readonly?: boolean
@@ -25,6 +25,17 @@ type Props = {
 
 const IconSelector: Component<Props> = (props) => {
     const intl = useIntl()
+
+    // All three start on first use, rather than fetching data only after the
+    // wrapper mounts. The boundary owns the whole wait and any failed import.
+    const EmojiPicker = lazy(async () => {
+        const [module] = await Promise.all([
+            import('../widgets/emojiPicker'),
+            ensureEmojiData(),
+            loadEmojiLocale(intl.locale),
+        ])
+        return module
+    })
 
     return (
         <div class='IconSelector'>
@@ -46,9 +57,9 @@ const IconSelector: Component<Props> = (props) => {
                                 icon={<EmojiIcon/>}
                                 name={intl.formatMessage({id: 'ViewTitle.pick-icon', defaultMessage: 'Pick icon'})}
                             >
-                                <Loading fallback={null}>
+                                <AsyncContent>
                                     <EmojiPicker onSelect={props.onSelectEmoji}/>
-                                </Loading>
+                                </AsyncContent>
                             </Menu.SubMenu>
                             <Menu.Text
                                 id='remove'

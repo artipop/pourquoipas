@@ -1,4 +1,4 @@
-import {render, screen} from '@solidjs/testing-library'
+import {render, screen, waitFor} from '@solidjs/testing-library'
 
 import userEvent from '@testing-library/user-event'
 
@@ -303,6 +303,7 @@ describe('src/components/gallery/GalleryCard', () => {
                     />
                 </AppStoreProvider>,
             ))
+            await waitFor(() => expect(container.querySelector('.ImageElement')).not.toBeNull())
             await hoverOver(document.querySelector('.GalleryCard')!)
             const buttonElement = screen.getByRole('button', {name: 'menuwrapper'})
             userEvent.click(buttonElement)
@@ -380,6 +381,7 @@ describe('src/components/gallery/GalleryCard', () => {
                     />
                 </AppStoreProvider>,
             ))
+            await waitFor(() => expect(container.querySelector('.ImageElement')).not.toBeNull())
             await hoverOver(document.querySelector('.GalleryCard')!)
             const buttonElement = screen.getByRole('button', {name: 'menuwrapper'})
             userEvent.click(buttonElement)

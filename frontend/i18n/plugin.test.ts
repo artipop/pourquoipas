@@ -9,8 +9,8 @@ const root = path.dirname(directory)
 const entry = path.join(directory, 'compiled-fixture.ts')
 const exec = promisify(execFile)
 
-// Build in Node, as the real build does: esbuild cannot run inside jsdom's
-// separate Uint8Array realm. The test still executes the resulting JS below.
+// Build in a separate Node process, as production does, then execute its
+// output to verify the parser-free runtime as well as the module graph.
 async function buildFixture(input: string, code: string): Promise<{code: string, modules: string[]}> {
     const script = `
 import formatjs from '@formatjs/unplugin/vite'

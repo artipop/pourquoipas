@@ -9,6 +9,7 @@ import interactionPlugin from '@fullcalendar/interaction'
 import dayGridPlugin from '@fullcalendar/daygrid'
 
 import {useIntl} from '../../intl'
+import {createLoader} from '../../hooks/loader'
 
 import {DatePropertyType} from '../../properties/types'
 
@@ -26,11 +27,15 @@ import {useHasCurrentBoardPermissions} from '../../hooks/permissions'
 import CardBadges from '../cardBadges'
 import ConfirmationDialogBox, {ConfirmationDialogBoxProps} from '../confirmationDialogBox'
 
+import {LoadError} from '../asyncContent'
+
 import './fullcalendar.scss'
 import MenuWrapper from '../../widgets/menuWrapper'
 import CardActionsMenu from '../cardActionsMenu/cardActionsMenu'
 import CardActionsMenuIcon from '../cardActionsMenu/cardActionsMenuIcon'
 import {shownCardProperties} from '../../extensions'
+
+import {loadCalendarLocales} from './calendarLoader'
 
 const oneDay = 60 * 60 * 24 * 1000
 
@@ -279,21 +284,11 @@ const CalendarFullView = (props: Props): JSX.Element => {
     // their own chunk, fetched only when the UI is not English — this library
     // is the last one left that needs such a fetch at all, now that the page's
     // own dates are Intl's (localeDates.ts).
-    const [locales, setLocales] = createSignal<LocaleInput[]>([])
-    createEffect(() => [intl.locale, locales().length] as const, ([locale, loaded]) => {
-        if (locale.toLowerCase() === 'en' || loaded > 0) {
-            return undefined
-        }
-        let cancelled = false
-        import('@fullcalendar/core/locales-all').then((mod) => {
-            if (!cancelled) {
-                setLocales(mod.default)
-            }
-        })
-        return () => {
-            cancelled = true
-        }
-    })
+    const [locales, reloadLocales, , localeError] = createLoader(
+        (locale: string) => (locale.toLowerCase() === 'en' ? Promise.resolve([]) : loadCalendarLocales()),
+        [] as LocaleInput[],
+        () => intl.locale,
+    )
 
     // Named only once the definitions are here: FullCalendar warns about a
     // locale it has never been given and quietly stays English, so asking for
@@ -427,6 +422,7 @@ const CalendarFullView = (props: Props): JSX.Element => {
         <div
             class='CalendarContainer'
         >
+            <Show when={localeError()}><LoadError onRetry={reloadLocales}/></Show>
             <div ref={host}/>
             <Show when={showConfirmationDialogBox()}>
                 <ConfirmationDialogBox dialogBox={confirmDialogProps}/>

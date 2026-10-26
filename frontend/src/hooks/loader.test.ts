@@ -21,6 +21,30 @@ const settle = async () => {
 }
 
 describe('hooks/loader', () => {
+    test('reports a synchronous read failure and permits a retry', async () => {
+        let calls = 0
+        let loader!: ReturnType<typeof createLoader<string>>
+        const dispose = createRoot((cleanup) => {
+            loader = createLoader(() => {
+                if (++calls === 1) {
+                    throw new Error('Unavailable')
+                }
+                return Promise.resolve('retried')
+            }, 'previous')
+            return cleanup
+        })
+        flush()
+        expect(loader[0]()).toBe('previous')
+        expect(loader[2]()).toBe(false)
+        expect(loader[3]()).toBeInstanceOf(Error)
+        loader[1]()
+        flush()
+        expect(loader[3]()).toBeUndefined()
+        await settle()
+        expect(loader[0]()).toBe('retried')
+        dispose()
+    })
+
     // Switching boards while the first is still loading is the ordinary case,
     // and the slow answer for the board left must not land over the one opened.
     test('keeps the answer to the latest question, not the last to arrive', async () => {

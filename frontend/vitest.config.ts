@@ -61,6 +61,16 @@ export default defineConfig({
         // `expect` and `vi` are expected to exist without an import.
         globals: true,
 
+        // Build integration uses Node APIs; UI tests keep their real browser.
+        projects: [
+            {test: {name: 'ui', include: ['src/**/*.test.{ts,tsx}']}},
+            {
+                extends: false,
+                root,
+                test: {name: 'build', globals: true, environment: 'node', include: ['i18n/*.test.ts']},
+            },
+        ],
+
         browser: {
             enabled: true,
             provider: playwright(),

@@ -15,6 +15,8 @@ import {
     type ComboboxRow,
 } from '../combobox'
 
+import {createLoader} from '../hooks/loader'
+
 import CompassIcon from './icons/compassIcon'
 
 import './combobox.scss'
@@ -107,7 +109,6 @@ function Combobox<T>(props: Props<T>): JSX.Element {
 
     const [focused, setFocused] = createSignal(false)
     const [ownQuery, setOwnQuery] = createSignal('')
-    const [loaded, setLoaded] = createSignal<Array<ComboboxItem<T>>>([])
 
     // Programmatic, the way react-select's autoFocus prop was: the attribute
     // alone is a hint browsers apply inconsistently to elements inserted after
@@ -122,6 +123,16 @@ function Combobox<T>(props: Props<T>): JSX.Element {
     const isOpen = () => (props.menuIsOpen === undefined ? focused() : props.menuIsOpen)
     const selected = () => asArray(props.value)
 
+    // Search failures historically produce an empty list; preserve that
+    // contract while the shared loader owns latest-query-wins and disposal.
+    const [loaded] = createLoader(async (text: string) => {
+        try {
+            return await props.loadOptions?.(text) || []
+        } catch {
+            return []
+        }
+    }, [] as Array<ComboboxItem<T>>, query)
+
     // An async list is already the answer to the query, so it is never filtered
     // a second time on this side.
     const rows = createMemo((): Array<ComboboxRow<T>> => {
@@ -129,30 +140,6 @@ function Combobox<T>(props: Props<T>): JSX.Element {
             return toRows(loaded())
         }
         return filterRows(toRows(props.options || []), query(), props.matches)
-    })
-
-    // Loaded on mount as well as on every query, which is what react-select's
-    // `defaultOptions` did: the list is expected to be there before the menu is
-    // opened, not fetched in the moment it opens.
-    createEffect(query, (text) => {
-        const load = props.loadOptions
-        if (!load) {
-            return undefined
-        }
-
-        let cancelled = false
-        load(text).then((items) => {
-            if (!cancelled) {
-                setLoaded(items)
-            }
-        }).catch(() => {
-            if (!cancelled) {
-                setLoaded([])
-            }
-        })
-        return () => {
-            cancelled = true
-        }
     })
 
     // Nothing is highlighted until the list has something to highlight, and a

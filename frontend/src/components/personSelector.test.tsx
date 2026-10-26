@@ -159,8 +159,7 @@ describe('properties/person', () => {
 
             userEvent.click(userProperty as Element)
 
-            const userList = container.querySelector('.Person-item')
-            expect(userList).not.toBeNull()
+            await waitFor(() => expect(container.querySelector('.Person-item')).not.toBeNull())
             expect(container).toMatchSnapshot()
         } else {
             throw new Error('container should have been initialized')
@@ -262,6 +261,7 @@ describe('properties/person', () => {
             expect(userProperty).not.toBeNull()
 
             userEvent.click(userProperty as Element)
+            await waitFor(() => expect(container.querySelectorAll('[role="option"]').length).toBeGreaterThan(0))
             const userList = container.querySelector('.MultiPerson-item')
             expect(userList).not.toBeNull()
             expect(container).toMatchSnapshot()
@@ -304,8 +304,11 @@ describe('properties/person', () => {
             expect(userProperty).not.toBeNull()
             userEvent.click(userProperty as Element)
 
-            const userList = container.querySelector('.Person-item')
-            expect(userList).not.toBeNull()
+            const userList = await waitFor(() => {
+                const item = container.querySelector('.Person-item')
+                expect(item).not.toBeNull()
+                return item
+            })
             console.log('Text content ' + userList?.textContent)
             expect(userList?.textContent).toBe('Me')
             expect(container).toMatchSnapshot()

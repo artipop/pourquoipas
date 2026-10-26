@@ -1,4 +1,4 @@
-import {Show, createSignal, onSettled} from 'solid-js'
+import {Show} from 'solid-js'
 import type {JSX} from '@solidjs/web'
 
 import {IntlShape} from '../../intl'
@@ -10,7 +10,9 @@ import {Utils} from '../../utils'
 import ImageIcon from '../../widgets/icons/image'
 import {sendFlashMessage} from '../../components/flashMessages'
 
-import {FileInfo} from '../../blocks/block'
+import {createFileLoader} from '../../hooks/fileLoader'
+
+import {LoadError, LoadingMessage} from '../asyncContent'
 
 import {contentRegistry} from './contentRegistry'
 import ArchivedFile from './archivedFile/archivedFile'
@@ -20,33 +22,26 @@ type Props = {
 }
 
 const ImageElement = (props: Props): JSX.Element => {
-    const [imageDataUrl, setImageDataUrl] = createSignal<string|null>(null)
-    const [fileInfo, setFileInfo] = createSignal<FileInfo>({})
-
-    onSettled(() => {
-        if (!imageDataUrl()) {
-            const loadImage = async () => {
-                const fileURL = await octoClient.getFileAsDataUrl(props.block.boardId, props.block.fields.fileId)
-                setImageDataUrl(fileURL.url || '')
-                setFileInfo(fileURL)
-            }
-            loadImage()
-        }
-    })
+    const [fileInfo, reload, loading, error] = createFileLoader(() => props.block.boardId, () => props.block.fields.fileId)
+    const imageDataUrl = () => fileInfo().url
 
     return (
-        <Show
-            when={!fileInfo().archived}
-            fallback={<ArchivedFile fileInfo={fileInfo()}/>}
-        >
-            <Show when={imageDataUrl()}>
-                <img
-                    class='ImageElement'
-                    src={imageDataUrl()!}
-                    alt={props.block.title}
-                />
+        <>
+            <Show when={loading()}><LoadingMessage/></Show>
+            <Show when={error()}><LoadError onRetry={reload}/></Show>
+            <Show
+                when={!fileInfo().archived}
+                fallback={<ArchivedFile fileInfo={fileInfo()}/>}
+            >
+                <Show when={imageDataUrl()}>
+                    <img
+                        class='ImageElement'
+                        src={imageDataUrl()!}
+                        alt={props.block.title}
+                    />
+                </Show>
             </Show>
-        </Show>
+        </>
     )
 }
 

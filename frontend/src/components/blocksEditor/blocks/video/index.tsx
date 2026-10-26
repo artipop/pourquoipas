@@ -1,7 +1,8 @@
-import {Show, createEffect, createSignal, onSettled} from 'solid-js'
+import {Show, onSettled} from 'solid-js'
 
 import {BlockInputProps, ContentType} from '../types'
-import octoClient from '../../../../octoClient'
+import {createFileLoader} from '../../../../hooks/fileLoader'
+import {LoadError, LoadingMessage} from '../../../asyncContent'
 
 import './video.scss'
 
@@ -20,28 +21,25 @@ const Video: ContentType<FileInfo> = {
     runSlashCommand: (): void => {},
     editable: false,
     Display: (props: BlockInputProps<FileInfo>) => {
-        const [videoDataUrl, setVideoDataUrl] = createSignal<string|null>(null)
-
-        createEffect(() => props.value, () => {
-            if (!videoDataUrl() && props.value && props.value.file && typeof props.value.file === 'string') {
-                octoClient.getFileAsDataUrl(props.currentBoardId || '', props.value.file).then((fileURL) => {
-                    setVideoDataUrl(fileURL.url || '')
-                })
-            }
-        })
+        const [fileInfo, reload, loading, error] = createFileLoader(() => props.currentBoardId, () => props.value?.file)
+        const videoDataUrl = () => fileInfo().url
 
         return (
-            <Show when={videoDataUrl()}>
-                <video
-                    width='320'
-                    height='240'
-                    controls={true}
-                    class='VideoView'
-                    data-testid='video'
-                >
-                    <source src={videoDataUrl()!}/>
-                </video>
-            </Show>
+            <>
+                <Show when={loading()}><LoadingMessage/></Show>
+                <Show when={error()}><LoadError onRetry={reload}/></Show>
+                <Show when={videoDataUrl()}>
+                    <video
+                        width='320'
+                        height='240'
+                        controls={true}
+                        class='VideoView'
+                        data-testid='video'
+                    >
+                        <source src={videoDataUrl()!}/>
+                    </video>
+                </Show>
+            </>
         )
     },
     Input: (props: BlockInputProps<FileInfo>) => {

@@ -169,6 +169,14 @@ exports[`components/boardTemplateSelector/boardTemplateSelector > the template p
             >
               
               <!---->
+              <p
+                role="status"
+              >
+                Loading…
+              </p>
+              <!---->
+              
+              <!---->
               
               <!---->
             </div>
@@ -351,6 +359,14 @@ exports[`components/boardTemplateSelector/boardTemplateSelector > the template p
             >
               
               <!---->
+              <p
+                role="status"
+              >
+                Loading…
+              </p>
+              <!---->
+              
+              <!---->
               
               <!---->
             </div>
@@ -531,6 +547,14 @@ exports[`components/boardTemplateSelector/boardTemplateSelector > the template p
             <div
               class="BoardTemplateSelectorPreview"
             >
+              
+              <!---->
+              <p
+                role="status"
+              >
+                Loading…
+              </p>
+              <!---->
               
               <!---->
               

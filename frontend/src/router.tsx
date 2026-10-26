@@ -1,6 +1,8 @@
-import {Component, Loading, createEffect, lazy, onSettled} from 'solid-js'
+import {Component, createEffect, lazy, onSettled} from 'solid-js'
 import {createRouter, useLocation, useNavigate, useParams} from '@solidjs/router'
 import type {JSX} from '@solidjs/web'
+
+import {AsyncContent} from './components/asyncContent'
 
 import ChangePasswordPage from './pages/changePasswordPage'
 import ErrorPage from './pages/errorPage'
@@ -16,9 +18,9 @@ import fbRoute from './route'
 const BoardPage = lazy(() => import('./pages/boardPage/boardPage'))
 
 const BoardRoute: Component<{readonly?: boolean}> = (props) => (
-    <Loading fallback={null}>
+    <AsyncContent>
         <BoardPage readonly={props.readonly}/>
-    </Loading>
+    </AsyncContent>
 )
 
 // A card's changes in a window of their own: its own route, so the window is
@@ -92,26 +94,26 @@ const routes = [
     fbRoute({
         path: '/acp/diff/:cardId',
         component: () => (
-            <Loading fallback={null}>
+            <AsyncContent>
                 <DiffPage/>
-            </Loading>
+            </AsyncContent>
         ),
     }),
 
     fbRoute({
         path: '/m',
         component: () => (
-            <Loading fallback={null}>
+            <AsyncContent>
                 <MobilePage/>
-            </Loading>
+            </AsyncContent>
         ),
     }),
     fbRoute({
         path: '/share',
         component: () => (
-            <Loading fallback={null}>
+            <AsyncContent>
                 <SharePage/>
-            </Loading>
+            </AsyncContent>
         ),
     }),
 
