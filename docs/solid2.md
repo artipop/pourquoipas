@@ -4,6 +4,11 @@ The webapp runs on Solid 2 (`solid-js@2.0.0-rc.1`, `@solidjs/web`,
 `@solidjs/router@2`, `@solidjs/vite-plugin@3`). This is what changed, what it
 cost, and what is not finished.
 
+Candidates for simplifying code and data loading, audited on 2026-10-26, are
+kept in [solid2-async-audit.md](solid2-async-audit.md). The audit distinguishes
+local `lazy`/`Loading` improvements from async-memo migrations blocked by the
+RC issue described below.
+
 ## The thing that looked like a blocker and was not
 
 `@dnd-kit/solid` (every drag on the board and in the sidebar) has no Solid 2
