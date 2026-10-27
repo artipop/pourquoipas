@@ -146,7 +146,7 @@ There is deliberately **no `window.webSocketBaseURL`** here, unlike v2:
 
 - Wails v3 CLI (it carries its own task runner, so no separate `task` binary):
   ```
-  go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.34
+  go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0
   ```
 - A C toolchain where the desktop build needs cgo:
   - **macOS**: Xcode Command Line Tools.

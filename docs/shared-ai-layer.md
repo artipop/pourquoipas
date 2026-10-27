@@ -28,7 +28,7 @@
 | `zalando/go-keyring` | 0.2.8 | 0.2.8 | — |
 | `google/uuid` | 1.6.0 | 1.6.0 | 1.6.0 (косвенно) |
 | `modernc.org/sqlite` | 1.44.3 | 1.44.3 | **1.56.0** |
-| `wailsapp/wails/v3` | beta.34 | beta.34 | **beta.27** |
+| `wailsapp/wails/v3` | 3.0.0 | 3.0.0 | **beta.27** |
 
 ACP и MCP одних версий везде. Расходятся SQLite и Wails у leadheat; модулю
 важна только первая, и то если у него будет своя память. SDK провайдеров пока
