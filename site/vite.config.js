@@ -1,52 +1,50 @@
-import {defineConfig} from 'vite'
+import {existsSync, readFileSync} from 'node:fs'
+import {defineConfig, loadEnv} from 'vite'
 
-// Two pages, so the entries are listed by hand: on its own Vite finds only the
-// index.html at the root. `mpa` keeps the dev server from answering /pourquoipas/
-// with the home page.
-export default defineConfig({
-    appType: 'mpa',
+// A profile is who the page is published for — deffun, or the personal site —
+// and it is a Vite mode: `.env.<profile>` holds the values, and
+// `profiles/<profile>/<name>.html` fills the `<!--profile:name-->` blocks of
+// index.html (requisites, price). A profile with no file for a block shows
+// nothing there. The pages stay otherwise identical.
+function profile(mode) {
+    const origin = loadEnv(mode, import.meta.dirname, 'VITE_').VITE_ORIGIN
+    return {
+        name: 'profile',
+        transformIndexHtml: {
+            order: 'pre',
+            handler: (html) => html
+                .replace(/<!--\s*profile:([\w-]+)\s*-->/g, (_, block) => {
+                    const file = `${import.meta.dirname}/profiles/${mode}/${block}.html`
+                    return existsSync(file) ? readFileSync(file, 'utf8').replace(/\n$/, '') : ''
+                })
+                // Without a domain there is nothing for a canonical address to say.
+                .replace(/^.*%VITE_ORIGIN%.*\n/gm, origin ? '$&' : ''),
+        },
+    }
+}
 
-    // On the deploy /docs/ is a folder inside dist/; in dev it is a second
-    // server, so the link to the guide in the header would be a 404 exactly
-    // where it is being written. The proxy makes the two look like one site
-    // here too — `npm run dev` in docs/guide (pinned to 5174) answers it.
+// `BASE` is where the page is served from: `/` standing alone, `/pourquoipas/` when
+// deffun (../../deffun) puts it beside the other products. The guide is always
+// `BASE + 'docs/'`.
+export default defineConfig(({mode}) => ({
+    plugins: [profile(mode)],
+
+    base: process.env.BASE ?? '/',
+
+    // In dev /docs/ is a second server, so the link to the guide in the header
+    // would be a 404 exactly where it is being written. The proxy makes the two
+    // look like one site; `npm run dev` starts both. `ws` because the guide's
+    // hot reload talks over a socket on this path too.
     server: {
         proxy: {
-            // Three guides, three dev servers, and the more specific paths
-            // first: the rules are tried in order, so '/docs' listed above
-            // would take /docs/xxvi/ and /docs/vi/ to the Pourquoi Pas? guide.
-            //
-            // `ws` because a guide's own hot reload talks over a socket on
-            // these paths too, and a proxy that forwards only HTTP leaves it
-            // reconnecting for ever.
-            //
-            // The VI guide lives in the six repository next door
-            // (../../six/docs/guide) rather than in this one: the browser's
-            // documentation ships with the browser. `npm run dev` starts it
-            // along with the rest, so nothing has to be remembered here.
-            '/docs/xxvi': {target: 'http://localhost:5175', ws: true},
-            '/docs/vi': {target: 'http://localhost:5176', ws: true},
             '/docs': {target: 'http://localhost:5174', ws: true},
         },
     },
 
-    // `preview` has no proxy of its own: Vite falls its `proxy` back to
-    // `server.proxy` unless it is told otherwise. Inherited, the rules above
-    // send /docs, /docs/xxvi and /docs/vi to dev servers that are not running
-    // during a preview — so the one thing preview exists to show, the built
-    // guides sitting in dist/, is the one thing it would not serve. An empty
-    // object is what turns the inheritance off; there is nothing to proxy here,
-    // because after `build:all` every guide is a real folder under dist/docs.
+    // `preview` falls its proxy back to `server.proxy`, and after `build:all`
+    // the guide is a real folder under dist/docs — the thing preview exists to
+    // show. An empty object turns the inheritance off.
     preview: {
         proxy: {},
     },
-
-    build: {
-        rollupOptions: {
-            input: {
-                index: new URL('index.html', import.meta.url).pathname,
-                pourquoipas: new URL('pourquoipas/index.html', import.meta.url).pathname,
-            },
-        },
-    },
-})
+}))

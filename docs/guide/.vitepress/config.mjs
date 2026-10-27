@@ -1,5 +1,9 @@
 import {defineConfig} from 'vitepress'
 
+// Who the guide is published for; deffun's own build is the default. The
+// composing project (../../../deffun) passes the other profiles' names.
+const holder = process.env.PROFILE_NAME ?? 'deffun'
+
 // The user guide as a site. VitePress was picked over the alternatives for two
 // reasons: it is Vite, which this repository already builds two other things
 // with, and it highlights code with Shiki at build time — so a JSON body or a
@@ -92,7 +96,7 @@ const ru = {
 
         footer: {
             message: 'Руководство пользователя Pourquoi Pas?',
-            copyright: '© 2026 deffun',
+            copyright: `© 2026 ${holder}`,
         },
 
         notFound: {
@@ -170,7 +174,7 @@ const en = {
 
         footer: {
             message: 'The Pourquoi Pas? user guide',
-            copyright: '© 2026 deffun',
+            copyright: `© 2026 ${holder}`,
         },
 
         notFound: {
@@ -195,15 +199,16 @@ export default defineConfig({
     // one with an extension in the address.
     cleanUrls: false,
 
-    // Published under /docs/ of the site, and built straight into the site's
-    // own dist so that a deploy is one directory. The landing's build empties
-    // dist/ first, so the order in site/package.json's `build:all` matters.
-    base: '/docs/',
-    outDir: '../../site/dist/docs',
+    // The guide is published under `docs/` of the product's root. `BASE` is that
+    // root — `/` by default, `/xciii/` when deffun (../../../deffun) composes the
+    // products — so the guide builds the same way on its own and there. The
+    // output is VitePress's default; whoever needs it copies it (`build:all` in
+    // site/).
+    base: `${process.env.BASE ?? '/'}docs/`,
 
     head: [
-        ['link', {rel: 'icon', href: '/docs/favicon.png', media: '(prefers-color-scheme: light)'}],
-        ['link', {rel: 'icon', href: '/docs/favicon-dark.png', media: '(prefers-color-scheme: dark)'}],
+        ['link', {rel: 'icon', href: `${process.env.BASE ?? '/'}docs/favicon.png`, media: '(prefers-color-scheme: light)'}],
+        ['link', {rel: 'icon', href: `${process.env.BASE ?? '/'}docs/favicon-dark.png`, media: '(prefers-color-scheme: dark)'}],
     ],
 
     markdown: {

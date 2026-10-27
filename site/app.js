@@ -5,7 +5,7 @@
 // Put a URL here (Formspree, a Cloudflare Worker, your own handler) and the form
 // will POST JSON to it instead.
 const PREORDER_ENDPOINT = ''
-const PREORDER_EMAIL = 'hello@deffun.com'
+const PREORDER_EMAIL = import.meta.env.VITE_CONTACT_EMAIL
 
 // ---------------------------------------------------------------- the theme --
 //
@@ -23,7 +23,6 @@ document.getElementById('theme-toggle').addEventListener('click', () => {
 
 // ------------------------------------------------------------- the preorder --
 
-// The same script runs on the home page, which carries no form.
 const form = document.getElementById('preorder')
 const status = document.getElementById('form-status')
 
