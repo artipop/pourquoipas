@@ -1,13 +1,13 @@
 # Solid 2
 
-The webapp runs on Solid 2 (`solid-js@2.0.0-rc.8`, `@solidjs/web`,
+The webapp runs on Solid 2 (`solid-js@2.0.0-rc.18`, `@solidjs/web`,
 `@solidjs/router@2`, `@solidjs/vite-plugin@3`). This is what changed, what it
 cost, and what is not finished.
 
 Code and data loading improvements implemented on 2026-10-26 are described
 in [solid2-async-audit.md](solid2-async-audit.md): local `Loading`/`Errored`
-boundaries, parallel chunk prerequisites, and shared loaders. Re-querying
-async memos remains blocked by the RC issue described below.
+boundaries, parallel chunk prerequisites, and shared loaders. The rc.8
+async-memo/Show issue described below is fixed on the pinned rc.18 runtime.
 
 ## The thing that looked like a blocker and was not
 
@@ -64,27 +64,35 @@ Mostly mechanical:
   (`class={[base, {modifier: on()}]}`).
 - `createResource` is gone. Its replacement in Solid 2 is an async memo
   (`createMemo(async () => …)`, `refresh(memo)`, `Loading`, `isPending`), and
-  **this app does not use one**, because of a bug in the RC (below). A read
-  from Go or the server is `createLoader` (`hooks/loader.ts`): a signal, an
-  effect keyed on what is being read, the latest question winning, `reload`
+  reads from Go or the server still use `createLoader` (`hooks/loader.ts`):
+  a signal, an effect keyed on what is being read, the latest question winning, `reload`
   for "look again", a `loading` flag. It replaced thirteen hand-written copies
   of the same signal-effect-`live`-flag shape, and was briefly replaced itself
   by async memos, which is how the bug was found.
-- **An async memo asked again while on screen tears `<Show>`.** While one is
-  pending with a stale value — after `refresh`, or after one of its sources
-  changed — a `<Show>` going falsy anywhere on the page lets a binding inside
-  it run once more with the falsy value before the branch is removed. The
-  common `value()!.field` then throws, and Solid 2 answers any throw in a
-  computation by halting reactivity for the whole page: it keeps its pixels
-  and ignores every update until reloaded. Measured on rc.1 and rc.8, dev and
-  production builds alike; `<Show>{(v) => v().field}</Show>` throws in the
-  same place ("stale value from `<Show>`"), `value()?.field` and `<Show
-  keyed>` do not, and a first load under `Loading` (a `lazy` page included)
-  does not trigger it. Found as a flash message that ran out while the
-  Windows folder picker kept a Go call waiting. The report for Solid is
-  written; until it is fixed, nothing here re-asks through an async memo.
-  `flashMessages.tsx` reads its message with `?.` regardless, and its test
-  reproduces the crash with an async memo beside it.
+- **The async-memo/closing-`Show` crash was an rc.1/rc.8 issue.** While a
+  refetch was pending, a binding in a closing non-keyed `Show` could run with
+  the cleared value and halt reactivity. Both a direct `value()!.field` read
+  and Show's narrowed accessor failed; keyed children and optional reads
+  avoided it. An isolated Chromium comparison reproduced the failure on rc.8
+  in development and production; all sixteen variants passed on rc.18.
+  `src/test/asyncShow.test.tsx` now keeps the two unsafe-before cases in the
+  app's browser suite, covering both `refresh` and a changed source. This is
+  no longer a reason to prohibit async memos. Existing `createLoader` users
+  retain their loading, error and stale-answer policy; migrating them is a
+  separate behavior change.
+- **rc.18 needs its matching JSX compiler's event format.** The old Vite
+  plugin (`next.31`) still built the app, but its generated handlers were not
+  invoked by the new runtime. The browser suite caught this as clicks doing
+  nothing, including the lazy retry button. `@solidjs/vite-plugin` is now
+  `3.0.0-next.51`, with Vite `8.3.5` as its supported host. The original
+  `AsyncContent` reset works with the compatible compiler; no custom
+  remount/retry mechanism is needed.
+- **FullCalendar content hooks restore the component owner.** Updating
+  options from an effect can synchronously invoke a content hook that creates
+  a Solid render root. rc.18 rejects that root with no ambient owner.
+  `mountInto` uses `runWithOwner` with the calendar component's owner, which
+  preserves providers and allows those roots during locale/event updates.
+  The existing Russian-month browser test catches this path.
 - **The open board is loaded through the same loader** (`boardPage.tsx`),
   keyed on the board, the team and whether anybody is signed in: the fetch is
   `fetchBoardBlocks`, and an effect over the answer applies it
@@ -210,8 +218,10 @@ wrapper.
 - **The suite runs in Chromium** (vitest browser mode), so layout, hover and
   drag-and-drop are driven there; a pass over the installed app — a WKWebView,
   not Chromium — is still owed for the route canvas and the calendar.
-- Solid 2 is at **rc.1** and `@solidjs/router` at `2.0.0-next.17`. Both are
-  pinned; neither is a version to float.
+- Solid, `@solidjs/web` and the signals override are pinned to **rc.18**.
+  The existing router (`2.0.0-next.17`) is verified with this runtime. The
+  matching JSX plugin and Vite versions are listed above. Compiler and Babel
+  plugin overrides pin both to rc.18 as well.
 
 ## The router
 

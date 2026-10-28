@@ -2,11 +2,10 @@ import {createEffect, createSignal} from 'solid-js'
 import type {Accessor} from 'solid-js'
 
 // An answer from somewhere asynchronous — Go, the server — kept in a signal,
-// asked again when its key changes or on demand. Not an async memo: while one
-// is being asked again, a <Show> going falsy anywhere on the page recomputes
-// its children once with the falsy value, and that throw halts the whole page
-// (a Solid 2 RC bug, docs/solid2.md). A signal is only ever written with an
-// answer, so nothing is pending in between.
+// asked again when its key changes or on demand. This keeps explicit loading
+// and error state and retains the last answer during revalidation or failure.
+// Async computations have a different boundary/pending contract; adopting
+// them is separate from the rc.18 fix for the old Show issue (docs/solid2.md).
 //
 // The latest question wins: an answer for a key already left, or overtaken by
 // a reload, is dropped. A failed read keeps the answer that was there.

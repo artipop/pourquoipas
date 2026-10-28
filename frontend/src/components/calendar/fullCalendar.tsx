@@ -1,4 +1,4 @@
-import {For, Show, createEffect, createSignal, onSettled} from 'solid-js'
+import {For, Show, createEffect, createSignal, getOwner, onSettled, runWithOwner} from 'solid-js'
 import {render} from '@solidjs/web'
 import type {JSX} from '@solidjs/web'
 
@@ -84,6 +84,7 @@ const timeZoneOffset = (date: number): number => {
 // the matching willUnmount hooks.
 const CalendarFullView = (props: Props): JSX.Element => {
     const intl = useIntl()
+    const owner = getOwner()
     const isSelectable = () => !props.readonly
     const canAddCards = useHasCurrentBoardPermissions([Permission.ManageBoardCards])
     const [showConfirmationDialogBox, setShowConfirmationDialogBox] = createSignal<boolean>(false)
@@ -317,7 +318,10 @@ const CalendarFullView = (props: Props): JSX.Element => {
 
     const mountInto = (component: () => JSX.Element, registry: Map<Element, () => void>) => {
         const container = document.createElement('div')
-        const dispose = render(component, container)
+
+        // Option changes can invoke this hook from an effect's apply phase.
+        // Restore the component owner for the Solid root and its providers.
+        const dispose = runWithOwner(owner, () => render(component, container))
         registry.set(container, dispose)
         return {domNodes: [container]}
     }

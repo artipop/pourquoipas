@@ -63,9 +63,9 @@ export const FlashMessages: Component<Props> = (props) => {
         return () => clearTimeout(timeoutId)
     }, {defer: true})
 
-    // Read as a message that may already be gone: while anything async is
-    // being asked again, Solid 2 lets a binding in here run once more after
-    // the message went null, and a throw there halts the page (docs/solid2.md).
+    // The message may already be gone. rc.8 could re-run these bindings during
+    // an unrelated async revalidation; keep the nullable reads even though
+    // rc.18 fixes that scheduling issue (docs/solid2.md).
     return (
         <Show when={message()}>
             <div
