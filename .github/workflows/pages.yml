@@ -1,0 +1,63 @@
+# The landing page and the guide (site/, which reads docs/guide/) on GitHub
+# Pages. Pages has to be switched to "GitHub Actions" as its source once, in the
+# repository's Settings → Pages.
+name: Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - site/**
+      - docs/guide/**
+      - .github/workflows/pages.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deployment at a time, and a newer push does not cancel one that is
+# already publishing.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Every commit, because the guide says when each page last changed
+          # and reads it off git.
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: site/.nvmrc
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+      - id: pages
+        uses: actions/configure-pages@v5
+      - run: npm ci
+        working-directory: site
+      # A project's Pages site lives under /<repository>/ unless a custom domain
+      # is set; configure-pages knows which.
+      - run: npm run build
+        working-directory: site
+        env:
+          BASE_PATH: ${{ steps.pages.outputs.base_path }}
+          SITE_ORIGIN: ${{ steps.pages.outputs.origin }}
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
