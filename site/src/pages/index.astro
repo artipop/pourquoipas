@@ -1,0 +1,337 @@
+---
+import {Image} from 'astro:assets'
+
+import shipDark from '../assets/ship-dark.jpg'
+import ship from '../assets/ship.jpg'
+import Site from '../layouts/Site.astro'
+import {contactEmail, preorderEndpoint} from '../site'
+
+const base = import.meta.env.BASE_URL
+const preorder = Boolean(preorderEndpoint || contactEmail)
+---
+
+<Site
+    title="Pourquoi Pas? — доска, на которой работают ИИ-агенты"
+    description="Pourquoi Pas? — доска, на которой работают ИИ-агенты: агент — исполнитель карточки и берётся за неё, когда её переносят в колонку. Всё локально, с вашими агентами или ключом API. Приложение бесплатное."
+>
+
+<!-- ------------------------------------------------------------------ hero -->
+<section class="hero">
+    <div class="wrap hero-grid">
+        <div class="hero-text">
+            <p class="label">Доска · ИИ-агенты · macOS, Windows, Linux</p>
+            <h1 class="title">Pourquoi Pas?</h1>
+            <p class="hero-headline">Свободное время где-то рядом.</p>
+            <p class="lead">
+                Доска, на&nbsp;которой работа делается: агент&nbsp;— исполнитель
+                карточки, как человек, и&nbsp;берётся за&nbsp;неё, когда вы&nbsp;переносите
+                её&nbsp;в&nbsp;колонку.
+            </p>
+            <p>
+                Агент делает задачу и&nbsp;оставляет результат в&nbsp;комментарии карточки.
+                Потом сам переносит её&nbsp;в&nbsp;колонку, название которой говорит, что вышло.
+            </p>
+            <p class="actions">
+                {preorder && <a class="btn" href="#preorder">Узнать о&nbsp;выходе</a>}
+                <a class={preorder ? 'btn btn-ghost' : 'btn'} href="#how">Как это работает</a>
+                <span class="note">Приложение бесплатное</span>
+            </p>
+        </div>
+        <div class="hero-ship">
+            <Image class="ship ship-light" src={ship} alt="Лайнер «Pourquoi Pas?»" widths={[400, 800]} sizes="(max-width: 52rem) 70vw, 400px" loading="eager" />
+            <Image class="ship ship-dark" src={shipDark} alt="Лайнер «Pourquoi Pas?»" widths={[400, 800]} sizes="(max-width: 52rem) 70vw, 400px" loading="eager" />
+        </div>
+    </div>
+</section>
+
+<!-- ------------------------------------------------------- how it works -->
+<section id="how">
+    <div class="wrap">
+        <p class="label">Как это работает</p>
+        <h2>Исполнитель, колонка, описание</h2>
+
+        <!-- A picture of the board drawn in the app's own terms: caps column
+             names, cards on the surface, the mustard of an agent asking. -->
+        <div class="board" aria-hidden="true">
+            <div class="column">
+                <p class="column-name">Сделать <span>2</span></p>
+                <div class="card">
+                    <p class="card-title">Обновить зависимости фронтенда</p>
+                    <p class="card-who">Claude Code</p>
+                </div>
+                <div class="card">
+                    <p class="card-title">Ответ клиенту про экспорт</p>
+                    <p class="card-who person">Анна</p>
+                </div>
+            </div>
+            <div class="column">
+                <p class="column-name">В работе <span>2</span></p>
+                <div class="card card-asking">
+                    <p class="asking">Агент спрашивает</p>
+                    <p class="card-title">Перевести настройки на новый формат</p>
+                    <p class="question">Старый файл удалить или оставить рядом?</p>
+                    <p class="answers"><span>Удалить</span><span>Оставить</span></p>
+                    <p class="card-who">Codex</p>
+                </div>
+                <div class="card card-working">
+                    <p class="card-title">Тесты для импорта архива</p>
+                    <p class="card-who">Claude Code</p>
+                </div>
+            </div>
+            <div class="column">
+                <p class="column-name">Готово <span>1</span></p>
+                <div class="card">
+                    <p class="card-title">Почему падает сборка на Linux</p>
+                    <p class="comment">Не хватало пакета libwebkit2gtk в образе CI. Добавил, сборка проходит.</p>
+                    <p class="card-who">Claude Code</p>
+                </div>
+            </div>
+            <div class="column">
+                <p class="column-name">Не вышло <span>0</span></p>
+            </div>
+        </div>
+
+        <ol class="steps">
+            <li>
+                <h3>Исполнитель</h3>
+                <p>
+                    Агента назначают исполнителем карточки, как человека.
+                    Любой ваш агент годится для&nbsp;любой доски; добавлять его
+                    на&nbsp;доску не&nbsp;нужно.
+                </p>
+            </li>
+            <li>
+                <h3>Колонка</h3>
+                <p>
+                    Перенос карточки в&nbsp;колонку запускает агента. Он&nbsp;знает
+                    колонки доски и, закончив, сам переносит карточку в&nbsp;ту,
+                    что говорит, чем всё кончилось. Настраивать колонки
+                    не&nbsp;нужно.
+                </p>
+            </li>
+            <li>
+                <h3>Задание</h3>
+                <p>
+                    Задание агент читает из&nbsp;описания карточки. К&nbsp;нему доска
+                    добавляет свою инструкцию&nbsp;— общую для&nbsp;всех её&nbsp;агентов.
+                </p>
+            </li>
+        </ol>
+        <p class="muted">
+            Подробно, по&nbsp;шагам&nbsp;— в&nbsp;<a href={`${base}docs/automation/`}>руководстве</a>.
+        </p>
+    </div>
+</section>
+
+<!-- --------------------------------------------------------------- inbox -->
+<section id="inbox" class="band">
+    <div class="wrap">
+        <p class="label">Входящие</p>
+        <h2>Карточки приходят сами</h2>
+        <p class="lead">
+            Всё, что пришло извне, складывается на&nbsp;одну доску
+            Входящие&nbsp;— по&nbsp;колонке на&nbsp;каждый источник. Оттуда
+            карточка переносится на&nbsp;доску, к&nbsp;которой относится.
+        </p>
+        <div class="tiles">
+            <div class="tile">
+                <h3>Kaiten</h3>
+                <p>
+                    Задачи, назначенные на&nbsp;вас в&nbsp;Kaiten, появляются
+                    во&nbsp;Входящих сами. Одна задача&nbsp;— одна карточка.
+                </p>
+            </div>
+            <div class="tile">
+                <h3>«Поделиться»</h3>
+                <p>
+                    На&nbsp;Mac ссылка или текст из&nbsp;любого приложения
+                    отправляется во&nbsp;Входящие или на&nbsp;доску через
+                    системное меню «Поделиться».
+                </p>
+            </div>
+            <div class="tile">
+                <h3>HTTP</h3>
+                <p>
+                    У&nbsp;каждого источника есть адрес и&nbsp;токен. Карточку может
+                    создать скрипт, вебхук или «Быстрая команда» на&nbsp;телефоне.
+                </p>
+            </div>
+        </div>
+        <p class="muted">
+            Карточка переносится на&nbsp;другую доску вместе со&nbsp;своими комментариями.
+        </p>
+
+        <div class="planning">
+            <h2>Или вы их нарежете с&nbsp;помощью&nbsp;ИИ</h2>
+            <p>
+                Это режим планирования: «Создать» → «Обсудить с&nbsp;агентом»
+                открывает разговор с&nbsp;агентом, который читает папку проекта.
+                Карточки, о&nbsp;которых вы&nbsp;договорились, агент заводит на&nbsp;доске сам.
+            </p>
+        </div>
+    </div>
+</section>
+
+<!-- ------------------------------------------------------------- stepping in -->
+<section>
+    <div class="wrap">
+        <p class="label">Когда нужно вмешаться</p>
+        <div class="pair">
+            <div>
+                <h2>История карточки</h2>
+                <p>
+                    Кнопка «История» показывает, кто и&nbsp;что менял
+                    в&nbsp;карточке: человек или агент, каждый под своим именем.
+                </p>
+                <p class="muted">
+                    Работа агента в&nbsp;репозитории остаётся отдельной веткой,
+                    а&nbsp;ваша рабочая копия не&nbsp;меняется.
+                </p>
+            </div>
+            <div>
+                <h2>Вопросы агента</h2>
+                <p>
+                    Если агенту нужно решение или разрешение, он&nbsp;останавливается
+                    и&nbsp;спрашивает. Вопрос с&nbsp;вариантами ответа приходит
+                    на&nbsp;карточку и&nbsp;уведомлением.
+                </p>
+                <p class="muted">
+                    Остальную работу агент в&nbsp;это время продолжает.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- --------------------------------------------------------------- the facts -->
+<section class="facts">
+    <div class="wrap">
+        <p class="label">Что это за программа</p>
+        <h2>Без облака и&nbsp;с&nbsp;вашими агентами</h2>
+        <dl class="rows">
+            <div>
+                <dt>Всё на&nbsp;вашем компьютере</dt>
+                <dd>Доска, файлы и&nbsp;агенты работают локально. Серверов
+                    и&nbsp;учётных записей у&nbsp;нас нет.</dd>
+            </div>
+            <div>
+                <dt>Ваш ИИ</dt>
+                <dd>Pourquoi Pas? запускает агентов, которые уже установлены у&nbsp;вас,
+                    под&nbsp;вашей учётной записью: подписки на&nbsp;Claude или Codex
+                    достаточно. Вместо программы можно подключить модель
+                    по&nbsp;своему ключу API Anthropic или OpenAI. И&nbsp;то,
+                    и&nbsp;другое подключается в&nbsp;одном месте, в&nbsp;настройках.</dd>
+            </div>
+            <div>
+                <dt>Поддерживаемые агенты</dt>
+                <dd>Claude Code, Codex, GitHub Copilot CLI, Antigravity, Junie
+                    и&nbsp;любой агент с&nbsp;поддержкой ACP.</dd>
+            </div>
+            <div>
+                <dt>Отдельные копии</dt>
+                <dd>Агент работает в&nbsp;отдельной копии проекта
+                    и&nbsp;не&nbsp;трогает ту, что открыта у&nbsp;вас. Несколько
+                    карточек идут одновременно.</dd>
+            </div>
+            <div>
+                <dt>Платформы</dt>
+                <dd>macOS, Windows и&nbsp;Linux.</dd>
+            </div>
+        </dl>
+    </div>
+</section>
+
+<!-- ------------------------------------------------------------------- price -->
+<section id="price" class="band">
+    <div class="wrap price">
+        <div>
+            <p class="label">Цена</p>
+            <p class="badge">Приложение бесплатное</p>
+            <h2>Платно только ИИ по&nbsp;нашей подписке</h2>
+            <p>
+                Доска, шаблоны, агенты на&nbsp;вашем компьютере и&nbsp;ваш
+                ключ API работают без&nbsp;оплаты. Подписка даст ИИ без&nbsp;своего
+                ключа и&nbsp;без&nbsp;установленного агента; она ещё не&nbsp;готова.
+            </p>
+            {preorder && (
+                <p>
+                    Оставьте почту&nbsp;— мы&nbsp;напишем, когда выйдет сборка
+                    под&nbsp;вашу систему.
+                </p>
+            )}
+        </div>
+
+        {preorder && (
+            <form id="preorder" novalidate data-endpoint={preorderEndpoint} data-email={contactEmail}>
+                <label class="field">
+                    <span>Почта</span>
+                    <input type="email" name="email" required placeholder="you@example.com" autocomplete="email">
+                </label>
+                <label class="field">
+                    <span>Имя (необязательно)</span>
+                    <input type="text" name="name" autocomplete="name">
+                </label>
+                <label class="field">
+                    <span>Система</span>
+                    <select name="os">
+                        <option>macOS</option>
+                        <option>Windows</option>
+                        <option>Linux</option>
+                    </select>
+                </label>
+                <button class="btn" type="submit">Написать мне о&nbsp;выходе</button>
+                <p class="form-status" role="status"></p>
+                <p class="muted small">
+                    Мы&nbsp;напишем один раз, когда выйдет сборка. Рассылок не&nbsp;будет.
+                </p>
+            </form>
+        )}
+    </div>
+</section>
+
+</Site>
+
+<script>
+    // With an endpoint the form posts JSON there; without one it opens a mail
+    // client with the same fields, so a submission is never silently lost.
+    const form = document.getElementById('preorder') as HTMLFormElement | null
+    const status = form?.querySelector('.form-status') as HTMLElement | null
+
+    function say(text: string, state = 'ok') {
+        if (!status) return
+        status.textContent = text
+        status.dataset.state = state
+    }
+
+    form?.addEventListener('submit', async (event) => {
+        event.preventDefault()
+        const {endpoint, email} = form.dataset
+        const data = Object.fromEntries(new FormData(form).entries()) as Record<string, string>
+        if (!data.email?.includes('@')) {
+            say('Проверьте адрес почты.', 'error')
+            return
+        }
+
+        if (!endpoint) {
+            const body = [`Почта: ${data.email}`, `Имя: ${data.name || '—'}`, `Система: ${data.os}`].join('\n')
+            window.location.href = `mailto:${email}?subject=${encodeURIComponent('Pourquoi Pas?: напишите о выходе')}` +
+                `&body=${encodeURIComponent(body)}`
+            say('Открыли почтовую программу — письмо заполнено, осталось отправить.')
+            return
+        }
+
+        say('Отправляем…')
+        try {
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', Accept: 'application/json'},
+                body: JSON.stringify(data),
+            })
+            if (!response.ok) throw new Error(String(response.status))
+            form.reset()
+            say('Записали. Напишем, когда выйдет сборка.')
+        } catch {
+            say(email ? `Не отправилось. Напишите нам на ${email}, мы запишем вас вручную.` : 'Не отправилось. Попробуйте позже.', 'error')
+        }
+    })
+</script>

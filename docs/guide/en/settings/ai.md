@@ -1,4 +1,6 @@
-# Connecting agents
+---
+title: "Connecting agents"
+---
 
 Agents are connected in one place — **"Settings" → "AI"** — and they are yours,
 not a board's. Any of your agents can be made the assignee of a card on any

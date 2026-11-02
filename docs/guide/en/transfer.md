@@ -1,4 +1,6 @@
-# Moving a board, and backups
+---
+title: "Moving a board, and backups"
+---
 
 A board is exported and imported as one `.boardarchive` file. The same file is
 the backup.

@@ -1,4 +1,6 @@
-# Settings
+---
+title: "Settings"
+---
 
 App settings live in one window: at the bottom of the left-hand list, under
 "Add board", the **"Settings"** button with a cog. They apply to all boards.

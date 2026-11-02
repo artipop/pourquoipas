@@ -1,4 +1,6 @@
-# The board: title, description, menu
+---
+title: "The board: title, description, menu"
+---
 
 This page is about the board itself: the header, the menu, the views. How an
 agent takes a card is covered in ["The agent on a card"](./agent.md).

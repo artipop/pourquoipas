@@ -1,0 +1,16 @@
+/* The app's four voices (frontend/src/styles/_typography.scss): Fira Sans
+   Condensed caps for what the system names, Inter for prose, Playfair Display
+   italic for names only, JetBrains Mono for data. Only the latin and cyrillic
+   files are ever fetched — each face's unicode-range keeps the rest away. */
+@import '@fontsource/fira-sans-condensed/latin-600.css';
+@import '@fontsource/fira-sans-condensed/cyrillic-600.css';
+@import '@fontsource-variable/inter/wght.css';
+@import '@fontsource-variable/playfair-display/wght-italic.css';
+@import '@fontsource-variable/jetbrains-mono/wght.css';
+
+:root {
+    --pp-font-label: 'Fira Sans Condensed', sans-serif;
+    --pp-font-prose: 'Inter Variable', system-ui, sans-serif;
+    --pp-font-title: 'Playfair Display Variable', Georgia, serif;
+    --pp-font-mono: 'JetBrains Mono Variable', ui-monospace, Menlo, monospace;
+}

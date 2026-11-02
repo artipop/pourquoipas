@@ -1,4 +1,6 @@
-# Light and dark
+---
+title: "Light and dark"
+---
 
 The app has one look, made from its icon: in the light half, cream paper and
 navy text; in the dark half, a navy ground and cream text. Mustard marks the

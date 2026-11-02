@@ -1,4 +1,6 @@
-# Your own server
+---
+title: "Your own server"
+---
 
 The app on your computer belongs to one person: it never asks who you are, and
 whoever opens the board sees everything. A server is **a separate install**,

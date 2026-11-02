@@ -1,43 +1,34 @@
 ---
-layout: home
-
-# Otherwise the tab reads "Pourquoi Pas? — the Pourquoi Pas? guide": the product's name is the
-# title of this page.
-titleTemplate: ':title — the guide'
-
+title: Guide
+description: "The Pourquoi Pas? user guide: the board, agents, the inbox and the settings."
+template: splash
 hero:
-  image:
-    light: /ship.jpg
-    dark: /ship-dark.jpg
-    alt: The liner «Pourquoi Pas?»
-  name: Pourquoi Pas?
-  text: The guide
+  title: Pourquoi Pas?
   tagline: How to use the board, the agents and everything around them.
+  image:
+    light: ../../../site/src/assets/ship.jpg
+    dark: ../../../site/src/assets/ship-dark.jpg
+    alt: The liner «Pourquoi Pas?»
   actions:
-    - theme: brand
-      text: Start with the board
-      link: /en/board
-    - theme: alt
-      text: How an agent is started
-      link: /en/automation/
-
-features:
-  - title: The board
-    details: Title, icon, description, the «⋯» menu and views.
-    link: /en/board
-  - title: The agent
-    details: How to assign a card to an agent, how to answer its questions, what stays on the card.
-    link: /en/agent
-  - title: Automation
-    details: The one rule by which the board starts an agent, and what it is told.
-    link: /en/automation/
-  - title: Inbox
-    details: 'Cards that arrive on their own: a link, Kaiten, a script or a phone over HTTP.'
-    link: /en/inbox/
-  - title: Settings
-    details: Theme and language, connecting agents, your own server.
-    link: /en/settings/
-  - title: Moving
-    details: Archive export and import, moving to another machine.
-    link: /en/transfer
+    - text: Start with the board
+      link: board/
+      icon: right-arrow
+    - text: How an agent is started
+      link: automation/
+      variant: minimal
 ---
+
+## Sections
+
+- **[The board](./board.md)** — title, icon, description, the «⋯» menu and
+  views.
+- **[The agent](./agent.md)** — how to assign a card to an agent, how to answer
+  its questions, what stays on the card.
+- **[Automation](./automation/index.md)** — the one rule by which the board
+  starts an agent, and what it is told.
+- **[Inbox](./inbox/index.md)** — cards that arrive on their own: a link,
+  Kaiten, a script or a phone over HTTP.
+- **[Settings](./settings/index.md)** — theme and language, connecting agents,
+  your own server.
+- **[Moving](./transfer.md)** — archive export and import, moving to another
+  machine.

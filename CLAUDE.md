@@ -494,8 +494,9 @@ per driver.
   done is rewritten as description or deleted; what was deliberately not done
   keeps its reasoning in `docs/deferred.md`.
 - **A feature a person uses is not finished until `docs/guide/` says how**
-  (Russian, by screen or task; a VitePress site, `docs/guide-site.md`). New pages
-  get a sidebar line in `.vitepress/config.mjs`. Quote the screen from
+  (Russian, by screen or task; Starlight in `site/`, `docs/guide-site.md`). A page
+  names itself in `title:` front matter, and a new one gets a sidebar line in
+  `site/astro.config.mjs`. Quote the screen from
   `frontend/i18n/ru.json`, never from memory. `docs/guide/en/` mirrors it page for
   page and quotes `en.json`.
 - Commit messages: a plain subject saying what changed, a body saying why — the

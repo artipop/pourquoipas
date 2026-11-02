@@ -1,4 +1,6 @@
-# The agent on a card
+---
+title: "The agent on a card"
+---
 
 This page covers how an agent works a card: who takes it, how to answer its
 questions and what stays on the card.

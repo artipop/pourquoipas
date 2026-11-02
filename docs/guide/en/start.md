@@ -1,4 +1,6 @@
-# First run
+---
+title: "First run"
+---
 
 This page is about where to begin: an agent, a first card, the tour of the
 board and the hints.

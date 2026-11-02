@@ -1,0 +1,142 @@
+/* The guide in the app's colours. The values are frontend/src/styles/_tokens.scss
+   put into Starlight's vocabulary: its dark theme is the hull, its light theme
+   the sky, and the ladder of greys between ink and ground is the app's ink
+   faded over its canvas. Starlight declares its own in a cascade layer, so
+   these win without a fight. */
+
+:root {
+    --sl-font: var(--pp-font-prose);
+    --sl-font-mono: var(--pp-font-mono);
+
+    --sl-color-white: #f1e4cc;
+    --sl-color-gray-1: #e2d6c0;
+    --sl-color-gray-2: #c4bcad;
+    --sl-color-gray-3: #8f9399;
+    --sl-color-gray-4: #5b6670;
+    --sl-color-gray-5: #2a3d4f;
+    --sl-color-gray-6: #13283a;
+    --sl-color-black: #0c1b29;
+
+    /* A button on the hull is the sky, as in the app; a link is the sea. */
+    --sl-color-accent-low: #0c1b29;
+    --sl-color-accent: #7fbfd0;
+    --sl-color-accent-high: #f1e4cc;
+    --sl-color-text-accent: #7fbfd0;
+
+    --sl-color-orange-low: #3d2a1a;
+    --sl-color-orange: #e0a85e;
+    --sl-color-orange-high: #f0d3a8;
+    --sl-color-green-low: #15322a;
+    --sl-color-green: #3db887;
+    --sl-color-green-high: #b6e6d0;
+    --sl-color-blue-low: #153049;
+    --sl-color-blue: #7fbfd0;
+    --sl-color-blue-high: #cfe7ee;
+    --sl-color-red-low: #3d2024;
+    --sl-color-red: #f08a6c;
+    --sl-color-red-high: #f8cfc2;
+    --sl-color-purple-low: #262648;
+    --sl-color-purple: #b09cff;
+    --sl-color-purple-high: #ddd5ff;
+
+    --sl-color-bg-nav: #07121c;
+    --sl-color-bg-sidebar: #07121c;
+    --sl-color-backdrop-overlay: rgba(0, 0, 0, 0.66);
+
+    --sl-content-width: 46rem;
+}
+
+:root[data-theme='light'] {
+    --sl-color-white: #0c1b29;
+    --sl-color-gray-1: #1d2e3d;
+    --sl-color-gray-2: #34434f;
+    --sl-color-gray-3: #5a6670;
+    --sl-color-gray-4: #8b8f8f;
+    --sl-color-gray-5: #cdbfa6;
+    --sl-color-gray-6: #ecdcc0;
+    --sl-color-gray-7: #fbf5ea;
+    --sl-color-black: #f5e8d1;
+
+    /* On paper a button is the hull. */
+    --sl-color-accent-low: #d0dfe4;
+    --sl-color-accent: #0c1b29;
+    --sl-color-accent-high: #0c1b29;
+    --sl-color-text-accent: #143d4c;
+
+    --sl-color-orange-low: #f2d6b6;
+    --sl-color-orange: #cc8c47;
+    --sl-color-orange-high: #8c5a1c;
+    --sl-color-green-low: #d5e3cc;
+    --sl-color-green: #1b6e4e;
+    --sl-color-green-high: #1b6e4e;
+    --sl-color-blue-low: #d0dfe4;
+    --sl-color-blue: #143d4c;
+    --sl-color-blue-high: #143d4c;
+    --sl-color-red-low: #eccfc4;
+    --sl-color-red: #a3462c;
+    --sl-color-red-high: #a3462c;
+    --sl-color-purple-low: #ddd5e8;
+    --sl-color-purple: #6d4ac7;
+    --sl-color-purple-high: #6d4ac7;
+
+    --sl-color-bg-nav: #fbf5ea;
+    --sl-color-bg-sidebar: #f5e8d1;
+    --sl-color-backdrop-overlay: rgba(12, 27, 41, 0.44);
+}
+
+/* A page's name is lettered like the ship's. */
+h1#_top,
+.hero h1 {
+    font-family: var(--pp-font-title);
+    font-style: italic;
+    font-weight: 500;
+    letter-spacing: 0;
+}
+
+/* What the system names — the sections of the sidebar, the outline's title —
+   is said in condensed caps, as on the board's columns. */
+.sidebar-content details > summary .group-label,
+.right-sidebar-panel h2,
+.pagination-links .link-title + span,
+starlight-toc h2 {
+    font-family: var(--pp-font-label);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.sidebar-content details > summary .group-label {
+    font-size: var(--sl-text-xs);
+}
+
+/* The product draws no rounded corners; Starlight rounds buttons and cards. */
+.sl-link-button,
+.sl-link-card,
+.card,
+.starlight-aside,
+.expressive-code .frame,
+site-search button {
+    border-radius: 2px;
+}
+
+.sl-markdown-content :is(p, li) {
+    text-wrap: pretty;
+}
+
+.sl-markdown-content :is(h1, h2, h3) {
+    text-wrap: balance;
+}
+
+/* The guide's front page shows the ship the app icon is cut from: here there is
+   room for the name on the hull. */
+.hero > img {
+    border-radius: 22%;
+    box-shadow: 0 16px 48px -12px rgb(0 0 0 / 0.32);
+}
+
+/* The theme and language pickers are sized for Starlight's system font, and in
+   Inter they cut the Russian labels short. */
+starlight-theme-select label,
+starlight-lang-select label {
+    --sl-select-width: 7.5em !important;
+}

@@ -1,4 +1,6 @@
-# Updates
+---
+title: "Updates"
+---
 
 The app can replace itself with a newer version. The **"Updates"** section of
 the settings window is the second one, right under "The app itself".

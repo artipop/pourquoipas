@@ -1,43 +1,33 @@
 ---
-layout: home
-
-# Иначе вкладка называется «Pourquoi Pas? — руководство Pourquoi Pas?»: имя продукта здесь и
-# есть заголовок страницы.
-titleTemplate: ':title — руководство'
-
+title: Руководство
+description: "Руководство пользователя Pourquoi Pas?: доска, агенты, Входящие и настройки."
+template: splash
 hero:
-  image:
-    light: /ship.jpg
-    dark: /ship-dark.jpg
-    alt: Лайнер «Pourquoi Pas?»
-  name: Pourquoi Pas?
-  text: Руководство
+  title: Pourquoi Pas?
   tagline: Как пользоваться доской, агентами и всем, что вокруг них.
+  image:
+    light: ../../site/src/assets/ship.jpg
+    dark: ../../site/src/assets/ship-dark.jpg
+    alt: Лайнер «Pourquoi Pas?»
   actions:
-    - theme: brand
-      text: Начать с доски
-      link: /board
-    - theme: alt
-      text: Как запускается агент
-      link: /automation/
-
-features:
-  - title: Доска
-    details: Название, иконка, описание, меню «⋯» и виды.
-    link: /board
-  - title: Агент
-    details: Как назначить карточку агенту, как отвечать на его вопросы и что остаётся на карточке.
-    link: /agent
-  - title: Автоматизация
-    details: Одно правило, по которому доска запускает агента, и что ему сказано.
-    link: /automation/
-  - title: Входящие
-    details: 'Карточки, которые приходят сами: ссылка, Kaiten, скрипт или телефон по HTTP.'
-    link: /inbox/
-  - title: Настройки
-    details: Тема и язык, подключение агентов, свой сервер.
-    link: /settings/
-  - title: Перенос
-    details: Экспорт и импорт архива, переезд на другую машину.
-    link: /transfer
+    - text: Начать с доски
+      link: board/
+      icon: right-arrow
+    - text: Как запускается агент
+      link: automation/
+      variant: minimal
 ---
+
+## Разделы
+
+- **[Доска](./board.md)** — название, иконка, описание, меню «⋯» и виды.
+- **[Агент](./agent.md)** — как назначить карточку агенту, как отвечать на его
+  вопросы и что остаётся на карточке.
+- **[Автоматизация](./automation/index.md)** — одно правило, по которому доска
+  запускает агента, и что ему сказано.
+- **[Входящие](./inbox/index.md)** — карточки, которые приходят сами: ссылка,
+  Kaiten, скрипт или телефон по HTTP.
+- **[Настройки](./settings/index.md)** — тема и язык, подключение агентов, свой
+  сервер.
+- **[Перенос](./transfer.md)** — экспорт и импорт архива, переезд на другую
+  машину.

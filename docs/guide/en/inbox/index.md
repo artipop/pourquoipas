@@ -1,4 +1,6 @@
-# Inbox
+---
+title: "Inbox"
+---
 
 Cards can arrive by themselves: a task from Kaiten, a link from the browser, a
 notification from a phone. Everything that arrives is filed in one place — the

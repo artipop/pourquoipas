@@ -1,4 +1,6 @@
-# Computer and server: what works where
+---
+title: "Computer and server: what works where"
+---
 
 Pourquoi Pas? is installed in one of two ways:
 

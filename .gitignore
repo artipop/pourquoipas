@@ -18,11 +18,6 @@ node_modules
 # older commit has taken it away and an IDE watcher is still running — it
 # falls back to .vite beside the config.
 .vite
-# VitePress' own working directory, for both guides (docs/guide, the Pourquoi Pas? one,
-# and docs/guide-xxvi). They build into site/dist instead, so a `dist` here only
-# appears if somebody overrides outDir.
-docs/guide*/.vitepress/cache
-docs/guide*/.vitepress/dist
 coverage
 .eslintcache
 frontend/cypress/videos

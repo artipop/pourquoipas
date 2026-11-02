@@ -1,4 +1,6 @@
-# Folders and branches
+---
+title: "Folders and branches"
+---
 
 An agent always works in some folder on your machine. A card picks one folder
 with its «Folder» field.

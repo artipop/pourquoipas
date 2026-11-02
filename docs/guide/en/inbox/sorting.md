@@ -1,4 +1,6 @@
-# Sorting the inbox
+---
+title: "Sorting the inbox"
+---
 
 An agent can move cards from the inbox to the boards they belong on. It decides
 by the board's title, its description and a summary of its cards. When no board

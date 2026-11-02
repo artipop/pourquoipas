@@ -339,8 +339,9 @@ window-position autosave.
 ## Documentation
 
 - [docs/guide/](docs/guide/index.md) — руководство пользователя, по-русски:
-  как этим пользоваться, а не как это устроено. Это же и сайт — VitePress,
-  разделами и с поиском; как он собирается — [docs/guide-site.md](docs/guide-site.md).
+  как этим пользоваться, а не как это устроено. Это же и сайт — Starlight
+  рядом с лендингом в `site/`, разделами и с поиском; как он собирается —
+  [docs/guide-site.md](docs/guide-site.md).
 - [docs/card-work.md](docs/card-work.md) — how a card gets worked on, for somebody using the
   board rather than working on it.
 - [docs/templates.md](docs/templates.md) — what a template carries, how it is edited,

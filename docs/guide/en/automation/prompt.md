@@ -1,4 +1,6 @@
-# The board's system prompt
+---
+title: "The board's system prompt"
+---
 
 The board menu (⋯ in the header) → **"The board's system prompt…"**. This is
 what an agent is told before anything else: before the card's task and before

@@ -1,0 +1,66 @@
+---
+import {Image} from 'astro:assets'
+
+import icon from '../assets/icon.png'
+
+// Two links where Starlight draws one: the product's name leads to the landing
+// page, which is the product's home, and the word after it to the start of the
+// guide in the reader's language. Starlight's own title leads to the locale's
+// root, and /en/ has no page.
+const {locale} = Astro.locals.starlightRoute
+const en = locale === 'en'
+const base = import.meta.env.BASE_URL
+---
+
+<div class="titles">
+    <a class="product" href={base}>
+        <Image src={icon} alt="" width={32} height={32} />
+        <span translate="no">Pourquoi Pas?</span>
+    </a>
+    <a class="guide" href={`${base}${en ? 'en/docs/' : 'docs/'}`}>{en ? 'Guide' : 'Руководство'}</a>
+</div>
+
+<style>
+    .titles {
+        display: flex;
+        align-items: center;
+        gap: 0.9rem;
+        min-width: 0;
+        white-space: nowrap;
+    }
+
+    a {
+        text-decoration: none;
+        color: var(--sl-color-white);
+    }
+
+    .product {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        font-family: var(--pp-font-title);
+        font-style: italic;
+        font-size: 1.35rem;
+    }
+
+    .product img {
+        width: 32px;
+        height: 32px;
+        border-radius: 22%;
+    }
+
+    .guide {
+        font-family: var(--pp-font-label);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: 0.8rem;
+        color: var(--sl-color-gray-2);
+    }
+
+    @media (max-width: 30rem) {
+        .guide {
+            display: none;
+        }
+    }
+</style>

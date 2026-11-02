@@ -1,4 +1,6 @@
-# Program agents: adapters, npx and Node.js
+---
+title: "Program agents: adapters, npx and Node.js"
+---
 
 This page is about the program agents the app starts on this computer, and what
 to do when one does not start. How to connect an agent is in [Connecting

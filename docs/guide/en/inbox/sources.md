@@ -1,4 +1,6 @@
-# Sources
+---
+title: "Sources"
+---
 
 Sources are set up in the menu of the [inbox](./index.md) board: ⋯ in the
 header → **"Sources…"**. There is nothing else in that menu, and sources are

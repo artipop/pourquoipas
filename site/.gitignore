@@ -1,2 +1,4 @@
 node_modules/
 dist/
+# Astro writes generated types and the content cache here.
+.astro/

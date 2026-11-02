@@ -1,4 +1,6 @@
-# How the board starts an agent
+---
+title: "How the board starts an agent"
+---
 
 There is one rule, and it fits in a sentence:
 
