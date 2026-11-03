@@ -44,6 +44,7 @@ export default defineConfig({
                 SiteTitle: './src/guide/SiteTitle.astro',
             },
             sidebar: [
+                item('docs', 'Обзор', 'Overview'),
                 {
                     label: 'Доска',
                     translations: {en: 'The board'},

@@ -85,8 +85,7 @@
 }
 
 /* A page's name is lettered like the ship's. */
-h1#_top,
-.hero h1 {
+h1#_top {
     font-family: var(--pp-font-title);
     font-style: italic;
     font-weight: 500;
@@ -125,13 +124,6 @@ site-search button {
 
 .sl-markdown-content :is(h1, h2, h3) {
     text-wrap: balance;
-}
-
-/* The guide's front page shows the ship the app icon is cut from: here there is
-   room for the name on the hull. */
-.hero > img {
-    border-radius: 22%;
-    box-shadow: 0 16px 48px -12px rgb(0 0 0 / 0.32);
 }
 
 /* The theme and language pickers are sized for Starlight's system font, and in

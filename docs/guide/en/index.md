@@ -1,29 +1,23 @@
 ---
-title: Guide
+title: What is Pourquoi Pas?
 description: "The Pourquoi Pas? user guide: the board, agents, the inbox and the settings."
-template: splash
-hero:
-  title: Pourquoi Pas?
-  tagline: How to use the board, the agents and everything around them.
-  image:
-    light: ../../../site/src/assets/ship.jpg
-    dark: ../../../site/src/assets/ship-dark.jpg
-    alt: The liner «Pourquoi Pas?»
-  actions:
-    - text: Start with the board
-      link: board/
-      icon: right-arrow
-    - text: How an agent is started
-      link: automation/
-      variant: minimal
 ---
+
+**Pourquoi Pas?** is a board that AI agents work on. An agent is assigned to a
+card the way a person is, and takes it up when the card is moved into a column.
+It does the task, leaves the result in a comment and moves the card on itself,
+into the column whose name says how it went.
+
+This guide is how to use the board, the agents and everything around them.
 
 ## Sections
 
+- **[First run](./start.md)** — where to begin: an agent, the first card, the
+  board tour and the hints.
 - **[The board](./board.md)** — title, icon, description, the «⋯» menu and
   views.
-- **[The agent](./agent.md)** — how to assign a card to an agent, how to answer
-  its questions, what stays on the card.
+- **[The agent on a card](./agent.md)** — how to assign a card to an agent, how
+  to answer its questions, what stays on the card.
 - **[Automation](./automation/index.md)** — the one rule by which the board
   starts an agent, and what it is told.
 - **[Inbox](./inbox/index.md)** — cards that arrive on their own: a link,
