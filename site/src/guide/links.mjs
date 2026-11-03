@@ -9,13 +9,15 @@ import {fileURLToPath} from 'node:url'
 
 export const guideDir = resolve(dirname(fileURLToPath(import.meta.url)), '../../../docs/guide')
 
-// `board.md` → `docs/board`, `automation/index.md` → `docs/automation`,
-// `en/board.md` → `en/docs/board`: English is a locale, and Starlight reads the
-// locale off the first segment.
+// English is the site's root and Russian a locale under /ru/, while the files
+// keep Russian at the top of docs/guide/ (it is the original) and English in
+// en/: `en/board.md` → `docs/board`, `board.md` → `ru/docs/board`,
+// `automation/index.md` → `ru/docs/automation`. Starlight reads the locale off
+// the first segment of the id.
 export function guideId(file) {
     const parts = file.replace(/\.mdx?$/, '').split('/')
     if (parts.at(-1) === 'index') parts.pop()
-    const locale = parts[0] === 'en' ? [parts.shift()] : []
+    const locale = parts[0] === 'en' ? (parts.shift(), []) : ['ru']
     return [...locale, 'docs', ...parts].join('/')
 }
 

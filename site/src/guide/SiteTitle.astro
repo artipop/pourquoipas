@@ -5,19 +5,20 @@ import icon from '../assets/icon.png'
 
 // Two links where Starlight draws one: the product's name leads to the landing
 // page, which is the product's home, and the word after it to the start of the
-// guide in the reader's language. Starlight's own title leads to the locale's
-// root, and /en/ has no page.
+// guide in the reader's language. Starlight's own title would lead to the
+// locale's root, which here is the landing page, not the guide.
 const {locale} = Astro.locals.starlightRoute
-const en = locale === 'en'
+const ru = locale === 'ru'
 const base = import.meta.env.BASE_URL
+const prefix = ru ? 'ru/' : ''
 ---
 
 <div class="titles">
-    <a class="product" href={base}>
+    <a class="product" href={`${base}${prefix}`}>
         <Image src={icon} alt="" width={32} height={32} />
         <span translate="no">Pourquoi Pas?</span>
     </a>
-    <a class="guide" href={`${base}${en ? 'en/docs/' : 'docs/'}`}>{en ? 'Guide' : 'Руководство'}</a>
+    <a class="guide" href={`${base}${prefix}docs/`}>{ru ? 'Руководство' : 'Guide'}</a>
 </div>
 
 <style>
