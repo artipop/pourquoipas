@@ -231,8 +231,85 @@ section {
     cursor: pointer;
 }
 
+/* The language menu: a details element, so it opens without the script. */
+.languages {
+    position: relative;
+}
+
+.languages summary {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    height: 32px;
+    padding: 0 10px;
+    border: 1px solid rgba(var(--band-ink-rgb), 0.3);
+    border-radius: 2px;
+    font: 600 13px/1 var(--pp-font-label);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    list-style: none;
+    cursor: pointer;
+    user-select: none;
+}
+
+.languages summary::-webkit-details-marker {
+    display: none;
+}
+
+.languages .caret {
+    opacity: 0.7;
+    transition: transform 0.15s;
+}
+
+.languages[open] .caret {
+    transform: rotate(180deg);
+}
+
+.languages ul {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    min-width: 100%;
+    margin: 0;
+    padding: 4px 0;
+    list-style: none;
+    background: rgb(var(--band-rgb));
+    border: 1px solid rgba(var(--band-ink-rgb), 0.3);
+    border-radius: 2px;
+    box-shadow: var(--shadow);
+}
+
+.nav .languages a {
+    display: block;
+    padding: 9px 14px;
+    white-space: nowrap;
+}
+
+.nav .languages a:hover,
+.nav .languages a:focus-visible {
+    background: rgba(var(--band-ink-rgb), 0.08);
+}
+
+.nav .languages a[aria-current='page'] {
+    opacity: 1;
+    box-shadow: inset 2px 0 0 rgb(var(--band-ink-rgb));
+}
+
 @media (max-width: 760px) {
-    .nav-wide {
+    .nav-wide,
+    .languages summary span {
+        display: none;
+    }
+
+    .nav {
+        gap: 16px;
+    }
+}
+
+/* On the narrowest phones the icon alone is the wordmark; with the name the
+   theme switch is pushed off the screen. */
+@media (max-width: 440px) {
+    .wordmark span {
         display: none;
     }
 }
