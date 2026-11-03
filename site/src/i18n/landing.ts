@@ -25,7 +25,7 @@ export interface LandingStrings {
     title: string
     description: string
     nav: {how: string; inbox: string; docs: string; price: string; language: string; theme: string}
-    hero: {label: string; headline: string; lead: string; text: string; preorder: string; how: string; free: string; shipAlt: string}
+    hero: {label: string; headline: string; lead: string; text: string; preorder: string; how: string; shipAlt: string}
     how: {label: string; title: string; columns: {name: string; cards: Card[]}[]; steps: Pair[]; more: string}
     inbox: {label: string; title: string; lead: string; tiles: Pair[]; moves: string; planTitle: string; planText: string}
     stepIn: {label: string; items: {title: string; text: string; muted: string}[]}
@@ -39,7 +39,7 @@ export interface LandingStrings {
 const en: LandingStrings = {
     lang: 'en',
     title: 'Pourquoi Pas? — a board that AI agents work on',
-    description: 'Pourquoi Pas? is a board that AI agents work on: an agent is assigned to a card and takes it up when the card is moved into a column. Everything is local, with your agents or your API key. The app is free.',
+    description: 'Pourquoi Pas? is a board that AI agents work on: an agent is assigned to a card and takes it up when the card is moved into a column. Everything is local, with your agents or your API key.',
     nav: {how: 'How it works', inbox: 'Inbox', docs: 'Guide', price: 'Price', language: 'Language', theme: 'Switch theme'},
     hero: {
         label: 'Board · AI agents · macOS, Windows, Linux',
@@ -48,7 +48,6 @@ const en: LandingStrings = {
         text: 'The agent does the task and leaves the result in a comment on the card. Then it moves the card itself, into the column whose name says how it went.',
         preorder: 'Tell me when it’s out',
         how: 'How it works',
-        free: 'The app is free',
         shipAlt: 'The liner «Pourquoi Pas?»',
     },
     how: {
@@ -138,7 +137,7 @@ const en: LandingStrings = {
 const ru: LandingStrings = {
     lang: 'ru',
     title: 'Pourquoi Pas? — доска, на которой работают ИИ-агенты',
-    description: 'Pourquoi Pas? — доска, на которой работают ИИ-агенты: агент — исполнитель карточки и берётся за неё, когда её переносят в колонку. Всё локально, с вашими агентами или ключом API. Приложение бесплатное.',
+    description: 'Pourquoi Pas? — доска, на которой работают ИИ-агенты: агент — исполнитель карточки и берётся за неё, когда её переносят в колонку. Всё локально, с вашими агентами или ключом API.',
     nav: {how: 'Как это работает', inbox: 'Входящие', docs: 'Руководство', price: 'Цена', language: 'Язык', theme: 'Переключить тему'},
     hero: {
         label: 'Доска · ИИ-агенты · macOS, Windows, Linux',
@@ -147,7 +146,6 @@ const ru: LandingStrings = {
         text: 'Агент делает задачу и&nbsp;оставляет результат в&nbsp;комментарии карточки. Потом сам переносит её&nbsp;в&nbsp;колонку, название которой говорит, что вышло.',
         preorder: 'Узнать о&nbsp;выходе',
         how: 'Как это работает',
-        free: 'Приложение бесплатное',
         shipAlt: 'Лайнер «Pourquoi Pas?»',
     },
     how: {

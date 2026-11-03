@@ -100,7 +100,6 @@ const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site).href : un
             <p class="actions">
                 {preorder && <a class="btn" href="#preorder" set:html={t.hero.preorder} />}
                 <a class={preorder ? 'btn btn-ghost' : 'btn'} href="#how">{t.hero.how}</a>
-                <span class="note">{t.hero.free}</span>
             </p>
         </div>
         <div class="hero-ship">

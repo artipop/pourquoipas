@@ -342,13 +342,6 @@ section {
     margin-top: 32px;
 }
 
-.note {
-    font: 600 13px/1 var(--pp-font-label);
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: rgb(var(--stamp-text-rgb));
-}
-
 .hero-ship {
     justify-self: end;
     width: 100%;
