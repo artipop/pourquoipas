@@ -24,7 +24,7 @@ export interface LandingStrings {
     lang: Lang
     title: string
     description: string
-    nav: {how: string; inbox: string; docs: string; price: string; language: string; theme: string}
+    nav: {how: string; features: string; docs: string; price: string; language: string; theme: string}
     hero: {label: string; headline: string; lead: string; text: string; preorder: string; how: string; shipAlt: string}
     how: {label: string; title: string; columns: {name: string; cards: Card[]}[]; steps: Pair[]; more: string}
     inbox: {label: string; title: string; lead: string; tiles: Pair[]; moves: string; planTitle: string; planText: string}
@@ -40,7 +40,7 @@ const en: LandingStrings = {
     lang: 'en',
     title: 'Pourquoi Pas? — a board that AI agents work on',
     description: 'Pourquoi Pas? is a board that AI agents work on: an agent is assigned to a card and takes it up when the card is moved into a column. Everything is local, with your agents or your API key.',
-    nav: {how: 'How it works', inbox: 'Inbox', docs: 'Guide', price: 'Price', language: 'Language', theme: 'Switch theme'},
+    nav: {how: 'How it works', features: 'Features', docs: 'Guide', price: 'Price', language: 'Language', theme: 'Switch theme'},
     hero: {
         label: 'Board · AI agents · macOS, Windows, Linux',
         headline: 'Free time is somewhere near.',
@@ -138,7 +138,7 @@ const ru: LandingStrings = {
     lang: 'ru',
     title: 'Pourquoi Pas? — доска, на которой работают ИИ-агенты',
     description: 'Pourquoi Pas? — доска, на которой работают ИИ-агенты: агент — исполнитель карточки и берётся за неё, когда её переносят в колонку. Всё локально, с вашими агентами или ключом API.',
-    nav: {how: 'Как это работает', inbox: 'Входящие', docs: 'Руководство', price: 'Цена', language: 'Язык', theme: 'Переключить тему'},
+    nav: {how: 'Как это работает', features: 'Возможности', docs: 'Руководство', price: 'Цена', language: 'Язык', theme: 'Переключить тему'},
     hero: {
         label: 'Доска · ИИ-агенты · macOS, Windows, Linux',
         headline: 'Свободное время где-то рядом.',

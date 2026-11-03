@@ -61,7 +61,7 @@ const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site).href : un
         </a>
         <nav class="nav">
             <a class="nav-wide" href="#how">{t.nav.how}</a>
-            <a class="nav-wide" href="#inbox">{t.nav.inbox}</a>
+            <a class="nav-wide" href="#features">{t.nav.features}</a>
             <a href={docs}>{t.nav.docs}</a>
             {/* Hidden with the price section below.
             <a class="nav-wide" href="#price">{t.nav.price}</a>
@@ -146,7 +146,7 @@ const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site).href : un
     </div>
 </section>
 
-<section id="inbox" class="band">
+<section id="features" class="band">
     <div class="wrap">
         <p class="label">{t.inbox.label}</p>
         <h2>{t.inbox.title}</h2>
